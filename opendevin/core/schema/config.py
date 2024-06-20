@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class ConfigType(str, Enum):
+    # For frontend
     LLM_CUSTOM_LLM_PROVIDER = 'LLM_CUSTOM_LLM_PROVIDER'
     LLM_MAX_INPUT_TOKENS = 'LLM_MAX_INPUT_TOKENS'
     LLM_MAX_OUTPUT_TOKENS = 'LLM_MAX_OUTPUT_TOKENS'
@@ -40,5 +41,4 @@ class ConfigType(str, Enum):
     USE_HOST_NETWORK = 'USE_HOST_NETWORK'
     SSH_HOSTNAME = 'SSH_HOSTNAME'
     DISABLE_COLOR = 'DISABLE_COLOR'
-    GITHUB_TOKEN = 'GITHUB_TOKEN'
     DEBUG = 'DEBUG'

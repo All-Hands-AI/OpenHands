@@ -1,16 +1,27 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-EVAL_LIMIT=$3
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+MAX_ITER=$5
+
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+if [ -z "$MAX_ITER" ]; then
+  echo "MAX_ITER not specified, use default 30"
+  MAX_ITER=30
+fi
+
+get_agent_version
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
@@ -32,7 +43,7 @@ unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token t
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 30 \
+  --max-iterations $MAX_ITER \
   --max-chars 10000000 \
   --eval-num-workers 8 \
   --eval-note $EVAL_NOTE"
@@ -44,3 +55,5 @@ fi
 
 # Run the command
 eval $COMMAND
+
+checkout_original_branch

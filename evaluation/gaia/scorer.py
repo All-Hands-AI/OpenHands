@@ -17,8 +17,10 @@ def normalize_number_str(number_str: str) -> float:
 
 def split_string(
     s: str,
-    char_list: list[str] = [',', ';'],
+    char_list: list[str] = None,
 ) -> list[str]:
+    if char_list is None:
+        char_list = [',', ';']
     pattern = f"[{''.join(char_list)}]"
     return re.split(pattern, s)
 
@@ -51,7 +53,9 @@ def question_scorer(
         # check length is the same
         if len(gt_elems) != len(ma_elems):
             warnings.warn(
-                'Answer lists have different lengths, returning False.', UserWarning
+                'Answer lists have different lengths, returning False.',
+                UserWarning,
+                stacklevel=2,
             )
             return False
 

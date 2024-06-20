@@ -81,6 +81,8 @@ class SensitiveDataFilter(logging.Filter):
             'aws_secret_access_key',
             'e2b_api_key',
             'github_token',
+            'jwt_secret',
+            'ssh_password',
         ]
 
         # add env var names
@@ -88,7 +90,9 @@ class SensitiveDataFilter(logging.Filter):
         sensitive_patterns.extend(env_vars)
 
         # and some special cases
+        sensitive_patterns.append('JWT_SECRET')
         sensitive_patterns.append('LLM_API_KEY')
+        sensitive_patterns.append('GITHUB_TOKEN')
         sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
 
         # this also formats the message with % args
@@ -216,7 +220,7 @@ class LlmFileHandler(logging.FileHandler):
         self.baseFilename = os.path.join(self.log_directory, filename)
         self.stream = self._open()
         super().emit(record)
-        self.stream.close
+        self.stream.close()
         opendevin_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
 

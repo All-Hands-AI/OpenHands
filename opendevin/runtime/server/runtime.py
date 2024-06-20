@@ -49,7 +49,7 @@ class ServerRuntime(Runtime):
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         obs = self._run_command(
-            ('cat > /tmp/opendevin_jupyter_temp.py <<EOL\n' f'{action.code}\n' 'EOL'),
+            ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
             background=False,
         )
 
@@ -67,7 +67,7 @@ class ServerRuntime(Runtime):
             ):
                 obs = self._run_command(
                     (
-                        'cat > /tmp/opendevin_jupyter_temp.py <<EOL\n'
+                        "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
                         f'{restart_kernel}\n'
                         'EOL'
                     ),
@@ -88,7 +88,7 @@ class ServerRuntime(Runtime):
                 if action.kernel_init_code:
                     obs = self._run_command(
                         (
-                            f'cat > /tmp/opendevin_jupyter_init.py <<EOL\n'
+                            f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
                             f'{action.kernel_init_code}\n'
                             'EOL'
                         ),

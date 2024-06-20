@@ -55,17 +55,16 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
-        latest_user_message = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
             history_to_json=history_to_json,
             delegates=self.delegates,
-            latest_user_message=latest_user_message,
+            latest_user_message=state.get_current_user_intent(),
         )
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.do_completion(messages=messages)
+        resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
         state.num_of_chars += len(prompt) + len(action_resp)
         action = parse_response(action_resp)

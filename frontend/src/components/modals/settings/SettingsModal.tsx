@@ -66,12 +66,9 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   }, []);
 
   const handleModelChange = (model: string) => {
-    // Needs to also reset the API key.
-    const key = localStorage.getItem(`API_KEY_${model}`);
     setSettings((prev) => ({
       ...prev,
       LLM_MODEL: model,
-      LLM_API_KEY: key || "",
     }));
   };
 

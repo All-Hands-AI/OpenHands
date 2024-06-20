@@ -6,9 +6,9 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
-    AgentMalformedActionError,
-    AgentNoActionError,
-    LLMOutputError,
+    LLMMalformedActionError,
+    LLMNoActionError,
+    LLMResponseError,
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -19,6 +19,7 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     ChangeAgentStateAction,
     MessageAction,
     ModifyTaskAction,
@@ -47,6 +48,7 @@ class AgentController:
     event_stream: EventStream
     state: State
     agent_task: Optional[asyncio.Task] = None
+    parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
 
@@ -58,7 +60,8 @@ class AgentController:
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
-        inputs: dict | None = None,
+        initial_state: State | None = None,
+        is_delegate: bool = False,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -69,25 +72,30 @@ class AgentController:
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
-            inputs: The initial inputs to the agent.
+            initial_state: The initial state of the controller.
+            is_delegate: Whether this controller is a delegate.
         """
+        self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
-        self.state = State(inputs=inputs or {}, max_iterations=max_iterations)
+        self.max_chars = max_chars
+        if initial_state is None:
+            self.state = State(inputs={}, max_iterations=max_iterations)
+        else:
+            self.state = initial_state
         self.event_stream = event_stream
         self.event_stream.subscribe(
-            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event
+            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, append=is_delegate
         )
-        self.max_iterations = max_iterations
-        self.max_chars = max_chars
         self.max_budget_per_task = max_budget_per_task
-        self.agent_task = asyncio.create_task(self._start_step_loop())
+        if not is_delegate:
+            self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
         if self.agent_task is not None:
             self.agent_task.cancel()
-        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         await self.set_agent_state_to(AgentState.STOPPED)
+        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
 
     def update_state_before_step(self):
         self.state.iteration += 1
@@ -105,9 +113,16 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
-        self.state.error = message
+        """
+        This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+
+        This method should be called for a particular type of errors:
+        - the string message should be user-friendly, it will be shown in the UI
+        - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
+        """
         if exception:
-            self.state.error += f': {str(exception)}'
+            message += f': {exception}'
+        self.state.error = message
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -117,6 +132,7 @@ class AgentController:
         self.state.updated_info.append((action, observation))
 
     async def _start_step_loop(self):
+        logger.info(f'[Agent Controller {self.id}] Starting step loop...')
         while True:
             try:
                 await self._step()
@@ -124,7 +140,6 @@ class AgentController:
                 logger.info('AgentController task was cancelled')
                 break
             except Exception as e:
-                traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
                 await self.report_error(
@@ -156,6 +171,9 @@ class AgentController:
         elif isinstance(event, AgentFinishAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
             await self.set_agent_state_to(AgentState.FINISHED)
+        elif isinstance(event, AgentRejectAction):
+            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
@@ -164,13 +182,16 @@ class AgentController:
             elif isinstance(event, CmdOutputObservation):
                 await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, AgentDelegateObservation):
+                await self.add_history(NullAction(), event)
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
         logger.info(
-            f'Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
+            f'[Agent Controller {self.id}] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
 
         if new_state == self.state.agent_state:
@@ -195,52 +216,93 @@ class AgentController:
     async def start_delegate(self, action: AgentDelegateAction):
         AgentCls: Type[Agent] = Agent.get_cls(action.agent)
         agent = AgentCls(llm=self.agent.llm)
+        state = State(
+            inputs=action.inputs or {},
+            iteration=0,
+            max_iterations=self.state.max_iterations,
+            num_of_chars=self.state.num_of_chars,
+            delegate_level=self.state.delegate_level + 1,
+        )
+        logger.info(f'[Agent Controller {self.id}]: start delegate')
         self.delegate = AgentController(
             sid=self.id + '-delegate',
             agent=agent,
             event_stream=self.event_stream,
-            max_iterations=self.max_iterations,
+            max_iterations=self.state.max_iterations,
             max_chars=self.max_chars,
-            inputs=action.inputs,
+            initial_state=state,
+            is_delegate=True,
         )
+        await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self):
+        logger.debug(f'[Agent Controller {self.id}] Entering step method')
         if self.get_agent_state() != AgentState.RUNNING:
-            logger.debug('waiting for agent to run...')
             await asyncio.sleep(1)
             return
 
         if self._pending_action:
-            logger.debug('waiting for pending action: ' + str(self._pending_action))
+            logger.info(
+                f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
+            )
             await asyncio.sleep(1)
             return
 
-        logger.info(f'STEP {self.state.iteration}', extra={'msg_type': 'STEP'})
-        if self.state.iteration >= self.max_iterations:
-            await self.report_error('Agent reached maximum number of iterations')
-            await self.set_agent_state_to(AgentState.ERROR)
-            return
-
         if self.delegate is not None:
-            delegate_done = await self.delegate._step()
+            logger.debug(f'[Agent Controller {self.id}] Delegate not none, awaiting...')
+            assert self.delegate != self
+            await self.delegate._step()
+            logger.debug(f'[Agent Controller {self.id}] Delegate step done')
+            assert self.delegate is not None
+            delegate_state = self.delegate.get_agent_state()
+            if delegate_state == AgentState.ERROR:
+                # close the delegate upon error
+                await self.delegate.close()
+                await self.report_error('Delegator agent encounters an error')
+                # propagate error state until an agent or user can handle it
+                await self.set_agent_state_to(AgentState.ERROR)
+                return
+            delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
+                logger.info(
+                    f'[Agent Controller {self.id}] Delegate agent has finished execution'
+                )
+                # retrieve delegate result
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
-                obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
-                await self.event_stream.add_event(obs, EventSource.AGENT)
+
+                # close delegate controller: we must close the delegate controller before adding new events
+                await self.delegate.close()
+
+                # clean up delegate status
                 self.delegate = None
                 self.delegateAction = None
+
+                # update delegate result observation
+                obs: Observation = AgentDelegateObservation(outputs=outputs, content='')
+                await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
+
+        logger.info(
+            f'{type(self.agent).__name__} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
+            extra={'msg_type': 'STEP'},
+        )
+        if self.state.iteration >= self.state.max_iterations:
+            await self.report_error('Agent reached maximum number of iterations')
+            await self.set_agent_state_to(AgentState.ERROR)
+            return
 
         self.update_state_before_step()
         action: Action = NullAction()
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError('No action was returned')
-        except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
+                raise LLMNoActionError('No action was returned')
+        except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
+            # report to the user
+            # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
             return
 
@@ -280,28 +342,35 @@ class AgentController:
             )
         ]
 
-        if len(filtered_history) < 4:
+        if len(filtered_history) < 3:
             return False
 
         # FIXME rewrite this to be more readable
 
-        # Check if the last four (Action, Observation) tuples are too repetitive
-        last_four_tuples = filtered_history[-4:]
+        # Scenario 1: the same (Action, Observation) loop
+        # 3 pairs of (action, observation) to stop the agent
+        last_three_tuples = filtered_history[-3:]
 
         if all(
             # (Action, Observation) tuples
-            # compare the last action to the last four actions
-            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
-            for _tuple in last_four_tuples
+            # compare the last action to the last three actions
+            self._eq_no_pid(last_three_tuples[-1][0], _tuple[0])
+            for _tuple in last_three_tuples
         ) and all(
-            # compare the last observation to the last four observations
-            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
-            for _tuple in last_four_tuples
+            # compare the last observation to the last three observations
+            self._eq_no_pid(last_three_tuples[-1][1], _tuple[1])
+            for _tuple in last_three_tuples
         ):
             logger.warning('Action, Observation loop detected')
             return True
 
-        # (action, error) tuples
+        if len(filtered_history) < 4:
+            return False
+
+        last_four_tuples = filtered_history[-4:]
+
+        # Scenario 2: (action, error) pattern, not necessary identical error
+        # 4 pairs of (action, error) to stop the agent
         if all(
             self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
             for _tuple in last_four_tuples
@@ -315,7 +384,8 @@ class AgentController:
 
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six tuples
-
+        # step1 = step3 = step5
+        # step2 = step4 = step6
         if len(filtered_history) >= 6:
             last_six_tuples = filtered_history[-6:]
             if (
@@ -334,6 +404,14 @@ class AgentController:
                 return True
 
         return False
+
+    def __repr__(self):
+        return (
+            f'AgentController(id={self.id}, agent={self.agent!r}, '
+            f'event_stream={self.event_stream!r}, '
+            f'state={self.state!r}, agent_task={self.agent_task!r}, '
+            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
+        )
 
     def _eq_no_pid(self, obj1, obj2):
         if isinstance(obj1, CmdOutputObservation) and isinstance(

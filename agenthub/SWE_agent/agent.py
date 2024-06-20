@@ -8,6 +8,7 @@ from opendevin.events.action import (
 )
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
+from opendevin.runtime.tools import RuntimeTool
 
 from .parser import parse_command
 from .prompts import (
@@ -27,6 +28,7 @@ class SWEAgent(Agent):
 
     SWE-agent includes ACI functions like 'goto', 'search_for', 'edit', 'scroll', 'run'
     """
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -36,7 +38,7 @@ class SWEAgent(Agent):
         self.cur_line: int = 0
 
     def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
-        resp = self.llm.do_completion(
+        resp = self.llm.completion(
             messages=messages,
             temperature=0.05,
         )

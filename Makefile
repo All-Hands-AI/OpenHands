@@ -7,9 +7,10 @@ BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
-DEFAULT_MODEL = "gpt-3.5-turbo"
+DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
+PYTHON_VERSION = 3.11
 
 # ANSI color codes
 GREEN=$(shell tput -Txterm setaf 2)
@@ -62,10 +63,10 @@ check-system:
 
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3.11 > /dev/null; then \
-		echo "$(BLUE)$(shell python3.11 --version) is already installed.$(RESET)"; \
+	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
+		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Python 3.11 is not installed. Please install Python 3.11 to continue.$(RESET)"; \
+		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -112,13 +113,13 @@ check-poetry:
 			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 		else \
 			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-			echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+			echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
 			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
 		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(RED) curl -sSL https://install.python-poetry.org | python3.11 -$(RESET)"; \
+		echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi
@@ -130,7 +131,11 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
-	poetry env use python3.11
+	@if [ -z "${TZ}" ]; then \
+		echo "Defaulting TZ (timezone) to UTC"; \
+		export TZ="UTC"; \
+	fi
+	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
@@ -142,7 +147,14 @@ install-python-dependencies:
 		poetry run pip install playwright; \
 		poetry run playwright install chromium; \
 	else \
-		poetry run playwright install --with-deps chromium; \
+		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			echo "Running playwright install --with-deps chromium..."; \
+			poetry run playwright install --with-deps chromium; \
+			mkdir -p cache; \
+			touch cache/playwright_chromium_is_installed.txt; \
+		else \
+			echo "Setup already done. Skipping playwright installation."; \
+		fi \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -165,7 +177,7 @@ install-precommit-hooks:
 
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files $$(git diff --name-only $$(git merge-base main $$(git branch --show-current)) $$(git branch --show-current) | tr '\n' ' ') --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -222,9 +234,19 @@ setup-config:
 setup-config-prompts:
 	@echo "[core]" > $(CONFIG_FILE).tmp
 
-	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
+	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
+	@read -p "Do you want to persist the sandbox container? [true/false] [default: true]: " persist_sandbox; \
+	 persist_sandbox=$${persist_sandbox:-true}; \
+	 if [ "$$persist_sandbox" = "true" ]; then \
+		 read -p "Enter a password for the sandbox container: " ssh_password; \
+		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
+		 echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
+	 else \
+		echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
+	 fi
 
 	@echo "" >> $(CONFIG_FILE).tmp
 

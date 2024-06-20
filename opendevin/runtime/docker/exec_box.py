@@ -18,11 +18,6 @@ from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.sandbox import Sandbox
 
-# FIXME these are not used, should we remove them?
-InputType = namedtuple('InputType', ['content'])
-OutputType = namedtuple('OutputType', ['content'])
-
-
 ExecResult = namedtuple('ExecResult', 'exit_code,output')
 """ A result of Container.exec_run with the properties ``exit_code`` and
     ``output``. """
@@ -353,6 +348,7 @@ class DockerExecBox(Sandbox):
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+        self.docker_client.close()
 
     def get_working_directory(self):
         return self.sandbox_workspace_dir
