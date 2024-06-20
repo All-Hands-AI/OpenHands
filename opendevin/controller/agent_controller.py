@@ -304,8 +304,6 @@ class AgentController:
             await self.report_error(str(e))
             return
 
-        logger.info(action, extra={'msg_type': 'ACTION'})
-
         await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
@@ -314,6 +312,8 @@ class AgentController:
 
         if not isinstance(action, NullAction):
             await self.event_stream.add_event(action, EventSource.AGENT)
+
+        logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
