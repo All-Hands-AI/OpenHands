@@ -19,7 +19,7 @@ on:
         default: ''
 
 jobs:
-  check-ghcr:
+  check_ghcr:
     runs-on: ubuntu-latest
     outputs:
       ghcr_enabled: ${{ steps.check-ghcr-status.outputs.ghcr_enabled }}
@@ -212,7 +212,7 @@ jobs:
     runs-on: ubuntu-latest
     # don't push if integration tests or sandbox tests fail or ghcr is disabled
     needs: [check_ghcr, ghcr_build, integration-tests-on-linux, test-for-sandbox]
-    if: needs.check_ghcr.outputs.ghcr_enabled == 'true' && github.ref == 'refs/heads/main'
+    if: ${{ needs.check-ghcr.outputs.ghcr_enabled == 'true' }} && github.ref == 'refs/heads/main'
 
     env:
       tags: ${{ needs.ghcr_build.outputs.tags }}
