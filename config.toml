@@ -1,11 +1,11 @@
 [core]
 workspace_base="../workspace"
 ssh_password="blehbleh"
-persist_sandbox=true
+persist_sandbox=false
 
 [llm]
-model="openai/meta-llama/Meta-Llama-3-70B-Instruct"
+model="openai/LLM360/K2-Chat"
 api_key="sk-1234"
-base_url="http://localhost:8000/v1/"
+base_url="http://localhost:8001/v1/"
 embedding_model="llama2"
 embedding_base_url=""
