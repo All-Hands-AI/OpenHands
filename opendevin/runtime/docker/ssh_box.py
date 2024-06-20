@@ -731,7 +731,8 @@ class DockerSSHBox(Sandbox):
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
             # update the container image
-            self.docker_client.images.pull(self.container_image)
+            if self.container_image.endswith(':main'):
+                self.docker_client.images.pull(self.container_image)
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
