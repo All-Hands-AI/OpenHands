@@ -38,7 +38,7 @@ class SWEAgent(Agent):
         self.cur_line: int = 0
 
     def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
-        resp = self.llm.do_completion(
+        resp = self.llm.completion(
             messages=messages,
             temperature=0.05,
         )

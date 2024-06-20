@@ -17,6 +17,7 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
+from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
@@ -222,6 +223,9 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
+        self.container_image = get_od_sandbox_image(
+            self.container_image, self.docker_client
+        )
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -271,7 +275,7 @@ class DockerSSHBox(Sandbox):
         self.execute('mkdir -p /tmp')
         # set git config
         self.execute('git config --global user.name "OpenDevin"')
-        self.execute('git config --global user.email "opendevin@opendevin.ai"')
+        self.execute('git config --global user.email "opendevin@all-hands.dev"')
         atexit.register(self.close)
         super().__init__()
 
@@ -341,6 +345,31 @@ class DockerSSHBox(Sandbox):
             if exit_code != 0:
                 raise Exception(
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
+                )
+            # check the miniforge3 directory exist
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1'],
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
+            )
+            if exit_code != 0:
+                if exit_code == 1:
+                    raise Exception(
+                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
+                    )
+                else:
+                    raise Exception(
+                        f'An error occurred while checking if miniforge3 directory exists: {logs}'
+                    )
+            # chown the miniforge3
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'chown -R opendevin:root /opendevin/miniforge3'],
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown miniforge3 directory for opendevin in sandbox: {logs}'
                 )
             exit_code, logs = self.container.exec_run(
                 [
@@ -714,7 +743,7 @@ class DockerSSHBox(Sandbox):
             )
             logger.info('Container started')
         except Exception as ex:
-            logger.exception('Failed to start container', exc_info=False)
+            logger.exception('Failed to start container: ' + str(ex), exc_info=False)
             raise ex
 
         # wait for container to be ready
@@ -766,7 +795,8 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+    ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
         f'{AgentSkillsRequirement().documentation}\n'
