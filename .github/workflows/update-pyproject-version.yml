@@ -1,0 +1,75 @@
+name: Update pyproject.toml Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-pyproject-toml:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check write permissions
+        id: check_permissions
+        run: |
+          if [ "$(jq -r '.permissions.contents' < "$GITHUB_EVENT_PATH")" != "write" ]; then
+            echo "Write permissions are required for this action to run."
+            exit 0
+          fi
+
+      - name: Get latest release tag
+        id: get_latest_tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+          if [ -n "$LATEST_TAG" ]; then
+            echo "::set-output name=latest_tag::$LATEST_TAG"
+          else
+            echo "No release tags found."
+            exit 0
+          fi
+
+      - name: Check if version needs update
+        id: check_version
+        run: |
+          CURRENT_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['tool']['poetry']['version'])")
+          if [ "$CURRENT_VERSION" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
+            echo "Version is already up-to-date."
+            echo "::set-output name=update_needed::false"
+          else
+            echo "Version needs to be updated."
+            echo "::set-output name=update_needed::true"
+          fi
+
+      - name: Update pyproject.toml
+        if: steps.check_version.outputs.update_needed == 'true'
+        run: |
+          python -c "
+          import toml
+          with open('pyproject.toml', 'r') as f:
+              data = toml.load(f)
+          data['tool']['poetry']['version'] = '${{ steps.get_latest_tag.outputs.latest_tag }}'
+          with open('pyproject.toml', 'w') as f:
+              toml.dump(data, f)
+          "
+
+      - name: Commit and push changes
+        if: steps.check_version.outputs.update_needed == 'true'
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add pyproject.toml
+          git commit -m "Update pyproject.toml version to ${{ steps.get_latest_tag.outputs.latest_tag }}"
+          git push
