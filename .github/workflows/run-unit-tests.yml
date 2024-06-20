@@ -21,7 +21,7 @@ env:
 jobs:
   test-on-macos:
     name: Test on macOS
-    runs-on: macos-13
+    runs-on: macos-12
     env:
       INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
     strategy:
