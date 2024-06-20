@@ -294,6 +294,52 @@ def test_sandbox_jupyter_plugin(temp_dir):
             )
             box.close()
 
+def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
+    box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+    exit_code, output = box.execute('mkdir test')
+    print(output)
+    assert exit_code == 0, (
+            'The exit code should be 0 for ' + box.__class__.__name__
+    )
+
+    exit_code, output = box.execute(
+        'echo "create_file(\'a.txt\')" | execute_cli'
+    )
+    print(output)
+    assert exit_code == 0, (
+            'The exit code should be 0 for ' + box.__class__.__name__
+    )
+    assert output.strip().split('\r\n') == (
+        '[File: /workspace/a.txt (1 lines total)]\r\n'
+        '1|\r\n'
+        '[File a.txt created.]'
+    ).strip().split('\r\n')
+
+    exit_code, output = box.execute('cd test')
+    print(output)
+    assert exit_code == 0, (
+            'The exit code should be 0 for ' + box.__class__.__name__
+    )
+
+    exit_code, output = box.execute(
+        'echo "create_file(\'a.txt\')" | execute_cli'
+    )
+    print(output)
+    assert exit_code == 0, (
+            'The exit code should be 0 for ' + box.__class__.__name__
+    )
+    assert output.strip().split('\r\n') == (
+        '[File: /workspace/test/a.txt (1 lines total)]\r\n'
+        '1|\r\n'
+        '[File a.txt created.]'
+    ).strip().split('\r\n')
+
+    exit_code, output = box.execute('rm -rf /workspace/*')
+    assert exit_code == 0, (
+            'The exit code should be 0 for ' + box.__class__.__name__
+    )
+    box.close()
+
 
 def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
@@ -303,41 +349,21 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox()]:
-            box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
-            exit_code, output = box.execute('mkdir test')
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
+            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
-            exit_code, output = box.execute(
-                'echo "create_file(\'a.txt\')" | execute_cli'
-            )
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip().split('\r\n') == (
-                '[File: /workspace/a.txt (1 lines total)]\r\n'
-                '1|\r\n'
-                '[File a.txt created.]'
-            ).strip().split('\r\n')
 
-            exit_code, output = box.execute('cd test')
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-
-            exit_code, output = box.execute(
-                'echo "create_file(\'a.txt\')" | execute_cli'
-            )
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip().split('\r\n') == (
-                '[File: /workspace/test/a.txt (1 lines total)]\r\n'
-                '1|\r\n'
-                '[File a.txt created.]'
-            ).strip().split('\r\n')
+@pytest.mark.skipif(os.getenv('TEST_IN_CI') != 'true',
+    reason='The unittest need to download image, so only run on CI',
+)
+def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+    for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
+        # get a temporary directory
+        with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+                config, 'workspace_mount_path', new=temp_dir
+        ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+            config, 'sandbox_type', new='ssh'
+        ), patch.object(
+            config, 'sandbox_container_image', new=base_sandbox_image
+        ):
+            for box in [DockerSSHBox()]:
+                _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
