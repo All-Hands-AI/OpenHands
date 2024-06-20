@@ -19,35 +19,39 @@ on:
         default: ''
 
 jobs:
-  check_ghcr:
+  check-ghcr:
     runs-on: ubuntu-latest
-
     outputs:
-      ghcr_enabled: ${{ steps.set-output.outputs.ghcr_enabled }}
-
+      ghcr_enabled: ${{ steps.check-ghcr-status.outputs.ghcr_enabled }}
     steps:
-      - name: Check if GHCR is enabled
-        id: check_ghcr
-        run: |
-          response=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                          -H "Accept: application/vnd.github.v3+json" \
-                          https://api.github.com/user/packages?package_type=container)
-          echo "response=$response" >> $GITHUB_ENV
+      - name: Check GHCR status
+        id: check-ghcr-status
+        uses: actions/github-script@v3
+        with:
+          script: |
+            try {
+              const response = await github.request('GET', '/user/packages/container/ghcr.io/%7Bowner%7D/%7Bpackage%7D/versions', {
+                owner: context.repo.owner,
+                package: 'test-package', // Replace with a dummy package name
+                headers: {
+                  'X-GitHub-Api-Version': '2022-11-28'
+                }
+              });
 
-      - name: Set output
-        id: set-output
-        run: |
-          if [[ "$(jq length <<< ${{ env.response }})" -gt 0 ]]; then
-            echo "ghcr_enabled=true" >> $GITHUB_ENV
-          else
-            echo "ghcr_enabled=false" >> $GITHUB_ENV
-          fi
-        env:
-          response: ${{ steps.check_ghcr.outputs.response }}
-
-      - name: Set final output
-        id: final-output
-        run: echo "ghcr_enabled=${{ env.ghcr_enabled }}" >> $GITHUB_OUTPUT
+              if (response.statusCode === 404) {
+                console.log('GHCR is likely not enabled. Received a 404 error for a test package.');
+                core.setOutput('ghcr_enabled', 'false');
+              } else if (response.statusCode === 200) {
+                console.log('GHCR is enabled. Successfully listed versions for a test package.');
+                core.setOutput('ghcr_enabled', 'true');
+              } else {
+                console.log('Unexpected response status code:', response.statusCode);
+                core.setFailed('Error checking GHCR status.');
+              }
+            } catch (error) {
+              console.error('Error checking GHCR status:', error);
+              core.setFailed(error.message);
+            }
 
   ghcr_build:
     runs-on: ubuntu-latest
