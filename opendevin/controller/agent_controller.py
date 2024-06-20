@@ -304,8 +304,7 @@ class AgentController:
             await self.report_error(str(e))
             return
 
-        if not isinstance(action, MessageAction):
-            logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.info(action, extra={'msg_type': 'ACTION'})
 
         await self.update_state_after_step()
         if action.runnable:
