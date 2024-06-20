@@ -13,6 +13,10 @@ async def send_command():
                         return
                     await websocket.send(command)
                     response = await websocket.recv()
+                    exit_code = response[-1].strip()\
+                    # command_output = '\n'.join(response[1:-1]).strip()
+                    # print("Yufan:", command_output)
+                    print("Exit Code:", exit_code)
                     print(response)
         except (websockets.exceptions.ConnectionClosed, OSError) as e:
             print(f"Connection closed, retrying... ({str(e)})")
