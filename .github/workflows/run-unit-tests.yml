@@ -47,7 +47,7 @@ jobs:
         if: env.INSTALL_DOCKER == '1'
         run: |
           brew install colima docker
-          colima start
+          colima start --arch x86_64
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
