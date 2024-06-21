@@ -21,7 +21,7 @@ env:
 jobs:
   test-on-macos:
     name: Test on macOS
-    runs-on: macos-13
+    runs-on: macos-12
     env:
       INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
     strategy:
@@ -47,7 +47,7 @@ jobs:
         if: env.INSTALL_DOCKER == '1'
         run: |
           brew install colima docker
-          colima start
+          colima start --arch x86_64
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
@@ -92,36 +92,6 @@ jobs:
 
       - name: Run Tests
         run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  test-for-sandbox:
-    name: Test for Sandbox
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install poetry via pipx
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "poetry"
-
-      - name: Install Python dependencies using Poetry
-        run: poetry install
-
-      - name: Build Environment
-        run: make build
-
-      - name: Run Integration Test for Sandbox
-        run: |
-          poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

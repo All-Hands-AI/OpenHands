@@ -173,7 +173,7 @@ class CodeActSWEAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        response = self.llm.do_completion(
+        response = self.llm.completion(
             messages=messages,
             stop=[
                 '</execute_ipython>',

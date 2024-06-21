@@ -35,11 +35,6 @@ class AgentNotRegisteredError(Exception):
         super().__init__(message)
 
 
-class LLMOutputError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
-
 class SandboxInvalidBackgroundCommandError(Exception):
     def __init__(self, id=None):
         if id is not None:
@@ -71,12 +66,22 @@ class BrowserUnavailableException(Exception):
         super().__init__(message)
 
 
-# These exceptions get sent back to the LLM
-class AgentMalformedActionError(Exception):
+# This exception gets sent back to the LLM
+# It might be malformed JSON
+class LLMMalformedActionError(Exception):
     def __init__(self, message='Malformed response'):
         super().__init__(message)
 
 
-class AgentNoActionError(Exception):
+# This exception gets sent back to the LLM
+# For some reason, the agent did not return an action
+class LLMNoActionError(Exception):
     def __init__(self, message='Agent must return an action'):
+        super().__init__(message)
+
+
+# This exception gets sent back to the LLM
+# The LLM output did not include an action, or the action was not the expected type
+class LLMResponseError(Exception):
+    def __init__(self, message='Failed to retrieve action from LLM response'):
         super().__init__(message)
