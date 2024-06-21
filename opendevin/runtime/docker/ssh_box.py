@@ -247,6 +247,9 @@ class DockerSSHBox(Sandbox):
             logger.info('Detected initial session.')
         if not config.persist_sandbox or self.is_initial_session:
             logger.info('Creating new Docker container')
+            # update the container image
+            if self.container_image.endswith(':main'):
+                self.docker_client.images.pull(self.container_image)
             n_tries = 5
             while n_tries > 0:
                 try:
@@ -348,19 +351,18 @@ class DockerSSHBox(Sandbox):
                 )
             # check the miniforge3 directory exist
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1'],
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
-                if exit_code == 1:
-                    raise Exception(
-                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
-                    )
-                else:
-                    raise Exception(
-                        f'An error occurred while checking if miniforge3 directory exists: {logs}'
-                    )
+                raise Exception(
+                    f'An error occurred while checking if miniforge3 directory exists: {logs}'
+                )
             # chown the miniforge3
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', 'chown -R opendevin:root /opendevin/miniforge3'],
