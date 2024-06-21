@@ -39,6 +39,15 @@ if [[ ! -f "$dir/config.sh" ]]; then
   exit 1
 fi
 
+DOCKERFILE_PATH="$dir/Dockerfile"
+
+# Check if the Dockerfile has changed for sandbox image
+if [[ "$image_name" == "sandbox" ]]; then
+  if [[ -n $(git diff --name-only HEAD~1 HEAD -- "$DOCKERFILE_PATH") ]]; then
+    echo "No changes detected in Dockerfile. Skipping Docker build."
+  fi
+fi
+
 source "$dir/config.sh"
 
 if [[ -n "$org_name" ]]; then
@@ -62,7 +71,7 @@ docker buildx build \
   --build-arg OPEN_DEVIN_BUILD_VERSION="$OPEN_DEVIN_BUILD_VERSION" \
   --platform linux/$platform \
   --provenance=false \
-  -f "$dir/Dockerfile" \
+  -f  "$DOCKERFILE_PATH" \
   --output type=docker,dest="$output_image" \
   "$DOCKER_BASE_DIR"
 
