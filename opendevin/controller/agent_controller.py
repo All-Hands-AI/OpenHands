@@ -1,5 +1,6 @@
 import asyncio
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Type
 
 from opendevin.controller.agent import Agent
@@ -39,6 +40,8 @@ from opendevin.events.observation import (
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
+
+executor = ThreadPoolExecutor(max_workers=10)
 
 
 class AgentController:
@@ -231,6 +234,7 @@ class AgentController:
 
     async def _step(self):
         logger.debug(f'[Agent Controller {self.id}] Entering step method')
+
         if self.get_agent_state() != AgentState.RUNNING:
             await asyncio.sleep(1)
             return
@@ -288,10 +292,17 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
+        async def run_blocking_function(state: State):
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(executor, self.agent.step, state)
+            return result
+
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            action = self.agent.step(self.state)
+            task = asyncio.create_task(run_blocking_function(self.state))
+            action = await task
+            # action = self.agent.step(self.state)
             if action is None:
                 raise AgentNoActionError('No action was returned')
         except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
