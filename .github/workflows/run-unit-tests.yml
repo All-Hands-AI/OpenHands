@@ -46,6 +46,7 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
+          brew unlink colima
           brew install --HEAD colima
           brew install docker
           colima start  --network-address --arch x86_64
