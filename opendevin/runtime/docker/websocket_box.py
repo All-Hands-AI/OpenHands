@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-
 import websockets
 
 from opendevin.core.config import config
@@ -23,16 +22,23 @@ class WebSocketBox(Sandbox):
         if config.enable_auto_lint:
             self.add_to_env('ENABLE_AUTO_LINT', 'true')
         self.initialize_plugins: bool = config.initialize_plugins
-        self.websocket = websockets.connect(self.uri)
+        self.websocket = None
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value
         # Note: json.dumps gives us nice escaping for free
         self.execute(f'export {key}={json.dumps(value)}')
 
+    async def connect(self):
+        self.websocket = await websockets.connect(self.uri)
+
     async def send_and_receive(self, cmd):
+        if self.websocket is None:
+            raise Exception("WebSocket is not connected.")
+        print(cmd)
         await self.websocket.send(cmd)
         output = await self.websocket.recv()
+        print(output)
         return output
 
     def execute(
@@ -53,11 +59,24 @@ class WebSocketBox(Sandbox):
     def read_logs(self, id: int) -> str:
         raise NotImplementedError
 
-    def close(self):
-        self.websocket.close()
+    async def close(self):
+        if self.websocket is not None:
+            await self.websocket.close()
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         raise NotImplementedError
 
     def get_working_directory(self):
         pass
+
+
+# Example usage
+async def main():
+    print("enter main")
+    sandbox = WebSocketBox()
+    await sandbox.connect()
+    await sandbox.send_and_receive("ls")
+    await sandbox.close()
+
+if __name__ == "__main__":
+    asyncio.run(main())
