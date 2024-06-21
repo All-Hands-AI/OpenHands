@@ -38,7 +38,6 @@ export const useTerminal = (commands: Command[] = []) => {
       terminal.current.onKey(({ key, domEvent }) => {
         if (domEvent.key === "Enter") {
           terminal.current?.write("\r\n");
-          console.log(commandBuffer);
           sendTerminalCommand(commandBuffer);
           commandBuffer = "";
         } else if (domEvent.key === "Backspace") {
@@ -47,7 +46,6 @@ export const useTerminal = (commands: Command[] = []) => {
             terminal.current?.write("\b \b");
           }
         } else {
-          // console.log(key, key.charCodeAt(0));
           // Ignore paste event
           if (key.charCodeAt(0) === 22) {
             return;
