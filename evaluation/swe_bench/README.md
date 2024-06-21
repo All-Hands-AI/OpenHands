@@ -42,7 +42,6 @@ Add the following configurations:
 [core]
 max_iterations = 100
 cache_dir = "/tmp/cache"
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
 ssh_hostname = "localhost"
 sandbox_timeout = 120

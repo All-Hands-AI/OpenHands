@@ -36,5 +36,3 @@ fi
 
 # Run the command
 eval $COMMAND
-
-checkout_original_branch

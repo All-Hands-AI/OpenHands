@@ -115,7 +115,7 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          SANDBOX_CONTAINER_IMAGE=$image_name poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
+          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
