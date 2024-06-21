@@ -47,6 +47,8 @@ jobs:
         if: env.INSTALL_DOCKER == '1'
         run: |
           brew unlink colima
+          # unlinking colima dependency: go
+          brew unlink go@1.21
           brew install --HEAD colima
           brew services start colima
           brew install docker
