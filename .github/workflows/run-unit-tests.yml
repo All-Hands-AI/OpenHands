@@ -48,6 +48,7 @@ jobs:
         run: |
           brew unlink colima
           brew install --HEAD colima
+          brew services start colima
           brew install docker
           colima start  --network-address --arch x86_64
 
