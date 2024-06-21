@@ -23,6 +23,8 @@ class WebSocketBox(Sandbox):
             self.add_to_env('ENABLE_AUTO_LINT', 'true')
         self.initialize_plugins: bool = config.initialize_plugins
         self.websocket = None
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self.connect())
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value
@@ -44,7 +46,7 @@ class WebSocketBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        output = asyncio.run(self.send_and_receive(cmd))
+        output = self.loop.run_until_complete(self.send_and_receive(cmd))
         exit_code = output[-1].strip()
         print('Exit Code:', exit_code)
         print(output)
@@ -70,13 +72,7 @@ class WebSocketBox(Sandbox):
         pass
 
 
-# Example usage
-async def main():
-    print("enter main")
-    sandbox = WebSocketBox()
-    await sandbox.connect()
-    await sandbox.send_and_receive("ls")
-    await sandbox.close()
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    sandbox = WebSocketBox()
+    sandbox.execute('ls')
+    sandbox.execute('pwd')
