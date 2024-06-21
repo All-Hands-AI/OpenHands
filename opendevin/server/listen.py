@@ -193,12 +193,16 @@ async def get_litellm_models():
     )
     bedrock_model_list = bedrock.list_foundation_models()
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    ollama_base_url = config.llm.ollama_base_url
     if config.llm.model.startswith('ollama'):
-        # TODO: detect the run mode docker or local
-        # ollama_url = 'http://localhost:11434/api/tags'
-        ollama_url = 'http://host.docker.internal/api/tags'
+        if not ollama_base_url:
+            # TODO: detect the run mode docker or local
+            # ollama_base_url = 'http://localhost:11434'
+            ollama_base_url = 'http://host.docker.internal:11434'
+    if ollama_base_url:
+        ollama_url = ollama_base_url.strip('/') + '/api/tags'
         try:
-            ollama_models_list = requests.get(ollama_url).json()['models']
+            ollama_models_list = requests.get(ollama_url, timeout=3).json()['models']
             for model in ollama_models_list:
                 model_list.append('ollama/' + model['name'])
         except Exception as e:
