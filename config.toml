@@ -1,11 +1,6 @@
 [core]
 workspace_base="../workspace"
-ssh_password="blehbleh"
 persist_sandbox=false
 
 [llm]
-model="openai/LLM360/K2-Chat"
-api_key="sk-1234"
-base_url="http://localhost:8001/v1/"
-embedding_model="llama2"
-embedding_base_url=""
+model_port_config_file="./model_port_config.json"

@@ -51,6 +51,7 @@ class LLMConfig(metaclass=Singleton):
     model: str = 'gpt-4o'
     api_key: str | None = None
     base_url: str | None = None
+    model_port_config_file: str | None = None
     api_version: str | None = None
     embedding_model: str = 'local'
     embedding_base_url: str | None = None
