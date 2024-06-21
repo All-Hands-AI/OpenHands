@@ -247,9 +247,6 @@ class DockerSSHBox(Sandbox):
             logger.info('Detected initial session.')
         if not config.persist_sandbox or self.is_initial_session:
             logger.info('Creating new Docker container')
-            # update the container image
-            if self.container_image.endswith(':main'):
-                self.docker_client.images.pull(self.container_image)
             n_tries = 5
             while n_tries > 0:
                 try:
