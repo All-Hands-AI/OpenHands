@@ -30,12 +30,11 @@ class Node:
 class OpenDevinSession:
     def __init__(
         self,
-        model='gpt-4o',
-        # model ='openai/meta-llama/Meta-Llama-3-70B-Instruct',
-        agent='WorldModelAgent',
+        agent,
+        port,
+        model,
         language='en',
         api_key=api_key,
-        port=3000,
     ):
         self.model = model
         self.agent = agent
@@ -527,6 +526,7 @@ def get_messages(
     session,
     status,
     agent_selection,
+    model_selection,
     api_key,
 ):
     print('Get Messages', session.agent_state)
@@ -569,6 +569,8 @@ def get_messages(
         clear = gr.Button('Clear', interactive=False)
         if session.agent_state not in ['init', 'running', 'pausing', 'resuming']:
             session.agent = agent_selection
+            # session.model = model_port_config[model_selection]["provider"] + '/' + model_selection
+            session.model = model_selection
             print('API Key:', api_key)
             session.api_key = api_key if len(api_key) > 0 else 'test'
             action_messages = []
@@ -660,7 +662,13 @@ def pause_resume_task(is_paused, session, status):
 
 if __name__ == '__main__':
     default_port = 3000
-    default_agent = 'DummyWebAgent'
+    default_agent = 'WorldModelAgent'
+
+    model_port_config = {}
+    with open('model_port_config.json') as f:
+        model_port_config = json.load(f)
+    model_list = list(model_port_config.keys())
+    default_model = model_list[0]
 
     with gr.Blocks() as demo:
         title = gr.Markdown('# FastAgent')
@@ -673,6 +681,13 @@ if __name__ == '__main__':
                         interactive=True,
                         label='Agent',
                         info='Choose your own adventure partner!',
+                    )
+                    model_selection = gr.Dropdown(
+                        model_list,
+                        value=default_model,
+                        interactive=True,
+                        label='Model',
+                        info='Choose the model you would like to use',
                     )
                     api_key = gr.Textbox(label='API Key', placeholder='Your API Key')
                     chatbot = gr.Chatbot()
@@ -704,8 +719,11 @@ if __name__ == '__main__':
 
         action_messages = gr.State([])
         browser_history = gr.State([(blank, start_url)])
-        session = gr.State(OpenDevinSession(agent=default_agent, port=default_port))
-        # session = gr.State(OpenDevinSession(agent='WorldModelAgent', port=3000))
+        session = gr.State(
+            OpenDevinSession(
+                agent=default_agent, port=default_port, model=default_model
+            )
+        )
         is_paused = gr.State(False)
         # chat_msg = msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False)
         chat_msg = gr.events.on(
@@ -720,6 +738,7 @@ if __name__ == '__main__':
                 session,
                 status,
                 agent_selection,
+                model_selection,
                 api_key,
             ],
             [
@@ -749,6 +768,7 @@ if __name__ == '__main__':
                     session,
                     status,
                     agent_selection,
+                    model_selection,
                     api_key,
                 ],
                 [

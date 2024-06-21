@@ -1,0 +1,17 @@
+{
+    "meta-llama/Meta-Llama-3-70B-Instruct":
+    {
+        "provider": "openai",
+        "port": 8000
+    },
+    "LLM360/K2-Chat":
+    {
+        "provider": "openai",
+        "port": 8001
+    },
+    "gradientai/Llama-3-70B-Instruct-Gradient-262k":
+    {
+        "provider": "openai",
+        "port": 8002
+    }
+}

@@ -1,8 +1,6 @@
 [core]
-workspace_base="./workspace"
+workspace_base="../workspace"
 persist_sandbox=false
 
 [llm]
-model="gpt-4o"
-api_key=""
-embedding_model="openai"
+model_port_config_file="./model_port_config.json"

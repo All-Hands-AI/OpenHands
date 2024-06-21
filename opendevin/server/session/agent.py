@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
@@ -90,6 +91,12 @@ class AgentSession:
         model = args.get(ConfigType.LLM_MODEL, config.llm.model)
         api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
         api_base = config.llm.base_url
+        if config.llm.model_port_config_file:
+            with open(config.llm.model_port_config_file) as f:
+                model_port_config = json.load(f)[model]
+            model = model_port_config['provider'] + '/' + model
+            port = model_port_config['port']
+            api_base = 'http://localhost:{}/v1/'.format(port)
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
         max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
 
