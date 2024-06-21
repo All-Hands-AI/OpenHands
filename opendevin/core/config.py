@@ -336,9 +336,21 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                 nested_sub_config = getattr(sub_config, field_name)
 
                 # the agent field: the env var for agent.name is just 'AGENT'
-                if field_name == 'agent' and 'AGENT' in env_or_toml_dict:
+                if field_name == 'agent' and env_var_name in env_or_toml_dict:
                     setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
 
+                old_configs = ['INITIALIZE_PLUGINS']
+                if field_name == 'sandbox':
+                    for old_config in old_configs:
+                        if (
+                            old_config.lower() in nested_sub_config.__annotations__
+                            and old_config in env_or_toml_dict
+                        ):
+                            suggested_name = f'{field_name}_{old_config}'.upper()
+                            logger.error(
+                                f'Please migrate {old_config} config to {suggested_name} = {env_or_toml_dict[old_config]}'
+                            )
+                            exit(1)
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
