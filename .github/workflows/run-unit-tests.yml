@@ -48,7 +48,7 @@ jobs:
         run: |
           brew install --HEAD colima
           brew install docker
-          colima start  --network-address --arch x86_64 --vm-type vz
+          colima start  --network-address --arch x86_64
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
