@@ -28,7 +28,7 @@ def test_get_new_image_name():
 
     base_image = 'ubuntu'
     new_image_name = _get_new_image_name(base_image)
-    assert new_image_name == 'od_sandbox:ubuntu__main'
+    assert new_image_name == 'od_sandbox:ubuntu__latest'
 
 
 @patch('opendevin.runtime.docker.image_agnostic_util._build_sandbox_image')
