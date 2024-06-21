@@ -1,4 +1,4 @@
-name: Update pyproject.toml Version
+name: Update pyproject.toml Version and Tags
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-pyproject-toml:
+  update-pyproject-and-tags:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install toml semver
+
       - name: Check write permissions
         id: check_permissions
         run: |
@@ -29,47 +34,57 @@ jobs:
             exit 0
           fi
 
-      - name: Get latest release tag
-        id: get_latest_tag
+      - name: Get latest release tag and pyproject version
+        id: get_versions
         run: |
           git fetch --tags
-          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
-          if [ -n "$LATEST_TAG" ]; then
-            echo "::set-output name=latest_tag::$LATEST_TAG"
-          else
-            echo "No release tags found."
-            exit 0
-          fi
+          LATEST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null || echo "v0.0.0")
+          PYPROJECT_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['tool']['poetry']['version'])")
+          echo "::set-output name=latest_tag::$LATEST_TAG"
+          echo "::set-output name=pyproject_version::$PYPROJECT_VERSION"
 
-      - name: Check if version needs update
-        id: check_version
+      - name: Compare versions
+        id: compare_versions
         run: |
-          CURRENT_VERSION=$(python -c "import toml; print(toml.load('pyproject.toml')['tool']['poetry']['version'])")
-          if [ "$CURRENT_VERSION" = "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
-            echo "Version is already up-to-date."
-            echo "::set-output name=update_needed::false"
-          else
-            echo "Version needs to be updated."
-            echo "::set-output name=update_needed::true"
-          fi
+          python -c "
+          import semver
+          latest_tag = '${{ steps.get_versions.outputs.latest_tag }}'.lstrip('v')
+          pyproject_version = '${{ steps.get_versions.outputs.pyproject_version }}'
+
+          if semver.compare(pyproject_version, latest_tag) > 0:
+              print('::set-output name=action::create_tag')
+          elif semver.compare(pyproject_version, latest_tag) < 0:
+              print('::set-output name=action::update_pyproject')
+          else:
+              print('::set-output name=action::no_action')
+          "
 
       - name: Update pyproject.toml
-        if: steps.check_version.outputs.update_needed == 'true'
+        if: steps.compare_versions.outputs.action == 'update_pyproject'
         run: |
           python -c "
           import toml
           with open('pyproject.toml', 'r') as f:
               data = toml.load(f)
-          data['tool']['poetry']['version'] = '${{ steps.get_latest_tag.outputs.latest_tag }}'
+          data['tool']['poetry']['version'] = '${{ steps.get_versions.outputs.latest_tag }}'.lstrip('v')
           with open('pyproject.toml', 'w') as f:
               toml.dump(data, f)
           "
 
-      - name: Commit and push changes
-        if: steps.check_version.outputs.update_needed == 'true'
+      - name: Commit and push pyproject.toml changes
+        if: steps.compare_versions.outputs.action == 'update_pyproject'
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add pyproject.toml
-          git commit -m "Update pyproject.toml version to ${{ steps.get_latest_tag.outputs.latest_tag }}"
+          git commit -m "Update pyproject.toml version to ${{ steps.get_versions.outputs.latest_tag }}"
           git push
+
+      - name: Create new tag
+        if: steps.compare_versions.outputs.action == 'create_tag'
+        run: |
+          NEW_TAG="v${{ steps.get_versions.outputs.pyproject_version }}"
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
+          git push origin "$NEW_TAG"
