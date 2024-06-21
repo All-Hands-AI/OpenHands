@@ -31,6 +31,7 @@ from opendevin.runtime import (
     E2BBox,
     LocalBox,
     Sandbox,
+    WebSocketBox,
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
@@ -47,6 +48,8 @@ def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
         return DockerSSHBox(sid=sid)
     elif sandbox_type == 'e2b':
         return E2BBox()
+    elif sandbox_type == 'websocket':
+        return WebSocketBox()
     else:
         raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
