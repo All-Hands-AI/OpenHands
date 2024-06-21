@@ -2,7 +2,7 @@ import asyncio
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
@@ -94,12 +94,13 @@ class EventStream:
                 del self._subscribers[id]
 
     # TODO: make this not async
-    async def add_event(self, event: Event, source: EventSource):
+    async def add_event(self, event: Event, source: Optional[EventSource] = None):
         async with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
-        event._source = source  # type: ignore [attr-defined]
+        if not event.source:
+            event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
         if event.id is not None:
             self._file_store.write(
