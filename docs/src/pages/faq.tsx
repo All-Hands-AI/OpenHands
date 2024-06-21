@@ -12,7 +12,7 @@ export default function FAQ() {
             <div className="faq-section-title">What is OpenDevin?</div>
             <p>
               <span className="highlight">OpenDevin</span>{" "}
-              is an autonomous software engineer that can solve solve software engineering
+              is an autonomous software engineer that can solve software engineering
               and web-browsing tasks end-to-end. It can perform data science queries, such
               as "Find the number of pull requests to the OpenDevin repository in the last
               month," and software engineering tasks, such as "Please add tests to this
@@ -59,7 +59,7 @@ export default function FAQ() {
             </div>
           </div>
           <div className="faq-section">
-            <div className="faq-section-title">How is OpenDevin Different from Devin?</div>
+            <div className="faq-section-title">How is OpenDevin different from Devin?</div>
             <p>
               <a href="https://www.cognition.ai/blog/introducing-devin">Devin</a>&nbsp;
               is a commercial product by Cognition Inc., that served as the initial
@@ -72,7 +72,7 @@ export default function FAQ() {
             </p>
           </div>
           <div className="faq-section">
-            <div className="faq-section-title">How is OpenDevin Different from ChatGPT?</div>
+            <div className="faq-section-title">How is OpenDevin different from ChatGPT?</div>
             <p>
               ChatGPT you can access online, it does not interface with local files, and
               its ability to execute code is limited. So it can write code, but it is not
