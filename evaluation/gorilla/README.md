@@ -15,13 +15,16 @@ Run `make setup-config` to set up the `config.toml` file if it does not exist at
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-bash evaluation/gorilla/scripts/run_infer.sh [model_config] [agent] [eval_limit] [hubs]
+bash evaluation/gorilla/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [hubs]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
 
 `model_config`, e.g. `llm`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
+
+`git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
@@ -33,9 +36,8 @@ By default, the script evaluates 1 instance.
 
 Note: in order to use `eval_limit`, you must also set `agent`; in order to use `hubs`, you must also set `eval_limit`.
 
-Let's say you'd like to run 10 instances using `llm` and CodeActAgent on `th` test,
-then your command would be:
+For example,
 
 ```bash
-bash evaluation/gorilla/scripts/run_infer.sh llm CodeActAgent 10 th
+bash evaluation/gorilla/scripts/run_infer.sh llm 0.6.2 CodeActAgent 10 th
 ```

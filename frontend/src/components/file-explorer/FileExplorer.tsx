@@ -32,7 +32,7 @@ function ExplorerActions({
   return (
     <div
       className={twMerge(
-        "transform flex h-[24px] items-center gap-1 absolute top-4 right-2",
+        "transform flex h-[24px] items-center gap-1",
         isHidden ? "right-3" : "right-2",
       )}
     >
@@ -168,7 +168,17 @@ function FileExplorer() {
         )}
       >
         <div className="flex flex-col p-2 relative">
-          <div className="flex items-center justify-end mb-8">
+          <div
+            className={twMerge(
+              "flex items-center mt-2 mb-1",
+              isHidden ? "justify-center" : "justify-between",
+            )}
+          >
+            {!isHidden && (
+              <div className="ml-1 text-neutral-300 font-bold text-sm">
+                Workspace
+              </div>
+            )}
             <ExplorerActions
               isHidden={isHidden}
               toggleHidden={() => setIsHidden((prev) => !prev)}

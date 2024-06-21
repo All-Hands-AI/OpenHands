@@ -1,5 +1,0 @@
-It seems like the Python environment used for execution might not be the same as the one where the package was installed. Let's try installing the package again within the Jupyter environment.
-
-<execute_ipython>
-!pip install pymsgbox==1.0.9
-

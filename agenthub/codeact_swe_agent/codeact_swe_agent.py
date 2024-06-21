@@ -10,13 +10,11 @@ from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
-    BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from opendevin.events.observation import (
-    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -34,8 +32,6 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
     elif isinstance(action, IPythonRunCellAction):
         return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, BrowseInteractiveAction):
-        return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
     elif isinstance(action, MessageAction):
         return action.content
     return ''
@@ -43,8 +39,7 @@ def action_to_str(action: Action) -> str:
 
 def get_action_message(action: Action) -> dict[str, str] | None:
     if (
-        isinstance(action, BrowseInteractiveAction)
-        or isinstance(action, CmdRunAction)
+        isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
     ):
@@ -59,7 +54,7 @@ def get_observation_message(obs) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         content += (
-            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
         return {'role': 'user', 'content': content}
     elif isinstance(obs, IPythonRunCellObservation):
@@ -73,9 +68,6 @@ def get_observation_message(obs) -> dict[str, str] | None:
                 )
         content = '\n'.join(splitted)
         content = truncate_observation(content)
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, BrowserOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         return {'role': 'user', 'content': content}
     return None
 
@@ -119,7 +111,7 @@ class CodeActSWEAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
+    runtime_tools: list[RuntimeTool] = []
 
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
@@ -156,7 +148,6 @@ class CodeActSWEAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
-        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
@@ -182,12 +173,11 @@ class CodeActSWEAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        response = self.llm.do_completion(
+        response = self.llm.completion(
             messages=messages,
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
-                '</execute_browse>',
             ],
             temperature=0.0,
         )

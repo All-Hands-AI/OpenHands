@@ -6,7 +6,6 @@ import tarfile
 import tempfile
 import time
 import uuid
-from collections import namedtuple
 from glob import glob
 
 import docker
@@ -18,14 +17,11 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
+from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
-
-# FIXME: these are not used, can we remove them?
-InputType = namedtuple('InputType', ['content'])
-OutputType = namedtuple('OutputType', ['content'])
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -227,6 +223,9 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
+        self.container_image = get_od_sandbox_image(
+            self.container_image, self.docker_client
+        )
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -276,7 +275,7 @@ class DockerSSHBox(Sandbox):
         self.execute('mkdir -p /tmp')
         # set git config
         self.execute('git config --global user.name "OpenDevin"')
-        self.execute('git config --global user.email "opendevin@opendevin.ai"')
+        self.execute('git config --global user.email "opendevin@all-hands.dev"')
         atexit.register(self.close)
         super().__init__()
 
@@ -346,6 +345,30 @@ class DockerSSHBox(Sandbox):
             if exit_code != 0:
                 raise Exception(
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
+                )
+            # check the miniforge3 directory exist
+            exit_code, logs = self.container.exec_run(
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'An error occurred while checking if miniforge3 directory exists: {logs}'
+                )
+            # chown the miniforge3
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'chown -R opendevin:root /opendevin/miniforge3'],
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown miniforge3 directory for opendevin in sandbox: {logs}'
                 )
             exit_code, logs = self.container.exec_run(
                 [
@@ -695,13 +718,13 @@ class DockerSSHBox(Sandbox):
             if self.use_host_network:
                 network_kwargs['network_mode'] = 'host'
             else:
-                # FIXME: This is a temporary workaround for Mac OS
+                # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
+                # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
                 network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
                     (
-                        'Using port forwarding for Mac OS. '
-                        'Server started by OpenDevin will not be accessible from the host machine at the moment. '
-                        'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
+                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
+                        'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
                     )
                 )
 
@@ -719,7 +742,7 @@ class DockerSSHBox(Sandbox):
             )
             logger.info('Container started')
         except Exception as ex:
-            logger.exception('Failed to start container', exc_info=False)
+            logger.exception('Failed to start container: ' + str(ex), exc_info=False)
             raise ex
 
         # wait for container to be ready
@@ -746,14 +769,14 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if (
-                    container.name.startswith(self.container_name)
-                    and not config.persist_sandbox
-                ):
-                    # only remove the container we created
-                    # otherwise all other containers with the same prefix will be removed
-                    # which will mess up with parallel evaluation
-                    container.remove(force=True)
+                if container.name.startswith(self.container_name):
+                    if config.persist_sandbox:
+                        container.stop()
+                    else:
+                        # only remove the container we created
+                        # otherwise all other containers with the same prefix will be removed
+                        # which will mess up with parallel evaluation
+                        container.remove(force=True)
             except docker.errors.NotFound:
                 pass
         self.docker_client.close()
@@ -771,7 +794,8 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+    ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
         f'{AgentSkillsRequirement().documentation}\n'
