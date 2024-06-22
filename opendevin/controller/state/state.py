@@ -42,6 +42,7 @@ class State:
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
+    llm_responses: list[dict] = field(default_factory=list)
 
     def save_to_session(self, sid: str):
         fs = get_file_store()

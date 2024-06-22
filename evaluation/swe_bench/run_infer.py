@@ -342,6 +342,7 @@ IMPORTANT TIPS:
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'metrics': metrics,
+        'llm_responses': state.llm_responses,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }

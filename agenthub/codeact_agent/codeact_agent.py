@@ -228,8 +228,9 @@ class CodeActAgent(Agent):
                 '</execute_bash>',
                 '</execute_browse>',
             ],
-            temperature=0.0,
+            sample_action=True,
         )
+        state.llm_responses.append(response)  # save llm responses
         state.num_of_chars += sum(
             len(message['content']) for message in messages
         ) + len(response.choices[0].message.content)
