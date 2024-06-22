@@ -414,6 +414,7 @@ if __name__ == '__main__':
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
+        'llm_config': str(config.llm),
     }
     _agent_cls = agenthub.Agent.get_cls(agent_class)
     if hasattr(_agent_cls, 'system_message'):
@@ -488,25 +489,39 @@ if __name__ == '__main__':
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
     try:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
-            # This is how we perform multi-processing
+        if num_workers > 1:
+            with ProcessPoolExecutor(num_workers) as executor:
+                futures = []
+                # This is how we perform multi-processing
+                for row_idx, instance in swe_bench_tests.iterrows():
+                    future = executor.submit(
+                        process_instance,
+                        instance,
+                        agent_class,
+                        metadata,
+                        skip_workspace_mount,
+                        eval_output_dir,
+                        reset_logger=True,
+                    )
+                    future.add_done_callback(update_progress)
+                    futures.append(future)
+
+                # Wait for all futures to complete
+                for future in futures:
+                    future.result()
+        else:
+            # Process instances sequentially - usually use for debugging
             for row_idx, instance in swe_bench_tests.iterrows():
-                future = executor.submit(
-                    process_instance,
+                result = process_instance(
                     instance,
                     agent_class,
                     metadata,
                     skip_workspace_mount,
                     eval_output_dir,
-                    reset_logger=bool(num_workers > 1),
+                    reset_logger=False,
                 )
-                future.add_done_callback(update_progress)
-                futures.append(future)
+                update_progress(result)  # Directly pass the result to update_progress
 
-            # Wait for all futures to complete
-            for future in futures:
-                future.result()
     except KeyboardInterrupt:
         print('KeyboardInterrupt received. Cleaning up...')
         cleanup()
