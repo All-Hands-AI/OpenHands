@@ -9,7 +9,11 @@ from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
 from opendevin.events.action import ChangeAgentStateAction, NullAction
 from opendevin.events.event import Event, EventSource
-from opendevin.events.observation import AgentStateChangedObservation, NullObservation
+from opendevin.events.observation import (
+    AgentStateChangedObservation,
+    CmdOutputObservation,
+    NullObservation,
+)
 from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
 
@@ -85,8 +89,10 @@ class Session:
             return
         if isinstance(event, NullObservation):
             return
-        if event.source == EventSource.AGENT and not isinstance(
-            event, (NullAction, NullObservation)
+        if event.source == EventSource.AGENT:
+            await self.send(event_to_dict(event))
+        elif event.source == EventSource.USER and isinstance(
+            event, CmdOutputObservation
         ):
             await self.send(event_to_dict(event))
 
