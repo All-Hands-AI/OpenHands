@@ -45,7 +45,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.4.9"
+ruff = "0.4.10"
 mypy = "1.10.0"
 pre-commit = "3.7.1"
 
