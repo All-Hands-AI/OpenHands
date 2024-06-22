@@ -230,7 +230,7 @@ class CodeActAgent(Agent):
             ],
             sample_action=True,
         )
-        state.llm_responses.append(response)  # save llm responses
+        state.llm_responses.append(response.to_dict())  # save llm responses
         state.num_of_chars += sum(
             len(message['content']) for message in messages
         ) + len(response.choices[0].message.content)
