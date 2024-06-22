@@ -21,7 +21,7 @@ env:
 jobs:
   test-on-macos:
     name: Test on macOS
-    runs-on: macos-12
+    runs-on: macos-13
     env:
       INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
     strategy:
@@ -49,13 +49,13 @@ jobs:
           # Uninstall colima to upgrade to the latest version
           if brew list colima &>/dev/null; then
               brew uninstall colima
-              # unlinking colima dependency: go
+              # uninstall colima dependency: go
               brew uninstall go@1.21
           fi
           brew install --HEAD colima
           brew services start colima
           brew install docker
-          colima start  --network-address --arch x86_64
+          colima start  --network-address --arch x86_64 --vm-type=vz
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
