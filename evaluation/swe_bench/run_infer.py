@@ -472,7 +472,10 @@ if __name__ == '__main__':
     # This function tracks the progress AND write the output to a JSONL file
     def update_progress(future):
         pbar.update(1)
-        output = future.result()
+        if hasattr(future, 'result'):
+            output = future.result()
+        else:
+            output = future
         pbar.set_description(f'Instance {output["instance_id"][:10]}')
         pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
