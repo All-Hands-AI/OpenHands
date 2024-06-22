@@ -14,7 +14,7 @@ def generate_dockerfile_content(base_image: str) -> str:
     # FIXME: Remove the requirement of ssh in future version
     dockerfile_content = (
         f'FROM {base_image}\n'
-        'RUN apt update && apt install -y openssh-server wget sudo\n'
+        'RUN apt update && apt install -y openssh-server wget sudo net-tools iproute2\n'
         'RUN mkdir -p -m0755 /var/run/sshd\n'
         'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
         'RUN { test -d /opendevin/miniforge3 && echo "/opendevin/miniforge3 already in base image"; } || { \\\n'

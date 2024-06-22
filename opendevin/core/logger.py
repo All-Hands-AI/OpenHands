@@ -184,7 +184,15 @@ class LlmFileHandler(logging.FileHandler):
     # LLM prompt and response logging
     """
 
-    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
+    def __init__(
+        self,
+        filename,
+        mode='a',
+        encoding='utf-8',
+        with_date: bool = False,
+        delay=False,
+        directory: str | None = None,
+    ):
         """
         Initializes an instance of LlmFileHandler.
 
@@ -196,11 +204,15 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        if config.debug:
+        if config.debug and with_date:
             self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
         else:
-            self.session = 'default'
-        self.log_directory = os.path.join(os.getcwd(), 'logs', 'llm', self.session)
+            self.session = ''
+        self.log_directory = (
+            os.path.join(os.getcwd(), 'logs', 'llm', self.session)
+            if directory is None
+            else directory
+        )
         os.makedirs(self.log_directory, exist_ok=True)
         if not config.debug:
             # Clear the log directory if not in debug mode
@@ -232,21 +244,33 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def get_llm_prompt_file_handler():
+def get_llm_prompt_file_handler(
+    sid: str = '', with_date: bool = False, directory: str | None = None
+):
     """
     Returns a file handler for LLM prompt logging.
     """
-    llm_prompt_file_handler = LlmFileHandler('prompt', delay=True)
+    filename = f'prompt_{sid}' if sid else 'prompt'
+
+    llm_prompt_file_handler = LlmFileHandler(
+        filename=filename, with_date=with_date, delay=True, directory=directory
+    )
     llm_prompt_file_handler.setFormatter(llm_formatter)
     llm_prompt_file_handler.setLevel(logging.DEBUG)
     return llm_prompt_file_handler
 
 
-def get_llm_response_file_handler():
+def get_llm_response_file_handler(
+    sid: str = '', with_date: bool = False, directory: str | None = None
+):
     """
     Returns a file handler for LLM response logging.
     """
-    llm_response_file_handler = LlmFileHandler('response', delay=True)
+    filename = f'response_{sid}' if sid else 'response'
+
+    llm_response_file_handler = LlmFileHandler(
+        filename=filename, with_date=with_date, delay=True, directory=directory
+    )
     llm_response_file_handler.setFormatter(llm_formatter)
     llm_response_file_handler.setLevel(logging.DEBUG)
     return llm_response_file_handler
@@ -255,9 +279,9 @@ def get_llm_response_file_handler():
 llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.propagate = False
 llm_prompt_logger.setLevel(logging.DEBUG)
-llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
+llm_prompt_logger.addHandler(get_llm_prompt_file_handler(with_date=False))
 
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
 llm_response_logger.setLevel(logging.DEBUG)
-llm_response_logger.addHandler(get_llm_response_file_handler())
+llm_response_logger.addHandler(get_llm_response_file_handler(with_date=False))
