@@ -329,10 +329,8 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
     # Assuming the storage service is already configured in the backend
     # and there is a function  to handle the storage.
     try:
-        store_feedback(feedback)
-        return JSONResponse(
-            status_code=200, content={'message': 'Feedback submitted successfully'}
-        )
+        feedback_data = store_feedback(feedback)
+        return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')
         return JSONResponse(
