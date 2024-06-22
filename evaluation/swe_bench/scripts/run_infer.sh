@@ -27,7 +27,7 @@ if [ -z "$USE_HINT_TEXT" ]; then
   export USE_HINT_TEXT=true
 fi
 echo "USE_HINT_TEXT: $USE_HINT_TEXT"
-EVAL_NOTE="$AGENT_VERSION"
+EVAL_NOTE="$AGENT_VERSION-best-of-n"
 # if not using Hint, add -no-hint to the eval note
 if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
@@ -40,7 +40,7 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations $MAX_ITER \
   --max-chars 10000000 \
-  --eval-num-workers 8 \
+  --eval-num-workers 1 \
   --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
