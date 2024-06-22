@@ -348,14 +348,18 @@ class DockerSSHBox(Sandbox):
                 )
             # check the miniforge3 directory exist
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1'],
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
                 if exit_code == 1:
                     raise Exception(
-                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
+                        'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
                     )
                 else:
                     raise Exception(
@@ -487,17 +491,17 @@ class DockerSSHBox(Sandbox):
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
-            logger.debug('WAITING FOR .prompt()')
+            # logger.debug('WAITING FOR .prompt()')
             self.ssh.sendline('\n')
             timeout_not_reached = self.ssh.prompt(timeout=1)
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
                 break
-            logger.debug('WAITING FOR .before')
+            # logger.debug('WAITING FOR .before')
             output = self.ssh.before
-            logger.debug(
-                f'WAITING FOR END OF command output ({bool(output)}): {output}'
-            )
+            # logger.debug(
+            #    f'WAITING FOR END OF command output ({bool(output)}): {output}'
+            # )
             if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
