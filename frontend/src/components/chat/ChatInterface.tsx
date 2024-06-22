@@ -53,7 +53,7 @@ function ChatInterface() {
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   const feedbackVersion = "1.0";
   const [feedback, setFeedback] = React.useState<Feedback>({
@@ -117,10 +117,8 @@ function ChatInterface() {
     setIsMuted(!isMuted);
     if (!isMuted) {
       document.cookie = `${cookieName}=;`;
-      console.log("Audio muted");
     } else {
       document.cookie = `${cookieName}=on;`;
-      console.log("Audio unmuted");
       beep();
     }
   };
