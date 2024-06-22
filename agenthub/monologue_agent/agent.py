@@ -1,4 +1,5 @@
 import agenthub.monologue_agent.utils.prompts as prompts
+from agenthub.monologue_agent.response_parser import MonologueResponseParser
 from agenthub.monologue_agent.utils.prompts import INITIAL_THOUGHTS
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -48,6 +49,7 @@ class MonologueAgent(Agent):
     memory: 'LongTermMemory | None'
     memory_condenser: MemoryCondenser
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
+    response_parser = MonologueResponseParser()
 
     def __init__(self, llm: LLM):
         """
@@ -179,15 +181,14 @@ class MonologueAgent(Agent):
         ]
 
         # format all as a single message, a monologue
-        resp = self.llm.do_completion(messages=messages)
-
-        # get the next action from the response
-        action_resp = resp['choices'][0]['message']['content']
+        resp = self.llm.completion(messages=messages)
 
         # keep track of max_chars fallback option
-        state.num_of_chars += len(prompt) + len(action_resp)
+        state.num_of_chars += len(prompt) + len(
+            resp['choices'][0]['message']['content']
+        )
 
-        action = prompts.parse_action_response(action_resp)
+        action = self.response_parser.parse(resp)
         self.latest_action = action
         return action
 

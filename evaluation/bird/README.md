@@ -36,11 +36,14 @@ temperature = 0.0
 ## Run Inference on Bird
 
 ```bash
-./evaluation/bird/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/bird/scripts/run_infer.sh eval_gpt4_1106_preview [model_config] [git-version]
 ```
 
-You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.
+- `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
 
+- `git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 ## Examples
 
