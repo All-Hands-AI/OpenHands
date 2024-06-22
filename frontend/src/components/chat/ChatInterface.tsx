@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { IoMdChatbubbles, IoMdVolumeHigh, IoMdVolumeOff } from "react-icons/io";
+import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
@@ -19,7 +19,6 @@ import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { removeApiKey } from "#/utils/utils";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
-import beep from "#/utils/beep";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -53,7 +52,6 @@ function ChatInterface() {
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const [isMuted, setIsMuted] = useState(true);
 
   const feedbackVersion = "1.0";
   const [feedback, setFeedback] = React.useState<Feedback>({
@@ -112,28 +110,11 @@ function ChatInterface() {
     }
   }, [curAgentState, dispatch, messages.length, t]);
 
-  const toggleMute = () => {
-    const cookieName = "audio";
-    setIsMuted(!isMuted);
-    if (!isMuted) {
-      document.cookie = `${cookieName}=;`;
-    } else {
-      document.cookie = `${cookieName}=on;`;
-      beep();
-    }
-  };
   return (
     <div className="flex flex-col h-full bg-neutral-800">
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
         <IoMdChatbubbles />
         Chat
-        <div className="ml-auto">
-          {isMuted ? (
-            <IoMdVolumeOff onClick={toggleMute} />
-          ) : (
-            <IoMdVolumeHigh onClick={toggleMute} />
-          )}
-        </div>
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div
