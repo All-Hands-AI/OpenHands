@@ -29,7 +29,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 # Default to use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
-  export USE_HINT_TEXT=true
+  export USE_HINT_TEXT=false  # default to no-hint
 fi
 echo "USE_HINT_TEXT: $USE_HINT_TEXT"
 EVAL_NOTE="$AGENT_VERSION-best-of-n"
