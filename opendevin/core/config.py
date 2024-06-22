@@ -46,6 +46,7 @@ class LLMConfig(metaclass=Singleton):
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
+        agent_action_best_of_n: The number of actions to sample and evaluate before choosing the best action.
     """
 
     model: str = 'gpt-4o'
@@ -70,6 +71,7 @@ class LLMConfig(metaclass=Singleton):
     max_output_tokens: int | None = None
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
+    agent_action_best_of_n: int | None = None
 
     def defaults_to_dict(self) -> dict:
         """
