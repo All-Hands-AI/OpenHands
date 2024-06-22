@@ -42,7 +42,7 @@ fi
 DOCKERFILE_PATH="$dir/Dockerfile"
 
 # Check if the Dockerfile has changed for sandbox image
-if [[ "$image_name" == "sandbox" ]]; then
+if [[ "$image_name" == "sandbox" && -n "$GITHUB_ACTION" ]]; then
   if [[ -n $(git diff --name-only HEAD~1 HEAD -- "$DOCKERFILE_PATH") ]]; then
     echo "No changes detected in Dockerfile. Skipping Docker build."
     exit 0
