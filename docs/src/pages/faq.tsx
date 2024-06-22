@@ -1,6 +1,6 @@
 import Layout from "@theme/Layout";
 import CustomFooter from "../components/CustomFooter";
-import "../css/faq.css"; 
+import "../css/faq.css";
 
 export default function FAQ() {
   return (
@@ -8,6 +8,21 @@ export default function FAQ() {
       <Layout title="FAQ" description="Frequently Asked Questions">
         <div id="faq" className="faq-container">
           <div className="faq-title">Frequently Asked Questions</div>
+          <div className="faq-section">
+            <div className="faq-section-title">What is OpenDevin?</div>
+            <p>
+              <span className="highlight">OpenDevin</span>{" "}
+              is an autonomous software engineer that can solve software engineering
+              and web-browsing tasks end-to-end. It can perform data science queries, such
+              as "Find the number of pull requests to the OpenDevin repository in the last
+              month," and software engineering tasks, such as "Please add tests to this
+              file and verify that all the tests pass. If they don't fix the file."
+            </p>
+            <p>
+              At the same time, OpenDevin is a platform and community for agent developers
+              to test out and evaluate new agents.
+            </p>
+          </div>
           <div className="faq-section">
             <div className="faq-section-title">Support</div>
             <div>How can I report an issue with OpenDevin?</div>
@@ -21,40 +36,12 @@ export default function FAQ() {
             </div>
           </div>
           <div className="faq-section">
-            <div className="faq-section-title">General</div>
-            <div>What is Devin?</div>
-            <div>
-              <span className="highlight">Devin</span>{" "}
-              represents a cutting-edge autonomous agent designed to navigate the
-              complexities of software engineering. It leverages a combination of
-              tools such as a shell, code editor, and web browser, showcasing the
-              untapped potential of LLMs in software development. Our goal is to
-              explore and expand upon Devin's capabilities, identifying both its
-              strengths and areas for improvement, to guide the progress of open
-              code models.
-            </div>
-          </div>
-          <div className="faq-section">
-            <div className="faq-section-title">Why OpenDevin?</div>
-            <p>
-              The{" "}
-              <span className="highlight">OpenDevin</span>{" "}
-              project is born out of a desire to replicate, enhance, and innovate
-              beyond the original Devin model. By engaging the{" "}
-              <a href="https://github.com/OpenDevin/OpenDevin">
-                open-source community
-              </a>
-              , we aim to tackle the challenges faced by Code LLMs in practical
-              scenarios, producing works that significantly contribute to the
-              community and pave the way for future advancements.
-            </p>
-          </div>
-          <div className="faq-section">
-            <div className="faq-section-title">How to fix an issue on OpenDevin?</div>
+            <div className="faq-section-title">How to fix a GitHub issue with OpenDevin?</div>
             <div className="faq-steps">
-              To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow these steps:
+              To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow
+              steps like the following:
               <ol>
-                <li>Read the issue on <a href="https://github.com/OpenDevin/OpenDevin/issues/1611">GitHub</a></li>
+                <li>Read the issue https://github.com/OpenDevin/OpenDevin/issues/1611</li>
                 <li>Clone the repository and check out a new branch</li>
                 <li>Based on the instructions in the issue description, modify files to fix the issue</li>
                 <li>Push the resulting output to GitHub using the GITHUB_TOKEN environment variable</li>
@@ -70,6 +57,27 @@ export default function FAQ() {
               </div>
               where USERNAME is your GitHub username.
             </div>
+          </div>
+          <div className="faq-section">
+            <div className="faq-section-title">How is OpenDevin different from Devin?</div>
+            <p>
+              <a href="https://www.cognition.ai/blog/introducing-devin">Devin</a>&nbsp;
+              is a commercial product by Cognition Inc., that served as the initial
+              inspiration for OpenDevin. They both aim to do a good job at solving software
+              engineering tasks, but OpenDevin you can download, use, and modify, while Devin
+              you can only use through the Cognition site. In addition, OpenDevin has evolved
+              beyond the initial inspiration, and now serves as a community-driven ecosystem for
+              agent development in general, and we'd love to have you join and
+              <a href="https://github.com/OpenDevin/OpenDevin/blob/main/CONTRIBUTING.md">contribute</a>!
+            </p>
+          </div>
+          <div className="faq-section">
+            <div className="faq-section-title">How is OpenDevin different from ChatGPT?</div>
+            <p>
+              ChatGPT you can access online, it does not interface with local files, and
+              its ability to execute code is limited. So it can write code, but it is not
+              easy to test or execute it.
+            </p>
           </div>
         </div>
       </Layout>
