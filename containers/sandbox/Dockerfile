@@ -34,6 +34,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
 RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3
+RUN chmod -R g+w /opendevin/miniforge3
 RUN bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"
 RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
 RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> /opendevin/bash.bashrc
