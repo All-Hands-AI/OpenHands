@@ -37,7 +37,6 @@ function FeedbackModal({
             "share-error",
             `Failed to share, please contact the developers: ${response.body.message}`,
           );
-          console.log(response);
         }
       })
       .catch((error) => {
@@ -45,7 +44,6 @@ function FeedbackModal({
           "share-error",
           `Failed to share, please contact the developers: ${error}`,
         );
-        console.log(error);
       });
   };
 
