@@ -41,7 +41,7 @@ find_free_port() {
   local end_port="${2:-65535}"
 
   for port in $(seq $start_port $end_port); do
-    if ! ss -tuln | awk '{print $5}' | grep -q ":$port$"; then
+    if ! netstat -tuln | awk '{print $4}' | grep -q ":$port$"; then
       echo $port
       return
     fi
