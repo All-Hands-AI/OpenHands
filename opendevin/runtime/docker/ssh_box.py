@@ -361,16 +361,6 @@ class DockerSSHBox(Sandbox):
                     raise Exception(
                         f'An error occurred while checking if miniforge3 directory exists: {logs}'
                     )
-            # chown the miniforge3
-            exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', 'chown -R opendevin:root /opendevin/miniforge3'],
-                workdir=self.sandbox_workspace_dir,
-                environment=self._env,
-            )
-            if exit_code != 0:
-                raise Exception(
-                    f'Failed to chown miniforge3 directory for opendevin in sandbox: {logs}'
-                )
             exit_code, logs = self.container.exec_run(
                 [
                     '/bin/bash',
