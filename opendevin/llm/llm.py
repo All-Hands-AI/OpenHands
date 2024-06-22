@@ -237,7 +237,7 @@ class LLM:
             cur_cost = 0
         if self.cost_metric_supported:
             logger.info(
-                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+                'Cost: %.2f USD | Accumulated Cost (current agent): %.2f USD',
                 cur_cost,
                 self.metrics.accumulated_cost,
             )

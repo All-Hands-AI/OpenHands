@@ -223,13 +223,21 @@ class AgentController:
             num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,
         )
-        logger.info(f'[Agent Controller {self.id}]: start delegate')
+        budget_left: float | None = (
+            None
+            if self.max_budget_per_task is None
+            else self.max_budget_per_task - self.state.metrics.accumulated_cost
+        )
+        logger.info(
+            f'[Agent Controller {self.id}]: start delegate, budget left: {budget_left}'
+        )
         self.delegate = AgentController(
             sid=self.id + '-delegate',
             agent=agent,
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_chars=self.max_chars,
+            max_budget_per_task=budget_left,
             initial_state=state,
             is_delegate=True,
         )
@@ -269,6 +277,9 @@ class AgentController:
                 )
                 # retrieve delegate result
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
+
+                # update parent's metrics
+                self.state.metrics.merge(self.delegate.state.metrics)
 
                 # close delegate controller: we must close the delegate controller before adding new events
                 await self.delegate.close()
