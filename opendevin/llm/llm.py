@@ -1,11 +1,14 @@
 import warnings
 from functools import partial
 
+import numpy as np
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
+from litellm import embedding as litellm_embedding
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -131,6 +134,16 @@ class LLM:
         self.metrics = metrics
         self.cost_metric_supported = cost_metric_supported
 
+        # assert temperature > 0.0 when agent_action_best_of_n is set
+        self.agent_action_best_of_n = llm_config.agent_action_best_of_n
+        assert (
+            llm_temperature > 0.0
+        ), 'Temperature must be greater than 0.0 when agent_action_best_of_n is set'
+        if self.agent_action_best_of_n is not None:
+            logger.info(
+                f'Agent action BEST of N is enabled: {self.agent_action_best_of_n}'
+            )
+
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
@@ -211,14 +224,71 @@ class LLM:
         """
         return self._completion
 
+    def perform_action_sampling(self, *args, **kwargs):
+        """
+        Perform action sampling.
+        """
+        # get the number of actions to sample
+        num_actions = self.agent_action_best_of_n
+
+        # sample num_actions actions
+        kwargs['n'] = num_actions
+        response = self._completion(*args, **kwargs)
+        self.post_completion(response)  # to log costs
+
+        # iterate over the choices and get the action
+        action_contents = []
+        for choice in response['choices']:
+            action_contents.append(choice['message']['content'])
+
+        action_embeddings_response = litellm_embedding(
+            model=config.llm.embedding_model,
+            input=action_contents,
+            custom_llm_provider=self.custom_llm_provider,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            api_version=self.api_version,
+            input_cost_per_token=config.llm.input_cost_per_token,
+            output_cost_per_token=config.llm.output_cost_per_token,
+        )
+        # calculate similarity between action embeddings
+        action_embeddings = action_embeddings_response['data']
+        # put into a matrix
+        action_embeddings_mat = np.array([i['embedding'] for i in action_embeddings])
+        # calculate similarity between action embeddings
+        action_similarity_mat = np.dot(action_embeddings_mat, action_embeddings_mat.T)
+        # Calculate average similarity for each action
+        avg_similarities = np.mean(action_similarity_mat, axis=1)
+
+        logger.info(f'{len(action_similarity_mat)} actions sampled.')
+        logger.info(
+            f'Action similarities (mean={np.mean(avg_similarities)}, std={np.std(avg_similarities)}): {avg_similarities}'
+        )
+
+        # Find the index of the action with the highest average similarity
+        best_action_index = np.argmax(avg_similarities)
+
+        for i, choice in enumerate(response['choices']):
+            choice['avg_similarity'] = avg_similarities[i]
+            if i == best_action_index:
+                choice['is_best_action'] = True
+            else:
+                choice['is_best_action'] = False
+
+        return response
+
     def do_completion(self, *args, **kwargs):
         """
         Wrapper for the litellm completion function.
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
-        resp = self._completion(*args, **kwargs)
-        self.post_completion(resp)
+        if kwargs.get('sample_action', True):
+            kwargs.pop('sample_action')
+            resp = self.perform_action_sampling(*args, **kwargs)
+        else:
+            resp = self._completion(*args, **kwargs)
+            self.post_completion(resp)
         return resp
 
     def post_completion(self, response: str) -> None:
