@@ -45,7 +45,7 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations $MAX_ITER \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers 8 \
   --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
