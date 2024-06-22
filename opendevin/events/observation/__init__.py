@@ -22,5 +22,4 @@ __all__ = [
     'AgentStateChangedObservation',
     'AgentDelegateObservation',
     'SuccessObservation',
-    'SummaryObservation',
 ]
