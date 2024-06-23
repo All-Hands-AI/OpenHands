@@ -66,7 +66,7 @@ function FeedbackModal({
         {
           label: t(I18nKey.FEEDBACK$CANCEL_LABEL),
           className: "bg-neutral-500 rounded-lg",
-          action() { },
+          action() {},
           closeAfterAction: true,
         },
       ]}
