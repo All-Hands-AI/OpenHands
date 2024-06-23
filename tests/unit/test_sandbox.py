@@ -1,4 +1,4 @@
-import os
+import os, shutil
 from unittest.mock import patch
 
 import pytest
@@ -10,19 +10,20 @@ from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
-def clean_up_workspace():
-    if os.path.exists(config.workspace_base):
-        for file in os.listdir(config.workspace_base):
-            os.remove(os.path.join(config.workspace_base, file))
-        os.removedirs(config.workspace_base)
-
-
 @pytest.fixture
-def setup_and_teardown():
-    # Setup code here
-    yield
-    # Teardown code here
-    clean_up_workspace()
+def clean_up_workspace():
+    folder = config.workspace_base
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+    print('Cleaned up workspace.')
 
 
 def test_env_vars():
@@ -131,7 +132,7 @@ def test_ssh_box_run_as_devin():
             box.close()
 
 
-def test_ssh_box_multi_line_cmd_run_as_devin():
+def test_ssh_box_multi_line_cmd_run_as_devin(clean_up_workspace):
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -149,7 +150,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin():
             box.close()
 
 
-def test_ssh_box_stateful_cmd_run_as_devin():
+def test_ssh_box_stateful_cmd_run_as_devin(clean_up_workspace):
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -277,7 +278,7 @@ def test_sandbox_jupyter_plugin():
             box.close()
 
 
-def test_sandbox_jupyter_agentskills_fileop_pwd():
+def test_sandbox_jupyter_agentskills_fileop_pwd(clean_up_workspace):
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
