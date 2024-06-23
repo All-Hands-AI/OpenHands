@@ -864,8 +864,8 @@ def get_repomap(dir_path: str) -> None:
     repo_map = RepoMap(
         model_name=AGENT_MODEL,
         map_tokens=1024,
-        root=dir_path,  # TODO: fix this
-        repo_content_prefix='\nHere are summaries of some files present in the workspace',  # TODO: fix this to path
+        root=dir_path,
+        repo_content_prefix='\nHere are summaries of some files present in the workspace',
         max_context_window=get_model_max_input_tokens(AGENT_MODEL),
     )
 
