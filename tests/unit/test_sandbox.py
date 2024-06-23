@@ -321,12 +321,10 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(clean_up_workspace):
     os.getenv('TEST_IN_CI') != 'true',
     reason='The unittest need to download image, so only run on CI',
 )
-def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd():
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
         # get a temporary directory
-        with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-            config, 'workspace_mount_path', new=temp_dir
-        ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        with patch.object(config, 'run_as_devin', new='true'), patch.object(
             config, 'sandbox_type', new='ssh'
         ), patch.object(config, 'sandbox_container_image', new=base_sandbox_image):
             for box in [DockerSSHBox()]:
