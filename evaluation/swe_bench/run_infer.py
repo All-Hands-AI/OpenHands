@@ -25,6 +25,7 @@ from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
+ENABLE_REPOMAP = config.enable_repomap
 
 
 def cleanup():
@@ -300,6 +301,8 @@ IMPORTANT TIPS:
             'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         )
+        if ENABLE_REPOMAP:
+            instruction += "Let's first start by using `RepoMap` to understand some main parts of the codebase."
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
@@ -485,9 +488,6 @@ if __name__ == '__main__':
 
     # This is SWE-Bench specific - CodeActAgent doesn't require mounted workspace to work
     skip_workspace_mount = agent_class == 'CodeActAgent'
-    if config.enable_repomap:
-        skip_workspace_mount = False
-        logger.info('RepoMap enabled. Workspace mount is ENABLED.')
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
     try:
