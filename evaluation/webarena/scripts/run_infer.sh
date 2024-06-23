@@ -41,6 +41,7 @@ COMMAND="poetry run python evaluation/webarena/run_infer.py \
   --max-iterations 15 \
   --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
+  --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
