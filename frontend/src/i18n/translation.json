@@ -296,7 +296,7 @@
     "en": "Share feedback"
   },
   "FEEDBACK$MODAL_CONTENT": {
-    "en": "Thank you for your feedback! The history of this conversation, together with your positive/negative feedback will be shared with the OpenDevin developers. Additionally, you can choose to contribute this feedback to our public dataset that will be shared with the community for model improvements."
+    "en": "To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data."
   },
   "FEEDBACK$EMAIL_LABEL": {
     "en": "Your email"

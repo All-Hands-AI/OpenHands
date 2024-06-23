@@ -8,7 +8,12 @@ COMMIT_HASH=$2
 EVAL_LIMIT=$3
 DATA_SPLIT=$4
 AGENT=$5
+NUM_WORKERS=$6
 
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
@@ -33,7 +38,7 @@ COMMAND="poetry run python evaluation/gpqa/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers $NUM_WORKERS \
   --data-split $DATA_SPLIT \
   --eval-note $AGENT_VERSION"
 
