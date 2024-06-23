@@ -7,7 +7,12 @@ MODEL_CONFIG=$1
 COMMIT_HASH=$2
 AGENT=$3
 EVAL_LIMIT=$4
+NUM_WORKERS=$5
 
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
@@ -26,7 +31,7 @@ COMMAND="poetry run python evaluation/bird/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations 5 \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note $AGENT_VERSION" \
 
 if [ -n "$EVAL_LIMIT" ]; then
