@@ -43,22 +43,27 @@ class Session:
         await self.agent_session.close()
 
     async def loop_recv(self):
+        if self.websocket is None:
+            logger.error('WebSocket is None, cannot receive messages')
+            return
+
         try:
             if self.websocket is None:
                 return
             while True:
                 try:
                     data = await self.websocket.receive_json()
-                except ValueError:
+                    asyncio.create_task(self.dispatch(data))
+                except ValueError as e:
+                    logger.error(f'Invalid JSON received: {e}')
                     await self.send_error('Invalid JSON')
                     continue
-                await self.dispatch(data)
         except WebSocketDisconnect:
             await self.close()
-            logger.info('WebSocket disconnected, sid: %s', self.sid)
+            logger.info(f'WebSocket disconnected for session {self.sid}')
         except RuntimeError as e:
             await self.close()
-            logger.exception('Error in loop_recv: %s', e)
+            logger.exception(f'Error in loop_recv: {e}')
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(

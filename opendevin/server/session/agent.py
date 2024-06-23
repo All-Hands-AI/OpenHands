@@ -40,7 +40,7 @@ class AgentSession:
             start_event: The start event data (optional).
         """
         if self.controller or self.runtime:
-            raise Exception(
+            raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
         await self._create_runtime()
@@ -59,7 +59,7 @@ class AgentSession:
 
     async def _create_runtime(self):
         if self.runtime is not None:
-            raise Exception('Runtime already created')
+            raise RuntimeError('Runtime already created')
         if config.runtime == 'server':
             logger.info('Using server runtime')
             self.runtime = ServerRuntime(self.event_stream, self.sid)
@@ -67,7 +67,7 @@ class AgentSession:
             logger.info('Using E2B runtime')
             self.runtime = E2BRuntime(self.event_stream, self.sid)
         else:
-            raise Exception(
+            raise RuntimeError(
                 f'Runtime not defined in config, or is invalid: {config.runtime}'
             )
 
@@ -78,9 +78,9 @@ class AgentSession:
             start_event: The start event data.
         """
         if self.controller is not None:
-            raise Exception('Controller already created')
+            raise RuntimeError('Controller already created')
         if self.runtime is None:
-            raise Exception('Runtime must be initialized before the agent controller')
+            raise RuntimeError('Runtime must be initialized before the agent controller')
         args = {
             key: value
             for key, value in start_event.get('args', {}).items()
@@ -112,6 +112,7 @@ class AgentSession:
         )
         try:
             agent_state = State.restore_from_session(self.sid)
+            llm.stop_requested_callback = self.controller.is_stopped
             self.controller.set_initial_state(agent_state)
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:

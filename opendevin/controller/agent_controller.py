@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from typing import Optional, Type
+from typing import Optional, Tuple, Type
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
@@ -74,6 +74,8 @@ class AgentController:
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
         """
+        self._is_closing = False
+        self._close_event = asyncio.Event()
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
@@ -98,8 +100,17 @@ class AgentController:
             self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
+        if self._is_closing:
+            return
+        self._is_closing = True
+
         if self.agent_task is not None:
             self.agent_task.cancel()
+            try:
+                await self.agent_task
+            except asyncio.CancelledError:
+                logger.info(f'AgentController task was cancelled for {self.id}')
+
         await self.set_agent_state_to(AgentState.STOPPED)
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
 
@@ -130,7 +141,7 @@ class AgentController:
 
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
-        while True:
+        while not self._is_closing:
             try:
                 await self._step()
             except asyncio.CancelledError:
@@ -149,8 +160,34 @@ class AgentController:
             await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
+        # Only parse agent_state for ChangeAgentStateAction
+        new_state = None
         if isinstance(event, ChangeAgentStateAction):
-            await self.set_agent_state_to(event.agent_state)  # type: ignore
+            success, parsed_state = self._parse_agent_state(event.agent_state)
+            if success:
+                new_state = parsed_state
+            else:
+                logger.error(f'Invalid agent state received: {event.agent_state}')
+                return  # Exit early if the state is invalid
+
+        if self.get_agent_state() == AgentState.STOPPED:
+            if isinstance(event, Observation) and not isinstance(
+                event, AgentStateChangedObservation
+            ):
+                logger.info('Task cancelled.')
+                return
+            elif isinstance(event, ChangeAgentStateAction):
+                # Allow ChangeAgentStateAction to be processed even when stopped
+                pass
+            else:
+                # Ignore all other events when stopped
+                logger.debug(f'Ignoring event in STOPPED state: {event}')
+                return
+
+        if isinstance(event, ChangeAgentStateAction):
+            if new_state is not None and new_state != self.state.agent_state:
+                await self.set_agent_state_to(new_state)
+            return
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
@@ -191,12 +228,12 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.debug(
-            f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
-        )
-
         if new_state == self.state.agent_state:
             return
+
+        logger.info(
+            f'[Agent Controller] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
+        )
 
         if (
             self.state.agent_state == AgentState.PAUSED
@@ -207,7 +244,15 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.PAUSED
 
         self.state.agent_state = new_state
-        if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
+        if new_state == AgentState.STOPPED:
+            self.reset_task()
+            # tobitege: should we instead reset to AWAITING_USER_INPUT on STOPPED
+            # new_state = AgentState.AWAITING_USER_INPUT
+            # self.state.agent_state = new_state
+            # logger.info(
+            #     f'[Agent Controller] Setting agent({type(self.agent).__name__}) to {new_state}'
+            # )
+        elif new_state == AgentState.ERROR:
             self.reset_task()
 
         self.event_stream.add_event(
@@ -338,7 +383,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            action = self.agent.step(self.state)
+            action = await self.agent.step(self.state)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
@@ -471,3 +516,31 @@ class AgentController:
         else:
             # this is the default comparison
             return obj1 == obj2
+
+    async def wait_closed(self):
+        await self._close_event.wait()
+
+    async def stop(self) -> None:
+        await self.set_agent_state_to(AgentState.STOPPED)
+
+    def _parse_agent_state(self, state_str: str) -> Tuple[bool, AgentState | None]:
+        """
+        Parse a string into an AgentState enum value.
+
+        Args:
+            state_str (str): The string representation of the agent state.
+
+        Returns:
+            Tuple[bool, AgentState | None]: A tuple containing:
+                - A boolean indicating whether the parsing was successful.
+                - The AgentState enum value if successful, None otherwise.
+        """
+        try:
+            new_state = AgentState(state_str)
+            return True, new_state
+        except ValueError:
+            logger.error(f'Invalid agent state received: {state_str}')
+            return False, None
+
+    def is_stopped(self):
+        return self.state.agent_state == AgentState.STOPPED.value

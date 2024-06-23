@@ -167,13 +167,68 @@ class CodeActAgent(Agent):
         """
         super().reset()
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         """
         Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
-        - state (State): used to get updated info
+        - state (State): used to get updated info and background commands
+        """
+        messages = self._prepare_messages(state)
+        if self._check_exit_command(messages):
+            return AgentFinishAction()
+        return await self._common_step_logic_async(
+            state, self.llm.async_completion, messages
+        )
+
+    def _common_step_logic_sync(
+        self, state: State, completion_func, messages: list[dict[str, str]]
+    ) -> Action:
+        """
+        Common logic for the synchronous step method.
+
+        :param state: The current state.
+        :param completion_func: self.llm.completion
+        :param messages: The prepared messages.
+        :return: The resulting Action.
+        """
+        response = completion_func(
+            messages=messages,
+            stop=[
+                '</execute_ipython>',
+                '</execute_bash>',
+                '</execute_browse>',
+            ],
+            temperature=0.0,
+        )
+        return self.action_parser.parse(response)
+
+    async def _common_step_logic_async(
+        self, state: State, completion_func, messages: list[dict[str, str]]
+    ) -> Action:
+        """
+        Common logic for the asynchronous step method.
+
+        :param state: The current state.
+        :param completion_func: self.llm.async_completion
+        :param messages: The prepared messages.
+        :return: The resulting Action.
+        """
+        response = await completion_func(
+            messages=messages,
+            stop=[
+                '</execute_ipython>',
+                '</execute_bash>',
+                '</execute_browse>',
+            ],
+            temperature=0.0,
+        )
+        return self.action_parser.parse(response)
+
+    def _prepare_messages(self, state: State) -> list[dict[str, str]]:
+        """
+        Prepare the messages for the LLM completion.
 
         Returns:
         - CmdRunAction(command) - bash command to run
@@ -198,22 +253,21 @@ class CodeActAgent(Agent):
 
         latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
         if latest_user_message:
-            if latest_user_message['content'].strip() == '/exit':
-                return AgentFinishAction()
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             )
 
-        response = self.llm.completion(
-            messages=messages,
-            stop=[
-                '</execute_ipython>',
-                '</execute_bash>',
-                '</execute_browse>',
-            ],
-            temperature=0.0,
-        )
-        return self.action_parser.parse(response)
+        return messages
+
+    def _check_exit_command(self, messages: list[dict[str, str]]) -> bool:
+        """
+        Check if the latest user message contains the exit command.
+
+        :param messages: The list of messages.
+        :return: True if the exit command is found, False otherwise.
+        """
+        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
+        return latest_user_message['content'].strip() == '/exit'
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')

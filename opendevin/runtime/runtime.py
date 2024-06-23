@@ -1,3 +1,5 @@
+import asyncio
+import atexit
 from abc import abstractmethod
 from typing import Any, Optional
 
@@ -34,11 +36,13 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
-def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+async def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
     if box_type == 'local':
         return LocalBox()
     elif box_type == 'ssh':
-        return DockerSSHBox(sid=sid)
+        sandbox = DockerSSHBox(sid=sid)
+        await sandbox.initialize()
+        return sandbox
     elif box_type == 'e2b':
         return E2BBox()
     else:
@@ -60,28 +64,47 @@ class Runtime:
         self,
         event_stream: EventStream,
         sid: str = 'default',
-        sandbox: Sandbox | None = None,
+        sandbox: Optional[Sandbox] = None,
     ):
         self.sid = sid
-        if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
-            self._is_external_sandbox = False
-        else:
-            self.sandbox = sandbox
-            self._is_external_sandbox = True
-        self.browser: BrowserEnv | None = None
+        self.sandbox = sandbox
+        self._is_external_sandbox = sandbox is not None
+        self.browser: Optional[BrowserEnv] = None
         self.file_store = InMemoryFileStore()
         self.event_stream = event_stream
+        self._initialization_complete = asyncio.Event()
+
+    async def initialize(self):
+        await self._initialize()
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self._initialization_complete.set()
+
+    async def _initialize(self):
+        if self.sandbox is None:
+            self.sandbox = await create_sandbox(self.sid, config.sandbox.box_type)
+
+        # make sure /tmp always exists
+        await self.sandbox.execute('mkdir -p /tmp')
+        # set git config
+        await self.sandbox.execute('git config --global user.name "OpenDevin"')
+        await self.sandbox.execute(
+            'git config --global user.email "opendevin@all-hands.dev"'
+        )
+        atexit.register(self.close)
+        self._initialization_complete.set()
+
+    async def wait_for_initialization(self):
+        await self._initialization_complete.wait()
 
     def close(self):
-        if not self._is_external_sandbox:
+        if not self._is_external_sandbox and self.sandbox is not None:
             self.sandbox.close()
         if self.browser is not None:
             self.browser.close()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        self.sandbox.init_plugins(plugins)
+        if self.sandbox is not None:
+            self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(
         self,
@@ -123,6 +146,7 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
+
         observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation

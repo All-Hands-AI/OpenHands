@@ -138,6 +138,7 @@ class SandboxConfig(metaclass=Singleton):
 
     """
 
+    env: dict = field(default_factory=dict)
     box_type: str = 'ssh'
     container_image: str = 'ghcr.io/opendevin/sandbox' + (
         f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
@@ -151,10 +152,10 @@ class SandboxConfig(metaclass=Singleton):
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
-        dict = {}
+        _dict = {}
         for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
+            _dict[f.name] = get_field_info(f)
+        return _dict
 
     def __str__(self):
         attr_str = []
@@ -398,6 +399,11 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
+        # Clear sensitive information when TOML is invalid
+        cfg.llm.api_key = None
+        cfg.e2b_api_key = ''
+        cfg.jwt_secret = ''
+        cfg.ssh_password = None
         return
 
     # if there was an exception or core is not in the toml, try to use the old-style toml
@@ -420,7 +426,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             agent_config = AgentConfig(**toml_config['agent'])
 
         # set sandbox config from the toml file
-        sandbox_config = config.sandbox
+        sandbox_config = cfg.sandbox if cfg.sandbox else SandboxConfig()
 
         # migrate old sandbox configs from [core] section to sandbox config
         keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
@@ -439,12 +445,19 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
 
         # update the config object with the new values
+        for key, value in core_config.items():
+            setattr(cfg, key, value)
+
+        cfg.llm = llm_config
+        cfg.agent = agent_config
+        cfg.sandbox = sandbox_config
         AppConfig(
             llm=llm_config,
             agent=agent_config,
             sandbox=sandbox_config,
             **core_config,
         )
+
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
@@ -456,7 +469,6 @@ def finalize_config(cfg: AppConfig):
     """
     More tweaks to the config after it's been loaded.
     """
-
     # Set workspace_mount_path if not set by the user
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
         cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
@@ -467,7 +479,6 @@ def finalize_config(cfg: AppConfig):
         cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
-        # TODO why do we need to check if workspace_mount_path is None?
         base = cfg.workspace_base or os.getcwd()
         parts = cfg.workspace_mount_rewrite.split(':')
         cfg.workspace_mount_path = base.replace(parts[0], parts[1])
@@ -484,6 +495,16 @@ def finalize_config(cfg: AppConfig):
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    # Populate SandboxConfig.env with SANDBOX_ENV_ prefixed variables
+    sandbox_env_vars = {
+        k[12:]: v for k, v in os.environ.items() if k.startswith('SANDBOX_ENV_')
+    }
+    if sandbox_env_vars:
+        # Ensure cfg.sandbox.env is a mutable dictionary
+        if not isinstance(cfg.sandbox.env, dict):
+            cfg.sandbox.env = {}  # type: ignore[unreachable]
+        cfg.sandbox.env.update(sandbox_env_vars)
 
 
 config = AppConfig()

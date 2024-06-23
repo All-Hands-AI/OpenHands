@@ -1,6 +1,8 @@
 import os
+import json
 import tarfile
 from glob import glob
+from typing import List
 
 from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
@@ -11,6 +13,7 @@ from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.utils.async_utils import async_to_sync
 
 
 class E2BBox(Sandbox):
@@ -33,6 +36,13 @@ class E2BBox(Sandbox):
         self.timeout = timeout
         logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
         super().__init__()
+
+    @classmethod
+    @async_to_sync
+    async def create(cls, template: str = 'open-devin', timeout: int = config.sandbox.timeout):
+        instance = cls(template, timeout)
+        # Perform any asynchronous initialization here if needed
+        return instance
 
     @property
     def filesystem(self):
@@ -61,16 +71,22 @@ class E2BBox(Sandbox):
                 tar.add(host_src, arcname=srcname)
         return tar_filename
 
+    @async_to_sync
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
+        return self.execute_async(cmd, stream, timeout)  # type: ignore
+
+    async def execute_async(
+        self, cmd: str, stream: bool = False, timeout: int | None = None
+    ) -> tuple[int, str | CancellableStream]:
         timeout = timeout if timeout is not None else self.timeout
-        process = self.sandbox.process.start(cmd, env_vars=self._env)
+        process = await self.sandbox.process.start(cmd, env_vars=self._env)
         try:
-            process_output = process.wait(timeout=timeout)
+            process_output = await process.wait(timeout=timeout)
         except TimeoutException:
             logger.info('Command timed out, killing process...')
-            process.kill()
+            await process.kill()
             return -1, f'Command: "{cmd}" timed out'
 
         logs = [m.line for m in process_output.messages]
@@ -81,8 +97,12 @@ class E2BBox(Sandbox):
         assert process_output.exit_code is not None
         return process_output.exit_code, logs_str
 
+    @async_to_sync
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         """Copies a local file or directory to the sandbox."""
+        return self.copy_to_async(host_src, sandbox_dest, recursive)
+
+    async def copy_to_async(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         tar_filename = self._archive(host_src, recursive)
 
         # Prepend the sandbox destination with our sandbox cwd
@@ -90,27 +110,42 @@ class E2BBox(Sandbox):
 
         with open(tar_filename, 'rb') as tar_file:
             # Upload the archive to /home/user (default destination that always exists)
-            uploaded_path = self.sandbox.upload_file(tar_file)
+            uploaded_path = await self.sandbox.upload_file(tar_file)
 
             # Check if sandbox_dest exists. If not, create it.
-            process = self.sandbox.process.start_and_wait(f'test -d {sandbox_dest}')
+            process = await self.sandbox.process.start_and_wait(f'test -d {sandbox_dest}')
             if process.exit_code != 0:
                 self.sandbox.filesystem.make_dir(sandbox_dest)
 
             # Extract the archive into the destination and delete the archive
-            process = self.sandbox.process.start_and_wait(
+            process = await self.sandbox.process.start_and_wait(
                 f'sudo tar -xf {uploaded_path} -C {sandbox_dest} && sudo rm {uploaded_path}'
             )
             if process.exit_code != 0:
-                raise Exception(
+                raise RuntimeError(
                     f'Failed to extract {uploaded_path} to {sandbox_dest}: {process.stderr}'
                 )
 
         # Delete the local archive
         os.remove(tar_filename)
 
+    @async_to_sync
+    async def add_to_env(self, key: str, value: str):
+        return await self.add_to_env_async(key, value)
+
+    async def add_to_env_async(self, key: str, value: str):
+        exit_code, _ = await self.execute_async(f'export {key}={json.dumps(value)}')
+        if exit_code == 0:
+            self._env[key] = value
+        else:
+            raise RuntimeError(f"Failed to set environment variable {key}")
+
+    @async_to_sync
     def close(self):
-        self.sandbox.close()
+        return self.aclose()
+
+    async def aclose(self):
+        await self.sandbox.close()
 
     def get_working_directory(self):
         return self.sandbox.cwd

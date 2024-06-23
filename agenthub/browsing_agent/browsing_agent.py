@@ -126,7 +126,7 @@ class BrowsingAgent(Agent):
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         """
         Performs one step using the Browsing Agent.
         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
@@ -208,7 +208,7 @@ class BrowsingAgent(Agent):
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
         messages.append({'role': 'user', 'content': prompt})
         logger.info(prompt)
-        response = self.llm.completion(
+        response = await self.llm.completion(
             messages=messages,
             temperature=0.0,
             stop=[')```', ')\n```'],

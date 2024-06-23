@@ -132,7 +132,7 @@ class BrowserEnv:
                     pass
                 return
 
-    def step(self, action_str: str, timeout: float = 30) -> dict:
+    async def step(self, action_str: str, timeout: float = 30) -> dict:
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))
         start_time = time.time()

@@ -32,20 +32,24 @@ class ServerRuntime(Runtime):
         sandbox: Sandbox | None = None,
     ):
         super().__init__(event_stream, sid, sandbox)
+        # if self.sandbox is None:
+        #     raise ValueError("Sandbox must be provided for ServerRuntime")
         self.file_store = LocalFileStore(config.workspace_base)
 
     async def run(self, action: CmdRunAction) -> Observation:
-        return self._run_command(action.command)
+        return await self._run_command(action.command)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        obs = self._run_command(
+        await self.wait_for_initialization()  # important
+
+        await self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
 
         # run the code
-        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        obs = await self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
-        if 'pip install' in action.code:
+        if 'pip installx' in action.code:
             print(output)
             package_names = action.code.split(' ', 2)[-1]
             is_single_package = ' ' not in package_names
@@ -56,14 +60,14 @@ class ServerRuntime(Runtime):
                     'Note: you may need to restart the kernel to use updated packages.'
                     in output
                 ):
-                    self._run_command(
+                    await self._run_command(
                         (
                             "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
                             f'{restart_kernel}\n'
                             'EOL'
                         )
                     )
-                    obs = self._run_command(
+                    obs = await self._run_command(
                         'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
                     )
                     output = '[Package installed successfully]'
@@ -79,14 +83,14 @@ class ServerRuntime(Runtime):
 
                     # re-init the kernel after restart
                     if action.kernel_init_code:
-                        obs = self._run_command(
+                        await self._run_command(
                             (
                                 f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
                                 f'{action.kernel_init_code}\n'
                                 'EOL'
                             ),
                         )
-                        obs = self._run_command(
+                        await self._run_command(
                             'cat /tmp/opendevin_jupyter_init.py | execute_cli',
                         )
             elif (
@@ -98,11 +102,13 @@ class ServerRuntime(Runtime):
 
     async def read(self, action: FileReadAction) -> Observation:
         # TODO: use self.file_store
+        assert self.sandbox is not None
         working_dir = self.sandbox.get_working_directory()
         return await read_file(action.path, working_dir, action.start, action.end)
 
     async def write(self, action: FileWriteAction) -> Observation:
         # TODO: use self.file_store
+        assert self.sandbox is not None
         working_dir = self.sandbox.get_working_directory()
         return await write_file(
             action.path, working_dir, action.content, action.start, action.end
@@ -117,9 +123,10 @@ class ServerRuntime(Runtime):
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
 
-    def _run_command(self, command: str) -> Observation:
+    async def _run_command(self, command: str) -> Observation:
+        assert self.sandbox is not None
         try:
-            exit_code, output = self.sandbox.execute(command)
+            exit_code, output = await self.sandbox.execute(command)
             if 'pip install' in command:
                 package_names = command.split(' ', 2)[-1]
                 is_single_package = ' ' not in package_names

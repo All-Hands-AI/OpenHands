@@ -1,9 +1,11 @@
+import asyncio
 import warnings
 from functools import partial
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from litellm import acompletion as litellm_acompletion
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -63,6 +65,7 @@ class LLM:
         llm_config=None,
         metrics=None,
         cost_metric_supported=True,
+        stop_requested_callback=None,
     ):
         """
         Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -84,6 +87,7 @@ class LLM:
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
             metrics (Metrics, optional): The metrics object to use. Defaults to None.
             cost_metric_supported (bool, optional): Whether the cost metric is supported. Defaults to True.
+            stop_requested_callback (callable, optional): A callback to check if the stop signal has been requested. Defaults to None.
         """
         if llm_config is None:
             llm_config = config.llm
@@ -131,6 +135,7 @@ class LLM:
         self.custom_llm_provider = custom_llm_provider
         self.metrics = metrics
         self.cost_metric_supported = cost_metric_supported
+        self.stop_requested_callback = stop_requested_callback
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -194,7 +199,7 @@ class LLM:
             ),
             after=attempt_on_error,
         )
-        def wrapper(*args, **kwargs):
+        async def wrapper(*args, **kwargs):
             """
             Wrapper for the litellm completion function. Logs the input and output of the completion function.
             """
@@ -211,18 +216,133 @@ class LLM:
                 debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
 
-            # call the completion function
-            resp = completion_unwrapped(*args, **kwargs)
+            async def check_stopped():
+                while True:
+                    if (
+                        self.stop_requested_callback is not None
+                        and await self.stop_requested_callback()
+                    ):
+                        return True
+                    await asyncio.sleep(0.1)  # Check every 100ms
 
-            # log the response
-            message_back = resp['choices'][0]['message']['content']
-            llm_response_logger.debug(message_back)
+            async def run_litellm():
+                return await asyncio.to_thread(
+                    partial(completion_unwrapped, *args, **kwargs)
+                )
 
-            # post-process to log costs
-            self._post_completion(resp)
-            return resp
+            litellm_task = asyncio.create_task(run_litellm())
+            stop_check_task = asyncio.create_task(check_stopped())
+
+            try:
+                done, pending = await asyncio.wait(
+                    [litellm_task, stop_check_task], return_when=asyncio.FIRST_COMPLETED
+                )
+
+                if stop_check_task in done:
+                    litellm_task.cancel()
+                    raise asyncio.CancelledError(
+                        'LLM request cancelled due to STOPPED state'
+                    )
+
+                resp = await litellm_task
+
+                # log the response
+                message_back = resp['choices'][0]['message']['content']
+                llm_response_logger.debug(message_back)
+
+                # post-process to log costs
+                self._post_completion(resp)
+
+                return resp
+
+            finally:
+                for task in pending:
+                    task.cancel()
 
         self._completion = wrapper  # type: ignore
+
+        # Async version
+        self._async_completion = partial(
+            litellm_acompletion,
+            model=self.model_name,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            api_version=self.api_version,
+            custom_llm_provider=custom_llm_provider,
+            max_tokens=self.max_output_tokens,
+            timeout=self.llm_timeout,
+            temperature=llm_temperature,
+            top_p=llm_top_p,
+        )
+
+        async_completion_unwrapped = self._async_completion
+
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(num_retries),
+            wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
+            retry=retry_if_exception_type(
+                (RateLimitError, APIConnectionError, ServiceUnavailableError)
+            ),
+            after=attempt_on_error,
+        )
+        async def async_wrapper(*args, **kwargs):
+            """
+            Async wrapper for the litellm acompletion function. Logs the input and output of the completion function.
+            """
+            # some callers might just send the messages directly
+            if 'messages' in kwargs:
+                messages = kwargs['messages']
+            else:
+                messages = args[1]
+
+            # log the prompt
+            debug_message = ''
+            for message in messages:
+                debug_message += message_separator + message['content']
+            llm_prompt_logger.debug(debug_message)
+
+            async def check_stopped():
+                while True:
+                    if (
+                        self.stop_requested_callback is not None
+                        and await self.stop_requested_callback()
+                    ):
+                        return True
+                    await asyncio.sleep(0.1)  # Check every 100ms
+
+            litellm_task = asyncio.create_task(
+                async_completion_unwrapped(*args, **kwargs)
+            )
+            stop_check_task = asyncio.create_task(check_stopped())
+
+            try:
+                done, pending = await asyncio.wait(
+                    [litellm_task, stop_check_task], return_when=asyncio.FIRST_COMPLETED
+                )
+
+                if stop_check_task in done:
+                    litellm_task.cancel()
+                    raise asyncio.CancelledError(
+                        'LLM request cancelled due to STOPPED state'
+                    )
+
+                resp = await litellm_task
+
+                # log the response
+                message_back = resp['choices'][0]['message']['content']
+                llm_response_logger.debug(message_back)
+
+                # post-process to log costs
+                self._post_completion(resp)
+
+                return resp
+
+            finally:
+                for task in pending:
+                    task.cancel()
+
+        self._async_completion = async_wrapper  # type: ignore
 
     @property
     def completion(self):
@@ -247,6 +367,14 @@ class LLM:
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
+
+    @property
+    def async_completion(self):
+        """
+        Decorator for the async litellm completion function.
+        Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
+        """
+        return self._async_completion
 
     def get_token_count(self, messages):
         """

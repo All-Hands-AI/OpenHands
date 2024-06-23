@@ -1,4 +1,7 @@
 import atexit
+import asyncio
+import docker
+import json
 import os
 import re
 import sys
@@ -8,9 +11,9 @@ import time
 import uuid
 from glob import glob
 
-import docker
 from pexpect import exceptions, pxssh
 from tenacity import retry, stop_after_attempt, wait_fixed
+from typing import cast
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -20,6 +23,7 @@ from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
+from opendevin.runtime.utils.async_utils import async_to_sync
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -207,39 +211,26 @@ class DockerSSHBox(Sandbox):
         timeout: int = config.sandbox.timeout,
         sid: str | None = None,
     ):
-        logger.info(
-            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
-        )
-        # Initialize docker client. Throws an exception if Docker is not reachable.
-        try:
-            self.docker_client = docker.from_env()
-        except Exception as ex:
-            logger.exception(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
-                exc_info=False,
-            )
-            raise ex
+        # do NOT call super().__init__()!!!
+        self._cleanup_done = False
 
+        self.initialize_plugins: bool = config.initialize_plugins
+        self._init_complete = asyncio.Event()
+        self._init_task = None
+
+        self.timeout = timeout
         if config.persist_sandbox:
             if not self.run_as_devin:
-                raise Exception(
+                raise RuntimeError(
                     'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
                 )
             self.instance_id = 'persisted'
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
-        self.timeout = timeout
-        self.container_image = container_image or config.sandbox.container_image
-        self.container_image = get_od_sandbox_image(
-            self.container_image, self.docker_client
-        )
-        self.container_name = self.container_name_prefix + self.instance_id
-
-        # set up random user password
         if config.persist_sandbox:
             if not config.ssh_password:
-                raise Exception(
+                raise RuntimeError(
                     'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
             self._ssh_password = config.ssh_password
@@ -247,16 +238,73 @@ class DockerSSHBox(Sandbox):
         else:
             self._ssh_password = str(uuid.uuid4())
             self._ssh_port = find_available_tcp_port()
+
+        self.is_initial_session = True
+
+        self.container_image = container_image or config.sandbox.container_image
+        self.container_name = self.container_name_prefix + self.instance_id
+
+        # Initialize _env with SANDBOX_ENV_ prefixed variables
+        self._env = {
+            k[12:]: v for k, v in os.environ.items() if k.startswith('SANDBOX_ENV_')
+        }
+        if isinstance(config.sandbox.env, dict):
+            self._env.update(config.sandbox.env)
+
+        atexit.register(self.sync_cleanup)
+
+        if self.is_async_context():
+            self._init_task = asyncio.create_task(self._async_init())
+        else:
+            self.sync_initialize()
+
+    def is_async_context(self):
         try:
-            docker.DockerClient().containers.get(self.container_name)
+            asyncio.get_running_loop()
+            return True
+        except RuntimeError:
+            return False
+
+    async def _async_init(self):
+        try:
+            await self.initialize()
+        finally:
+            self._init_complete.set()
+
+    @async_to_sync
+    def sync_initialize(self):
+        return self.initialize()
+
+    async def initialize(self):
+        logger.info(
+            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
+        )
+
+        # Init docker client. Throws an exception if Docker is not reachable.
+        try:
+            self.docker_client = docker.from_env()  # not async!
+        except RuntimeError as ex:
+            logger.exception(
+                f'Error creating Docker client. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
+                exc_info=False,
+            )
+            raise ex
+
+        self.container_image = get_od_sandbox_image(
+            self.container_image, self.docker_client
+        )
+
+        try:
+            self.docker_client.containers.get(self.container_name)
             self.is_initial_session = False
         except docker.errors.NotFound:
             self.is_initial_session = True
-            logger.info('Detected initial session.')
+
         if not config.persist_sandbox or self.is_initial_session:
             logger.info('Creating new Docker container')
             n_tries = 5
             while n_tries > 0:
+                await asyncio.sleep(2)
                 try:
                     self.restart_docker_container()
                     break
@@ -267,51 +315,77 @@ class DockerSSHBox(Sandbox):
                     n_tries -= 1
                     if n_tries == 0:
                         raise e
-                    time.sleep(5)
-            self.setup_user()
+                    await asyncio.sleep(2)
+            try:
+                await asyncio.wait_for(self.setup_user(), timeout=60)  # 60 second timeout
+            except asyncio.TimeoutError:
+                logger.error("User setup timed out after 60 seconds")
+                raise
+            except Exception as e:
+                logger.exception("Error during user setup")
+                raise e
         else:
             self.container = self.docker_client.containers.get(self.container_name)
             logger.info('Using existing Docker container')
             self.start_docker_container()
+
         try:
-            self.start_ssh_session()
+            await asyncio.sleep(2)
+            await self.start_ssh_session()
         except Exception as e:
+            logger.info("SSH session failed, closing container")
             self.close()
             raise e
 
-        # make sure /tmp always exists
-        self.execute('mkdir -p /tmp')
-        # set git config
-        self.execute('git config --global user.name "OpenDevin"')
-        self.execute('git config --global user.email "opendevin@all-hands.dev"')
-        atexit.register(self.close)
-        super().__init__()
+        try:
+            _, _ = await self.execute_async('mkdir -p /tmp')
+            _, _ = await self.execute_async('git config --global user.name "OpenDevin"')
+            _, _ = await self.execute_async('git config --global user.email "opendevin@all-hands.dev"')
+        except Exception as e:
+            logger.exception(f"Error during initialization: {e}")
+            raise
+        finally:
+            self._init_complete.set()
 
+    @async_to_sync
     def add_to_env(self, key: str, value: str):
-        super().add_to_env(key, value)
+        return self.add_to_env_async(key, value)
 
-    def setup_user(self):
+    async def add_to_env_async(self, key: str, value: str):
+        exit_code, _ = await self.execute_async(f'export {key}={json.dumps(value)}')
+        if exit_code == 0:
+            self._env[key] = value
+        else:
+            raise RuntimeError(f"Failed to set environment variable {key}")
+
+    async def container_exec_run(self, *args, **kwargs):
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, lambda: self.container.exec_run(*args, **kwargs))
+        return result  # Returns a tuple (exit_code, output)
+
+    async def setup_user(self):
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
-        exit_code, logs = self.container.exec_run(
+        result = await self.container_exec_run(
             ['/bin/bash', '-c', r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
+        exit_code, logs = result
         if exit_code != 0:
-            raise Exception(
+            raise RuntimeError(
                 f'Failed to make all users passwordless sudoers in sandbox: {logs}'
             )
 
         # Check if the opendevin user exists
-        exit_code, logs = self.container.exec_run(
+        exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
         if exit_code == 0:
             # User exists, delete it
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 ['/bin/bash', '-c', 'userdel -r opendevin'],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
@@ -321,7 +395,7 @@ class DockerSSHBox(Sandbox):
 
         if self.run_as_devin:
             # Create the opendevin user
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -332,7 +406,7 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 raise Exception(f'Failed to create opendevin user in sandbox: {logs}')
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -345,17 +419,17 @@ class DockerSSHBox(Sandbox):
                 raise Exception(f'Failed to set password in sandbox: {logs}')
 
             # chown the home directory
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(
+                raise RuntimeError(
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
                 )
             # check the miniforge3 directory exist
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -366,14 +440,14 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 if exit_code == 1:
-                    raise Exception(
+                    raise RuntimeError(
                         'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
                     )
                 else:
-                    raise Exception(
+                    raise RuntimeError(
                         f'An error occurred while checking if miniforge3 directory exists: {logs}'
                     )
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -388,51 +462,61 @@ class DockerSSHBox(Sandbox):
                     f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {self.sandbox_workspace_dir=} is mounted by the app docker container.'
                 )
         else:
-            exit_code, logs = self.container.exec_run(
+            exit_code, logs = await self.container_exec_run(
                 # change password for root
                 ['/bin/bash', '-c', f"echo 'root:{self._ssh_password}' | chpasswd"],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(f'Failed to set password for root in sandbox: {logs}')
-        exit_code, logs = self.container.exec_run(
+                raise RuntimeError(f'Failed to set password for root in sandbox: {logs}')
+        exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
+        logger.info("User setup in sandbox completed")
 
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
     @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
-    def __ssh_login(self):
+    async def __ssh_login(self):
         try:
+            if not hasattr(self, '_ssh_debug_logged'):
+                hostname = self.ssh_hostname
+                username = 'opendevin' if self.run_as_devin else 'root'
+                if config.persist_sandbox:
+                    password_msg = 'using your SSH password'
+                else:
+                    password_msg = f"using the password '{self._ssh_password}'"
+                ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
+                logger.info(f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}')
+                self._ssh_debug_logged = True
+
             self.ssh = pxssh.pxssh(
                 echo=False,
                 timeout=self.timeout,
                 encoding='utf-8',
                 codec_errors='replace',
             )
-            hostname = self.ssh_hostname
-            username = 'opendevin' if self.run_as_devin else 'root'
-            if config.persist_sandbox:
-                password_msg = 'using your SSH password'
-            else:
-                password_msg = f"using the password '{self._ssh_password}'"
-            logger.info('Connecting to SSH session...')
-            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
-            logger.info(
-                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
+
+            # Keep the login call synchronous
+            await asyncio.to_thread(
+                self.ssh.login,
+                self.ssh_hostname,
+                'opendevin' if self.run_as_devin else 'root',
+                self._ssh_password,
+                port=self._ssh_port,
             )
-            self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
-            logger.exception(
-                'Failed to login to SSH session, retrying...', exc_info=False
-            )
-            raise e
+                logger.exception('Failed to login to SSH session, retrying...', exc_info=False)
+                raise e
 
-    def start_ssh_session(self):
-        self.__ssh_login()
+    async def start_ssh_session(self):
+        logger.info("Starting SSH session")
+        if hasattr(self, '_ssh_debug_logged'):
+            delattr(self, '_ssh_debug_logged')
+        await self.__ssh_login()
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -447,18 +531,18 @@ class DockerSSHBox(Sandbox):
         else:
             return ['/bin/bash', '-c', cmd]
 
-    def _send_interrupt(
+    async def _send_interrupt(
         self,
         cmd: str,
         prev_output: str = '',
         ignore_last_output: bool = False,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str | CancellableStream]:
         logger.exception(
             f'Command "{cmd}" timed out, killing process...', exc_info=False
         )
         # send a SIGINT to the process
         self.ssh.sendintr()
-        self.ssh.prompt()
+        await asyncio.to_thread(self.ssh.prompt)
         command_output = prev_output
         if not ignore_last_output:
             command_output += '\n' + self.ssh.before
@@ -467,7 +551,13 @@ class DockerSSHBox(Sandbox):
             f'Command: "{cmd}" timed out. Sent SIGINT to the process: {command_output}',
         )
 
+    @async_to_sync
     def execute(
+        self, cmd: str, stream: bool = False, timeout: int | None = None
+    ) -> tuple[int, str | CancellableStream]:
+        return self.execute_async(cmd, stream, timeout)  # type: ignore
+
+    async def execute_async(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
         timeout = timeout or self.timeout
@@ -475,7 +565,7 @@ class DockerSSHBox(Sandbox):
         if len(commands) > 1:
             all_output = ''
             for command in commands:
-                exit_code, output = self.execute(command)
+                exit_code, output = await self.execute_async(command)  # type: ignore
                 if all_output:
                     all_output += '\r\n'
                 all_output += str(output)
@@ -483,18 +573,23 @@ class DockerSSHBox(Sandbox):
                     return exit_code, all_output
             return 0, all_output
 
-        self.ssh.sendline(cmd)
+        # Prepare environment variables
+        env_exports = ' '.join([f"export {key}={json.dumps(value)}" for key, value in self._env.items()])
+        full_cmd = f"{env_exports} && {cmd}"
+
+        self.ssh.sendline(full_cmd)
         if stream:
-            return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
-        success = self.ssh.prompt(timeout=timeout)
+            return 0, SSHExecCancellableStream(self.ssh, full_cmd, self.timeout)
+
+        success = await asyncio.to_thread(self.ssh.prompt, timeout=timeout)
         if not success:
-            return self._send_interrupt(cmd)
+            return await self._send_interrupt(full_cmd)  # type: ignore
         command_output = self.ssh.before
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             self.ssh.sendline('\n')
-            timeout_not_reached = self.ssh.prompt(timeout=1)
+            timeout_not_reached = await asyncio.to_thread(self.ssh.prompt, timeout=1)
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
                 break
@@ -506,14 +601,14 @@ class DockerSSHBox(Sandbox):
 
         # get the exit code
         self.ssh.sendline('echo $?')
-        self.ssh.prompt()
+        await asyncio.to_thread(self.ssh.prompt)
         exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
         while not exit_code_str:
-            self.ssh.prompt(timeout=1)
+            await asyncio.to_thread(self.ssh.prompt, timeout=1)
             exit_code_str = self.ssh.before.strip()
             if time.time() - _start_time > timeout:
-                return self._send_interrupt(
+                return await self._send_interrupt(  # type: ignore
                     cmd, command_output, ignore_last_output=True
                 )
         cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
@@ -527,15 +622,19 @@ class DockerSSHBox(Sandbox):
 
         return exit_code, command_output
 
+    @async_to_sync
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        return self.copy_to_async(host_src, sandbox_dest, recursive)
+
+    async def copy_to_async(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist
-        exit_code, logs = self.container.exec_run(
+        exit_code, logs = await self.container_exec_run(  # type: ignore
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
         if exit_code != 0:
-            raise Exception(
+            raise RuntimeError(
                 f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
             )
 
@@ -594,7 +693,7 @@ class DockerSSHBox(Sandbox):
             logger.info('Container removed')
             elapsed = 0
             while container.status != 'exited':
-                time.sleep(1)
+                time.sleep(2)
                 elapsed += 1
                 if elapsed > self.timeout:
                     break
@@ -602,10 +701,10 @@ class DockerSSHBox(Sandbox):
         except docker.errors.NotFound:
             pass
 
-    def get_working_directory(self):
-        exit_code, result = self.execute('pwd')
+    async def get_working_directory(self):
+        exit_code, result = await self.execute('pwd')
         if exit_code != 0:
-            raise Exception('Failed to get working directory')
+            raise RuntimeError('Failed to get working directory')
         return str(result).strip()
 
     @property
@@ -628,9 +727,9 @@ class DockerSSHBox(Sandbox):
     def use_host_network(self):
         return config.use_host_network
 
-    def is_container_running(self):
+    async def is_container_running(self):
         try:
-            container = self.docker_client.containers.get(self.container_name)
+            container = await self.docker_client.containers.get(self.container_name)
             if container.status == 'running':
                 self.container = container
                 return True
@@ -641,7 +740,6 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         mount_dir = config.workspace_mount_path
-        logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
@@ -694,40 +792,95 @@ class DockerSSHBox(Sandbox):
 
         # wait for container to be ready
         elapsed = 0
-        while self.container.status != 'running':
-            if self.container.status == 'exited':
-                logger.info('container exited')
+        while True:
+            container_info = self.docker_client.containers.get(self.container_name)
+            if container_info.status == 'running':
+                break
+            if container_info.status == 'exited':
                 logger.info('container logs:')
-                logger.info(self.container.logs())
+                logs = container_info.logs()
+                logger.info(logs.decode('utf-8'))
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = self.docker_client.containers.get(self.container_name)
             logger.info(
-                f'waiting for container to start: {elapsed}, container status: {self.container.status}'
+                f'waiting for container to start: {elapsed}, container status: {container_info.status}'
             )
             if elapsed > self.timeout:
                 break
-        if self.container.status != 'running':
-            raise Exception('Failed to start container')
+        if container_info.status != 'running':
+            raise RuntimeError('Failed to start container')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
+    @async_to_sync
     def close(self):
-        containers = self.docker_client.containers.list(all=True)
-        for container in containers:
-            try:
-                if container.name.startswith(self.container_name):
-                    if config.persist_sandbox:
-                        container.stop()
-                    else:
-                        # only remove the container we created
-                        # otherwise all other containers with the same prefix will be removed
-                        # which will mess up with parallel evaluation
-                        container.remove(force=True)
-            except docker.errors.NotFound:
-                pass
-        self.docker_client.close()
+        return self.aclose()
 
+    async def aclose(self):
+        if self._cleanup_done:
+            return
+
+        try:
+            if hasattr(self, 'docker_client'):
+                for container in self.docker_client.containers.list(all=True):
+                    if container.name.startswith(self.container_name):
+                        try:
+                            if config.persist_sandbox:
+                                await asyncio.to_thread(container.stop)
+                            else:
+                                await asyncio.to_thread(container.remove, force=True)
+                        except docker.errors.NotFound:
+                            pass
+                        except Exception as e:
+                            logger.error(f"Error during container cleanup: {e}")
+
+                # Close the Docker client
+                if hasattr(self.docker_client, 'close'):
+                    await asyncio.to_thread(self.docker_client.close)
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        finally:
+            self._cleanup_done = True
+
+    def sync_cleanup(self):
+        if self._cleanup_done:
+            return
+
+        try:
+            if hasattr(self, 'docker_client'):
+                for container in self.docker_client.containers.list(all=True):
+                    if container.name.startswith(self.container_name):
+                        try:
+                            if config.persist_sandbox:
+                                container.stop()
+                            else:
+                                container.remove(force=True)
+                        except docker.errors.NotFound:
+                            pass
+                        except Exception as e:
+                            logger.error(f"Error during container cleanup: {e}")
+
+                self.docker_client.close()
+        except Exception as e:
+            logger.error(f"Error during sync cleanup: {e}")
+        finally:
+            self._cleanup_done = True
+
+    def __del__(self):
+        if hasattr(self, '_cleanup_done') and not self._cleanup_done:
+            self.sync_cleanup()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.aclose()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.sync_cleanup()
 
 if __name__ == '__main__':
     try:
@@ -735,7 +888,6 @@ if __name__ == '__main__':
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
-
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit."
     )

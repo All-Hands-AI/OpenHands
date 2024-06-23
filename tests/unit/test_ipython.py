@@ -1,6 +1,6 @@
 import pathlib
 import tempfile
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
@@ -21,38 +21,49 @@ def temp_dir(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_run_python_backticks():
+async def test_run_python_backticks(temp_dir):
     # Create a mock event_stream
     mock_event_stream = MagicMock()
 
     test_code = "print('Hello, `World`!\n')"
 
     # Mock the asynchronous sandbox execute method
-    mock_sandbox_execute = MagicMock()
+    mock_sandbox_execute = AsyncMock()
     mock_sandbox_execute.side_effect = [
-        (0, ''),  # Initial call during DockerSSHBox initialization
-        (0, ''),  # Initial call during DockerSSHBox initialization
-        (0, ''),  # Initial call during DockerSSHBox initialization
+        (0, ''),  # mkdir -p /tmp
+        (0, ''),  # git config user.name
+        (0, ''),  # git config user.email
         (0, ''),  # Write command
         (0, test_code),  # Execute command
     ]
 
+    # Create a mock sandbox
+    mock_sandbox = AsyncMock()
+    mock_sandbox.execute = mock_sandbox_execute
+    mock_sandbox.get_working_directory = MagicMock(return_value=temp_dir)
+
     # Set up the patches for the runtime and sandbox
-    with patch(
-        'opendevin.runtime.docker.ssh_box.DockerSSHBox.execute',
-        new=mock_sandbox_execute,
-    ):
+    with patch.object(config, 'workspace_base', new=temp_dir), \
+         patch.object(config, 'workspace_mount_path', new=temp_dir), \
+         patch.object(config, 'run_as_devin', new='true'), \
+         patch.object(config.sandbox, 'box_type', new='ssh'), \
+         patch('opendevin.runtime.docker.ssh_box.DockerSSHBox.execute', new=mock_sandbox_execute), \
+         patch('opendevin.runtime.server.runtime.ServerRuntime._initialize', new=AsyncMock()):
+
         # Initialize the runtime with the mock event_stream
         runtime = ServerRuntime(event_stream=mock_event_stream)
+        runtime.sandbox = mock_sandbox  # Set the mock sandbox
+
+        # Manually set the initialization complete event
+        runtime._initialization_complete.set()
 
         # Define the test action with a simple IPython command
         action = IPythonRunCellAction(code=test_code)
+        observation = await runtime.run_ipython(action)
 
-        # Call the run_ipython method with the test action
-        result = await runtime.run_action(action)
-
-        # Assert that the result is an instance of IPythonRunCellObservation
-        assert isinstance(result, IPythonRunCellObservation)
+        assert isinstance(observation, IPythonRunCellObservation)
+        assert observation.content == test_code
+        assert observation.code == test_code
 
         # Assert that the execute method was called with the correct commands
         expected_write_command = (
@@ -68,10 +79,6 @@ async def test_run_python_backticks():
                 call(expected_execute_command),
             ]
         )
-
-        assert (
-            test_code == result.content
-        ), f'The output should contain the expected print output, got: {result.content}'
 
 
 def test_sandbox_jupyter_plugin_backticks(temp_dir):

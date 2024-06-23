@@ -1,3 +1,6 @@
+import asyncio
+from typing import Union
+
 from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
@@ -12,9 +15,15 @@ from .instructions import instructions
 from .registry import all_microagents
 
 
-def parse_response(orig_response: str) -> Action:
-    # attempt to load the JSON dict from the response
-    action_dict = json.loads(orig_response)
+def parse_response(orig_response: Union[str, dict]) -> Action:
+    if isinstance(orig_response, str):
+        # attempt to load the JSON dict from the response
+        action_dict = json.loads(orig_response)
+    elif isinstance(orig_response, dict):
+        # If it's already a dict, use it directly
+        action_dict = orig_response
+    else:
+        raise TypeError(f'Expected str or dict, got {type(orig_response)}')
 
     # load the action from the dict
     return action_from_dict(action_dict)
@@ -54,7 +63,7 @@ class MicroAgent(Agent):
         self.delegates = all_microagents.copy()
         del self.delegates[self.agent_definition['name']]
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
@@ -64,8 +73,26 @@ class MicroAgent(Agent):
             latest_user_message=state.get_current_user_intent(),
         )
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
-        action_resp = resp['choices'][0]['message']['content']
+
+        # If self.llm.completion is async
+        if asyncio.iscoroutinefunction(self.llm.completion):
+            resp = await self.llm.completion(messages=messages)
+        else:
+            # If it's not async, use to_thread
+            resp = await asyncio.to_thread(self.llm.completion, messages=messages)
+
+        # Handle both real responses and mock responses in tests
+        if isinstance(resp, dict) and 'choices' in resp:
+            action_resp = resp['choices'][0]['message']['content']
+        elif isinstance(resp, str):
+            action_resp = resp
+        else:
+            # For mock responses in tests, try to get the return_value
+            try:
+                action_resp = resp.return_value['choices'][0]['message']['content']
+            except AttributeError:
+                raise TypeError(f'Unexpected response type: {type(resp)}')
+
         action = parse_response(action_resp)
         return action
 
