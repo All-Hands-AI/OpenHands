@@ -144,6 +144,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent_class
                 ),
+                sid=instance['task_id'],
             )
         )
         # ======= Attempt to evaluate the agent's edits =======

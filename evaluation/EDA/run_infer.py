@@ -128,6 +128,7 @@ def process_instance(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            sid=instance['text'].strip(),
         )
     )
     # ======= Attempt to evaluate the agent's edits =======

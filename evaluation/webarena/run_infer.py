@@ -64,6 +64,7 @@ def process_instance(
             'PLACEHOLDER_GOAL',
             runtime_tools_config=runtime_tools_config,
             sandbox=docker_sandbox,
+            sid=env_id,
         )
     )
 
