@@ -14,6 +14,7 @@ interface FeedbackModalProps {
   handlePermissionsChange: (permissions: "public" | "private") => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onSendFeedback: () => void;
 }
 
 function FeedbackModal({
@@ -22,10 +23,12 @@ function FeedbackModal({
   handlePermissionsChange,
   isOpen,
   onOpenChange,
+  onSendFeedback,
 }: FeedbackModalProps) {
   const { t } = useTranslation();
 
   const handleSendFeedback = () => {
+    onSendFeedback();
     sendFeedback(feedback)
       .then((response) => {
         if (response.statusCode === 200) {
@@ -63,7 +66,7 @@ function FeedbackModal({
         {
           label: t(I18nKey.FEEDBACK$CANCEL_LABEL),
           className: "bg-neutral-500 rounded-lg",
-          action() {},
+          action() { },
           closeAfterAction: true,
         },
       ]}
