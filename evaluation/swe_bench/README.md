@@ -42,7 +42,6 @@ Add the following configurations:
 [core]
 max_iterations = 100
 cache_dir = "/tmp/cache"
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
 ssh_hostname = "localhost"
 sandbox_timeout = 120
@@ -153,6 +152,33 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 - `logs/`: a directory of test logs
 - `report.json`: a JSON file that contains keys like `"resolved"` pointing to instance IDs that are resolved by the agent.
 - `summary.json`: a JSON file contains more fine-grained information for each test instance.
+
+## Visualize Results
+
+First you need to clone `https://huggingface.co/spaces/OpenDevin/evaluation` and add your own running results from opendevin into the `outputs` of the cloned repo.
+
+```bash
+git clone https://huggingface.co/spaces/OpenDevin/evaluation
+```
+
+**(optional) setup streamlit environment with conda**:
+```bash
+conda create -n streamlit python=3.10
+conda activate streamlit
+pip install streamlit altair st_pages
+```
+
+**run the visualizer**:
+Then, in a separate Python environment with `streamlit` library, you can run the following:
+
+```bash
+# Make sure you are inside the cloned `evaluation` repo
+conda activate streamlit # if you follow the optional conda env setup above
+streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 0.0.0.0
+```
+
+Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
+
 
 
 ## View Result Summary
