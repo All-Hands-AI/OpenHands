@@ -3,7 +3,7 @@ from datetime import datetime
 
 from json_repair import repair_json
 
-from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.exceptions import LLMResponseError
 from opendevin.events.event import Event
 from opendevin.events.serialization import event_to_dict
 
@@ -50,7 +50,7 @@ def loads(json_str, **kwargs):
                     json_str = repair_json(response)
                     return json.loads(json_str, **kwargs)
                 except (json.JSONDecodeError, ValueError, TypeError) as e:
-                    raise LLMOutputError(
+                    raise LLMResponseError(
                         'Invalid JSON in response. Please make sure the response is a valid JSON object.'
                     ) from e
-    raise LLMOutputError('No valid JSON object found in response.')
+    raise LLMResponseError('No valid JSON object found in response.')

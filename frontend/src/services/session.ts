@@ -84,7 +84,7 @@ class Session {
         Session._history.push(data);
       } catch (err) {
         // TODO: report the error
-        console.error("Error parsing JSON data", err);
+        toast.error("ws", "Error handing message.");
         return;
       }
       if (data.error && data.error_code === 401) {

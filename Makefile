@@ -2,7 +2,7 @@ SHELL=/bin/bash
 # Makefile for OpenDevin project
 
 # Variables
-DOCKER_IMAGE = ghcr.io/opendevin/sandbox
+DOCKER_IMAGE = ghcr.io/opendevin/sandbox:main
 BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
@@ -131,6 +131,10 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@if [ -z "${TZ}" ]; then \
+		echo "Defaulting TZ (timezone) to UTC"; \
+		export TZ="UTC"; \
+	fi
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
