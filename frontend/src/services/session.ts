@@ -93,8 +93,6 @@ class Session {
         data = JSON.parse(e.data);
         Session._history.push(data);
       } catch (err) {
-        console.error("WebSocket message parsing error:", err);
-        // To the user display only a generic error message
         toast.error(
           "ws",
           "Error processing server message. Please try again or contact support if the issue persists.",

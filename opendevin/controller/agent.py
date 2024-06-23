@@ -44,7 +44,7 @@ class Agent(ABC):
         return self._complete
 
     @abstractmethod
-    async def step(self, state: 'State') -> 'Action':
+    def step(self, state: 'State') -> 'Action':
         """
         Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
@@ -117,3 +117,13 @@ class Agent(ABC):
         if not bool(cls._registry):
             raise AgentNotRegisteredError()
         return list(cls._registry.keys())
+
+
+class AsyncAgent(Agent):
+    @abstractmethod
+    async def async_step(self, state: 'State') -> 'Action':
+        """
+        Starts the execution of the assigned instruction asynchronously. This method should
+        be implemented by subclasses to define the specific execution logic.
+        """
+        pass

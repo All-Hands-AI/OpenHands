@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional, Tuple, Type
 
-from opendevin.controller.agent import Agent
+from opendevin.controller.agent import Agent, AsyncAgent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
@@ -349,7 +349,10 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            action = await self.agent.step(self.state)
+            if isinstance(self.agent, AsyncAgent):
+                action = await self.agent.async_step(self.state)
+            else:
+                action = self.agent.step(self.state)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
