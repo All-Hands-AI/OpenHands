@@ -99,7 +99,6 @@ class Session {
         data = JSON.parse(e.data);
         Session._history.push(data);
       } catch (err) {
-        // TODO: report the error
         toast.error(
           "ws",
           translate(I18nKey.SESSION$SESSION_HANDLING_ERROR_MESSAGE),
