@@ -23,7 +23,7 @@ async def browse(action, browser: BrowserEnv | None) -> BrowserOutputObservation
         raise ValueError(f'Invalid action type: {action.action}')
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
-        obs = browser.step(action_str)
+        obs = await browser.step(action_str)
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             open_pages_urls=obs['open_pages_urls'],  # list of open pages

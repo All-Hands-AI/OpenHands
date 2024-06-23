@@ -1,13 +1,22 @@
 import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
 import { getToken, setToken, clearToken } from "./auth";
+import AgentState from "#/types/AgentState";
 import ActionType from "#/types/ActionType";
 import { getSettings } from "./settings";
+
+// Define a type for the messages
+type Message = {
+  action: ActionType;
+  args: Record<string, unknown>;
+};
 
 class Session {
   private static _socket: WebSocket | null = null;
 
   private static _latest_event_id: number = -1;
+
+  private static _messageQueue: Message[] = [];
 
   public static _history: Record<string, unknown>[] = [];
 
@@ -72,6 +81,7 @@ class Session {
       toast.success("ws", "Connected to server.");
       Session._connecting = false;
       Session._initializeAgent();
+      Session._flushQueue();
       Session.callbacks.open?.forEach((callback) => {
         callback(e);
       });
@@ -83,8 +93,12 @@ class Session {
         data = JSON.parse(e.data);
         Session._history.push(data);
       } catch (err) {
-        // TODO: report the error
-        console.error("Error parsing JSON data", err);
+        console.error("WebSocket message parsing error:", err);
+        // Display a generic error message only to the user
+        toast.error(
+          "ws",
+          "Error processing server message. Please try again or contact support if the issue persists.",
+        );
         return;
       }
       if (data.error && data.error_code === 401) {
@@ -129,9 +143,20 @@ class Session {
     Session._socket = null;
   }
 
+  private static _flushQueue(): void {
+    while (Session._messageQueue.length > 0) {
+      const message = Session._messageQueue.shift();
+      if (message) {
+        Session.send(JSON.stringify(message));
+      }
+    }
+  }
+
   static send(message: string): void {
+    const messageObject: Message = JSON.parse(message);
+
     if (Session._connecting) {
-      setTimeout(() => Session.send(message), 1000);
+      Session._messageQueue.push(messageObject);
       return;
     }
     if (!Session.isConnected()) {
@@ -175,6 +200,18 @@ class Session {
       return;
     }
     Session.callbacks[event].push(...callbacks);
+  }
+
+  static cancelCurrentAction(): void {
+    const changeStateEvent: Message = {
+      action: ActionType.CHANGE_AGENT_STATE,
+      args: {
+        agent_state: AgentState.STOPPED,
+        thought: "User requested cancellation",
+        status_message: "Task cancelled by user.",
+      },
+    };
+    Session.send(JSON.stringify(changeStateEvent));
   }
 }
 

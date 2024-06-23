@@ -37,8 +37,8 @@ class SWEAgent(Agent):
         self.cur_file: str = ''
         self.cur_line: int = 0
 
-    def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
-        resp = self.llm.completion(
+    async def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
+        resp = await self.llm.completion(
             messages=messages,
             temperature=0.05,
         )
@@ -57,7 +57,7 @@ class SWEAgent(Agent):
             self.cur_file = action.path
             self.cur_line = action.start
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         """
         SWE-Agent step:
             1. Get context - past actions, custom commands, current step
@@ -91,7 +91,7 @@ class SWEAgent(Agent):
         # print('\n\n'.join([c+m['content']+'\033[0m' for c, m in zip(clrs, msgs)]))
 
         # send it over
-        action, thought = self._think_act(messages=msgs)
+        action, thought = await self._think_act(messages=msgs)
 
         # be robust with malformed responses
         start_msg_len = len(msgs)
@@ -99,7 +99,7 @@ class SWEAgent(Agent):
             error = NO_ACTION(thought)
             error_msg = {'content': error, 'role': 'user'}
             msgs.append(error_msg)
-            action, thought = self._think_act(messages=msgs)
+            action, thought = await self._think_act(messages=msgs)
 
         if not action:
             action = MessageAction(thought)

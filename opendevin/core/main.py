@@ -1,5 +1,6 @@
 import asyncio
 import os
+import signal
 import sys
 from typing import Callable, Optional, Type
 
@@ -17,6 +18,35 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.server.runtime import ServerRuntime
+
+_is_shutting_down = False
+
+
+async def shutdown(
+    sig: signal.Signals,
+    loop: asyncio.AbstractEventLoop,
+    shutdown_event: asyncio.Event,
+) -> None:
+    global _is_shutting_down
+    if _is_shutting_down:
+        return
+    _is_shutting_down = True
+
+    logger.info(f'Received exit signal {sig.name}...')
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
+    shutdown_event.set()
+    loop.stop()
+
+
+def create_signal_handler(
+    sig: signal.Signals, loop: asyncio.AbstractEventLoop, shutdown_event: asyncio.Event
+) -> Callable[[], None]:
+    def handler() -> None:
+        asyncio.create_task(shutdown(sig, loop, shutdown_event))
+
+    return handler
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -81,6 +111,12 @@ async def main(
         )
         llm = LLM(args.model_name)
 
+    loop = asyncio.get_running_loop()
+    shutdown_event = asyncio.Event()
+    signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
+    for sig in signals:
+        loop.add_signal_handler(sig, create_signal_handler(sig, loop, shutdown_event))
+
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
@@ -92,52 +128,81 @@ async def main(
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
+
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
-    runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
-    runtime.init_runtime_tools(
-        controller.agent.runtime_tools,
-        is_async=False,
-        runtime_tools_config=runtime_tools_config,
-    )
 
-    # browser eval specific
-    # TODO: move to a better place
-    if runtime.browser and runtime.browser.eval_dir:
-        logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
-        with open(
-            os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
-        ) as f:
-            task = f.read()
-            logger.info(f'Dynamic Eval task: {task}')
+    try:
+        runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
+        runtime.init_runtime_tools(
+            controller.agent.runtime_tools,
+            is_async=False,
+            runtime_tools_config=runtime_tools_config,
+        )
 
-    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
+        # browser eval specific
+        # TODO: move to a better place
+        if runtime.browser and runtime.browser.eval_dir:
+            logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
+            with open(
+                os.path.join(runtime.browser.eval_dir, 'goal.txt'),
+                'r',
+                encoding='utf-8',
+            ) as f:
+                task = f.read()
+                logger.info(f'Dynamic Eval task: {task}')
 
-    async def on_event(event: Event):
-        if isinstance(event, AgentStateChangedObservation):
-            if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                if exit_on_message:
-                    message = '/exit'
-                elif fake_user_response_fn is None:
-                    message = input('Request user input >> ')
-                else:
-                    message = fake_user_response_fn(controller.get_state())
-                action = MessageAction(content=message)
-                await event_stream.add_event(action, EventSource.USER)
+        await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.get_agent_state() not in [
-        AgentState.FINISHED,
-        AgentState.REJECTED,
-        AgentState.ERROR,
-        AgentState.PAUSED,
-        AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+        async def on_event(event: Event):
+            if isinstance(event, AgentStateChangedObservation):
+                if event.agent_state == AgentState.AWAITING_USER_INPUT:
+                    if exit_on_message:
+                        message = '/exit'
+                    elif fake_user_response_fn is None:
+                        message = input('Request user input >> ')
+                    else:
+                        message = fake_user_response_fn(controller.get_state())
+                    action = MessageAction(content=message)
+                    await event_stream.add_event(action, EventSource.USER)
 
-    await controller.close()
-    runtime.close()
+        event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
+
+        # Use an event to keep the main coroutine running
+        shutdown_event = asyncio.Event()
+
+        while not _is_shutting_down:
+            if controller.get_agent_state() in [
+                AgentState.FINISHED,
+                AgentState.REJECTED,
+                AgentState.ERROR,
+                AgentState.PAUSED,
+                AgentState.STOPPED,
+            ]:
+                break
+
+            try:
+                await asyncio.wait_for(shutdown_event.wait(), timeout=1)
+                break  # Exit the loop if shutdown_event is set
+            except asyncio.TimeoutError:
+                # Timeout occurred, continue the loop
+                pass
+
+    except asyncio.CancelledError:
+        logger.info('Main task cancelled')
+    finally:
+        await controller.close()
+        runtime.close()
+        logger.info('Successfully shut down the OpenDevin server.')
+        if not loop.is_closed():
+            loop.stop()
+
     return controller.get_state()
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info('Received keyboard interrupt, exiting...')
+    finally:
+        logger.info('OpenDevin has shut down.')

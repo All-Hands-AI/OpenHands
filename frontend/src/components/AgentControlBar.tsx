@@ -4,10 +4,12 @@ import { useSelector } from "react-redux";
 import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
+import StopIcon from "#/assets/stop"; // You'll need to change/create this icon
 import { changeAgentState } from "#/services/agentStateService";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
+import Session from "#/services/session";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
@@ -77,6 +79,10 @@ function AgentControlBar() {
     changeAgentState(action);
   };
 
+  const handleCancelAction = () => {
+    Session.cancelCurrentAction();
+  };
+
   useEffect(() => {
     if (curAgentState === desiredState) {
       if (curAgentState === AgentState.STOPPED) {
@@ -126,6 +132,14 @@ function AgentControlBar() {
         handleAction={handleAction}
       >
         <ArrowIcon />
+      </ActionButton>
+      <ActionButton
+        isDisabled={isLoading || curAgentState === AgentState.STOPPED}
+        content="Cancel current task"
+        action={AgentState.STOPPED}
+        handleAction={handleCancelAction}
+      >
+        <StopIcon />
       </ActionButton>
     </div>
   );

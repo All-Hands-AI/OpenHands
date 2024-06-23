@@ -131,6 +131,11 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
+
+        # Add cancellation check
+        if isinstance(action, CmdKillAction):
+            return await self.kill(action)
+
         observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
