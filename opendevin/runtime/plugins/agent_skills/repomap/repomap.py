@@ -23,10 +23,10 @@ from pygments.util import ClassNotFound
 from tqdm import tqdm
 from tree_sitter_languages import get_language, get_parser
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.llm.llm import LLM
-
-from .utils import is_image_file
+if __package__ is None or __package__ == '':
+    from utils import get_token_count_from_text, is_image_file
+else:
+    from .utils import get_token_count_from_text, is_image_file
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter('ignore', category=FutureWarning)
@@ -49,7 +49,7 @@ class RepoMap:
 
     def __init__(
         self,
-        llm: LLM,
+        model_name,
         map_tokens=1024,
         root=None,
         repo_content_prefix=None,
@@ -68,18 +68,16 @@ class RepoMap:
             verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
             max_context_window (int, optional): The maximum context window size. Defaults to None.
         """
-        logger.info('root arg: ' + str(root))
         if not root:
             root = os.getcwd()
         self.root = root
-        logger.info('self.root: ' + str(self.root))
 
         self.load_tags_cache()
-
+        self.model_name = model_name
         self.max_map_tokens = map_tokens
         self.max_context_window = max_context_window
 
-        self.token_count = llm.get_token_count_from_text
+        self.token_count = get_token_count_from_text
         self.repo_content_prefix = repo_content_prefix
         self.abs_fnames: Any = set()
         if aider_ignore_file:
@@ -138,8 +136,8 @@ class RepoMap:
         if not files_listing:
             return
 
-        num_tokens = self.token_count(files_listing)
-        logger.info(f'Repo-map: {num_tokens/1024:.1f} k-tokens')
+        # num_tokens = self.token_count(self.model_name, files_listing)
+        # logger.info(f'Repo-map: {num_tokens/1024:.1f} k-tokens')
 
         if chat_files:
             other = 'other '
@@ -528,7 +526,7 @@ class RepoMap:
 
         while lower_bound <= upper_bound:
             tree = self.to_tree(ranked_tags[:middle], chat_rel_fnames)
-            num_tokens = self.token_count(tree)
+            num_tokens = self.token_count(self.model_name, tree)
 
             if num_tokens < max_map_tokens and num_tokens > best_tree_tokens:
                 best_tree = tree
@@ -637,11 +635,8 @@ class RepoMap:
 
     def get_history_aware_repo_map(self, messages: list) -> str:
         cur_msg_text = self.get_cur_message_text(messages)
-        logger.debug(f'Current message text: {cur_msg_text}')
         mentioned_fnames = self.get_file_mentions(cur_msg_text)
-        logger.debug(f'Mentioned fnames: {mentioned_fnames}')
         mentioned_idents = self.get_ident_mentions(cur_msg_text)
-        logger.debug(f'Mentioned idents: {mentioned_idents}')
 
         other_files = set(self.get_all_abs_files()) - set(self.abs_fnames)
         repo_content = self.get_repo_map(
@@ -727,17 +722,17 @@ class RepoMap:
                 item.path for item in repo.tree().traverse() if item.type == 'blob'
             ]
         except git.InvalidGitRepositoryError:
-            logger.error(
-                'The directory is not a git repository. RepoMap will not be enabled.'
-            )
+            # logger.error(
+            #     'The directory is not a git repository. RepoMap will not be enabled.'
+            # )
             return []
         except git.NoSuchPathError:
-            logger.error('The directory does not exist. RepoMap will not be enabled.')
+            # logger.error('The directory does not exist. RepoMap will not be enabled.')
             return []
-        except Exception as e:
-            logger.error(
-                f'An error occurred when getting tracked files in git repo: {e}'
-            )
+        except Exception:
+            # logger.error(
+            #     f'An error occurred when getting tracked files in git repo: {e}'
+            # )
             return []
 
         # Add staged files
@@ -818,7 +813,8 @@ class RepoMap:
             return
 
     def log_error(self, message):
-        logger.error(f'Error when constructing repomap: {message}')
+        # logger.error(f'Error when constructing repomap: {message}')
+        pass
 
     def ignored_file(self, fname):
         if not self.aider_ignore_file or not self.aider_ignore_file.is_file():

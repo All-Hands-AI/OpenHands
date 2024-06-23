@@ -23,13 +23,18 @@ import shutil
 import subprocess
 import tempfile
 from inspect import signature
-from typing import Optional
+from typing import Any, Optional
 
 import docx
 import PyPDF2
 from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
+
+if __package__ is None or __package__ == '':
+    from repomap import RepoMap, get_model_max_input_tokens
+else:
+    from .repomap import RepoMap, get_model_max_input_tokens
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
@@ -49,6 +54,8 @@ OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
 MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
 
 OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
+
+AGENT_MODEL = os.getenv('AGENT_MODEL', 'gpt-4o-2024-05-13')
 
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
@@ -845,6 +852,28 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
+@update_pwd_decorator
+def get_repomap(dir_path: str) -> None:
+    """Gets the `RepoMap` for the given directory and print it.
+
+    `RepoMap` is a concise map of the directory that includes the most important classes and functions along with their types and call signatures.
+
+    Args:
+        dir_path: str: The path to the directory to get the `RepoMap` for.
+    """
+    repo_map = RepoMap(
+        model_name=AGENT_MODEL,
+        map_tokens=1024,
+        root=dir_path,  # TODO: fix this
+        repo_content_prefix='\nHere are summaries of some files present in the workspace',  # TODO: fix this to path
+        max_context_window=get_model_max_input_tokens(AGENT_MODEL),
+    )
+
+    messages: Any = []  # FIXME: change to message history obtained from `EventStream` after
+    repo_content = repo_map.get_history_aware_repo_map(messages)
+    print(repo_content)
+
+
 __all__ = [
     # file operation
     'open_file',
@@ -862,6 +891,8 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
+    # others
+    'get_repomap',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:

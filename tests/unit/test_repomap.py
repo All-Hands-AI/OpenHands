@@ -6,14 +6,15 @@ Description of changes: removed redundant methods, attributes, and adapted some 
 import os
 import unittest
 
-from opendevin.indexing.repomap.repomap import RepoMap
-from opendevin.indexing.repomap.utils import IgnorantTemporaryDirectory
-from opendevin.llm.llm import LLM
+from opendevin.runtime.plugins.agent_skills.repomap.repomap import RepoMap
+from opendevin.runtime.plugins.agent_skills.repomap.utils import (
+    IgnorantTemporaryDirectory,
+)
 
 
 class TestRepoMap(unittest.TestCase):
     def setUp(self):
-        self.GPT35 = LLM('gpt-3.5-turbo')
+        self.GPT35_MODEL_NAME = 'gpt-3.5-turbo'
 
     def test_get_repo_map(self):
         # Create a temporary directory with sample files for testing
@@ -29,7 +30,7 @@ class TestRepoMap(unittest.TestCase):
                 with open(os.path.join(temp_dir, file), 'w') as f:
                     f.write('')
 
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
+            repo_map = RepoMap(model_name=self.GPT35_MODEL_NAME, root=temp_dir)
             other_files = [os.path.join(temp_dir, file) for file in test_files]
             result = repo_map.get_repo_map([], other_files)
 
@@ -76,7 +77,7 @@ print(my_function(3, 4))
             with open(os.path.join(temp_dir, test_file3), 'w') as f:
                 f.write(file_content3)
 
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
+            repo_map = RepoMap(model_name=self.GPT35_MODEL_NAME, root=temp_dir)
             other_files = [
                 os.path.join(temp_dir, test_file1),
                 os.path.join(temp_dir, test_file2),
@@ -110,7 +111,7 @@ print(my_function(3, 4))
                 with open(os.path.join(temp_dir, file), 'w') as f:
                     f.write('')
 
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
+            repo_map = RepoMap(model_name=self.GPT35_MODEL_NAME, root=temp_dir)
 
             other_files = [os.path.join(temp_dir, file) for file in test_files]
             result = repo_map.get_repo_map([], other_files)
@@ -136,7 +137,7 @@ print(my_function(3, 4))
                 with open(os.path.join(temp_dir, file), 'w') as f:
                     f.write('def foo(): pass\n')
 
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
+            repo_map = RepoMap(model_name=self.GPT35_MODEL_NAME, root=temp_dir)
             test_files = [os.path.join(temp_dir, file) for file in test_files]
             result = repo_map.get_repo_map(test_files[:2], test_files[2:])
 
@@ -152,7 +153,7 @@ print(my_function(3, 4))
 
 class TestRepoMapTypescript(unittest.TestCase):
     def setUp(self):
-        self.GPT35 = LLM('gpt-3.5-turbo')
+        self.GPT35_MODEL_NAME = 'gpt-3.5-turbo'
 
     def test_get_repo_map_typescript(self):
         # Create a temporary directory with a sample TypeScript file
@@ -191,7 +192,7 @@ export function myFunction(input: number): number {
             with open(os.path.join(temp_dir, test_file_ts), 'w') as f:
                 f.write(file_content_ts)
 
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
+            repo_map = RepoMap(model_name=self.GPT35_MODEL_NAME, root=temp_dir)
             other_files = [os.path.join(temp_dir, test_file_ts)]
             result = repo_map.get_repo_map([], other_files)
 
