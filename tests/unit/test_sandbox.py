@@ -1,4 +1,5 @@
-import os, shutil
+import os
+import shutil
 from unittest.mock import patch
 
 import pytest
