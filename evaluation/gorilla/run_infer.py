@@ -117,6 +117,7 @@ def process_instance(
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent_class
                 ),
+                sid=question_id,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
