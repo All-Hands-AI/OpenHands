@@ -5,7 +5,7 @@ from functools import partial
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from litellm import completion as litellm_completion
+from litellm import acompletion as litellm_acompletion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
@@ -162,7 +162,7 @@ class LLM:
                 self.max_output_tokens = 1024
 
         self._completion = partial(
-            litellm_completion,
+            litellm_acompletion,
             model=self.model_name,
             api_key=self.api_key,
             base_url=self.base_url,
@@ -194,7 +194,7 @@ class LLM:
         )
         async def wrapper(*args, **kwargs):
             """
-            Wrapper for the litellm completion function. Logs the input and output of the completion function.
+            Wrapper for the litellm acompletion function. Logs the input and output of the completion function.
             """
 
             # some callers might just send the messages directly
@@ -218,12 +218,7 @@ class LLM:
                         return True
                     await asyncio.sleep(0.1)  # Check every 100ms
 
-            async def run_litellm():
-                return await asyncio.to_thread(
-                    partial(completion_unwrapped, *args, **kwargs)
-                )
-
-            litellm_task = asyncio.create_task(run_litellm())
+            litellm_task = asyncio.create_task(completion_unwrapped(*args, **kwargs))
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
