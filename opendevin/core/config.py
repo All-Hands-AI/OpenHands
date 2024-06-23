@@ -156,6 +156,7 @@ class AppConfig(metaclass=Singleton):
         sandbox_timeout: The timeout for the sandbox.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
+        enable_repomap: Whether to call the `get_repomap` agentskill at the beginning of each task for evaluation.
     """
 
     llm: LLMConfig = field(default_factory=LLMConfig)

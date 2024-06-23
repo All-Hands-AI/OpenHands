@@ -40,9 +40,6 @@ class TestRepoMap(unittest.TestCase):
             self.assertIn('test_file3.md', result)
             self.assertIn('test_file4.json', result)
 
-            # close the open cache files, so Windows won't error
-            del repo_map
-
     def test_get_repo_map_with_identifiers(self):
         # Create a temporary directory with a sample Python file containing identifiers
         test_file1 = 'test_file_with_identifiers.py'
@@ -92,9 +89,6 @@ print(my_function(3, 4))
             self.assertIn('my_function', result)
             self.assertIn('test_file_pass.py', result)
 
-            # close the open cache files, so Windows won't error
-            del repo_map
-
     def test_get_repo_map_all_files(self):
         test_files = [
             'test_file0.py',
@@ -120,9 +114,6 @@ print(my_function(3, 4))
             for file in test_files:
                 self.assertIn(file, result)
 
-            # close the open cache files, so Windows won't error
-            del repo_map
-
     def test_get_repo_map_excludes_added_files(self):
         # Create a temporary directory with sample files for testing
         test_files = [
@@ -146,9 +137,6 @@ print(my_function(3, 4))
             self.assertNotIn('test_file2.py', result)
             self.assertIn('test_file3.md', result)
             self.assertIn('test_file4.json', result)
-
-            # close the open cache files, so Windows won't error
-            del repo_map
 
 
 class TestRepoMapTypescript(unittest.TestCase):
@@ -204,9 +192,6 @@ export function myFunction(input: number): number {
             self.assertIn('MyClass', result)
             self.assertIn('add', result)
             self.assertIn('myFunction', result)
-
-            # close the open cache files, so Windows won't error
-            del repo_map
 
 
 if __name__ == '__main__':
