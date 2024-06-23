@@ -1,26 +1,26 @@
 {
   "title": {
     "message": "OpenDevin",
-    "description": "导航栏中的标题"
+    "description": "The title in the navbar"
   },
   "logo.alt": {
     "message": "OpenDevin",
-    "description": "导航栏 logo 的替代文本"
+    "description": "The alt text of navbar logo"
   },
   "item.label.Docs": {
     "message": "文档",
-    "description": "导航栏项目，标签为 Docs"
+    "description": "Navbar item with label Docs"
   },
   "item.label.Codebase": {
     "message": "代码库",
-    "description": "代码库"
+    "description": "Navbar item with label Codebase"
   },
   "item.label.FAQ": {
     "message": "常见问题",
-    "description": "常见问题"
+    "description": "Navbar item with label FAQ"
   },
   "item.label.GitHub": {
     "message": "GitHub",
-    "description": "导航栏项目，标签为 GitHub"
+    "description": "Navbar item with label GitHub"
   }
 }

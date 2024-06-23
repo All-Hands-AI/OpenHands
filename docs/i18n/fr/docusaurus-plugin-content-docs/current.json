@@ -1,18 +1,18 @@
 {
   "version.label": {
-    "message": "Prochain",
-    "description": "L'étiquette pour la version actuelle"
+    "message": "Next",
+    "description": "The label for version current"
   },
-  "sidebar.docsSidebar.category.🤖 LLM Backends": {
-    "message": "🤖 LLM Backends",
-    "description": "L'étiquette pour la catégorie 🤖 LLM Backends dans la barre latérale des documents"
+  "sidebar.docsSidebar.category.🤖 Backends LLM": {
+    "message": "🤖 Backends LLM",
+    "description": "The label for category 🤖 Backends LLM in sidebar docsSidebar"
   },
-  "sidebar.docsSidebar.category.🚧 Troubleshooting": {
+  "sidebar.docsSidebar.category.🚧 Dépannage": {
     "message": "🚧 Dépannage",
-    "description": "L'étiquette pour la catégorie 🚧 Dépannage dans la barre latérale des documents"
+    "description": "The label for category 🚧 Dépannage in sidebar docsSidebar"
   },
   "sidebar.apiSidebar.category.Backend": {
     "message": "Backend",
-    "description": "L'étiquette pour la catégorie Backend dans la barre latérale de l'API"
+    "description": "The label for category Backend in sidebar apiSidebar"
   }
 }

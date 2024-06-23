@@ -3,375 +3,404 @@
     "message": "OpenDevin"
   },
   "footer.docs": {
-    "message": "文档"
+    "message": "Docs"
   },
   "footer.community": {
-    "message": "社区"
+    "message": "Community"
   },
   "footer.copyright": {
-    "message": "版权所有 © {year} OpenDevin"
+    "message": "Copyright © {year} OpenDevin"
   },
   "faq.title": {
-    "message": "常见问题"
+    "message": "Frequently Asked Questions",
+    "description": "FAQ Title"
   },
   "faq.description": {
-    "message": "常见问题"
+    "message": "Frequently Asked Questions"
   },
-  "faq.support.title": {
-    "message": "支持"
+  "faq.section.title.1": {
+    "message": "What is OpenDevin?",
+    "description": "First Section Title"
   },
-  "faq.support.issue": {
-    "message": "如何报告 OpenDevin 的问题？"
+  "faq.section.highlight": {
+    "message": "OpenDevin",
+    "description": "Highlight Text"
   },
-  "faq.support.report": {
-    "message": "如果您发现可能影响其他人的问题，请在 {githubLink} 提交 bug。如果您在安装时遇到问题或有一般性问题，请在 {discordLink} 或 {slackLink} 联系我们。"
+  "faq.section.description.1": {
+    "message": "is an autonomous software engineer that can solve software engineering and web-browsing tasks end-to-end. It can perform data science queries, such as \"Find the number of pull requests to the OpenDevin repository in the last month,\" and software engineering tasks, such as \"Please add tests to this file and verify that all the tests pass. If they don't fix the file.\"",
+    "description": "Description for OpenDevin"
   },
-  "faq.general.title": {
-    "message": "通用"
+  "faq.section.description.2": {
+    "message": "At the same time, OpenDevin is a platform and community for agent developers to test out and evaluate new agents.",
+    "description": "Further Description for OpenDevin"
   },
-  "faq.general.what": {
-    "message": "什么是 Devin？"
+  "faq.section.title.2": {
+    "message": "Support",
+    "description": "Support Section Title"
   },
-  "faq.general.devin": {
-    "message": "{highlight} 代表一个先进的自主代理，旨在应对软件工程的复杂性。它利用诸如 shell、代码编辑器和网络浏览器等工具，展示了 LLM 在软件开发中的潜力。我们的目标是探索并扩展 Devin 的功能，找出其优点和改进空间，以指导开源码模型的发展。"
+  "faq.section.support.answer": {
+    "message": "Please file a bug on {githubLink} if you notice a problem that likely affects others. If you're having trouble installing, or have general questions, reach out on {discordLink} or {slackLink}.",
+    "description": "Support Answer"
   },
-  "faq.why.title": {
-    "message": "为什么选择 OpenDevin？"
+  "faq.section.title.3": {
+    "message": "How to fix a GitHub issue with OpenDevin?",
+    "description": "GitHub Issue Section Title"
   },
-  "faq.why.opendevin": {
-    "message": "{highlight} 项目源于一个愿望，即复制、增强并超越原始的 Devin 模型。通过参与 {githubLink}，我们旨在解决 Code LLM 在实际场景中面临的挑战，产出显著贡献于社区的作品，并为未来的进步铺平道路。"
+  "faq.section.github.steps.intro": {
+    "message": "To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow steps like the following:",
+    "description": "GitHub Steps Introduction"
   },
-  "faq.fix.title": {
-    "message": "如何修复 OpenDevin 上的问题？"
+  "faq.section.github.step1": {
+    "message": "Read the issue https://github.com/OpenDevin/OpenDevin/issues/1611",
+    "description": "GitHub Step 1"
   },
-  "faq.fix.steps": {
-    "message": "要在 GitHub 上使用 OpenDevin 修复问题，请向 OpenDevin 发出提示，要求其遵循以下步骤："
+  "faq.section.github.step2": {
+    "message": "Clone the repository and check out a new branch",
+    "description": "GitHub Step 2"
   },
-  "faq.fix.step1": {
-    "message": "阅读 {githubLink} 上的问题"
+  "faq.section.github.step3": {
+    "message": "Based on the instructions in the issue description, modify files to fix the issue",
+    "description": "GitHub Step 3"
   },
-  "faq.fix.step2": {
-    "message": "克隆仓库并创建一个新的分支"
+  "faq.section.github.step4": {
+    "message": "Push the resulting output to GitHub using the GITHUB_TOKEN environment variable",
+    "description": "GitHub Step 4"
   },
-  "faq.fix.step3": {
-    "message": "根据问题描述中提供的说明，修改文件以解决问题"
+  "faq.section.github.step5": {
+    "message": "Tell me the link that I need to go to to send a pull request",
+    "description": "GitHub Step 5"
   },
-  "faq.fix.step4": {
-    "message": "使用 GITHUB_TOKEN 环境变量将修改后的结果推送到 GitHub"
+  "faq.section.github.steps.preRun": {
+    "message": "Before you run OpenDevin, you can do:",
+    "description": "GitHub Steps Pre-Run"
   },
-  "faq.fix.step5": {
-    "message": "告诉我提交拉取请求的链接"
+  "faq.section.github.steps.tokenInfo": {
+    "message": "where XXX is a GitHub token that you created that has permissions to push to the OpenDevin repo. If you don’t have write permission to the OpenDevin repo, you might need to change that to:",
+    "description": "GitHub Steps Token Info"
   },
-  "faq.fix.beforeRun": {
-    "message": "在运行 OpenDevin 之前，您可以："
+  "faq.section.github.steps.usernameInfo": {
+    "message": "where USERNAME is your GitHub username.",
+    "description": "GitHub Steps Username Info"
   },
-  "faq.fix.command1": {
-    "message": "export SANDBOX_ENV_GITHUB_TOKEN=XXX"
+  "faq.section.title.4": {
+    "message": "How is OpenDevin different from Devin?",
+    "description": "Devin Section Title"
   },
-  "faq.fix.note1": {
-    "message": "其中 XXX 是您创建的具有推送到 OpenDevin 仓库权限的 GitHub 令牌。如果您没有 OpenDevin 仓库的写权限，您可能需要将其更改为："
+  "faq.section.devin.linkText": {
+    "message": "Devin",
+    "description": "Devin Link Text"
   },
-  "faq.fix.command2": {
-    "message": "使用 GITHUB_TOKEN 环境变量将结果推送到 https://github.com/USERNAME/OpenDevin/ 的我的 fork"
+  "faq.section.devin.description": {
+    "message": "is a commercial product by Cognition Inc., that served as the initial inspiration for OpenDevin. They both aim to do a good job at solving software engineering tasks, but OpenDevin you can download, use, and modify, while Devin you can only use through the Cognition site. In addition, OpenDevin has evolved beyond the initial inspiration, and now serves as a community-driven ecosystem for agent development in general, and we'd love to have you join and",
+    "description": "Devin Description"
   },
-  "faq.fix.note2": {
-    "message": "其中 USERNAME 是您的 GitHub 用户名。"
+  "faq.section.devin.contribute": {
+    "message": "contribute",
+    "description": "Contribute Link"
+  },
+  "faq.section.title.5": {
+    "message": "How is OpenDevin different from ChatGPT?",
+    "description": "ChatGPT Section Title"
+  },
+  "faq.section.chatgpt.description": {
+    "message": "ChatGPT you can access online, it does not interface with local files, and its ability to execute code is limited. So it can write code, but it is not easy to test or execute it.",
+    "description": "ChatGPT Description"
   },
   "homepage.description": {
-    "message": "由 AI 驱动的代码生成，用于软件工程。",
-    "description": "主页描述"
+    "message": "AI-powered code generation for software engineering.",
+    "description": "The homepage description"
   },
   "homepage.getStarted": {
-    "message": "开始使用"
+    "message": "Get Started"
   },
   "welcome.message": {
-    "message": "欢迎来到 OpenDevin，一个致力于复制 Devin 的开源项目。Devin 是一名自主的 AI 软件工程师，能够执行复杂的工程任务并在软件开发项目中与用户积极合作。通过开源社区的力量，本项目旨在复制、增强并创新 Devin。"
+    "message": "Welcome to OpenDevin, an open-source autonomous AI software engineer that is capable of executing complex engineering tasks and collaborating actively with users on software development projects."
   },
   "theme.ErrorPageContent.title": {
     "message": "页面已崩溃。",
-    "description": "页面崩溃时的备用页面标题"
+    "description": "The title of the fallback page when the page crashed"
   },
   "theme.BackToTopButton.buttonAriaLabel": {
     "message": "回到顶部",
-    "description": "回到顶部按钮的ARIA标签"
+    "description": "The ARIA label for the back to top button"
   },
   "theme.blog.archive.title": {
     "message": "历史博文",
-    "description": "博客存档页的页面和标题"
+    "description": "The page & hero title of the blog archive page"
   },
   "theme.blog.archive.description": {
     "message": "历史博文",
-    "description": "博客存档页的页面和描述"
+    "description": "The page & hero description of the blog archive page"
   },
   "theme.blog.paginator.navAriaLabel": {
     "message": "博文列表分页导航",
-    "description": "博客分页的ARIA标签"
+    "description": "The ARIA label for the blog pagination"
   },
   "theme.blog.paginator.newerEntries": {
     "message": "较新的博文",
-    "description": "用于导航到较新博客文章页面（上一页）的标签"
+    "description": "The label used to navigate to the newer blog posts page (previous page)"
   },
   "theme.blog.paginator.olderEntries": {
     "message": "较旧的博文",
-    "description": "用于导航到较旧博客文章页面（下一页）的标签"
+    "description": "The label used to navigate to the older blog posts page (next page)"
   },
   "theme.blog.post.paginator.navAriaLabel": {
     "message": "博文分页导航",
-    "description": "博文分页的ARIA标签"
+    "description": "The ARIA label for the blog posts pagination"
   },
   "theme.blog.post.paginator.newerPost": {
     "message": "较新一篇",
-    "description": "用于导航到较新/上一篇博文的按钮标签"
+    "description": "The blog post button label to navigate to the newer/previous post"
   },
   "theme.blog.post.paginator.olderPost": {
     "message": "较旧一篇",
-    "description": "用于导航到较旧/下一篇博文的按钮标签"
+    "description": "The blog post button label to navigate to the older/next post"
   },
   "theme.blog.post.plurals": {
     "message": "{count} 篇博文",
-    "description": "“{count} posts”的复数标签。根据支持的语言使用尽可能多的复数形式（用“|”分隔）。"
+    "description": "Pluralized label for \"{count} posts\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.blog.tagTitle": {
     "message": "{nPosts} 含有标签「{tagName}」",
-    "description": "博客标签页面的标题"
+    "description": "The title of the page for a blog tag"
   },
   "theme.tags.tagsPageLink": {
     "message": "查看所有标签",
-    "description": "指向标签列表页面的链接标签"
+    "description": "The label of the link targeting the tag list page"
   },
   "theme.colorToggle.ariaLabel": {
     "message": "切换浅色/暗黑模式（当前为{mode}）",
-    "description": "导航栏颜色模式切换的ARIA标签"
+    "description": "The ARIA label for the navbar color mode toggle"
   },
   "theme.colorToggle.ariaLabel.mode.dark": {
     "message": "暗黑模式",
-    "description": "暗色模式的名称"
+    "description": "The name for the dark color mode"
   },
   "theme.colorToggle.ariaLabel.mode.light": {
     "message": "浅色模式",
-    "description": "浅色模式的名称"
+    "description": "The name for the light color mode"
   },
   "theme.docs.breadcrumbs.navAriaLabel": {
     "message": "页面路径",
-    "description": "面包屑的ARIA标签"
+    "description": "The ARIA label for the breadcrumbs"
   },
   "theme.docs.DocCard.categoryDescription.plurals": {
     "message": "{count} 个项目",
-    "description": "关于此类别包含多少个项目的类别卡片的默认描述"
+    "description": "The default description for a category card in the generated index about how many items this category includes"
   },
   "theme.docs.paginator.navAriaLabel": {
     "message": "文件选项卡",
-    "description": "文档分页的ARIA标签"
+    "description": "The ARIA label for the docs pagination"
   },
   "theme.docs.paginator.previous": {
     "message": "上一页",
-    "description": "用于导航到上一页文档的标签"
+    "description": "The label used to navigate to the previous doc"
   },
   "theme.docs.paginator.next": {
     "message": "下一页",
-    "description": "用于导航到下一页文档的标签"
+    "description": "The label used to navigate to the next doc"
   },
   "theme.docs.tagDocListPageTitle.nDocsTagged": {
     "message": "{count} 篇文档带有标签",
-    "description": "“{count} docs tagged”的复数标签。根据支持的语言使用尽可能多的复数形式（用“|”分隔）。"
+    "description": "Pluralized label for \"{count} docs tagged\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.docs.tagDocListPageTitle": {
     "message": "{nDocsTagged}「{tagName}」",
-    "description": "文档标签页面的标题"
+    "description": "The title of the page for a docs tag"
   },
   "theme.docs.versionBadge.label": {
     "message": "版本：{versionLabel}"
   },
   "theme.docs.versions.unreleasedVersionLabel": {
     "message": "此为 {siteTitle} {versionLabel} 版尚未发行的文档。",
-    "description": "用于告知用户他们正在浏览未发布的文档版本的标签"
+    "description": "The label used to tell the user that he's browsing an unreleased doc version"
   },
   "theme.docs.versions.unmaintainedVersionLabel": {
     "message": "此为 {siteTitle} {versionLabel} 版的文档，现已不再积极维护。",
-    "description": "用于告知用户他们正在浏览的文档版本已不再维护的标签"
+    "description": "The label used to tell the user that he's browsing an unmaintained doc version"
   },
   "theme.docs.versions.latestVersionSuggestionLabel": {
     "message": "最新的文档请参阅 {latestVersionLink} ({versionLabel})。",
-    "description": "用于告知用户查看最新版本文档的标签"
+    "description": "The label used to tell the user to check the latest version"
   },
   "theme.docs.versions.latestVersionLinkLabel": {
     "message": "最新版本",
-    "description": "最新版本建议链接标签"
+    "description": "The label used for the latest version suggestion link label"
   },
   "theme.common.editThisPage": {
     "message": "编辑此页",
-    "description": "编辑当前页面的链接标签"
+    "description": "The link label to edit the current page"
   },
   "theme.common.headingLinkTitle": {
     "message": "{heading}的直接链接",
-    "description": "标题链接的标题"
+    "description": "Title for link to heading"
   },
   "theme.lastUpdated.atDate": {
     "message": "于 {date} ",
-    "description": "用于描述页面最后更新日期的词语"
+    "description": "The words used to describe on which date a page has been last updated"
   },
   "theme.lastUpdated.byUser": {
     "message": "由 {user} ",
-    "description": "用于描述页面最后更新者的词语"
+    "description": "The words used to describe by who the page has been last updated"
   },
   "theme.lastUpdated.lastUpdatedAtBy": {
     "message": "最后{byUser}{atDate}更新",
-    "description": "用于显示页面最后更新时间和更新者的句子"
+    "description": "The sentence used to display when a page has been last updated, and by who"
   },
   "theme.navbar.mobileVersionsDropdown.label": {
     "message": "选择版本",
-    "description": "移动端版本下拉菜单的标签"
+    "description": "The label for the navbar versions dropdown on mobile view"
   },
   "theme.NotFound.title": {
     "message": "找不到页面",
-    "description": "404页面的标题"
+    "description": "The title of the 404 page"
   },
   "theme.tags.tagsListLabel": {
     "message": "标签：",
-    "description": "标签列表旁边的标签"
+    "description": "The label alongside a tag list"
   },
   "theme.admonition.caution": {
     "message": "警告",
-    "description": "警告类内容的默认标签（:::caution）"
+    "description": "The default label used for the Caution admonition (:::caution)"
   },
   "theme.admonition.danger": {
     "message": "危险",
-    "description": "危险类内容的默认标签（:::danger）"
+    "description": "The default label used for the Danger admonition (:::danger)"
   },
   "theme.admonition.info": {
     "message": "信息",
-    "description": "信息类内容的默认标签（:::info）"
+    "description": "The default label used for the Info admonition (:::info)"
   },
   "theme.admonition.note": {
     "message": "备注",
-    "description": "备注类内容的默认标签（:::note）"
+    "description": "The default label used for the Note admonition (:::note)"
   },
   "theme.admonition.tip": {
     "message": "提示",
-    "description": "提示类内容的默认标签（:::tip）"
+    "description": "The default label used for the Tip admonition (:::tip)"
   },
   "theme.admonition.warning": {
     "message": "注意",
-    "description": "注意类内容的默认标签（:::warning）"
+    "description": "The default label used for the Warning admonition (:::warning)"
   },
   "theme.AnnouncementBar.closeButtonAriaLabel": {
     "message": "关闭",
-    "description": "公告栏关闭按钮的ARIA标签"
+    "description": "The ARIA label for close button of announcement bar"
   },
   "theme.blog.sidebar.navAriaLabel": {
     "message": "最近博文导航",
-    "description": "博客侧边栏最近博文的ARIA标签"
+    "description": "The ARIA label for recent posts in the blog sidebar"
   },
   "theme.CodeBlock.copied": {
     "message": "复制成功",
-    "description": "代码块复制成功按钮标签"
+    "description": "The copied button label on code blocks"
   },
   "theme.CodeBlock.copyButtonAriaLabel": {
     "message": "复制代码到剪贴板",
-    "description": "代码块复制按钮的ARIA标签"
+    "description": "The ARIA label for copy code blocks button"
   },
   "theme.CodeBlock.copy": {
     "message": "复制",
-    "description": "代码块复制按钮标签"
+    "description": "The copy button label on code blocks"
   },
   "theme.CodeBlock.wordWrapToggle": {
     "message": "切换自动换行",
-    "description": "代码块行自动换行按钮的标题属性"
+    "description": "The title attribute for toggle word wrapping button of code block lines"
   },
   "theme.DocSidebarItem.expandCategoryAriaLabel": {
     "message": "展开侧边栏分类 '{label}'",
-    "description": "展开侧边栏分类的ARIA标签"
+    "description": "The ARIA label to expand the sidebar category"
   },
   "theme.DocSidebarItem.collapseCategoryAriaLabel": {
     "message": "折叠侧边栏分类 '{label}'",
-    "description": "折叠侧边栏分类的ARIA标签"
+    "description": "The ARIA label to collapse the sidebar category"
   },
   "theme.NavBar.navAriaLabel": {
     "message": "主导航",
-    "description": "主导航的ARIA标签"
+    "description": "The ARIA label for the main navigation"
   },
   "theme.navbar.mobileLanguageDropdown.label": {
     "message": "选择语言",
-    "description": "移动端语言切换器下拉菜单的标签"
+    "description": "The label for the mobile language switcher dropdown"
   },
   "theme.NotFound.p1": {
     "message": "我们找不到您要找的页面。",
-    "description": "404页面的第一段"
+    "description": "The first paragraph of the 404 page"
   },
   "theme.NotFound.p2": {
     "message": "请联系原始链接来源网站的所有者，并告知他们链接已损坏。",
-    "description": "404页面的第二段"
+    "description": "The 2nd paragraph of the 404 page"
   },
   "theme.TOCCollapsible.toggleButtonLabel": {
     "message": "本页总览",
-    "description": "可折叠目录组件按钮的标签"
+    "description": "The label used by the button on the collapsible TOC component"
   },
   "theme.blog.post.readMore": {
     "message": "阅读更多",
-    "description": "博客文章摘要中用于链接到完整博客文章的标签"
+    "description": "The label used in blog post item excerpts to link to full blog posts"
   },
   "theme.blog.post.readMoreLabel": {
     "message": "阅读 {title} 的全文",
-    "description": "从摘要链接到完整博客文章的链接的ARIA标签"
+    "description": "The ARIA label for the link to full blog posts from excerpts"
   },
   "theme.blog.post.readingTime.plurals": {
     "message": "阅读需 {readingTime} 分钟",
-    "description": "“{readingTime} min read”的复数标签。根据支持的语言使用尽可能多的复数形式（用“|”分隔）。"
+    "description": "Pluralized label for \"{readingTime} min read\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.docs.breadcrumbs.home": {
     "message": "主页面",
-    "description": "面包屑中主页的ARIA标签"
+    "description": "The ARIA label for the home page in the breadcrumbs"
   },
   "theme.docs.sidebar.collapseButtonTitle": {
     "message": "收起侧边栏",
-    "description": "文档侧边栏折叠按钮的标题属性"
+    "description": "The title attribute for collapse button of doc sidebar"
   },
   "theme.docs.sidebar.collapseButtonAriaLabel": {
     "message": "收起侧边栏",
-    "description": "文档侧边栏折叠按钮的标题属性"
+    "description": "The title attribute for collapse button of doc sidebar"
   },
   "theme.docs.sidebar.navAriaLabel": {
     "message": "文档侧边栏",
-    "description": "侧边栏导航的ARIA标签"
+    "description": "The ARIA label for the sidebar navigation"
   },
   "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
     "message": "关闭导航栏",
-    "description": "移动端侧边栏关闭按钮的ARIA标签"
+    "description": "The ARIA label for close button of mobile sidebar"
   },
   "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
     "message": "← 回到主菜单",
-    "description": "移动端导航栏侧边栏辅助菜单中的返回按钮标签（主要用于显示文档侧边栏）"
+    "description": "The label of the back button to return to main menu, inside the mobile navbar sidebar secondary menu (notably used to display the docs sidebar)"
   },
   "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
     "message": "切换导航栏",
-    "description": "移动端导航栏汉堡菜单按钮的ARIA标签"
+    "description": "The ARIA label for hamburger menu button of mobile navigation"
   },
   "theme.docs.sidebar.expandButtonTitle": {
     "message": "展开侧边栏",
-    "description": "文档侧边栏展开按钮的ARIA标签和标题属性"
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
   },
   "theme.docs.sidebar.expandButtonAriaLabel": {
     "message": "展开侧边栏",
-    "description": "文档侧边栏展开按钮的ARIA标签和标题属性"
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
   },
   "theme.ErrorPageContent.tryAgain": {
     "message": "重试",
-    "description": "React 错误边界捕获错误时重试渲染的按钮标签"
+    "description": "The label of the button to try again rendering when the React error boundary captures an error"
   },
   "theme.common.skipToMainContent": {
     "message": "跳到主要内容",
-    "description": "用于辅助功能的跳过内容标签，允许使用键盘Tab/Enter导航快速跳转到主要内容"
+    "description": "The skip to content label used for accessibility, allowing to rapidly navigate to main content with keyboard tab/enter navigation"
   },
   "theme.tags.tagsPageTitle": {
     "message": "标签",
-    "description": "标签列表页面的标题"
+    "description": "The title of the tag list page"
   },
   "theme.unlistedContent.title": {
     "message": "未列出页",
-    "description": "未列出内容横幅标题"
+    "description": "The unlisted content banner title"
   },
   "theme.unlistedContent.message": {
     "message": "此页面未列出。搜索引擎不会对其索引，只有拥有直接链接的用户才能访问。",
-    "description": "未列出内容横幅消息"
+    "description": "The unlisted content banner message"
   }
 }

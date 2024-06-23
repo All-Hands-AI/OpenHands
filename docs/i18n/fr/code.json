@@ -6,341 +6,370 @@
     "message": "Docs"
   },
   "footer.community": {
-    "message": "Communauté"
+    "message": "Community"
   },
   "footer.copyright": {
     "message": "Copyright © {year} OpenDevin"
   },
   "faq.title": {
-    "message": "Questions Fréquemment Posées"
+    "message": "Frequently Asked Questions",
+    "description": "FAQ Title"
   },
   "faq.description": {
-    "message": "Questions Fréquemment Posées"
+    "message": "Frequently Asked Questions"
   },
-  "faq.support.title": {
-    "message": "Support"
+  "faq.section.title.1": {
+    "message": "What is OpenDevin?",
+    "description": "First Section Title"
   },
-  "faq.support.issue": {
-    "message": "Comment puis-je signaler un problème avec OpenDevin?"
+  "faq.section.highlight": {
+    "message": "OpenDevin",
+    "description": "Highlight Text"
   },
-  "faq.support.report": {
-    "message": "Veuillez déposer un bug sur {githubLink} si vous remarquez un problème qui affecte probablement d'autres personnes. Si vous rencontrez des difficultés pour l'installation ou avez des questions générales, contactez-nous sur {discordLink} ou {slackLink}."
+  "faq.section.description.1": {
+    "message": "is an autonomous software engineer that can solve software engineering and web-browsing tasks end-to-end. It can perform data science queries, such as \"Find the number of pull requests to the OpenDevin repository in the last month,\" and software engineering tasks, such as \"Please add tests to this file and verify that all the tests pass. If they don't fix the file.\"",
+    "description": "Description for OpenDevin"
   },
-  "faq.general.title": {
-    "message": "Général"
+  "faq.section.description.2": {
+    "message": "At the same time, OpenDevin is a platform and community for agent developers to test out and evaluate new agents.",
+    "description": "Further Description for OpenDevin"
   },
-  "faq.general.what": {
-    "message": "Qu'est-ce que Devin?"
+  "faq.section.title.2": {
+    "message": "Support",
+    "description": "Support Section Title"
   },
-  "faq.general.devin": {
-    "message": "{highlight} représente un agent autonome de pointe conçu pour naviguer dans les complexités de l'ingénierie logicielle. Il utilise une combinaison d'outils tels qu'un shell, un éditeur de code et un navigateur web, mettant en lumière le potentiel inexploité des LLMs dans le développement de logiciels. Notre objectif est d'explorer et d'élargir les capacités de Devin, en identifiant ses forces et ses faiblesses, afin de guider le progrès des modèles de code ouvert."
+  "faq.section.support.answer": {
+    "message": "Please file a bug on {githubLink} if you notice a problem that likely affects others. If you're having trouble installing, or have general questions, reach out on {discordLink} or {slackLink}.",
+    "description": "Support Answer"
   },
-  "faq.why.title": {
-    "message": "Pourquoi OpenDevin?"
+  "faq.section.title.3": {
+    "message": "How to fix a GitHub issue with OpenDevin?",
+    "description": "GitHub Issue Section Title"
   },
-  "faq.why.opendevin": {
-    "message": "Le projet {highlight} est né d'un désir de reproduire, améliorer et innover au-delà du modèle original Devin. En utilisant {githubLink}, nous visons à relever les défis rencontrés par les Code LLMs dans des scénarios pratiques, en produisant des travaux qui contribuent significativement à la communauté et ouvrent la voie à de futurs avancements."
+  "faq.section.github.steps.intro": {
+    "message": "To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow steps like the following:",
+    "description": "GitHub Steps Introduction"
   },
-  "faq.fix.title": {
-    "message": "Comment corriger un problème sur OpenDevin?"
+  "faq.section.github.step1": {
+    "message": "Read the issue https://github.com/OpenDevin/OpenDevin/issues/1611",
+    "description": "GitHub Step 1"
   },
-  "faq.fix.steps": {
-    "message": "Pour corriger un problème sur GitHub en utilisant OpenDevin, envoyez une demande à OpenDevin en lui demandant de suivre ces étapes:"
+  "faq.section.github.step2": {
+    "message": "Clone the repository and check out a new branch",
+    "description": "GitHub Step 2"
   },
-  "faq.fix.step1": {
-    "message": "Lire le problème sur {githubLink}"
+  "faq.section.github.step3": {
+    "message": "Based on the instructions in the issue description, modify files to fix the issue",
+    "description": "GitHub Step 3"
   },
-  "faq.fix.step2": {
-    "message": "Cloner le dépôt et créer une nouvelle branche"
+  "faq.section.github.step4": {
+    "message": "Push the resulting output to GitHub using the GITHUB_TOKEN environment variable",
+    "description": "GitHub Step 4"
   },
-  "faq.fix.step3": {
-    "message": "En fonction des instructions dans la description du problème, modifiez les fichiers pour résoudre le problème"
+  "faq.section.github.step5": {
+    "message": "Tell me the link that I need to go to to send a pull request",
+    "description": "GitHub Step 5"
   },
-  "faq.fix.step4": {
-    "message": "Poussez le résultat sur GitHub en utilisant la variable d'environnement GITHUB_TOKEN"
+  "faq.section.github.steps.preRun": {
+    "message": "Before you run OpenDevin, you can do:",
+    "description": "GitHub Steps Pre-Run"
   },
-  "faq.fix.step5": {
-    "message": "Dites-moi le lien vers lequel je dois aller pour envoyer une pull request"
+  "faq.section.github.steps.tokenInfo": {
+    "message": "where XXX is a GitHub token that you created that has permissions to push to the OpenDevin repo. If you don’t have write permission to the OpenDevin repo, you might need to change that to:",
+    "description": "GitHub Steps Token Info"
   },
-  "faq.fix.beforeRun": {
-    "message": "Avant d'exécuter OpenDevin, vous pouvez faire:"
+  "faq.section.github.steps.usernameInfo": {
+    "message": "where USERNAME is your GitHub username.",
+    "description": "GitHub Steps Username Info"
   },
-  "faq.fix.command1": {
-    "message": "export SANDBOX_ENV_GITHUB_TOKEN=XXX"
+  "faq.section.title.4": {
+    "message": "How is OpenDevin different from Devin?",
+    "description": "Devin Section Title"
   },
-  "faq.fix.note1": {
-    "message": "où XXX est un token GitHub que vous avez créé et qui a des permissions pour pousser sur le dépôt OpenDevin. Si vous n'avez pas la permission d'écriture sur le dépôt OpenDevin, vous devrez peut-être changer cela pour:"
+  "faq.section.devin.linkText": {
+    "message": "Devin",
+    "description": "Devin Link Text"
   },
-  "faq.fix.command2": {
-    "message": "Poussez le résultat sur mon fork à https://github.com/USERNAME/OpenDevin/ en utilisant la variable d'environnement GITHUB_TOKEN"
+  "faq.section.devin.description": {
+    "message": "is a commercial product by Cognition Inc., that served as the initial inspiration for OpenDevin. They both aim to do a good job at solving software engineering tasks, but OpenDevin you can download, use, and modify, while Devin you can only use through the Cognition site. In addition, OpenDevin has evolved beyond the initial inspiration, and now serves as a community-driven ecosystem for agent development in general, and we'd love to have you join and",
+    "description": "Devin Description"
   },
-  "faq.fix.note2": {
-    "message": "où USERNAME est votre nom d'utilisateur GitHub."
+  "faq.section.devin.contribute": {
+    "message": "contribute",
+    "description": "Contribute Link"
+  },
+  "faq.section.title.5": {
+    "message": "How is OpenDevin different from ChatGPT?",
+    "description": "ChatGPT Section Title"
+  },
+  "faq.section.chatgpt.description": {
+    "message": "ChatGPT you can access online, it does not interface with local files, and its ability to execute code is limited. So it can write code, but it is not easy to test or execute it.",
+    "description": "ChatGPT Description"
   },
   "homepage.description": {
-    "message": "Génération de code pilotée par l'IA pour l'ingénierie logicielle.",
-    "description": "La description de la page d'accueil"
+    "message": "AI-powered code generation for software engineering.",
+    "description": "The homepage description"
   },
   "homepage.getStarted": {
-    "message": "Commencer"
+    "message": "Get Started"
   },
   "welcome.message": {
-    "message": "Bienvenue sur OpenDevin, un projet open-source visant à reproduire Devin, un ingénieur logiciel autonome en IA capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur des projets de développement logiciel. Ce projet aspire à reproduire, améliorer et innover sur Devin grâce à la puissance de la communauté open-source."
+    "message": "Welcome to OpenDevin, an open-source autonomous AI software engineer that is capable of executing complex engineering tasks and collaborating actively with users on software development projects."
   },
   "theme.ErrorPageContent.title": {
     "message": "Cette page a planté.",
-    "description": "Le titre de la page de secours lorsque la page a planté"
+    "description": "The title of the fallback page when the page crashed"
   },
   "theme.BackToTopButton.buttonAriaLabel": {
     "message": "Retour au début de la page",
-    "description": "L'étiquette ARIA pour le bouton de retour en haut de page"
+    "description": "The ARIA label for the back to top button"
   },
   "theme.blog.archive.title": {
     "message": "Archive",
-    "description": "Le titre de la page et de l'en-tête de la page d'archive du blog"
+    "description": "The page & hero title of the blog archive page"
   },
   "theme.blog.archive.description": {
     "message": "Archive",
-    "description": "La description de la page et de l'en-tête de la page d'archive du blog"
+    "description": "The page & hero description of the blog archive page"
   },
   "theme.blog.paginator.navAriaLabel": {
     "message": "Pagination de la liste des articles du blog",
-    "description": "L'étiquette ARIA pour la pagination du blog"
+    "description": "The ARIA label for the blog pagination"
   },
   "theme.blog.paginator.newerEntries": {
     "message": "Nouvelles entrées",
-    "description": "L'étiquette utilisée pour naviguer vers les pages des articles de blog plus récents (page précédente)"
+    "description": "The label used to navigate to the newer blog posts page (previous page)"
   },
   "theme.blog.paginator.olderEntries": {
     "message": "Anciennes entrées",
-    "description": "L'étiquette utilisée pour naviguer vers les pages des articles de blog plus anciens (page suivante)"
+    "description": "The label used to navigate to the older blog posts page (next page)"
   },
   "theme.blog.post.paginator.navAriaLabel": {
     "message": "Pagination des articles du blog",
-    "description": "L'étiquette ARIA pour la pagination des articles du blog"
+    "description": "The ARIA label for the blog posts pagination"
   },
   "theme.blog.post.paginator.newerPost": {
     "message": "Article plus récent",
-    "description": "L'étiquette du bouton d'article de blog pour naviguer vers l'article précédent/plus récent"
+    "description": "The blog post button label to navigate to the newer/previous post"
   },
   "theme.blog.post.paginator.olderPost": {
     "message": "Article plus ancien",
-    "description": "L'étiquette du bouton d'article de blog pour naviguer vers l'article suivant/plus ancien"
+    "description": "The blog post button label to navigate to the older/next post"
   },
   "theme.blog.post.plurals": {
     "message": "Un article|{count} articles",
-    "description": "Etiquette pluriel pour \"{count} posts\". Utilisez autant de formes plurielles (séparées par \"|\") que votre langue le permet (voir https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+    "description": "Pluralized label for \"{count} posts\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.blog.tagTitle": {
     "message": "{nPosts} tagués avec « {tagName} »",
-    "description": "Le titre de la page pour une étiquette de blog"
+    "description": "The title of the page for a blog tag"
   },
   "theme.tags.tagsPageLink": {
     "message": "Voir tous les tags",
-    "description": "L'étiquette du lien vers la page de la liste des tags"
+    "description": "The label of the link targeting the tag list page"
   },
   "theme.colorToggle.ariaLabel": {
     "message": "Basculer entre le mode sombre et clair (actuellement {mode})",
-    "description": "L'étiquette ARIA pour le basculement du mode de couleur de la barre de navigation"
+    "description": "The ARIA label for the navbar color mode toggle"
   },
   "theme.colorToggle.ariaLabel.mode.dark": {
     "message": "mode sombre",
-    "description": "Le nom pour le mode de couleur sombre"
+    "description": "The name for the dark color mode"
   },
   "theme.colorToggle.ariaLabel.mode.light": {
     "message": "mode clair",
-    "description": "Le nom pour le mode de couleur clair"
+    "description": "The name for the light color mode"
   },
   "theme.docs.breadcrumbs.navAriaLabel": {
     "message": "Fil d'Ariane",
-    "description": "L'étiquette ARIA pour les fils d'Ariane"
+    "description": "The ARIA label for the breadcrumbs"
   },
   "theme.docs.DocCard.categoryDescription.plurals": {
     "message": "1 élément|{count} éléments",
-    "description": "La description par défaut pour une carte de catégorie dans l'index généré sur le nombre d'éléments que cette catégorie inclut"
+    "description": "The default description for a category card in the generated index about how many items this category includes"
   },
   "theme.docs.paginator.navAriaLabel": {
     "message": "Pages de documentation",
-    "description": "L'étiquette ARIA pour la pagination des documents"
+    "description": "The ARIA label for the docs pagination"
   },
   "theme.docs.paginator.previous": {
     "message": "Précédent",
-    "description": "L'étiquette utilisée pour naviguer vers le document précédent"
+    "description": "The label used to navigate to the previous doc"
   },
   "theme.docs.paginator.next": {
     "message": "Suivant",
-    "description": "L'étiquette utilisée pour naviguer vers le document suivant"
+    "description": "The label used to navigate to the next doc"
   },
   "theme.docs.tagDocListPageTitle.nDocsTagged": {
     "message": "Un document tagué|{count} documents tagués",
-    "description": "Etiquette pluriel pour \"{count} docs tagged\". Utilisez autant de formes plurielles (séparées par \"|\") que votre langue le permet (voir https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+    "description": "Pluralized label for \"{count} docs tagged\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.docs.tagDocListPageTitle": {
     "message": "{nDocsTagged} avec \"{tagName}\"",
-    "description": "Le titre de la page pour une étiquette de documents"
+    "description": "The title of the page for a docs tag"
   },
   "theme.docs.versionBadge.label": {
     "message": "Version: {versionLabel}"
   },
   "theme.docs.versions.unreleasedVersionLabel": {
     "message": "Ceci est la documentation de la prochaine version {versionLabel} de {siteTitle}.",
-    "description": "L'étiquette utilisée pour informer l'utilisateur qu'il consulte une version non publiée de la documentation"
+    "description": "The label used to tell the user that he's browsing an unreleased doc version"
   },
   "theme.docs.versions.unmaintainedVersionLabel": {
     "message": "Ceci est la documentation de {siteTitle} {versionLabel}, qui n'est plus activement maintenue.",
-    "description": "L'étiquette utilisée pour informer l'utilisateur qu'il consulte une version non maintenue de la documentation"
+    "description": "The label used to tell the user that he's browsing an unmaintained doc version"
   },
   "theme.docs.versions.latestVersionSuggestionLabel": {
     "message": "Pour une documentation à jour, consultez la {latestVersionLink} ({versionLabel}).",
-    "description": "L'étiquette utilisée pour inviter l'utilisateur à consulter la dernière version"
+    "description": "The label used to tell the user to check the latest version"
   },
   "theme.docs.versions.latestVersionLinkLabel": {
     "message": "dernière version",
-    "description": "L'étiquette utilisée pour le lien de suggestion de la dernière version"
+    "description": "The label used for the latest version suggestion link label"
   },
   "theme.common.editThisPage": {
     "message": "Éditer cette page",
-    "description": "L'étiquette du lien pour éditer la page actuelle"
+    "description": "The link label to edit the current page"
   },
   "theme.common.headingLinkTitle": {
     "message": "Lien direct vers {heading}",
-    "description": "Titre pour le lien vers l'en-tête"
+    "description": "Title for link to heading"
   },
   "theme.lastUpdated.atDate": {
     "message": " le {date}",
-    "description": "Les mots utilisés pour décrire la date de la dernière mise à jour d'une page"
+    "description": "The words used to describe on which date a page has been last updated"
   },
   "theme.lastUpdated.byUser": {
     "message": " par {user}",
-    "description": "Les mots utilisés pour décrire par qui la page a été mise à jour pour la dernière fois"
+    "description": "The words used to describe by who the page has been last updated"
   },
   "theme.lastUpdated.lastUpdatedAtBy": {
     "message": "Dernière mise à jour{atDate}{byUser}",
-    "description": "La phrase utilisée pour afficher la dernière mise à jour d'une page et par qui"
+    "description": "The sentence used to display when a page has been last updated, and by who"
   },
   "theme.navbar.mobileVersionsDropdown.label": {
     "message": "Versions",
-    "description": "L'étiquette pour le menu déroulant des versions de la barre de navigation sur les mobiles"
+    "description": "The label for the navbar versions dropdown on mobile view"
   },
   "theme.NotFound.title": {
     "message": "Page introuvable",
-    "description": "Le titre de la page 404"
+    "description": "The title of the 404 page"
   },
   "theme.tags.tagsListLabel": {
     "message": "Tags :",
-    "description": "L'étiquette aux côtés de la liste des tags"
+    "description": "The label alongside a tag list"
   },
   "theme.admonition.caution": {
     "message": "attention",
-    "description": "L'étiquette par défaut utilisée pour l'avertissement (:::caution)"
+    "description": "The default label used for the Caution admonition (:::caution)"
   },
   "theme.admonition.danger": {
     "message": "danger",
-    "description": "L'étiquette par défaut utilisée pour le danger (:::danger)"
+    "description": "The default label used for the Danger admonition (:::danger)"
   },
   "theme.admonition.info": {
     "message": "info",
-    "description": "L'étiquette par défaut utilisée pour l'information (:::info)"
+    "description": "The default label used for the Info admonition (:::info)"
   },
   "theme.admonition.note": {
     "message": "remarque",
-    "description": "L'étiquette par défaut utilisée pour la remarque (:::note)"
+    "description": "The default label used for the Note admonition (:::note)"
   },
   "theme.admonition.tip": {
     "message": "astuce",
-    "description": "L'étiquette par défaut utilisée pour l'astuce (:::tip)"
+    "description": "The default label used for the Tip admonition (:::tip)"
   },
   "theme.admonition.warning": {
     "message": "attention",
-    "description": "L'étiquette par défaut utilisée pour l'avertissement (:::warning)"
+    "description": "The default label used for the Warning admonition (:::warning)"
   },
   "theme.AnnouncementBar.closeButtonAriaLabel": {
     "message": "Fermer",
-    "description": "L'étiquette ARIA pour le bouton de fermeture de la barre d'annonce"
+    "description": "The ARIA label for close button of announcement bar"
   },
   "theme.blog.sidebar.navAriaLabel": {
     "message": "Navigation article de blog récent",
-    "description": "L'étiquette ARIA pour les articles récents dans la barre latérale du blog"
+    "description": "The ARIA label for recent posts in the blog sidebar"
   },
   "theme.CodeBlock.copied": {
     "message": "Copié",
-    "description": "L'étiquette du bouton copié sur les blocs de code"
+    "description": "The copied button label on code blocks"
   },
   "theme.CodeBlock.copyButtonAriaLabel": {
     "message": "Copier le code",
-    "description": "L'étiquette ARIA pour le bouton de copie des blocs de code"
+    "description": "The ARIA label for copy code blocks button"
   },
   "theme.CodeBlock.copy": {
     "message": "Copier",
-    "description": "L'étiquette du bouton de copie sur les blocs de code"
+    "description": "The copy button label on code blocks"
   },
   "theme.CodeBlock.wordWrapToggle": {
     "message": "Activer/désactiver le retour à la ligne",
-    "description": "L'attribut titre pour le bouton de basculement du retour à la ligne des lignes de bloc de code"
+    "description": "The title attribute for toggle word wrapping button of code block lines"
   },
   "theme.DocSidebarItem.expandCategoryAriaLabel": {
     "message": "Développer la catégorie '{label}' de la barre latérale",
-    "description": "L'étiquette ARIA pour développer la catégorie de la barre latérale"
+    "description": "The ARIA label to expand the sidebar category"
   },
   "theme.DocSidebarItem.collapseCategoryAriaLabel": {
     "message": "Réduire la catégorie '{label}' de la barre latérale",
-    "description": "L'étiquette ARIA pour réduire la catégorie de la barre latérale"
+    "description": "The ARIA label to collapse the sidebar category"
   },
   "theme.NavBar.navAriaLabel": {
     "message": "Main",
-    "description": "L'étiquette ARIA pour la navigation principale"
+    "description": "The ARIA label for the main navigation"
   },
   "theme.navbar.mobileLanguageDropdown.label": {
     "message": "Langues",
-    "description": "L'étiquette pour le sélecteur de langue mobile de la barre de navigation"
+    "description": "The label for the mobile language switcher dropdown"
   },
   "theme.NotFound.p1": {
     "message": "Nous n'avons pas trouvé ce que vous recherchez.",
-    "description": "Le premier paragraphe de la page 404"
+    "description": "The first paragraph of the 404 page"
   },
   "theme.NotFound.p2": {
     "message": "Veuillez contacter le propriétaire du site qui vous a lié à l'URL d'origine et leur faire savoir que leur lien est cassé.",
-    "description": "Le deuxième paragraphe de la page 404"
+    "description": "The 2nd paragraph of the 404 page"
   },
   "theme.TOCCollapsible.toggleButtonLabel": {
     "message": "Sur cette page",
-    "description": "L'étiquette utilisée par le bouton sur le composant TOC rétractable"
+    "description": "The label used by the button on the collapsible TOC component"
   },
   "theme.blog.post.readMore": {
     "message": "Lire plus",
-    "description": "L'étiquette utilisée dans les extraits d'articles de blog pour accéder aux articles complets"
+    "description": "The label used in blog post item excerpts to link to full blog posts"
   },
   "theme.blog.post.readMoreLabel": {
     "message": "En savoir plus sur {title}",
-    "description": "L'étiquette ARIA pour le lien vers les articles complets à partir des extraits"
+    "description": "The ARIA label for the link to full blog posts from excerpts"
   },
   "theme.blog.post.readingTime.plurals": {
     "message": "Une minute de lecture|{readingTime} minutes de lecture",
-    "description": "Etiquette pluriel pour \"{readingTime} min read\". Utilisez autant de formes plurielles (séparées par \"|\") que votre langue le permet (voir https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+    "description": "Pluralized label for \"{readingTime} min read\". Use as much plural forms (separated by \"|\") as your language support (see https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
   },
   "theme.docs.breadcrumbs.home": {
     "message": "Page d'accueil",
-    "description": "L'étiquette ARIA pour la page d'accueil dans les fils d'Ariane"
+    "description": "The ARIA label for the home page in the breadcrumbs"
   },
   "theme.docs.sidebar.collapseButtonTitle": {
     "message": "Réduire le menu latéral",
-    "description": "L'attribut titre pour le bouton de réduction de la barre latérale des documents"
+    "description": "The title attribute for collapse button of doc sidebar"
   },
   "theme.docs.sidebar.collapseButtonAriaLabel": {
     "message": "Réduire le menu latéral",
-    "description": "L'attribut titre pour le bouton de réduction de la barre latérale des documents"
+    "description": "The title attribute for collapse button of doc sidebar"
   },
   "theme.docs.sidebar.navAriaLabel": {
-    "message": "Barre latérale de la documentation",
-    "description": "L'étiquette ARIA pour la navigation de la barre latérale"
+    "message": "Docs sidebar",
+    "description": "The ARIA label for the sidebar navigation"
   },
   "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
     "message": "Fermer la barre de navigation",
-    "description": "L'étiquette ARIA pour le bouton de fermeture de la barre latérale mobile"
+    "description": "The ARIA label for close button of mobile sidebar"
   },
   "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
     "message": "← Retour au menu principal",
-    "description": "L'étiquette du bouton de retour au menu principal, dans le menu secondaire de la barre de navigation mobile (notamment utilisé pour afficher la barre latérale des documents)"
+    "description": "The label of the back button to return to main menu, inside the mobile navbar sidebar secondary menu (notably used to display the docs sidebar)"
   },
   "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
     "message": "Ouvrir/fermer la barre de navigation",

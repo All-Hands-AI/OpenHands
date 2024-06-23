@@ -1,18 +1,18 @@
 {
   "version.label": {
-    "message": "下一个",
-    "description": "当前版本的标签"
+    "message": "Next",
+    "description": "The label for version current"
   },
-  "sidebar.docsSidebar.category.🤖 LLM Backends": {
-    "message": "🤖 LLM 后端",
-    "description": "侧边栏 docsSidebar 中类别 🤖 LLM Backends 的标签"
+  "sidebar.docsSidebar.category.🤖 LLM 支持": {
+    "message": "🤖 LLM 支持",
+    "description": "The label for category 🤖 LLM 支持 in sidebar docsSidebar"
   },
-  "sidebar.docsSidebar.category.🚧 Troubleshooting": {
+  "sidebar.docsSidebar.category.🚧 故障排除": {
     "message": "🚧 故障排除",
-    "description": "侧边栏 docsSidebar 中类别 🚧 Troubleshooting 的标签"
+    "description": "The label for category 🚧 故障排除 in sidebar docsSidebar"
   },
   "sidebar.apiSidebar.category.Backend": {
-    "message": "后端",
-    "description": "侧边栏 apiSidebar 中类别 Backend 的标签"
+    "message": "Backend",
+    "description": "The label for category Backend in sidebar apiSidebar"
   }
 }
