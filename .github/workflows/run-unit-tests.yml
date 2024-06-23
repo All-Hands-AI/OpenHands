@@ -52,6 +52,7 @@ jobs:
               # unlinking colima dependency: go
               brew uninstall go@1.21
           fi
+          rm -rf ~/.colima
           brew install --HEAD colima
           brew services start colima
           brew install docker
