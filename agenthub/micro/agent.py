@@ -63,7 +63,7 @@ class MicroAgent(Agent):
         self.delegates = all_microagents.copy()
         del self.delegates[self.agent_definition['name']]
 
-    async def step(self, state: State) -> Action:
+    def step(self, state: State) -> Action:
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,

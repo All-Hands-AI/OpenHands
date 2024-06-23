@@ -138,7 +138,7 @@ class MonologueAgent(Agent):
                     action = MessageAction(thought)
                 self.initial_thoughts.append(event_to_memory(action))
 
-    async def step(self, state: State) -> Action:
+    def step(self, state: State) -> Action:
         """
         Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
 
@@ -176,7 +176,7 @@ class MonologueAgent(Agent):
         ]
 
         # format all as a single message, a monologue
-        resp = await self.llm.completion(messages=messages)
+        resp = self.llm.completion(messages=messages)
 
         action = self.response_parser.parse(resp)
         self.latest_action = action

@@ -6,7 +6,7 @@ from agenthub.codeact_agent.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
-from opendevin.controller.agent import Agent
+from opendevin.controller.agent import AsyncAgent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
@@ -167,9 +167,22 @@ class CodeActAgent(Agent):
         """
         super().reset()
 
-    async def step(self, state: State) -> Action:
+    def step(self, state: State) -> Action:
         """
         Performs one step using the CodeAct Agent.
+        This includes gathering info on previous steps and prompting the model to make a command to execute.
+
+        Parameters:
+        - state (State): used to get updated info and background commands
+        """
+        messages = self._prepare_messages(state)
+        if self._check_exit_command(messages):
+            return AgentFinishAction()
+        return self._common_step_logic_sync(state, self.llm.completion, messages)
+
+    async def async_step(self, state: State) -> Action:
+        """
+        Performs one step asynchronously     using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:

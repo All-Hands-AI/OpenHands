@@ -6,6 +6,7 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 from litellm import acompletion as litellm_acompletion
+from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
@@ -163,7 +164,7 @@ class LLM:
                 self.max_output_tokens = 1024
 
         self._completion = partial(
-            litellm_acompletion,
+            litellm_completion,
             model=self.model_name,
             api_key=self.api_key,
             base_url=self.base_url,
@@ -198,11 +199,66 @@ class LLM:
             ),
             after=attempt_on_error,
         )
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             """
-            Wrapper for the litellm acompletion function. Logs the input and output of the completion function.
+            Wrapper for the litellm completion function. Logs the input and output of the completion function.
             """
 
+            # some callers might just send the messages directly
+            if 'messages' in kwargs:
+                messages = kwargs['messages']
+            else:
+                messages = args[1]
+
+            # log the prompt
+            debug_message = ''
+            for message in messages:
+                debug_message += message_separator + message['content']
+            llm_prompt_logger.debug(debug_message)
+
+            # call the completion function
+            resp = completion_unwrapped(*args, **kwargs)
+
+            # log the response
+            message_back = resp['choices'][0]['message']['content']
+            llm_response_logger.debug(message_back)
+
+            # post-process to log costs
+            self._post_completion(resp)
+
+            return resp
+
+        self._completion = wrapper  # type: ignore
+
+        # Async version
+        self._async_completion = partial(
+            litellm_acompletion,
+            model=self.model_name,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            api_version=self.api_version,
+            custom_llm_provider=custom_llm_provider,
+            max_tokens=self.max_output_tokens,
+            timeout=self.llm_timeout,
+            temperature=llm_temperature,
+            top_p=llm_top_p,
+        )
+
+        async_completion_unwrapped = self._async_completion
+
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(num_retries),
+            wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
+            retry=retry_if_exception_type(
+                (RateLimitError, APIConnectionError, ServiceUnavailableError)
+            ),
+            after=attempt_on_error,
+        )
+        async def async_wrapper(*args, **kwargs):
+            """
+            Async wrapper for the litellm acompletion function. Logs the input and output of the completion function.
+            """
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -224,7 +280,9 @@ class LLM:
                         return True
                     await asyncio.sleep(0.1)  # Check every 100ms
 
-            litellm_task = asyncio.create_task(completion_unwrapped(*args, **kwargs))
+            litellm_task = asyncio.create_task(
+                async_completion_unwrapped(*args, **kwargs)
+            )
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
@@ -253,7 +311,7 @@ class LLM:
                 for task in pending:
                     task.cancel()
 
-        self._completion = wrapper  # type: ignore
+        self._async_completion = async_wrapper  # type: ignore
 
         # Async version
         self._async_completion = partial(
@@ -346,6 +404,15 @@ class LLM:
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
         return self._completion
+
+    @property
+    def async_completion(self):
+        """
+        Decorator for the async litellm completion function.
+
+        Check the complete documentation at https://litellm.vercel.app/docs/completion
+        """
+        return self._async_completion
 
     def _post_completion(self, response: str) -> None:
         """

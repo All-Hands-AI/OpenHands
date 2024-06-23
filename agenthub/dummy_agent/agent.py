@@ -121,7 +121,7 @@ class DummyAgent(Agent):
             },
         ]
 
-    async def step(self, state: State) -> Action:
+    def step(self, state: State) -> Action:
         time.sleep(0.1)
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
