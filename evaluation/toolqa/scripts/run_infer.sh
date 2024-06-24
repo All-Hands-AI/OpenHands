@@ -10,7 +10,12 @@ EVAL_LIMIT=$4
 DATASET=$5
 HARDNESS=$6
 WOLFRAM_APPID=$7
+NUM_WORKERS=$8
 
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
@@ -51,7 +56,7 @@ COMMAND="poetry run python evaluation/toolqa/run_infer.py \
   --wolfram_alpha_appid $WOLFRAM_APPID\
   --data-split validation \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${LEVELS}"
 
 if [ -n "$EVAL_LIMIT" ]; then

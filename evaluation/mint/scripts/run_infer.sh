@@ -7,7 +7,12 @@ MODEL_CONFIG=$1
 COMMIT_HASH=$2
 SUBSET=$3
 EVAL_LIMIT=$4
+NUM_WORKERS=$5
 
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
 checkout_eval_branch
 
 # Only 'CodeActAgent' is supported for MINT now
@@ -24,7 +29,7 @@ COMMAND="poetry run python ./evaluation/mint/run_infer.py \
     --llm-config $MODEL_CONFIG \
     --max-iterations 5 \
     --max-propose-solution 2 \
-    --eval-note $AGENT_VERSION"
+    --eval-num-workers $NUM_WORKERS \
 
 if [ -n "$SUBSET" ]; then
   echo "SUBSET: $SUBSET"
