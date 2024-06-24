@@ -1,8 +1,0 @@
-{
-  "action": "reject",
-  "args": {
-    "outputs": {
-      "reason": "The CommitWriterAgent was unable to write a git commit message because the current directory is not a valid git repository. No other agents are suitable for resolving this issue."
-    }
-  }
-}
