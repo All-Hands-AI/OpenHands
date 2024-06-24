@@ -80,11 +80,14 @@ class MoatlessSearchAgent(Agent):
         nodes, tokens = code_index.run_ingestion()
         logger.info(f'🤓 Indexed {nodes} nodes and {tokens} tokens')
         self._workspace = Workspace(file_repo=file_repo, code_index=code_index)
+        self._identified_or_rejected = False
 
     def step(self, state: State) -> Action:
         """
         Perform one search step using the agent.
         """
+        if self._identified_or_rejected:
+            return AgentFinishAction()
 
         messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
@@ -170,12 +173,18 @@ class MoatlessSearchAgent(Agent):
 
                 function_name = tool_call.function.name
                 if function_name == IdentifyCode.name():
-                    response = self._identify(tool_call.id, arguments)
+                    response, file_context = self._identify(tool_call.id, arguments)
                     if response:
-                        return AgentFinishAction(thought=response.model_dump())
+                        self._identified_or_rejected = True
+                        return MessageAction(
+                            content=response.message
+                            + '\n'
+                            + file_context.create_prompt()
+                        )
                 elif function_name == Reject.name():
                     reject_request = RejectRequest.model_validate(arguments)
-                    return AgentFinishAction(thought=reject_request.reason)
+                    self._identified_or_rejected = True
+                    return MessageAction(content=reject_request.reason)
                 elif function_name == SearchCodeAction.name():
                     ranked_spans = []
                     try:
@@ -264,9 +273,7 @@ class MoatlessSearchAgent(Agent):
     def _tool_specs(self) -> list[dict[str, Any]]:
         return [tool.openai_tool_spec() for tool in self.TOOLS]
 
-    def _identify(
-        self, tool_call_id: str, arguments: dict[str, Any]
-    ) -> Optional[FindCodeResponse]:
+    def _identify(self, tool_call_id: str, arguments: dict[str, Any]):
         identify_request = IdentifyCodeRequest.model_validate(arguments)
 
         files_with_missing_spans = self._find_missing_spans(
@@ -303,7 +310,7 @@ class MoatlessSearchAgent(Agent):
             message=identify_request.reasoning, files=file_context.to_files_with_spans()
         )
 
-        return response
+        return response, file_context
 
     def _find_missing_spans(self, files_with_spans: list[FileWithSpans]):
         files_with_missing_spans = []

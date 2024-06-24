@@ -91,7 +91,7 @@ class ContextFile(BaseModel):
             exclude_comments=exclude_comments,
         )
 
-        return f'{self.file_path}\n```\n{code}\n```\n'
+        return f'**{self.file_path}**\n```\n{code}\n```\n\n\n'
 
     def _find_span(self, codeblock: CodeBlock) -> Optional[ContextSpan]:
         if not codeblock.belongs_to_span:
