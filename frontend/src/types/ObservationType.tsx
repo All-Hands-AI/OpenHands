@@ -20,7 +20,7 @@ enum ObservationType {
   // Agent state has changed
   AGENT_STATE_CHANGED = "agent_state_changed",
 
-  // Delegatge result
+  // Delegate result
   DELEGATE = "delegate",
 }
 
