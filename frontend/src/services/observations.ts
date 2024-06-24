@@ -28,11 +28,10 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(changeAgentState(message.extras.agent_state));
       break;
     case ObservationType.DELEGATE:
-      // As of now, do nothing (display nothing on GUI), because:
-      // 1) if delegation succeeds, the result shall have already been displayed
-      // to users through previous messages
-      // 2) if delegation is rejected, the error message is displayed to users
-      // via reject action's message
+      // TODO: better UI for delegation result (#2309)
+      if (message.content) {
+        store.dispatch(addAssistantMessage(message.content));
+      }
       break;
     default:
       store.dispatch(addAssistantMessage(message.message));

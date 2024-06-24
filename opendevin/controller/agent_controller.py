@@ -1,4 +1,5 @@
 import asyncio
+import json
 import traceback
 from typing import Optional, Type
 
@@ -278,7 +279,12 @@ class AgentController:
                 self.delegateAction = None
 
                 # update delegate result observation
-                obs: Observation = AgentDelegateObservation(outputs=outputs, content='')
+                content = (
+                    f'Delegate agent finishes task with outputs: {json.dumps(outputs)}'
+                )
+                obs: Observation = AgentDelegateObservation(
+                    outputs=outputs, content=content
+                )
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
