@@ -213,15 +213,17 @@ class Session {
   }
 
   static cancelCurrentAction(): void {
+    const userMessage = "Task cancelled by user.";
     const changeStateEvent: Message = {
       action: ActionType.CHANGE_AGENT_STATE,
       args: {
         agent_state: AgentState.STOPPED,
         thought: "User requested cancellation",
-        status_message: "Task cancelled by user.",
+        status_message: userMessage,
       },
     };
     Session.send(JSON.stringify(changeStateEvent));
+    toast.error("ws", userMessage);
   }
 }
 
