@@ -1,7 +1,29 @@
 # Default configuration template for OpenDevin
 
-# General settings
-enable_auto_lint = "false"  # Set to "true" for automatic linting during evaluations
+# Core Configuration
+# Uncomment and configure the following settings as needed
+
+# [core]
+# runtime = "server"
+# file_store = "memory"
+# file_store_path = "/tmp/file_store"
+# workspace_base = "/path/to/workspace"
+# workspace_mount_path = "/path/to/mount"
+# workspace_mount_path_in_sandbox = "/workspace"
+# workspace_mount_rewrite = "your_workspace_mount_rewrite"
+# cache_dir = "/tmp/cache"
+# sandbox_container_image = "ghcr.io/opendevin/sandbox:main"
+# run_as_devin = true
+# max_iterations = 100
+# max_budget_per_task = 100.0
+# e2b_api_key = "your_e2b_api_key"
+# sandbox_type = "ssh"  # Options: "ssh", "exec", "e2b", "local"
+# use_host_network = false
+# ssh_hostname = "localhost"
+# disable_color = false
+# sandbox_user_id = 1000
+# sandbox_timeout = 120
+# debug = false
 
 # Sandbox configuration
 # Uncomment and configure the following settings as needed
@@ -45,31 +67,6 @@ enable_auto_lint = "false"  # Set to "true" for automatic linting during evaluat
 # name = "CodeActAgent"
 # memory_enabled = false
 # memory_max_threads = 2
-
-# App Configuration
-# Uncomment and configure the following settings as needed
-
-# [app]
-# runtime = "server"
-# file_store = "memory"
-# file_store_path = "/tmp/file_store"
-# workspace_base = "/path/to/workspace"
-# workspace_mount_path = "/path/to/mount"
-# workspace_mount_path_in_sandbox = "/workspace"
-# workspace_mount_rewrite = "your_workspace_mount_rewrite"
-# cache_dir = "/tmp/cache"
-# sandbox_container_image = "ghcr.io/opendevin/sandbox:main"
-# run_as_devin = true
-# max_iterations = 100
-# max_budget_per_task = 100.0
-# e2b_api_key = "your_e2b_api_key"
-# sandbox_type = "ssh"  # Options: "ssh", "exec", "e2b", "local"
-# use_host_network = false
-# ssh_hostname = "localhost"
-# disable_color = false
-# sandbox_user_id = 1000
-# sandbox_timeout = 120
-# debug = false
 
 # Environment Variables
 # Uncomment and configure the following settings as needed
