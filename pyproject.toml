@@ -69,7 +69,6 @@ tree-sitter-languages = "1.10.2"
 gitpython = "*"
 networkx = "*"
 scipy = "*"
-pathspec = "*"
 pandas = "*"
 reportlab = "*"
 
