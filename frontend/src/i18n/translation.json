@@ -357,6 +357,11 @@
     "de": "Agent hat die Aufgabe erledigt.",
     "zh-CN": "智能体已完成任务"
   },
+  "CHAT_INTERFACE$AGENT_REJECTED_MESSAGE": {
+    "en": "Agent has rejected the task.",
+    "de": "Agent hat die Aufgabe abgelehnt.",
+    "zh-CN": "智能体拒绝任务"
+  },
   "CHAT_INTERFACE$AGENT_ERROR_MESSAGE": {
     "en": "Agent encountered an error.",
     "de": "Agent ist auf einen Fehler gelaufen.",

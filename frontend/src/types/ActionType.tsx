@@ -33,6 +33,9 @@ enum ActionType {
   // use the finish action to stop working.
   FINISH = "finish",
 
+  // Reject a request from user or another agent.
+  REJECT = "reject",
+
   // Adds a task to the plan.
   ADD_TASK = "add_task",
 
