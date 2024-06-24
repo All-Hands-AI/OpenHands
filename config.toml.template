@@ -1,0 +1,107 @@
+# config.toml.template
+
+# Core settings
+[core]
+# Maximum number of iterations the agent will run
+max_iterations = 100
+
+# Directory to cache files
+cache_dir = "/path/to/cache"
+
+# Base path for the workspace. This directory will be mounted into the sandbox.
+workspace_base = "/path/to/workspace"
+
+# Path to mount the workspace. This should be the same as workspace_base.
+workspace_mount_path = "/path/to/workspace"
+
+# Type of sandbox to use. Options: 'ssh', 'exec', 'e2b', 'local'
+sandbox_type = "ssh"
+
+# Timeout for the sandbox in seconds
+sandbox_timeout = 120
+
+# Hostname for SSH sandbox
+ssh_hostname = "localhost"
+
+# Whether to use the host network. Set to true if the sandbox needs to access the host network.
+use_host_network = false
+
+# Run as devin user
+run_as_devin = true
+
+# Enable auto linting. Set to true to automatically lint files after editing.
+enable_auto_lint = true
+
+# LLM settings for GPT-3.5 Turbo
+[eval_gpt35_turbo]
+model = "gpt-3.5-turbo"
+api_key = "sk-123"
+temperature = 0.0
+
+# LLM settings for GPT-4
+[eval_gpt4o]
+model = "gpt-4o"
+api_key = "sk-123"
+temperature = 0.0
+
+# Example of a local LLM configuration
+[local_llm]
+model = "local-llm"
+base_url = "http://localhost:8000"
+api_key = "local-api-key"
+temperature = 0.7
+
+# Example of using Azure OpenAI
+[azure_openai]
+model = "azure-gpt-4"
+api_key = "azure-api-key"
+base_url = "https://api.openai.azure.com"
+api_version = "2023-05-15"
+embedding_model = "azure-embedding-model"
+embedding_base_url = "https://api.openai.azure.com/embeddings"
+embedding_deployment_name = "azure-deployment"
+
+# Example of using AWS LLM
+[aws_llm]
+model = "aws-gpt-4"
+aws_access_key_id = "your-aws-access-key-id"
+aws_secret_access_key = "your-aws-secret-access-key"
+aws_region_name = "us-west-2"
+num_retries = 5
+retry_min_wait = 3
+retry_max_wait = 60
+timeout = 120
+
+# Sandbox environment variable settings
+[sandbox_env]
+# Example environment variable
+MY_ENV_VAR = "value"
+
+# Additional settings for the application
+[app]
+# Path to the file store
+file_store_path = "/tmp/file_store"
+
+# Container image to use for the sandbox
+sandbox_container_image = "ghcr.io/opendevin/sandbox:main"
+
+# Whether to disable color in the terminal output
+disable_color = false
+
+# User ID for the sandbox
+sandbox_user_id = 1000
+
+# Whether to enable debugging
+debug = false
+
+# Whether to persist the sandbox after execution
+persist_sandbox = false
+
+# SSH port for the sandbox
+ssh_port = 63710
+
+# SSH password for the sandbox
+ssh_password = "your-ssh-password"
+
+# JWT secret for authentication
+jwt_secret = "your-jwt-secret"
