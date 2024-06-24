@@ -8,7 +8,12 @@ COMMIT_HASH=$2
 AGENT=$3
 EVAL_LIMIT=$4
 MAX_ITER=$5
+NUM_WORKERS=$6
 
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
@@ -45,7 +50,7 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations $MAX_ITER \
   --max-chars 10000000 \
-  --eval-num-workers 8 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then

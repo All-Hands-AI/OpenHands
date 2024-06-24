@@ -46,7 +46,15 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
+          # Uninstall colima to upgrade to the latest version
+          if brew list colima &>/dev/null; then
+              brew uninstall colima
+              # unlinking colima dependency: go
+              brew uninstall go@1.21
+          fi
+          rm -rf ~/.colima ~/.lima
           brew install --HEAD colima
+          brew services start colima
           brew install docker
           colima start  --network-address --arch x86_64
 
