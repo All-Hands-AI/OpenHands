@@ -35,6 +35,8 @@ pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.4.2"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
+tree-sitter = "0.21.3"
+grep-ast = "0.3.2"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -61,9 +63,11 @@ python-docx = "*"
 PyPDF2 = "*"
 pylatexenc = "*"
 python-pptx = "*"
-opencv-python = "*"
+opencv-python = "4.10.0.82"
 pandas = "*"
 reportlab = "*"
+grep-ast = "0.3.2"
+tree-sitter = "0.21.3"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
