@@ -24,26 +24,29 @@ To reproduce this image, please see the Dockerfile_Opendevin in the `biocoder` r
 
 
 ```bash
-./evaluation/biocoder/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+./evaluation/biocoder/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
 ```
 
-where `model_config` is mandatory, while `agent`, `dataset` and `eval_limit` are optional.
+where `model_config` is mandatory, while `git-version`, `agent`, `dataset` and `eval_limit` are optional.
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
+
+- `git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 - `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
 - `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By default it infers all instances.
 
-Let's say you'd like to run 10 instances using `eval_gpt4_1106_eval_gpt4o_2024_05_13preview` and CodeActAgent,
-then your command would be:
+Let's say you'd like to run 1 instance using `eval_gpt4_1106_eval_gpt4o_2024_05_13preview` and CodeActAgent
+with OpenDevin version 0.6.2, then your command would be:
 
 ## Examples
 
 ```bash
-./evaluation/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 CodeActAgent 1
+./evaluation/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 0.6.2 CodeActAgent 1
 ```
 
 ## Reference

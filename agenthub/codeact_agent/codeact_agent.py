@@ -64,7 +64,7 @@ def get_observation_message(obs) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         content += (
-            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
         return {'role': 'user', 'content': content}
     elif isinstance(obs, IPythonRunCellObservation):
@@ -225,7 +225,7 @@ class CodeActAgent(Agent):
         if config.agent.is_autonomous:
             messages.append({'role': 'user', 'content': f'Give step {state.iteration}'})
 
-        response = self.llm.do_completion(
+        response = self.llm.completion(
             messages=messages,
             stop=[
                 '</execute_ipython>',

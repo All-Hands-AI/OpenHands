@@ -1,4 +1,7 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
 
 # configure webarena websites and environment
 source evaluation/webarena/scripts/webarena_env.sh
@@ -8,17 +11,23 @@ export USE_NAV="false"
 export USE_CONCISE_ANSWER="true"
 
 MODEL_CONFIG=$1
-AGENT=$2
-EVAL_LIMIT=$3
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+NUM_WORKERS=$5
+
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default BrowsingAgent"
   AGENT="BrowsingAgent"
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+get_agent_version
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
@@ -31,6 +40,7 @@ COMMAND="poetry run python evaluation/webarena/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations 15 \
   --max-chars 10000000 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then

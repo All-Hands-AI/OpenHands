@@ -73,7 +73,6 @@ function ChatInterface() {
   } = useDisclosure();
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
-    setFeedbackShared(messages.length);
     setFeedback((prev) => ({
       ...prev,
       feedback: polarity,
@@ -190,6 +189,7 @@ function ChatInterface() {
         handlePermissionsChange={handlePermissionsChange}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
+        onSendFeedback={() => setFeedbackShared(messages.length)}
       />
     </div>
   );
