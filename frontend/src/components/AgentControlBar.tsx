@@ -134,7 +134,7 @@ function AgentControlBar() {
         <ArrowIcon />
       </ActionButton>
       <ActionButton
-        isDisabled={isLoading || curAgentState === AgentState.STOPPED}
+        isDisabled={isLoading || curAgentState !== AgentState.RUNNING}
         content="Cancel current task"
         action={AgentState.STOPPED}
         handleAction={handleCancelAction}
