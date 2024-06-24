@@ -22,7 +22,6 @@ import functools
 import os
 import re
 import shutil
-import subprocess
 import tempfile
 from inspect import signature
 from typing import Optional
@@ -33,9 +32,12 @@ from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
+from opendevin.runtime.aider.linter import Linter
+
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
 WINDOW = 100
+
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
@@ -126,54 +128,13 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     Returns:
         tuple[str, Optional[int]]: (lint_error, first_error_line_number)
     """
-
-    if file_path.endswith('.py'):
-        # Define the flake8 command with selected error codes
-        def _command_fn(executable):
-            return [
-                executable,
-                '--isolated',
-                '--select=F821,F822,F831,E112,E113,E999,E902',
-                file_path,
-            ]
-
-        if os.path.exists('/opendevin/miniforge3/bin/flake8'):
-            # when this function is called from the docker sandbox,
-            # the flake8 command is available at /opendevin/miniforge3/bin/flake8
-            executable = '/opendevin/miniforge3/bin/flake8'
-        else:
-            executable = 'flake8'
-
-        command = _command_fn(executable)
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        if result.returncode == 0:
-            # Linting successful. No issues found.
-            return None, None
-
-        # Extract the line number from the first error message
-        error_message = result.stdout.decode().strip()
-        lint_error = 'ERRORS:\n' + error_message
-        first_error_line = None
-        for line in error_message.splitlines(True):
-            if line.strip():
-                # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
-                parts = line.split(':')
-                if len(parts) >= 2:
-                    try:
-                        first_error_line = int(parts[1])
-                        break
-                    except ValueError:
-                        # Not a valid line number, continue to the next line
-                        continue
-
-        return lint_error, first_error_line
-
-    # Not a python file, skip linting
-    return None, None
+    linter = Linter(root=os.getcwd())
+    lint_result = linter.lint(file_path)
+    if linter.returncode == 0:
+        # Linting successful. No issues found.
+        return None, None
+    lint_error = 'ERRORS:\n' + lint_result.text
+    return lint_error, lint_result.lines[0]
 
 
 def _print_window(file_path, targeted_line, window, return_str=False):
