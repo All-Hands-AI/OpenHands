@@ -34,10 +34,6 @@ gevent = "^24.2.1"
 pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.4.1"
 zope-interface = "6.4.post2"
-diskcache = "5.6.3"
-grep-ast = "0.3.2"
-tree-sitter = "0.21.3"
-tree-sitter-languages = "1.10.2"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
