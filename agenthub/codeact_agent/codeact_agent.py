@@ -301,6 +301,7 @@ class CodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
+                '</execute_search>,',
             ],
             temperature=0.0,
         )

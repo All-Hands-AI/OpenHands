@@ -25,6 +25,7 @@ from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
+USE_MOATLESS_SEARCH = os.environ.get('USE_MOATLESS_SEARCH', 'false') == 'true'
 
 
 def cleanup():

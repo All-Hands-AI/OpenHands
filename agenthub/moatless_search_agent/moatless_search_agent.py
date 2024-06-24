@@ -102,7 +102,7 @@ class MoatlessSearchAgent(Agent):
             messages.append(
                 {
                     'role': 'assistant',
-                    'tool_calls': json.dumps(
+                    'tool_calls': (  # type: ignore
                         [
                             {
                                 'id': tool_call.call_id,
