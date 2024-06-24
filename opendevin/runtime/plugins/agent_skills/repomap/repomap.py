@@ -12,7 +12,6 @@ from importlib import resources
 from pathlib import Path, PurePosixPath
 from typing import Any, Set
 
-import git
 import networkx as nx
 import pathspec
 from diskcache import Cache
@@ -710,6 +709,8 @@ class RepoMap:
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
+        import git
+
         # Construct a git repo object and get all the relative files tracked by git and staged files
         try:
             repo = git.Repo(self.root)
