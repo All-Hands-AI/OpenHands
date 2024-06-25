@@ -99,3 +99,5 @@ poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
     --log_dir $FILE_DIR/logs \
     --output_dir $FILE_DIR \
     --swe_bench_tasks $SWEBENCH_TASKS
+
+poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH

@@ -2,7 +2,7 @@
 {
   "action": "run",
   "args": {
-    "command": "git diff --cached"
+    "command": "git status"
   }
 }
 ```

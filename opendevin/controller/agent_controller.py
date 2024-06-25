@@ -108,7 +108,7 @@ class AgentController:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
                 await self.report_error(
-                    f'Task budget exceeded. Current cost: {current_cost}, Max budget: {self.max_budget_per_task}'
+                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
                 )
                 await self.set_agent_state_to(AgentState.ERROR)
 
@@ -120,9 +120,9 @@ class AgentController:
         - the string message should be user-friendly, it will be shown in the UI
         - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
         """
-        self.state.error = message
         if exception:
-            self.state.error += f': {str(exception)}'
+            message += f': {exception}'
+        self.state.error = message
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -140,7 +140,6 @@ class AgentController:
                 logger.info('AgentController task was cancelled')
                 break
             except Exception as e:
-                traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
                 await self.report_error(
@@ -186,6 +185,9 @@ class AgentController:
             elif isinstance(event, AgentDelegateObservation):
                 await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, ErrorObservation):
+                await self.add_history(NullAction(), event)
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
         self.agent.reset()
@@ -223,6 +225,8 @@ class AgentController:
             max_iterations=self.state.max_iterations,
             num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,
+            # metrics should be shared between parent and child
+            metrics=self.state.metrics,
         )
         logger.info(f'[Agent Controller {self.id}]: start delegate')
         self.delegate = AgentController(
@@ -231,6 +235,7 @@ class AgentController:
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_chars=self.max_chars,
+            max_budget_per_task=self.max_budget_per_task,
             initial_state=state,
             is_delegate=True,
         )
@@ -309,11 +314,14 @@ class AgentController:
 
         logger.info(action, extra={'msg_type': 'ACTION'})
 
-        await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
         else:
             await self.add_history(action, NullObservation(''))
+
+        await self.update_state_after_step()
+        if self.state.agent_state == AgentState.ERROR:
+            return
 
         if not isinstance(action, NullAction):
             await self.event_stream.add_event(action, EventSource.AGENT)

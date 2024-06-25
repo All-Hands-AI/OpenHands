@@ -2,7 +2,9 @@
 {
   "action": "reject",
   "args": {
-    "reason": "The current repository is not a valid git repository or there is no diff in the staging area."
+    "outputs": {
+      "reason": "CommitWriterAgent failed because the current directory is not a valid git repository. No other agents can resolve this issue."
+    }
   }
 }
 ```
