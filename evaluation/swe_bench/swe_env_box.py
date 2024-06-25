@@ -12,7 +12,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
+SWE_BENCH_DOCKER_NAMESPACE = 'docker.io/xingyaoww'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
@@ -94,8 +94,12 @@ class SWEBenchSSHBox(DockerSSHBox):
             config.enable_auto_lint = True
             # Need to run as root to use SWEBench container
             config.run_as_devin = False
+
+            repo_name = instance['repo'].replace('/', '_')
+            testbed_image = f"{SWE_BENCH_DOCKER_NAMESPACE}/swe-bench-{repo_name}-testbed:{instance['version']}"
+
             sandbox = cls(
-                container_image=SWE_BENCH_CONTAINER_IMAGE,
+                container_image=testbed_image,
                 swe_instance_id=instance['instance_id'],
                 swe_instance=instance,
                 skip_workspace_mount=skip_workspace_mount,
