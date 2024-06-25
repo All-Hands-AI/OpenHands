@@ -133,7 +133,6 @@ class SandboxConfig(metaclass=Singleton):
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
-        initialize_plugins: Whether to initialize the plugins.
         fast_boot: Whether to fast boot the sandbox.
 
 
@@ -147,7 +146,6 @@ class SandboxConfig(metaclass=Singleton):
     )
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
-    initialize_plugins: bool = True
     fast_boot: bool = False
 
     def defaults_to_dict(self) -> dict:
@@ -201,6 +199,7 @@ class AppConfig(metaclass=Singleton):
         use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
+        initialize_plugins: Whether to initialize plugins.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
     """
@@ -225,6 +224,7 @@ class AppConfig(metaclass=Singleton):
     use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
+    initialize_plugins: bool = True
     persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
@@ -340,7 +340,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                     setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
 
                 old_configs = ['INITIALIZE_PLUGINS']
-                if field_name == 'sandbox':
+                if field_name == 'sandbox' and 0: # Separate PR
                     for old_config in old_configs:
                         if (
                             old_config.lower() in nested_sub_config.__annotations__
