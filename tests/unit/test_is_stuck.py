@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendevin.controller.agent_controller import AgentController
+from opendevin.controller.stuck import StuckDetector
 from opendevin.events.action import CmdRunAction, FileReadAction, MessageAction
 from opendevin.events.action.commands import CmdKillAction, IPythonRunCellAction
 from opendevin.events.observation import (
@@ -33,23 +33,22 @@ def event_stream():
     event_stream.clear()
 
 
-class TestAgentController:
+class TestStuckDetector:
     @pytest.fixture
-    def controller(self):
-        controller = Mock(spec=AgentController)
-        controller._is_stuck = AgentController._is_stuck.__get__(
-            controller, AgentController
+    def stuck_detector(self):
+        stuck_detector = Mock(spec=StuckDetector)
+        stuck_detector.is_stuck = StuckDetector.is_stuck.__get__(
+            stuck_detector, StuckDetector
         )
-        controller._eq_no_pid = AgentController._eq_no_pid.__get__(
-            controller, AgentController
+        stuck_detector._eq_no_pid = StuckDetector._eq_no_pid.__get__(
+            stuck_detector, StuckDetector
         )
-        controller.delegate = None
-        controller.state = Mock()
-        controller.state.history = ShortTermHistory()
-        return controller
+        stuck_detector.state = Mock()
+        stuck_detector.state.history = ShortTermHistory()
+        return stuck_detector
 
     def test_history_too_short(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         message_action = MessageAction(content='Hello', wait_for_response=False)
         message_action._source = EventSource.USER
@@ -66,12 +65,12 @@ class TestAgentController:
         cmd_observation._cause = cmd_action._id
         event_stream.add_event(cmd_observation, EventSource.USER)
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
-        assert controller._is_stuck() is False
+        assert stuck_detector._is_stuck() is False
 
     def test_is_stuck_repeating_action_observation(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
@@ -116,17 +115,17 @@ class TestAgentController:
         event_stream.add_event(cmd_observation_3, EventSource.USER)
         # 10 events
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
         assert len(collect_events(event_stream)) == 10
-        assert len(list(controller.state.history.get_events())) == 8
-        assert len(controller.state.history.get_tuples()) == 5
+        assert len(list(stuck_detector.state.history.get_events())) == 8
+        assert len(stuck_detector.state.history.get_tuples()) == 5
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert controller._is_stuck() is True
+            assert stuck_detector._is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
     def test_is_stuck_repeating_action_error_observation(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         # (action, error_observation), not necessarily the same error
         message_action = MessageAction(content='Done', wait_for_response=False)
@@ -174,15 +173,15 @@ class TestAgentController:
         event_stream.add_event(error_observation_4, EventSource.USER)
         # 12 events
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
         with patch('logging.Logger.warning') as mock_warning:
-            assert controller._is_stuck() is True
+            assert stuck_detector._is_stuck() is True
             mock_warning.assert_called_once_with(
                 'Action, ErrorObservation loop detected'
             )
 
     def test_is_stuck_ipython_syntax_error(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         ipython_action_1 = IPythonRunCellAction(code='print("hello')
         event_stream.add_event(ipython_action_1, EventSource.AGENT)
@@ -220,7 +219,7 @@ class TestAgentController:
         ipython_observation_4._cause = ipython_action_4._id
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
         last_observations = [
             ipython_observation_1,
@@ -248,13 +247,13 @@ class TestAgentController:
             assert string_is_last
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert controller._is_stuck() is True
+            assert stuck_detector._is_stuck() is True
             mock_warning.assert_called_once_with(
                 'Action, IPythonRunCellObservation loop detected'
             )
 
     def test_is_stuck_ipython_syntax_error_not_at_end(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         ipython_action_1 = IPythonRunCellAction(code='print("hello')
         event_stream.add_event(ipython_action_1, EventSource.AGENT)
@@ -292,14 +291,14 @@ class TestAgentController:
         ipython_observation_4._cause = ipython_action_4._id
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert controller._is_stuck() is False
+            assert stuck_detector._is_stuck() is False
             mock_warning.assert_not_called()
 
     def test_is_stuck_repeating_action_observation_pattern(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         message_action = MessageAction(content='Come on', wait_for_response=False)
         message_action._source = EventSource.USER
@@ -360,14 +359,14 @@ class TestAgentController:
         read_observation_3._cause = read_action_3._id
         event_stream.add_event(read_observation_3, EventSource.USER)
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert controller._is_stuck() is True
+            assert stuck_detector._is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation pattern detected')
 
     def test_is_stuck_not_stuck(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
@@ -430,12 +429,12 @@ class TestAgentController:
         read_observation_3._cause = read_action_3._id
         event_stream.add_event(read_observation_3, EventSource.USER)
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
-        assert controller._is_stuck() is False
+        assert stuck_detector._is_stuck() is False
 
     def test_is_stuck_four_tuples_cmd_kill_and_output(
-        self, controller: AgentController, event_stream: EventStream
+        self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
@@ -502,18 +501,18 @@ class TestAgentController:
         cmd_output_observation_4._cause = cmd_kill_action_4._id
         event_stream.add_event(cmd_output_observation_4, EventSource.USER)
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert controller._is_stuck() is True
+            assert stuck_detector._is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
-    def test_is_stuck_delegate_stuck(self, controller):
-        controller.delegate = Mock()
-        controller.delegate._is_stuck.return_value = True
-        assert controller._is_stuck() is True
+    def test_is_stuck_delegate_stuck(self, stuck_detector):
+        stuck_detector.delegate = Mock()
+        stuck_detector.delegate._is_stuck.return_value = True
+        assert stuck_detector._is_stuck() is True
 
-    def test_is_stuck_thinking(self, controller, event_stream):
+    def test_is_stuck_thinking(self, stuck_detector, event_stream):
         # Add events to the event stream
         message_action_1 = MessageAction(content='Hi there!')
         event_stream.add_event(message_action_1, EventSource.USER)
@@ -544,9 +543,9 @@ class TestAgentController:
         event_stream.add_event(message_action_6, EventSource.AGENT)
         message_action_6._source = EventSource.AGENT
 
-        controller.state.history.set_event_stream(event_stream)
+        stuck_detector.state.history.set_event_stream(event_stream)
 
-        assert controller._is_stuck()
+        assert stuck_detector._is_stuck()
 
         # Add an observation event between the repeated message actions
         cmd_output_observation = CmdOutputObservation(
@@ -566,4 +565,4 @@ class TestAgentController:
         event_stream.add_event(message_action_8, EventSource.AGENT)
         message_action_8._source = EventSource.AGENT
 
-        assert not controller._is_stuck()
+        assert not stuck_detector._is_stuck()
