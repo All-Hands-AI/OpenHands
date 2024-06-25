@@ -1,8 +1,10 @@
+```json
 {
   "action": "reject",
   "args": {
     "outputs": {
-      "reason": "Not a valid git repository."
+      "reason": "CommitWriterAgent failed because the current directory is not a valid git repository. No other agents can resolve this issue."
     }
   }
 }
+```
