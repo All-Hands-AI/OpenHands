@@ -92,7 +92,8 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 def test_load_from_new_style_toml(default_config, temp_toml_file):
     # Test loading configuration from a new-style TOML file
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write("""
+        toml_file.write(
+            """
 [llm]
 model = "test-model"
 api_key = "toml-api-key"
@@ -101,8 +102,12 @@ api_key = "toml-api-key"
 name = "TestAgent"
 memory_enabled = true
 
+[sandbox]
+timeout = 1
+                        
 [core]
 workspace_base = "/opt/files2/workspace"
+sandbox_type = "local"
 """)
 
     load_from_toml(default_config, temp_toml_file)
@@ -112,6 +117,8 @@ workspace_base = "/opt/files2/workspace"
     assert default_config.agent.name == 'TestAgent'
     assert default_config.agent.memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
+    assert default_config.sandbox.type != 'local'
+    assert default_config.sandbox.timeout == 1
 
     # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
