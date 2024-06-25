@@ -41,6 +41,7 @@ CURRENT_LINE = 1
 WINDOW = 100
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
+ENABLE_REPOMAP = os.getenv('ENABLE_REPOMAP', 'false').lower() == 'true'
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
@@ -891,12 +892,13 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
-    # others
-    'get_repomap',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:
     __all__ += ['parse_audio', 'parse_video', 'parse_image']
+
+if ENABLE_REPOMAP:
+    __all__ += ['get_repomap']
 
 DOCUMENTATION = ''
 for func_name in __all__:
