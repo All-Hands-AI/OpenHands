@@ -263,7 +263,12 @@ class AppConfig(metaclass=Singleton):
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            if attr_name in ['e2b_api_key', 'github_token']:
+            if attr_name in [
+                'e2b_api_key',
+                'github_token',
+                'jwt_secret',
+                'ssh_password',
+            ]:
                 attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
@@ -391,9 +396,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     except FileNotFoundError as e:
         logger.info(f'Config file not found: {e}')
         return
-    except toml.TomlDecodeError:
+    except toml.TomlDecodeError as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
         return
@@ -423,6 +428,7 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
 
         # update the config object with the new values
+<<<<<<< fastboot -- Incoming Change
         config = AppConfig(
             llm=llm_config,
             agent=agent_config,
@@ -430,8 +436,12 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
             **core_config,
         )
     except (TypeError, KeyError):
+=======
+        config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
+    except (TypeError, KeyError) as e:
+>>>>>>> main -- Current Change
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
 

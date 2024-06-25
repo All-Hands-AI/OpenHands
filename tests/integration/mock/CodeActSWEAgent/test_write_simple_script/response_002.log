@@ -2,4 +2,3 @@ The shell script `hello.sh` has been created and made executable. Let's run it t
 
 <execute_bash>
 ./hello.sh
-
