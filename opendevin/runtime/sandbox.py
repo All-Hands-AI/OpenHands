@@ -20,8 +20,6 @@ class Sandbox(ABC, PluginMixin):
                 self.add_to_env(sandbox_key, os.environ[key])
         if config.enable_auto_lint:
             self.add_to_env('ENABLE_AUTO_LINT', 'true')
-        if config.enable_repomap:
-            self.add_to_env('ENABLE_REPOMAP', 'true')
         self.initialize_plugins: bool = config.initialize_plugins
 
     def add_to_env(self, key: str, value: str):
