@@ -19,7 +19,6 @@ cache_dir = "/tmp/cache"
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
 ssh_hostname = "localhost"
-sandbox_timeout = 120
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]

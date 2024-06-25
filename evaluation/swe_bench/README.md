@@ -45,7 +45,6 @@ cache_dir = "/tmp/cache"
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
 ssh_hostname = "localhost"
-sandbox_timeout = 120
 
 # SWEBench eval specific
 use_host_network = false
