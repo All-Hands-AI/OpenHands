@@ -40,3 +40,45 @@ code {
   padding: 0;
   background-color: inherit;
 }
+
+.agent-control-button  {
+  position: relative;
+  overflow: visible;
+  cursor: default;
+}
+
+.agent-control-button:hover {
+  cursor: pointer;
+}
+
+.agent-control-button svg {
+  position: relative;
+  z-index: 1;
+}
+
+.agent-control-button:hover svg {
+  filter: drop-shadow(0 0 5px rgba(255, 64, 0, 0.4));
+}
+
+.agent-control-button::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 2px solid rgba(255, 0, 0, 0.4);
+  border-radius: 50%;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.agent-control-button:hover::after {
+  opacity: 1;
+}
+
+.agent-control-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6; /* Optional: reduce opacity for visual feedback */
+}

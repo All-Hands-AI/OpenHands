@@ -48,7 +48,7 @@ function ActionButton({
       <button
         onClick={() => handleAction(action)}
         disabled={isDisabled}
-        className={`${large ? "rounded-full bg-neutral-800 p-3" : ""} hover:opacity-80 transition-all`}
+        className={`agent-control-button ${large ? "rounded-full bg-neutral-800 p-3" : ""} hover:opacity-80 transition-all`}
         type="button"
       >
         {children}
