@@ -3,6 +3,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from opendevin.controller.agent_controller import AgentController
+from opendevin.controller.state.state import State
 from opendevin.controller.stuck import StuckDetector
 from opendevin.events.action import CmdRunAction, FileReadAction, MessageAction
 from opendevin.events.action.commands import CmdKillAction, IPythonRunCellAction
@@ -35,17 +37,12 @@ def event_stream():
 
 class TestStuckDetector:
     @pytest.fixture
-    def stuck_detector(self):
-        stuck_detector = Mock(spec=StuckDetector)
-        stuck_detector.is_stuck = StuckDetector.is_stuck.__get__(
-            stuck_detector, StuckDetector
-        )
-        stuck_detector._eq_no_pid = StuckDetector._eq_no_pid.__get__(
-            stuck_detector, StuckDetector
-        )
-        stuck_detector.state = Mock()
-        stuck_detector.state.history = ShortTermHistory()
-        return stuck_detector
+    def stuck_detector(self, event_stream):
+        state = State(inputs={}, max_iterations=50)
+        # state.history = ShortTermHistory()
+        state.history.set_event_stream(event_stream)
+
+        return StuckDetector(state)
 
     def test_history_too_short(
         self, stuck_detector: StuckDetector, event_stream: EventStream
@@ -65,9 +62,9 @@ class TestStuckDetector:
         cmd_observation._cause = cmd_action._id
         event_stream.add_event(cmd_observation, EventSource.USER)
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
-        assert stuck_detector._is_stuck() is False
+        assert stuck_detector.is_stuck() is False
 
     def test_is_stuck_repeating_action_observation(
         self, stuck_detector: StuckDetector, event_stream: EventStream
@@ -115,13 +112,14 @@ class TestStuckDetector:
         event_stream.add_event(cmd_observation_3, EventSource.USER)
         # 10 events
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
+
         assert len(collect_events(event_stream)) == 10
         assert len(list(stuck_detector.state.history.get_events())) == 8
         assert len(stuck_detector.state.history.get_tuples()) == 5
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector._is_stuck() is True
+            assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
     def test_is_stuck_repeating_action_error_observation(
@@ -173,9 +171,10 @@ class TestStuckDetector:
         event_stream.add_event(error_observation_4, EventSource.USER)
         # 12 events
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
+
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector._is_stuck() is True
+            assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with(
                 'Action, ErrorObservation loop detected'
             )
@@ -219,7 +218,7 @@ class TestStuckDetector:
         ipython_observation_4._cause = ipython_action_4._id
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
         last_observations = [
             ipython_observation_1,
@@ -247,7 +246,7 @@ class TestStuckDetector:
             assert string_is_last
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector._is_stuck() is True
+            assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with(
                 'Action, IPythonRunCellObservation loop detected'
             )
@@ -291,10 +290,10 @@ class TestStuckDetector:
         ipython_observation_4._cause = ipython_action_4._id
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector._is_stuck() is False
+            assert stuck_detector.is_stuck() is False
             mock_warning.assert_not_called()
 
     def test_is_stuck_repeating_action_observation_pattern(
@@ -359,10 +358,10 @@ class TestStuckDetector:
         read_observation_3._cause = read_action_3._id
         event_stream.add_event(read_observation_3, EventSource.USER)
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector._is_stuck() is True
+            assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation pattern detected')
 
     def test_is_stuck_not_stuck(
@@ -429,9 +428,9 @@ class TestStuckDetector:
         read_observation_3._cause = read_action_3._id
         event_stream.add_event(read_observation_3, EventSource.USER)
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
-        assert stuck_detector._is_stuck() is False
+        assert stuck_detector.is_stuck() is False
 
     def test_is_stuck_four_tuples_cmd_kill_and_output(
         self, stuck_detector: StuckDetector, event_stream: EventStream
@@ -501,16 +500,11 @@ class TestStuckDetector:
         cmd_output_observation_4._cause = cmd_kill_action_4._id
         event_stream.add_event(cmd_output_observation_4, EventSource.USER)
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector._is_stuck() is True
+            assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
-
-    def test_is_stuck_delegate_stuck(self, stuck_detector):
-        stuck_detector.delegate = Mock()
-        stuck_detector.delegate._is_stuck.return_value = True
-        assert stuck_detector._is_stuck() is True
 
     def test_is_stuck_thinking(self, stuck_detector, event_stream):
         # Add events to the event stream
@@ -543,9 +537,9 @@ class TestStuckDetector:
         event_stream.add_event(message_action_6, EventSource.AGENT)
         message_action_6._source = EventSource.AGENT
 
-        stuck_detector.state.history.set_event_stream(event_stream)
+        # stuck_detector.state.history.set_event_stream(event_stream)
 
-        assert stuck_detector._is_stuck()
+        assert stuck_detector.is_stuck()
 
         # Add an observation event between the repeated message actions
         cmd_output_observation = CmdOutputObservation(
@@ -565,4 +559,22 @@ class TestStuckDetector:
         event_stream.add_event(message_action_8, EventSource.AGENT)
         message_action_8._source = EventSource.AGENT
 
-        assert not stuck_detector._is_stuck()
+        assert not stuck_detector.is_stuck()
+
+
+class TestAgentController:
+    @pytest.fixture
+    def controller(self):
+        controller = Mock(spec=AgentController)
+        controller._is_stuck = AgentController._is_stuck.__get__(
+            controller, AgentController
+        )
+        controller.delegate = None
+        controller.state = Mock()
+        controller.state.history = ShortTermHistory()
+        return controller
+
+    def test_is_stuck_delegate_stuck(self, controller: AgentController):
+        controller.delegate = Mock()
+        controller.delegate._is_stuck.return_value = True
+        assert controller._is_stuck() is True

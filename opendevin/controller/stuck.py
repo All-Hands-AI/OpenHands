@@ -1,6 +1,5 @@
 from typing import cast
 
-from agenthub.browsing_agent.prompt import Observation
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
@@ -14,6 +13,7 @@ from opendevin.events.observation.commands import (
 )
 from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.error import ErrorObservation
+from opendevin.events.observation.observation import Observation
 
 
 class StuckDetector:
