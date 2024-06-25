@@ -63,7 +63,7 @@ async def test_run_python_backticks():
             [
                 call('mkdir -p /tmp'),
                 call('git config --global user.name "OpenDevin"'),
-                call('git config --global user.email "opendevin@opendevin.ai"'),
+                call('git config --global user.email "opendevin@all-hands.dev"'),
                 call(expected_write_command),
                 call(expected_execute_command),
             ]

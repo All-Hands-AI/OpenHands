@@ -1,0 +1,111 @@
+---
+sidebar_position: 1
+---
+
+# 💻 OpenDevin
+
+OpenDevin est un **ingénieur logiciel IA autonome** capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur des projets de développement logiciel.
+Ce projet est entièrement open-source, vous pouvez donc l'utiliser et le modifier comme bon vous semble.
+
+:::tip
+Explorez le code source d'OpenDevin sur [GitHub](https://github.com/OpenDevin/OpenDevin) ou rejoignez l'une de nos communautés !
+
+<a href="https://github.com/OpenDevin/OpenDevin/graphs/contributors">
+  <img
+    src="https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge"
+    alt="Contributors"
+  />
+</a>
+<a href="https://github.com/OpenDevin/OpenDevin/network/members">
+  <img
+    src="https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge"
+    alt="Forks"
+  />
+</a>
+<a href="https://github.com/OpenDevin/OpenDevin/stargazers">
+  <img
+    src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge"
+    alt="Stargazers"
+  />
+</a>
+<a href="https://github.com/OpenDevin/OpenDevin/issues">
+  <img
+    src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge"
+    alt="Issues"
+  />
+</a>
+<br></br>
+<a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE">
+  <img
+    src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge"
+    alt="MIT License"
+  />
+</a>
+<br></br>
+<a href="https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA">
+  <img
+    src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
+    alt="Join our Slack community"
+  />
+</a>
+<a href="https://discord.gg/ESHStjSjD4">
+  <img
+    src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge"
+    alt="Join our Discord community"
+  />
+</a>
+:::
+
+## 🛠️ Pour commencer
+
+La manière la plus simple d'exécuter OpenDevin est à l'intérieur d'un conteneur Docker. Il fonctionne mieux avec la version la plus récente de Docker, `26.0.0`.
+Vous devez utiliser Linux, Mac OS ou WSL sur Windows.
+
+Pour démarrer OpenDevin dans un conteneur docker, exécutez les commandes suivantes dans votre terminal :
+
+:::warning
+Lorsque vous exécutez la commande suivante, les fichiers dans `./workspace` peuvent être modifiés ou supprimés.
+:::
+
+```bash
+WORKSPACE_BASE=$(pwd)/workspace
+docker run -it \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e PERSIST_SANDBOX="true" \
+    -e SSH_PASSWORD="make something up here" \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name opendevin-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/opendevin/opendevin:0.6
+```
+
+Vous trouverez OpenDevin fonctionnant à l'adresse [http://localhost:3000](http://localhost:3000) avec accès à `./workspace`. Pour qu'OpenDevin fonctionne sur votre code, placez-le dans `./workspace`.
+
+OpenDevin n'aura accès qu'à ce dossier de workspace. Le reste de votre système ne sera pas affecté car il s'exécute dans un bac à sable sécurisé de docker.
+
+:::tip
+Si vous souhaitez utiliser la version **(instable !)** la plus récente, vous pouvez utiliser `ghcr.io/opendevin/opendevin:main` comme image (dernière ligne).
+:::
+
+Pour le workflow de développement, consultez [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
+
+Avez-vous des problèmes ? Consultez notre [Guide de dépannage](https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting).
+
+:::warning
+OpenDevin est actuellement en cours de développement, mais vous pouvez déjà exécuter la version alpha pour voir le système de bout en bout en action.
+:::
+
+[contributors-shield]: https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge
+[contributors-url]: https://github.com/OpenDevin/OpenDevin/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge
+[forks-url]: https://github.com/OpenDevin/OpenDevin/network/members
+[stars-shield]: https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge
+[stars-url]: https://github.com/OpenDevin/OpenDevin/stargazers
+[issues-shield]: https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge
+[issues-url]: https://github.com/OpenDevin/OpenDevin/issues
+[license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
+[license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE

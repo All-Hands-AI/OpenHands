@@ -42,7 +42,6 @@ Add the following configurations:
 [core]
 max_iterations = 100
 cache_dir = "/tmp/cache"
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
 ssh_hostname = "localhost"
 
@@ -81,14 +80,17 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview head CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
 
 `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
+
+`git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
@@ -101,7 +103,7 @@ Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and Code
 then your command would be:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview head CodeActAgent 10
 ```
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
@@ -150,7 +152,33 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 - `report.json`: a JSON file that contains keys like `"resolved"` pointing to instance IDs that are resolved by the agent.
 - `summary.json`: a JSON file contains more fine-grained information for each test instance.
 
-Please refer to [EVAL_PATCH.md](./EVAL_PATCH.md) if you want to learn more about how to evaluate patches that are already generated (e.g., not by OpenDevin).
+## Visualize Results
+
+First you need to clone `https://huggingface.co/spaces/OpenDevin/evaluation` and add your own running results from opendevin into the `outputs` of the cloned repo.
+
+```bash
+git clone https://huggingface.co/spaces/OpenDevin/evaluation
+```
+
+**(optional) setup streamlit environment with conda**:
+```bash
+conda create -n streamlit python=3.10
+conda activate streamlit
+pip install streamlit altair st_pages
+```
+
+**run the visualizer**:
+Then, in a separate Python environment with `streamlit` library, you can run the following:
+
+```bash
+# Make sure you are inside the cloned `evaluation` repo
+conda activate streamlit # if you follow the optional conda env setup above
+streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 0.0.0.0
+```
+
+Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
+
+
 
 ## View Result Summary
 

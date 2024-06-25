@@ -1,10 +1,22 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-EVAL_LIMIT=$3
-DATASET=$4
-HARDNESS=$5
-WOLFRAM_APPID=$6
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+DATASET=$5
+HARDNESS=$6
+WOLFRAM_APPID=$7
+NUM_WORKERS=$8
+
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
@@ -26,9 +38,7 @@ if [ -z "$WOLFRAM_APPID" ]; then
   echo "WOLFRAM_APPID not specified"
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+get_agent_version
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
@@ -46,7 +56,7 @@ COMMAND="poetry run python evaluation/toolqa/run_infer.py \
   --wolfram_alpha_appid $WOLFRAM_APPID\
   --data-split validation \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${LEVELS}"
 
 if [ -n "$EVAL_LIMIT" ]; then
