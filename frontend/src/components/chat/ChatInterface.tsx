@@ -1,3 +1,4 @@
+// frontend/src/components/chat/ChatInterface.tsx
 import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
@@ -8,6 +9,7 @@ import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
 import { useDisclosure } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
+import TypingIndicator from "./TypingIndicator"; // Importiere die TypingIndicator-Komponente
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
@@ -122,6 +124,7 @@ function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
           <Chat messages={messages} />
+          {curAgentState === AgentState.RUNNING && <TypingIndicator />} {/* Zeige den Typing-Indikator an */}
         </div>
       </div>
 
