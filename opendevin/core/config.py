@@ -426,20 +426,23 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
         sandbox_config = config.sandbox
         if 'sandbox' in toml_config:
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
+        # migrate old configs
+        for key in core_config:
+            if key.startswith('sandbox_'):
+                new_key = key.replace('sandbox_', '')
+                if new_key in sandbox_config.__annotations__:
+                    setattr(sandbox_config, new_key, core_config[key])
+                else:
+                    logger.error(f'Unknown sandbox config: {key}')
 
         # update the config object with the new values
-<<<<<<< fastboot -- Incoming Change
         config = AppConfig(
             llm=llm_config,
             agent=agent_config,
             sandbox=sandbox_config,
             **core_config,
         )
-    except (TypeError, KeyError):
-=======
-        config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
     except (TypeError, KeyError) as e:
->>>>>>> main -- Current Change
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,

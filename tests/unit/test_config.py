@@ -117,7 +117,7 @@ sandbox_type = "local"
     assert default_config.agent.name == 'TestAgent'
     assert default_config.agent.memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
-    assert default_config.sandbox.type != 'local'
+    assert default_config.sandbox.type == 'local'
     assert default_config.sandbox.timeout == 1
 
     # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
