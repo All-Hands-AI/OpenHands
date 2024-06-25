@@ -1,0 +1,27 @@
+[config]
+# Maximum allowed file size in megabytes
+# Set to 0 for unlimited file size
+max_file_size_mb = 0
+
+# Set to true to restrict file types based on extensions
+# Set to false to allow all file types
+restrict_file_types = false
+
+[allowed-file-types]
+# Specify allowed file extensions here
+# Use the format: extension = true
+# Extensions are case-sensitive
+# Use * to allow all file types
+# Use a bare dot (.) to allow files without extensions
+
+# Examples:
+# jpg = true
+# JPG = true
+# png = true
+# PNG = true
+# pdf = true
+# PDF = true
+# . = true  # Allow files without extensions
+
+# Allow all file types (remove or comment out to restrict)
+* = true

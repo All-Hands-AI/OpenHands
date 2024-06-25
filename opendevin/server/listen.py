@@ -1,12 +1,18 @@
+import configparser
+import os
+import re
 import uuid
 import warnings
+from pathlib import Path
+
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from pathlib import Path
 
 from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,7 +25,10 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import ChangeAgentStateAction, NullAction
-from opendevin.events.observation import AgentStateChangedObservation, NullObservation
+from opendevin.events.observation import (
+    AgentStateChangedObservation,
+    NullObservation,
+)
 from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
@@ -35,6 +44,73 @@ app.add_middleware(
 )
 
 security_scheme = HTTPBearer()
+
+# Determine the project root directory
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+# Path to the configuration file
+CONFIG_FILE = PROJECT_ROOT / 'config' / 'file_uploads.conf'
+
+
+def load_file_upload_config():
+    """
+    Load file upload configuration from the INI-style config file (optional).
+    """
+    if not CONFIG_FILE.exists():
+        logger.info(f'Config file not found: {CONFIG_FILE}. Using default values.')
+        return 0, True, {'.*'}  # Default values when file doesn't exist
+
+    config = configparser.ConfigParser()
+    config.read(CONFIG_FILE)
+
+    # Load general configuration
+    try:
+        max_file_size_mb = config.getint('config', 'max_file_size_mb', fallback=0)
+        restrict_file_types = config.getboolean(
+            'config', 'restrict_file_types', fallback=True
+        )
+    except configparser.Error as e:
+        logger.error(f'Error reading [config] section in {CONFIG_FILE}: {str(e)}')
+        max_file_size_mb, restrict_file_types = 0, True
+
+    # Load allowed extensions
+    allowed_extensions = set()
+    try:
+        if 'allowed-file-types' in config:
+            for key, value in config['allowed-file-types'].items():
+                if value.lower() == 'true':
+                    ext = f'.{key}'
+                    if re.match(r'^\.\w{1,10}$', ext) or ext == '.*' or ext == '.':
+                        allowed_extensions.add(ext)
+                    else:
+                        logger.warning(f'Invalid extension in {CONFIG_FILE}: {ext}')
+    except configparser.Error as e:
+        logger.error(
+            f'Error reading [allowed-file-types] section in {CONFIG_FILE}: {str(e)}'
+        )
+
+    # If no extensions are specified or restrictions are disabled, allow all
+    if not restrict_file_types or not allowed_extensions:
+        allowed_extensions = {'.*'}
+
+    return max_file_size_mb, restrict_file_types, allowed_extensions
+
+
+# Load configuration
+MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_config()
+
+
+def is_extension_allowed(filename):
+    """
+    Check if the file is allowed, supporting wildcards and files without extensions.
+    Case-sensitive for extensions.
+    """
+    file_ext = os.path.splitext(filename)[1]  # Keep original case
+    return (
+        '.*' in ALLOWED_EXTENSIONS
+        or file_ext in ALLOWED_EXTENSIONS
+        or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
+    )
 
 
 @app.middleware('http')
@@ -225,44 +301,80 @@ def list_files(request: Request, path: str = '/'):
             content={'error': 'Runtime not yet initialized'},
         )
 
-    exclude_list = (
-        '.git',
-        '.DS_Store',
-        '.svn',
-        '.hg',
-        '.idea',
-        '.vscode',
-        '.settings',
-        '.pytest_cache',
-        '__pycache__',
-        'node_modules',
-        'vendor',
-        'build',
-        'dist',
-        'bin',
-        'logs',
-        'log',
-        'tmp',
-        'temp',
-        'coverage',
-        'venv',
-        'env',
-    )
-
     try:
+        # Get the full path of the requested directory
+        full_path = (
+            request.state.session.agent_session.runtime.file_store.get_full_path(path)
+        )
+
+        # Check if .gitignore exists
+        gitignore_path = os.path.join(full_path, '.gitignore')
+        if os.path.exists(gitignore_path):
+            # Use PathSpec to parse .gitignore
+            with open(gitignore_path, 'r') as f:
+                spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
+        else:
+            # Fallback to default exclude list if .gitignore doesn't exist
+            default_exclude = [
+                '.git',
+                '.DS_Store',
+                '.svn',
+                '.hg',
+                '.idea',
+                '.vscode',
+                '.settings',
+                '.pytest_cache',
+                '__pycache__',
+                'node_modules',
+                'vendor',
+                'build',
+                'dist',
+                'bin',
+                'logs',
+                'log',
+                'tmp',
+                'temp',
+                'coverage',
+                'venv',
+                'env',
+            ]
+            spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
+
         entries = request.state.session.agent_session.runtime.file_store.list(path)
 
-        # Filter entries, excluding special folders
-        if entries:
-            return [
-                entry
-                for entry in entries
-                if Path(entry).parts and Path(entry).parts[-1] not in exclude_list
-            ]
-        return []
+        # Filter entries using PathSpec
+        filtered_entries = [
+            entry
+            for entry in entries
+            if not spec.match_file(os.path.relpath(entry, full_path))
+        ]
+
+        # Separate directories and files
+        directories = []
+        files = []
+        for entry in filtered_entries:
+            # Remove leading slash and any parent directory components
+            entry_relative = entry.lstrip('/').split('/')[-1]
+
+            # Construct the full path by joining the base path with the relative entry path
+            full_entry_path = os.path.join(full_path, entry_relative)
+            is_dir = os.path.isdir(full_entry_path)
+            if is_dir:
+                directories.append(entry)
+            else:
+                files.append(entry)
+
+        # Sort directories and files separately
+        directories.sort(key=str.lower)
+        files.sort(key=str.lower)
+
+        # Combine sorted directories and files
+        sorted_entries = directories + files
+        return sorted_entries
+
     except Exception as e:
-        logger.error(f'Error refreshing files: {e}', exc_info=False)
-        error_msg = f'Error refreshing files: {e}'
+        logger.error(f'Error listing files: {e}', exc_info=True)
+        error_msg = f'Error listing files: {e}'
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': error_msg},
@@ -291,6 +403,22 @@ def select_file(file: str, request: Request):
     return {'code': content}
 
 
+def sanitize_filename(filename):
+    """
+    Sanitize the filename to prevent directory traversal
+    """
+    # Remove any directory components
+    filename = os.path.basename(filename)
+    # Remove any non-alphanumeric characters except for .-_
+    filename = re.sub(r'[^\w\-_\.]', '', filename)
+    # Limit the filename length
+    max_length = 255
+    if len(filename) > max_length:
+        name, ext = os.path.splitext(filename)
+        filename = name[: max_length - len(ext)] + ext
+    return filename
+
+
 @app.post('/api/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
     """
@@ -302,24 +430,56 @@ async def upload_file(request: Request, files: list[UploadFile]):
     ```
     """
     try:
+        uploaded_files = []
         for file in files:
+            # Sanitize the filename
+            safe_filename = sanitize_filename(file.filename)
+
+            # Read file contents
             file_contents = await file.read()
+
+            # Check file size (if specified)
+            if MAX_FILE_SIZE_MB > 0:
+                if len(file_contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
+                    return JSONResponse(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        content={
+                            'error': f'File {safe_filename} exceeds the maximum size limit of {MAX_FILE_SIZE_MB}MB'
+                        },
+                    )
+
+            # Check file type (if restriction is enabled)
+            if not is_extension_allowed(safe_filename):
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={'error': f'File type not allowed for {safe_filename}'},
+                )
+
+            # Write the file
             request.state.session.agent_session.runtime.file_store.write(
-                file.filename, file_contents
+                safe_filename, file_contents
             )
+            uploaded_files.append(safe_filename)
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                'message': 'Files uploaded successfully',
+                'uploaded_files': uploaded_files,
+            },
+        )
     except Exception as e:
         logger.error(f'Error saving files: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving file:s {e}'},
+            content={'error': f'Error saving files: {str(e)}'},
         )
-    return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
 
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request, feedback: FeedbackDataModel):
     """
-    Upload files to the workspace.
+    Upload feedback data to the feedback site.
 
     To upload files:
     ```sh
@@ -327,7 +487,7 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
     ```
     """
     # Assuming the storage service is already configured in the backend
-    # and there is a function  to handle the storage.
+    # and there is a function to handle the storage.
     try:
         feedback_data = store_feedback(feedback)
         return JSONResponse(status_code=200, content=feedback_data)

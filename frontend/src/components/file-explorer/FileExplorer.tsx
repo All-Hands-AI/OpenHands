@@ -146,7 +146,7 @@ function FileExplorer() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {isDragging && (
         <div
           data-testid="dropzone"
@@ -163,32 +163,36 @@ function FileExplorer() {
       )}
       <div
         className={twMerge(
-          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring overflow-auto",
+          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring",
           isHidden ? "min-w-[48px]" : "min-w-[228px]",
         )}
       >
-        <div className="flex flex-col p-2 relative">
-          <div
-            className={twMerge(
-              "flex items-center mt-2 mb-1",
-              isHidden ? "justify-center" : "justify-between",
-            )}
-          >
-            {!isHidden && (
-              <div className="ml-1 text-neutral-300 font-bold text-sm">
-                Workspace
-              </div>
-            )}
-            <ExplorerActions
-              isHidden={isHidden}
-              toggleHidden={() => setIsHidden((prev) => !prev)}
-              onRefresh={refreshWorkspace}
-              onUpload={selectFileInput}
-            />
+        <div className="flex flex-col relative h-full">
+          <div className="sticky top-0 bg-neutral-800 z-10">
+            <div
+              className={twMerge(
+                "flex items-center mt-2 mb-1 p-2",
+                isHidden ? "justify-center" : "justify-between",
+              )}
+            >
+              {!isHidden && (
+                <div className="ml-1 text-neutral-300 font-bold text-sm">
+                  Workspace
+                </div>
+              )}
+              <ExplorerActions
+                isHidden={isHidden}
+                toggleHidden={() => setIsHidden((prev) => !prev)}
+                onRefresh={refreshWorkspace}
+                onUpload={selectFileInput}
+              />
+            </div>
           </div>
 
-          <div style={{ display: isHidden ? "none" : "block" }}>
-            <ExplorerTree files={files} defaultOpen />
+          <div className="overflow-auto flex-grow">
+            <div style={{ display: isHidden ? "none" : "block" }}>
+              <ExplorerTree files={files} defaultOpen />
+            </div>
           </div>
         </div>
         <input
