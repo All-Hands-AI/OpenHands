@@ -354,7 +354,7 @@ IMPORTANT TIPS:
 def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
     if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
+        with open(file_path, 'r', encoding='utf-8') as file:
             data = toml.load(file)
             if 'selected_ids' in data:
                 selected_ids = data['selected_ids']
@@ -421,7 +421,7 @@ if __name__ == '__main__':
     if hasattr(_agent_cls, 'in_context_example'):
         metadata['in_context_example'] = _agent_cls.in_context_example
     logger.info(f'Metadata: {metadata}')
-    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
+    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w', encoding='utf-8') as f:
         json.dump(metadata, f)
 
     # LIMIT EVALUATION
@@ -435,14 +435,14 @@ if __name__ == '__main__':
     logger.info(f'Writing evaluation output to {output_file}')
     finished_instance_ids = set()
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r', encoding='utf-8') as f:
             for line in f:
                 data = json.loads(line)
                 finished_instance_ids.add(data['instance_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
         )
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a', encoding='utf-8')
 
     logger.info(
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'

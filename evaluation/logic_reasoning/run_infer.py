@@ -171,7 +171,7 @@ def process_instance(
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
                 logger.removeHandler(handler)
-            file_handler = logging.FileHandler(log_file)
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
             file_handler.setFormatter(
                 logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
             )
@@ -192,9 +192,7 @@ def process_instance(
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
 
-        # Prepare instruction
-
-        with open('./evaluation/logic_reasoning/instruction.txt', 'r') as f:
+        with open('./evaluation/logic_reasoning/instruction.txt', 'r', encoding='utf-8') as f:
             instruction = f.read()
 
         instance_logic_programs = instance['raw_logic_programs'][0].strip()
@@ -350,14 +348,14 @@ if __name__ == '__main__':
     logger.info(f'Writing evaluation output to {output_file}')
     finished_task_ids = set()
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r', encoding='utf-8') as f:
             for line in f:
                 data = json.loads(line)
                 finished_task_ids.add(data['id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_task_ids)} finished instances.'
         )
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a', encoding='utf-8')
 
     logger.info(
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
@@ -430,7 +428,7 @@ if __name__ == '__main__':
 
     output_fp.close()
 
-    with open(output_file, 'r') as f:
+    with open(output_file, 'r', encoding='utf-8') as f:
         test_result = [(json.loads(line))['test_result']['result'] for line in f]
 
     metadata = {
@@ -444,7 +442,7 @@ if __name__ == '__main__':
         'Final Accuracy': f'{sum(test_result)/len(test_result):.2f}',
     }
 
-    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
+    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=4)
 
     logger.info(f'Metadata: {json.dumps(metadata, indent=4)}')

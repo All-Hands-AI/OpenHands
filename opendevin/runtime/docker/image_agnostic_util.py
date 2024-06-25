@@ -40,7 +40,7 @@ def _build_sandbox_image(
                     f'==============================='
                 )
             )
-            with open(f'{temp_dir}/Dockerfile', 'w') as file:
+            with open(f'{temp_dir}/Dockerfile', 'w', encoding='utf-8') as file:
                 file.write(dockerfile_content)
 
             image, logs = docker_client.images.build(

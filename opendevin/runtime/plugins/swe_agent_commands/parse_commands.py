@@ -11,7 +11,8 @@ class Command:
 
 
 def parse_command_file(filepath: str) -> str:
-    content = open(filepath, 'r').read()
+    with open(filepath, 'r', encoding='utf-8') as file:
+        content = file.read()
     lines = content.split('\n')
     commands: list[Command] = []
     idx = 0

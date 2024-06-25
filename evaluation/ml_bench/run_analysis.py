@@ -15,7 +15,7 @@ def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
     costs = []
     instance_ids = set()
     instances = []
-    with open(res_file_path, 'r') as file:
+    with open(res_file_path, 'r', encoding='utf-8') as file:
         for line in file:
             data = json.loads(line.strip())
             success = data['metrics']['success']
@@ -54,7 +54,7 @@ def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
 
         # sort by instance_id
         instances.sort(key=lambda x: x['instance_id'])
-        with open(res_file_path, 'w') as file:
+        with open(res_file_path, 'w', encoding='utf-8') as file:
             for instance in instances:
                 file.write(json.dumps(instance) + '\n')
         return passed, failed, costs
@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
     failed = []
     if os.path.exists(args.json_file_path.replace('.jsonl', '_failed.jsonl')):
-        with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'r') as file:
+        with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'r', encoding='utf-8') as file:
             for line in file:
                 failed.append(json.loads(line.strip()))
         print(
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         error_category = classify_error(llm, failed_case)
         failed_case['error_category'] = error_category
         failed.append(failed_case)
-        with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'a') as file:
+        with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'a', encoding='utf-8') as file:
             file.write(json.dumps(failed_case) + '\n')
 
     # Print the summary

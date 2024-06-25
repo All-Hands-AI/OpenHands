@@ -114,7 +114,7 @@ def get_test_result(instance, path, language='python', timeout=10):
     python_imports = '\n'.join(IMPORT_HELPER[language])
 
     # Load function from path
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         function = f.read()
 
     function = [[python_imports + '\n' + function.strip()]]
@@ -175,7 +175,7 @@ def process_instance(
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
                 logger.removeHandler(handler)
-            file_handler = logging.FileHandler(log_file)
+            file_handler = logging.FileHandler(log_file, encoding='utf-8')
             file_handler.setFormatter(
                 logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
             )
@@ -192,7 +192,7 @@ def process_instance(
         path = os.path.join(
             workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
         )
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(problem_statement)
 
         # Prepare instruction
@@ -302,7 +302,7 @@ if __name__ == '__main__':
         .strip(),
     }
     logger.info(f'Metadata: {metadata}')
-    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
+    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w', encoding='utf-8') as f:
         json.dump(metadata, f)
 
     # LIMIT EVALUATION
@@ -316,14 +316,14 @@ if __name__ == '__main__':
     logger.info(f'Writing evaluation output to {output_file}')
     finished_instance_ids = set()
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r', encoding='utf-8') as f:
             for line in f:
                 data = json.loads(line)
                 finished_instance_ids.add(data['task_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
         )
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a', encoding='utf-8')
 
     logger.info(
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'

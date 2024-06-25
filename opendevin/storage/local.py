@@ -18,12 +18,12 @@ class LocalFileStore(FileStore):
     def write(self, path: str, contents: str) -> None:
         full_path = self.get_full_path(path)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, 'w') as f:
+        with open(full_path, 'w', encoding='utf-8') as f:
             f.write(contents)
 
     def read(self, path: str) -> str:
         full_path = self.get_full_path(path)
-        with open(full_path, 'r') as f:
+        with open(full_path, 'r', encoding='utf-8') as f:
             return f.read()
 
     def list(self, path: str) -> list[str]:

@@ -69,7 +69,7 @@ class PykeProgram:
         return False
 
     def create_fact_file(self, facts):
-        with open(os.path.join(self.cache_dir, 'facts.kfb'), 'w') as f:
+        with open(os.path.join(self.cache_dir, 'facts.kfb'), 'w', encoding='utf-8') as f:
             for fact in facts:
                 # check for invalid facts
                 if not fact.find('$x') >= 0:
@@ -80,7 +80,7 @@ class PykeProgram:
         for idx, rule in enumerate(rules):
             pyke_rules.append(self.parse_forward_rule(idx + 1, rule))
 
-        with open(os.path.join(self.cache_dir, 'rules.krb'), 'w') as f:
+        with open(os.path.join(self.cache_dir, 'rules.krb'), 'w', encoding='utf-8') as f:
             f.write('\n\n'.join(pyke_rules))
 
     # example rule: Furry($x, True) && Quite($x, True) >>> White($x, True)

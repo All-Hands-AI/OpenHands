@@ -18,7 +18,7 @@ if __name__ == '__main__':
     total_reward = 0
     total_cost = 0
     actual_num = 0
-    with open(args.output_path, 'r') as f:
+    with open(args.output_path, 'r', encoding='utf-8') as f:
         for line in f:
             data = json.loads(line)
             actual_num += 1

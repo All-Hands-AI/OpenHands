@@ -169,7 +169,7 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
 def _print_window(file_path, targeted_line, WINDOW, return_str=False):
     global CURRENT_LINE
     _check_current_file(file_path)
-    with open(file_path) as file:
+    with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
 
         # Ensure the content ends with a newline character
@@ -239,7 +239,7 @@ def open_file(
         raise FileNotFoundError(f'File {path} not found')
 
     CURRENT_FILE = os.path.abspath(path)
-    with open(CURRENT_FILE) as file:
+    with open(CURRENT_FILE, 'r', encoding='utf-8') as file:
         total_lines = max(1, sum(1 for _ in file))
 
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
@@ -267,7 +267,7 @@ def goto_line(line_number: int) -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     _check_current_file()
 
-    with open(str(CURRENT_FILE)) as file:
+    with open(str(CURRENT_FILE), 'r', encoding='utf-8') as file:
         total_lines = max(1, sum(1 for _ in file))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
         raise ValueError(f'Line number must be between 1 and {total_lines}')
@@ -289,7 +289,7 @@ def scroll_down() -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     _check_current_file()
 
-    with open(str(CURRENT_FILE)) as file:
+    with open(str(CURRENT_FILE), encoding='utf-8') as file:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
@@ -307,7 +307,7 @@ def scroll_up() -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     _check_current_file()
 
-    with open(str(CURRENT_FILE)) as file:
+    with open(str(CURRENT_FILE), encoding='utf-8') as file:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
@@ -325,7 +325,7 @@ def create_file(filename: str) -> None:
     if os.path.exists(filename):
         raise FileExistsError(f"File '{filename}' already exists.")
 
-    with open(filename, 'w') as file:
+    with open(filename, 'w', encoding='utf-8') as file:
         file.write('\n')
 
     open_file(filename)
@@ -376,11 +376,11 @@ def _edit_or_append_file(
     first_error_line = None
     try:
         # Create a temporary file
-        with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile('w', delete=False, encoding='utf-8') as temp_file:
             temp_file_path = temp_file.name
 
             # Read the original file and check if empty and for a trailing newline
-            with open(file_name) as original_file:
+            with open(file_name, 'r', encoding='utf-8') as original_file:
                 lines = original_file.readlines()
 
             if is_append:
@@ -428,7 +428,7 @@ def _edit_or_append_file(
                 content += '\n'
 
             # Write the new content to the temporary file
-            temp_file.write(content)
+            temp_file.write(content.encode('utf-8'))
 
         # Replace the original file with the temporary file atomically
         shutil.move(temp_file_path, src_abs_path)
@@ -440,7 +440,7 @@ def _edit_or_append_file(
                 os.path.dirname(file_name),
                 f'.backup.{os.path.basename(file_name)}',
             )
-            with open(original_file_backup_path, 'w') as f:
+            with open(original_file_backup_path, 'w', encoding='utf-8') as f:
                 f.writelines(lines)
 
             lint_error, first_error_line = _lint_file(file_name)
@@ -469,8 +469,8 @@ def _edit_or_append_file(
                 )
 
                 # recover the original file
-                with open(original_file_backup_path) as fin, open(
-                    file_name, 'w'
+                with open(original_file_backup_path, 'r', encoding='utf-8') as fin, open(
+                    file_name, 'w', encoding='utf-8'
                 ) as fout:
                     fout.write(fin.read())
                 os.remove(original_file_backup_path)
@@ -554,7 +554,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
             if file.startswith('.'):
                 continue
             file_path = os.path.join(root, file)
-            with open(file_path, 'r', errors='ignore') as f:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line_num, line in enumerate(f, 1):
                     if search_term in line:
                         matches.append((file_path, line_num, line.strip()))
@@ -597,7 +597,7 @@ def search_file(search_term: str, file_path: Optional[str] = None) -> None:
         raise FileNotFoundError(f'File {file_path} not found')
 
     matches = []
-    with open(file_path) as file:
+    with open(file_path, encoding='utf-8') as file:
         for i, line in enumerate(file, 1):
             if search_term in line:
                 matches.append((i, line.strip()))
@@ -681,7 +681,7 @@ def parse_latex(file_path: str) -> None:
         file_path: str: The path to the file to open.
     """
     print(f'[Reading LaTex file from {file_path}]')
-    with open(file_path) as f:
+    with open(file_path, encoding='utf-8') as f:
         data = f.read()
     text = LatexNodes2Text().latex_to_text(data)
     print(text.strip())

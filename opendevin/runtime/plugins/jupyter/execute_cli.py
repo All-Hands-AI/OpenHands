@@ -32,7 +32,7 @@ def execute_code(code, print_output=True):
         time.sleep(2)
     else:
         if not output:
-            with open('/opendevin/logs/jupyter_execute_server.log', 'r') as f:
+            with open('/opendevin/logs/jupyter_execute_server.log', 'r', encoding='utf-8') as f:
                 output = f.read()
         print('Failed to connect to the Jupyter server', output)
 

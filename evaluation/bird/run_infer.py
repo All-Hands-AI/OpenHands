@@ -88,7 +88,7 @@ def get_test_result(instance, path, timeout=30):
     test_result = {'result': {}, 'metadata': {}}
 
     # Read the generated python file
-    with open(path, 'r') as f:
+    with open(path, 'r', encoding='utf-8') as f:
         gen_file = f.read()
 
     # Extract the SQL from the python file
@@ -296,7 +296,7 @@ def process_bird(dataset_path):
         raw_data_path = os.path.join(dataset_path, 'dev.json')
         database_path = os.path.join(dataset_path, 'dev_databases')
         processed_data = []
-        with pathlib.Path(raw_data_path).open('r') as f:
+        with open(raw_data_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             for e in tqdm(data):
                 item = {
@@ -310,7 +310,7 @@ def process_bird(dataset_path):
                 }
                 processed_data.append(item)
 
-        with pathlib.Path(processed_path).open('w') as f:
+        with open(processed_path, 'w', encoding='utf-8') as f:
             json.dump(processed_data, f, indent=2)
             logger.info(f'Processed data saved to {processed_path}')
     else:
@@ -428,7 +428,7 @@ if __name__ == '__main__':
         .strip(),
     }
     logger.info(f'Metadata: {metadata}')
-    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
+    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w', encoding='utf-8') as f:
         json.dump(metadata, f)
 
     # LIMIT EVALUATION
@@ -442,14 +442,14 @@ if __name__ == '__main__':
     logger.info(f'Writing evaluation output to {output_file}')
     finished_instance_ids = set()
     if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
+        with open(output_file, 'r', encoding='utf-8') as f:
             for line in f:
                 data = json.loads(line)
                 finished_instance_ids.add(data['task_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
         )
-    output_fp = open(output_file, 'a')
+    output_fp = open(output_file, 'a', encoding='utf-8')
 
     logger.info(
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
