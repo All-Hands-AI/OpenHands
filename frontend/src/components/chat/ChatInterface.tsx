@@ -141,7 +141,9 @@ function ChatInterface() {
               {curAgentState === AgentState.AWAITING_USER_INPUT && (
                 <ScrollButton
                   onClick={handleSendContinueMsg}
-                  icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
+                  icon={
+                    <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
+                  }
                   label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
                 />
               )}
