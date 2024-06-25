@@ -344,7 +344,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                     for old_config in old_configs:
                         if (
                             old_config.lower() in nested_sub_config.__annotations__
-                            and old_config in env_or_toml_dict
+                            and (old_config in env_or_toml_dict or old_config.lower() in env_or_toml_dict)
                         ):
                             suggested_name = f'{field_name}_{old_config}'.upper()
                             logger.error(
