@@ -319,12 +319,12 @@ class AgentController:
         else:
             await self.add_history(action, NullObservation(''))
 
+        if not isinstance(action, NullAction):
+            await self.event_stream.add_event(action, EventSource.AGENT)
+
         await self.update_state_after_step()
         if self.state.agent_state == AgentState.ERROR:
             return
-
-        if not isinstance(action, NullAction):
-            await self.event_stream.add_event(action, EventSource.AGENT)
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
