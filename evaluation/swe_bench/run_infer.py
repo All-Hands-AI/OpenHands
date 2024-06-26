@@ -18,13 +18,7 @@ import agenthub
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
-from opendevin.core.logger import (
-    get_console_handler,
-    get_llm_prompt_file_handler,
-    get_llm_response_file_handler,
-    llm_prompt_logger,
-    llm_response_logger,
-)
+from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
@@ -232,31 +226,6 @@ def process_instance(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         )
         logger.addHandler(file_handler)
-
-        # prompt logger
-        directory = os.path.join(eval_output_dir, 'infer_logs')
-        sid = f'inst_{instance.instance_id}'
-        for handler in llm_prompt_logger.handlers[:]:
-            llm_prompt_logger.removeHandler(handler)
-        prompt_file_handler = get_llm_prompt_file_handler(
-            sid=sid, with_date=False, directory=directory
-        )
-        llm_prompt_logger.addHandler(prompt_file_handler)
-        llm_prompt_logger.setLevel(logging.DEBUG)
-        llm_prompt_logger.propagate = False
-        prompt_file_handler.setFormatter(logging.Formatter('%(message)s'))
-
-        # response logger
-        for handler in llm_response_logger.handlers[:]:
-            llm_response_logger.removeHandler(handler)
-        response_file_handler = get_llm_response_file_handler(
-            sid=sid, with_date=False, directory=directory
-        )
-        llm_response_logger.addHandler(response_file_handler)
-        llm_response_logger.setLevel(logging.DEBUG)
-        llm_response_logger.propagate = False
-        response_file_handler.setFormatter(logging.Formatter('%(message)s'))
-
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
