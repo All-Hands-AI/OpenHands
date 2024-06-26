@@ -284,7 +284,14 @@ class AgentController:
                 self.delegateAction = None
 
                 # update delegate result observation
-                obs: Observation = AgentDelegateObservation(outputs=outputs, content='')
+                # TODO: replace this with AI-generated summary (#2395)
+                formatted_output = ', '.join(
+                    f'{key}: {value}' for key, value in outputs.items()
+                )
+                content = f'Delegate agent finishes task with {formatted_output}'
+                obs: Observation = AgentDelegateObservation(
+                    outputs=outputs, content=content
+                )
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 

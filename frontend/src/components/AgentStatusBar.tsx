@@ -49,6 +49,10 @@ function AgentStatusBar() {
       message: t(I18nKey.CHAT_INTERFACE$AGENT_FINISHED_MESSAGE),
       indicator: IndicatorColor.GREEN,
     },
+    [AgentState.REJECTED]: {
+      message: t(I18nKey.CHAT_INTERFACE$AGENT_REJECTED_MESSAGE),
+      indicator: IndicatorColor.YELLOW,
+    },
     [AgentState.ERROR]: {
       message: t(I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE),
       indicator: IndicatorColor.RED,
