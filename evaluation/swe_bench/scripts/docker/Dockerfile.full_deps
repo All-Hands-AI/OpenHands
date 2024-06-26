@@ -1,6 +1,6 @@
 FROM ghcr.io/opendevin/eval-swe-bench:builder
 
-# This Dockefile is used to build the Docker image for the evaluation of the SWE-Bench.
+# This Dockerfile is used to build the Docker image for the evaluation of the SWE-Bench.
 # YOU SHOULD ENSURE ./eval_workspace CONTAINS THE EVALUATION WORKSPACE (testbed, conda)
 # Check BUILD_TESTBED_AND_ENV.md for more details.
 
