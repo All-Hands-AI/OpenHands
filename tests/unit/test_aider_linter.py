@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from opendevin.runtime.aider.linter import Linter, LintResult
+from opendevin.runtime.plugins.agent_skills.aider import Linter, LintResult
 
 
 @pytest.fixture
@@ -28,6 +28,16 @@ def temp_ruby_file_errors(tmp_path):
     print("Hello, World!")
 foo()
 """)
+    tmp_file.close()
+    yield temp_name
+    os.remove(temp_name)
+
+@pytest.fixture
+def temp_ruby_file_errors_parentheses(tmp_path):
+    # Fixture to create a temporary file
+    temp_name = os.path.join(tmp_path, 'lint-test.rb')
+    with open(temp_name, 'w', encoding='utf-8') as tmp_file:
+        tmp_file.write("""code = "def print_hello_world()\n    puts 'Hello World'\n""")
     tmp_file.close()
     yield temp_name
     os.remove(temp_name)
@@ -97,7 +107,7 @@ def test_py_lint_fail(linter, temp_file):
 
 
 def test_basic_lint(temp_file):
-    from opendevin.runtime.aider.linter import basic_lint
+    from opendevin.runtime.plugins.agent_skills.aider.linter import basic_lint
 
     poorly_formatted_code = """
         def foo()
@@ -113,7 +123,7 @@ def test_basic_lint(temp_file):
 
 
 def test_basic_lint_fail_returns_text_and_lines(temp_file):
-    from opendevin.runtime.aider.linter import basic_lint
+    from opendevin.runtime.plugins.agent_skills.aider.linter import basic_lint
 
     poorly_formatted_code = """
         def foo()
@@ -130,7 +140,8 @@ def test_basic_lint_fail_returns_text_and_lines(temp_file):
 
 
 def test_lint_python_compile(temp_file):
-    from opendevin.runtime.aider.linter import lint_python_compile
+    from opendevin.runtime.plugins.agent_skills.aider.linter import \
+        lint_python_compile
 
     result = lint_python_compile(temp_file, "print('Hello, World!')\n")
 
@@ -138,7 +149,8 @@ def test_lint_python_compile(temp_file):
 
 
 def test_lint_python_compile_fail_returns_text_and_lines(temp_file):
-    from opendevin.runtime.aider.linter import lint_python_compile
+    from opendevin.runtime.plugins.agent_skills.aider.linter import \
+        lint_python_compile
 
     poorly_formatted_code = """
         def foo()
@@ -180,4 +192,9 @@ def test_lint_pass_ruby(linter, temp_ruby_file_correct):
 
 def test_lint_fail_ruby(linter, temp_ruby_file_errors):
     errors = linter.lint(temp_ruby_file_errors)
+    assert errors is not None
+
+
+def test_lint_fail_ruby_no_def(linter, temp_ruby_file_errors_parentheses):
+    errors = linter.lint(temp_ruby_file_errors_parentheses)
     assert errors is not None
