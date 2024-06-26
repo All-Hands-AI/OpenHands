@@ -7,6 +7,7 @@ import {
 } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
+import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
@@ -15,6 +16,7 @@ import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -92,7 +94,7 @@ function FileExplorer() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
-
+  const { t } = useTranslation();
   const selectFileInput = () => {
     fileInputRef.current?.click(); // Trigger the file browser
   };
@@ -113,7 +115,7 @@ function FileExplorer() {
       await uploadFiles(toAdd);
       await refreshWorkspace();
     } catch (error) {
-      toast.error("ws", "Error uploading file");
+      toast.error("ws", t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE));
     }
   };
 
@@ -158,7 +160,9 @@ function FileExplorer() {
           className="z-10 absolute flex flex-col justify-center items-center bg-black top-0 bottom-0 left-0 right-0 opacity-65"
         >
           <IoFileTray size={32} />
-          <p className="font-bold text-xl">Drop Files Here</p>
+          <p className="font-bold text-xl">
+            {t(I18nKey.EXPLORER$LABEL_DROP_FILES)}
+          </p>
         </div>
       )}
       <div
@@ -176,7 +180,7 @@ function FileExplorer() {
           >
             {!isHidden && (
               <div className="ml-1 text-neutral-300 font-bold text-sm">
-                Workspace
+                {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
               </div>
             )}
             <ExplorerActions
