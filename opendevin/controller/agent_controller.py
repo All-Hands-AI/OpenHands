@@ -1,5 +1,4 @@
 import asyncio
-import json
 import traceback
 from typing import Optional, Type
 
@@ -285,9 +284,11 @@ class AgentController:
                 self.delegateAction = None
 
                 # update delegate result observation
-                content = (
-                    f'Delegate agent finishes task with outputs: {json.dumps(outputs)}'
+                # TODO: replace this with AI-generated summary (#2395)
+                formatted_output = ', '.join(
+                    f'{key}: {value}' for key, value in outputs.items()
                 )
+                content = f'Delegate agent finishes task with {formatted_output}'
                 obs: Observation = AgentDelegateObservation(
                     outputs=outputs, content=content
                 )
