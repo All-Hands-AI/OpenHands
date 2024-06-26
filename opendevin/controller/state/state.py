@@ -43,6 +43,7 @@ class State:
     delegate_level: int = 0
     start_id: int = -1
     end_id: int = -1
+    almost_stuck: int = 0
     summaries: dict[tuple[int, int], AgentSummarizeAction] = field(default_factory=dict)
 
     def save_to_session(self, sid: str):

@@ -187,6 +187,7 @@ class AgentController:
                 self.state.history.on_event(event)
 
     def reset_task(self):
+        self.almost_stuck = 0
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):

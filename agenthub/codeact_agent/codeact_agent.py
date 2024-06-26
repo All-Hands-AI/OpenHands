@@ -275,8 +275,17 @@ class CodeActAgent(Agent):
         )
 
         if latest_user_message:
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
-            )
+            if state.almost_stuck == 1:
+                latest_user_message['content'] += (
+                    '\n\nENVIRONMENT REMINDER: You are almost stuck repeating the same action. You have only 1 iteration left and you must change your approach. Now.'
+                )
+            elif state.almost_stuck == 2:
+                latest_user_message['content'] += (
+                    '\n\nENVIRONMENT REMINDER: You are almost stuck repeating the same action. You have only 2 iterations left and you must change your approach.'
+                )
+            else:
+                latest_user_message['content'] += (
+                    f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+                )
 
         return messages

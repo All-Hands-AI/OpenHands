@@ -103,6 +103,9 @@ class TestStuckDetector:
         event_stream.add_event(message_null_observation, EventSource.USER)
         # 8 events
 
+        assert stuck_detector.is_stuck() is False
+        assert stuck_detector.state.almost_stuck == 2
+
         cmd_action_3 = CmdRunAction(command='ls')
         event_stream.add_event(cmd_action_3, EventSource.AGENT)
         cmd_observation_3 = CmdOutputObservation(
@@ -112,14 +115,29 @@ class TestStuckDetector:
         event_stream.add_event(cmd_observation_3, EventSource.USER)
         # 10 events
 
-        # stuck_detector.state.history.set_event_stream(event_stream)
-
         assert len(collect_events(event_stream)) == 10
         assert len(list(stuck_detector.state.history.get_events())) == 8
         assert len(stuck_detector.state.history.get_tuples()) == 5
 
+        assert stuck_detector.is_stuck() is False
+        assert stuck_detector.state.almost_stuck == 1
+
+        cmd_action_4 = CmdRunAction(command='ls')
+        event_stream.add_event(cmd_action_4, EventSource.AGENT)
+        cmd_observation_4 = CmdOutputObservation(
+            content='', command='ls', command_id=cmd_action_4._id
+        )
+        cmd_observation_4._cause = cmd_action_4._id
+        event_stream.add_event(cmd_observation_4, EventSource.USER)
+        # 12 events
+
+        assert len(collect_events(event_stream)) == 12
+        assert len(list(stuck_detector.state.history.get_events())) == 10
+        assert len(stuck_detector.state.history.get_tuples()) == 6
+
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
+            assert stuck_detector.state.almost_stuck == 0
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
     def test_is_stuck_repeating_action_error(
@@ -170,8 +188,6 @@ class TestStuckDetector:
         error_observation_4._cause = cmd_action_4._id
         event_stream.add_event(error_observation_4, EventSource.USER)
         # 12 events
-
-        # stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
@@ -290,8 +306,6 @@ class TestStuckDetector:
         ipython_observation_4._cause = ipython_action_4._id
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
-        # stuck_detector.state.history.set_event_stream(event_stream)
-
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is False
             mock_warning.assert_not_called()
@@ -357,8 +371,6 @@ class TestStuckDetector:
         )
         read_observation_3._cause = read_action_3._id
         event_stream.add_event(read_observation_3, EventSource.USER)
-
-        # stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
@@ -427,8 +439,6 @@ class TestStuckDetector:
         )
         read_observation_3._cause = read_action_3._id
         event_stream.add_event(read_observation_3, EventSource.USER)
-
-        # stuck_detector.state.history.set_event_stream(event_stream)
 
         assert stuck_detector.is_stuck() is False
 
@@ -499,8 +509,6 @@ class TestStuckDetector:
         )
         cmd_output_observation_4._cause = cmd_kill_action_4._id
         event_stream.add_event(cmd_output_observation_4, EventSource.USER)
-
-        # stuck_detector.state.history.set_event_stream(event_stream)
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
