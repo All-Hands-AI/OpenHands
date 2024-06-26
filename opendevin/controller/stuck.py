@@ -78,6 +78,9 @@ class StuckDetector:
         # it takes 4 actions and 4 observations to detect a loop
         # assert len(last_actions) == 4 and len(last_observations) == 4
 
+        # reset almost_stuck reminder
+        self.state.almost_stuck = 0
+
         # almost stuck? if two actions, obs are the same, we're almost stuck
         if len(last_actions) >= 2 and len(last_observations) >= 2:
             actions_equal = all(
@@ -91,8 +94,6 @@ class StuckDetector:
             # the last two actions and obs are the same?
             if actions_equal and observations_equal:
                 self.state.almost_stuck = 2
-            else:
-                self.state.almost_stuck = 0
 
             # the last three actions and observations are the same?
             if len(last_actions) >= 3 and len(last_observations) >= 3:
