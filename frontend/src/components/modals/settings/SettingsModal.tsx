@@ -58,7 +58,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         setModels(await fetchModels());
         setAgents(await fetchAgents());
       } catch (error) {
-        toast.error("settings", "Failed to fetch models and agents");
+        toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));
       } finally {
         setLoading(false);
       }
