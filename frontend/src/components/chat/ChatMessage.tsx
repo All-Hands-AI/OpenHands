@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import Markdown from "react-markdown";
 import { FaClipboard } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
+import { useTranslation } from "react-i18next";
 import { code } from "../markdown/code";
 import toast from "#/utils/toast";
+import { I18nKey } from "#/i18n/declaration";
 
 interface MessageProps {
   message: Message;
@@ -18,14 +20,18 @@ function ChatMessage({ message }: MessageProps) {
     message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
   );
 
+  const { t } = useTranslation();
   const copyToClipboard = () => {
     navigator.clipboard
       .writeText(message.content)
       .then(() => {
-        toast.info("Message copied to clipboard!");
+        toast.info(t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPIED));
       })
-      .catch((error) => {
-        toast.error("copy-error", `Failed to copy message: ${error}`);
+      .catch(() => {
+        toast.error(
+          "copy-error",
+          t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED),
+        );
       });
   };
 
@@ -40,7 +46,7 @@ function ChatMessage({ message }: MessageProps) {
         <button
           onClick={copyToClipboard}
           className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-500 transition-opacity opacity-75 hover:opacity-100"
-          aria-label="Copy message"
+          aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)}
           type="button"
         >
           <FaClipboard />
