@@ -38,7 +38,7 @@
   },
   "scripts": {
     "start": "npm run make-i18n && vite",
-    "build": "tsc && vite build",
+    "build": "npm run make-i18n && tsc && vite build",
     "test": "vitest run",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
     "preview": "vite preview",
