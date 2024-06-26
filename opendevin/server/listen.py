@@ -24,6 +24,7 @@ from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import session_manager
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
+from opendevin.core.schema import AgentState  # Add this import
 
 app = FastAPI()
 app.add_middleware(
@@ -231,51 +232,62 @@ async def save_file(request: Request):
     """
     Save a file to the agent's runtime file store.
 
-    This endpoint allows saving a file only when the agent is in a paused or finished state.
-    It checks the agent's state before proceeding with the file save operation.
+    This endpoint allows saving a file when the agent is in a paused, finished,
+    or awaiting user input state. It checks the agent's state before proceeding
+    with the file save operation.
 
     Args:
         request (Request): The incoming FastAPI request object.
 
     Returns:
-        JSONResponse: A JSON response indicating the success or failure of the operation.
+        JSONResponse: A JSON response indicating the success of the operation.
 
     Raises:
-        HTTPException: If the agent is not in a paused or finished state, or if there's an error during the save operation.
+        HTTPException: 
+            - 403 error if the agent is not in an allowed state for editing.
+            - 400 error if the file path or content is missing.
+            - 500 error if there's an unexpected error during the save operation.
     """
     try:
-        # Check if the agent is paused or finished
-        agent_state = request.state.session.agent_session.controller.get_state().state
-        if agent_state not in [AgentStateChangedObservation.State.PAUSED,
-                               AgentStateChangedObservation.State.FINISHED]:
+        # Get the agent's current state
+        controller = request.state.session.agent_session.controller
+        agent_state = controller.get_agent_state()
+        
+        # Check if the agent is in an allowed state for editing
+        if agent_state not in [AgentState.PAUSED, AgentState.FINISHED, AgentState.AWAITING_USER_INPUT]:
             raise HTTPException(
                 status_code=403,
-                detail="Code editing is only allowed when the agent is paused or finished"
+                detail="Code editing is only allowed when the agent is paused, finished, or awaiting user input"
             )
         
+        # Extract file path and content from the request
         data = await request.json()
         file_path = data.get('filePath')
         content = data.get('content')
         
+        # Validate the presence of required data
         if not file_path or content is None:
             raise HTTPException(
                 status_code=400,
                 detail="Missing filePath or content"
             )
         
+        # Save the file to the agent's runtime file store
         request.state.session.agent_session.runtime.file_store.write(
             file_path, content
         )
+        
+        # Return a success response
         return JSONResponse(
             status_code=200,
             content={'message': 'File saved successfully'}
         )
     except Exception as e:
+        # Log the error and return a 500 response
         logger.error(f'Error saving file: {e}', exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Error saving file: {str(e)}"
         )
-
 
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

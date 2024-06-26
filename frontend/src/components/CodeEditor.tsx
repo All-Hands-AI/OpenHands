@@ -29,7 +29,9 @@ function CodeEditor(): JSX.Element {
   }, [activeFilepath]);
 
   const isEditingAllowed = useMemo(() => {
-    return agentState === AgentState.PAUSED || agentState === AgentState.FINISHED;
+    return agentState === AgentState.PAUSED || 
+           agentState === AgentState.FINISHED || 
+           agentState === AgentState.AWAITING_USER_INPUT;
   }, [agentState]);
 
   useEffect(() => {
