@@ -158,17 +158,15 @@ install-python-dependencies:
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
-make-frontend-i18n:
-	@echo "$(YELLOW)Running make-i18n for frontend...$(RESET)"
-	@cd frontend && npm run make-i18n
-
 install-frontend-dependencies:
 	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
 	@cd frontend && \
 		echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)" && \
-		npm install
+		npm install && \
+		echo "$(BLUE)Running make-i18n with npm...$(RESET)" && \
+		npm run make-i18n
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
 install-precommit-hooks:
@@ -198,7 +196,6 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@$(MAKE) -s make-frontend-i18n
 	@cd frontend && npm run build
 
 # Start backend
