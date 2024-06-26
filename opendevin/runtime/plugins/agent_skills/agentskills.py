@@ -31,7 +31,10 @@ from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
-from opendevin.runtime.aider.linter import Linter
+if __package__ is None or __package__ == '':
+    from aider import Linter
+else:
+    from .aider import Linter
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
@@ -128,12 +131,11 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
         tuple[str, Optional[int]]: (lint_error, first_error_line_number)
     """
     linter = Linter(root=os.getcwd())
-    lint_result = linter.lint(file_path)
-    if linter.returncode == 0:
+    lint_error = linter.lint(file_path)
+    if not lint_error:
         # Linting successful. No issues found.
         return None, None
-    lint_error = 'ERRORS:\n' + lint_result.text
-    return lint_error, lint_result.lines[0]
+    return 'ERRORS:\n' + lint_error.text, lint_error.lines[0]
 
 
 def _print_window(file_path, targeted_line, window, return_str=False):
