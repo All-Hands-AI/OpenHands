@@ -228,6 +228,21 @@ async def appconfig_defaults():
 
 @app.post('/api/save-file')
 async def save_file(request: Request):
+    """
+    Save a file to the agent's runtime file store.
+
+    This endpoint allows saving a file only when the agent is in a paused or finished state.
+    It checks the agent's state before proceeding with the file save operation.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success or failure of the operation.
+
+    Raises:
+        HTTPException: If the agent is not in a paused or finished state, or if there's an error during the save operation.
+    """
     try:
         # Check if the agent is paused or finished
         agent_state = request.state.session.agent_session.controller.get_state().state
