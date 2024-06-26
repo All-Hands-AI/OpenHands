@@ -15,6 +15,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.PAUSED,
     AgentState.STOPPED,
     AgentState.FINISHED,
+    AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
   ],
   [AgentState.RUNNING]: [
@@ -22,6 +23,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.RUNNING,
     AgentState.STOPPED,
     AgentState.FINISHED,
+    AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
   ],
   [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
