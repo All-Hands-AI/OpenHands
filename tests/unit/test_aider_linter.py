@@ -32,6 +32,16 @@ foo()
     yield temp_name
     os.remove(temp_name)
 
+@pytest.fixture
+def temp_ruby_file_errors_parentheses(tmp_path):
+    # Fixture to create a temporary file
+    temp_name = os.path.join(tmp_path, 'lint-test.rb')
+    with open(temp_name, 'w', encoding='utf-8') as tmp_file:
+        tmp_file.write("""code = "def print_hello_world()\n    puts 'Hello World'\n""")
+    tmp_file.close()
+    yield temp_name
+    os.remove(temp_name)
+
 
 @pytest.fixture
 def temp_ruby_file_errors_parentheses(tmp_path):
