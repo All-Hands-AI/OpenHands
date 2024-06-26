@@ -91,6 +91,8 @@ class StuckDetector:
             # the last two actions and obs are the same?
             if actions_equal and observations_equal:
                 self.state.almost_stuck = 2
+            else:
+                self.state.almost_stuck = 0
 
             # the last three actions and observations are the same?
             if len(last_actions) >= 3 and len(last_observations) >= 3:
