@@ -26,6 +26,9 @@ enum ActionType {
   // Interact with the browser instance.
   BROWSE_INTERACTIVE = "browse_interactive",
 
+  // Delegate a (sub)task to another agent.
+  DELEGATE = "delegate",
+
   // Searches long-term memory.
   RECALL = "recall",
 

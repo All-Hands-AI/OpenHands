@@ -39,6 +39,9 @@ const messageActions = {
   [ActionType.REJECT]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.message));
   },
+  [ActionType.DELEGATE]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.message));
+  },
   [ActionType.RUN]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
