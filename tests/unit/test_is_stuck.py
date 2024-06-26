@@ -122,7 +122,7 @@ class TestStuckDetector:
             assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
-    def test_is_stuck_repeating_action_error_observation(
+    def test_is_stuck_repeating_action_error(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         # (action, error_observation), not necessarily the same error
@@ -506,7 +506,7 @@ class TestStuckDetector:
             assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
-    def test_is_stuck_thinking(self, stuck_detector, event_stream):
+    def test_is_stuck_monologue(self, stuck_detector, event_stream):
         # Add events to the event stream
         message_action_1 = MessageAction(content='Hi there!')
         event_stream.add_event(message_action_1, EventSource.USER)

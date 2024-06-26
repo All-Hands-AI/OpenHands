@@ -34,14 +34,16 @@ class StuckDetector:
             )
         ]
 
-        # scenario 1: same action, same observation
-        # it takes 3 actions and 3 observations to detect a loop
+        # it takes 3 actions minimum to detect a loop, otherwise nothing to do here
         if len(filtered_history) < 3:
             return False
 
+        # the first few scenarios detect 3 or 4 repeated steps
+        # prepare the last 4 actions and observations, to check them out
         last_actions: list[Event] = []
         last_observations: list[Event] = []
-        # retrieve the last three actions and observations starting from the end of history, wherever they are
+
+        # retrieve the last four actions and observations starting from the end of history, wherever they are
         for event in reversed(filtered_history):
             if isinstance(event, Action) and len(last_actions) < 4:
                 last_actions.append(event)
@@ -51,20 +53,47 @@ class StuckDetector:
             if len(last_actions) == 4 and len(last_observations) == 4:
                 break
 
-        # are the last three actions the same?
+        # scenario 1: same action, same observation
+        if self._is_stuck_repeating_action_observation(last_actions, last_observations):
+            return True
+
+        # scenario 2: same action, errors
+        if self._is_stuck_repeating_action_error(last_actions, last_observations):
+            return True
+
+        # scenario 3: monologue
+        if self._is_stuck_monologue(filtered_history):
+            return True
+
+        # scenario 4: action, observation pattern on the last six steps
+        if len(filtered_history) < 6:
+            return False
+        if self._is_stuck_action_observation_pattern(filtered_history):
+            return True
+
+        return False
+
+    def _is_stuck_repeating_action_observation(self, last_actions, last_observations):
+        # scenario 1: same action, same observation
+        # it takes 3 actions and 3 observations to detect a loop
         last_three_actions = last_actions[-3:]
         last_three_observations = last_observations[-3:]
+
+        # are the last three actions the same?
         if len(last_three_actions) == 3 and all(
             self._eq_no_pid(last_three_actions[0], action)
             for action in last_three_actions
         ):
+            # and the last three observations the same?
             if len(last_three_observations) == 3 and all(
                 self._eq_no_pid(last_three_observations[0], observation)
                 for observation in last_three_observations
             ):
                 logger.warning('Action, Observation loop detected')
                 return True
+        return False
 
+    def _is_stuck_repeating_action_error(self, last_actions, last_observations):
         # scenario 2: same action, errors
         # it takes 4 actions and 4 observations to detect a loop
         # check if the last four actions are the same and result in errors
@@ -96,7 +125,9 @@ class StuckDetector:
             ):
                 logger.warning('Action, IPythonRunCellObservation loop detected')
                 return True
+        return False
 
+    def _is_stuck_monologue(self, filtered_history):
         # scenario 3: monologue
         # check for repeated MessageActions with source=AGENT
         # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
@@ -111,7 +142,7 @@ class StuckDetector:
             last_agent_message_actions = agent_message_actions[-3:]
 
             if all(
-                self._eq_no_pid(last_agent_message_actions[0][1], action[1])
+                (last_agent_message_actions[0][1] == action[1])
                 for action in last_agent_message_actions
             ):
                 # check if there are any observations between the repeated MessageActions
@@ -128,7 +159,9 @@ class StuckDetector:
                 if not has_observation_between:
                     logger.warning('Repeated MessageAction with source=AGENT detected')
                     return True
+        return False
 
+    def _is_stuck_action_observation_pattern(self, filtered_history):
         # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
@@ -168,7 +201,6 @@ class StuckDetector:
             if actions_equal and observations_equal:
                 logger.warning('Action, Observation pattern detected')
                 return True
-
         return False
 
     def _eq_no_pid(self, obj1, obj2):
