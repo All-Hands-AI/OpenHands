@@ -9,10 +9,13 @@ from opendevin.events.event import Event
 from opendevin.events.observation import Observation
 from opendevin.events.stream import EventStream
 from opendevin.runtime.plugins import PluginRequirement
-from opendevin.events.serialization import event_to_dict
+from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.tools import RuntimeTool
+from opendevin.runtime.server.browse import browse
+from opendevin.runtime.server.files import read_file, write_file
+from opendevin.core.config import config
 from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -85,51 +88,22 @@ class EventStreamRuntime(Runtime):
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
-        observation = await getattr(self, action_type)(action)
+        observation = await self.execute(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     
     async def execute(
         self, action: Action, stream: bool = False, timeout: int | None = None
-    ) -> tuple[int, str | CancellableStream]:
+    ) -> Observation:
         if self.websocket is None:
             raise Exception("WebSocket is not connected.")
         await self.websocket.send(json.dumps(event_to_dict(action)))
         output = await self.websocket.recv()
         print(output)
-        return output
-    
-    async def run(self, action: CmdRunAction) -> Observation:
-        pass
-
-    
-    async def kill(self, action: CmdKillAction) -> Observation:
-        pass
-
-    
+        return observation_from_dict(json.loads(output))
+        
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        pass
-
-    
-    async def read(self, action: FileReadAction) -> Observation:
-        pass
-
-    
-    async def write(self, action: FileWriteAction) -> Observation:
-        pass
-
-    
-    async def browse(self, action: BrowseURLAction) -> Observation:
-        pass
-
-    
-    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        pass
-
-    
-    async def recall(self, action: AgentRecallAction) -> Observation:
-        pass
-
+        raise NotImplementedError
 
     async def _start_background_observation_loop(self):
         while True:
@@ -145,9 +119,45 @@ class EventStreamRuntime(Runtime):
         print("Not implemented yet.")
         await asyncio.sleep(2)
 
+    ############################################################################ 
+    # Keep the same with other runtimes
+    ############################################################################ 
+
+    def get_working_directory(self):
+        # TODO: should we get this from od-runtime-client
+        return config.workspace_base
+    
+    async def read(self, action: FileReadAction) -> Observation:
+        working_dir = self.get_working_directory()
+        return await read_file(action.path, working_dir, action.start, action.end)
+    
+    async def write(self, action: FileWriteAction) -> Observation:
+        working_dir = self.get_working_directory()
+        return await write_file(
+            action.path, working_dir, action.content, action.start, action.end
+        )
+    
+    async def browse(self, action: BrowseURLAction) -> Observation:
+        return await browse(action, self.browser)
+
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return await browse(action, self.browser)
+
+    async def recall(self, action: AgentRecallAction) -> Observation:
+        return NullObservation('')
+    
+    ############################################################################ 
+    # Function that should impelement in od-runtime-client
+    ############################################################################
+    async def run(self, action: CmdRunAction) -> Observation:
+        raise NotImplementedError
+    
+    async def kill(self, action: CmdKillAction) -> Observation:
+        raise NotImplementedError
 
 if __name__ == "__main__":
-    runtime = EventStreamRuntime(None)
+    event_stream = EventStream("1")
+    runtime = EventStreamRuntime(event_stream)
     asyncio.run(runtime.execute(CmdRunAction('ls -l')))
 
 
