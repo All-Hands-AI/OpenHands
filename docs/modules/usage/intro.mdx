@@ -2,108 +2,176 @@
 sidebar_position: 1
 ---
 
-# 💻 OpenDevin
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
 
-OpenDevin is an **autonomous AI software engineer** capable of executing complex engineering tasks and collaborating actively with users on software development projects.
-This project is fully open-source, so you can use and modify it however you like.
+# 💻 OpenDevin: Your AI Software Engineer
+
+<p className="hero__subtitle">
+  An autonomous AI capable of executing complex engineering tasks and collaborating on software development projects.
+</p>
+
+:::tip Explore & Connect
+<div className="row">
+  <div className="col">
+
+  [![GitHub](https://img.shields.io/badge/GitHub-Explore%20Code-181717?style=for-the-badge&logo=github)](https://github.com/OpenDevin/OpenDevin)
+  [![Documentation](https://img.shields.io/badge/Docs-Read%20More-blue?style=for-the-badge&logo=read-the-docs)](https://opendevin.github.io/OpenDevin/)
+
+  </div>
+  <div className="col">
+
+  [![Slack](https://img.shields.io/badge/Slack-Join%20Community-4A154B?style=for-the-badge&logo=slack)](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA)
+  [![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/ESHStjSjD4)
+
+  </div>
+</div>
+:::
+
+## 🌟 Features
+
+<div className="row">
+  <div className="col col--6">
+
+  - ✨ Autonomous code generation
+  - 🤝 Real-time collaboration
+  - 🌐 Multi-language support
+
+  </div>
+  <div className="col col--6">
+
+  - 🧠 Intelligent code review
+  - 🐛 Automated bug detection
+  - 🛠️ Integration with popular tools
+
+  </div>
+</div>
+
+## 🚀 Getting Started
+
+Before you begin, ensure you have the following:
+
+- Docker (version 26.0.0 or later recommended)
+- Operating System: Linux, macOS, or Windows with WSL
+- Minimum 8GB RAM and 4 CPU cores (16GB RAM and 8 cores recommended)
+
+## 🛠️ Installation
+
+<Tabs>
+  <TabItem value="step1" label="Step 1" default>
+
+  Create a workspace directory:
+
+  <CodeBlock language="bash">
+  mkdir workspace
+  </CodeBlock>
+
+  </TabItem>
+  <TabItem value="step2" label="Step 2">
+
+  Run the Docker container:
+
+  <CodeBlock language="bash">
+  WORKSPACE_BASE=$(pwd)/workspace
+  docker run -it \
+      --pull=always \
+      -e SANDBOX_USER_ID=$(id -u) \
+      -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+      -v $WORKSPACE_BASE:/opt/workspace_base \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -p 3000:3000 \
+      --add-host host.docker.internal:host-gateway \
+      --name opendevin-app-$(date +%Y%m%d%H%M%S) \
+      ghcr.io/opendevin/opendevin:0.6.2
+  </CodeBlock>
+
+  </TabItem>
+</Tabs>
+
+:::caution
+When you run the Docker command, files in `./workspace` may be modified or deleted.
+:::
+
+## 📘 Usage
+
+1. Access OpenDevin at [http://localhost:3000](http://localhost:3000)
+2. Place your code in the `./workspace` directory
+3. Use the web interface to interact with OpenDevin
 
 :::tip
-Explore the codebase of OpenDevin on [GitHub](https://github.com/OpenDevin/OpenDevin) or join one of our communities!
-
-<a href="https://github.com/OpenDevin/OpenDevin/graphs/contributors">
-  <img
-    src="https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge"
-    alt="Contributors"
-  />
-</a>
-<a href="https://github.com/OpenDevin/OpenDevin/network/members">
-  <img
-    src="https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge"
-    alt="Forks"
-  />
-</a>
-<a href="https://github.com/OpenDevin/OpenDevin/stargazers">
-  <img
-    src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge"
-    alt="Stargazers"
-  />
-</a>
-<a href="https://github.com/OpenDevin/OpenDevin/issues">
-  <img
-    src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge"
-    alt="Issues"
-  />
-</a>
-<br></br>
-<a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE">
-  <img
-    src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge"
-    alt="MIT License"
-  />
-</a>
-<br></br>
-<a href="https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA">
-  <img
-    src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
-    alt="Join our Slack community"
-  />
-</a>
-<a href="https://discord.gg/ESHStjSjD4">
-  <img
-    src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge"
-    alt="Join our Discord community"
-  />
-</a>
+For advanced usage, check our [Development Guide](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
 :::
 
-## 🛠️ Getting Started
+## 🔧 Troubleshooting
 
-The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
-You must be using Linux, Mac OS, or WSL on Windows.
+<details>
+  <summary>Docker container won't start</summary>
+  Ensure Docker is running and you have sufficient system resources.
+</details>
 
-To start OpenDevin in a docker container, run the following commands in your terminal:
+<details>
+  <summary>Can't access localhost:3000</summary>
+  Check if port 3000 is not in use by another application.
+</details>
+
+<details>
+  <summary>Workspace not updating</summary>
+  Verify that you've mounted the correct local directory.
+</details>
+
+For more help, visit our [Troubleshooting Guide](https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting).
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how:
+
+1. Fork the repository
+2. Create a new branch
+3. Make your changes
+4. Submit a pull request
+
+See our [Contributing Guidelines](https://github.com/OpenDevin/OpenDevin/blob/main/CONTRIBUTING.md) for more details.
+
+## 🗺️ Roadmap
+
+<div className="row">
+  <div className="col col--6">
+
+  - Enhanced natural language understanding
+  - Expanded language and framework support
+  - Improved code optimization algorithms
+
+  </div>
+  <div className="col col--6">
+
+  - Integration with more third-party tools
+  - Advanced project management capabilities
+  - Collaborative coding features
+
+  </div>
+</div>
+
+---
+
+<div className="row">
+  <div className="col col--6">
+
+  [![Contributors](https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge)](https://github.com/OpenDevin/OpenDevin/graphs/contributors)
+  [![Forks](https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge)](https://github.com/OpenDevin/OpenDevin/network/members)
+  [![Stargazers](https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge)](https://github.com/OpenDevin/OpenDevin/stargazers)
+
+  </div>
+  <div className="col col--6">
+
+  [![Issues](https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge)](https://github.com/OpenDevin/OpenDevin/issues)
+  [![MIT License](https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge)](https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE)
+
+  </div>
+</div>
+
+**Version**: This documentation refers to OpenDevin version 0.6.2.
 
 :::warning
-When you run the following command, files in `./workspace` may be modified or deleted.
+OpenDevin is currently a work in progress. While you can run the alpha version to see the end-to-end system in action, expect ongoing updates and improvements.
 :::
-
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-docker run -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    --add-host host.docker.internal:host-gateway \
-    --name opendevin-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.6.2
-```
-
-You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
-
-OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
-
-:::tip
-If you want to use the **(unstable!)** bleeding edge, you can use `ghcr.io/opendevin/opendevin:main` as the image (last line).
-:::
-
-For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
-
-Are you having trouble? Check out our [Troubleshooting Guide](https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting).
-
-:::warning
-OpenDevin is currently a work in progress, but you can already run the alpha version to see the end-to-end system in action.
-:::
-
-[contributors-shield]: https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge
-[contributors-url]: https://github.com/OpenDevin/OpenDevin/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge
-[forks-url]: https://github.com/OpenDevin/OpenDevin/network/members
-[stars-shield]: https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge
-[stars-url]: https://github.com/OpenDevin/OpenDevin/stargazers
-[issues-shield]: https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge
-[issues-url]: https://github.com/OpenDevin/OpenDevin/issues
-[license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
-[license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE
