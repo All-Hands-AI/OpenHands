@@ -70,7 +70,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"source": "user", "action": "message", "args": {"content": "Write a git commit message for the current staging area. Do not ask me for confirmation at any point.", "wait_for_response": false}}, {"observation": "null", "content": "", "extras": {}}], [{"source": "agent", "action": "delegate", "args": {"agent": "CommitWriterAgent", "inputs": {}, "thought": ""}}, {"observation": "null", "content": "", "extras": {}}], [{"action": "null", "args": {}}, {"source": "agent", "observation": "delegate", "content": "", "extras": {"outputs": {"reason": "Not a valid git repository."}}}]]
+[[{"source": "user", "action": "message", "args": {"content": "Write a git commit message for the current staging area. Do not ask me for confirmation at any point.", "wait_for_response": false}}, {"observation": "null", "content": "", "extras": {}}], [{"source": "agent", "action": "delegate", "args": {"agent": "CommitWriterAgent", "inputs": {}, "thought": ""}}, {"observation": "null", "content": "", "extras": {}}], [{"action": "null", "args": {}}, {"source": "agent", "observation": "delegate", "content": "Delegate agent finishes task with reason: Not a valid git repository.", "extras": {"outputs": {"reason": "Not a valid git repository."}}}]]
 
 If the last item in the history is an error, you should try to fix it. If you
 cannot fix it, call the `reject` action.
