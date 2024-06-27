@@ -6,6 +6,7 @@ enum AgentState {
   PAUSED = "paused",
   STOPPED = "stopped",
   FINISHED = "finished",
+  REJECTED = "rejected",
   ERROR = "error",
 }
 
