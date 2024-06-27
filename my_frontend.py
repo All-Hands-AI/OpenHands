@@ -661,7 +661,7 @@ def pause_resume_task(is_paused, session, status):
 
 
 if __name__ == '__main__':
-    default_port = 3000
+    default_port = 5000
     default_agent = 'WorldModelAgent'
 
     model_port_config = {}

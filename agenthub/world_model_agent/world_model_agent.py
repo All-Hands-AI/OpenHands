@@ -41,6 +41,9 @@ if not USE_NAV and USE_CONCISE_ANSWER:
 else:
     EVAL_MODE = False
 
+MAX_TOKENS = 8192  # added
+OUTPUT_BUFFER = 1100  # added
+
 
 class ParseError(Exception):
     pass
@@ -66,6 +69,8 @@ class WorldModelAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        print(self.llm.max_input_tokens)
+        print(self.llm.max_output_tokens)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']
@@ -80,6 +85,56 @@ class WorldModelAgent(Agent):
         self.max_retry = 4
 
         self.reset()
+
+    # added
+    def count_tokens(self, messages):
+        return self.llm.get_token_count(messages)
+
+    def reduce_ax_tree(self, ax, goal_token):
+        low, high = 0, len(ax)
+
+        while low < high:
+            mid = (low + high + 1) // 2
+            if self.count_tokens([{'role': 'user', 'content': ax[:mid]}]) <= goal_token:
+                low = mid
+            else:
+                high = mid - 1
+
+        return ax[:low]
+
+    def truncate_messages(self, messages, max_tokens):
+        if self.count_tokens(messages) > max_tokens:
+            tree_start = messages[-1]['content'].find('AXSTART')
+            tree_end = messages[-1]['content'].find('AXEND')
+
+            no_ax = (
+                messages[-1]['content'][0:tree_start]
+                + messages[-1]['content'][tree_end:]
+            )
+            ax = messages[-1]['content'][tree_start + len('AXSTART') : tree_end]
+
+            new_message = {'role': 'user', 'content': no_ax}
+            tmp_messages = []
+            tmp_messages.append(messages[0])
+            tmp_messages.append(new_message)
+
+            no_ax_token = self.count_tokens(tmp_messages)
+            goal_token = max_tokens - no_ax_token
+            reduced_ax = self.reduce_ax_tree(ax, goal_token)
+
+            processed_content = (
+                messages[-1]['content'][0:tree_start]
+                + reduced_ax
+                + messages[-1]['content'][tree_end:]
+            )
+            messages[-1]['content'] = processed_content
+
+            # print(self.count_tokens(messages))
+            # print(messages[-1]['content'])
+            assert self.count_tokens(messages) <= max_tokens
+            return messages
+        else:
+            return messages
 
     def reset(self) -> None:
         """
@@ -126,8 +181,12 @@ class WorldModelAgent(Agent):
         tries = 0
         rate_limit_total_delay = 0
         while tries < n_retry and rate_limit_total_delay < rate_limit_max_wait_time:
+            truncated_messages = self.truncate_messages(
+                messages, MAX_TOKENS - OUTPUT_BUFFER
+            )  # added
             response = self.llm.completion(
-                messages=messages,
+                # messages=messages,
+                messages=truncated_messages,  # added
                 temperature=self.temperature,
                 stop=None,
             )
@@ -173,7 +232,12 @@ and executed by a program, make sure to follow the formatting instructions.
             return ans_dict, True, ''
 
         try:
-            ans_dict = self.retry(messages, parser, n_retry=self.max_retry)
+            # ans_dict = self.retry(messages, parser, n_retry=self.max_retry)
+            ans_dict = self.retry(
+                self.truncate_messages(messages, MAX_TOKENS - OUTPUT_BUFFER),
+                parser,
+                n_retry=self.max_retry,
+            )  # added
             ans_dict['n_retry'] = (len(messages) - 3) / 2
         except ValueError as e:
             # Likely due to maximum retry. We catch it here to be able to return
@@ -330,6 +394,7 @@ and executed by a program, make sure to follow the formatting instructions.
 
         current_obs = {
             'axtree_txt': cur_axtree_txt,
+            # 'axtree_txt': "AXSTART "+cur_axtree_txt+" AXEND",
             'last_action_error': error_prefix,
             'goal': goal,
         }

@@ -145,6 +145,7 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.ERROR)
                 break
 
+            # yield self.state
             await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
@@ -319,6 +320,7 @@ class AgentController:
 
         if not isinstance(action, NullAction):
             await self.event_stream.add_event(action, EventSource.AGENT)
+            # yield action
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
