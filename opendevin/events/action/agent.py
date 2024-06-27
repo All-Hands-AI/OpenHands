@@ -37,12 +37,12 @@ class AgentSummarizeAction(Action):
     Action to summarize a list of events.
 
     Attributes:
-    - actions: A comma-separated list of all the action names from the summarized actions.
-    - summary: A single sentence summarizing all the observations.
+    - summarized_actions: A sentence summarizing all the actions.
+    - summarized_observations: A few sentences summarizing all the observations.
     """
 
     summarized_actions: str = ''
-    summary: str = ''
+    summarized_observations: str = ''
     action: str = ActionType.SUMMARIZE
     _chunk_start: int = -1
     _chunk_end: int = -1
@@ -50,11 +50,12 @@ class AgentSummarizeAction(Action):
 
     @property
     def message(self) -> str:
-        return self.summary
+        return self.summarized_observations
 
     def __str__(self) -> str:
         ret = '**AgentSummarizeAction**\n'
-        ret += f'SUMMARY: {self.summary}'
+        ret += f'SUMMARIZED ACTIONS: {self.summarized_actions}\n'
+        ret += f'SUMMARIZED OBSERVATIONS: {self.summarized_observations}\n'
         return ret
 
 

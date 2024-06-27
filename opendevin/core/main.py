@@ -85,7 +85,7 @@ async def main(
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream('main' + (f'_{sid if sid else ""}'))
+    event_stream = EventStream('main' + ('_' + sid if sid else ''))
 
     # restore main session if enabled
     initial_state = None

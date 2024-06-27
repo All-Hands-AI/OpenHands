@@ -53,7 +53,7 @@ def action_to_str(action: Action) -> str:
     elif isinstance(action, MessageAction):
         return action.content
     elif isinstance(action, AgentSummarizeAction):
-        return action.summary
+        return action.summarized_actions
     return ''
 
 
@@ -97,6 +97,8 @@ def get_observation_message(obs) -> dict[str, str] | None:
     elif isinstance(obs, AgentDelegateObservation):
         content = 'OBSERVATION:\n' + truncate_content(str(obs.outputs))
         return {'role': 'user', 'content': content}
+    elif isinstance(obs, AgentSummarizeAction):
+        return {'role': 'user', 'content': obs.summarized_observations}
     return None
 
 
@@ -262,14 +264,29 @@ class CodeActAgent(Agent):
         ]
 
         for event in state.history.get_events():
+            # split summarize message into action and observation
+            if isinstance(event, AgentSummarizeAction):
+                action_message = get_action_message(event)
+                if action_message:
+                    messages.append(action_message)
+                observation_message = get_observation_message(event)
+                if observation_message:
+                    messages.append(observation_message)
+                continue
+
+            # find regular message
             message = (
                 get_action_message(event)
                 if isinstance(event, Action)
                 else get_observation_message(event)
             )
+
+            # add regular message
             if message:
                 messages.append(message)
 
+        # the latest user message is important:
+        # we want to remind the agent of the environment constraints
         latest_user_message = next(
             (m for m in reversed(messages) if m['role'] == 'user'), None
         )
@@ -277,11 +294,11 @@ class CodeActAgent(Agent):
         if latest_user_message:
             if state.almost_stuck == 1:
                 latest_user_message['content'] += (
-                    '\n\nENVIRONMENT REMINDER: You are almost stuck repeating the same action. You have only 1 iteration left and you must change your approach. Now.'
+                    '\n\nENVIRONMENT REMINDER: You are almost stuck, repeating the same action. You have only 1 chance left before you fail. You MUST change your approach. Re-think the problem. Do NOT repeat the same action again, you will fail.'
                 )
             elif state.almost_stuck == 2:
                 latest_user_message['content'] += (
-                    '\n\nENVIRONMENT REMINDER: You are almost stuck repeating the same action. You have only 2 iterations left and you must change your approach.'
+                    '\n\nENVIRONMENT REMINDER: You are almost stuck, repeating the same action. You have only 2 iterations left before you fail. Do NOT repeat the same action again, you will fail the same as before. Re-think the problem.'
                 )
             else:
                 latest_user_message['content'] += (
