@@ -585,7 +585,7 @@ class MyMainPrompt(PromptElement):
 
         # return f"\n# Observation of current step:\n{self.error.prompt}{self.ax_tree.prompt}\n"
         # return f"\n# Observation of current step:\n{self.html.prompt}{self.ax_tree.prompt}{self.error.prompt}\n\n"
-        return f'\n# Observation of current step:\n{self.ax_tree.prompt}{self.error.prompt}\n\n'
+        return f'\n# Observation of current step:\nAXSTART{self.ax_tree.prompt}AXEND{self.error.prompt}\n\n'
 
     def get_obs_state(self, obs, state):
         return self.get_obs(obs) + f'\n## Current State:\n{state}\n'
