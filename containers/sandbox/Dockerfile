@@ -1,5 +1,9 @@
 FROM ubuntu:22.04
 
+# For Python 3.11
+RUN add-apt-repository ppa:deadsnakes/ppa;
+RUN apt update;
+
 # install basic packages
 RUN apt-get update && apt-get install -y \
     curl \
