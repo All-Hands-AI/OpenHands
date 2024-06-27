@@ -161,7 +161,7 @@ class CodeActAgent(Agent):
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
 
-    attempts_to_condense: int = 2
+    attempts_to_condense: int = 10
 
     action_parser = CodeActResponseParser()
 
