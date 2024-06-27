@@ -854,23 +854,27 @@ def parse_pptx(file_path: str) -> None:
 
 
 @update_pwd_decorator
-def get_repomap(dir_path: str) -> None:
+def get_repomap(dir_path: str, task_str: str) -> None:
     """Gets the `RepoMap` for the given directory and print it.
 
     `RepoMap` is a concise map of the directory that includes the most important classes and functions along with their types and call signatures.
 
     Args:
         dir_path: str: The path to the directory to get the `RepoMap` for.
+        task_str: str: The description of the task assigned. Should always be set to the task provided by the user, which can help the `RepoMap` to provide a better summary.
     """
     repo_map = RepoMap(
         model_name=AGENT_MODEL,
         map_tokens=1024,
         root=dir_path,
-        repo_content_prefix='\nHere are summaries of some files present in the workspace',
+        repo_content_prefix='\nHere are summaries of some files present in the workspace:\n\n',
         max_context_window=get_model_max_input_tokens(AGENT_MODEL),
     )
 
     messages: Any = []  # FIXME: change to message history obtained from `EventStream` after
+    if task_str:
+        messages = [{'role': 'user', 'content': task_str}]
+
     repo_content = repo_map.get_history_aware_repo_map(messages)
     print(repo_content)
 
