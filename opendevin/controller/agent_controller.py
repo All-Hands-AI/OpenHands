@@ -182,8 +182,6 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, ErrorObservation):
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 self.state.history.on_event(event)
 
     def reset_task(self):
@@ -325,12 +323,10 @@ class AgentController:
         if action.runnable:
             self._pending_action = action
 
+        await self.update_state_after_step()
+
         if not isinstance(action, NullAction):
             self.event_stream.add_event(action, EventSource.AGENT)
-
-        await self.update_state_after_step()
-        if self.state.agent_state == AgentState.ERROR:
-            return
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
