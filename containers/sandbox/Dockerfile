@@ -13,10 +13,10 @@ RUN apt-get update && apt-get install -y \
     nano \
     unzip \
     zip \
-    python3 \
-    python3-pip \
-    python3-venv \
-    python3-dev \
+    python3.11 \
+    python3.11-pip \
+    python3.11-venv \
+    python3.11-dev \
     build-essential \
     openssh-server \
     sudo \
