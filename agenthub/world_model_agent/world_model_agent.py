@@ -2,6 +2,7 @@ import ast
 import itertools
 import math
 import os
+import time
 import traceback
 from typing import Any, Dict, List, Optional
 
@@ -43,6 +44,8 @@ else:
 
 MAX_TOKENS = 8192  # added
 OUTPUT_BUFFER = 1100  # added
+DEFAULT_BROWSER = 'https://www.google.com'  # added
+# DEFAULT_BROWSER = None
 
 
 class ParseError(Exception):
@@ -326,10 +329,23 @@ Review the current state of the page and all other information to find the best 
         - AgentFinishAction() - end the interaction
         """
 
+        # Set default first action
+        if DEFAULT_BROWSER is not None and len(self.actions) == 0:
+            time.sleep(4)
+            action = "goto('{}')".format(DEFAULT_BROWSER)
+            self.actions.append(action)
+            return BrowseInteractiveAction(
+                browser_actions=action, thought='Open default browser'
+            )
+        actions = self.actions
+        if DEFAULT_BROWSER is not None:
+            actions = actions[1:]
+
         goal = env_state.get_current_user_intent()
         if goal is None:
             goal = env_state.inputs['task']
         self.goal = goal
+
         # messages: List[str] = []
         prev_actions: List[str] = []
         cur_axtree_txt = ''
@@ -407,7 +423,7 @@ Review the current state of the page and all other information to find the best 
             obs_history=self.obs_history,
             states=self.states,
             strategies=self.strategies,
-            actions=self.actions,
+            actions=actions,
             active_strategy=self.active_strategy,
         )
 
@@ -438,7 +454,7 @@ Review the current state of the page and all other information to find the best 
             obs_history=self.obs_history,
             states=self.states,
             strategies=self.strategies,
-            actions=self.actions,
+            actions=actions,
             active_strategy=self.active_strategy,
             action_space=self.action_space,
         )
@@ -491,6 +507,9 @@ Review the current state of the page and all other information to find the best 
         def _expand(node, path):
             new_states = [n.state for n in path[:] if n.state is not None]
             new_actions = [n.action for n in path[:] if n.action is not None]
+            actions = self.actions
+            if DEFAULT_BROWSER is not None:
+                actions = actions[1:]
             if node.state is None:
                 # print(self.states + new_states)
                 # print(self.actions + new_actions)
@@ -498,7 +517,7 @@ Review the current state of the page and all other information to find the best 
                     obs_history=self.obs_history,
                     states=self.states + new_states,
                     strategies=self.strategies + new_actions,
-                    actions=self.actions,
+                    actions=actions,
                 )
                 node.state, node.state_status, node.is_terminal = self.dynamics(
                     main_prompt
@@ -521,7 +540,7 @@ Review the current state of the page and all other information to find the best 
                 # main_prompt = my_prompting.MyMainPrompt(
                 #     obs_history=self.obs_history,
                 #     states=self.states + new_states,
-                #     actions=self.actions + new_actions
+                #     actions=actions + new_actions
                 # )
                 # node.reward, node.is_terminal, node.reward_details = self.critic(main_prompt)
                 # TODO (DONE) : Figure out numerical reward logic
@@ -535,7 +554,7 @@ Review the current state of the page and all other information to find the best 
                         obs_history=self.obs_history,
                         states=self.states + new_states,
                         strategies=self.strategies + new_actions,
-                        actions=self.actions,
+                        actions=actions,
                     )
                     strategy = self.policy(main_prompt)
                     # action, action_dict = self.policy(main_prompt)
@@ -550,7 +569,7 @@ Review the current state of the page and all other information to find the best 
                         obs_history=self.obs_history,
                         states=self.states + new_states,
                         strategies=self.strategies + new_actions + [action],
-                        actions=self.actions,
+                        actions=actions,
                     )
                     fast_reward, think = self.action_reward(main_prompt)
                     logger.info(f'*Strategy Candidate*: {action}')
