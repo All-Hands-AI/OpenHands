@@ -107,15 +107,59 @@ function FileExplorer() {
       return;
     }
     dispatch(setRefreshID(Math.random()));
-    setFiles(await listFiles("/"));
+    try {
+      const fileList = await listFiles("/");
+      setFiles(fileList);
+      if (fileList.length === 0) {
+        toast.info(t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE));
+      }
+    } catch (error) {
+      console.error("Error refreshing workspace:", error);
+      toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
+    }
   };
 
   const uploadFileData = async (toAdd: FileList) => {
     try {
-      await uploadFiles(toAdd);
+      console.log("Uploading files:", toAdd);
+      const result = await uploadFiles(toAdd);
+      console.log("Upload result:", result);
+
+      if (result.uploadedFiles.length > 0) {
+        console.log("Uploaded files:", result.uploadedFiles);
+        toast.success(
+          `upload-success-${new Date().getTime()}`,
+          t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
+            count: result.uploadedFiles.length,
+          }),
+        );
+      }
+
+      if (result.skippedFiles.length > 0) {
+        const skippedCount = result.skippedFiles.length;
+        const displayCount = Math.min(skippedCount, 5);
+        const skippedDetails = result.skippedFiles
+          .slice(0, displayCount)
+          .map((file) => `${file.name}: ${file.reason}`)
+          .join("\n");
+
+        const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
+          count: skippedCount,
+          details: skippedDetails,
+          remaining: skippedCount > 5 ? skippedCount - 5 : 0,
+        });
+
+        console.log("Skipped files:", result.skippedFiles);
+        toast.info(message);
+      }
+
       await refreshWorkspace();
     } catch (error) {
-      toast.error("ws", t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE));
+      console.error("Upload error:", error);
+      toast.error(
+        `upload-error-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+      );
     }
   };
 
@@ -154,7 +198,10 @@ function FileExplorer() {
           data-testid="dropzone"
           onDrop={(event) => {
             event.preventDefault();
-            uploadFileData(event.dataTransfer.files);
+            const { files: droppedFiles } = event.dataTransfer;
+            if (droppedFiles.length > 0) {
+              uploadFileData(droppedFiles);
+            }
           }}
           onDragOver={(event) => event.preventDefault()}
           className="z-10 absolute flex flex-col justify-center items-center bg-black top-0 bottom-0 left-0 right-0 opacity-65"
@@ -207,8 +254,9 @@ function FileExplorer() {
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={(event) => {
-            if (event.target.files) {
-              uploadFileData(event.target.files);
+            const { files: selectedFiles } = event.target;
+            if (selectedFiles && selectedFiles.length > 0) {
+              uploadFileData(selectedFiles);
             }
           }}
         />

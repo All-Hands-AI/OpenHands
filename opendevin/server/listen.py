@@ -1,9 +1,8 @@
-import configparser
 import os
 import re
 import uuid
 import warnings
-from pathlib import Path
+from typing import Set, cast
 
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -45,53 +44,69 @@ app.add_middleware(
 
 security_scheme = HTTPBearer()
 
-# Determine the project root directory
-PROJECT_ROOT = Path(__file__).parent.parent.parent
 
-# Path to the configuration file
-CONFIG_FILE = PROJECT_ROOT / 'config' / 'file_uploads.conf'
-
-
-def load_file_upload_config():
+def load_file_upload_config() -> tuple[int, bool, Set[str]]:
     """
-    Load file upload configuration from the INI-style config file (optional).
+    Load file upload configuration from the config object.
+
+    This function retrieves the file upload settings from the global config object.
+    It handles the following settings:
+    - Maximum file size for uploads
+    - Whether to restrict file types
+    - List of allowed file extensions
+
+    It also performs sanity checks on the values to ensure they are valid and safe.
+
+    Returns:
+        tuple: A tuple containing:
+            - max_file_size_mb (int): Maximum file size in MB. 0 means no limit.
+            - restrict_file_types (bool): Whether file type restrictions are enabled.
+            - allowed_extensions (set): Set of allowed file extensions.
     """
-    if not CONFIG_FILE.exists():
-        logger.info(f'Config file not found: {CONFIG_FILE}. Using default values.')
-        return 0, True, {'.*'}  # Default values when file doesn't exist
+    # Retrieve values from config
+    max_file_size_mb = cast(int, getattr(config, 'file_uploads_max_file_size_mb', 0))
+    restrict_file_types = cast(
+        bool, getattr(config, 'file_uploads_restrict_file_types', False)
+    )
+    allowed_extensions = set(
+        cast(list, getattr(config, 'file_uploads_allowed_extensions', ['.*']))
+    )
 
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
-
-    # Load general configuration
-    try:
-        max_file_size_mb = config.getint('config', 'max_file_size_mb', fallback=0)
-        restrict_file_types = config.getboolean(
-            'config', 'restrict_file_types', fallback=True
+    # Sanity check for max_file_size_mb
+    MAX_ALLOWED_SIZE = 1024  # Maximum allowed file size 1 GB
+    if not isinstance(max_file_size_mb, int) or max_file_size_mb < 0:
+        logger.warning(
+            f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).'
         )
-    except configparser.Error as e:
-        logger.error(f'Error reading [config] section in {CONFIG_FILE}: {str(e)}')
-        max_file_size_mb, restrict_file_types = 0, True
-
-    # Load allowed extensions
-    allowed_extensions = set()
-    try:
-        if 'allowed-file-types' in config:
-            for key, value in config['allowed-file-types'].items():
-                if value.lower() == 'true':
-                    ext = f'.{key}'
-                    if re.match(r'^\.\w{1,10}$', ext) or ext == '.*' or ext == '.':
-                        allowed_extensions.add(ext)
-                    else:
-                        logger.warning(f'Invalid extension in {CONFIG_FILE}: {ext}')
-    except configparser.Error as e:
-        logger.error(
-            f'Error reading [allowed-file-types] section in {CONFIG_FILE}: {str(e)}'
+        max_file_size_mb = 0
+    elif max_file_size_mb > MAX_ALLOWED_SIZE:
+        logger.warning(
+            f'max_file_size_mb exceeds maximum allowed size. Capping at {MAX_ALLOWED_SIZE}MB.'
         )
+        max_file_size_mb = MAX_ALLOWED_SIZE
 
-    # If no extensions are specified or restrictions are disabled, allow all
-    if not restrict_file_types or not allowed_extensions:
+    # Sanity check for allowed_extensions
+    if not isinstance(allowed_extensions, (list, set)) or not allowed_extensions:
+        logger.warning(
+            f'Invalid allowed_extensions: {allowed_extensions}. Setting to [".*"].'
+        )
         allowed_extensions = {'.*'}
+    else:
+        # Ensure all extensions start with a dot and are lowercase
+        allowed_extensions = {
+            ext.lower() if ext.startswith('.') else f'.{ext.lower()}'
+            for ext in allowed_extensions
+        }
+
+    # If restrictions are disabled, allow all
+    if not restrict_file_types:
+        allowed_extensions = {'.*'}
+
+    logger.info(
+        f'File upload config: max_size={max_file_size_mb}MB, '
+        f'restrict_types={restrict_file_types}, '
+        f'allowed_extensions={allowed_extensions}'
+    )
 
     return max_file_size_mb, restrict_file_types, allowed_extensions
 
@@ -102,13 +117,24 @@ MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_con
 
 def is_extension_allowed(filename):
     """
-    Check if the file is allowed, supporting wildcards and files without extensions.
-    Case-sensitive for extensions.
+    Check if the file extension is allowed based on the current configuration.
+
+    This function supports wildcards and files without extensions.
+    The check is case-insensitive for extensions.
+
+    Args:
+        filename (str): The name of the file to check.
+
+    Returns:
+        bool: True if the file extension is allowed, False otherwise.
     """
-    file_ext = os.path.splitext(filename)[1]  # Keep original case
+    if not RESTRICT_FILE_TYPES:
+        return True
+
+    file_ext = os.path.splitext(filename)[1].lower()  # Convert to lowercase
     return (
         '.*' in ALLOWED_EXTENSIONS
-        or file_ext in ALLOWED_EXTENSIONS
+        or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
 
@@ -307,6 +333,10 @@ def list_files(request: Request, path: str = '/'):
             request.state.session.agent_session.runtime.file_store.get_full_path(path)
         )
 
+        # Check if the directory exists
+        if not os.path.exists(full_path) or not os.path.isdir(full_path):
+            return []
+
         # Check if .gitignore exists
         gitignore_path = os.path.join(full_path, '.gitignore')
         if os.path.exists(gitignore_path):
@@ -358,11 +388,12 @@ def list_files(request: Request, path: str = '/'):
 
             # Construct the full path by joining the base path with the relative entry path
             full_entry_path = os.path.join(full_path, entry_relative)
-            is_dir = os.path.isdir(full_entry_path)
-            if is_dir:
-                directories.append(entry)
-            else:
-                files.append(entry)
+            if os.path.exists(full_entry_path):
+                is_dir = os.path.isdir(full_entry_path)
+                if is_dir:
+                    directories.append(entry)
+                else:
+                    files.append(entry)
 
         # Sort directories and files separately
         directories.sort(key=str.lower)
@@ -374,11 +405,7 @@ def list_files(request: Request, path: str = '/'):
 
     except Exception as e:
         logger.error(f'Error listing files: {e}', exc_info=True)
-        error_msg = f'Error listing files: {e}'
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': error_msg},
-        )
+        return []
 
 
 @app.get('/api/select-file')
@@ -431,48 +458,56 @@ async def upload_file(request: Request, files: list[UploadFile]):
     """
     try:
         uploaded_files = []
+        skipped_files = []
         for file in files:
-            # Sanitize the filename
             safe_filename = sanitize_filename(file.filename)
-
-            # Read file contents
             file_contents = await file.read()
 
-            # Check file size (if specified)
-            if MAX_FILE_SIZE_MB > 0:
-                if len(file_contents) > MAX_FILE_SIZE_MB * 1024 * 1024:
-                    return JSONResponse(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        content={
-                            'error': f'File {safe_filename} exceeds the maximum size limit of {MAX_FILE_SIZE_MB}MB'
-                        },
-                    )
-
-            # Check file type (if restriction is enabled)
-            if not is_extension_allowed(safe_filename):
-                return JSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content={'error': f'File type not allowed for {safe_filename}'},
+            if (
+                MAX_FILE_SIZE_MB > 0
+                and len(file_contents) > MAX_FILE_SIZE_MB * 1024 * 1024
+            ):
+                skipped_files.append(
+                    {
+                        'name': safe_filename,
+                        'reason': f'Exceeds maximum size limit of {MAX_FILE_SIZE_MB}MB',
+                    }
                 )
+                continue
 
-            # Write the file
+            if not is_extension_allowed(safe_filename):
+                skipped_files.append(
+                    {'name': safe_filename, 'reason': 'File type not allowed'}
+                )
+                continue
+
             request.state.session.agent_session.runtime.file_store.write(
                 safe_filename, file_contents
             )
             uploaded_files.append(safe_filename)
 
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={
-                'message': 'Files uploaded successfully',
-                'uploaded_files': uploaded_files,
-            },
-        )
+        response_content = {
+            'message': 'File upload process completed',
+            'uploaded_files': uploaded_files,
+            'skipped_files': skipped_files,
+        }
+
+        if not uploaded_files and skipped_files:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    **response_content,
+                    'error': 'No files were uploaded successfully',
+                },
+            )
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=response_content)
+
     except Exception as e:
-        logger.error(f'Error saving files: {e}', exc_info=True)
+        logger.error(f'Error during file upload: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving files: {str(e)}'},
+            content={'error': f'Error during file upload: {str(e)}'},
         )
 
 
