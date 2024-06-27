@@ -185,9 +185,27 @@ def list_files(request: Request, path: str = '/'):
         )
 
     exclude_list = (
-        '.git', '.DS_Store', '.svn', '.hg', '.idea', '.vscode', '.settings',
-        '.pytest_cache', '__pycache__', 'node_modules', 'vendor', 'build',
-        'dist', 'bin', 'logs', 'log', 'tmp', 'temp', 'coverage', 'venv', 'env',
+        '.git',
+        '.DS_Store',
+        '.svn',
+        '.hg',
+        '.idea',
+        '.vscode',
+        '.settings',
+        '.pytest_cache',
+        '__pycache__',
+        'node_modules',
+        'vendor',
+        'build',
+        'dist',
+        'bin',
+        'logs',
+        'log',
+        'tmp',
+        'temp',
+        'coverage',
+        'venv',
+        'env',
     )
 
     try:
