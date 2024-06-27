@@ -47,8 +47,6 @@ def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
         return DockerSSHBox(sid=sid)
     elif sandbox_type == 'e2b':
         return E2BBox()
-    elif sandbox_type == 'websocket':
-        return WebSocketBox()
     else:
         raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
