@@ -89,9 +89,6 @@ class SWEBenchSSHBox(DockerSSHBox):
         try:
             config.workspace_base = workspace_mount_path
             config.workspace_mount_path = workspace_mount_path
-            logger.warning(
-                f"{instance['instance_id']} : setting workspace_base and workspace_mount_path to {workspace_mount_path}"
-            )
 
             # linting python after editing helps LLM fix indentations
             config.enable_auto_lint = True
@@ -156,13 +153,6 @@ class SWEBenchSSHBox(DockerSSHBox):
         return git_patch
 
 
-def print_env_vars(sandbox):
-    env_vars = ['REPO_PATH', 'SWE_TASK_DIR', 'TEST_CMD']
-    for var in env_vars:
-        exit_code, output = sandbox.execute(f'echo ${var}')
-        logger.info(f'{var}: {output.strip()}')
-
-
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
@@ -170,10 +160,7 @@ if __name__ == '__main__':
     swe_bench_tests = dataset['test'].to_pandas()
 
     # INSTANCE_ID = 'django__django-11099'
-    # INSTANCE_ID = 'astropy__astropy-12907'
-    # failures:
-    # INSTANCE_ID = 'psf__requests-2317'
-    INSTANCE_ID = 'scikit-learn__scikit-learn-13142'
+    INSTANCE_ID = 'astropy__astropy-12907'
     swe_bench_tests = swe_bench_tests[swe_bench_tests['instance_id'] == INSTANCE_ID]
     EXAMPLE_INSTANCE = swe_bench_tests.iloc[0].to_dict()
 
@@ -186,47 +173,6 @@ if __name__ == '__main__':
     exit_code, output = sandbox.execute('cd $REPO_PATH')
     assert exit_code == 0, 'Failed to cd $REPO_PATH'
     logger.info(f'cd $REPO_PATH: {output}')
-
-    print_env_vars(sandbox)
-
-    # Reset the repo
-    exit_code, output = sandbox.execute('git reset --hard')
-    assert exit_code == 0, 'Failed to reset the repo'
-    logger.info(f'git reset --hard: {output}')
-
-    exit_code, output = sandbox.execute('cat $SWE_TASK_DIR/test.patch')
-    logger.info(f'Content of test.patch:\n{output}')
-
-    exit_code, output = sandbox.execute('ls -l $SWE_TASK_DIR/test.patch')
-    logger.info(f'File permissions of test.patch: {output}')
-
-    exit_code, output = sandbox.execute('ls -la $REPO_PATH')
-    logger.info(f'Repository file permissions:\n{output}')
-
-    # exit_code, output = sandbox.execute('ls -la $REPO_PATH/.git')
-    # logger.info(f'Git directory permissions:\n{output}')
-
-    # exit_code, output = sandbox.execute('git --version && git config --list')
-    # logger.info(f'Git version and config:\n{output}')
-
-    # exit_code, output = sandbox.execute('patch -p1 < $SWE_TASK_DIR/test.patch')
-    # logger.info(f'Manual patch application:\n{output}')
-
-    exit_code, output = sandbox.execute(
-        'git apply --verbose $SWE_TASK_DIR/test.patch test_requests.py'
-    )
-    logger.info(f'Applying patch to specific file:\n{output}')
-
-    exit_code, output = sandbox.execute('git status')
-    logger.info(f'Git status before patch:\n{output}')
-
-    # exit_code, output = sandbox.execute('patch -p1 < $SWE_TASK_DIR/test.patch')
-    # logger.info(f'Manual patch application:\n{output}')
-
-    # Reset the repo
-    exit_code, output = sandbox.execute('git reset --hard')
-    assert exit_code == 0, 'Failed to reset the repo'
-    logger.info(f'git reset --hard: {output}')
 
     # apply test patch
     exit_code, output = sandbox.execute('git apply $SWE_TASK_DIR/test.patch')
