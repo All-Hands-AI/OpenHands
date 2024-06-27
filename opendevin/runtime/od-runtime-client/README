@@ -5,6 +5,6 @@
 
 
 # TODO
-1. Do test in docker, move and run server.py in docker, need to figure out the network setting to map the websocket port out into host machine.
-2. Convert client.py into `websocket box`, convert server.py into `od-runtime-client` 
-3. Move plugin initialization task into `od-runtime-client`
+1. Move plugin initialization task into `od-runtime-client`
+2. Wake od-runtime-cleint run in docker, need to figure out the network setting to map the websocket port out into host machine.
+3. Figure out the way to get the output of background process (maybe we put them into log file and read the file when need, but now decide to ignore this feature because of not frequency usage)

@@ -1,4 +1,4 @@
-# client.py
+# client.py, this file is used in development to test the runtime client. It is not used in production.
 import asyncio
 import websockets
 
