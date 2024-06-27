@@ -224,8 +224,8 @@ def test_history_with_summary(event_stream: EventStream):
 
     # Create a summary action and observation
     summary_action = AgentSummarizeAction(
-        summarized_actions='FileReadAction, FileReadAction',
-        summary='The agent read the contents of file1.txt and file2.txt',
+        summarized_actions='I tried to read the files',
+        summarized_observations='The agent read the contents of file1.txt and file2.txt',
     )
     summary_action._chunk_start = read_action_1._id
     summary_action._chunk_end = read_observation_2._id
