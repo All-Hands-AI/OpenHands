@@ -114,19 +114,15 @@ function FileExplorer() {
         toast.info(t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE));
       }
     } catch (error) {
-      console.error("Error refreshing workspace:", error);
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
     }
   };
 
   const uploadFileData = async (toAdd: FileList) => {
     try {
-      console.log("Uploading files:", toAdd);
       const result = await uploadFiles(toAdd);
-      console.log("Upload result:", result);
 
       if (result.uploadedFiles.length > 0) {
-        console.log("Uploaded files:", result.uploadedFiles);
         toast.success(
           `upload-success-${new Date().getTime()}`,
           t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
@@ -137,25 +133,14 @@ function FileExplorer() {
 
       if (result.skippedFiles.length > 0) {
         const skippedCount = result.skippedFiles.length;
-        const displayCount = Math.min(skippedCount, 5);
-        const skippedDetails = result.skippedFiles
-          .slice(0, displayCount)
-          .map((file) => `${file.name}: ${file.reason}`)
-          .join("\n");
-
         const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
           count: skippedCount,
-          details: skippedDetails,
-          remaining: skippedCount > 5 ? skippedCount - 5 : 0,
         });
-
-        console.log("Skipped files:", result.skippedFiles);
         toast.info(message);
       }
 
       await refreshWorkspace();
     } catch (error) {
-      console.error("Upload error:", error);
       toast.error(
         `upload-error-${new Date().getTime()}`,
         t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
