@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     zip \
     python3.11 \
-    python3.11-pip \
+    python3-pip \
     python3.11-venv \
     python3.11-dev \
     build-essential \
