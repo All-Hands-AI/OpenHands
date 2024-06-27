@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
+import beep from "#/utils/beep";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -49,6 +50,10 @@ function AgentStatusBar() {
       message: t(I18nKey.CHAT_INTERFACE$AGENT_FINISHED_MESSAGE),
       indicator: IndicatorColor.GREEN,
     },
+    [AgentState.REJECTED]: {
+      message: t(I18nKey.CHAT_INTERFACE$AGENT_REJECTED_MESSAGE),
+      indicator: IndicatorColor.YELLOW,
+    },
     [AgentState.ERROR]: {
       message: t(I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE),
       indicator: IndicatorColor.RED,
@@ -61,6 +66,16 @@ function AgentStatusBar() {
   // - Agent is thinking
   // - Agent is ready
   // - Agent is not available
+  useEffect(() => {
+    if (
+      curAgentState === AgentState.AWAITING_USER_INPUT ||
+      curAgentState === AgentState.ERROR ||
+      curAgentState === AgentState.INIT
+    ) {
+      if (document.cookie.indexOf("audio") !== -1) beep();
+    }
+  }, [curAgentState]);
+
   return (
     <div className="flex items-center">
       <div
