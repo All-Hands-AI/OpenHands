@@ -13,5 +13,9 @@
     {
         "provider": "openai",
         "port": 8002
+    },
+    "gpt-4o":
+    {
+        "base_url": "https://api.openai.com/v1/"
     }
 }

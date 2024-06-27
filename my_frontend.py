@@ -1,7 +1,6 @@
 import base64
 import json
 import os
-import time
 from io import BytesIO
 
 import gradio as gr
@@ -115,18 +114,7 @@ class OpenDevinSession:
 
     def _get_message(self):
         # try:
-        response = self.ws.recv()
-        try:
-            message = json.loads(response)
-        except json.decoder.JSONDecodeError as e:
-            print(e)
-            print(response)
-            message = {
-                'action': 'error',
-                'message': 'Received JSON response cannot be parsed. Skipping..',
-                'response': response,
-            }
-
+        message = json.loads(self.ws.recv())
         self.raw_messages.append(message)
         # print(list(message.keys()))
         return message
@@ -134,7 +122,6 @@ class OpenDevinSession:
         #     return {}
 
     def _read_message(self, message, verbose=True):
-        printable = {}
         if message.get('token'):
             self.token = message['token']
             self.status = message['status']
@@ -179,8 +166,6 @@ class OpenDevinSession:
         print(f'Closing connection {self.token}')
         if self.ws:
             self.ws.close()
-        now = time.time()
-        json.dump(self.raw_messages, open(f'frontend_logs/{now}_steps.json', 'w'))
         self._reset()
 
     def __del__(self):
@@ -662,6 +647,14 @@ def pause_resume_task(is_paused, session, status):
 
 if __name__ == '__main__':
     default_port = 3000
+    with open('Makefile') as f:
+        while True:
+            line = f.readline()
+            if 'BACKEND_PORT' in line:
+                default_port = int(line.split('=')[1].strip())
+                break
+            if not line:
+                break
     default_agent = 'WorldModelAgent'
 
     model_port_config = {}
@@ -803,4 +796,4 @@ if __name__ == '__main__':
         )
 
     demo.queue()
-    demo.launch(share=False)
+    demo.launch(share=True)
