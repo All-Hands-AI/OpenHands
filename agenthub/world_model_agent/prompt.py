@@ -338,9 +338,7 @@ class GoalInstructions(PromptElement):
         super().__init__(visible)
         self._prompt = f"""\
 # Instructions
-Review the current state of the page and all other information to find the best
-possible next action to accomplish your goal. Your answer will be interpreted
-and executed by a program, make sure to follow the formatting instructions.
+Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
 ## Goal:
 {goal}
@@ -353,14 +351,9 @@ class ChatInstructions(PromptElement):
         self._prompt = """\
 # Instructions
 
-You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can
-communicate with the user via a chat, in which the user gives you instructions and in which you
-can send back messages. You have access to a web browser that both you and the user can see,
-and with which only you can interact via specific commands.
+You are a UI Assistant, your goal is to help the user perform tasks using a web browser. You can communicate with the user via a chat, in which the user gives you instructions and in which you can send back messages. You have access to a web browser that both you and the user can see, and with which only you can interact via specific commands.
 
-Review the instructions from the user, the current state of the page and all other information
-to find the best possible next action to accomplish your goal. Your answer will be interpreted
-and executed by a program, make sure to follow the formatting instructions.
+Review the instructions from the user, the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
 ## Chat messages:
 
@@ -376,9 +369,7 @@ and executed by a program, make sure to follow the formatting instructions.
 
 class SystemPrompt(PromptElement):
     _prompt = """\
-You are an agent trying to solve a web task based on the content of the page and
-a user instructions. You can interact with the page and explore. Each time you
-submit an action it will be sent to the browser and you will receive a new page."""
+You are an agent trying to solve a web task based on the content of the page and a user instructions. You can interact with the page and explore. Each time you submit an action it will be sent to the browser and you will receive a new page."""
 
 
 def _get_my_action_space() -> AbstractActionSet:
