@@ -507,7 +507,11 @@ async def upload_file(request: Request, files: list[UploadFile]):
         logger.error(f'Error during file upload: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error during file upload: {str(e)}'},
+            content={
+                'error': f'Error during file upload: {str(e)}',
+                'uploaded_files': [],
+                'skipped_files': [],
+            },
         )
 
 

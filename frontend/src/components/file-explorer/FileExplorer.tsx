@@ -122,25 +122,41 @@ function FileExplorer() {
     try {
       const result = await uploadFiles(toAdd);
 
-      if (result.uploadedFiles.length > 0) {
+      if (result.error) {
+        // Handle error response
+        toast.error(
+          `upload-error-${new Date().getTime()}`,
+          result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+        );
+        return;
+      }
+
+      const uploadedCount = result.uploadedFiles.length;
+      const skippedCount = result.skippedFiles.length;
+
+      if (uploadedCount > 0) {
         toast.success(
           `upload-success-${new Date().getTime()}`,
           t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
-            count: result.uploadedFiles.length,
+            count: uploadedCount,
           }),
         );
       }
 
-      if (result.skippedFiles.length > 0) {
-        const skippedCount = result.skippedFiles.length;
+      if (skippedCount > 0) {
         const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
           count: skippedCount,
         });
         toast.info(message);
       }
 
+      if (uploadedCount === 0 && skippedCount === 0) {
+        toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
+      }
+
       await refreshWorkspace();
     } catch (error) {
+      // Handle unexpected errors (network issues, etc.)
       toast.error(
         `upload-error-${new Date().getTime()}`,
         t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),

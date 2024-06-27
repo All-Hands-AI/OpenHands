@@ -10,11 +10,14 @@ interface UploadResult {
   message: string;
   uploadedFiles: string[];
   skippedFiles: Array<{ name: string; reason: string }>;
+  error?: string;
 }
 
 export async function uploadFiles(files: FileList): Promise<UploadResult> {
   const formData = new FormData();
   const skippedFiles: Array<{ name: string; reason: string }> = [];
+
+  let uploadedCount = 0;
 
   for (let i = 0; i < files.length; i += 1) {
     const file = files[i];
@@ -30,8 +33,15 @@ export async function uploadFiles(files: FileList): Promise<UploadResult> {
       });
     } else {
       formData.append("files", file);
+      uploadedCount += 1;
     }
   }
+
+  // Add skippedFilesCount to formData
+  formData.append("skippedFilesCount", skippedFiles.length.toString());
+
+  // Add uploadedFilesCount to formData
+  formData.append("uploadedFilesCount", uploadedCount.toString());
 
   const response = await request("/api/upload-files", {
     method: "POST",
