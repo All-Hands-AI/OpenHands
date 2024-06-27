@@ -1,4 +1,5 @@
 import { request } from "./api";
+import toast from "#/utils/toast";
 
 export async function selectFile(file: string): Promise<string> {
   try {
@@ -9,6 +10,7 @@ export async function selectFile(file: string): Promise<string> {
     return data.code;
   } catch (error) {
     console.error('Error selecting file:', error);
+    toast.error('Failed to select file. Please try again.', 'File Selection Error');
     throw error;
   }
 }
@@ -24,6 +26,7 @@ export async function uploadFiles(files: FileList): Promise<void> {
     });
   } catch (error) {
     console.error('Error uploading files:', error);
+    toast.error('Failed to upload files. Please try again.', 'Upload Error');
     throw error;
   }
 }
@@ -37,6 +40,7 @@ export async function listFiles(path: string = "/"): Promise<string[]> {
     return data;
   } catch (error) {
     console.error('Error listing files:', error);
+    toast.error('Failed to list files. Please try again.', 'File List Error');
     throw error;
   }
 }
@@ -52,6 +56,7 @@ export async function saveFile(filePath: string, content: string): Promise<void>
     });
   } catch (error) {
     console.error('Error saving file:', error);
+    toast.error('Failed to save file. Please try again.', 'File Save Error');
     throw error;
   }
 }
