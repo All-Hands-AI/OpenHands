@@ -37,9 +37,21 @@ app.add_middleware(
 
 security_scheme = HTTPBearer()
 
-
 @app.middleware('http')
 async def attach_session(request: Request, call_next):
+    """
+    Middleware to attach session information to the request.
+
+    This middleware checks for the Authorization header, validates the token,
+    and attaches the corresponding session to the request state.
+
+    Args:
+        request (Request): The incoming request object.
+        call_next (Callable): The next middleware or route handler in the chain.
+
+    Returns:
+        Response: The response from the next middleware or route handler.
+    """
     if (request.url.path.startswith('/api/options/') or
             not request.url.path.startswith('/api/')):
         response = await call_next(request)
@@ -72,9 +84,17 @@ async def attach_session(request: Request, call_next):
     response = await call_next(request)
     return response
 
-
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time communication.
+
+    This function handles the WebSocket connection, including authentication,
+    session management, and event streaming.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection object.
+    """
     await websocket.accept()
 
     session = None
@@ -109,9 +129,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await session.loop_recv()
 
-
 @app.get('/api/options/models')
 async def get_litellm_models():
+    """
+    Retrieve a list of available LLM models.
+
+    This function combines models from litellm and Bedrock, removing any
+    error-prone Bedrock models.
+
+    Returns:
+        list: A sorted list of unique model names.
+    """
     litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
         litellm_model_list
@@ -121,15 +149,35 @@ async def get_litellm_models():
 
     return list(sorted(set(model_list)))
 
-
 @app.get('/api/options/agents')
 async def get_agents():
+    """
+    Retrieve a list of available agents.
+
+    Returns:
+        list: A sorted list of agent names.
+    """
     agents = sorted(Agent.list_agents())
     return agents
 
-
 @app.get('/api/list-files')
 def list_files(request: Request, path: str = '/'):
+    """
+    List files in the specified path.
+
+    This function retrieves a list of files from the agent's runtime file store,
+    excluding certain system and hidden files/directories.
+
+    Args:
+        request (Request): The incoming request object.
+        path (str, optional): The path to list files from. Defaults to '/'.
+
+    Returns:
+        list: A list of file names in the specified path.
+
+    Raises:
+        HTTPException: If there's an error listing the files.
+    """
     if not request.state.session.agent_session.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -163,9 +211,21 @@ def list_files(request: Request, path: str = '/'):
             content={'error': error_msg},
         )
 
-
 @app.get('/api/select-file')
 def select_file(file: str, request: Request):
+    """
+    Retrieve the content of a specified file.
+
+    Args:
+        file (str): The path of the file to be retrieved.
+        request (Request): The incoming request object.
+
+    Returns:
+        dict: A dictionary containing the file content.
+
+    Raises:
+        HTTPException: If there's an error opening the file.
+    """
     try:
         content = request.state.session.agent_session.runtime.file_store.read(
             file
@@ -179,9 +239,21 @@ def select_file(file: str, request: Request):
         )
     return {'code': content}
 
-
 @app.post('/api/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
+    """
+    Upload multiple files to the agent's runtime file store.
+
+    Args:
+        request (Request): The incoming request object.
+        files (list[UploadFile]): A list of files to be uploaded.
+
+    Returns:
+        dict: A message indicating the success of the upload operation.
+
+    Raises:
+        HTTPException: If there's an error saving the files.
+    """
     try:
         for file in files:
             file_contents = await file.read()
@@ -196,9 +268,23 @@ async def upload_file(request: Request, files: list[UploadFile]):
         )
     return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
-
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request, feedback: FeedbackDataModel):
+    """
+    Submit user feedback.
+
+    This function stores the provided feedback data.
+
+    Args:
+        request (Request): The incoming request object.
+        feedback (FeedbackDataModel): The feedback data to be stored.
+
+    Returns:
+        dict: The stored feedback data.
+
+    Raises:
+        HTTPException: If there's an error submitting the feedback.
+    """
     try:
         feedback_data = store_feedback(feedback)
         return JSONResponse(status_code=200, content=feedback_data)
@@ -208,9 +294,20 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
             status_code=500, content={'error': 'Failed to submit feedback'}
         )
 
-
 @app.get('/api/root_task')
 def get_root_task(request: Request):
+    """
+    Retrieve the root task of the current agent session.
+
+    Args:
+        request (Request): The incoming request object.
+
+    Returns:
+        dict: The root task data if available.
+
+    Raises:
+        HTTPException: If the root task is not available.
+    """
     controller = request.state.session.agent_session.controller
     if controller is not None:
         state = controller.get_state()
@@ -221,11 +318,15 @@ def get_root_task(request: Request):
             )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-
 @app.get('/api/defaults')
 async def appconfig_defaults():
-    return config.defaults_dict
+    """
+    Retrieve the default configuration settings.
 
+    Returns:
+        dict: The default configuration settings.
+    """
+    return config.defaults_dict
 
 @app.post('/api/save-file')
 async def save_file(request: Request):
