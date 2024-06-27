@@ -4,40 +4,36 @@ sidebar_position: 6
 
 # ✅ Providing Feedback
 
-When using OpenDevin, you will undoubtably encounter cases where things work well, and others where they don't. We encourage you to provide feedback when you use OpenDevin to help give feedback to the development team, and perhaps more importantly, create an open corpus of coding agent training examples -- Share-OpenDevin!
+Your feedback on OpenDevin is crucial. It helps our development team and contributes to an open corpus of coding agent training examples - Share-OpenDevin!
 
 ## 📝 How to Provide Feedback
 
-Providing feedback is easy! When you are using OpenDevin, you can press the thumbs-up or thumbs-down button at any point during your interaction with. You will be prompted to provide your email address (e.g. so we can contact you if we want to ask any follow-up questions), and you can choose whether you want to provide feedback publicly or privately.
+1. While using OpenDevin, press the thumbs-up or thumbs-down button at any point.
+2. Provide your email address (for potential follow-up questions).
+3. Choose whether to provide feedback publicly or privately.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/5rFx-StMVV0?si=svo7xzp6LhGK_GXr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## 📜 Data Use and Privacy
 
-### Data sharing settings
+### Data Sharing Settings
 
-When you submit data, you can submit it either publicly or privately.
+- **Public Data:** Distributed under the MIT License, available for community use in training and testing models.
+- **Private Data:** Shared only with the OpenDevin team for improving OpenDevin.
 
-* **Public** data will be distributed under the MIT License, like OpenDevin itself, and can be used by the community to train and test models. Obviously, feedback that you can make public will be more valuable for the community as a whole, so when you are not dealing with sensitive information, we would encourage you to choose this option!
-* **Private** data will only be shared with the OpenDevin team for the purpose of improving OpenDevin.
+### Data Collection and Storage
 
-### Who collects and stores the data?
+[All Hands AI](https://all-hands.dev), founded by OpenDevin maintainers, collects and stores the data.
 
-The data is collected and stored by [All Hands AI](https://all-hands.dev), a company founded by OpenDevin maintainers to support and improve OpenDevin.
+### Public Data Release Process
 
-### How will public data be released?
+1. Email notification to contributors at fixed milestones (e.g., 1,000, 10,000 public examples).
+2. Quality control: removal of low-quality feedback, submitter email addresses, and sensitive information.
+3. Public release under MIT license through platforms like GitHub or Hugging Face.
 
-The public data will be released when we hit fixed milestones, such as 1,000 public examples, 10,000 public examples, etc.
-At this time, we will follow the following release process:
+### Data Deletion Requests
 
-1. All people who contributed public feedback will receive an email describing the data release and being given an opportunity to opt out.
-2. The person or people in charge of the data release will perform quality control of the data, removing low-quality feedback, removing email submitter email addresses, and attempting to remove any sensitive information such as API keys.
-3. The data will be released publicly under the MIT license through commonly used sites such as github or Hugging Face.
+- **Single Data Point:** Use the link and password displayed upon submission (feature coming soon).
+- **All Data:** Contact `contact@all-hands.dev` from your registered email address.
 
-### What if I want my data deleted?
-
-For data on the All Hands AI servers, we are happy to delete it at request:
-
-**One Piece of Data:** If you want one piece of data deleted, we will shortly be adding a mechanism to delete pieces of data using the link and password that is displayed on the interface when you submit data.
-
-**All Data:** If you would like all pieces of your data deleted, or you do not have the ID and password that you received when submitting the data, please contact `contact@all-hands.dev` from the email address that you registered when you originally submitted the data.
+For more information or assistance, join our [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA) or [Discord](https://discord.gg/ESHStjSjD4) communities.
