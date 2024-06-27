@@ -186,12 +186,15 @@ class AgentController:
             elif isinstance(event, AgentDelegateObservation):
                 await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, ErrorObservation):
+                await self.add_history(NullAction(), event)
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})             
         elif isinstance(event, AgentAutoModeAction):
             config.agent.is_autonomous = event.is_enabled
             logger.info(f'Auto mode {event.is_enabled = }')
-
         else:
             logger.warning(f'Unhandled event: {event}')
+
 
     def reset_task(self):
         self.agent.reset()
@@ -288,7 +291,14 @@ class AgentController:
                 self.delegateAction = None
 
                 # update delegate result observation
-                obs: Observation = AgentDelegateObservation(outputs=outputs, content='')
+                # TODO: replace this with AI-generated summary (#2395)
+                formatted_output = ', '.join(
+                    f'{key}: {value}' for key, value in outputs.items()
+                )
+                content = f'Delegate agent finishes task with {formatted_output}'
+                obs: Observation = AgentDelegateObservation(
+                    outputs=outputs, content=content
+                )
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 

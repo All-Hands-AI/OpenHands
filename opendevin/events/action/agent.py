@@ -65,7 +65,10 @@ class AgentRejectAction(Action):
 
     @property
     def message(self) -> str:
-        return 'Task is rejected by the agent.'
+        msg: str = 'Task is rejected by the agent.'
+        if 'reason' in self.outputs:
+            msg += ' Reason: ' + self.outputs['reason']
+        return msg
 
 
 @dataclass
