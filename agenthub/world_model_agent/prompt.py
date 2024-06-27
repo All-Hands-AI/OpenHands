@@ -616,23 +616,20 @@ class MyMainPrompt(PromptElement):
         prompt += """
 # Abstract Example
 
-Here is an abstract version of the answer with description of the content of
-each tag. Make sure you follow this structure, but replace the content with your
-answer:
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
 <action>
-Based on the current observation, state and active strategy, select one single
-action to be executed. You can only use one action at a time.
-</action>\
+Based on the current observation, state and active strategy, select one single action to be executed. You can only use one action at a time.
+</action>
 """
 
         prompt += """
 # Concrete Example
 
-Here is a concrete example of how to format your answer.
-Make sure to follow the template with proper tags:
+Here is a concrete example of how to format your answer. Make sure to follow the template by wrapping with proper html starting and closing tags:
 <action>
 fill('32-12', 'example with "quotes"')
-</action>\
+</action>
+
 """
 
         # prompt = self.add_screenshot(prompt)
@@ -644,55 +641,42 @@ fill('32-12', 'example with "quotes"')
 {self.history}\
 {self.obs}\
 ## Active Strategy:
-{self.active_strategy}\
+{self.active_strategy}
 """
 
         prompt += """
 # Abstract Example
 
-Here is an abstract version of the answer with description of the content of
-each tag. Make sure you follow this structure, but replace the content with your
-answer:
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
 <state>
-Summarize the observation of the current step and last error you encountered. Include
-details such as accessibility tree id when describing elements on the page. Describe
-the effect that your previous action had, as well as elements you can interact with.
-Infer any information relevant to achieving your goal. No need to describe what you
-plan to do, just focus on giving an objective description.
+Summarize the observation of the current step and last error you encountered. Include details such as accessibility tree id when describing elements on the page. Describe the effect that your previous action had, as well as elements you can interact with. Infer any information relevant to achieving your goal. No need to describe what you plan to do, just focus on giving an objective description.
 </state>\
 
-
-<status>
-Observe your previous action, current state, and active strategy. Classify the situation into
-one of four categories based on the progress of your strategy. The categories are:
+<progress>
+Observe your previous action, current state, and active strategy. Classify the situation into one of four categories based on the progress of your strategy. The categories are:
 
 1. "finished" - Your strategy has been successfully executed and you will plan for the next step.
 2. "in-progress" - Your strategy is still ongoing and you need to take some more actions.
 3. "not-sure" - It's unclear if your strategy has been carried out and you need to reassess your plan.
 4. "failed" - Your strategy was not successful and you need to replan.
 
-You should be extra careful when assigning "in-progress" labels. If you are unsure,
-please select "not-sure" instead.
-</status>\
+You should be extra careful when assigning "in-progress" labels. If you are unsure, please select "not-sure" instead.
+</progress>
 """
 
         prompt += """
 # Concrete Example
 
-Here is a concrete example of how to format your answer.
-Make sure to follow the template with proper tags:
+Here is a concrete example of how to format your answer. Make sure to follow the template by wrapping with proper html starting and closing tags:
 <state>
-The previous action yielded a timeout error, suggesting it had no effect on the page.
-The page shows:
-- An empty textbox with id 123, which can be clicked or filled. Text "Date" is on top,
-suggesting the textbox may be for entering dates.
-- A button with id 456 and text "Submit" below textbox 123, suggesting that when clicked,
-it will submit the textbox's content to the website backend.
+The previous action yielded a timeout error, suggesting it had no effect on the page. The page shows:
+- An empty textbox with id 123, which can be clicked or filled. Text "Date" is on top, suggesting the textbox may be for entering dates.
+- A button with id 456 and text "Submit" below textbox 123, suggesting that when clicked, it will submit the textbox's content to the website backend.
 </state>\
 
-<status>
+<progress>
 not-sure
-</status>\
+</progress>
 """
 
         # prompt = self.add_screenshot(prompt)
@@ -708,30 +692,19 @@ not-sure
         prompt += """
 # Abstract Example
 
-Here is an abstract version of the answer with description of the content of
-each tag. Make sure you follow this structure, but replace the content with your
-answer:
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
 <strategy>
-Assume the previous actions have been carried out and the environment has
-transitioned to the current inferred state. Describe your next action to
-achieve the goal. Avoid starting phrases like "To accomplish the goal", "I will",
-"To proceed", or "Assume the previous strategies have been carried out". Do not
-mention specific element ids as they may change during the execution.
-Limit your answer to one sentence. Include any details that make it easier
-for someone else to select the right action. Be creative, and try to come
-up with many different ways to reach the goal.
-</strategy>\
+Assume the previous actions have been carried out and the environment has transitioned to the current inferred state. Describe your next action to achieve the goal. Avoid starting phrases like "To accomplish the goal", "I will", "To proceed", or "Assume the previous strategies have been carried out". Do not mention specific element ids as they may change during the execution. Limit your answer to one sentence. Include any details that make it easier for someone else to select the right action. Be creative, and try to come up with many different ways to reach the goal.
+</strategy>
 """
 
         prompt += """
 # Concrete Example
 
-Here is a concrete example of how to format your answer.
-Make sure to follow the template with proper tags:
+Here is a concrete example of how to format your answer. Make sure to follow the template by wrapping with proper html starting and closing tags:
 <strategy>
-Explore different ways to fill the form, such as clicking its elements to explore
-options or filling parts of it with text.
-</strategy>\
+Explore different ways to fill the form, such as clicking its elements to explore options or filling parts of it with text.
+</strategy>
 """
 
         # prompt = self.add_screenshot(prompt)
@@ -746,47 +719,37 @@ options or filling parts of it with text.
         prompt += """
 # Abstract Example
 
-Here is an abstract version of the answer with description of the content of
-each tag. Make sure you follow this structure, but replace the content with your
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your
 answer:
 <next_state>
-Assume the environment is at the current inferred state and your proposed strategy has
-been applied. Predict the new state of the webpage after executing each part of the
-proposed strategy, such as page content you will observe and any possible information
-you will gain that is relevant to your goal. Pay attention to how the element details
-will change. Describe the elements you can interact with on the changed webpage.
+Assume the environment is at the current inferred state and your proposed strategy has been applied. Predict the new state of the webpage after executing each part of the proposed strategy, such as page content you will observe and any possible information you will gain that is relevant to your goal. Pay attention to how the element details will change. Describe the elements you can interact with on the changed webpage.
 </next_state>\
 
-<status>
-Observe your previous and current states of the browser environment. Classify
-your status into one of three categories based on your progress towards the goal.
-The categories are:
+<progress>
+Observe your previous and current states of the browser environment. Classify your status into one of three categories based on your progress towards the goal. The categories are:
 
 1. "in-progress" - You are still in progress to achieving the goal.
-2. "not-sure" - It’s unclear if you have achieved the goal.
+2. "not-sure" - It's unclear if you have achieved the goal.
 3. "goal-reached" - You have successfully completed the goal.
-</status>\
+</progress>
 """
 
         prompt += """
 # Concrete Example
 
-Here is a concrete example of how to format your answer.
-Make sure to follow the template with proper tags:
+Here is a concrete example of how to format your answer. Make sure to follow the template by wrapping with proper html starting and closing tags:
 <next_state>
 A new list of text items have appeared below textbox 123, which may be autocomplete.
 
 The page shows:
 - A textbox with id 123 filled with text "quote", which can be clicked or filled again.
-- A list with id 456 under textbox 123. It contains items with ids 789 and 012, each of
-which can be clicked on. Item 789 has text "quote on" which matches what we want.
-- A button with id 345 and text "Submit" below textbox 123, suggesting that when clicked,
-it will submit the textbox's content to the website backend.
+- A list with id 456 under textbox 123. It contains items with ids 789 and 012, each of which can be clicked on. Item 789 has text "quote on" which matches what we want.
+- A button with id 345 and text "Submit" below textbox 123, suggesting that when clicked, it will submit the textbox's content to the website backend.
 </next_state>\
 
-<status>
+<progress>
 in-progress
-</status>\
+</progress>
 """
 
         # prompt = self.add_screenshot(prompt)
@@ -801,16 +764,12 @@ in-progress
         prompt += """
 # Abstract Example
 
-Here is an abstract version of the answer with description of the content of
-each tag. Make sure you follow this structure, but replace the content with your
-answer:
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
 <think>
-Observe your current state and proposed strategy in the browser environment,
-classify the proposed strategy into one of four categories
-based on progress towards your goal. The categories are:
+Observe your current state and proposed strategy in the browser environment, classify the proposed strategy into one of four categories based on progress towards your goal. The categories are:
 
 1. "towards-the-goal" - You are moving closer to achieving the goal.
-2. "not-sure" - It’s unclear if the action are helping reach the goal.
+2. "not-sure" - It's unclear if the action are helping reach the goal.
 3. "away-from-the-goal" - Your actions are diverting from the goal.
 
 Explain your reasoning here.
@@ -818,24 +777,21 @@ Explain your reasoning here.
 
 <response>
 "towards-the-goal", "not-sure", or "away-from-the-goal"
-You should be extra-careful when assigning "towards-the-goal" labels. If you are unsure, please
-select "not-sure" instead.
-</response>\
+You should be extra-careful when assigning "towards-the-goal" labels. If you are unsure, please select "not-sure" instead.
+</response>
 """
 
         prompt += """
 # Concrete Example
 
-Here is a concrete example of how to format your answer.
-Make sure to follow the template with proper tags:
+Here is a concrete example of how to format your answer. Make sure to follow the template by wrapping with proper html starting and closing tags:
 <think>
-The proposed action clicks the "Submit" button with 123 without filling out the
-form above it. It will likely encounter an error, moving away from the goal.
+The proposed action clicks the "Submit" button with 123 without filling out the form above it. It will likely encounter an error, moving away from the goal.
 </think>\
 
 <response>
 away-from-the-goal
-</response>\
+</response>
 """
 
         return prompt
@@ -867,7 +823,7 @@ away-from-the-goal
         )
         ans_dict.update(
             parse_html_tags_raise(
-                text_answer, keys=['state', 'status'], merge_multiple=True
+                text_answer, keys=['state', 'progress'], merge_multiple=True
             )
         )
         return ans_dict
@@ -883,7 +839,7 @@ away-from-the-goal
         ans_dict = {}
         ans_dict.update(
             parse_html_tags_raise(
-                text_answer, keys=['next_state', 'status'], merge_multiple=True
+                text_answer, keys=['next_state', 'progress'], merge_multiple=True
             )
         )
         return ans_dict

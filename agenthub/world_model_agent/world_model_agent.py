@@ -133,6 +133,9 @@ class WorldModelAgent(Agent):
             )
             answer = response['choices'][0]['message']['content'].strip()
 
+            # with open("/home/demo/jinyu/prompts/last_answer.txt", "w") as f:
+            #     f.write(answer)
+
             messages.append({'role': 'assistant', 'content': answer})
 
             value, valid, retry_message = parser(answer)
@@ -151,9 +154,7 @@ class WorldModelAgent(Agent):
     def get_llm_output(self, prompt, parse_func, output_keys):
         system_msg = f"""\
 # Instructions
-Review the current state of the page and all other information to find the best
-possible next action to accomplish your goal. Your answer will be interpreted
-and executed by a program, make sure to follow the formatting instructions.
+Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
 {self.goal}
@@ -164,6 +165,9 @@ and executed by a program, make sure to follow the formatting instructions.
         messages = []
         messages.append({'role': 'system', 'content': system_msg})
         messages.append({'role': 'user', 'content': prompt})
+
+        # with open("/home/demo/jinyu/prompts/last_prompt.txt", "w") as f:
+        #     f.write(prompt)
 
         def parser(text):
             try:
@@ -191,13 +195,13 @@ and executed by a program, make sure to follow the formatting instructions.
     def encoder(self, main_prompt):
         prompt = main_prompt.get_encoder_prompt()
         ans_dict = self.get_llm_output(
-            prompt, main_prompt._parse_encoder_answer, ['state', 'status']
+            prompt, main_prompt._parse_encoder_answer, ['state', 'progress']
         )
 
         think = ans_dict.get('think')
-        replan = ans_dict['status'] in ['finished', 'failed', 'not-sure']
+        replan = ans_dict['progress'] in ['finished', 'failed', 'not-sure']
 
-        return ans_dict['state'], ans_dict['status'], replan, think
+        return ans_dict['state'], ans_dict['progress'], replan, think
 
     def policy(self, main_prompt):
         prompt = main_prompt.get_policy_prompt()
@@ -213,11 +217,11 @@ and executed by a program, make sure to follow the formatting instructions.
     def dynamics(self, main_prompt):
         prompt = main_prompt.get_dynamics_prompt()
         ans_dict = self.get_llm_output(
-            prompt, main_prompt._parse_dynamics_answer, ['next_state', 'status']
+            prompt, main_prompt._parse_dynamics_answer, ['next_state', 'progress']
         )
 
-        is_terminal = ans_dict['status'] == 'goal-reached'
-        return ans_dict['next_state'], ans_dict['status'], is_terminal
+        is_terminal = ans_dict['progress'] == 'goal-reached'
+        return ans_dict['next_state'], ans_dict['progress'], is_terminal
 
     def action_reward(self, main_prompt):
         prompt = main_prompt.get_action_reward_prompt()
