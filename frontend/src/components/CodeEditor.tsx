@@ -78,7 +78,7 @@ function CodeEditor(): JSX.Element {
       setSaveStatus('saved');
       setShowSaveNotification(true);
       setTimeout(() => setShowSaveNotification(false), 2000);
-      toast.success("File saved successfully!", "Save Successful");
+      toast.success(t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY), "Save Successful");
       console.log(`File "${selectedFileName}" has been saved.`);
     } catch (error) {
       console.error("Error saving file:", error);
@@ -89,7 +89,7 @@ function CodeEditor(): JSX.Element {
         toast.error("An unknown error occurred while saving the file", "Save Error");
       }
     }
-  }, [saveStatus, activeFilepath, code, selectedFileName, isEditingAllowed]);
+  }, [saveStatus, activeFilepath, code, selectedFileName, isEditingAllowed, t]);
 
   const getSaveButtonColor = () => {
     switch (saveStatus) {
@@ -164,7 +164,7 @@ function CodeEditor(): JSX.Element {
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
           <div className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center animate-pulse">
             <VscCheck className="mr-2 text-xl" />
-            <span>File saved successfully</span>
+            <span>{t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY)}</span>
           </div>
         </div>
       )}

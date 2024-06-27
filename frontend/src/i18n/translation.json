@@ -26,6 +26,20 @@
     "fr": "Terminal",
     "tr": "Terminal"
   },
+  "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
+    "en": "File saved successfully",
+    "zh-CN": "文件保存成功",
+    "de": "Datei erfolgreich gespeichert",
+    "ko-KR": "파일이 성공적으로 저장되었습니다",
+    "no": "Fil lagret vellykket",
+    "zh-TW": "檔案儲存成功",
+    "it": "File salvato con successo",
+    "pt": "Arquivo salvo com sucesso",
+    "es": "Archivo guardado exitosamente",
+    "ar": "تم حفظ الملف بنجاح",
+    "fr": "Fichier enregistré avec succès",
+    "tr": "Dosya başarıyla kaydedildi"
+  },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
     "zh-CN": "规划器",
