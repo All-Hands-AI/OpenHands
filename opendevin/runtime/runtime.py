@@ -31,7 +31,6 @@ from opendevin.runtime import (
     E2BBox,
     LocalBox,
     Sandbox,
-    WebSocketBox,
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
