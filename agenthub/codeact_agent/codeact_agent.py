@@ -201,7 +201,7 @@ class CodeActAgent(Agent):
             if latest_user_message['content'].strip() == '/exit':
                 return AgentFinishAction()
             latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finished>.'
             )
 
         response = self.llm.completion(

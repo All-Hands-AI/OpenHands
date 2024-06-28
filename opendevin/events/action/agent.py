@@ -54,7 +54,10 @@ class AgentFinishAction(Action):
 
     @property
     def message(self) -> str:
-        return "All done! What's next on the agenda?"
+        if self.thought != "":
+            return self.thought
+        else:
+            return "All done! What's next on the agenda?"
 
 
 @dataclass
