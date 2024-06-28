@@ -515,8 +515,8 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
 
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
-    `edit_file` will replace *all* matching occurrences.
     Include enough lines to make code in `to_replace` unique.
+    `edit_file` will only replace the *first* matching occurrences.
 
     For example, given a file "/workspace/example.txt" with the following content:
     ```
@@ -525,17 +525,14 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 2
     line 3
     ```
-    and you call `edit_file('/workspace/example.txt', 'line 2', 'new line')`, the file will be updated to:
-    ```
-    line 1
-    new line
-    new line
-    line 3
-    ```
 
-    If you want to replace only the second occurrence of "line 2", you can make `to_replace` more unique:
+    EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
     ```python
-    edit_file('/workspace/example.txt', 'line 2\nline 3', 'new line\nline 3')
+    edit_file(
+        '/workspace/example.txt',
+        to_replace='line 2\nline 3',
+        new_content='new line\nline 3',
+    )
     ```
     This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
 
@@ -547,9 +544,13 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
 
-    If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
+    REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
     ```python
-    edit_file('/workspace/example.txt', 'line 2\nline 3', '')
+    edit_file(
+        '/workspace/example.txt',
+        to_replace='line 2\nline 3',
+        new_content='',
+    )
     ```
 
     Args:
@@ -557,6 +558,8 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
         to_replace: str: The content to search for and replace.
         new_content: str: The new content to replace the old content with.
     """
+    # FIXME: support replacing *all* occurrences
+
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
     # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`

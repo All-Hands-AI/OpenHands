@@ -444,6 +444,76 @@ def test_edit_file(tmp_path):
     assert lines[2].rstrip() == 'Line 5'
 
 
+def test_edit_file_sameline(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file(
+                file_name=str(temp_file_path),
+                to_replace='Line 2\nLine 2',
+                new_content='Line 2\nREPLACE TEXT',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '1|Line 1\n'
+            '2|Line 2\n'
+            '3|REPLACE TEXT\n'
+            '4|Line 4\n'
+            '5|Line 5\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 5
+    assert lines[0].rstrip() == 'Line 1'
+    assert lines[1].rstrip() == 'Line 2'
+    assert lines[2].rstrip() == 'REPLACE TEXT'
+    assert lines[3].rstrip() == 'Line 4'
+    assert lines[4].rstrip() == 'Line 5'
+
+
+def test_edit_file_multiline(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file(
+                file_name=str(temp_file_path),
+                to_replace='Line 2',
+                new_content='REPLACE TEXT',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '1|Line 1\n'
+            '2|REPLACE TEXT\n'
+            '3|Line 2\n'
+            '4|Line 4\n'
+            '5|Line 5\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 5
+    assert lines[0].rstrip() == 'Line 1'
+    assert lines[1].rstrip() == 'REPLACE TEXT'
+    assert lines[2].rstrip() == 'Line 2'
+    assert lines[3].rstrip() == 'Line 4'
+    assert lines[4].rstrip() == 'Line 5'
+
+
 def test_insert_content_at_line(tmp_path):
     temp_file_path = tmp_path / 'b.txt'
     content = 'Line 1\nLine 2\nLine 3'
