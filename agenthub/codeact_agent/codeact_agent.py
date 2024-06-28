@@ -12,7 +12,7 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import (
     ContextWindowLimitExceededError,
-    TokenLimitExceedError,
+    TokenLimitExceededError,
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -227,7 +227,7 @@ class CodeActAgent(Agent):
                     ],
                     temperature=0.0,
                 )
-            except (ContextWindowExceededError, TokenLimitExceedError):
+            except (ContextWindowExceededError, TokenLimitExceededError):
                 logger.warning(
                     'Context window exceeded or token limit exceeded. Condensing memory, attempt %d',
                     attempt,
@@ -266,6 +266,9 @@ class CodeActAgent(Agent):
         for event in state.history.get_events():
             # split summarize message into action and observation
             if isinstance(event, AgentSummarizeAction):
+                logger.debug(
+                    f'Including summarize action: {event.id}({event._chunk_start}, {event._chunk_end}) \n{event.summarized_actions} \n{event.summarized_observations}'
+                )
                 action_message = get_action_message(event)
                 if action_message:
                     messages.append(action_message)

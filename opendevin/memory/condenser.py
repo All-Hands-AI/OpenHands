@@ -1,4 +1,9 @@
-from opendevin.core.exceptions import InvalidSummaryResponseError
+from litellm.exceptions import ContextWindowExceededError
+
+from opendevin.core.exceptions import (
+    InvalidSummaryResponseError,
+    TokenLimitExceededError,
+)
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.agent import (
     AgentFinishAction,
@@ -76,15 +81,19 @@ class MemoryCondenser:
             if not self._is_summarizable(event):
                 if chunk and len(chunk) > 1:
                     # we've just gathered a chunk to summarize
-                    summary_action = self._summarize_chunk(chunk)
+                    # if invalid, skip and do next chunk
+                    if chunk_start_id is None or last_summarizable_id is None:
+                        logger.debug('Chunk start or end is None, skipping')
+                        # reset and try to continue with the next chunk
+                        chunk = []
+                        chunk_start_id = None
+                        last_summarizable_id = None
+                        continue
 
-                    # mypy is happy with assert, and in fact it cannot/should not be None
-                    assert chunk_start_id is not None
-                    summary_action._chunk_start = chunk_start_id
-
-                    # same here, a gift for mypy during development
-                    assert last_summarizable_id is not None
-                    summary_action._chunk_end = last_summarizable_id
+                    # good to go
+                    summary_action = self._summarize_chunk(
+                        chunk, chunk_start_id, last_summarizable_id
+                    )
 
                     # add it directly to history, so the agent only has to retry the request
                     history.add_summary(summary_action)
@@ -102,19 +111,22 @@ class MemoryCondenser:
                 chunk.append(event)
 
         if chunk and len(chunk) > 1:
-            summary_action = self._summarize_chunk(chunk)
+            # we've just gathered a chunk to summarize
+            # if invalid, skip and do next chunk
+            if chunk_start_id is None or last_summarizable_id is None:
+                logger.debug('Chunk start or end is None, skipping')
+                # reset and don't do anything
+                chunk = []
+                chunk_start_id = None
+                last_summarizable_id = None
+            else:
+                # good to go
+                summary_action = self._summarize_chunk(
+                    chunk, chunk_start_id, last_summarizable_id
+                )
 
-            # keep mypy happy
-            assert chunk_start_id is not None
-            summary_action._chunk_start = chunk_start_id
-
-            # same here
-            assert last_summarizable_id is not None
-            summary_action._chunk_end = (
-                last_summarizable_id  # history.get_latest_event_id()
-            )
-            history.add_summary(summary_action)
-            return summary_action
+                history.add_summary(summary_action)
+                return summary_action
 
         # no more chunks of agent actions or observations
         # then summarize individual user messages that exceeed a certain length
@@ -129,9 +141,7 @@ class MemoryCondenser:
                     not last_event_was_finish
                     and len(event.content) > MAX_USER_MESSAGE_CHAR_COUNT
                 ):
-                    summary_action = self._summarize_chunk([event])
-                    summary_action._chunk_start = event.id
-                    summary_action._chunk_end = event.id
+                    summary_action = self._summarize_chunk([event], event.id, event.id)
                     history.add_summary(summary_action)
                     return summary_action
                 last_event_was_finish = False
@@ -140,7 +150,9 @@ class MemoryCondenser:
 
         return None
 
-    def _summarize_chunk(self, chunk: list[Event]) -> AgentSummarizeAction:
+    def _summarize_chunk(
+        self, chunk: list[Event], chunk_start: int, chunk_end: int
+    ) -> AgentSummarizeAction:
         """
         Summarizes the given chunk of events into a single sentence.
 
@@ -166,14 +178,28 @@ class MemoryCondenser:
 
                     action_response = response['choices'][0]['message']['content']
                     action = parse_summary_response(action_response)
+                    action._chunk_start = chunk_start
+                    action._chunk_end = chunk_end
+                    logger.debug(f'action = {action}')
                     break
                 except InvalidSummaryResponseError as e:
-                    logger.error(f'Failed to summarize chunk: {e}')
-
                     if failed_response:
                         # we've already tried summarizing this chunk, so we're stuck
                         raise
                     failed_response = str(e)
+                except (ContextWindowExceededError, TokenLimitExceededError):
+                    if len(chunk) == 1:
+                        # we can't split a single event
+                        raise
+
+                    # split the chunk into two and try again
+                    mid = len(chunk) // 2
+                    half_chunk = chunk[:mid]
+                    action = self._summarize_chunk(
+                        half_chunk, chunk_start, half_chunk[-1].id
+                    )
+                    logger.debug(f'action = {action}')
+                    break
 
             return action
         except Exception as e:

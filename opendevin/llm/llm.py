@@ -1,7 +1,7 @@
 import warnings
 from functools import partial
 
-from opendevin.core.exceptions import TokenLimitExceedError
+from opendevin.core.exceptions import TokenLimitExceededError
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -203,7 +203,7 @@ class LLM:
                 messages = args[1]
 
             if self.is_over_token_limit(messages):
-                raise TokenLimitExceedError(
+                raise TokenLimitExceededError(
                     f'Token count exceeds the maximum of {self.max_input_tokens}. Attempting to condense memory.'
                 )
 

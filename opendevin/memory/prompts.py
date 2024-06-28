@@ -13,18 +13,17 @@ SUMMARY_PROMPT = """
 Given the following actions and observations, create a JSON response with:
     - "action": "summarize"
     - args:
-      - "summarized_actions": A sentence summarizing all the provided actions, at first person
-      - "summarized observations": A few sentences summarizing all the provided observations, at third person
-
+      - "summarized_actions": A precise sentence summarizing all the provided actions, written in the first person.
+      - "summarized_observations": A few precise sentences summarizing all the provided observations, written in the third person.
 Example:
-        {
-            "action": "summarize",
-            "args": {
-                "summarized_actions": "I opened the uml file.",
-                "summarized observations": "The agent ran a python script to open the uml.pdf file."
-            }
-        }
-Make sure to include in observations any relevant information that the agent should remember.
+{
+    "action": "summarize",
+    "args": {
+        "summarized_actions": "I located the UML specification PDF, parsed its content, and searched for information about sequence diagrams.",
+        "summarized_observations": "The agent encountered a UnicodeDecodeError when initially searching the PDF text, but was able to resolve this by installing the PyPDF2 library and successfully extracting relevant information about sequence diagrams."
+    }
+}
+Make sure to include in observations any relevant information that the agent needs to remember.
 %(events)s
 """
 
@@ -59,8 +58,8 @@ def parse_summary_response(response: str) -> AgentSummarizeAction:
             raise InvalidSummaryResponseError(error_message)
         action._source = EventSource.AGENT  # type: ignore
     except (LLMResponseError, LLMMalformedActionError) as e:
-        logger.error(f'Failed to parse summary response: {e}')
+        logger.error(f'Failed to parse summary response: {str(e)}')
         raise InvalidSummaryResponseError(
-            'Failed to parse the response: {str(e)}'
+            f'Failed to parse the response: {str(e)}'
         ) from e
     return action

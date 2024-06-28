@@ -76,7 +76,6 @@ class EventStream:
                     if filter_out_type is None or not isinstance(
                         event, filter_out_type
                     ):
-                        logger.debug(f'{event_id}: {event}')
                         yield event
                 except FileNotFoundError:
                     logger.debug(f'No event found for ID {event_id}')
@@ -91,7 +90,6 @@ class EventStream:
                     if filter_out_type is None or not isinstance(
                         event, filter_out_type
                     ):
-                        logger.debug(f'{event_id}: {event}')
                         yield event
                 except FileNotFoundError:
                     logger.debug(f'No event found for ID {event_id}')
