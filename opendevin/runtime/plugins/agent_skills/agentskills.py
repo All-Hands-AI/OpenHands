@@ -384,12 +384,11 @@ def _edit_or_insert_file(
             with open(file_name) as original_file:
                 lines = original_file.readlines()
 
-            if (
-                is_insert
-                and start
-                and lines
-                and not (len(lines) == 1 and lines[0].strip() == '')
-            ):
+            if is_insert and start and lines:
+                if len(lines) == 1 and lines[0].strip() == '':
+                    # if the file is empty with only 1 line
+                    lines = ['\n']
+
                 new_lines = (
                     lines[: start - 1]
                     + [content + '\n' if not content.endswith('\n') else content]
