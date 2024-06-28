@@ -428,7 +428,7 @@ def _edit_or_append_file(
                 content += '\n'
 
             # Write the new content to the temporary file
-            temp_file.write(content.encode('utf-8'))
+            temp_file.write(content)
 
         # Replace the original file with the temporary file atomically
         shutil.move(temp_file_path, src_abs_path)
