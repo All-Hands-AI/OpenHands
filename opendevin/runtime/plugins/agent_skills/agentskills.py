@@ -527,13 +527,13 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     ```
 
     EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
-    ```python
+
     edit_file(
         '/workspace/example.txt',
         to_replace='line 2\nline 3',
         new_content='new line\nline 3',
     )
-    ```
+
     This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
 
     The resulting file will be:
@@ -545,13 +545,12 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     ```
 
     REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
-    ```python
+
     edit_file(
         '/workspace/example.txt',
         to_replace='line 2\nline 3',
         new_content='',
     )
-    ```
 
     Args:
         file_name: str: The name of the file to edit.
