@@ -56,8 +56,7 @@ class AgentFinishAction(Action):
     def message(self) -> str:
         if self.thought != "":
             return self.thought
-        else:
-            return "All done! What's next on the agenda?"
+        return "All done! What's next on the agenda?"
 
 
 @dataclass
