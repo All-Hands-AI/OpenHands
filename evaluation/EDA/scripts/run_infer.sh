@@ -1,13 +1,27 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-DATASET=$3
-EVAL_LIMIT=$4
+COMMIT_HASH=$2
+AGENT=$3
+DATASET=$4
+EVAL_LIMIT=$5
+NUM_WORKERS=$6
+
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
 fi
+
+get_agent_version
 
 if [ -z "$DATASET" ]; then
   echo "Dataset not specified, use default 'things'"
@@ -37,7 +51,7 @@ COMMAND="poetry run python evaluation/EDA/run_infer.py \
   --max-iterations 20 \
   --OPENAI_API_KEY $OPENAI_API_KEY \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${DATASET}"
 
 if [ -n "$EVAL_LIMIT" ]; then
@@ -46,4 +60,5 @@ if [ -n "$EVAL_LIMIT" ]; then
 fi
 
 # Run the command
+echo $COMMAND
 eval $COMMAND
