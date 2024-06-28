@@ -12,8 +12,8 @@ Functions:
 - search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
-- edit_file(file_name, start, end, content): Replaces lines in a file with the given content.
-- append_file(file_name, content): Appends given content to a file.
+- edit_file(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
+- insert_content_at_line(file_name: str, line_number: int, content: str): Inserts given content at the specified line number in a file.
 """
 
 import base64
