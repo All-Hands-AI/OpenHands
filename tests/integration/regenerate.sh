@@ -18,6 +18,10 @@ WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
+echo "WORKSPACE_BASE: $WORKSPACE_BASE"
+echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
+echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
+
 mkdir -p $WORKSPACE_BASE
 
 # use environmental variable if exists, otherwise use "ssh"

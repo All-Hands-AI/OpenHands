@@ -157,6 +157,9 @@ class AppConfig(metaclass=Singleton):
         sandbox_timeout: The timeout for the sandbox.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
+        file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
+        file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
+        file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
     llm: LLMConfig = field(default_factory=LLMConfig)
@@ -197,6 +200,9 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    file_uploads_max_file_size_mb: int = 0
+    file_uploads_restrict_file_types: bool = False
+    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -232,7 +238,12 @@ class AppConfig(metaclass=Singleton):
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            if attr_name in ['e2b_api_key', 'github_token']:
+            if attr_name in [
+                'e2b_api_key',
+                'github_token',
+                'jwt_secret',
+                'ssh_password',
+            ]:
                 attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
@@ -348,9 +359,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     except FileNotFoundError as e:
         logger.info(f'Config file not found: {e}')
         return
-    except toml.TomlDecodeError:
+    except toml.TomlDecodeError as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
         return
@@ -376,9 +387,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
 
         # update the config object with the new values
         config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
-    except (TypeError, KeyError):
+    except (TypeError, KeyError) as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
 

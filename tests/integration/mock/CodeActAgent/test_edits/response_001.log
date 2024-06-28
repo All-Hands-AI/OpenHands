@@ -1,4 +1,4 @@
-Sure! Let's start by opening the `bad.txt` file to see its content.
+Sure! Let's start by opening the `bad.txt` file to identify and fix the typos.
 
 <execute_ipython>
-open_file('bad.txt')
+find_file('bad.txt')

@@ -6,9 +6,9 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
-    AgentMalformedActionError,
-    AgentNoActionError,
-    LLMOutputError,
+    LLMMalformedActionError,
+    LLMNoActionError,
+    LLMResponseError,
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -114,14 +114,21 @@ class AgentController:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
                 await self.report_error(
-                    f'Task budget exceeded. Current cost: {current_cost}, Max budget: {self.max_budget_per_task}'
+                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
                 )
                 await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
+        """
+        This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+
+        This method should be called for a particular type of errors:
+        - the string message should be user-friendly, it will be shown in the UI
+        - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
+        """
         self.state.error = message
         if exception:
-            self.state.error += f': {str(exception)}'
+            self.state.error += f': {exception}'
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -185,13 +192,16 @@ class AgentController:
             elif isinstance(event, AgentDelegateObservation):
                 await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, ErrorObservation):
+                await self.add_history(NullAction(), event)
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
         logger.info(
-            f'[Agent Controller {self.id}] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
+            f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
         if new_state == self.state.agent_state:
@@ -227,6 +237,8 @@ class AgentController:
             num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,
             global_iteration=self.state.global_iteration,
+            # metrics should be shared between parent and child
+            metrics=self.state.metrics,
         )
         logger.info(f'[Agent Controller {self.id}]: start delegate')
         self.delegate = AgentController(
@@ -235,6 +247,7 @@ class AgentController:
             event_stream=self.event_stream,
             max_iterations=state.max_iterations,
             max_chars=self.max_chars,
+            max_budget_per_task=self.max_budget_per_task,
             initial_state=state,
             is_delegate=True,
         )
@@ -278,12 +291,21 @@ class AgentController:
                 # close delegate controller: we must close the delegate controller before adding new events
                 await self.delegate.close()
 
+                # update delegate result observation
+                # TODO: replace this with AI-generated summary (#2395)
+                formatted_output = ', '.join(
+                    f'{key}: {value}' for key, value in outputs.items()
+                )
+                content = (
+                    f'{self.delegate.agent.name} finishes task with {formatted_output}'
+                )
+                obs: Observation = AgentDelegateObservation(
+                    outputs=outputs, content=content
+                )
+
                 # clean up delegate status
                 self.delegate = None
                 self.delegateAction = None
-
-                # update delegate result observation
-                obs: Observation = AgentDelegateObservation(outputs=outputs, content='')
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
@@ -291,7 +313,7 @@ class AgentController:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
         logger.info(
-            f'{type(self.agent).__name__} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
+            f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
         if (self.state.iteration >= self.state.max_iterations or
@@ -305,18 +327,23 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError('No action was returned')
-        except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
+                raise LLMNoActionError('No action was returned')
+        except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
+            # report to the user
+            # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
             return
 
         logger.info(action, extra={'msg_type': 'ACTION'})
 
-        await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
         else:
             await self.add_history(action, NullObservation(''))
+
+        await self.update_state_after_step()
+        if self.state.agent_state == AgentState.ERROR:
+            return
 
         if not isinstance(action, NullAction):
             await self.event_stream.add_event(action, EventSource.AGENT)
