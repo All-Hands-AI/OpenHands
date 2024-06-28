@@ -122,7 +122,7 @@ class AgentController:
         """
         self.state.error = message
         if exception:
-            self.state.error += f': {str(exception)}'
+            self.state.error += f': {exception}'
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
