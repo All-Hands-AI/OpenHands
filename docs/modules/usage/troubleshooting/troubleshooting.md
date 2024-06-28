@@ -135,9 +135,9 @@ the API endpoint you're trying to connect to. Most often this happens for Azure 
   * If you're running inside the UI, be sure to set the `model` in the settings modal
   * If you're running headless (via main.py) be sure to set `LLM_MODEL` in your env/config
 * Make sure you've followed any special instructions for your LLM provider
-  * [ollama](/OpenDevin/modules/usage/llms/localLLMs)
-  * [Azure](/OpenDevin/modules/usage/llms/azureLLMs)
-  * [Google](/OpenDevin/modules/usage/llms/googleLLMs)
+  * [ollama](/modules/usage/llms/localLLMs)
+  * [Azure](/modules/usage/llms/azureLLMs)
+  * [Google](/modules/usage/llms/googleLLMs)
 * Make sure your API key is correct
 * See if you can connect to the LLM using `curl`
 * Try [connecting via LiteLLM directly](https://github.com/BerriAI/litellm) to test your setup

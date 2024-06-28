@@ -268,6 +268,46 @@
     "en": "Please stop the agent before editing these settings.",
     "de": "Bitte beenden Sie den Agenten vor der Bearbeitung der Einstellungen."
   },
+  "CONFIGURATION$ERROR_FETCH_MODELS": {
+    "en": "Failed to fetch models and agents",
+    "zh-CN": "获取模型和智能体失败",
+    "de": "Fehler beim Abrufen der Modelle und Agenten"
+  },
+  "SESSION$SERVER_CONNECTED_MESSAGE": {
+    "en": "Connected to server",
+    "zh-CN": "已连接到服务器",
+    "de": "Verbindung zum Server hergestellt"
+  },
+  "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
+    "en": "Error handling message",
+    "zh-CN": "处理消息时发生错误",
+    "de": "Fehler beim Verarbeiten der Nachricht"
+  },
+  "SESSION$SESSION_CONNECTION_ERROR_MESSAGE": {
+    "en": "Error connecting to session",
+    "zh-CN": "连接到会话时发生错误",
+    "de": "Verbindung zur Sitzung fehlgeschlagen"
+  },
+  "SESSION$SOCKET_NOT_INITIALIZED_ERROR_MESSAGE": {
+    "en": "Socket not initialized",
+    "zh-CN": "Socket 未初始化",
+    "de": "Socket nicht initialisiert"
+  },
+  "EXPLORER$UPLOAD_ERROR_MESSAGE": {
+    "en": "Error uploading file",
+    "zh-CN": "上传文件时发生错误",
+    "de": "Fehler beim Hochladen der Datei"
+  },
+  "EXPLORER$LABEL_DROP_FILES": {
+    "en": "Drop files here",
+    "zh-CN": "将文件拖到这里",
+    "de": "Dateien hier ablegen"
+  },
+  "EXPLORER$LABEL_WORKSPACE": {
+    "en": "Workspace",
+    "zh-CN": "工作区",
+    "de": "Arbeitsbereich"
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
     "de": "Zurück zu vorhandener Sitzung?",
@@ -357,6 +397,11 @@
     "de": "Agent hat die Aufgabe erledigt.",
     "zh-CN": "智能体已完成任务"
   },
+  "CHAT_INTERFACE$AGENT_REJECTED_MESSAGE": {
+    "en": "Agent has rejected the task.",
+    "de": "Agent hat die Aufgabe abgelehnt.",
+    "zh-CN": "智能体拒绝任务"
+  },
   "CHAT_INTERFACE$AGENT_ERROR_MESSAGE": {
     "en": "Agent encountered an error.",
     "de": "Agent ist auf einen Fehler gelaufen.",
@@ -393,6 +438,26 @@
     "es": "Enviar",
     "ar": "إرسال",
     "fr": "Envoyer"
+  },
+  "CHAT_INTERFACE$CHAT_MESSAGE_COPIED": {
+    "en": "Message copied to clipboard",
+    "zh-CN": "消息已复制到剪贴板",
+    "de": "Nachricht in die Zwischenablage kopiert"
+  },
+  "CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED": {
+    "en": "Failed to copy message to clipboard",
+    "zh-CN": "复制消息到剪贴板失败",
+    "de": "Nachricht konnte nicht in die Zwischenablage kopiert werden"
+  },
+  "CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE": {
+    "en": "Copy message",
+    "zh-CN": "复制消息",
+    "de": "Nachricht kopieren"
+  },
+  "CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE": {
+    "en": "Send message",
+    "zh-CN": "发送消息",
+    "de": "Nachricht senden"
   },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",

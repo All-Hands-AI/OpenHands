@@ -1,3 +1,4 @@
+```json
 {
   "action": "delegate",
   "args": {
@@ -5,3 +6,4 @@
     "inputs": {}
   }
 }
+```
