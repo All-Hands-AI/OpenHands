@@ -126,9 +126,9 @@ class AgentController:
         - the string message should be user-friendly, it will be shown in the UI
         - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
         """
-        if exception:
-            message += f': {exception}'
         self.state.error = message
+        if exception:
+            self.state.error += f': {str(exception)}'
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def _start_step_loop(self):
@@ -140,6 +140,7 @@ class AgentController:
                 logger.info('AgentController task was cancelled')
                 break
             except Exception as e:
+                traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
                 await self.report_error(
