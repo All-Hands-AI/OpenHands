@@ -19,6 +19,7 @@ Functions:
 import base64
 import functools
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -332,12 +333,12 @@ def create_file(filename: str) -> None:
     print(f'[File {filename} created.]')
 
 
-def _edit_or_append_file(
+def _edit_or_insert_file(
     file_name: str,
     start: int | None = None,
     end: int | None = None,
     content: str = '',
-    is_append: bool = False,
+    is_insert: bool = False,
 ) -> None:
     """Internal method to handle common logic for edit_/append_file methods.
 
@@ -346,7 +347,7 @@ def _edit_or_append_file(
         start: int | None = None: The start line number for editing. Ignored if is_append is True.
         end: int | None = None: The end line number for editing. Ignored if is_append is True.
         content: str: The content to replace the lines with or to append.
-        is_append: bool = False: Whether to append content to the file instead of editing.
+        is_insert: bool = False: Whether to insert content at the given line number instead of editing.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -383,13 +384,18 @@ def _edit_or_append_file(
             with open(file_name) as original_file:
                 lines = original_file.readlines()
 
-            if is_append:
-                if lines and not (len(lines) == 1 and lines[0].strip() == ''):
-                    if not lines[-1].endswith('\n'):
-                        lines[-1] += '\n'
-                    content_lines = content.splitlines(keepends=True)
-                    new_lines = lines + content_lines
-                    content = ''.join(new_lines)
+            if (
+                is_insert
+                and start
+                and lines
+                and not (len(lines) == 1 and lines[0].strip() == '')
+            ):
+                new_lines = (
+                    lines[: start - 1]
+                    + [content + '\n' if not content.endswith('\n') else content]
+                    + lines[start - 1 :]
+                )
+                content = ''.join(new_lines)
             else:
                 # Handle cases where start or end are None
                 if start is None:
@@ -495,10 +501,7 @@ def _edit_or_append_file(
     if first_error_line is not None and int(first_error_line) > 0:
         CURRENT_LINE = first_error_line
     else:
-        if is_append:
-            CURRENT_LINE = max(1, len(lines))  # end of original file
-        else:
-            CURRENT_LINE = start or n_total_lines or 1
+        CURRENT_LINE = start or n_total_lines or 1
     print(
         f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]'
     )
@@ -508,34 +511,120 @@ def _edit_or_append_file(
 
 
 @update_pwd_decorator
-def edit_file(file_name: str, start: int, end: int, content: str) -> None:
-    """Edit a file.
+def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+    """Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
 
-    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
-    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+    Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
+
+    `edit_file` will replace *all* matching occurrences.
+    Include enough lines to make code in `to_replace` unique.
+
+    For example, given a file "/workspace/example.txt" with the following content:
+    ```
+    line 1
+    line 2
+    line 2
+    line 3
+    ```
+    and you call `edit_file('/workspace/example.txt', 'line 2', 'new line')`, the file will be updated to:
+    ```
+    line 1
+    new line
+    new line
+    line 3
+    ```
+
+    If you want to replace only the second occurrence of "line 2", you can make `to_replace` more unique:
+    ```python
+    edit_file('/workspace/example.txt', 'line 2\nline 3', 'new line\nline 3')
+    ```
+    This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
+
+    The resulting file will be:
+    ```
+    line 1
+    line 2
+    new line
+    line 3
+    ```
+
+    If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
+    ```python
+    edit_file('/workspace/example.txt', 'line 2\nline 3', '')
+    ```
 
     Args:
         file_name: str: The name of the file to edit.
-        start: int: The start line number. Must satisfy start >= 1.
-        end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
-        content: str: The content to replace the lines with.
+        to_replace: str: The content to search for and replace.
+        new_content: str: The new content to replace the old content with.
     """
-    _edit_or_append_file(
-        file_name, start=start, end=end, content=content, is_append=False
+    # search for `to_replace` in the file
+    # if found, replace it with `new_content`
+    # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`
+    with open(file_name, 'r') as file:
+        file_content = file.read()
+
+    start = file_content.find(to_replace)
+    if start != -1:
+        # Convert start from index to line number
+        start_line_number = file_content[:start].count('\n') + 1
+        end_line_number = start_line_number + len(to_replace.splitlines()) - 1
+    else:
+
+        def _fuzzy_transform(s: str) -> str:
+            # remove all space except newline
+            return re.sub(r'[^\S\n]+', '', s)
+
+        # perform a fuzzy search (remove all spaces except newlines)
+        to_replace_fuzzy = _fuzzy_transform(to_replace)
+        file_content_fuzzy = _fuzzy_transform(file_content)
+        # find the closest match
+        start = file_content_fuzzy.find(to_replace_fuzzy)
+        if start == -1:
+            print(
+                f'[No exact match found in {file_name} for\n```\n{to_replace}\n```\n]'
+            )
+            return
+        # Convert start from index to line number for fuzzy match
+        start_line_number = file_content_fuzzy[:start].count('\n') + 1
+        end_line_number = start_line_number + len(to_replace.splitlines()) - 1
+
+    _edit_or_insert_file(
+        file_name,
+        start=start_line_number,
+        end=end_line_number,
+        content=new_content,
+        is_insert=False,
     )
 
 
 @update_pwd_decorator
-def append_file(file_name: str, content: str) -> None:
-    """Append content to the given file.
+def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
+    """Insert content at the given line number in a file.
+    This will NOT modify the content of the lines before OR after the given line number.
 
-    It appends text `content` to the end of the specified file.
+    For example, if the file has the following content:
+    ```
+    line 1
+    line 2
+    line 3
+    ```
+    and you call `insert_content_at_line('file.txt', 2, 'new line')`, the file will be updated to:
+    ```
+    line 1
+    new line
+    line 2
+    line 3
+    ```
 
     Args:
-        file_name: str: The name of the file to append to.
-        content: str: The content to append to the file.
+        file_name: str: The name of the file to edit.
+        line_number: int: The line number (starting from 1) to insert the content after.
+        content: str: The content to insert.
     """
-    _edit_or_append_file(file_name, start=1, end=None, content=content, is_append=True)
+    _edit_or_insert_file(
+        file_name, start=line_number, end=line_number, content=content, is_insert=True
+    )
 
 
 @update_pwd_decorator
@@ -852,8 +941,8 @@ __all__ = [
     'scroll_down',
     'scroll_up',
     'create_file',
-    'append_file',
     'edit_file',
+    'insert_content_at_line',
     'search_dir',
     'search_file',
     'find_file',
