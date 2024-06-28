@@ -75,29 +75,32 @@ echo "=============================================================="
 echo "Running SWE-bench evaluation"
 echo "=============================================================="
 
+RUN_ID=$(basename $SWEBENCH_FORMAT_JSONL)
+
 if [ -z "$INSTANCE_ID" ]; then
     echo "Running SWE-bench evaluation on the whole input file..."
-
-    poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
+    # Default to SWE-Bench-lite
+    # change `--dataset_name` and `--split` to alter dataset
+    set -x
+    poetry run python -m swebench.harness.run_evaluation \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --log_dir $FILE_DIR/logs \
-        --swe_bench_tasks $SWEBENCH_TASKS \
-        --namespace $DOCKERHUB_NAMESPACE \
-        --timeout 1800
-
+        --timeout 1800 \
+        --cache_level instance \
+        --run_id $RUN_ID
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
-    poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_single_instance.py \
+    poetry run python -m swebench.harness.run_evaluation \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --swe_bench_tasks $SWEBENCH_TASKS \
-        --namespace $DOCKERHUB_NAMESPACE \
-        --instance_id $INSTANCE_ID
+        --timeout 1800 \
+        --instance_ids $INSTANCE_ID \
+        --cache_level instance \
+        --run_id $RUN_ID
 fi
 
-poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
-    --predictions_path $SWEBENCH_FORMAT_JSONL \
-    --log_dir $FILE_DIR/logs \
-    --output_dir $FILE_DIR \
-    --swe_bench_tasks $SWEBENCH_TASKS
+# poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
+#     --predictions_path $SWEBENCH_FORMAT_JSONL \
+#     --log_dir $FILE_DIR/logs \
+#     --output_dir $FILE_DIR \
+#     --swe_bench_tasks $SWEBENCH_TASKS
 
-poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
+# poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
