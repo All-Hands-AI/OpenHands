@@ -19,7 +19,7 @@ where `model_config` is mandatory, while `git-version`, `agent`, `dataset` and `
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
 
-- `git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
 like to evaluate. It could also be a release tag like `0.6.2`.
 
 - `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
