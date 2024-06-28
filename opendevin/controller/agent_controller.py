@@ -195,7 +195,7 @@ class AgentController:
 
     async def set_agent_state_to(self, new_state: AgentState):
         logger.info(
-            f'[Agent Controller {self.id}] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
+            f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
         if new_state == self.state.agent_state:
@@ -280,19 +280,21 @@ class AgentController:
                 # close delegate controller: we must close the delegate controller before adding new events
                 await self.delegate.close()
 
-                # clean up delegate status
-                self.delegate = None
-                self.delegateAction = None
-
                 # update delegate result observation
                 # TODO: replace this with AI-generated summary (#2395)
                 formatted_output = ', '.join(
                     f'{key}: {value}' for key, value in outputs.items()
                 )
-                content = f'Delegate agent finishes task with {formatted_output}'
+                content = (
+                    f'{self.delegate.agent.name} finishes task with {formatted_output}'
+                )
                 obs: Observation = AgentDelegateObservation(
                     outputs=outputs, content=content
                 )
+
+                # clean up delegate status
+                self.delegate = None
+                self.delegateAction = None
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
@@ -300,7 +302,7 @@ class AgentController:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
         logger.info(
-            f'{type(self.agent).__name__} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
+            f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
         if self.state.iteration >= self.state.max_iterations:

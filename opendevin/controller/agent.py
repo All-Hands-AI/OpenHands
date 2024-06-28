@@ -72,6 +72,10 @@ class Agent(ABC):
         """
         self._complete = False
 
+    @property
+    def name(self):
+        return self.__class__.__name__
+
     @classmethod
     def register(cls, name: str, agent_cls: Type['Agent']):
         """
