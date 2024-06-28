@@ -1,10 +1,12 @@
 FROM ubuntu:22.04
 
 # For Python 3.11
+RUN apt-get update && apt-get install -y \
+    software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa;
 
 # install basic packages
-RUN apt-get update && apt-get install -y \
+RUN apt-get install -y \
     curl \
     wget \
     git \
