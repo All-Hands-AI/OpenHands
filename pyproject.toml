@@ -36,6 +36,7 @@ tenacity = "^8.4.2"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
 
+invariant = {git = "https://github.com/invariantlabs-ai/invariant.git"}
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
 llama-index-vector-stores-chroma = "*"

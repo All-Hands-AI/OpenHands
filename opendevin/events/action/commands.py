@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
-from .action import Action
+from .action import Action, ActionSecurityRisk
 
 
 @dataclass
@@ -13,6 +13,7 @@ class CmdRunAction(Action):
     thought: str = ''
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
@@ -32,6 +33,7 @@ class CmdKillAction(Action):
     thought: str = ''
     action: str = ActionType.KILL
     runnable: ClassVar[bool] = True
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
@@ -48,6 +50,7 @@ class IPythonRunCellAction(Action):
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'

@@ -17,6 +17,7 @@ class EventStreamSubscriber(str, Enum):
     RUNTIME = 'runtime'
     MAIN = 'main'
     TEST = 'test'
+    SECURITY_ANALYZER = 'security_analyzer'
 
 
 class EventStream:
