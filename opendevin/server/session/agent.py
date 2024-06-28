@@ -13,6 +13,7 @@ from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.e2b.runtime import E2BRuntime
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.security import InvariantAnalyzer
 
 
 class AgentSession:
@@ -43,6 +44,7 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
+        await self._create_security_analyzer()
         await self._create_runtime()
         await self._create_controller(start_event)
 
@@ -56,6 +58,11 @@ class AgentSession:
         if self.runtime is not None:
             self.runtime.close()
         self._closed = True
+
+    # TODO: Make this configurable
+    async def _create_security_analyzer(self):
+        """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
+        self.security_analyzer = InvariantAnalyzer(self.event_stream)
 
     async def _create_runtime(self):
         if self.runtime is not None:

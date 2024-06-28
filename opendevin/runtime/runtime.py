@@ -17,6 +17,7 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from opendevin.events.action.action import ActionSecurityRisk
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     CmdOutputObservation,
@@ -111,6 +112,13 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
+            if hasattr(event, 'security_risk'):
+                logger.info(
+                    'Action about to be run has security risk level: '
+                    + str(event.security_risk)
+                )
+                if event.security_risk >= ActionSecurityRisk.MEDIUM:
+                    logger.info('Security risk too high!')
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT

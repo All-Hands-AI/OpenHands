@@ -35,6 +35,7 @@ pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.4.2"
 zope-interface = "6.4.post2"
 
+invariant = {git = "https://github.com/invariantlabs-ai/invariant.git"}
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
 llama-index-vector-stores-chroma = "*"
