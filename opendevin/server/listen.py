@@ -2,7 +2,6 @@ import os
 import re
 import uuid
 import warnings
-from typing import Set, cast
 
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -45,7 +44,7 @@ app.add_middleware(
 security_scheme = HTTPBearer()
 
 
-def load_file_upload_config() -> tuple[int, bool, Set[str]]:
+def load_file_upload_config() -> tuple[int, bool, list[str]]:
     """
     Load file upload configuration from the config object.
 
@@ -64,13 +63,9 @@ def load_file_upload_config() -> tuple[int, bool, Set[str]]:
             - allowed_extensions (set): Set of allowed file extensions.
     """
     # Retrieve values from config
-    max_file_size_mb = cast(int, getattr(config, 'file_uploads_max_file_size_mb', 0))
-    restrict_file_types = cast(
-        bool, getattr(config, 'file_uploads_restrict_file_types', False)
-    )
-    allowed_extensions = set(
-        cast(list, getattr(config, 'file_uploads_allowed_extensions', ['.*']))
-    )
+    max_file_size_mb = config.file_uploads_max_file_size_mb
+    restrict_file_types = config.file_uploads_restrict_file_types
+    allowed_extensions = config.file_uploads_allowed_extensions
 
     # Sanity check for max_file_size_mb
     MAX_ALLOWED_SIZE = 1024  # Maximum allowed file size 1 GB
@@ -90,17 +85,17 @@ def load_file_upload_config() -> tuple[int, bool, Set[str]]:
         logger.warning(
             f'Invalid allowed_extensions: {allowed_extensions}. Setting to [".*"].'
         )
-        allowed_extensions = {'.*'}
+        allowed_extensions = ['.*']
     else:
         # Ensure all extensions start with a dot and are lowercase
-        allowed_extensions = {
+        allowed_extensions = [
             ext.lower() if ext.startswith('.') else f'.{ext.lower()}'
             for ext in allowed_extensions
-        }
+        ]
 
     # If restrictions are disabled, allow all
     if not restrict_file_types:
-        allowed_extensions = {'.*'}
+        allowed_extensions = ['.*']
 
     logger.info(
         f'File upload config: max_size={max_file_size_mb}MB, '
