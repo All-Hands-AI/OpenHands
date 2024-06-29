@@ -177,7 +177,7 @@ jobs:
   ghcr_push:
     runs-on: ubuntu-latest
     # don't push if integration tests or sandbox tests fail
-    needs: [ghcr_build]
+    needs: [ghcr_build, integration-tests-on-linux, test-for-sandbox]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
 
     env:
