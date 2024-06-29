@@ -314,8 +314,7 @@ class AgentController:
                 )
                 await self.set_agent_state_to(AgentState.PAUSED)
                 return
-
-        if self.max_budget_per_task is not None:
+        elif self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
                 if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
