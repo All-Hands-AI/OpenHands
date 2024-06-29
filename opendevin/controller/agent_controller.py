@@ -3,7 +3,7 @@ import traceback
 from typing import Optional, Type
 
 from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
+from opendevin.controller.state.state import TRAFFIC_CONTROL_STATE, State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
@@ -193,6 +193,14 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
+        if (
+            self.state.agent_state == AgentState.PAUSED
+            and new_state == AgentState.RUNNING
+            and self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.THROTTLING
+        ):
+            # user intends to interrupt traffic control and let the task resume temporarily
+            self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.PAUSED
+
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
@@ -294,20 +302,32 @@ class AgentController:
         )
 
         if self.state.iteration >= self.state.max_iterations:
-            await self.report_error(
-                f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
-            )
-            await self.set_agent_state_to(AgentState.PAUSED)
-            return
+            if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
+                logger.info(
+                    'Hitting traffic control, temporarily resume upon user request'
+                )
+                self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
+            else:
+                await self.report_error(
+                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                )
+                await self.set_agent_state_to(AgentState.PAUSED)
+                return
 
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
-                await self.report_error(
-                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                )
-                await self.set_agent_state_to(AgentState.PAUSED)
-                return
+                if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
+                    logger.info(
+                        'Hitting traffic control, temporarily resume upon user request'
+                    )
+                    self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
+                else:
+                    await self.report_error(
+                        f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                    )
+                    await self.set_agent_state_to(AgentState.PAUSED)
+                    return
 
         self.update_state_before_step()
         action: Action = NullAction()
