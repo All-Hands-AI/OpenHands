@@ -211,9 +211,9 @@ class AppConfig(metaclass=Singleton):
         Post-initialization hook, called when the instance is created with only default values.
         """
         # Ensure the max_iterations are set based on configuration if not explicitly set
-        if self.max_iterations == 100:  
+        if self.max_iterations == 100:
             self.max_iterations = config.global_max_iterations
-        if self.max_iterations_per_task == 100:  
+        if self.max_iterations_per_task == 100:
             self.max_iterations_per_task = config.max_iterations_per_task
         AppConfig.defaults_dict = self.defaults_to_dict()
 
