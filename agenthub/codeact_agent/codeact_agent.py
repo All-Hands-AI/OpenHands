@@ -226,9 +226,6 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
         return self.action_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:

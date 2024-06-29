@@ -219,7 +219,6 @@ class AgentController:
             inputs=action.inputs or {},
             iteration=0,
             max_iterations=self.state.max_iterations,
-            num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,
             # metrics should be shared between parent and child
             metrics=self.state.metrics,
