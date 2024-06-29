@@ -1,6 +1,13 @@
 {
 	"name": "OpenDevin Codespaces",
 	"image": "mcr.microsoft.com/devcontainers/universal",
+	"customizations":{
+        "vscode":{
+            "extensions": [
+                "ms-python.python"
+            ]
+        }
+    },
 	"onCreateCommand": "sh ./.devcontainer/on_create.sh",
 	"postCreateCommand": "make build & make run"
 }
