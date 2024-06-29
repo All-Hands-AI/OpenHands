@@ -416,17 +416,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.134"
+version = "1.34.135"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.134-py3-none-any.whl", hash = "sha256:342782c02ff077aae118c9c61179eed95c585831fba666baacc5588ff04aa6e1"},
-    {file = "boto3-1.34.134.tar.gz", hash = "sha256:f6d6e5b0c9ab022a75373fa16c01f0cd54bc1bb64ef3b6ac64ac7cedd56cbe9c"},
+    {file = "boto3-1.34.135-py3-none-any.whl", hash = "sha256:6f5d7a20afbe45e3f7c6b5e96071752d36c3942535b1f7924964f1fdf25376a7"},
+    {file = "boto3-1.34.135.tar.gz", hash = "sha256:344f635233c85dbb509b87638232ff9132739f90bb5e6bf01fa0e0a521a9107e"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.134,<1.35.0"
+botocore = ">=1.34.135,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -435,13 +435,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.134"
+version = "1.34.135"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.134-py3-none-any.whl", hash = "sha256:45219e00639755f92569b29f8f279d5dde721494791412c1f7026a3779e8d9f4"},
-    {file = "botocore-1.34.134.tar.gz", hash = "sha256:e29c299599426ed16dd2d4c1e20eef784f96b15e1850ebbc59a3250959285b95"},
+    {file = "botocore-1.34.135-py3-none-any.whl", hash = "sha256:3aa9e85e7c479babefb5a590e844435449df418085f3c74d604277bc52dc3109"},
+    {file = "botocore-1.34.135.tar.gz", hash = "sha256:2e72f37072f75cb1391fca9d7a4c32cecb52a3557d62431d0f59d5311dc7d0cf"},
 ]
 
 [package.dependencies]
@@ -2547,13 +2547,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.25.1"
+version = "0.25.2"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "json_repair-0.25.1-py3-none-any.whl", hash = "sha256:6fba3960f1036be01dc0d4ef909fb543f4bd4e3d6851ad0cdfb8191d7ee19763"},
-    {file = "json_repair-0.25.1.tar.gz", hash = "sha256:b808a86699516a0eaa9e0c52233cd2eedab24bac156d4eca9a4c5e2f1586afcb"},
+    {file = "json_repair-0.25.2-py3-none-any.whl", hash = "sha256:51d67295c3184b6c41a3572689661c6128cef6cfc9fb04db63130709adfc5bf0"},
+    {file = "json_repair-0.25.2.tar.gz", hash = "sha256:161a56d7e6bbfd4cad3a614087e3e0dbd0e10d402dd20dc7db418432428cb32b"},
 ]
 
 [[package]]
@@ -2771,13 +2771,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.40.28"
+version = "1.40.29"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.40.28-py3-none-any.whl", hash = "sha256:aa6d59390f24d1b1168a202b966249f9f5f93d08deba38ed9528654544065e96"},
-    {file = "litellm-1.40.28.tar.gz", hash = "sha256:08fdfcb01715006f9dadb8d05b94143f782e08d1944e5691d9faf20300e62739"},
+    {file = "litellm-1.40.29-py3-none-any.whl", hash = "sha256:f541c6a868e62a9018d1502a2043d9e3a669833a6a4ed4946635eec26329540a"},
+    {file = "litellm-1.40.29.tar.gz", hash = "sha256:167357fcfe33813bf3410c5f13058c7d8ca39a38a476a4ddb80ffd3c18dab770"},
 ]
 
 [package.dependencies]
@@ -3119,13 +3119,13 @@ llama-parse = ">=0.4.0,<0.5.0"
 
 [[package]]
 name = "llama-index-vector-stores-chroma"
-version = "0.1.9"
+version = "0.1.10"
 description = "llama-index vector_stores chroma integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_vector_stores_chroma-0.1.9-py3-none-any.whl", hash = "sha256:0d900fe97def537c2dd1c2d155287fae014b63848e3aff28902eb38c45e0bc28"},
-    {file = "llama_index_vector_stores_chroma-0.1.9.tar.gz", hash = "sha256:6a5c27ab3ae25cf504bed9513c1f035365dfb576b886fe334d46908ca24a59cf"},
+    {file = "llama_index_vector_stores_chroma-0.1.10-py3-none-any.whl", hash = "sha256:18859272ec8d3ed20bae7e4a9bc18feb4233e8be2a725d33626f283ac41d1475"},
+    {file = "llama_index_vector_stores_chroma-0.1.10.tar.gz", hash = "sha256:97971f7b36461ef37be023b9ceb5531396cc48360d0bdbda51cce1290301cc47"},
 ]
 
 [package.dependencies]
@@ -4189,13 +4189,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.35.6"
+version = "1.35.7"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.6-py3-none-any.whl", hash = "sha256:c2bfa599445a2d6010adc7954476c2dc64e1aa8dad02ef29e0f31b9a887c1d02"},
-    {file = "openai-1.35.6.tar.gz", hash = "sha256:c5958617048a2d777d2b96050fd69ae6721bdffbf59967698694223cc092abd9"},
+    {file = "openai-1.35.7-py3-none-any.whl", hash = "sha256:3d1e0b0aac9b0db69a972d36dc7efa7563f8e8d65550b27a48f2a0c2ec207e80"},
+    {file = "openai-1.35.7.tar.gz", hash = "sha256:009bfa1504c9c7ef64d87be55936d142325656bbc6d98c68b669d6472e4beb09"},
 ]
 
 [package.dependencies]
@@ -4542,6 +4542,17 @@ spss = ["pyreadstat (>=1.2.0)"]
 sql-other = ["SQLAlchemy (>=2.0.0)", "adbc-driver-postgresql (>=0.8.0)", "adbc-driver-sqlite (>=0.8.0)"]
 test = ["hypothesis (>=6.46.1)", "pytest (>=7.3.2)", "pytest-xdist (>=2.2.0)"]
 xml = ["lxml (>=4.9.2)"]
+
+[[package]]
+name = "pathspec"
+version = "0.12.1"
+description = "Utility library for gitignore style pattern matching of file paths."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08"},
+    {file = "pathspec-0.12.1.tar.gz", hash = "sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712"},
+]
 
 [[package]]
 name = "pexpect"
@@ -7736,4 +7747,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "dba3c8c3812d657e413a57e3bd87ad6f80adadc08857948ff1fd6e1c62692ca7"
+content-hash = "d30ba49e7737bdacfb1c08a821ab1d41f97e00c19b691bec504e6eae301ee0e7"
