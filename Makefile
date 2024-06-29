@@ -216,6 +216,19 @@ run:
 		exit 1; \
 	fi
 	@mkdir -p logs
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
+	@echo "$(YELLOW)Waiting for the app to start...$(RESET)"
+	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
+	@echo "$(GREEN)Application started successfully.$(RESET)"
+
+# Run the app
+run-dev:
+	@echo "$(YELLOW)Running the app...$(RESET)"
+	@if [ "$(OS)" = "Windows_NT" ]; then \
+		echo "$(RED)`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately.$(RESET)"; \
+		exit 1; \
+	fi
+	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
@@ -308,4 +321,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help run-dev

@@ -1,0 +1,6 @@
+{
+	"name": "OpenDevin Codespaces",
+	"image": "mcr.microsoft.com/devcontainers/universal",
+	"onCreateCommand": "sh ./.devcontainer/on_create.sh",
+	"postCreateCommand": "make build & make run"
+}
