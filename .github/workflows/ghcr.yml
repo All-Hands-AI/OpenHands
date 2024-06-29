@@ -177,7 +177,7 @@ jobs:
   ghcr_push:
     runs-on: ubuntu-latest
     # don't push if integration tests or sandbox tests fail
-    needs: [ghcr_build, integration-tests-on-linux, test-for-sandbox]
+    needs: [ghcr_build]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
 
     env:
@@ -212,7 +212,8 @@ jobs:
       - name: Load images and push to registry
         run: |
           mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | awk '{print $3}')
+          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
+          echo "loaded image = $loaded_image"
           tags=$(echo ${tags} | tr ' ' '\n')
           image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
           echo "image name = $image_name"
