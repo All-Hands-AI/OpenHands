@@ -550,7 +550,7 @@ pip install pymsgbox==1.0.9
 ----------
 
 OBSERVATION:
-Package installed successfully
+[Package installed successfully]
 [Command -1 finished with exit code 0]
 
 ----------

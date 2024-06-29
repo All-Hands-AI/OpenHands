@@ -16,7 +16,12 @@ COMMIT_HASH=$2
 AGENT=$3
 NOTE=$4
 EVAL_LIMIT=$5
+NUM_WORKERS=$6
 
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
@@ -37,7 +42,7 @@ COMMAND="poetry run python evaluation/miniwob/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
   --max-chars 10000000 \
-  --eval-note $EVAL_NOTE"
+  --eval-num-workers $NUM_WORKERS \
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
