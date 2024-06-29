@@ -134,9 +134,9 @@ le point de terminaison API avec lequel vous essayez de vous connecter. Cela arr
   * Si vous êtes en cours d'exécution dans l'interface utilisateur, assurez-vous de définir le `model` dans le modal des paramètres
   * Si vous êtes en cours d'exécution sans interface (via main.py), assurez-vous de définir `LLM_MODEL` dans votre env/config
 * Assurez-vous de suivre les instructions spéciales de votre fournisseur de LLM
-  * [ollama](/OpenDevin/fr/modules/usage/llms/localLLMs)
-  * [Azure](/OpenDevin/fr/modules/usage/llms/azureLLMs)
-  * [Google](/OpenDevin/fr/modules/usage/llms/googleLLMs)
+  * [ollama](/fr/modules/usage/llms/localLLMs)
+  * [Azure](/fr/modules/usage/llms/azureLLMs)
+  * [Google](/fr/modules/usage/llms/googleLLMs)
 * Assurez-vous que votre clé API est correcte
 * Voyez si vous pouvez vous connecter au LLM en utilisant `curl`
 * Essayez de [vous connecter via LiteLLM directement](https://github.com/BerriAI/litellm) pour tester votre configuration

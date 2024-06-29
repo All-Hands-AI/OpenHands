@@ -107,15 +107,60 @@ function FileExplorer() {
       return;
     }
     dispatch(setRefreshID(Math.random()));
-    setFiles(await listFiles("/"));
+    try {
+      const fileList = await listFiles("/");
+      setFiles(fileList);
+      if (fileList.length === 0) {
+        toast.info(t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE));
+      }
+    } catch (error) {
+      toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
+    }
   };
 
   const uploadFileData = async (toAdd: FileList) => {
     try {
-      await uploadFiles(toAdd);
+      const result = await uploadFiles(toAdd);
+
+      if (result.error) {
+        // Handle error response
+        toast.error(
+          `upload-error-${new Date().getTime()}`,
+          result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+        );
+        return;
+      }
+
+      const uploadedCount = result.uploadedFiles.length;
+      const skippedCount = result.skippedFiles.length;
+
+      if (uploadedCount > 0) {
+        toast.success(
+          `upload-success-${new Date().getTime()}`,
+          t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
+            count: uploadedCount,
+          }),
+        );
+      }
+
+      if (skippedCount > 0) {
+        const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
+          count: skippedCount,
+        });
+        toast.info(message);
+      }
+
+      if (uploadedCount === 0 && skippedCount === 0) {
+        toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
+      }
+
       await refreshWorkspace();
     } catch (error) {
-      toast.error("ws", t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE));
+      // Handle unexpected errors (network issues, etc.)
+      toast.error(
+        `upload-error-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+      );
     }
   };
 
@@ -148,13 +193,16 @@ function FileExplorer() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {isDragging && (
         <div
           data-testid="dropzone"
           onDrop={(event) => {
             event.preventDefault();
-            uploadFileData(event.dataTransfer.files);
+            const { files: droppedFiles } = event.dataTransfer;
+            if (droppedFiles.length > 0) {
+              uploadFileData(droppedFiles);
+            }
           }}
           onDragOver={(event) => event.preventDefault()}
           className="z-10 absolute flex flex-col justify-center items-center bg-black top-0 bottom-0 left-0 right-0 opacity-65"
@@ -167,32 +215,37 @@ function FileExplorer() {
       )}
       <div
         className={twMerge(
-          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring overflow-auto",
+          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring",
           isHidden ? "min-w-[48px]" : "min-w-[228px]",
         )}
       >
-        <div className="flex flex-col p-2 relative">
-          <div
-            className={twMerge(
-              "flex items-center mt-2 mb-1",
-              isHidden ? "justify-center" : "justify-between",
-            )}
-          >
-            {!isHidden && (
-              <div className="ml-1 text-neutral-300 font-bold text-sm">
-                {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
-              </div>
-            )}
-            <ExplorerActions
-              isHidden={isHidden}
-              toggleHidden={() => setIsHidden((prev) => !prev)}
-              onRefresh={refreshWorkspace}
-              onUpload={selectFileInput}
-            />
+        <div className="flex flex-col relative h-full">
+          <div className="sticky top-0 bg-neutral-800 z-10">
+            <div
+              className={twMerge(
+                "flex items-center mt-2 mb-1 p-2",
+                isHidden ? "justify-center" : "justify-between",
+              )}
+            >
+              {!isHidden && (
+                <div className="ml-1 text-neutral-300 font-bold text-sm">
+                  <div className="ml-1 text-neutral-300 font-bold text-sm">
+                    {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
+                  </div>
+                </div>
+              )}
+              <ExplorerActions
+                isHidden={isHidden}
+                toggleHidden={() => setIsHidden((prev) => !prev)}
+                onRefresh={refreshWorkspace}
+                onUpload={selectFileInput}
+              />
+            </div>
           </div>
-
-          <div style={{ display: isHidden ? "none" : "block" }}>
-            <ExplorerTree files={files} defaultOpen />
+          <div className="overflow-auto flex-grow">
+            <div style={{ display: isHidden ? "none" : "block" }}>
+              <ExplorerTree files={files} defaultOpen />
+            </div>
           </div>
         </div>
         <input
@@ -202,8 +255,9 @@ function FileExplorer() {
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={(event) => {
-            if (event.target.files) {
-              uploadFileData(event.target.files);
+            const { files: selectedFiles } = event.target;
+            if (selectedFiles && selectedFiles.length > 0) {
+              uploadFileData(selectedFiles);
             }
           }}
         />

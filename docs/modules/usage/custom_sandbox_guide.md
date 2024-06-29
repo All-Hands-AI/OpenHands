@@ -1,4 +1,4 @@
-# How to Create a Custom Docker Sandbox 
+# 💿 How to Create a Custom Docker Sandbox 
 
 The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https://github.com/OpenDevin/OpenDevin/blob/main/containers/sandbox/Dockerfile). Your use case may need additional software installed by default. This guide will teach you how to accomplish this by utilizing a custom docker image. 
 
@@ -9,6 +9,9 @@ To get started running with your own Docker Sandbox image you need to ensure you
 2. In the root (OpenDevin/)  directory, run ```make build```
 3. Then run ```make run```  
 4. Finally navigate your browser to ```localhost:3001``` to ensure that your local build of OpenDevin is functional 
+
+
+Please refer to [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) for more installation details.
 
 > Note that the above steps will take some time to run and will require that your have python3.11, poetry (a python package manager), and Docker installed 
 
@@ -101,7 +104,8 @@ sandbox_user_id="1001"
 ```
 
 ### Port use errors 
-If you see an error about a port being in use or unavailable, try deleting all running Docker Containers and then re-running ```make run``` 
+
+If you see an error about a port being in use or unavailable, try deleting all running Docker Containers (run `docker ps` and `docker rm` relevant containers) and then re-running ```make run``` 
 
 ## Discuss 
 
