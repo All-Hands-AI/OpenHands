@@ -573,6 +573,32 @@ def test_insert_content_at_line_from_scratch(tmp_path):
     assert lines[1].rstrip() == ''
 
 
+def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    with open(temp_file_path, 'w') as file:
+        file.write('')
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            insert_content_at_line(
+                file_name=str(temp_file_path),
+                line_number=1,
+                content='REPLACE TEXT',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (1 lines total after edit)]\n'
+            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 1
+    assert lines[0].rstrip() == 'REPLACE TEXT'
+
+
 def test_insert_content_at_line_emptyline(tmp_path):
     temp_file_path = tmp_path / 'b.txt'
     content = 'Line 1\n\n'

@@ -354,7 +354,7 @@ def _edit_or_insert_file(
     ERROR_MSG = f'[Error editing file {file_name}. Please confirm the file is correct.]'
     ERROR_MSG_SUFFIX = (
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-        'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
+        'You either need to 1) Open the correct file and try again or 2) Specify the correct line number arguments.\n'
         'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
     )
 
@@ -384,16 +384,28 @@ def _edit_or_insert_file(
             with open(file_name) as original_file:
                 lines = original_file.readlines()
 
-            if is_insert and start and lines:
-                if len(lines) == 1 and lines[0].strip() == '':
-                    # if the file is empty with only 1 line
-                    lines = ['\n']
-
-                new_lines = (
-                    lines[: start - 1]
-                    + [content + '\n' if not content.endswith('\n') else content]
-                    + lines[start - 1 :]
-                )
+            if is_insert:
+                if len(lines) == 0:
+                    new_lines = [
+                        content + '\n' if not content.endswith('\n') else content
+                    ]
+                elif start is not None:
+                    if len(lines) == 1 and lines[0].strip() == '':
+                        # if the file is empty with only 1 line
+                        lines = ['\n']
+                    new_lines = (
+                        lines[: start - 1]
+                        + [content + '\n' if not content.endswith('\n') else content]
+                        + lines[start - 1 :]
+                    )
+                else:
+                    assert start is None
+                    print(
+                        f'{ERROR_MSG}\n'
+                        f'Invalid line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+                        f'{ERROR_MSG_SUFFIX}'
+                    )
+                    return
                 content = ''.join(new_lines)
             else:
                 # Handle cases where start or end are None
