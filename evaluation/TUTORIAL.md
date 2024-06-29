@@ -32,6 +32,7 @@ workspace_mount_path = "/path/to/your/workspace"
 # ==========================
 
 sandbox_type = "ssh"
+sandbox_timeout = 120
 ssh_hostname = "localhost"
 
 # SWEBench eval specific - but you can tweak it to your needs
