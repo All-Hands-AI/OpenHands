@@ -685,7 +685,6 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         mount_dir = config.workspace_mount_path
-        logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
