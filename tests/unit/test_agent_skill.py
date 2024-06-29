@@ -514,6 +514,15 @@ def test_edit_file_multiline(tmp_path):
     assert lines[4].rstrip() == 'Line 5'
 
 
+def test_edit_file_toreplace_empty():
+    with pytest.raises(ValueError):
+        edit_file(
+            str('unknown file'),
+            '',
+            'REPLACE TEXT',
+        )
+
+
 def test_insert_content_at_line(tmp_path):
     temp_file_path = tmp_path / 'b.txt'
     content = 'Line 1\nLine 2\nLine 3'

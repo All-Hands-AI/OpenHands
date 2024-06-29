@@ -527,7 +527,7 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
 
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
-    Include enough lines to make code in `to_replace` unique.
+    Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
     `edit_file` will only replace the *first* matching occurrences.
 
     For example, given a file "/workspace/example.txt" with the following content:
@@ -570,6 +570,8 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
         new_content: str: The new content to replace the old content with.
     """
     # FIXME: support replacing *all* occurrences
+    if to_replace.strip() == '':
+        raise ValueError('`to_replace` must not be empty.')
 
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
