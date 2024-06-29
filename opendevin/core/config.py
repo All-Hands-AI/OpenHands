@@ -39,7 +39,6 @@ class LLMConfig(metaclass=Singleton):
         retry_min_wait: The minimum time to wait between retries, in seconds. This is exponential backoff minimum. For models with very low limits, this can be set to 15-20.
         retry_max_wait: The maximum time to wait between retries, in seconds. This is exponential backoff maximum.
         timeout: The timeout for the API.
-        max_chars: The maximum number of characters to send to and receive from the API. This is a fallback for token counting, which doesn't work in all cases.
         temperature: The temperature for the API.
         top_p: The top p for the API.
         custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
@@ -63,7 +62,6 @@ class LLMConfig(metaclass=Singleton):
     retry_min_wait: int = 3
     retry_max_wait: int = 60
     timeout: int | None = None
-    max_chars: int = 5_000_000  # fallback for token counting
     temperature: float = 0
     top_p: float = 0.5
     custom_llm_provider: str | None = None
@@ -202,6 +200,9 @@ class AppConfig(metaclass=Singleton):
         initialize_plugins: Whether to initialize plugins.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
+        file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
+        file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
+        file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
     llm: LLMConfig = field(default_factory=LLMConfig)
@@ -233,6 +234,9 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    file_uploads_max_file_size_mb: int = 0
+    file_uploads_restrict_file_types: bool = False
+    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -585,13 +589,6 @@ def get_parser():
         default=config.max_budget_per_task,
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
-    )
-    parser.add_argument(
-        '-n',
-        '--max-chars',
-        default=config.llm.max_chars,
-        type=int,
-        help='The maximum number of characters to send to and receive from LLM per task',
     )
     # --eval configs are for evaluations only
     parser.add_argument(
