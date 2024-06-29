@@ -94,9 +94,18 @@ class AgentSession:
         if config.llm.model_port_config_file:
             with open(config.llm.model_port_config_file) as f:
                 model_port_config = json.load(f)[model]
-            model = model_port_config['provider'] + '/' + model
-            port = model_port_config['port']
-            api_base = 'http://localhost:{}/v1/'.format(port)
+            api_base = model_port_config.get('base_url', None)
+            if api_base is None:
+                if 'port' not in model_port_config:
+                    raise Exception(
+                        'One of API base URL and local port need to be provided for model {}'.format(
+                            model
+                        )
+                    )
+                port = model_port_config['port']
+                api_base = 'http://localhost:{}/v1/'.format(port)
+            if 'provider' in model_port_config:
+                model = model_port_config['provider'] + '/' + model
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
         max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
 

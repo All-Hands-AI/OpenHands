@@ -667,13 +667,20 @@ def pause_resume_task(is_paused, session, status):
 
 if __name__ == '__main__':
     default_port = 3000
+    with open('Makefile') as f:
+        while True:
+            line = f.readline()
+            if 'BACKEND_PORT' in line:
+                default_port = int(line.split('=')[1].strip())
+                break
+            if not line:
+                break
     default_agent = 'WorldModelAgent'
 
     model_port_config = {}
     with open('model_port_config.json') as f:
         model_port_config = json.load(f)
     model_list = list(model_port_config.keys())
-    model_list.append('gpt-4o')
     default_model = model_list[0]
 
     with gr.Blocks() as demo:
@@ -682,7 +689,7 @@ if __name__ == '__main__':
             with gr.Column(scale=1):
                 with gr.Group():
                     agent_selection = gr.Dropdown(
-                        ['DummyWebAgent', 'WorldModelAgent', 'BrowsingAgent'],
+                        ['DummyWebAgent', 'WorldModelAgent'],
                         value=default_agent,
                         interactive=True,
                         label='Agent',
@@ -758,7 +765,6 @@ if __name__ == '__main__':
                 clear,
                 plot,
             ],
-            concurrency_limit=10,
         )
         (
             pause_resume.click(
@@ -810,4 +816,4 @@ if __name__ == '__main__':
         )
 
     demo.queue()
-    demo.launch(share=False)
+    demo.launch(share=True)

@@ -41,6 +41,11 @@ if not USE_NAV and USE_CONCISE_ANSWER:
 else:
     EVAL_MODE = False
 
+MAX_TOKENS = 8192  # added
+OUTPUT_BUFFER = 1100  # added
+# DEFAULT_BROWSER = 'https://www.google.com'  # added
+DEFAULT_BROWSER = None
+
 
 class ParseError(Exception):
     pass
@@ -66,6 +71,8 @@ class WorldModelAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        print(self.llm.max_input_tokens)
+        print(self.llm.max_output_tokens)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']
@@ -80,6 +87,56 @@ class WorldModelAgent(Agent):
         self.max_retry = 4
 
         self.reset()
+
+    # added
+    def count_tokens(self, messages):
+        return self.llm.get_token_count(messages)
+
+    def reduce_ax_tree(self, ax, goal_token):
+        low, high = 0, len(ax)
+
+        while low < high:
+            mid = (low + high + 1) // 2
+            if self.count_tokens([{'role': 'user', 'content': ax[:mid]}]) <= goal_token:
+                low = mid
+            else:
+                high = mid - 1
+
+        return ax[:low]
+
+    def truncate_messages(self, messages, max_tokens):
+        if self.count_tokens(messages) > max_tokens:
+            tree_start = messages[-1]['content'].find('AXSTART')
+            tree_end = messages[-1]['content'].find('AXEND')
+
+            no_ax = (
+                messages[-1]['content'][0:tree_start]
+                + messages[-1]['content'][tree_end:]
+            )
+            ax = messages[-1]['content'][tree_start + len('AXSTART') : tree_end]
+
+            new_message = {'role': 'user', 'content': no_ax}
+            tmp_messages = []
+            tmp_messages.append(messages[0])
+            tmp_messages.append(new_message)
+
+            no_ax_token = self.count_tokens(tmp_messages)
+            goal_token = max_tokens - no_ax_token
+            reduced_ax = self.reduce_ax_tree(ax, goal_token)
+
+            processed_content = (
+                messages[-1]['content'][0:tree_start]
+                + reduced_ax
+                + messages[-1]['content'][tree_end:]
+            )
+            messages[-1]['content'] = processed_content
+
+            # print(self.count_tokens(messages))
+            # print(messages[-1]['content'])
+            assert self.count_tokens(messages) <= max_tokens
+            return messages
+        else:
+            return messages
 
     def reset(self) -> None:
         """
@@ -126,12 +183,19 @@ class WorldModelAgent(Agent):
         tries = 0
         rate_limit_total_delay = 0
         while tries < n_retry and rate_limit_total_delay < rate_limit_max_wait_time:
+            truncated_messages = self.truncate_messages(
+                messages, MAX_TOKENS - OUTPUT_BUFFER
+            )  # added
             response = self.llm.completion(
-                messages=messages,
+                # messages=messages,
+                messages=truncated_messages,  # added
                 temperature=self.temperature,
                 stop=None,
             )
             answer = response['choices'][0]['message']['content'].strip()
+
+            # with open("/home/demo/jinyu/prompts/last_answer.txt", "w") as f:
+            #     f.write(answer)
 
             messages.append({'role': 'assistant', 'content': answer})
 
@@ -151,9 +215,7 @@ class WorldModelAgent(Agent):
     def get_llm_output(self, prompt, parse_func, output_keys):
         system_msg = f"""\
 # Instructions
-Review the current state of the page and all other information to find the best
-possible next action to accomplish your goal. Your answer will be interpreted
-and executed by a program, make sure to follow the formatting instructions.
+Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
 {self.goal}
@@ -165,6 +227,9 @@ and executed by a program, make sure to follow the formatting instructions.
         messages.append({'role': 'system', 'content': system_msg})
         messages.append({'role': 'user', 'content': prompt})
 
+        # with open("/home/demo/jinyu/prompts/last_prompt.txt", "w") as f:
+        #     f.write(prompt)
+
         def parser(text):
             try:
                 ans_dict = parse_func(text)
@@ -173,7 +238,12 @@ and executed by a program, make sure to follow the formatting instructions.
             return ans_dict, True, ''
 
         try:
-            ans_dict = self.retry(messages, parser, n_retry=self.max_retry)
+            # ans_dict = self.retry(messages, parser, n_retry=self.max_retry)
+            ans_dict = self.retry(
+                self.truncate_messages(messages, MAX_TOKENS - OUTPUT_BUFFER),
+                parser,
+                n_retry=self.max_retry,
+            )  # added
             ans_dict['n_retry'] = (len(messages) - 3) / 2
         except ValueError as e:
             # Likely due to maximum retry. We catch it here to be able to return
@@ -191,13 +261,13 @@ and executed by a program, make sure to follow the formatting instructions.
     def encoder(self, main_prompt):
         prompt = main_prompt.get_encoder_prompt()
         ans_dict = self.get_llm_output(
-            prompt, main_prompt._parse_encoder_answer, ['state', 'status']
+            prompt, main_prompt._parse_encoder_answer, ['state', 'progress']
         )
 
         think = ans_dict.get('think')
-        replan = ans_dict['status'] in ['finished', 'failed', 'not-sure']
+        replan = ans_dict['progress'] in ['finished', 'failed', 'not-sure']
 
-        return ans_dict['state'], ans_dict['status'], replan, think
+        return ans_dict['state'], ans_dict['progress'], replan, think
 
     def policy(self, main_prompt):
         prompt = main_prompt.get_policy_prompt()
@@ -213,11 +283,11 @@ and executed by a program, make sure to follow the formatting instructions.
     def dynamics(self, main_prompt):
         prompt = main_prompt.get_dynamics_prompt()
         ans_dict = self.get_llm_output(
-            prompt, main_prompt._parse_dynamics_answer, ['next_state', 'status']
+            prompt, main_prompt._parse_dynamics_answer, ['next_state', 'progress']
         )
 
-        is_terminal = ans_dict['status'] == 'goal-reached'
-        return ans_dict['next_state'], ans_dict['status'], is_terminal
+        is_terminal = ans_dict['progress'] == 'goal-reached'
+        return ans_dict['next_state'], ans_dict['progress'], is_terminal
 
     def action_reward(self, main_prompt):
         prompt = main_prompt.get_action_reward_prompt()
@@ -258,10 +328,23 @@ and executed by a program, make sure to follow the formatting instructions.
         - AgentFinishAction() - end the interaction
         """
 
+        # Set default first action
+        # if DEFAULT_BROWSER is not None and len(self.actions) == 0:
+        #     time.sleep(4)
+        #     action = "goto('{}')".format(DEFAULT_BROWSER)
+        #     self.actions.append(action)
+        #     return BrowseInteractiveAction(
+        #         browser_actions=action, thought='Open default browser'
+        #     )
+        actions = self.actions
+        # if DEFAULT_BROWSER is not None:
+        #     actions = actions[1:]
+
         goal = env_state.get_current_user_intent()
         if goal is None:
             goal = env_state.inputs['task']
         self.goal = goal
+
         # messages: List[str] = []
         prev_actions: List[str] = []
         cur_axtree_txt = ''
@@ -330,6 +413,7 @@ and executed by a program, make sure to follow the formatting instructions.
 
         current_obs = {
             'axtree_txt': cur_axtree_txt,
+            # 'axtree_txt': "AXSTART "+cur_axtree_txt+" AXEND",
             'last_action_error': error_prefix,
             'goal': goal,
         }
@@ -338,7 +422,7 @@ and executed by a program, make sure to follow the formatting instructions.
             obs_history=self.obs_history,
             states=self.states,
             strategies=self.strategies,
-            actions=self.actions,
+            actions=actions,
             active_strategy=self.active_strategy,
         )
 
@@ -369,7 +453,7 @@ and executed by a program, make sure to follow the formatting instructions.
             obs_history=self.obs_history,
             states=self.states,
             strategies=self.strategies,
-            actions=self.actions,
+            actions=actions,
             active_strategy=self.active_strategy,
             action_space=self.action_space,
         )
@@ -422,6 +506,9 @@ and executed by a program, make sure to follow the formatting instructions.
         def _expand(node, path):
             new_states = [n.state for n in path[:] if n.state is not None]
             new_actions = [n.action for n in path[:] if n.action is not None]
+            actions = self.actions
+            # if DEFAULT_BROWSER is not None:
+            #     actions = actions[1:]
             if node.state is None:
                 # print(self.states + new_states)
                 # print(self.actions + new_actions)
@@ -429,7 +516,7 @@ and executed by a program, make sure to follow the formatting instructions.
                     obs_history=self.obs_history,
                     states=self.states + new_states,
                     strategies=self.strategies + new_actions,
-                    actions=self.actions,
+                    actions=actions,
                 )
                 node.state, node.state_status, node.is_terminal = self.dynamics(
                     main_prompt
@@ -452,7 +539,7 @@ and executed by a program, make sure to follow the formatting instructions.
                 # main_prompt = my_prompting.MyMainPrompt(
                 #     obs_history=self.obs_history,
                 #     states=self.states + new_states,
-                #     actions=self.actions + new_actions
+                #     actions=actions + new_actions
                 # )
                 # node.reward, node.is_terminal, node.reward_details = self.critic(main_prompt)
                 # TODO (DONE) : Figure out numerical reward logic
@@ -466,7 +553,7 @@ and executed by a program, make sure to follow the formatting instructions.
                         obs_history=self.obs_history,
                         states=self.states + new_states,
                         strategies=self.strategies + new_actions,
-                        actions=self.actions,
+                        actions=actions,
                     )
                     strategy = self.policy(main_prompt)
                     # action, action_dict = self.policy(main_prompt)
@@ -481,7 +568,7 @@ and executed by a program, make sure to follow the formatting instructions.
                         obs_history=self.obs_history,
                         states=self.states + new_states,
                         strategies=self.strategies + new_actions + [action],
-                        actions=self.actions,
+                        actions=actions,
                     )
                     fast_reward, think = self.action_reward(main_prompt)
                     logger.info(f'*Strategy Candidate*: {action}')
