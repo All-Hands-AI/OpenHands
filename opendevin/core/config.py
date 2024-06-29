@@ -156,6 +156,9 @@ class AppConfig(metaclass=Singleton):
         sandbox_timeout: The timeout for the sandbox.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
+        file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
+        file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
+        file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
     llm: LLMConfig = field(default_factory=LLMConfig)
@@ -194,6 +197,9 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    file_uploads_max_file_size_mb: int = 0
+    file_uploads_restrict_file_types: bool = False
+    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
 
     defaults_dict: ClassVar[dict] = {}
 

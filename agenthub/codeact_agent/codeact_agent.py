@@ -10,15 +10,14 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
+    AgentDelegateAction,
     AgentFinishAction,
-    BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from opendevin.events.observation import (
     AgentDelegateObservation,
-    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -38,8 +37,8 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
     elif isinstance(action, IPythonRunCellAction):
         return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, BrowseInteractiveAction):
-        return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
+    elif isinstance(action, AgentDelegateAction):
+        return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
     elif isinstance(action, MessageAction):
         return action.content
     return ''
@@ -47,7 +46,7 @@ def action_to_str(action: Action) -> str:
 
 def get_action_message(action: Action) -> dict[str, str] | None:
     if (
-        isinstance(action, BrowseInteractiveAction)
+        isinstance(action, AgentDelegateAction)
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
@@ -77,9 +76,6 @@ def get_observation_message(obs) -> dict[str, str] | None:
                 )
         content = '\n'.join(splitted)
         content = truncate_observation(content)
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, BrowserOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         return {'role': 'user', 'content': content}
     elif isinstance(obs, AgentDelegateObservation):
         content = 'OBSERVATION:\n' + truncate_observation(str(obs.outputs))
