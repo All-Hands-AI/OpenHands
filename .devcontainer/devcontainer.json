@@ -10,6 +10,6 @@
     },
 	"onCreateCommand": "sh ./.devcontainer/on_create.sh",
 	"postCreateCommand": "make build",
-	"postStartCommand": "make run"
+	"postStartCommand": "nohup bash -c 'make run &'"
 
 }
