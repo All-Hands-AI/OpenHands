@@ -135,7 +135,7 @@ install-python-dependencies:
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
-	poetry env use /usr/bin/python$(PYTHON_VERSION)
+	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
