@@ -37,6 +37,10 @@ from opendevin.events.observation import (
 
 MAX_ITERATIONS = config.max_iterations
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
+# note: RESUME is only available on web GUI
+TRAFFIC_CONTROL_REMINDER = (
+    "Please click on resume button if you'd like to continue, or start a new task."
+)
 
 
 class AgentController:
@@ -288,22 +292,22 @@ class AgentController:
             f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
+
         if self.state.iteration >= self.state.max_iterations:
-            await self.report_error('Agent reached maximum number of iterations')
-            await self.set_agent_state_to(AgentState.ERROR)
+            await self.report_error(
+                f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+            )
+            await self.set_agent_state_to(AgentState.PAUSED)
             return
 
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
                 await self.report_error(
-                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
+                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
                 )
-                await self.set_agent_state_to(AgentState.ERROR)
+                await self.set_agent_state_to(AgentState.PAUSED)
                 return
-
-        if self.state.agent_state == AgentState.ERROR:
-            return
 
         self.update_state_before_step()
         action: Action = NullAction()
