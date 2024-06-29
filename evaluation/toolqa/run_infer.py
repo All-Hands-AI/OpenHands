@@ -138,7 +138,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'metrics': metrics,
-        'error': state.error if state and state.error else None,
+        'error': state.eval_error if state and state.eval_error else None,
     }
     return output
 

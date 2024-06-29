@@ -239,7 +239,7 @@ def process_instance(
                 for action, obs in state.history
             ],
             'metrics': metrics,
-            'error': state.error if state and state.error else None,
+            'error': state.eval_error if state and state.eval_error else None,
             'test_result': test_result,
         }
     except Exception:
