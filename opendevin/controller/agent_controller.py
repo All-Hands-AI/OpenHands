@@ -300,6 +300,7 @@ class AgentController:
                     f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
                 )
                 await self.set_agent_state_to(AgentState.ERROR)
+                return
 
         if self.state.agent_state == AgentState.ERROR:
             return
