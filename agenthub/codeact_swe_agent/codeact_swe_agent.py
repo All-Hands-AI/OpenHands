@@ -181,9 +181,6 @@ class CodeActSWEAgent(Agent):
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
 
         return self.response_parser.parse(response)
 

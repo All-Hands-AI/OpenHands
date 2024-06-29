@@ -9,7 +9,6 @@ from opendevin.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
-    MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
@@ -37,7 +36,6 @@ from opendevin.events.observation import (
 )
 
 MAX_ITERATIONS = config.max_iterations
-MAX_CHARS = config.llm.max_chars
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
 
 
@@ -58,7 +56,6 @@ class AgentController:
         event_stream: EventStream,
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
-        max_chars: int = MAX_CHARS,
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -70,7 +67,6 @@ class AgentController:
             event_stream: The event stream to publish events to.
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
-            max_chars: The maximum number of characters the agent can output.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
@@ -78,7 +74,6 @@ class AgentController:
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
-        self.max_chars = max_chars
         if initial_state is None:
             self.state = State(inputs={}, max_iterations=max_iterations)
         else:
@@ -224,7 +219,6 @@ class AgentController:
             inputs=action.inputs or {},
             iteration=0,
             max_iterations=self.state.max_iterations,
-            num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,
             # metrics should be shared between parent and child
             metrics=self.state.metrics,
@@ -235,7 +229,6 @@ class AgentController:
             agent=agent,
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
-            max_chars=self.max_chars,
             max_budget_per_task=self.max_budget_per_task,
             initial_state=state,
             is_delegate=True,
@@ -297,9 +290,6 @@ class AgentController:
                 self.delegateAction = None
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
-
-        if self.state.num_of_chars > self.max_chars:
-            raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
         logger.info(
             f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',

@@ -183,11 +183,6 @@ class MonologueAgent(Agent):
         # format all as a single message, a monologue
         resp = self.llm.completion(messages=messages)
 
-        # keep track of max_chars fallback option
-        state.num_of_chars += len(prompt) + len(
-            resp['choices'][0]['message']['content']
-        )
-
         action = self.response_parser.parse(resp)
         self.latest_action = action
         return action
