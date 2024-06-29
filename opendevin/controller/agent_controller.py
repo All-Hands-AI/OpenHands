@@ -308,6 +308,7 @@ class AgentController:
                 )
                 self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
             else:
+                self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.THROTTLING
                 await self.report_error(
                     f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
                 )
@@ -323,6 +324,7 @@ class AgentController:
                     )
                     self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
                 else:
+                    self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.THROTTLING
                     await self.report_error(
                         f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
                     )
