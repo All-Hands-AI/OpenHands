@@ -8,7 +8,7 @@ import gradio as gr
 import networkx as nx
 import plotly.graph_objects as go
 import websocket
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 api_key = os.environ.get('OPENAI_API_KEY')
 LINE_LEN = 18
@@ -147,13 +147,18 @@ class OpenDevinSession:
             printable = message
         elif 'extras' in message and 'screenshot' in message['extras']:
             image_data = base64.b64decode(message['extras']['screenshot'])
-            screenshot = Image.open(BytesIO(image_data))
-            url = message['extras']['url']
-            printable = {
-                k: v for k, v in message.items() if k not in ['extras', 'content']
-            }
-            self.browser_history.append((screenshot, url))
-
+            try:
+                screenshot = Image.open(BytesIO(image_data))
+                url = message['extras']['url']
+                printable = {
+                    k: v for k, v in message.items() if k not in ['extras', 'content']
+                }
+                self.browser_history.append((screenshot, url))
+            except UnidentifiedImageError:
+                err_msg = (
+                    'Failure to receive screenshot, likely due to a server-side error.'
+                )
+                self.action_messages.append(err_msg)
         if verbose:
             print(printable)
 
@@ -668,6 +673,7 @@ if __name__ == '__main__':
     with open('model_port_config.json') as f:
         model_port_config = json.load(f)
     model_list = list(model_port_config.keys())
+    model_list.append('gpt-4o')
     default_model = model_list[0]
 
     with gr.Blocks() as demo:
@@ -676,7 +682,7 @@ if __name__ == '__main__':
             with gr.Column(scale=1):
                 with gr.Group():
                     agent_selection = gr.Dropdown(
-                        ['DummyWebAgent', 'WorldModelAgent'],
+                        ['DummyWebAgent', 'WorldModelAgent', 'BrowsingAgent'],
                         value=default_agent,
                         interactive=True,
                         label='Agent',
@@ -752,6 +758,7 @@ if __name__ == '__main__':
                 clear,
                 plot,
             ],
+            concurrency_limit=10,
         )
         (
             pause_resume.click(
