@@ -617,6 +617,7 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
         is_insert=False,
     )
     # lint_error = bool(LINTER_ERROR_MSG in ret_str)
+    # TODO: automatically tries to fix linter error (maybe involve some static analysis tools on the location near the edit to figure out indentation)
     print(ret_str)
 
 
