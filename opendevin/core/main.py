@@ -90,6 +90,7 @@ async def main(
     initial_state = None
     if config.enable_main_session:
         try:
+            logger.info('Restoring agent state from main session')
             initial_state = State.restore_from_session('main')
         except Exception as e:
             print('Error restoring state', e)
