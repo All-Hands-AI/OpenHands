@@ -104,13 +104,6 @@ class AgentController:
         self.state.updated_info = []
         # update metrics especially for cost
         self.state.metrics = self.agent.llm.metrics
-        if self.max_budget_per_task is not None:
-            current_cost = self.state.metrics.accumulated_cost
-            if current_cost > self.max_budget_per_task:
-                await self.report_error(
-                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
-                )
-                await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
         """
@@ -265,9 +258,9 @@ class AgentController:
             if delegate_state == AgentState.ERROR:
                 # close the delegate upon error
                 await self.delegate.close()
+                self.delegate = None
+                self.delegateAction = None
                 await self.report_error('Delegator agent encounters an error')
-                # propagate error state until an agent or user can handle it
-                await self.set_agent_state_to(AgentState.ERROR)
                 return
             delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
@@ -310,6 +303,17 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
+        if self.max_budget_per_task is not None:
+            current_cost = self.state.metrics.accumulated_cost
+            if current_cost > self.max_budget_per_task:
+                await self.report_error(
+                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
+                )
+                await self.set_agent_state_to(AgentState.ERROR)
+
+        if self.state.agent_state == AgentState.ERROR:
+            return
+
         self.update_state_before_step()
         action: Action = NullAction()
         try:
@@ -333,8 +337,6 @@ class AgentController:
             await self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
-        if self.state.agent_state == AgentState.ERROR:
-            return
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
