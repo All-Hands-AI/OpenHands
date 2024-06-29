@@ -37,9 +37,9 @@ function BaseModal({
       backdrop="blur"
       hideCloseButton
       size="sm"
-      className="bg-neutral-900 rounded-lg"
+      className="bg-bg-light dark:bg-bg-dark rounded-lg"
     >
-      <ModalContent className="max-w-[30rem] p-[40px]">
+      <ModalContent className="max-w-[30rem] p-[40px] bg-bg-light dark:bg-bg-dark text-foreground">
         {(closeModal) => (
           <>
             <ModalHeader className="flex flex-col p-0">

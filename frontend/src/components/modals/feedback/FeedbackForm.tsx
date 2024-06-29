@@ -36,6 +36,7 @@ function FeedbackForm({
         onChange={(e) => {
           onEmailChange(e.target.value);
         }}
+        className="bg-bg-input text-text-editor-active"
       />
       <Select
         label="Sharing settings"
@@ -45,6 +46,7 @@ function FeedbackForm({
         onChange={(e) => {
           onPermissionsChange(e.target.value as "public" | "private");
         }}
+        className="bg-bg-input text-text-editor-active"
       >
         <SelectItem key="public" value="public">
           Public

@@ -18,10 +18,8 @@ function Browser(): JSX.Element {
       : `data:image/png;base64,${screenshotSrc || ""}`;
 
   return (
-    <div className="h-full w-full flex flex-col text-neutral-400">
-      <div className="w-full p-2 truncate border-b border-neutral-600">
-        {url}
-      </div>
+    <div className="h-full w-full flex flex-col text-text-editor-base bg-bg-workspace">
+      <div className="w-full p-2 truncate border-b border-border">{url}</div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
         {screenshotSrc ? (
           <img
@@ -31,7 +29,7 @@ function Browser(): JSX.Element {
             alt="Browser Screenshot"
           />
         ) : (
-          <div className="flex flex-col items-center h-full justify-center">
+          <div className="flex flex-col items-center h-full justify-center text-text-editor-active">
             <IoIosGlobe size={100} />
             {t(I18nKey.BROWSER$EMPTY_MESSAGE)}
           </div>

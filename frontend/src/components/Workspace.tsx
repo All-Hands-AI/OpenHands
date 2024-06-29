@@ -95,25 +95,26 @@ function Workspace() {
   useEffect(() => {
     if (activeTab !== TabOption.JUPYTER && jupyterCells.length > 0) {
       // FIXME: This is a temporary solution to show the jupyter tab when the first cell is added
-      // Only need to show the tab only when a cell is added
+      // Only need to show the tab when a cell is added
       setChanges((prev) => ({ ...prev, [TabOption.JUPYTER]: true }));
     }
   }, [activeTab, jupyterCells]);
 
   return (
-    <div className="flex flex-col min-h-0 grow">
+    <div className="flex flex-col min-h-0 grow bg-bg-workspace">
       <div
         role="tablist"
-        className="tabs tabs-bordered tabs-lg border-b border-neutral-600 flex"
+        className="tabs tabs-bordered tabs-lg border-b border-border flex"
       >
         <Tabs
           disableCursorAnimation
           classNames={{
             base: "w-full",
             tabList:
-              "w-full relative rounded-none bg-neutral-900 p-0 gap-0 h-[36px] flex",
-            tab: "rounded-none border-neutral-600 data-[selected=true]:bg-neutral-800 justify-start",
-            tabContent: "group-data-[selected=true]:text-white",
+              "w-full relative rounded-none bg-bg-dark p-0 gap-0 h-[36px] flex",
+            tab: "rounded-none border-border data-[selected=true]:bg-bg-light data-[selected=true]:border-t-2 data-[selected=true]:border-t-primary justify-start",
+            tabContent:
+              "group-data-[selected=true]:text-text-editor-active text-text-editor-base",
           }}
           size="lg"
           onSelectionChange={(v) => {
@@ -138,7 +139,7 @@ function Workspace() {
           ))}
         </Tabs>
       </div>
-      <div className="grow w-full bg-neutral-800 flex min-h-0">
+      <div className="grow w-full bg-bg-light flex min-h-0">
         {tabData[activeTab as TabType].component}
       </div>
     </div>

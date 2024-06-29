@@ -1,13 +1,12 @@
 import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
-import { useSelector } from "react-redux";
 import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
-import { changeAgentState } from "#/services/agentStateService";
-import store, { RootState } from "#/store";
+import store from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
+import { useAgentState } from "#/hooks/useAgentState";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
@@ -53,7 +52,7 @@ function ActionButton({
         className={`
           relative overflow-visible cursor-default hover:cursor-pointer group
           disabled:cursor-not-allowed disabled:opacity-60
-          ${large ? "rounded-full bg-neutral-800 p-3" : ""}
+          ${large ? "rounded-full bg-bg-light p-3" : ""}
           transition-all duration-300 ease-in-out
         `}
         type="button"
@@ -61,14 +60,14 @@ function ActionButton({
         <span className="relative z-10 group-hover:filter group-hover:drop-shadow-[0_0_5px_rgba(255,64,0,0.4)]">
           {children}
         </span>
-        <span className="absolute -inset-[5px] border-2 border-red-400/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
+        <span className="absolute -inset-[5px] border-2 border-primary/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
       </button>
     </Tooltip>
   );
 }
 
 function AgentControlBar() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState, setAgentState } = useAgentState();
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -84,7 +83,7 @@ function AgentControlBar() {
     }
 
     setDesiredState(action);
-    changeAgentState(action);
+    setAgentState(action);
   };
 
   useEffect(() => {

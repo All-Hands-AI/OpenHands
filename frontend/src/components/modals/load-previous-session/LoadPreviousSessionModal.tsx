@@ -24,13 +24,15 @@ function LoadPreviousSessionModal({
       actions={[
         {
           label: t(I18nKey.LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL),
-          className: "bg-primary rounded-lg",
+          className:
+            "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-secondary rounded-lg px-4 py-2",
           action: Session.restoreOrStartNewSession,
           closeAfterAction: true,
         },
         {
           label: t(I18nKey.LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL),
-          className: "bg-neutral-500 rounded-lg",
+          className:
+            "bg-primary text-primary-foreground hover:bg-primary/80 border border-primary rounded-lg px-4 py-2",
           action: Session.startNewSession,
           closeAfterAction: true,
         },

@@ -59,19 +59,19 @@ function FeedbackModal({
       actions={[
         {
           label: t(I18nKey.FEEDBACK$SHARE_LABEL),
-          className: "bg-primary rounded-lg",
+          className: "bg-primary text-primary-foreground rounded-lg",
           action: handleSendFeedback,
           closeAfterAction: true,
         },
         {
           label: t(I18nKey.FEEDBACK$CANCEL_LABEL),
-          className: "bg-neutral-500 rounded-lg",
+          className: "bg-neutral text-neutral-foreground rounded-lg",
           action() {},
           closeAfterAction: true,
         },
       ]}
     >
-      <p>{t(I18nKey.FEEDBACK$MODAL_CONTENT)}</p>
+      <p className="text-foreground">{t(I18nKey.FEEDBACK$MODAL_CONTENT)}</p>
       <FeedbackForm
         feedback={feedback}
         onEmailChange={handleEmailChange}

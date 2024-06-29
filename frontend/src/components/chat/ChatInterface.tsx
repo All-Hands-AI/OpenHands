@@ -39,7 +39,7 @@ function ScrollButton({
   return (
     <button
       type="button"
-      className="relative border-1 text-xs rounded px-2 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
+      className="relative border-1 text-xs rounded px-2 py-1 border-border bg-bg-light text-foreground cursor-pointer select-none disabled:opacity-50"
       onClick={onClick}
       disabled={disabled}
     >
@@ -112,8 +112,8 @@ function ChatInterface() {
   }, [curAgentState, dispatch, messages.length, t]);
 
   return (
-    <div className="flex flex-col h-full bg-neutral-800">
-      <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
+    <div className="flex flex-col h-full bg-bg-dark">
+      <div className="flex items-center gap-2 border-b border-border text-sm px-4 py-2 text-foreground">
         <IoMdChatbubbles />
         Chat
       </div>

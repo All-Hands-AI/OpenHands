@@ -15,9 +15,10 @@ function ChatMessage({ message }: MessageProps) {
   const [isHovering, setIsHovering] = useState(false);
 
   const className = twMerge(
-    "markdown-body",
-    "p-3 text-white max-w-[90%] overflow-y-auto rounded-lg relative",
-    message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
+    "p-3 max-w-[90%] overflow-y-auto rounded-lg relative border-2 shadow-md",
+    message.sender === "user"
+      ? "bg-user-message-bg text-user-message-text self-end border-blue-500 dark:border-blue-400"
+      : "bg-assistant-message-bg text-assistant-message-text border-green-500 dark:border-green-400",
   );
 
   const { t } = useTranslation();
@@ -45,7 +46,7 @@ function ChatMessage({ message }: MessageProps) {
       {isHovering && (
         <button
           onClick={copyToClipboard}
-          className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-500 transition-opacity opacity-75 hover:opacity-100"
+          className="absolute top-1 right-1 p-1 bg-neutral-600 dark:bg-neutral-700 rounded hover:bg-neutral-500 dark:hover:bg-neutral-600 transition-opacity opacity-75 hover:opacity-100"
           aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)}
           type="button"
         >

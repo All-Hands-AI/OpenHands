@@ -38,7 +38,7 @@ function CodeEditor(): JSX.Element {
   };
 
   return (
-    <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
+    <div className="flex h-full w-full bg-bg-dark transition-all duration-500 ease-in-out">
       <FileExplorer />
       <div className="flex flex-col min-h-0 w-full">
         <Tabs
@@ -46,10 +46,10 @@ function CodeEditor(): JSX.Element {
           classNames={{
             base: "border-b border-divider border-neutral-600 mb-4",
             tabList:
-              "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
-            cursor: "w-full bg-neutral-600 rounded-none",
+              "w-full relative rounded-none bg-bg-dark p-0 border-divider",
+            cursor: "w-full bg-bg-light rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
-            tabContent: "group-data-[selected=true]:text-white",
+            tabContent: "group-data-[selected=true]:text-text-editor-active",
           }}
           aria-label="Options"
         >
@@ -60,7 +60,7 @@ function CodeEditor(): JSX.Element {
         </Tabs>
         <div className="flex grow items-center justify-center">
           {selectedFileName === "" ? (
-            <div className="flex flex-col items-center text-neutral-400">
+            <div className="flex flex-col items-center text-text-editor-base">
               <VscCode size={100} />
               {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
             </div>

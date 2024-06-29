@@ -18,9 +18,10 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
   const code = cell.content;
 
   if (cell.type === "input") {
+    // TODO translations
     return (
-      <div className="rounded-lg bg-gray-800 dark:bg-gray-900 p-2 text-xs">
-        <div className="mb-1 text-gray-400">EXECUTE</div>
+      <div className="rounded-lg bg-editor-sidebar p-2 text-xs">
+        <div className="mb-1 text-editor-base">EXECUTE</div>
         <pre
           className="scrollbar-custom scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20 overflow-auto px-5"
           style={{ padding: 0, marginBottom: 0, fontSize: "0.75rem" }}
@@ -48,10 +49,10 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
   lines.push({ type: "plaintext", content: current });
 
   return (
-    <div className="rounded-lg bg-gray-800 dark:bg-gray-900 p-2 text-xs">
-      <div className="mb-1 text-gray-400">STDOUT/STDERR</div>
+    <div className="rounded-lg bg-editor-sidebar p-2 text-xs">
+      <div className="mb-1 text-editor-base">STDOUT/STDERR</div>
       <pre
-        className="scrollbar-custom scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20 overflow-auto px-5 max-h-[60vh] bg-gray-800"
+        className="scrollbar-custom scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20 overflow-auto px-5 max-h-[60vh] bg-editor-sidebar"
         style={{ padding: 0, marginBottom: 0, fontSize: "0.75rem" }}
       >
         {/* display the lines as plaintext or image */}
@@ -102,7 +103,7 @@ function Jupyter(): JSX.Element {
         <div className="sticky bottom-2 flex items-center justify-center">
           <button
             type="button"
-            className="relative border-1 text-sm rounded px-3 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
+            className="relative border border-border text-sm rounded px-3 py-1 bg-editor-active cursor-pointer select-none"
           >
             <span className="flex items-center" onClick={scrollDomToBottom}>
               <VscArrowDown className="inline mr-2 w-3 h-3" />

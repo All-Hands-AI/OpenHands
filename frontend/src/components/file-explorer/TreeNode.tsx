@@ -18,7 +18,7 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-white hover:text-white"
+      className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-primary aria-selected:text-primary-foreground hover:bg-primary hover:text-primary-foreground"
     >
       {type === "folder" && <FolderIcon isOpen={isOpen} />}
       {type === "file" && <FileIcon filename={name} />}
@@ -73,7 +73,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     <div
       className={twMerge(
         "text-sm text-neutral-400",
-        path === activeFilepath ? "bg-gray-700" : "",
+        path === activeFilepath ? "bg-bg-editor-active" : "",
       )}
     >
       <Title

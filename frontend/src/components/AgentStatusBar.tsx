@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import beep from "#/utils/beep";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -60,28 +59,12 @@ function AgentStatusBar() {
     },
   };
 
-  // TODO: Extend the agent status, e.g.:
-  // - Agent is typing
-  // - Agent is initializing
-  // - Agent is thinking
-  // - Agent is ready
-  // - Agent is not available
-  useEffect(() => {
-    if (
-      curAgentState === AgentState.AWAITING_USER_INPUT ||
-      curAgentState === AgentState.ERROR ||
-      curAgentState === AgentState.INIT
-    ) {
-      if (document.cookie.indexOf("audio") !== -1) beep();
-    }
-  }, [curAgentState]);
-
   return (
-    <div className="flex items-center">
+    <div className="flex items-center justify-center w-full">
       <div
         className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
       />
-      <span className="text-sm text-stone-400">
+      <span className="text-sm text-editor-base">
         {AgentStatusMap[curAgentState].message}
       </span>
     </div>

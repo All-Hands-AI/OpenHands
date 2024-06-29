@@ -273,6 +273,31 @@
     "zh-CN": "获取模型和智能体失败",
     "de": "Fehler beim Abrufen der Modelle und Agenten"
   },
+  "CONFIGURATION$THEME_LABEL": {
+    "en": "Theme",
+    "zh-CN": "主题",
+    "de": "Theme"
+  },
+  "CONFIGURATION$THEME_DARK": {
+    "en": "Dark",
+    "zh-CN": "暗黑",
+    "de": "Dunkel"
+  },
+  "CONFIGURATION$THEME_LIGHT": {
+    "en": "Light",
+    "zh-CN": "明亮",
+    "de": "Hell"
+  },
+  "CONFIGURATION$THEME_LOADING": {
+    "en": "Loading theme...",
+    "zh-CN": "加载主题中...",
+    "de": "Lade Theme..."
+  },
+  "CONFIGURATION$UNSAVED_CHANGES": {
+    "en": "You have unsaved changes",
+    "zh-CN": "您有未保存的更改",
+    "de": "Sie haben nicht gespeicherte Änderungen"
+  },
   "SESSION$SERVER_CONNECTED_MESSAGE": {
     "en": "Connected to server",
     "zh-CN": "已连接到服务器",
@@ -307,6 +332,16 @@
     "en": "Workspace",
     "zh-CN": "工作区",
     "de": "Arbeitsbereich"
+  },
+  "EXPLORER$WORKSPACE_CLOSE_LABEL": {
+    "en": "Close workspace",
+    "zh-CN": "关闭工作区",
+    "de": "Arbeitsbereich schließen"
+  },
+  "EXPLORER$WORKSPACE_OPEN_LABEL": {
+    "en": "Open workspace",
+    "zh-CN": "打开工作区",
+    "de": "Arbeitsbereich öffnen"
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",

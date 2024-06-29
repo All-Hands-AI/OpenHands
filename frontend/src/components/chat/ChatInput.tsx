@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { VscArrowUp } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
 import { I18nKey } from "#/i18n/declaration";
+import { useAgentState } from "#/hooks/useAgentState";
+import AgentState from "#/types/AgentState";
 
 interface ChatInputProps {
   disabled?: boolean;
@@ -11,6 +13,8 @@ interface ChatInputProps {
 }
 
 function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
+  const { curAgentState } = useAgentState();
+
   const { t } = useTranslation();
 
   const [message, setMessage] = React.useState("");
@@ -44,8 +48,17 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
         placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
         className="pb-3 px-3"
         classNames={{
-          inputWrapper: "bg-neutral-700 border border-neutral-600 rounded-lg",
-          input: "pr-16 text-neutral-400",
+          inputWrapper: "bg-bg-input border-border rounded-lg",
+          input: twMerge(
+            "pr-16",
+            curAgentState === AgentState.AWAITING_USER_INPUT ||
+              curAgentState === AgentState.FINISHED ||
+              curAgentState === AgentState.INIT ||
+              curAgentState === AgentState.STOPPED ||
+              curAgentState === AgentState.ERROR
+              ? "text-text-editor-active"
+              : "text-text-editor-base",
+          ),
         }}
         maxRows={10}
         minRows={1}
@@ -57,10 +70,10 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
         onClick={handleSendChatMessage}
         disabled={disabled}
         className={twMerge(
-          "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
+          "bg-transparent border rounded-lg p-1 border-border hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-bg-light active:text-text-editor-active",
           disabled
-            ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500 ",
+            ? "cursor-not-allowed border-neutral-400 text-text-editor-base"
+            : "hover:bg-bg-light",
         )}
         aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE)}
       >

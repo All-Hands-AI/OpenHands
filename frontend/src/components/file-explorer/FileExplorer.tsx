@@ -31,6 +31,7 @@ function ExplorerActions({
   onUpload,
   isHidden,
 }: ExplorerActionsProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={twMerge(
@@ -44,7 +45,7 @@ function ExplorerActions({
             icon={
               <IoIosRefresh
                 size={16}
-                className="text-neutral-400 hover:text-neutral-100 transition"
+                className="text-text-editor-base hover:text-text-editor-active transition"
               />
             }
             testId="refresh"
@@ -55,7 +56,7 @@ function ExplorerActions({
             icon={
               <IoIosCloudUpload
                 size={16}
-                className="text-neutral-400 hover:text-neutral-100 transition"
+                className="text-text-editor-base hover:text-text-editor-active transition"
               />
             }
             testId="upload"
@@ -70,17 +71,21 @@ function ExplorerActions({
           isHidden ? (
             <IoIosArrowForward
               size={20}
-              className="text-neutral-400 hover:text-neutral-100 transition"
+              className="text-text-editor-base hover:text-text-editor-active transition"
             />
           ) : (
             <IoIosArrowBack
               size={20}
-              className="text-neutral-400 hover:text-neutral-100 transition"
+              className="text-text-editor-base hover:text-text-editor-active transition"
             />
           )
         }
         testId="toggle"
-        ariaLabel={isHidden ? "Open workspace" : "Close workspace"}
+        ariaLabel={
+          isHidden
+            ? t(I18nKey.EXPLORER$WORKSPACE_OPEN_LABEL)
+            : t(I18nKey.EXPLORER$WORKSPACE_CLOSE_LABEL)
+        }
         onClick={toggleHidden}
       />
     </div>
@@ -167,7 +172,7 @@ function FileExplorer() {
       )}
       <div
         className={twMerge(
-          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring overflow-auto",
+          "bg-bg-editor-sidebar h-full border-r-1 border-r-border-editor-sidebar flex flex-col transition-all ease-soft-spring overflow-auto",
           isHidden ? "min-w-[48px]" : "min-w-[228px]",
         )}
       >
@@ -179,7 +184,7 @@ function FileExplorer() {
             )}
           >
             {!isHidden && (
-              <div className="ml-1 text-neutral-300 font-bold text-sm">
+              <div className="ml-1 text-text-editor-active font-bold text-sm">
                 {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
               </div>
             )}

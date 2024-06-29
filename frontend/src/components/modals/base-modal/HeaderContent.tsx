@@ -11,9 +11,11 @@ export function HeaderContent({
 }: HeaderContentProps) {
   return (
     <>
-      <h3>{title}</h3>
+      <h3 className="text-foreground">{title}</h3>
       {subtitle && (
-        <span className="text-neutral-400 text-sm font-light">{subtitle}</span>
+        <span className="text-text-editor-base text-sm font-light">
+          {subtitle}
+        </span>
       )}
     </>
   );

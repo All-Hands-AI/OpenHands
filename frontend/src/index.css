@@ -1,16 +1,15 @@
 :root {
-  --bg-dark: #0c0e10;
-  --bg-light: #292929;
-  --bg-input: #393939;
-  --bg-workspace: #1f2228;
-  --border: #3c3c4a;
-  --text-editor-base: #9099AC;
-  --text-editor-active:#C4CBDA;
-  --bg-editor-sidebar: #24272E;
-  --bg-editor-active: #31343D;
-  --border-editor-sidebar: #3C3C4A;
-  background-color: var(--neutral-900) !important;
-  --bg-neutral-muted: #afb8c133;
+  --bg-dark: theme('colors.bg-dark');
+  --bg-light: theme('colors.bg-light');
+  --bg-input: theme('colors.bg-input');
+  --bg-workspace: theme('colors.bg-workspace');
+  --border: theme('colors.border');
+  --text-editor-base: theme('colors.text-editor-base');
+  --text-editor-active: theme('colors.text-editor-active');
+  --bg-editor-sidebar: theme('colors.bg-editor-sidebar');
+  --bg-editor-active: theme('colors.bg-editor-active');
+  --border-editor-sidebar: theme('colors.border-editor-sidebar');
+  --bg-neutral-muted: theme('colors.bg-neutral-muted');
 }
 
 body {
@@ -25,6 +24,8 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 .markdown-body code {

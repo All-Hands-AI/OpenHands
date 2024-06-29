@@ -57,6 +57,7 @@ describe("saveSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
+      THEME: "dark",
     };
 
     saveSettings(settings);

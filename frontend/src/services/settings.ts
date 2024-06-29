@@ -5,6 +5,7 @@ export type Settings = {
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY: string;
+  THEME: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS: Settings = {
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
+  THEME: "dark",
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -51,12 +53,14 @@ export const getSettings = (): Settings => {
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
+  const theme = localStorage.getItem("THEME");
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    THEME: theme || DEFAULT_SETTINGS.THEME,
   };
 };
 
@@ -79,9 +83,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
  * Useful for notifying the user of exact changes.
  *
  * @example
- * // Assuming the current settings are: { LLM_MODEL: "gpt-4o", AGENT: "MonologueAgent", LANGUAGE: "en" }
  * const updatedSettings = getSettingsDifference({ LLM_MODEL: "gpt-4o", AGENT: "OTHER_AGENT", LANGUAGE: "en" });
- * // updatedSettings = { AGENT: "OTHER_AGENT" }
  *
  * @param settings - the settings to compare
  * @returns the updated settings

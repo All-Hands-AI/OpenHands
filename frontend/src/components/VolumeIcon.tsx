@@ -1,19 +1,24 @@
-import React, { useState } from "react";
+import React from "react";
 import { IoMdVolumeHigh, IoMdVolumeOff } from "react-icons/io";
 import beep from "#/utils/beep";
 
-function VolumeIcon(): JSX.Element {
-  const [isMuted, setIsMuted] = useState(true);
-
+interface VolumeIconProps {
+  isMuted: boolean;
+  setIsMuted: React.Dispatch<React.SetStateAction<boolean>>;
+}
+function VolumeIcon({ isMuted, setIsMuted }: VolumeIconProps): JSX.Element {
   const toggleMute = () => {
     const cookieName = "audio";
-    setIsMuted(!isMuted);
-    if (!isMuted) {
-      document.cookie = `${cookieName}=;`;
-    } else {
-      document.cookie = `${cookieName}=on;`;
-      beep();
-    }
+    setIsMuted((prevMuted) => {
+      const newMuted = !prevMuted;
+      if (newMuted) {
+        document.cookie = `${cookieName}=;`;
+      } else {
+        document.cookie = `${cookieName}=on;`;
+        beep();
+      }
+      return newMuted;
+    });
   };
 
   return (
