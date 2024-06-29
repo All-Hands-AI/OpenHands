@@ -333,13 +333,16 @@ def create_file(filename: str) -> None:
     print(f'[File {filename} created.]')
 
 
+LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+
+
 def _edit_or_insert_file(
     file_name: str,
     start: int | None = None,
     end: int | None = None,
     content: str = '',
     is_insert: bool = False,
-) -> None:
+) -> str:
     """Internal method to handle common logic for edit_/append_file methods.
 
     Args:
@@ -349,6 +352,7 @@ def _edit_or_insert_file(
         content: str: The content to replace the lines with or to append.
         is_insert: bool = False: Whether to insert content at the given line number instead of editing.
     """
+    ret_str = ''
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
     ERROR_MSG = f'[Error editing file {file_name}. Please confirm the file is correct.]'
@@ -400,12 +404,12 @@ def _edit_or_insert_file(
                     )
                 else:
                     assert start is None
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
+
                 content = ''.join(new_lines)
             else:
                 # Handle cases where start or end are None
@@ -415,26 +419,23 @@ def _edit_or_insert_file(
                     end = len(lines)  # Default to the end
                 # Check arguments
                 if not (1 <= start <= len(lines)):
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
                 if not (1 <= end <= len(lines)):
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
                 if start > end:
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
                 if not content.endswith('\n'):
                     content += '\n'
                 content_lines = content.splitlines(True)
@@ -464,22 +465,27 @@ def _edit_or_insert_file(
             if lint_error is not None:
                 if first_error_line is not None:
                     CURRENT_LINE = int(first_error_line)
-                print(
-                    '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+                ret_str += LINTER_ERROR_MSG
+                ret_str += lint_error + '\n'
+
+                ret_str += '[This is how your edit would have looked if applied]\n'
+                ret_str += '-------------------------------------------------\n'
+                ret_str += (
+                    _print_window(file_name, CURRENT_LINE, 10, return_str=True) + '\n'
                 )
-                print(lint_error)
+                ret_str += '-------------------------------------------------\n\n'
 
-                print('[This is how your edit would have looked if applied]')
-                print('-------------------------------------------------')
-                _print_window(file_name, CURRENT_LINE, 10)
-                print('-------------------------------------------------\n')
+                ret_str += '[This is the original code before your edit]\n'
+                ret_str += '-------------------------------------------------\n'
+                ret_str += (
+                    _print_window(
+                        original_file_backup_path, CURRENT_LINE, 10, return_str=True
+                    )
+                    + '\n'
+                )
+                ret_str += '-------------------------------------------------\n'
 
-                print('[This is the original code before your edit]')
-                print('-------------------------------------------------')
-                _print_window(original_file_backup_path, CURRENT_LINE, 10)
-                print('-------------------------------------------------')
-
-                print(
+                ret_str += (
                     'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                     'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
                     'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
@@ -491,14 +497,14 @@ def _edit_or_insert_file(
                 ) as fout:
                     fout.write(fin.read())
                 os.remove(original_file_backup_path)
-                return
+                return ret_str
 
     except FileNotFoundError as e:
-        print(f'File not found: {e}')
+        ret_str += f'File not found: {e}\n'
     except IOError as e:
-        print(f'An error occurred while handling the file: {e}')
+        ret_str += f'An error occurred while handling the file: {e}\n'
     except ValueError as e:
-        print(f'Invalid input: {e}')
+        ret_str += f'Invalid input: {e}\n'
     except Exception as e:
         # Clean up the temporary file if an error occurs
         if temp_file_path and os.path.exists(temp_file_path):
@@ -513,12 +519,11 @@ def _edit_or_insert_file(
         CURRENT_LINE = first_error_line
     else:
         CURRENT_LINE = start or n_total_lines or 1
-    print(
-        f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]'
-    )
+    ret_str += f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]\n'
     CURRENT_FILE = file_name
-    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
-    print(MSG_FILE_UPDATED)
+    ret_str += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True) + '\n'
+    ret_str += MSG_FILE_UPDATED
+    return ret_str
 
 
 @update_pwd_decorator
@@ -604,13 +609,15 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
         start_line_number = file_content_fuzzy[:start].count('\n') + 1
         end_line_number = start_line_number + len(to_replace.splitlines()) - 1
 
-    _edit_or_insert_file(
+    ret_str = _edit_or_insert_file(
         file_name,
         start=start_line_number,
         end=end_line_number,
         content=new_content,
         is_insert=False,
     )
+    # lint_error = bool(LINTER_ERROR_MSG in ret_str)
+    print(ret_str)
 
 
 @update_pwd_decorator
@@ -637,9 +644,10 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
         line_number: int: The line number (starting from 1) to insert the content after.
         content: str: The content to insert.
     """
-    _edit_or_insert_file(
+    ret_str = _edit_or_insert_file(
         file_name, start=line_number, end=line_number, content=content, is_insert=True
     )
+    print(ret_str)
 
 
 @update_pwd_decorator
