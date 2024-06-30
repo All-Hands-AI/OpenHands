@@ -15,11 +15,15 @@ class LocalFileStore(FileStore):
             path = path[1:]
         return os.path.join(self.root, path)
 
-    def write(self, path: str, contents: str) -> None:
+    def write(self, path: str, contents: str | bytes):
         full_path = self.get_full_path(path)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, 'w', encoding='utf-8') as f:
-            f.write(contents)
+        if isinstance(contents, str):
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(contents)
+        else:
+            with open(full_path, 'wb') as f:
+                f.write(contents)
 
     def read(self, path: str) -> str:
         full_path = self.get_full_path(path)

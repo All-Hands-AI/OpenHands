@@ -29,14 +29,12 @@ class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     max_iterations: int = 100
-    # number of characters we have sent to and received from LLM so far for current task
-    num_of_chars: int = 0
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
     history: list[tuple[Action, Observation]] = field(default_factory=list)
     updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
-    error: str | None = None
+    last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
     metrics: Metrics = Metrics()

@@ -143,8 +143,9 @@ def process_instance(
 
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-        # Create a sandbox, using the instance ID as the session ID to avoid conflicts
-        sandbox = DockerSSHBox(sid=str(instance['id']) + '_' + str(os.getpid()))
+        # Create a sandbox, using the instance ID and PID as the session ID to avoid conflicts
+        sid = str(instance['id']) + '_' + str(os.getpid())
+        sandbox = DockerSSHBox(sid=sid)
 
         # Set up the task environment
         sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
@@ -186,6 +187,7 @@ def process_instance(
                     agent_class
                 ),
                 sandbox=sandbox,
+                sid=sid,
             )
         )
         metrics = state.metrics.get() if state.metrics else {}

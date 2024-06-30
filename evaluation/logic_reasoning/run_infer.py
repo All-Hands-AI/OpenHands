@@ -205,7 +205,9 @@ def process_instance(
         # NOTE: You can actually set slightly different instruction for different agents
         instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
-        sandbox = DockerSSHBox()
+        # use a session id for concurrent evaluation
+        sid = instance['id'] + '_' + str(os.getpid())
+        sandbox = DockerSSHBox(sid=sid)
         exit_code, command_output = sandbox.execute('pip install scitools-pyke')
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
@@ -216,6 +218,7 @@ def process_instance(
                     agent_class
                 ),
                 sandbox=sandbox,
+                sid=sid,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
@@ -258,7 +261,7 @@ def process_instance(
             'metrics': metrics,
             'final_message': final_message,
             'messages': messages,
-            'error': state.error if state and state.error else None,
+            'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
         }
     except Exception:

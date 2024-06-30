@@ -8,8 +8,8 @@ const config: Config = {
   favicon: "img/logo.png",
 
   // Set the production url of your site here
-  url: "https://OpenDevin.github.io",
-  baseUrl: "/OpenDevin/",
+  url: "https://docs.all-hands.dev",
+  baseUrl: "/",
 
   // GitHub pages deployment config.
   organizationName: "OpenDevin",
