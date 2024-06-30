@@ -90,11 +90,11 @@ async def main(
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
 
-    # restore main session if enabled
+    # restore cli session if enabled
     initial_state = None
-    if config.enable_main_session:
+    if config.enable_cli_session:
         try:
-            logger.info('Restoring agent state from main session')
+            logger.info('Restoring agent state from cli session')
             initial_state = State.restore_from_session(cli_session)
         except Exception as e:
             print('Error restoring state', e)
@@ -128,7 +128,7 @@ async def main(
             logger.info(f'Dynamic Eval task: {task}')
 
     # start event is a MessageAction with the task, either resumed or new
-    if config.enable_main_session and initial_state is not None:
+    if config.enable_cli_session and initial_state is not None:
         # we're resuming the previous session
         await event_stream.add_event(
             MessageAction(
@@ -163,7 +163,7 @@ async def main(
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
     # save session when we're about to close
-    if config.enable_main_session:
+    if config.enable_cli_session:
         end_state = controller.get_state()
         end_state.save_to_session(cli_session)
 

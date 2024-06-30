@@ -113,9 +113,9 @@ class AgentController:
         - the string message should be user-friendly, it will be shown in the UI
         - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
         """
-        self.state.eval_error = message
+        self.state.last_error = message
         if exception:
-            self.state.eval_error += f': {exception}'
+            self.state.last_error += f': {exception}'
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):

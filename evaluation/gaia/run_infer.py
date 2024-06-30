@@ -197,7 +197,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
                 for action, obs in state.history
             ],
             'metrics': metrics,
-            'error': state.eval_error if state and state.eval_error else None,
+            'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
         }
     except Exception:

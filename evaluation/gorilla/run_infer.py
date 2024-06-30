@@ -153,7 +153,7 @@ def process_instance(
                 for action, obs in state.history
             ],
             'metrics': metrics,
-            'error': state.eval_error if state and state.eval_error else None,
+            'error': state.last_error if state and state.last_error else None,
         }
     except Exception:
         logger.error('Process instance failed')

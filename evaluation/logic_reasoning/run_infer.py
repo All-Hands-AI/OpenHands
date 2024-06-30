@@ -263,7 +263,7 @@ def process_instance(
             'metrics': metrics,
             'final_message': final_message,
             'messages': messages,
-            'error': state.eval_error if state and state.eval_error else None,
+            'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
         }
     except Exception:
