@@ -116,7 +116,9 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    sandbox = DockerSSHBox()
+    # use a session id for concurrent processing
+    sid = instance.task_id + '_' + str(os.getpid())
+    sandbox = DockerSSHBox(sid=sid)
 
     requirements_host_src = 'evaluation/mint/requirements.txt'
     requirements_sandbox_dest = '/opendevin/plugins/mint/requirements.txt'
@@ -159,6 +161,7 @@ def process_instance(
             instruction,
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
+            sid=sid,
         )
     )
 
