@@ -213,12 +213,16 @@ def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
+    # use a session id for concurrent evaluation
+    sid = instance.test_case_id.replace('/', '__')
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
             sandbox=sandbox,
+            sid=sid,
         )
     )
 
