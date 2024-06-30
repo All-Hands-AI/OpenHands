@@ -196,9 +196,7 @@ async def attach_session(request: Request, call_next):
 async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for receiving events from the client (i.e., the browser).
-    WebSocket endpoint for real-time communication.
     Once connected, you can send various actions:
-    This function handles the WebSocket connection, including authentication,
     - Initialize the agent:
     session management, and event streaming.
         ```json
