@@ -108,6 +108,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            sid=qid,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -138,7 +139,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'metrics': metrics,
-        'error': state.error if state and state.error else None,
+        'error': state.last_error if state and state.last_error else None,
     }
     return output
 

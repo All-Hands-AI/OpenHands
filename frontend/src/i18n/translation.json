@@ -438,6 +438,36 @@
     "zh-CN": "工作区",
     "de": "Arbeitsbereich"
   },
+  "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
+    "en": "No files in workspace",
+    "zh-CN": "工作区没有文件",
+    "de": "Keine Dateien im Arbeitsbereich"
+  },
+  "EXPLORER$REFRESH_ERROR_MESSAGE": {
+    "en": "Error refreshing workspace",
+    "zh-CN": "工作区刷新错误",
+    "de": "Fehler beim Aktualisieren des Arbeitsbereichs"
+  },
+  "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
+    "en": "Successfully uploaded {{count}} file(s)",
+    "zh-CN": "成功上传 {{count}} 个文件",
+    "de": "Erfolgreich {{count}} Datei(en) hochgeladen"
+  },
+  "EXPLORER$NO_FILES_UPLOADED_MESSAGE": {
+    "en": "No files were uploaded",
+    "zh-CN": "没有文件上传",
+    "de": "Keine Dateien wurden hochgeladen"
+  },
+  "EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE": {
+    "en": "{{count}} file(s) were skipped during upload",
+    "zh-CN": "{{count}} 个文件在上传过程中被跳过",
+    "de": "{{count}} Datei(en) wurden während des Hochladens übersprungen"
+  },
+  "EXPLORER$UPLOAD_UNEXPECTED_RESPONSE_MESSAGE": {
+    "en": "Unexpected response structure from server",
+    "zh-CN": "服务器响应结构不符合预期",
+    "de": "Unerwartetes Antwortformat vom Server"
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
     "de": "Zurück zu vorhandener Sitzung?",
