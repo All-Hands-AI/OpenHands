@@ -156,13 +156,16 @@ def process_instance(
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
+        # use a session id for concurrent evaluation
+        sid = instance.task_id.replace('/', '__')
+
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
             # Set up logger
             log_file = os.path.join(
                 eval_output_dir,
                 'logs',
-                f'instance_{instance.task_id.replace("/", "__")}.log',
+                f'instance_{sid}.log',
             )
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
@@ -189,9 +192,7 @@ def process_instance(
         problem_statement = (
             instance.declaration + instance.buggy_solution + '\n' + instance.test
         )
-        path = os.path.join(
-            workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
-        )
+        path = os.path.join(workspace_mount_path, f'{sid}.py')
         with open(path, 'w') as f:
             f.write(problem_statement)
 
@@ -217,6 +218,7 @@ def process_instance(
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent_class
                 ),
+                sid=sid,
             )
         )
 

@@ -36,6 +36,7 @@ async def main(
     fake_user_response_fn: Callable[[State | None], str] | None = None,
     sandbox: Sandbox | None = None,
     runtime_tools_config: dict | None = None,
+    sid: str | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -81,17 +82,20 @@ async def main(
         )
         llm = LLM(args.model_name)
 
+    # set up the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream('main')
+    # set up the event stream
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
 
     # restore main session if enabled
     initial_state = None
     if config.enable_main_session:
         try:
             logger.info('Restoring agent state from main session')
-            initial_state = State.restore_from_session('main')
+            initial_state = State.restore_from_session(cli_session)
         except Exception as e:
             print('Error restoring state', e)
 
@@ -161,7 +165,7 @@ async def main(
     # save session when we're about to close
     if config.enable_main_session:
         end_state = controller.get_state()
-        end_state.save_to_session('main')
+        end_state.save_to_session(cli_session)
 
     # close when done
     await controller.close()

@@ -163,6 +163,7 @@ def process_instance(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
             sandbox=sandbox,
+            sid=inst_id,
         )
     )
 
