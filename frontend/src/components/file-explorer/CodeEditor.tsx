@@ -7,7 +7,7 @@ import { VscCode, VscSave, VscCheck } from "react-icons/vsc";
 import type { editor } from "monaco-editor";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
-import FileExplorer from "./file-explorer/FileExplorer";
+import FileExplorer from "./FileExplorer";
 import { setCode } from "#/state/codeSlice";
 import toast from "#/utils/toast";
 import { saveFile } from "#/services/fileService";
@@ -18,85 +18,112 @@ function CodeEditor(): JSX.Element {
   const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const agentState = useSelector((state: RootState) => state.agent.curAgentState);
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const agentState = useSelector(
+    (state: RootState) => state.agent.curAgentState,
+  );
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [showSaveNotification, setShowSaveNotification] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSavedContent, setLastSavedContent] = useState(code);
 
   const selectedFileName = useMemo(() => {
     const paths = activeFilepath.split("/");
     return paths[paths.length - 1];
   }, [activeFilepath]);
 
-  const isEditingAllowed = useMemo(() => {
-    return agentState === AgentState.PAUSED || 
-           agentState === AgentState.FINISHED || 
-           agentState === AgentState.AWAITING_USER_INPUT;
-  }, [agentState]);
+  const isEditingAllowed = useMemo(
+    () =>
+      agentState === AgentState.INIT ||
+      agentState === AgentState.PAUSED ||
+      agentState === AgentState.FINISHED ||
+      agentState === AgentState.AWAITING_USER_INPUT,
+    [agentState],
+  );
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (saveStatus === 'saved') {
-      timer = setTimeout(() => setSaveStatus('idle'), 3000);
-    }
-    return () => clearTimeout(timer);
-  }, [saveStatus]);
+    setSaveStatus("idle");
+    setHasUnsavedChanges(false);
+    setLastSavedContent(code);
+  }, [activeFilepath]);
 
-  const handleEditorDidMount = useCallback((
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco
-  ): void => {
-    monaco.editor.defineTheme("my-theme", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [],
-      colors: {
-        "editor.background": "#171717",
-      },
-    });
+  useEffect(() => {
+    setHasUnsavedChanges(code !== lastSavedContent);
+  }, [code, lastSavedContent]);
 
-    monaco.editor.setTheme("my-theme");
-  }, []);
+  const handleEditorChange = useCallback(
+    (value: string | undefined): void => {
+      if (value !== undefined && isEditingAllowed) {
+        dispatch(setCode(value));
+        setHasUnsavedChanges(true);
+      }
+    },
+    [dispatch, isEditingAllowed],
+  );
 
-  const handleEditorChange = useCallback((value: string | undefined): void => {
-    if (value !== undefined && isEditingAllowed) {
-      dispatch(setCode(value));
-      setSaveStatus('idle');
-    }
-  }, [dispatch, isEditingAllowed]);
+  const handleEditorDidMount = useCallback(
+    (editor: editor.IStandaloneCodeEditor, monaco: Monaco): void => {
+      monaco.editor.defineTheme("my-theme", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": "#171717",
+        },
+      });
+
+      monaco.editor.setTheme("my-theme");
+    },
+    [],
+  );
 
   const handleSave = useCallback(async (): Promise<void> => {
-    if (saveStatus === 'saving' || !isEditingAllowed) return;
+    if (saveStatus === "saving" || !isEditingAllowed) return;
 
-    setSaveStatus('saving');
-    setLastSaved(null);
+    setSaveStatus("saving");
 
     try {
       await saveFile(activeFilepath, code);
-      const now = new Date().toLocaleTimeString();
-      setLastSaved(now);
-      setSaveStatus('saved');
+      setSaveStatus("saved");
       setShowSaveNotification(true);
+      setLastSavedContent(code);
+      setHasUnsavedChanges(false);
       setTimeout(() => setShowSaveNotification(false), 2000);
-      toast.success(t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY), "Save Successful");
-      console.log(`File "${selectedFileName}" has been saved.`);
+      toast.success(
+        "file-save-success",
+        t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY),
+      );
     } catch (error) {
-      console.error("Error saving file:", error);
-      setSaveStatus('error');
+      setSaveStatus("error");
       if (error instanceof Error) {
-        toast.error(`Failed to save file: ${error.message}`, "Save Error");
+        toast.error(
+          "file-save-error",
+          `${t(I18nKey.CODE_EDITOR$FILE_SAVE_ERROR)}: ${error.message}`,
+        );
       } else {
-        toast.error("An unknown error occurred while saving the file", "Save Error");
+        toast.error("file-save-error", t(I18nKey.CODE_EDITOR$FILE_SAVE_ERROR));
       }
     }
-  }, [saveStatus, activeFilepath, code, selectedFileName, isEditingAllowed, t]);
+  }, [
+    saveStatus,
+    activeFilepath,
+    code,
+    isEditingAllowed,
+    t,
+    hasUnsavedChanges,
+  ]);
 
   const getSaveButtonColor = () => {
     switch (saveStatus) {
-      case 'saving': return 'bg-yellow-600';
-      case 'saved': return 'bg-green-600';
-      case 'error': return 'bg-red-600';
-      default: return 'bg-blue-600';
+      case "saving":
+        return "bg-yellow-600";
+      case "saved":
+        return "bg-green-600";
+      case "error":
+        return "bg-red-600";
+      default:
+        return "bg-blue-600";
     }
   };
 
@@ -115,29 +142,26 @@ function CodeEditor(): JSX.Element {
               tab: "max-w-fit px-4 h-[36px]",
               tabContent: "group-data-[selected=true]:text-white",
             }}
-            aria-label="Options"
+            aria-label={t(I18nKey.CODE_EDITOR$OPTIONS)}
           >
             <Tab
-              key={selectedFileName.toLowerCase()}
-              title={selectedFileName || "No file selected"}
+              key={selectedFileName}
+              title={selectedFileName || t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
             />
           </Tabs>
-          {selectedFileName && (
+          {selectedFileName && hasUnsavedChanges && (
             <div className="flex items-center mr-2">
               <Button
                 onClick={handleSave}
                 className={`${getSaveButtonColor()} text-white transition-colors duration-300 mr-2`}
                 size="sm"
                 startContent={<VscSave />}
-                disabled={saveStatus === 'saving' || !isEditingAllowed}
+                disabled={saveStatus === "saving" || !isEditingAllowed}
               >
-                {saveStatus === 'saving' ? "Saving..." : "Save"}
+                {saveStatus === "saving"
+                  ? t(I18nKey.CODE_EDITOR$SAVING_LABEL)
+                  : t(I18nKey.CODE_EDITOR$SAVE_LABEL)}
               </Button>
-              {lastSaved && (
-                <span className="text-xs text-gray-400">
-                  Last saved: {lastSaved}
-                </span>
-              )}
             </div>
           )}
         </div>

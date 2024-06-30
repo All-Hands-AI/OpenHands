@@ -40,7 +40,53 @@
     "fr": "Fichier enregistré avec succès",
     "tr": "Dosya başarıyla kaydedildi"
   },
-"FILE_SERVICE$SELECT_FILE_ERROR": {
+  "CODE_EDITOR$SAVING_LABEL": {
+    "en": "Saving...",
+    "zh-CN": "保存中...",
+    "de": "Speichern...",
+    "ko-KR": "저장 중...",
+    "no": "Lagrer...",
+    "zh-TW": "保存中...",
+    "it": "Salvataggio in corso...",
+    "pt": "Salvando...",
+    "es": "Guardando...",
+    "ar": "حفظ مؤقت",
+    "fr": "Enregistrement en cours...",
+    "tr": "Kayıt yapılıyor..."
+  },
+  "CODE_EDITOR$SAVE_LABEL": {
+    "en": "Save",
+    "zh-CN": "保存",
+    "de": "Speichern",
+    "ko-KR": "저장",
+    "no": "Lagrer",
+    "zh-TW": "保存",
+    "it": "Salva",
+    "pt": "Salvar",
+    "es": "Guardar",
+    "ar": "حفظ",
+    "fr": "Enregistrer",
+    "tr": "Kayıt"
+  },
+  "CODE_EDITOR$OPTIONS": {
+    "en": "Options",
+    "zh-CN": "选项",
+    "zh-TW": "選項",
+    "de": "Optionen"
+  },
+  "CODE_EDITOR$FILE_SAVE_ERROR": {
+    "en": "An unknown error occurred while saving the file",
+    "zh-CN": "文件保存时发生未知错误",
+    "zh-TW": "文件保存時發生未知錯誤",
+    "de": "Beim Speichern der Datei ist ein unbekannter Fehler aufgetreten"
+  },
+  "CODE_EDITOR$EMPTY_MESSAGE": {
+    "en": "No file selected.",
+    "zh-CN": "文件未选中",
+    "zh-TW": "未選取任何文件。",
+    "de": "Keine Datei ausgewählt."
+  },
+  "FILE_SERVICE$SELECT_FILE_ERROR": {
     "en": "Error selecting file. Please try again.",
     "zh-CN": "选择文件时出错。请重试。",
     "de": "Fehler beim Auswählen der Datei. Bitte versuchen Sie es erneut.",
@@ -604,12 +650,6 @@
     "zh-CN": "输入您的 API key",
     "zh-TW": "輸入您的 API 金鑰。",
     "de": "Modell API Schlüssel."
-  },
-  "CODE_EDITOR$EMPTY_MESSAGE": {
-    "en": "No file selected.",
-    "zh-CN": "文件未选中",
-    "zh-TW": "未選取任何文件。",
-    "de": "Keine Datei ausgewählt."
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",
