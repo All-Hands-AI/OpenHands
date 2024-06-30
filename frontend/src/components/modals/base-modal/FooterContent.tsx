@@ -16,7 +16,7 @@ interface FooterContentProps {
 
 export function FooterContent({ actions, closeModal }: FooterContentProps) {
   return (
-    <>
+    <div className="flex justify-end space-x-2">
       {actions.map(
         ({ action, isDisabled, label, className, closeAfterAction }) => (
           <Button
@@ -27,12 +27,12 @@ export function FooterContent({ actions, closeModal }: FooterContentProps) {
               action();
               if (closeAfterAction) closeModal();
             }}
-            className={className}
+            className={`px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed ${className}`}
           >
             {label}
           </Button>
         ),
       )}
-    </>
+    </div>
   );
 }

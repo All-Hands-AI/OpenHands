@@ -5,6 +5,8 @@ import SettingsForm from "./SettingsForm";
 import { Settings } from "#/services/settings";
 import { Theme } from "#/utils/themeUtils";
 import ThemeSelector from "./ThemeSelector";
+import { AutocompleteCombobox } from "./AutocompleteCombobox";
+import { AvailableLanguages } from "#/i18n";
 
 interface SettingsPageProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ interface SettingsPageProps {
   onLanguageChange: (language: string) => void;
   onAPIKeyChange: (key: string) => void;
   onSaveSettings: (newSettings: Settings) => void;
+  onResetSettings: () => void;
   onError: (error: Error, isCritical?: boolean) => void;
   onThemeChange: (theme: Theme) => void;
 }
@@ -38,6 +41,7 @@ function SettingsPage({
   onLanguageChange,
   onAPIKeyChange,
   onSaveSettings,
+  onResetSettings,
   onError,
   onThemeChange,
 }: SettingsPageProps): JSX.Element {
@@ -51,16 +55,16 @@ function SettingsPage({
   const hasUnsavedChanges =
     JSON.stringify(settings) !== JSON.stringify(initialSettings);
 
-  const handleReset = () => {
-    onModelChange(initialSettings.LLM_MODEL);
-    onAgentChange(initialSettings.AGENT);
-    onLanguageChange(initialSettings.LANGUAGE);
-    onAPIKeyChange(initialSettings.LLM_API_KEY);
-    onThemeChange(initialSettings.THEME as "light" | "dark");
+  const handleError = (error: Error) => {
+    onError(error, false);
   };
 
   const handleSave = () => {
     onSaveSettings(settings); // Directly call onSaveSettings with the current settings
+  };
+
+  const handleLanguageChange = (language: string) => {
+    onLanguageChange(language);
   };
 
   const handleThemeChange = (newTheme: Theme) => {
@@ -70,14 +74,14 @@ function SettingsPage({
 
   return (
     <div
-      className={`absolute inset-0 bg-neutral-800 text-white overflow-hidden ${
+      className={`absolute inset-0 bg-bg-light dark:bg-bg-dark text-foreground overflow-hidden transition-opacity duration-300 ${
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
       <div className="h-full flex flex-col overflow-hidden">
         <div className="flex-grow overflow-y-auto p-4 space-y-4 px-[20%]">
-          <div className="bg-neutral-700 p-4 rounded-lg border border-blue-400 shadow-md shadow-blue-400/20">
-            <h1 className="text-xl font-bold mb-2 text-foreground">
+          <div className="dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
+            <h1 className="text-xl font-bold mb-2 text-gray-800 dark:text-gray-200">
               {t(I18nKey.CONFIGURATION$MODAL_TITLE)}
             </h1>
             <SettingsForm
@@ -88,16 +92,28 @@ function SettingsPage({
               disabled={disabled}
               onModelChange={onModelChange}
               onAgentChange={onAgentChange}
-              onLanguageChange={onLanguageChange}
               onAPIKeyChange={onAPIKeyChange}
-              onResetSettings={handleReset}
               onSaveSettings={handleSave}
-              onError={onError}
+              onResetSettings={onResetSettings}
               hasUnsavedChanges={hasUnsavedChanges}
+              onError={handleError}
             />
           </div>
-          <div className="bg-neutral-700 p-4 rounded-lg border border-blue-400 shadow-md shadow-blue-400/20">
-            <h2 className="text-lg font-bold mb-2 text-foreground">
+          <div className="dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
+            <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-gray-200">
+              {t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
+            </h2>
+            <AutocompleteCombobox
+              ariaLabel="language"
+              items={AvailableLanguages}
+              defaultKey={settings.LANGUAGE}
+              onChange={handleLanguageChange}
+              tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
+              disabled={disabled}
+            />
+          </div>
+          <div className="dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
+            <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-gray-200">
               {t(I18nKey.CONFIGURATION$THEME_LABEL)}
             </h2>
             <ThemeSelector
@@ -107,7 +123,7 @@ function SettingsPage({
             />
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-neutral-700 flex justify-center">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-center">
           <button
             onClick={onClose}
             type="button"

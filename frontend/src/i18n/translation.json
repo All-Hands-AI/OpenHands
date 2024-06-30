@@ -298,6 +298,16 @@
     "zh-CN": "您有未保存的更改",
     "de": "Sie haben nicht gespeicherte Änderungen"
   },
+  "CONFIGURATION$SAVE_ERROR_MESSAGE": {
+    "en": "An error occurred while saving settings",
+    "zh-CN": "保存设置时发生错误",
+    "de": "Fehler beim Speichern der Einstellungen"
+  },
+  "CONFIGURATION$RESET_ERROR_MESSAGE": {
+    "en": "An error occurred while resetting settings",
+    "zh-CN": "重置设置时发生错误",
+    "de": "Fehler beim Zurücksetzen der Einstellungen"
+  },
   "SESSION$SERVER_CONNECTED_MESSAGE": {
     "en": "Connected to server",
     "zh-CN": "已连接到服务器",

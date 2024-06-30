@@ -22,9 +22,14 @@ function ThemeSelector({
         value={theme}
         onValueChange={(value) => onThemeChange(value as Theme)}
         isDisabled={disabled}
+        className="text-foreground dark:text-foreground-dark"
       >
         {THEMES.map((themeOption) => (
-          <Radio key={themeOption} value={themeOption}>
+          <Radio
+            key={themeOption}
+            value={themeOption}
+            className="text-foreground dark:text-foreground-dark"
+          >
             {t(`CONFIGURATION$THEME_${themeOption.toUpperCase()}`)}
           </Radio>
         ))}

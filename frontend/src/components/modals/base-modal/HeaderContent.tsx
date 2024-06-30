@@ -11,9 +11,9 @@ export function HeaderContent({
 }: HeaderContentProps) {
   return (
     <>
-      <h3 className="text-foreground">{title}</h3>
+      <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">{title}</h3>
       {subtitle && (
-        <span className="text-text-editor-base text-sm font-light">
+        <span className="text-sm font-light mt-1 text-gray-600 dark:text-gray-400">
           {subtitle}
         </span>
       )}

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Input, useDisclosure } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import {
@@ -22,10 +21,10 @@ interface SettingsFormProps {
   hasUnsavedChanges: boolean;
   onModelChange: (model: string) => void;
   onAgentChange: (agent: string) => void;
-  onLanguageChange: (language: string) => void;
   onAPIKeyChange: (key: string) => void;
   onResetSettings: () => void;
   onSaveSettings: (newSettings: Settings) => void;
+  onError: (error: Error) => void;
 }
 
 function SettingsForm({
@@ -37,10 +36,10 @@ function SettingsForm({
   hasUnsavedChanges,
   onModelChange,
   onAgentChange,
-  onLanguageChange,
   onAPIKeyChange,
-  onResetSettings,
   onSaveSettings,
+  onResetSettings,
+  onError,
 }: SettingsFormProps): JSX.Element {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
@@ -57,7 +56,6 @@ function SettingsForm({
       const parsedSettings = JSON.parse(storedSettings);
       onModelChange(parsedSettings.LLM_MODEL || settings.LLM_MODEL);
       onAgentChange(parsedSettings.AGENT || settings.AGENT);
-      onLanguageChange(parsedSettings.LANGUAGE || settings.LANGUAGE);
       onAPIKeyChange(parsedSettings.LLM_API_KEY || settings.LLM_API_KEY);
     }
     setLoading(false);
@@ -68,12 +66,19 @@ function SettingsForm({
   };
 
   const handleReset = () => {
-    onResetSettings();
-    const defaultSettings = getDefaultSettings();
-    onModelChange(defaultSettings.LLM_MODEL);
-    onAgentChange(defaultSettings.AGENT);
-    onLanguageChange(defaultSettings.LANGUAGE);
-    onAPIKeyChange(defaultSettings.LLM_API_KEY);
+    try {
+      const defaultSettings = getDefaultSettings();
+      onModelChange(defaultSettings.LLM_MODEL);
+      onAgentChange(defaultSettings.AGENT);
+      onAPIKeyChange(defaultSettings.LLM_API_KEY);
+      onResetSettings();
+    } catch (error) {
+      onError(
+        error instanceof Error
+          ? error
+          : new Error(t(I18nKey.CONFIGURATION$RESET_ERROR_MESSAGE)),
+      );
+    }
   };
 
   let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
@@ -86,8 +91,8 @@ function SettingsForm({
   }
 
   return (
-    <div className="space-y-4 text-foreground bg-background p-4 rounded-lg">
-      <p className="mb-4 text-foreground">{subtitle}</p>
+    <div className="space-y-4 text-foreground dark:text-foreground-dark p-4 rounded-lg bg-background dark:bg-background-dark">
+      <p className="mb-4 text-foreground dark:text-foreground-dark">{subtitle}</p>
       <AutocompleteCombobox
         ariaLabel="agent"
         items={agents.map((agent) => ({ value: agent, label: agent }))}
@@ -118,7 +123,10 @@ function SettingsForm({
         onChange={(e) => {
           onAPIKeyChange(e.target.value);
         }}
-        className="bg-bg-input border-border"
+        classNames={{
+          input: "bg-transparent",
+          inputWrapper: "bg-default-100 dark:bg-default-100/20",
+        }}
         endContent={
           <button
             className="focus:outline-none"
@@ -134,14 +142,6 @@ function SettingsForm({
           </button>
         }
       />
-      <AutocompleteCombobox
-        ariaLabel="language"
-        items={AvailableLanguages}
-        defaultKey={settings.LANGUAGE}
-        onChange={onLanguageChange}
-        tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
-        disabled={isFormDisabled}
-      />
       {hasUnsavedChanges && (
         <div className="unsaved-changes-warning text-accent">
           {t(I18nKey.CONFIGURATION$UNSAVED_CHANGES)}
@@ -150,7 +150,7 @@ function SettingsForm({
       <div className="flex justify-center space-x-4">
         <button
           type="button"
-          className="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded"
+          className="px-4 py-2 bg-error text-white hover:bg-error-dark rounded"
           onClick={handleReset}
           disabled={isFormDisabled} // Disable if agent is running
         >
@@ -158,7 +158,7 @@ function SettingsForm({
         </button>
         <button
           type="button"
-          className="px-4 py-2 bg-blue-500 text-primary-foreground hover:opacity-80 rounded"
+          className="px-4 py-2 bg-primary text-white hover:bg-primary-dark rounded"
           onClick={handleSave}
           disabled={saveIsDisabled || isFormDisabled}
         >

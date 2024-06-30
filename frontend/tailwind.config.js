@@ -9,25 +9,24 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
-      // ... existing extensions ...
       backgroundColor: {
         'user-message': {
-          light: '#e6f7ff', // Light blue for user messages in light mode
-          dark: '#1a3a4a'   // Dark blue for user messages in dark mode
+          light: '#e6f7ff',
+          dark: '#1a3a4a'
         },
         'assistant-message': {
-          light: '#f0f5ea', // Light green for assistant messages in light mode
-          dark: '#1e3a2e'   // Dark green for assistant messages in dark mode
+          light: '#f0f5ea',
+          dark: '#1e3a2e'
         },
       },
       textColor: {
         'user-message': {
-          light: '#003366', // Dark blue text for user messages in light mode
-          dark: '#b3d9ff'   // Light blue text for user messages in dark mode
+          light: '#003366',
+          dark: '#b3d9ff'
         },
         'assistant-message': {
-          light: '#2e5c1f', // Dark green text for assistant messages in light mode
-          dark: '#c1e1c1'   // Light green text for assistant messages in dark mode
+          light: '#2e5c1f',
+          dark: '#c1e1c1'
         },
       },
     },
@@ -44,11 +43,11 @@ export default {
       themes: {
         light: {
           colors: {
-            background: "#f0f4f8", // Changed from "#FFFFFF" to a light blue-gray
-            foreground: "#333c4d", // Kept the same
+            background: "#f0f4f8",
+            foreground: "#333c4d",
             primary: {
-              DEFAULT: "#66cc8a",
-              foreground: "#223D30",
+              DEFAULT: "#3b82f6",
+              foreground: "#ffffff",
             },
             secondary: {
               DEFAULT: "#377cfb",
@@ -62,29 +61,39 @@ export default {
               DEFAULT: "#333c4d",
               foreground: "#f9fafb",
             },
-            // Adjusting the custom colors
-            "bg-dark": "#e2e8f0", // Changed from "#FFFFFF" to a lighter gray
-            "bg-light": "#f0f4f8", // Changed to match the new background color
-            "bg-input": "#ffffff", // Kept white for input fields
-            "bg-workspace": "#e2e8f0", // Changed to a lighter gray
-            border: "#a0aec0", // Darker border color for more contrast
-            "border-editor-sidebar": "#a0aec0", // Matching the border color
-            "text-editor-base": "#4a5568", // Slightly darker for better readability
-            "text-editor-active": "#1a202c", // Slightly darker for better contrast
-            "bg-editor-sidebar": "#e2e8f0", // Changed to match bg-dark
-            "bg-editor-active": "#d1dce8", // Slightly darker than bg-editor-sidebar
-            "border-editor-sidebar": "#a0aec0", // Darker border for more contrast
-            "bg-neutral-muted": "rgba(51, 60, 77, 0.05)", // Reduced opacity
+            "bg-dark": "#e2e8f0",
+            "bg-light": "#f0f4f8",
+            "bg-input": "#ffffff",
+            "bg-workspace": "#e2e8f0",
+            border: "#cbd5e1",
+            "border-editor-sidebar": "#cbd5e1",
+            "text-editor-base": "#4a5568",
+            "text-editor-active": "#1a202c",
+            "bg-editor-sidebar": "#f1f5f9",
+            "bg-editor-active": "#e2e8f0",
+            "bg-neutral-muted": "rgba(51, 60, 77, 0.05)",
             'user-message-bg': '#e6f7ff',
             'user-message-text': '#003366',
             'assistant-message-bg': '#f0f5ea',
             'assistant-message-text': '#2e5c1f',
+            "color-scheme": "light",
+            "primary": "#3b82f6",
+            "primary-dark": "#2980b9",
+            "secondary": "#377cfb",
+            "accent": "#f68067",
+            "neutral": "#333c4d",
+            "base-100": "#f0f4f8",
+            "info": "#3498db",
+            "success": "#2ecc71",
+            "warning": "#f39c12",
+            "error": "#e74c3c",
+            "error-dark": "#c0392b",
           },
         },
         dark: {
           colors: {
-            background: "#202020", // Matches base-100
-            foreground: "#ECEDEE", // Kept as is for contrast
+            background: "#1a1a1a",
+            foreground: "#ECEDEE",
             primary: {
               DEFAULT: "#1C4E80",
               foreground: "#FFFFFF",
@@ -98,29 +107,46 @@ export default {
               foreground: "#FFFFFF",
             },
             neutral: "#23282E",
-            "bg-dark": "#202020", // Matches base-100
-            "bg-light": "#23282E", // Matches neutral
-            "bg-input": "#23282E", // Matches neutral
-            "bg-workspace": "#202020", // Matches base-100
-            border: "#7C909A", // Matches secondary
-            "text-editor-base": "#ECEDEE", // Kept as is for readability
+            "bg-dark": "#1a1a1a",
+            "bg-light": "#2a2a2a",
+            "bg-input": "#2a2a2a",
+            "bg-workspace": "#1a1a1a",
+            border: "#4a4a4a",
+            "text-editor-base": "#ECEDEE",
             "text-editor-active": "#FFFFFF",
-            "bg-editor-sidebar": "#23282E", // Matches neutral
-            "bg-editor-active": "#1C4E80", // Matches primary
-            "border-editor-sidebar": "#7C909A", // Matches secondary
-            "bg-neutral-muted": "rgba(35, 40, 46, 0.6)", // Based on neutral
-            'user-message-bg': '#1C4E80', // Matches primary
-            'user-message-text': '#ECEDEE', // Kept as is for readability
-            'assistant-message-bg': '#23282E', // Matches neutral
-            'assistant-message-text': '#ECEDEE', // Kept as is for readability
-            info: "#0091D5",
-            success: "#6BB187",
-            warning: "#DBAE59",
-            error: "#AC3E31",
+            "bg-editor-sidebar": "#2a2a2a",
+            "bg-editor-active": "#3b82f6",
+            "border-editor-sidebar": "#4a4a4a",
+            "bg-neutral-muted": "rgba(42, 42, 42, 0.6)",
+            'user-message-bg': '#1C4E80',
+            'user-message-text': '#ECEDEE',
+            'assistant-message-bg': '#2a2a2a',
+            'assistant-message-text': '#ECEDEE',
+            "color-scheme": "dark",
+            "primary": "#1C4E80",
+            "primary-dark": "#2980b9",
+            "secondary": "#7C909A",
+            "accent": "#EA6947",
+            "neutral": "#23282E",
+            "base-100": "#202020",
+            "info": "#0091D5",
+            "success": "#6BB187",
+            "warning": "#DBAE59",
+            "error": "#AC3E31",
+            "error-dark": "#c0392b",
           },
         },
       },
     }),
     require('@tailwindcss/typography'),
   ],
+  theme: {
+    extend: {
+      borderRadius: {
+        'box': '0.25rem',
+        'btn': '0.125rem',
+        'badge': '0.125rem',
+      },
+    },
+  },
 };

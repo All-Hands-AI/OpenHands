@@ -24,6 +24,8 @@ import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import {
   getSettings,
+  getSettingsDifference,
+  getDefaultSettings,
   saveSettings,
   settingsAreUpToDate,
   Settings,
@@ -90,10 +92,15 @@ function AppContent(): JSX.Element {
   };
 
   const handleLanguageChange = (language: string) => {
-    const key =
-      AvailableLanguages.find((lang) => lang.label === language)?.value ||
-      language;
-    setSettings((prev) => ({ ...prev, LANGUAGE: key }));
+    const key = AvailableLanguages.find(
+      (lang) => lang.label === language,
+    )?.value;
+    if (key) {
+      setSettings((prev) => ({ ...prev, LANGUAGE: key }));
+      saveSettings({ ...settings, LANGUAGE: key });
+      i18next.changeLanguage(key);
+      toast.settingsChanged(`Language set to "${key}"`);
+    }
   };
 
   const handleAPIKeyChange = (key: string) => {
@@ -111,24 +118,33 @@ function AppContent(): JSX.Element {
     }
   };
 
+  const handleResetSettings = () => {
+    const defaultSettings = getDefaultSettings();
+    setSettings(defaultSettings);
+    saveSettings(defaultSettings);
+
+    // Update language
+    i18next.changeLanguage(defaultSettings.LANGUAGE);
+
+    // Update theme
+    if (isValidTheme(defaultSettings.THEME)) {
+      setTheme(defaultSettings.THEME);
+    }
+
+    // Start a new session
+    Session.startNewSession();
+
+    toast.success("save-settings", "Settings have been reset to default values");
+  };
+
   const handleSaveSettings = (newSettings: Settings) => {
-    const currentSettings = getSettings();
-    const updatedSettings: Partial<Settings> = {};
+    const updatedSettings = getSettingsDifference(newSettings);
 
-    // Determine which settings have actually changed
-    Object.keys(newSettings).forEach((key) => {
-      if (
-        newSettings[key as keyof Settings] !==
-        currentSettings[key as keyof Settings]
-      ) {
-        updatedSettings[key as keyof Settings] =
-          newSettings[key as keyof Settings];
-      }
-    });
-
-    // Check if only the theme has changed
-    const onlyThemeChanged =
-      Object.keys(updatedSettings).length === 1 && "THEME" in updatedSettings;
+    // Check if any core settings that require a new session have changed
+    const coreSettings = ["LLM_MODEL", "AGENT", "LLM_API_KEY"];
+    const coreSettingsChanged = coreSettings.some(
+      (setting) => setting in updatedSettings,
+    );
 
     saveSettings(newSettings);
     setSettings(newSettings);
@@ -139,7 +155,7 @@ function AppContent(): JSX.Element {
     }
 
     // Start a new session only if changes other than theme were made
-    if (!onlyThemeChanged) {
+    if (coreSettingsChanged) {
       Session.startNewSession();
     }
 
@@ -173,7 +189,7 @@ function AppContent(): JSX.Element {
           <img
             src="/src/assets/logo.png"
             alt="OpenDevin Logo"
-            className="w-5 h-auto"
+            className="w-8 h-auto"
           />
           <div className="ml-4 text-base font-bold">OpenDevin</div>
         </div>
@@ -247,6 +263,7 @@ function AppContent(): JSX.Element {
               onAPIKeyChange={handleAPIKeyChange}
               onThemeChange={handleThemeChange}
               onSaveSettings={handleSaveSettings}
+              onResetSettings={handleResetSettings}
               onError={handleError}
             />
           ) : (

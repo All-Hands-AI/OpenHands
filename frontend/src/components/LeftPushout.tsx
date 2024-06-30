@@ -40,7 +40,7 @@ function ExpandButton({
   setIsMuted: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
-    <div className="w-12 bg-bg-light flex flex-col items-center justify-between h-full rounded-r-lg overflow-hidden">
+    <div className="w-12 bg-bg-light flex flex-col items-center justify-between h-full rounded-r-lg overflow-hidden pb-2">
       <div
         className="w-full flex-grow flex flex-col items-center justify-center cursor-pointer hover:bg-bg-editor-active transition-colors"
         onClick={onClick}
@@ -55,7 +55,7 @@ function ExpandButton({
         <VolumeIcon isMuted={isMuted} setIsMuted={setIsMuted} />
       </div>
       <div
-        className="w-full h-8 flex items-center justify-center cursor-pointer hover:bg-bg-editor-active transition-colors pb-2"
+        className="w-full h-8 flex items-center justify-center cursor-pointer hover:bg-bg-editor-active transition-colors"
         onClick={(e) => {
           e.stopPropagation();
           onSettingsOpen();

@@ -50,17 +50,18 @@ function ActionButton({
         onClick={() => handleAction(action)}
         disabled={isDisabled}
         className={`
-          relative overflow-visible cursor-default hover:cursor-pointer group
+         relative overflow-visible cursor-default hover:cursor-pointer group
           disabled:cursor-not-allowed disabled:opacity-60
-          ${large ? "rounded-full bg-bg-light p-3" : ""}
+          ${large ? "rounded-full bg-bg-light p-3" : "rounded-full bg-bg-light p-2"}
           transition-all duration-300 ease-in-out
+          border border-primary/40 hover:border-primary/60
+          shadow-md hover:shadow-lg
         `}
         type="button"
       >
         <span className="relative z-10 group-hover:filter group-hover:drop-shadow-[0_0_5px_rgba(255,64,0,0.4)]">
           {children}
         </span>
-        <span className="absolute -inset-[5px] border-2 border-primary/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
       </button>
     </Tooltip>
   );

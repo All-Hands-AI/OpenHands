@@ -12,7 +12,6 @@ const onAPIKeyChangeMock = vi.fn();
 const onResetSettingsMock = vi.fn();
 const onSaveSettingsMock = vi.fn();
 const onErrorMock = vi.fn();
-const onThemeChangeMock = vi.fn();
 
 const renderSettingsForm = (
   props?: Partial<React.ComponentProps<typeof SettingsForm>>,
@@ -31,15 +30,12 @@ const renderSettingsForm = (
       agents={["agent1", "agent2", "agent3"]}
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
-      onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
       agentIsRunning={false}
       onResetSettings={onResetSettingsMock}
       onSaveSettings={onSaveSettingsMock}
       onError={onErrorMock}
       hasUnsavedChanges={false}
-      theme="light"
-      onThemeChange={onThemeChangeMock}
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...props}
     />,
@@ -76,7 +72,6 @@ describe("SettingsForm", () => {
         LLM_API_KEY: "sk-...",
         THEME: "dark",
       },
-      theme: "dark",
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
