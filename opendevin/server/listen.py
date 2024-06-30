@@ -1,7 +1,6 @@
 import os
 import re
 import uuid
-from pathlib import Path
 import warnings
 
 from pathspec import PathSpec
@@ -13,7 +12,6 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-import litellm
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -41,7 +39,6 @@ from opendevin.events.observation import (
 from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 from opendevin.server.session import session_manager
 
 app = FastAPI()
