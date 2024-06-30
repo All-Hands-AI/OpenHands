@@ -95,10 +95,10 @@ class EventStream:
                 del self._subscribers[id]
 
     def add_event(self, event: Event, source: EventSource):
-        logger.debug(f'Adding event {event} from {source}')
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
+        logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
@@ -108,5 +108,4 @@ class EventStream:
             )
         for stack in self._subscribers.values():
             callback = stack[-1]
-            logger.debug(f'Notifying subscriber {callback} of event {event}')
             asyncio.create_task(callback(event))
