@@ -5,11 +5,6 @@ Please be sure to run all commands inside your WSL terminal.
 
 ## Troubleshooting
 
-### Error: 'docker' could not be found in this WSL 2 distro.
-
-If you are using Docker Desktop, make sure to start it before calling any docker command from inside WSL.
-Docker also needs to have the WSL integration option activated.
-
 ### Recommendation: Do not run as root user
 
 For security reasons, it is highly recommended to not run OpenDevin as the root user, but a user with a non-zero UID.
@@ -20,6 +15,11 @@ References:
 * [Why it is bad to login as root](https://askubuntu.com/questions/16178/why-is-it-bad-to-log-in-as-root)
 * [Set default user in WSL](https://www.tenforums.com/tutorials/128152-set-default-user-windows-subsystem-linux-distro-windows-10-a.html#option2)  
 Hint about the 2nd reference: for Ubuntu users, the command could actually be "ubuntupreview" instead of "ubuntu".
+
+### Error: 'docker' could not be found in this WSL 2 distro.
+
+If you are using Docker Desktop, make sure to start it before calling any docker command from inside WSL.
+Docker also needs to have the WSL integration option activated.
 
 ### Failed to create opendevin user
 
