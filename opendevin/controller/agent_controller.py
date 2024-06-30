@@ -215,6 +215,8 @@ class AgentController:
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
+        if self.delegate is not None:
+            return self.delegate.get_agent_state()
         return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
