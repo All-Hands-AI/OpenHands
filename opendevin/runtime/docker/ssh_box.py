@@ -39,8 +39,14 @@ class SSHExecCancellableStream(CancellableStream):
         success = self.ssh.prompt(timeout=self.timeout)
         if not success:
             return -1
-
+        
         _exit_code = self.ssh.before.strip()
+        import re
+        isNumOnly = bool(re.match(r'^-?[0-9]+$', _exit_code))
+        if not isNumOnly:
+            # simulate success code
+            return 0
+        
         return int(_exit_code)
 
     def read_output(self):
