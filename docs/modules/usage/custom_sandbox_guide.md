@@ -26,7 +26,7 @@ This will produce a new image called ```custom_image``` that will be available i
 
 > Note that in the configuration described in this document, OpenDevin will run as user "opendevin" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
 > 
-> Installing with apt-get above installs node for all users .
+> Installing with apt-get above installs node for all users.
 
 
 ## Specify your custom image in config.toml file

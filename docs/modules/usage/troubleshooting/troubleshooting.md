@@ -24,8 +24,8 @@ If you're running on Windows and having trouble, check out our [guide for Window
 * [Unable to connect to Docker](#unable-to-connect-to-docker)
 * [Unable to connect to SSH box](#unable-to-connect-to-ssh-box)
 * [404 Resource not found](#404-resource-not-found)
-* [make-build-getting-stuck-on-package-installations](#make-build-getting-stuck-on-package-installations)
-* [sessions-are-not-restored](#sessions-are-not-restored)
+* [`make build` getting stuck on package installations](#make-build-getting-stuck-on-package-installations)
+* [Sessions are not restored](#sessions-are-not-restored)
 
 ### Unable to connect to Docker
 
