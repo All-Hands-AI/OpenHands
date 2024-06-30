@@ -1,7 +1,5 @@
 import json
 
-import pytest
-
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import NullAction
 from opendevin.events.observation import NullObservation
@@ -11,15 +9,13 @@ def collect_events(stream):
     return [event for event in stream.get_events()]
 
 
-@pytest.mark.asyncio
-async def test_basic_flow():
+def test_basic_flow():
     stream = EventStream('abc')
     stream.add_event(NullAction(), EventSource.AGENT)
     assert len(collect_events(stream)) == 1
 
 
-@pytest.mark.asyncio
-async def test_stream_storage():
+def test_stream_storage():
     stream = EventStream('def')
     stream.add_event(NullObservation(''), EventSource.AGENT)
     assert len(collect_events(stream)) == 1
@@ -38,8 +34,7 @@ async def test_stream_storage():
     }
 
 
-@pytest.mark.asyncio
-async def test_rehydration():
+def test_rehydration():
     stream1 = EventStream('es1')
     stream1.add_event(NullObservation('obs1'), EventSource.AGENT)
     stream1.add_event(NullObservation('obs2'), EventSource.AGENT)
