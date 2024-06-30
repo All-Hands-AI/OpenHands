@@ -236,7 +236,7 @@ def process_instance(
         'metadata': metadata,
         'history': histories,
         'metrics': metrics,
-        'error': state.error if state and state.error else None,
+        'error': state.last_error if state and state.last_error else None,
         'test_result': {
             'agent_answer': agent_answer,
             'final_answer': final_ans,
