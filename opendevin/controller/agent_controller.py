@@ -74,14 +74,19 @@ class AgentController:
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
-        if initial_state is None:
-            self.state = State(inputs={}, max_iterations=max_iterations)
-        else:
-            self.state = initial_state
+
+        # subscribe to the event stream
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, append=is_delegate
         )
+
+        # state from the previous session, state from a parent agent, or a fresh state
+        self._set_initial_state(
+            state=initial_state,
+            max_iterations=max_iterations,
+        )
+
         self.max_budget_per_task = max_budget_per_task
         if not is_delegate:
             self.agent_task = asyncio.create_task(self._start_step_loop())
@@ -108,9 +113,9 @@ class AgentController:
         - the string message should be user-friendly, it will be shown in the UI
         - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
         """
-        self.state.error = message
+        self.state.last_error = message
         if exception:
-            self.state.error += f': {exception}'
+            self.state.last_error += f': {exception}'
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -182,7 +187,7 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.info(
+        logger.debug(
             f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
@@ -235,7 +240,7 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.info(
+            logger.debug(
                 f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
             )
             await asyncio.sleep(1)
@@ -336,8 +341,15 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def set_state(self, state: State):
-        self.state = state
+    def _set_initial_state(
+        self, state: State | None, max_iterations: int = MAX_ITERATIONS
+    ):
+        # state from the previous session, state from a parent agent, or a new state
+        # note that this is called twice when restoring a previous session, first with state=None
+        if state is None:
+            self.state = State(inputs={}, max_iterations=max_iterations)
+        else:
+            self.state = state
 
     def _is_stuck(self):
         # check if delegate stuck
