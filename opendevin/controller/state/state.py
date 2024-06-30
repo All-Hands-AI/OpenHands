@@ -1,6 +1,7 @@
 import base64
 import pickle
 from dataclasses import dataclass, field
+from enum import Enum
 
 from opendevin.controller.state.task import RootTask
 from opendevin.core.logger import opendevin_logger as logger
@@ -16,6 +17,18 @@ from opendevin.events.observation import (
 )
 from opendevin.storage import get_file_store
 from opendevin.core.config import config
+
+
+class TRAFFIC_CONTROL_STATE(str, Enum):
+    # default state, no rate limiting
+    NORMAL = 'normal'
+
+    # task paused due to traffic control
+    THROTTLING = 'throttling'
+
+    # traffic control is temporarily paused
+    PAUSED = 'paused'
+
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -39,9 +52,10 @@ class State:
     updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
-    error: str | None = None
+    last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
+    traffic_control_state: TRAFFIC_CONTROL_STATE = TRAFFIC_CONTROL_STATE.NORMAL
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0

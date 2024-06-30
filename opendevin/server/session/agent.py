@@ -94,7 +94,7 @@ class AgentSession:
             int(args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)),
             config.max_iterations_per_task,
         )
-        max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
+        max_chars = int(args.get(ConfigType.MAX_CHARS, config.llm.max_chars))
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
@@ -112,11 +112,11 @@ class AgentSession:
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=max_iterations,
-            max_chars=int(max_chars),
+            max_chars=max_chars,
         )
         try:
             agent_state = State.restore_from_session(self.sid)
-            self.controller.set_state(agent_state)
+            self.controller._set_initial_state(agent_state)
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             print('Error restoring state', e)

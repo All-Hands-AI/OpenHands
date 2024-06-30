@@ -38,9 +38,6 @@ options:
   -b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK
                         The maximum budget allowed per task, beyond which the
                         agent will stop.
-  -n MAX_CHARS, --max-chars MAX_CHARS
-                        The maximum number of characters to send to and
-                        receive from LLM per task
   --eval-output-dir EVAL_OUTPUT_DIR
                         The directory to save evaluation output
   --eval-n-limit EVAL_N_LIMIT

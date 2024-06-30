@@ -1,13 +1,13 @@
 import asyncio
 import os
 import sys
-from typing import Callable, Optional, Type
+from typing import Callable, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, get_llm_config_arg
+from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
@@ -33,10 +33,11 @@ def read_task_from_stdin() -> str:
 async def main(
     task_str: str = '',
     exit_on_message: bool = False,
-    fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
-    sandbox: Optional[Sandbox] = None,
-    runtime_tools_config: Optional[dict] = None,
-) -> Optional[State]:
+    fake_user_response_fn: Callable[[State | None], str] | None = None,
+    sandbox: Sandbox | None = None,
+    runtime_tools_config: dict | None = None,
+    sid: str | None = None,
+) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
 
@@ -81,20 +82,34 @@ async def main(
         )
         llm = LLM(args.model_name)
 
+    # set up the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream('main')
+    # set up the event stream
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
 
-    max_iterations = args.max_iterations
+    # restore cli session if enabled
+    initial_state = None
+    if config.enable_cli_session:
+        try:
+            logger.info('Restoring agent state from cli session')
+            initial_state = State.restore_from_session(cli_session)
+        except Exception as e:
+            print('Error restoring state', e)
+
+    # init controller with this initial state
 
     controller = AgentController(
         agent=agent,
-        max_iterations=max_iterations,
+        max_iterations=args.max_iterations,
         max_budget_per_task=args.max_budget_per_task,
-        max_chars=args.max_chars,
         event_stream=event_stream,
+        initial_state=initial_state,
     )
+
+    # runtime and tools
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
@@ -113,7 +128,18 @@ async def main(
             task = f.read()
             logger.info(f'Dynamic Eval task: {task}')
 
-    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
+    # start event is a MessageAction with the task, either resumed or new
+    if config.enable_cli_session and initial_state is not None:
+        # we're resuming the previous session
+        await event_stream.add_event(
+            MessageAction(
+                content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
+            ),
+            EventSource.USER,
+        )
+    elif initial_state is None:
+        # init with the provided task
+        await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
@@ -137,6 +163,12 @@ async def main(
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
+    # save session when we're about to close
+    if config.enable_cli_session:
+        end_state = controller.get_state()
+        end_state.save_to_session(cli_session)
+
+    # close when done
     await controller.close()
     runtime.close()
     return controller.get_state()
