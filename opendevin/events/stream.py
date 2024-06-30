@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
@@ -25,7 +26,7 @@ class EventStream:
     # when there are agent delegates
     _subscribers: dict[str, list[Callable]]
     _cur_id: int
-    _lock: asyncio.Lock
+    _lock: threading.Lock
     _file_store: FileStore
 
     def __init__(self, sid: str):
@@ -33,7 +34,7 @@ class EventStream:
         self._file_store = get_file_store()
         self._subscribers = {}
         self._cur_id = 0
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
         self._reinitialize_from_file_store()
 
     def _reinitialize_from_file_store(self):
@@ -93,10 +94,9 @@ class EventStream:
             if len(self._subscribers[id]) == 0:
                 del self._subscribers[id]
 
-    # TODO: make this not async
-    async def add_event(self, event: Event, source: EventSource):
+    def add_event(self, event: Event, source: EventSource):
         logger.debug(f'Adding event {event} from {source}')
-        async with self._lock:
+        with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
@@ -109,4 +109,4 @@ class EventStream:
         for stack in self._subscribers.values():
             callback = stack[-1]
             logger.debug(f'Notifying subscriber {callback} of event {event}')
-            await callback(event)
+            asyncio.create_task(callback(event))

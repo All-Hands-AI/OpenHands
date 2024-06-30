@@ -118,7 +118,7 @@ class AgentController:
         self.state.error = message
         if exception:
             self.state.error += f': {exception}'
-        await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
+        self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
@@ -200,7 +200,7 @@ class AgentController:
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
 
-        await self.event_stream.add_event(
+        self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
@@ -288,7 +288,7 @@ class AgentController:
                 # clean up delegate status
                 self.delegate = None
                 self.delegateAction = None
-                await self.event_stream.add_event(obs, EventSource.AGENT)
+                self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
         logger.info(
@@ -324,7 +324,7 @@ class AgentController:
             return
 
         if not isinstance(action, NullAction):
-            await self.event_stream.add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, EventSource.AGENT)
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
