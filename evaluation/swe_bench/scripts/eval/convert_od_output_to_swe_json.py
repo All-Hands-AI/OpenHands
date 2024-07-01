@@ -16,8 +16,10 @@ model_name = os.path.basename(os.path.dirname(args.od_output_file))
 
 def process_git_patch(patch):
     if not patch.strip():
+        # skip empty patches
         return ''
-    patch = patch.replace('\r\n', '\n').rstrip() + '\n'
+
+    patch = patch.replace('\r\n', '\n')
     # There might be some weird characters at the beginning of the patch
     # due to some OpenDevin inference command outputs
 
@@ -34,6 +36,8 @@ def process_git_patch(patch):
         if line.startswith('diff --git'):
             patch = '\n'.join(lines[i:])
             break
+
+    patch = patch.rstrip() + '\n'  # Make sure the last line ends with a newline
     return patch
 
 
