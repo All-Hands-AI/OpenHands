@@ -35,13 +35,26 @@ class SSHExecCancellableStream(CancellableStream):
         self.closed = True
 
     def exit_code(self):
-        self.ssh.sendline('echo $?')
-        success = self.ssh.prompt(timeout=self.timeout)
-        if not success:
-            return -1
+        marker = f'EXIT_CODE_MARKER_{uuid.uuid4().hex}'
+        self.ssh.sendline(f'echo "{marker}$?{marker}"')
 
-        _exit_code = self.ssh.before.strip()
-        return int(_exit_code)
+        if not self.ssh.prompt(timeout=self.timeout):
+            return None  # Timeout occurred
+
+        output = self.ssh.before
+        match = re.search(f'{marker}(\\d+){marker}', output)
+
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                # Log the unexpected format
+                logger.error(f'Unexpected exit code format: {match.group(1)}')
+                return None
+        else:
+            # If we can't find our marked exit code, log the output and return None
+            logger.error(f'Could not find exit code in output: {output}')
+            return None
 
     def read_output(self):
         st = time.time()
@@ -348,14 +361,18 @@ class DockerSSHBox(Sandbox):
                 )
             # check the miniforge3 directory exist
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1'],
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
                 if exit_code == 1:
                     raise Exception(
-                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
+                        'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
                     )
                 else:
                     raise Exception(
