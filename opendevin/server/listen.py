@@ -77,17 +77,11 @@ def load_file_upload_config() -> tuple[int, bool, list[str]]:
     allowed_extensions = config.file_uploads_allowed_extensions
 
     # Sanity check for max_file_size_mb
-    MAX_ALLOWED_SIZE = 1024  # Maximum allowed file size 1 GB
     if not isinstance(max_file_size_mb, int) or max_file_size_mb < 0:
         logger.warning(
             f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).'
         )
         max_file_size_mb = 0
-    elif max_file_size_mb > MAX_ALLOWED_SIZE:
-        logger.warning(
-            f'max_file_size_mb exceeds maximum allowed size. Capping at {MAX_ALLOWED_SIZE}MB.'
-        )
-        max_file_size_mb = MAX_ALLOWED_SIZE
 
     # Sanity check for allowed_extensions
     if not isinstance(allowed_extensions, (list, set)) or not allowed_extensions:
@@ -106,7 +100,7 @@ def load_file_upload_config() -> tuple[int, bool, list[str]]:
     if not restrict_file_types:
         allowed_extensions = ['.*']
 
-    logger.info(
+    logger.debug(
         f'File upload config: max_size={max_file_size_mb}MB, '
         f'restrict_types={restrict_file_types}, '
         f'allowed_extensions={allowed_extensions}'
