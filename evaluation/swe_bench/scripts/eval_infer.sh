@@ -87,6 +87,37 @@ if [ -z "$INSTANCE_ID" ]; then
         --cache_level instance \
         --max_workers $N_PROCESS \
         --run_id $RUN_ID
+
+    # get the "model_name_or_path" from the first line of the SWEBENCH_FORMAT_JSONL
+    MODEL_NAME_OR_PATH=$(jq -r '.model_name_or_path' $SWEBENCH_FORMAT_JSONL | head -n 1)
+    echo "MODEL_NAME_OR_PATH: $MODEL_NAME_OR_PATH"
+
+    RESULT_OUTPUT_DIR=$(dirname $SWEBENCH_FORMAT_JSONL)
+    echo "RESULT_OUTPUT_DIR: $RESULT_OUTPUT_DIR"
+
+    # move the eval results to the target directory
+    mkdir -p $RESULT_OUTPUT_DIR
+    mv run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
+    mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
+    echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
+
+    # move report file
+    REPORT_PATH=$MODEL_NAME_OR_PATH.$RUN_ID.json
+    if [ -f $REPORT_PATH ]; then
+        # check if $RESULT_OUTPUT_DIR/report.json exists
+        if [ -f $RESULT_OUTPUT_DIR/report.json ]; then
+            echo "Report file $RESULT_OUTPUT_DIR/report.json already exists. Overwriting..."
+            if [ -f $RESULT_OUTPUT_DIR/report.json.bak ]; then
+                rm $RESULT_OUTPUT_DIR/report.json.bak
+            fi
+            mv $RESULT_OUTPUT_DIR/report.json $RESULT_OUTPUT_DIR/report.json.bak
+        fi
+
+        mv $REPORT_PATH $RESULT_OUTPUT_DIR/report.json
+    fi
+
+    poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
+
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
     poetry run python -m swebench.harness.run_evaluation \
@@ -97,33 +128,3 @@ else
         --max_workers $N_PROCESS \
         --run_id $RUN_ID
 fi
-
-# get the "model_name_or_path" from the first line of the SWEBENCH_FORMAT_JSONL
-MODEL_NAME_OR_PATH=$(jq -r '.model_name_or_path' $SWEBENCH_FORMAT_JSONL | head -n 1)
-echo "MODEL_NAME_OR_PATH: $MODEL_NAME_OR_PATH"
-
-RESULT_OUTPUT_DIR=$(dirname $SWEBENCH_FORMAT_JSONL)
-echo "RESULT_OUTPUT_DIR: $RESULT_OUTPUT_DIR"
-
-# move the eval results to the target directory
-mkdir -p $RESULT_OUTPUT_DIR
-mv run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
-mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
-echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
-
-# move report file
-REPORT_PATH=$MODEL_NAME_OR_PATH.$RUN_ID.json
-if [ -f $REPORT_PATH ]; then
-    # check if $RESULT_OUTPUT_DIR/report.json exists
-    if [ -f $RESULT_OUTPUT_DIR/report.json ]; then
-        echo "Report file $RESULT_OUTPUT_DIR/report.json already exists. Overwriting..."
-        if [ -f $RESULT_OUTPUT_DIR/report.json.bak ]; then
-            rm $RESULT_OUTPUT_DIR/report.json.bak
-        fi
-        mv $RESULT_OUTPUT_DIR/report.json $RESULT_OUTPUT_DIR/report.json.bak
-    fi
-
-    mv $REPORT_PATH $RESULT_OUTPUT_DIR/report.json
-fi
-
-poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
