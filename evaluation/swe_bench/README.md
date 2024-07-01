@@ -2,7 +2,7 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We created [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly built on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
-**UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as annouced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
+**UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
 ## Setup Environment
 
@@ -134,13 +134,13 @@ If you want to evaluate existing results, you should first run this to clone exi
 git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
 ```
 
-If you have extra local space, you can pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared to speed up the evaluation by running:
+If you have extra local space (e.g., 500GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared to speed up the evaluation by running:
 
 ```bash
 evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
 ```
 
-If you want to save disk space a bit while speed up the image pre-build process, you can pull the environment-level docker images:
+If you want to save disk space a bit (e.g., with ~50GB free disk space) while speed up the image pre-build process, you can pull the environment-level docker images:
 ```bash
 evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
 ```
