@@ -504,17 +504,12 @@ class DockerSSHBox(Sandbox):
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
-            logger.debug('WAITING FOR .prompt()')
             self.ssh.sendline('\n')
             timeout_not_reached = self.ssh.prompt(timeout=1)
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
                 break
-            logger.debug('WAITING FOR .before')
             output = self.ssh.before
-            logger.debug(
-                f'WAITING FOR END OF command output ({bool(output)}): {output}'
-            )
             if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
@@ -528,7 +523,6 @@ class DockerSSHBox(Sandbox):
         while not exit_code_str:
             self.ssh.prompt(timeout=1)
             exit_code_str = self.ssh.before.strip()
-            logger.debug(f'WAITING FOR exit code: {exit_code_str}')
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
