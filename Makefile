@@ -208,21 +208,32 @@ start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
-# Run the app
-run:
-	@echo "$(YELLOW)Running the app...$(RESET)"
-	@if [ "$(OS)" = "Windows_NT" ]; then \
-		echo "$(RED)`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately.$(RESET)"; \
-		exit 1; \
-	fi
+# Common setup for running the app (non-callable)
+_run_setup:
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
+
+# Run the app (standard mode)
+run:
+	@echo "$(YELLOW)Running the app...$(RESET)"
+	@if [ "$(OS)" = "Windows_NT" ]; then \
+		echo "$(RED)`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately.$(RESET)"; \
+		exit 1; \
+	fi
+	@$(MAKE) -s _run_setup
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
+
+# Run the app (WSL mode)
+run-wsl:
+	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
+	@$(MAKE) -s _run_setup
+	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
+	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
 
 # Setup config.toml
 setup-config:
@@ -308,4 +319,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
