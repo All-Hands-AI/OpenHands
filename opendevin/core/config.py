@@ -353,17 +353,18 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                     setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
 
                 old_configs = ['INITIALIZE_PLUGINS']
-                if field_name == 'sandbox' and 0: # Separate PR
-                    for old_config in old_configs:
-                        if (
-                            old_config.lower() in nested_sub_config.__annotations__
-                            and (old_config in env_or_toml_dict or old_config.lower() in env_or_toml_dict)
-                        ):
-                            suggested_name = f'{field_name}_{old_config}'.upper()
-                            logger.error(
-                                f'Please migrate {old_config} config to {suggested_name} = {env_or_toml_dict[old_config]}'
-                            )
-                            exit(1)
+                # As suggested, commented for a separate PR
+                # if field_name == 'sandbox':  
+                #     for old_config in old_configs:
+                #         if (
+                #             old_config.lower() in nested_sub_config.__annotations__
+                #             and (old_config in env_or_toml_dict or old_config.lower() in env_or_toml_dict)
+                #         ):
+                #             suggested_name = f'{field_name}_{old_config}'.upper()
+                #             logger.error(
+                #                 f'Please migrate {old_config} config to {suggested_name} = {env_or_toml_dict[old_config]}'
+                #             )
+                #             exit(1)
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
@@ -385,9 +386,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                     )
 
     if 'SANDBOX_TYPE' in env_or_toml_dict:
-        logger.error(
-            'SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.'
-        )
+        logger.error('SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.')
         env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(config)
