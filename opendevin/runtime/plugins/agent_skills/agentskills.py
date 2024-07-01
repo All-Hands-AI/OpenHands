@@ -633,6 +633,40 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
 
 
 @update_pwd_decorator
+def edit_file_by_line(file_name: str, start: int, end: int, new_content: str) -> None:
+    """Edit a file.
+
+    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+
+    For example, given a file "/workspace/example.txt" with the following content (line numbers are included for clarity):
+    ```
+    1|line 1
+    2|line 2
+    3|line 3
+    ```
+    If you want to replace the second line, you can call:
+    edit_file_by_line('/workspace/example.txt', 2, 2, 'new line')
+    This will give the following result:
+    ```
+    1|line 1
+    2|new line
+    3|line 3
+    ```
+
+    Args:
+        file_name: str: The name of the file to edit.
+        start: int: The start line number. Must satisfy start >= 1.
+        end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
+        content: str: The content to replace the lines with.
+    """
+    ret_str = _edit_or_insert_file(
+        file_name, start=start, end=end, content=new_content, is_insert=False
+    )
+    print(ret_str)
+
+
+@update_pwd_decorator
 def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     """Insert content at the given line number in a file.
     This will NOT modify the content of the lines before OR after the given line number.
@@ -977,6 +1011,7 @@ __all__ = [
     'scroll_up',
     'create_file',
     'edit_file_by_replace',
+    'edit_file_by_line',
     'insert_content_at_line',
     'search_dir',
     'search_file',

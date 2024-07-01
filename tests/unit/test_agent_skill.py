@@ -9,6 +9,7 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
     _print_window,
     create_file,
+    edit_file_by_line,
     edit_file_by_replace,
     find_file,
     goto_line,
@@ -413,6 +414,9 @@ check(any_int)"""
         assert result == expected
 
 
+# ================================
+
+
 def test_edit_file_by_replace(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
@@ -522,6 +526,173 @@ def test_edit_file_by_replace_toreplace_empty():
         edit_file_by_replace(
             str('unknown file'),
             '',
+            'REPLACE TEXT',
+        )
+
+
+# ================================
+def test_edit_file_by_line(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file_by_line(
+                file_name=str(temp_file_path),
+                start=1,
+                end=3,
+                new_content='REPLACE TEXT',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|REPLACE TEXT\n'
+            '2|Line 4\n'
+            '3|Line 5\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'REPLACE TEXT'
+    assert lines[1].rstrip() == 'Line 4'
+    assert lines[2].rstrip() == 'Line 5'
+
+
+def test_edit_file_by_line_from_scratch(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file_by_line(
+                str(temp_file_path),
+                start=1,
+                end=1,
+                new_content='REPLACE TEXT',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (1 lines total after edit)]\n'
+            '1|REPLACE TEXT\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 1
+    assert lines[0].rstrip() == 'REPLACE TEXT'
+
+
+def test_edit_file_by_line_from_scratch_multiline_with_backticks_and_second_edit(
+    tmp_path,
+):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file_by_line(
+                str(temp_file_path),
+                1,
+                1,
+                '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|`REPLACE TEXT1`\n'
+            '2|`REPLACE TEXT2`\n'
+            '3|`REPLACE TEXT3`\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == '`REPLACE TEXT1`'
+    assert lines[1].rstrip() == '`REPLACE TEXT2`'
+    assert lines[2].rstrip() == '`REPLACE TEXT3`'
+
+    # Check that no backticks are escaped in the edit_file_by_line call
+    assert '\\`' not in result
+
+    # Perform a second edit
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file_by_line(
+                str(temp_file_path),
+                1,
+                3,
+                '`REPLACED TEXT1`\n`REPLACED TEXT2`\n`REPLACED TEXT3`',
+            )
+        second_result = buf.getvalue()
+        second_expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|`REPLACED TEXT1`\n'
+            '2|`REPLACED TEXT2`\n'
+            '3|`REPLACED TEXT3`\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert second_result.split('\n') == second_expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == '`REPLACED TEXT1`'
+    assert lines[1].rstrip() == '`REPLACED TEXT2`'
+    assert lines[2].rstrip() == '`REPLACED TEXT3`'
+
+    # Check that no backticks are escaped in the second edit_file_by_line call
+    assert '\\`' not in second_result
+
+
+def test_edit_file_by_line_from_scratch_multiline(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(temp_file_path)
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file_by_line(
+                str(temp_file_path),
+                1,
+                1,
+                new_content='REPLACE TEXT1\nREPLACE TEXT2\nREPLACE TEXT3',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|REPLACE TEXT1\n'
+            '2|REPLACE TEXT2\n'
+            '3|REPLACE TEXT3\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'REPLACE TEXT1'
+    assert lines[1].rstrip() == 'REPLACE TEXT2'
+    assert lines[2].rstrip() == 'REPLACE TEXT3'
+
+
+def test_edit_file_by_line_not_opened():
+    with pytest.raises(FileNotFoundError):
+        edit_file_by_line(
+            str('unknown file'),
+            1,
+            3,
             'REPLACE TEXT',
         )
 
