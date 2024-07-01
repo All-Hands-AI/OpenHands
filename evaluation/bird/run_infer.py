@@ -153,13 +153,16 @@ def process_instance(
     # Set up the database path
     database_path = os.path.join(instance.db_id, f'{instance.db_id}.sqlite')
 
+    # use session id for concurrent evaluation
+    sid = instance.task_id.replace('/', '__')
+
     # Set up the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
             eval_output_dir,
             'logs',
-            f'instance_{instance.task_id.replace("/", "__")}.log',
+            f'instance_{sid}.log',
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -198,14 +201,12 @@ def process_instance(
         result = execute_sql(db_path, sql)
         print(result)
     """
-    path = os.path.join(
-        config.workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
-    )
+    path = os.path.join(config.workspace_mount_path, f'{sid}.py')
     instruction = (
         f'You are a SQL expert and need to complete the following text-to-SQL tasks.'
         f'\n\n{instance.instruction}\n\n'
         'Please write the SQL in one line without line breaks.'
-        f'And write a new python file named {instance.task_id.replace("/", "__")}.py to call the SQL you wrote.'
+        f'And write a new python file named {sid}.py to call the SQL you wrote.'
         'You need to follow the code template below:'
         f'\n\n{statements}\n\n'
         'Environment has been set up for you to start working.'
@@ -222,6 +223,7 @@ def process_instance(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            sid=sid,
         )
     )
 
@@ -243,7 +245,7 @@ def process_instance(
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'metrics': metrics,
-        'error': state.error if state and state.error else None,
+        'error': state.last_error if state and state.last_error else None,
         'test_result': test_result,
     }
     return output

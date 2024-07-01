@@ -3,7 +3,7 @@ import traceback
 from typing import Optional, Type
 
 from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
+from opendevin.controller.state.state import TRAFFIC_CONTROL_STATE, State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
@@ -37,6 +37,10 @@ from opendevin.events.observation import (
 
 MAX_ITERATIONS = config.max_iterations
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
+# note: RESUME is only available on web GUI
+TRAFFIC_CONTROL_REMINDER = (
+    "Please click on resume button if you'd like to continue, or start a new task."
+)
 
 
 class AgentController:
@@ -74,14 +78,19 @@ class AgentController:
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
-        if initial_state is None:
-            self.state = State(inputs={}, max_iterations=max_iterations)
-        else:
-            self.state = initial_state
+
+        # subscribe to the event stream
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, append=is_delegate
         )
+
+        # state from the previous session, state from a parent agent, or a fresh state
+        self._set_initial_state(
+            state=initial_state,
+            max_iterations=max_iterations,
+        )
+
         self.max_budget_per_task = max_budget_per_task
         if not is_delegate:
             self.agent_task = asyncio.create_task(self._start_step_loop())
@@ -108,9 +117,9 @@ class AgentController:
         - the string message should be user-friendly, it will be shown in the UI
         - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
         """
-        self.state.error = message
+        self.state.last_error = message
         if exception:
-            self.state.error += f': {exception}'
+            self.state.last_error += f': {exception}'
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -182,12 +191,20 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.info(
+        logger.debug(
             f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
         if new_state == self.state.agent_state:
             return
+
+        if (
+            self.state.agent_state == AgentState.PAUSED
+            and new_state == AgentState.RUNNING
+            and self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.THROTTLING
+        ):
+            # user intends to interrupt traffic control and let the task resume temporarily
+            self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.PAUSED
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
@@ -203,6 +220,8 @@ class AgentController:
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
+        if self.delegate is not None:
+            return self.delegate.get_agent_state()
         return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
@@ -235,7 +254,7 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.info(
+            logger.debug(
                 f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
             )
             await asyncio.sleep(1)
@@ -288,22 +307,35 @@ class AgentController:
             f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
-        if self.state.iteration >= self.state.max_iterations:
-            await self.report_error('Agent reached maximum number of iterations')
-            await self.set_agent_state_to(AgentState.ERROR)
-            return
 
-        if self.max_budget_per_task is not None:
+        if self.state.iteration >= self.state.max_iterations:
+            if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
+                logger.info(
+                    'Hitting traffic control, temporarily resume upon user request'
+                )
+                self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
+            else:
+                self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.THROTTLING
+                await self.report_error(
+                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                )
+                await self.set_agent_state_to(AgentState.PAUSED)
+                return
+        elif self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
-                await self.report_error(
-                    f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}'
-                )
-                await self.set_agent_state_to(AgentState.ERROR)
-                return
-
-        if self.state.agent_state == AgentState.ERROR:
-            return
+                if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
+                    logger.info(
+                        'Hitting traffic control, temporarily resume upon user request'
+                    )
+                    self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
+                else:
+                    self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.THROTTLING
+                    await self.report_error(
+                        f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                    )
+                    await self.set_agent_state_to(AgentState.PAUSED)
+                    return
 
         self.update_state_before_step()
         action: Action = NullAction()
@@ -336,8 +368,15 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def set_state(self, state: State):
-        self.state = state
+    def _set_initial_state(
+        self, state: State | None, max_iterations: int = MAX_ITERATIONS
+    ):
+        # state from the previous session, state from a parent agent, or a new state
+        # note that this is called twice when restoring a previous session, first with state=None
+        if state is None:
+            self.state = State(inputs={}, max_iterations=max_iterations)
+        else:
+            self.state = state
 
     def _is_stuck(self):
         # check if delegate stuck
