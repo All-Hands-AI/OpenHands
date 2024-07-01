@@ -13,7 +13,9 @@ Functions:
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
 - edit_file_by_replace(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
+- edit_file_by_line(file_name: str, start: int, end: int, content: str): Replaces lines in a file with the given content.
 - insert_content_at_line(file_name: str, line_number: int, content: str): Inserts given content at the specified line number in a file.
+- append_file(file_name: str, content: str): Appends the given content to the end of the specified file.
 """
 
 import base64
@@ -336,12 +338,13 @@ def create_file(filename: str) -> None:
 LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
 
 
-def _edit_or_insert_file(
+def _edit_file_impl(
     file_name: str,
     start: int | None = None,
     end: int | None = None,
     content: str = '',
     is_insert: bool = False,
+    is_append: bool = False,
 ) -> str:
     """Internal method to handle common logic for edit_/append_file methods.
 
@@ -351,6 +354,7 @@ def _edit_or_insert_file(
         end: int | None = None: The end line number for editing. Ignored if is_append is True.
         content: str: The content to replace the lines with or to append.
         is_insert: bool = False: Whether to insert content at the given line number instead of editing.
+        is_append: bool = False: Whether to append content to the file instead of editing.
     """
     ret_str = ''
     global CURRENT_FILE, CURRENT_LINE, WINDOW
@@ -374,6 +378,9 @@ def _edit_or_insert_file(
     if not os.path.isfile(file_name):
         raise FileNotFoundError(f'File {file_name} not found.')
 
+    if is_insert and is_append:
+        raise ValueError('Cannot insert and append at the same time.')
+
     # Use a temporary file to write changes
     content = str(content or '')
     temp_file_path = ''
@@ -388,7 +395,14 @@ def _edit_or_insert_file(
             with open(file_name) as original_file:
                 lines = original_file.readlines()
 
-            if is_insert:
+            if is_append:
+                if lines and not (len(lines) == 1 and lines[0].strip() == ''):
+                    if not lines[-1].endswith('\n'):
+                        lines[-1] += '\n'
+                    content_lines = content.splitlines(keepends=True)
+                    new_lines = lines + content_lines
+                    content = ''.join(new_lines)
+            elif is_insert:
                 if len(lines) == 0:
                     new_lines = [
                         content + '\n' if not content.endswith('\n') else content
@@ -620,7 +634,7 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         start_line_number = file_content_fuzzy[:start].count('\n') + 1
         end_line_number = start_line_number + len(to_replace.splitlines()) - 1
 
-    ret_str = _edit_or_insert_file(
+    ret_str = _edit_file_impl(
         file_name,
         start=start_line_number,
         end=end_line_number,
@@ -660,8 +674,13 @@ def edit_file_by_line(file_name: str, start: int, end: int, new_content: str) ->
         end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
         content: str: The content to replace the lines with.
     """
-    ret_str = _edit_or_insert_file(
-        file_name, start=start, end=end, content=new_content, is_insert=False
+    ret_str = _edit_file_impl(
+        file_name,
+        start=start,
+        end=end,
+        content=new_content,
+        is_insert=False,
+        is_append=False,
     )
     print(ret_str)
 
@@ -690,8 +709,32 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
         line_number: int: The line number (starting from 1) to insert the content after.
         content: str: The content to insert.
     """
-    ret_str = _edit_or_insert_file(
-        file_name, start=line_number, end=line_number, content=content, is_insert=True
+    ret_str = _edit_file_impl(
+        file_name,
+        start=line_number,
+        end=line_number,
+        content=content,
+        is_insert=True,
+        is_append=False,
+    )
+    print(ret_str)
+
+
+@update_pwd_decorator
+def append_file(file_name: str, content: str) -> None:
+    """Append content to the given file.
+    It appends text `content` to the end of the specified file.
+    Args:
+        file_name: str: The name of the file to append to.
+        content: str: The content to append to the file.
+    """
+    ret_str = _edit_file_impl(
+        file_name,
+        start=None,
+        end=None,
+        content=content,
+        is_insert=False,
+        is_append=True,
     )
     print(ret_str)
 
@@ -1013,6 +1056,7 @@ __all__ = [
     'edit_file_by_replace',
     'edit_file_by_line',
     'insert_content_at_line',
+    'append_file',
     'search_dir',
     'search_file',
     'find_file',
