@@ -126,4 +126,4 @@ if [ -f $REPORT_PATH ]; then
     mv $REPORT_PATH $RESULT_OUTPUT_DIR/report.json
 fi
 
-# poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
+poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
