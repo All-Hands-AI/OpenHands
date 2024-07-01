@@ -145,6 +145,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent_class
                 ),
+                sid=instance['task_id'],
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
@@ -196,7 +197,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
                 for action, obs in state.history
             ],
             'metrics': metrics,
-            'error': state.error if state and state.error else None,
+            'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
         }
     except Exception:
