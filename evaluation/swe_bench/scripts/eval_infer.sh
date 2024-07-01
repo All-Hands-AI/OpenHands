@@ -80,7 +80,7 @@ if [ -z "$INSTANCE_ID" ]; then
     echo "Running SWE-bench evaluation on the whole input file..."
     # Default to SWE-Bench-lite
     # change `--dataset_name` and `--split` to alter dataset
-    set -x
+
     poetry run python -m swebench.harness.run_evaluation \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 1800 \
