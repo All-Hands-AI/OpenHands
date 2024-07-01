@@ -216,4 +216,4 @@ containers/agnostic_sandbox
 
 # swe-bench-eval
 image_build_logs
-run_instances_logs
+run_instance_logs
