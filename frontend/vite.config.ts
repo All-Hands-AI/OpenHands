@@ -32,7 +32,12 @@ export default defineConfig(({ mode }) => {
   return {
     // depending on your application, base can also be "/"
     base: "",
-    plugins: [react(), viteTsconfigPaths()],
+    plugins: [
+      react({
+        include: "src/**/*.tsx",
+      }),
+      viteTsconfigPaths(),
+    ],
     clearScreen: false,
     server: {
       watch: {
