@@ -1,0 +1,26 @@
+{
+  "title": {
+    "message": "OpenDevin",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "OpenDevin",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "Docs",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Codebase": {
+    "message": "Codebase",
+    "description": "Navbar item with label Codebase"
+  },
+  "item.label.FAQ": {
+    "message": "FAQ",
+    "description": "Navbar item with label FAQ"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}

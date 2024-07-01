@@ -11,6 +11,7 @@ import SettingsModal from "#/components/modals/settings/SettingsModal";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
+import VolumeIcon from "./components/VolumeIcon";
 import Terminal from "./components/terminal/Terminal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
@@ -27,11 +28,17 @@ function Controls({ setSettingOpen }: Props): JSX.Element {
         <AgentControlBar />
       </div>
       <AgentStatusBar />
-      <div
-        className="cursor-pointer hover:opacity-80 transition-all"
-        onClick={() => setSettingOpen(true)}
-      >
-        <CogTooth />
+
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ marginRight: "8px" }}>
+          <VolumeIcon />
+        </div>
+        <div
+          className="cursor-pointer hover:opacity-80 transition-all"
+          onClick={() => setSettingOpen(true)}
+        >
+          <CogTooth />
+        </div>
       </div>
     </div>
   );
