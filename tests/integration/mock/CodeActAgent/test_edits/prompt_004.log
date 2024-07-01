@@ -442,4 +442,31 @@ OBSERVATION:
 4|Enjoy!
 
 
-ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
+----------
+
+I will now correct the typos in the `bad.txt` file.
+<execute_ipython>
+edit_file_by_line(
+    '/workspace/bad.txt',
+    start=1,
+    end=4,
+    new_content="""This is a stupid typo.
+Really?
+No more typos!
+Enjoy!"""
+)
+</execute_ipython>
+
+----------
+
+OBSERVATION:
+[File: /workspace/bad.txt (4 lines total after edit)]
+1|This is a stupid typo.
+2|Really?
+3|No more typos!
+4|Enjoy!
+[File edited at line 1.]
+[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+
+
+ENVIRONMENT REMINDER: You have 6 turns left to complete the task.

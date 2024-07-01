@@ -42,11 +42,11 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
     Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file` will only replace the *first* matching occurrences.
+    `edit_file_by_replace` will only replace the *first* matching occurrences.
     For example, given a file "/workspace/example.txt" with the following content:
     ```
     line 1
@@ -55,7 +55,7 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
     EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
-    edit_file(
+    edit_file_by_replace(
     '/workspace/example.txt',
     to_replace='line 2
     line 3',
@@ -71,7 +71,7 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
     REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
-    edit_file(
+    edit_file_by_replace(
     '/workspace/example.txt',
     to_replace='line 2
     line 3',
@@ -81,6 +81,30 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     file_name: str: The name of the file to edit.
     to_replace: str: The content to search for and replace.
     new_content: str: The new content to replace the old content with.
+
+edit_file_by_line(file_name: str, start: int, end: int, new_content: str) -> None:
+    Edit a file.
+    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+    For example, given a file "/workspace/example.txt" with the following content (line numbers are included for clarity):
+    ```
+    1|line 1
+    2|line 2
+    3|line 3
+    ```
+    If you want to replace the second line, you can call:
+    edit_file_by_line('/workspace/example.txt', 2, 2, 'new line')
+    This will give the following result:
+    ```
+    1|line 1
+    2|new line
+    3|line 3
+    ```
+    Args:
+    file_name: str: The name of the file to edit.
+    start: int: The start line number. Must satisfy start >= 1.
+    end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
+    content: str: The content to replace the lines with.
 
 insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     Insert content at the given line number in a file.
@@ -610,8 +634,8 @@ Let's correct the typos in the `bad.txt` file.
 
 I will make these changes now.
 <execute_ipython>
-edit_file('bad.txt', 'This is a stupid typoo.', 'This is a stupid typo.')
-edit_file('bad.txt', 'No mor typos!', 'No more typos!')
+edit_file_by_line('bad.txt', 1, 1, 'This is a stupid typo.')
+edit_file_by_line('bad.txt', 3, 3, 'No more typos!')
 </execute_ipython>
 
 ----------
@@ -622,12 +646,14 @@ OBSERVATION:
 2|Really?
 3|No mor typos!
 4|Enjoy!
+[File edited at line 1.]
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 [File: /workspace/bad.txt (4 lines total after edit)]
 1|This is a stupid typo.
 2|Really?
 3|No more typos!
 4|Enjoy!
+[File edited at line 3.]
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 
