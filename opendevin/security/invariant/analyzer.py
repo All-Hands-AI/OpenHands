@@ -12,8 +12,6 @@ from opendevin.events.observation import Observation
 from opendevin.events.stream import EventStream
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.security.analyzer import SecurityAnalyzer
-
-# from invariant import Monitor
 from opendevin.security.invariant.client import InvariantClient
 from opendevin.security.invariant.parser import TraceElement, parse_element
 from opendevin.security.invariant.policies import DEFAULT_INVARIANT_POLICY
@@ -112,14 +110,16 @@ class InvariantAnalyzer(SecurityAnalyzer):
         logger.info('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         self.trace.extend(new_elements)
-        # input = [asdict(e) for e in self.trace]
-        # self.input.extend([asdict(e) for e in new_elements])  # type: ignore [call-overload]
         input = [asdict(e) for e in new_elements]  # type: ignore [call-overload]
         logger.info(f'before policy: {input}')
-        errors = self.monitor.check(input)
-        logger.info('policy result:')
-        logger.info('errors: ' + str(errors))
-        if len(errors) > 0:
-            return ActionSecurityRisk.MEDIUM
-        else:
-            return ActionSecurityRisk.LOW
+        result, err = self.monitor.check(input)
+        if not err:
+            logger.info('policy result:')
+            logger.info('errors: ' + str(result))
+            if len(result) > 0:
+                return ActionSecurityRisk.MEDIUM
+            else:
+                return ActionSecurityRisk.LOW
+
+        logger.warning(f'Error checking policy: {err}')
+        return ActionSecurityRisk.LOW

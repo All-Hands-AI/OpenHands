@@ -1,8 +1,8 @@
 import time
-from typing import Optional
+from typing import Any, Optional, Tuple, Union
 
 import requests
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 
 class InvariantClient:
@@ -10,71 +10,113 @@ class InvariantClient:
 
     def __init__(self, server_url: str, session_id: Optional[str] = None):
         self.server = server_url
-        self.session_id = self._create_session()
+        self.session_id, err = self._create_session(session_id)
+        if err:
+            raise RuntimeError(f'Failed to create session: {err}')
         self.Policy = self._Policy(self)
         self.Monitor = self._Monitor(self)
 
-    def _create_session(self, session_id: Optional[str] = None):
+    def _create_session(
+        self, session_id: Optional[str] = None
+    ) -> Tuple[Optional[str], Optional[Exception]]:
         elapsed = 0
         while elapsed < self.timeout:
             try:
                 if session_id:
                     response = requests.get(
-                        f'{self.server}/session/new?session_id={session_id}'
+                        f'{self.server}/session/new?session_id={session_id}', timeout=30
                     )
                 else:
-                    response = requests.get(f'{self.server}/session/new')
-                break
-            except ConnectionError:
+                    response = requests.get(f'{self.server}/session/new', timeout=30)
+                response.raise_for_status()
+                return response.json().get('id'), None
+            except (ConnectionError, Timeout):
                 elapsed += 1
                 time.sleep(1)
-        return response.json()['id']
+            except HTTPError as http_err:
+                return None, http_err
+            except Exception as err:
+                return None, err
+        return None, ConnectionError('Connection timed out')
 
-    def close_session(self):
-        requests.delete(f'{self.server}/session/?session_id={self.session_id}')
+    def close_session(self) -> Union[None, Exception]:
+        try:
+            response = requests.delete(
+                f'{self.server}/session/?session_id={self.session_id}', timeout=30
+            )
+            response.raise_for_status()
+        except (ConnectionError, Timeout, HTTPError) as err:
+            return err
+        return None
 
     class _Policy:
         def __init__(self, invariant):
             self.server = invariant.server
             self.session_id = invariant.session_id
 
-        def _create_policy(self, rule):
-            response = requests.post(
-                f'{self.server}/policy/new?session_id={self.session_id}',
-                json={'rule': rule},
-            )
-            return response.json()['policy_id']
+        def _create_policy(self, rule) -> Tuple[Optional[str], Optional[Exception]]:
+            try:
+                response = requests.post(
+                    f'{self.server}/policy/new?session_id={self.session_id}',
+                    json={'rule': rule},
+                    timeout=30,
+                )
+                response.raise_for_status()
+                return response.json().get('policy_id'), None
+            except (ConnectionError, Timeout, HTTPError) as err:
+                return None, err
 
         def from_string(self, rule):
-            self.policy_id = self._create_policy(rule)
+            policy_id, err = self._create_policy(rule)
+            if err:
+                return err
+            self.policy_id = policy_id
             return self
 
-        def analyze(self, trace):
-            response = requests.post(
-                f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
-                json={'trace': trace},
-            )
-            return response.json()
+        def analyze(self, trace) -> Union[Any, Exception]:
+            try:
+                response = requests.post(
+                    f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
+                    json={'trace': trace},
+                    timeout=30,
+                )
+                response.raise_for_status()
+                return response.json(), None
+            except (ConnectionError, Timeout, HTTPError) as err:
+                return None, err
 
     class _Monitor:
         def __init__(self, invariant):
             self.server = invariant.server
             self.session_id = invariant.session_id
 
-        def _create_monitor(self, rule):
-            response = requests.post(
-                f'{self.server}/monitor/new?session_id={self.session_id}',
-                json={'rule': rule},
-            )
-            return response.json()['monitor_id']
+        def _create_monitor(self, rule) -> Tuple[Optional[str], Optional[Exception]]:
+            try:
+                response = requests.post(
+                    f'{self.server}/monitor/new?session_id={self.session_id}',
+                    json={'rule': rule},
+                    timeout=30,
+                )
+                response.raise_for_status()
+                return response.json().get('monitor_id'), None
+            except (ConnectionError, Timeout, HTTPError) as err:
+                return None, err
 
         def from_string(self, rule):
-            self.monitor_id = self._create_monitor(rule)
+            monitor_id, err = self._create_monitor(rule)
+            if err:
+                return err
+            self.monitor_id = monitor_id
             return self
 
-        def check(self, trace):
-            response = requests.post(
-                f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
-                json={'trace': trace},
-            )
-            return response.text
+        def check(self, trace) -> Union[Any, Exception]:
+            try:
+                response = requests.post(
+                    f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
+                    json={'trace': trace},
+                    timeout=30,
+                )
+                response.raise_for_status()
+                return response.json(), None
+            except (ConnectionError, Timeout, HTTPError) as err:
+                return None, err
