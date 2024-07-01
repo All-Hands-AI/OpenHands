@@ -5,7 +5,7 @@ _AGENT_SKILLS_DOCS = AgentSkillsRequirement.documentation
 COMMAND_DOCS = (
     '\nApart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:\n'
     f'{_AGENT_SKILLS_DOCS}'
-    "Please note that THE `edit_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
+    "Please note that THE `edit_file_by_replace`, `edit_file_by_line` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
 # ======= SYSTEM MESSAGE =======
@@ -221,7 +221,7 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file(
+edit_file_by_replace(
   'app.py',
   to_replace="    return str(numbers)",
   new_content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'",
