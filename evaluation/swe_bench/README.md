@@ -134,7 +134,7 @@ If you want to evaluate existing results, you should first run this to clone exi
 git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
 ```
 
-If you have extra local space, you can pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared to speed up the evaluation by running:
+If you have extra local space (e.g., 500GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared to speed up the evaluation by running:
 
 ```bash
 evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
