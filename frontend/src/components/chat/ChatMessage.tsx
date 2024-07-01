@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Markdown from "react-markdown";
-import { FaClipboard } from "react-icons/fa";
+import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
 import { code } from "../markdown/code";
@@ -12,6 +12,7 @@ interface MessageProps {
 }
 
 function ChatMessage({ message }: MessageProps) {
+  const [isCopy, setIsCopy] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
 
   const className = twMerge(
@@ -25,6 +26,10 @@ function ChatMessage({ message }: MessageProps) {
     navigator.clipboard
       .writeText(message.content)
       .then(() => {
+        setIsCopy(true);
+        setTimeout(() => {
+          setIsCopy(false);
+        }, 1500);
         toast.info(t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPIED));
       })
       .catch(() => {
@@ -45,11 +50,11 @@ function ChatMessage({ message }: MessageProps) {
       {isHovering && (
         <button
           onClick={copyToClipboard}
-          className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-500 transition-opacity opacity-75 hover:opacity-100"
+          className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-700"
           aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)}
           type="button"
         >
-          <FaClipboard />
+          {isCopy ? <FaClipboardCheck /> : <FaClipboard />}
         </button>
       )}
       <Markdown components={{ code }}>{message.content}</Markdown>

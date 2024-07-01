@@ -109,8 +109,8 @@ jobs:
           # Load the Docker image and capture the output
           output=$(docker load -i /tmp/sandbox_image_amd64.tar)
 
-          # Extract the image name from the output
-          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*')
+          # Extract the first image name from the output
+          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
 
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
@@ -161,8 +161,8 @@ jobs:
           # Load the Docker image and capture the output
           output=$(docker load -i /tmp/sandbox_image_amd64.tar)
 
-          # Extract the image name from the output
-          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*')
+          # Extract the first image name from the output
+          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
 
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
@@ -178,7 +178,7 @@ jobs:
     runs-on: ubuntu-latest
     # don't push if integration tests or sandbox tests fail
     needs: [ghcr_build, integration-tests-on-linux, test-for-sandbox]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
 
     env:
       tags: ${{ needs.ghcr_build.outputs.tags }}
@@ -212,7 +212,8 @@ jobs:
       - name: Load images and push to registry
         run: |
           mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | awk '{print $3}')
+          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
+          echo "loaded image = $loaded_image"
           tags=$(echo ${tags} | tr ' ' '\n')
           image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
           echo "image name = $image_name"
@@ -225,7 +226,7 @@ jobs:
   create_manifest:
     runs-on: ubuntu-latest
     needs: [ghcr_build, ghcr_push]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
 
     env:
       tags: ${{ needs.ghcr_build.outputs.tags }}
