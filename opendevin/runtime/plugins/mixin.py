@@ -13,14 +13,16 @@ class SandboxProtocol(Protocol):
     def initialize_plugins(self) -> bool: ...
 
     def execute(
-            self, cmd: str, stream: bool = False
+        self, cmd: str, stream: bool = False
     ) -> tuple[int, str | CancellableStream]: ...
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False): ...
 
 
 def _source_bashrc(sandbox: SandboxProtocol):
-    exit_code, output = sandbox.execute('source /opendevin/bash.bashrc && source ~/.bashrc')
+    exit_code, output = sandbox.execute(
+        'source /opendevin/bash.bashrc && source ~/.bashrc'
+    )
     if exit_code != 0:
         raise RuntimeError(
             f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
@@ -66,15 +68,18 @@ class PluginMixin:
                 if isinstance(output, CancellableStream):
                     total_output = ''
                     for line in output:
-                        if line.endswith('\n'):
-                            line = line[:-1]
+                        line = (
+                            line.rstrip()
+                        )  # Removes any trailing whitespace, including \n and \r\n
                         logger.debug(line)
-                        total_output += line
+                        total_output += (
+                            line + ' '
+                        )  # Avoid text from lines running into each other
                     _exit_code = output.exit_code()
                     output.close()
                     if _exit_code != 0:
                         raise RuntimeError(
-                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output}'
+                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
                         )
                     logger.info(f'Plugin {requirement.name} initialized successfully')
                 else:
