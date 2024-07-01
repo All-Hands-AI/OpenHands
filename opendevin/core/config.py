@@ -384,11 +384,11 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
-    if 'SANDBOX_TYPE' in config:
+    if 'SANDBOX_TYPE' in env_or_toml_dict:
         logger.error(
             'SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.'
         )
-        config['SANDBOX_BOX_TYPE'] = config.pop('SANDBOX_TYPE')
+        env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(config)
 
