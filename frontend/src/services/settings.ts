@@ -5,6 +5,7 @@ export type Settings = {
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY: string;
+  SECURITY_INVARIANT: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS: Settings = {
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
+  SECURITY_INVARIANT: "false",
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -51,12 +53,14 @@ export const getSettings = (): Settings => {
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
+  const securityInvariant = localStorage.getItem("SECURITY_INVARIANT");
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    SECURITY_INVARIANT: securityInvariant || DEFAULT_SETTINGS.SECURITY_INVARIANT,
   };
 };
 

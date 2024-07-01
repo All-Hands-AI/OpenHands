@@ -45,7 +45,7 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_security_analyzer()
+        await self._create_security_analyzer(start_event)
         await self._create_runtime()
         await self._create_controller(start_event)
 
@@ -63,9 +63,16 @@ class AgentSession:
         self._closed = True
 
     # TODO: Make this configurable
-    async def _create_security_analyzer(self):
+    async def _create_security_analyzer(self, start_event: dict):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
-        self.security_analyzer = InvariantAnalyzer(self.event_stream)
+        args = {
+            key: value
+            for key, value in start_event.get('args', {}).items()
+            if value != ''
+        }  # remove empty values, prevent FE from sending empty strings
+        logger.info(f'Creating security analyzer with args {args}')
+        if args.get(ConfigType.SECURITY_INVARIANT, False) == 'true':
+            self.security_analyzer = InvariantAnalyzer(self.event_stream)
 
     async def _create_runtime(self):
         if self.runtime is not None:

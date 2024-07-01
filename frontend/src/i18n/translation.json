@@ -521,6 +521,9 @@
     "zh-TW": "輸入您的 API 金鑰。",
     "de": "Modell API Schlüssel."
   },
+  "SETTINGS$SECURITY_INVARIANT": {
+    "en": "Enable Invariant Security Analyzer"
+  },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
     "zh-CN": "文件未选中",

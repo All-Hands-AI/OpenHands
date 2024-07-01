@@ -1,4 +1,4 @@
-import { Input, useDisclosure } from "@nextui-org/react";
+import { Input, Switch, useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -17,6 +17,7 @@ interface SettingsFormProps {
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
+  onSecurityInvariantChange: (securityInvariant: boolean) => void;
 }
 
 function SettingsForm({
@@ -28,6 +29,7 @@ function SettingsForm({
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
+  onSecurityInvariantChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
@@ -86,6 +88,14 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
+      <Switch
+        aria-label="invariant"
+        defaultSelected={settings.SECURITY_INVARIANT === "true"}
+        onValueChange={onSecurityInvariantChange}
+        isDisabled={disabled}
+      >
+        {t(I18nKey.SETTINGS$SECURITY_INVARIANT)}
+      </Switch>
     </>
   );
 }

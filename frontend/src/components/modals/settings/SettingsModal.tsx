@@ -89,6 +89,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     setSettings((prev) => ({ ...prev, LLM_API_KEY: key }));
   };
 
+  const handleSecurityInvariantChange = (securityInvariant: boolean) => {
+    setSettings((prev) => ({ ...prev, SECURITY_INVARIANT: securityInvariant.toString() }));
+  };
+
   const handleResetSettings = () => {
     setSettings(getDefaultSettings);
   };
@@ -170,6 +174,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
+          onSecurityInvariantChange={handleSecurityInvariantChange}
         />
       )}
     </BaseModal>
