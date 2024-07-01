@@ -70,7 +70,7 @@ class Runtime:
     ):
         self.sid = sid
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox.type)
+            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox

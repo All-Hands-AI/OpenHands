@@ -65,7 +65,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert config.agent.memory_max_threads == 4
     assert config.agent.memory_enabled is True
     assert config.agent.name == 'CodeActAgent'
-    assert config.sandbox.type == 'local'
+    assert config.sandbox.box_type == 'local'
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
@@ -104,11 +104,12 @@ memory_enabled = true
 
 [sandbox]
 timeout = 1
-                        
+
 [core]
 workspace_base = "/opt/files2/workspace"
 sandbox_type = "local"
-""")
+"""
+        )
 
     load_from_toml(default_config, temp_toml_file)
 
@@ -117,7 +118,7 @@ sandbox_type = "local"
     assert default_config.agent.name == 'TestAgent'
     assert default_config.agent.memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
-    assert default_config.sandbox.type == 'local'
+    assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1
 
     # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
@@ -171,7 +172,7 @@ disable_color = true
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     assert default_config.workspace_mount_path == 'UNDEFINED'
 
-    assert default_config.sandbox.type == 'ssh'
+    assert default_config.sandbox.box_type == 'ssh'
     assert default_config.disable_color is True
 
     finalize_config(default_config)
@@ -221,7 +222,7 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 def test_finalize_config(default_config):
     # Test finalize config
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
-    default_config.sandbox.type = 'local'
+    default_config.sandbox.box_type = 'local'
     finalize_config(default_config)
 
     assert (
@@ -244,7 +245,7 @@ def test_workspace_mount_path_default(default_config):
 
 def test_workspace_mount_path_in_sandbox_local(default_config):
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    default_config.sandbox.type = 'local'
+    default_config.sandbox.box_type = 'local'
     finalize_config(default_config)
     assert (
         default_config.workspace_mount_path_in_sandbox

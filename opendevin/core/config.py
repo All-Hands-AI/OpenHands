@@ -127,7 +127,7 @@ class SandboxConfig(metaclass=Singleton):
     Configuration for the sandbox.
 
     Attributes:
-        type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
+        box_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
@@ -136,7 +136,7 @@ class SandboxConfig(metaclass=Singleton):
 
     """
 
-    type: str = 'ssh'
+    box_type: str = 'ssh'
     container_image: str = 'ghcr.io/opendevin/sandbox' + (
         f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
@@ -380,6 +380,11 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
+    if 'SANDBOX_TYPE' in config:
+        logger.error(
+            'SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.'
+        )
+        config['SANDBOX_BOX_TYPE'] = config.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(config)
 
@@ -434,6 +439,8 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
         for key in core_config:
             if key.startswith('sandbox_'):
                 new_key = key.replace('sandbox_', '')
+                if new_key == 'type':
+                    new_key = 'box_type'
                 if new_key in sandbox_config.__annotations__:
                     setattr(sandbox_config, new_key, core_config[key])
                 else:
@@ -464,7 +471,7 @@ def finalize_config(config: AppConfig):
     config.workspace_base = os.path.abspath(config.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if config.sandbox.type == 'local':
+    if config.sandbox.box_type == 'local':
         config.workspace_mount_path_in_sandbox = config.workspace_mount_path
 
     if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:
