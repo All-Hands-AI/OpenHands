@@ -18,6 +18,7 @@ interface SettingsFormProps {
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
   onConfirmationModeChange: (confirmationMode: boolean) => void;
+  onSecurityInvariantChange: (securityInvariant: boolean) => void;
 }
 
 function SettingsForm({
@@ -30,6 +31,7 @@ function SettingsForm({
   onAgentChange,
   onLanguageChange,
   onConfirmationModeChange,
+  onSecurityInvariantChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
@@ -97,6 +99,14 @@ function SettingsForm({
         >
         {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
         </Switch>
+      <Switch
+        aria-label="invariant"
+        defaultSelected={settings.SECURITY_INVARIANT === "true"}
+        onValueChange={onSecurityInvariantChange}
+        isDisabled={disabled}
+      >
+        {t(I18nKey.SETTINGS$SECURITY_INVARIANT)}
+      </Switch>
     </>
   );
 }

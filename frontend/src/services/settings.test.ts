@@ -20,7 +20,7 @@ describe("getSettings", () => {
       .mockReturnValueOnce("llm_value")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
-      .mockReturnValueOnce("api_key")
+      .mockReturnValueOnce("true")
       .mockReturnValueOnce("true");
 
     const settings = getSettings();
@@ -30,7 +30,6 @@ describe("getSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
-      CONFIRMATION_MODE: true,
     });
   });
 
@@ -49,6 +48,7 @@ describe("getSettings", () => {
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
       LLM_API_KEY: "",
       CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+      SECURITY_INVARIANT: DEFAULT_SETTINGS.SECURITY_INVARIANT,
     });
   });
 });
@@ -61,6 +61,7 @@ describe("saveSettings", () => {
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
       CONFIRMATION_MODE: true,
+      SECURITY_INVARIANT: true,
     };
 
     saveSettings(settings);
