@@ -2,7 +2,7 @@ SHELL=/bin/bash
 # Makefile for OpenDevin project
 
 # Variables
-DOCKER_IMAGE = ghcr.io/opendevin/sandbox
+DOCKER_IMAGE = ghcr.io/opendevin/sandbox:main
 BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
@@ -131,6 +131,10 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@if [ -z "${TZ}" ]; then \
+		echo "Defaulting TZ (timezone) to UTC"; \
+		export TZ="UTC"; \
+	fi
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
@@ -204,11 +208,10 @@ start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
-# Run the app
-run:
-	@echo "$(YELLOW)Running the app...$(RESET)"
+# Common setup for running the app (non-callable)
+_run_setup:
 	@if [ "$(OS)" = "Windows_NT" ]; then \
-		echo "$(RED)`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately.$(RESET)"; \
+		echo "$(RED) Windows is not supported, use WSL instead!$(RESET)"; \
 		exit 1; \
 	fi
 	@mkdir -p logs
@@ -217,8 +220,20 @@ run:
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
+
+# Run the app (standard mode)
+run:
+	@echo "$(YELLOW)Running the app...$(RESET)"
+	@$(MAKE) -s _run_setup
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
+
+# Run the app (WSL mode)
+run-wsl:
+	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
+	@$(MAKE) -s _run_setup
+	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
+	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
 
 # Setup config.toml
 setup-config:
@@ -234,8 +249,8 @@ setup-config-prompts:
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
-	@read -p "Do you want to persist the sandbox container? [true/false] [default: true]: " persist_sandbox; \
-	 persist_sandbox=$${persist_sandbox:-true}; \
+	@read -p "Do you want to persist the sandbox container? [true/false] [default: false]: " persist_sandbox; \
+	 persist_sandbox=$${persist_sandbox:-false}; \
 	 if [ "$$persist_sandbox" = "true" ]; then \
 		 read -p "Enter a password for the sandbox container: " ssh_password; \
 		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
@@ -304,4 +319,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help

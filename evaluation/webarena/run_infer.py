@@ -65,6 +65,7 @@ def process_instance(
             'PLACEHOLDER_GOAL',
             runtime_tools_config=runtime_tools_config,
             sandbox=docker_sandbox,
+            sid=env_id,
         )
     )
 
@@ -99,7 +100,7 @@ def process_instance(
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'metrics': metrics,
-        'error': state.error if state and state.error else None,
+        'error': state.last_error if state and state.last_error else None,
         'test_result': reward,
     }
 

@@ -47,10 +47,7 @@ class PlannerAgent(Agent):
             return AgentFinishAction()
         prompt = get_prompt(state)
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.do_completion(messages=messages)
-        state.num_of_chars += len(prompt) + len(
-            resp['choices'][0]['message']['content']
-        )
+        resp = self.llm.completion(messages=messages)
         return self.response_parser.parse(resp)
 
     def search_memory(self, query: str) -> list[str]:
