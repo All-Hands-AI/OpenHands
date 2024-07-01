@@ -140,7 +140,7 @@ If you have extra local space (e.g., 500GB), you can try pull the [instance-leve
 evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
 ```
 
-If you want to save disk space a bit while speed up the image pre-build process, you can pull the environment-level docker images:
+If you want to save disk space a bit (e.g., with ~50GB free disk space) while speed up the image pre-build process, you can pull the environment-level docker images:
 ```bash
 evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
 ```
