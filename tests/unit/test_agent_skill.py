@@ -9,7 +9,7 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
     _print_window,
     create_file,
-    edit_file,
+    edit_file_by_replace,
     find_file,
     goto_line,
     insert_content_at_line,
@@ -314,7 +314,7 @@ def test_print_window_internal(tmp_path):
         assert result == expected
 
 
-def test_edit_file_window(tmp_path, monkeypatch):
+def test_edit_file_by_replace_window(tmp_path, monkeypatch):
     # Set environment variable via monkeypatch does NOT work!
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
@@ -361,7 +361,7 @@ check(any_int)"""
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 str(temp_file_path),
                 to_replace='    assert any_int(1.0, 2, 3) == False',
                 new_content='        assert any_int(1.0, 2, 3) == False',
@@ -413,7 +413,7 @@ check(any_int)"""
         assert result == expected
 
 
-def test_edit_file(tmp_path):
+def test_edit_file_by_replace(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
     temp_file_path.write_text(content)
@@ -422,7 +422,7 @@ def test_edit_file(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 file_name=str(temp_file_path),
                 to_replace='Line 1\nLine 2\nLine 3',
                 new_content='REPLACE TEXT',
@@ -445,7 +445,7 @@ def test_edit_file(tmp_path):
     assert lines[2].rstrip() == 'Line 5'
 
 
-def test_edit_file_sameline(tmp_path):
+def test_edit_file_by_replace_sameline(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
     temp_file_path.write_text(content)
@@ -454,7 +454,7 @@ def test_edit_file_sameline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 file_name=str(temp_file_path),
                 to_replace='Line 2\nLine 2',
                 new_content='Line 2\nREPLACE TEXT',
@@ -481,7 +481,7 @@ def test_edit_file_sameline(tmp_path):
     assert lines[4].rstrip() == 'Line 5'
 
 
-def test_edit_file_multiline(tmp_path):
+def test_edit_file_by_replace_multiline(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
     temp_file_path.write_text(content)
@@ -490,7 +490,7 @@ def test_edit_file_multiline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 file_name=str(temp_file_path),
                 to_replace='Line 2',
                 new_content='REPLACE TEXT',
@@ -517,9 +517,9 @@ def test_edit_file_multiline(tmp_path):
     assert lines[4].rstrip() == 'Line 5'
 
 
-def test_edit_file_toreplace_empty():
+def test_edit_file_by_replace_toreplace_empty():
     with pytest.raises(ValueError):
-        edit_file(
+        edit_file_by_replace(
             str('unknown file'),
             '',
             'REPLACE TEXT',
@@ -673,13 +673,13 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
     assert lines[1].rstrip() == '`REPLACE TEXT2`'
     assert lines[2].rstrip() == '`REPLACE TEXT3`'
 
-    # Check that no backticks are escaped in the edit_file call
+    # Check that no backticks are escaped in the edit_file_by_replace call
     assert '\\`' not in result
 
     # Perform a second edit
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 str(temp_file_path),
                 '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
                 '`REPLACED TEXT1`\n`REPLACED TEXT2`\n`REPLACED TEXT3`',
@@ -701,7 +701,7 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
     assert lines[1].rstrip() == '`REPLACED TEXT2`'
     assert lines[2].rstrip() == '`REPLACED TEXT3`'
 
-    # Check that no backticks are escaped in the second edit_file call
+    # Check that no backticks are escaped in the second edit_file_by_replace call
     assert '\\`' not in second_result
 
 

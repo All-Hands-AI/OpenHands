@@ -12,7 +12,7 @@ Functions:
 - search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
-- edit_file(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
+- edit_file_by_replace(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
 - insert_content_at_line(file_name: str, line_number: int, content: str): Inserts given content at the specified line number in a file.
 """
 
@@ -538,13 +538,13 @@ def _edit_or_insert_file(
 
 
 @update_pwd_decorator
-def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
     """Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
 
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file` will only replace the *first* matching occurrences.
+    `edit_file_by_replace` will only replace the *first* matching occurrences.
 
     For example, given a file "/workspace/example.txt" with the following content:
     ```
@@ -556,7 +556,7 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
 
     EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
 
-    edit_file(
+    edit_file_by_replace(
         '/workspace/example.txt',
         to_replace='line 2\nline 3',
         new_content='new line\nline 3',
@@ -574,7 +574,7 @@ def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
 
     REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
 
-    edit_file(
+    edit_file_by_replace(
         '/workspace/example.txt',
         to_replace='line 2\nline 3',
         new_content='',
@@ -976,7 +976,7 @@ __all__ = [
     'scroll_down',
     'scroll_up',
     'create_file',
-    'edit_file',
+    'edit_file_by_replace',
     'insert_content_at_line',
     'search_dir',
     'search_file',
