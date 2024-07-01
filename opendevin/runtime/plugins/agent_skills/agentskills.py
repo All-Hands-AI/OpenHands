@@ -542,7 +542,10 @@ def _edit_file_impl(
     if first_error_line is not None and int(first_error_line) > 0:
         CURRENT_LINE = first_error_line
     else:
-        CURRENT_LINE = start or n_total_lines or 1
+        if is_append:
+            CURRENT_LINE = max(1, len(lines))  # end of original file
+        else:
+            CURRENT_LINE = start or n_total_lines or 1
     ret_str += f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]\n'
     CURRENT_FILE = file_name
     ret_str += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True) + '\n'
