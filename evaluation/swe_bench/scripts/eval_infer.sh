@@ -19,8 +19,6 @@ echo "INSTANCE_ID: $INSTANCE_ID"
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
-mkdir -p $FILE_DIR/logs
-mkdir -p $FILE_DIR/swe_bench_format
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
 DOCKERHUB_NAMESPACE="xingyaoww"
@@ -76,6 +74,7 @@ echo "Running SWE-bench evaluation"
 echo "=============================================================="
 
 RUN_ID=$(date +"%Y%m%d_%H%M%S")
+N_PROCESS=16
 
 if [ -z "$INSTANCE_ID" ]; then
     echo "Running SWE-bench evaluation on the whole input file..."
@@ -86,6 +85,7 @@ if [ -z "$INSTANCE_ID" ]; then
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 1800 \
         --cache_level instance \
+        --max_workers $N_PROCESS \
         --run_id $RUN_ID
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
@@ -94,6 +94,7 @@ else
         --timeout 1800 \
         --instance_ids $INSTANCE_ID \
         --cache_level instance \
+        --max_workers $N_PROCESS \
         --run_id $RUN_ID
 fi
 
@@ -105,9 +106,9 @@ RESULT_OUTPUT_DIR=$(dirname $SWEBENCH_FORMAT_JSONL)
 echo "RESULT_OUTPUT_DIR: $RESULT_OUTPUT_DIR"
 
 # move the eval results to the target directory
-CUR_EVAL_RESULTS_DIR=run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH
-mkdir -p $RESULT_OUTPUT_DIR/eval_outputs
-mv $CUR_EVAL_RESULTS_DIR $RESULT_OUTPUT_DIR/eval_outputs
+mkdir -p $RESULT_OUTPUT_DIR
+mv run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
+mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
 echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
 
 # move report file
