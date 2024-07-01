@@ -352,8 +352,8 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                 if field_name == 'agent' and env_var_name in env_or_toml_dict:
                     setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
 
-                old_configs = ['INITIALIZE_PLUGINS']
                 # As suggested, commented for a separate PR
+                # old_configs = ['INITIALIZE_PLUGINS']
                 # if field_name == 'sandbox':  
                 #     for old_config in old_configs:
                 #         if (
