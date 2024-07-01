@@ -68,13 +68,11 @@ class PluginMixin:
                 if isinstance(output, CancellableStream):
                     total_output = ''
                     for line in output:
-                        line = (
-                            line.rstrip()
-                        )  # Removes any trailing whitespace, including \n and \r\n
+                        # Removes any trailing whitespace, including \n and \r\n
+                        line = line.rstrip()
                         logger.debug(line)
-                        total_output += (
-                            line + ' '
-                        )  # Avoid text from lines running into each other
+                        # Avoid text from lines running into each other
+                        total_output += line + ' '
                     _exit_code = output.exit_code()
                     output.close()
                     if _exit_code != 0:
