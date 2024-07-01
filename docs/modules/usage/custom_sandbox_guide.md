@@ -4,17 +4,7 @@ The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https:
 
 ## Setup
 
-To get started running with your own Docker Sandbox image you need to ensure you can build OpenDevin locally via the following: 
-1. Clone the OpenDevin github repository to your local machine 
-2. In the root (OpenDevin/)  directory, run ```make build```
-3. Then run ```make run```  
-4. Finally navigate your browser to ```localhost:3001``` to ensure that your local build of OpenDevin is functional 
-
-
-Please refer to [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) for more installation details.
-
-> Note that the above steps will take some time to run and will require that your have python3.11, poetry (a python package manager), and Docker installed 
-
+Make sure you are able to run OpenDevin using the [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) first.
 
 ## Create Your Docker Image
 
@@ -34,9 +24,9 @@ Next build your docker image with the name of your choice, for example "custom_i
 
 This will produce a new image called ```custom_image``` that will be available in Docker Engine. 
 
-> Note that in the configuration described in this document, OpenDevin will run as user "opendevin" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root
+> Note that in the configuration described in this document, OpenDevin will run as user "opendevin" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
 > 
-> Installing with apt-get above installs node for all users 
+> Installing with apt-get above installs node for all users.
 
 
 ## Specify your custom image in config.toml file
@@ -50,11 +40,10 @@ persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="custom_image"
 ```
-> Ensure that sandbox_container_image is set to the name of your custom image from the previous step
+> Ensure that sandbox_container_image is set to the name of your custom image from the previous step.
 
 ## Run  
 Run OpenDevin by running ```make run``` in the top level directory.  
-A lot of things will happen but ultimately the OpenDevin server and frontend should be running.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.  
 
@@ -85,10 +74,7 @@ dockerfile_content = (
     ).strip()
 ```
 
-> Note: the name of the image is modified via [_get_new_image_name()](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py#L63) and it is the modified name that is searched for on subsequent runs 
-
-
-
+> Note: the name of the image is modified via [_get_new_image_name()](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py#L63) and it is the modified name that is searched for on subsequent runs.
 
 ## Troubleshooting / Errors 
 
