@@ -6358,8 +6358,8 @@ tqdm = "*"
 [package.source]
 type = "git"
 url = "https://github.com/OpenDevin/SWE-bench.git"
-reference = "HEAD"
-resolved_reference = "7f67c1f4e264e3221848a218937a6f11c360b915"
+reference = "xw/attempt-fix-django-parsing"
+resolved_reference = "c61bc104ae5113dd58c228004e7b52293ed73bbd"
 
 [[package]]
 name = "sympy"
@@ -7746,4 +7746,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "bfb5c89e3fe1763ed5b539f77e714e9c269366ece66507ed8811dff7df614c93"
+content-hash = "bcee6d5cbe7f6ef236173bf5e94c8859a097c3d2ecde0e757be5f2c45b45a8cd"
