@@ -27,6 +27,7 @@ class AgentSession:
     event_stream: EventStream
     controller: Optional[AgentController] = None
     runtime: Optional[Runtime] = None
+    security_analyzer: Optional[InvariantAnalyzer] = None
     _closed: bool = False
 
     def __init__(self, sid):
@@ -57,6 +58,8 @@ class AgentSession:
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
+        if self.security_analyzer is not None:
+            self.security_analyzer.close()
         self._closed = True
 
     # TODO: Make this configurable
