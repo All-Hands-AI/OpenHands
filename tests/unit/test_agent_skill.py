@@ -432,7 +432,8 @@ def test_edit_file(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|REPLACE TEXT\n'
             '2|Line 4\n'
-            '3|Line 5\n' + MSG_FILE_UPDATED + '\n'
+            '3|Line 5\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -465,7 +466,8 @@ def test_edit_file_sameline(tmp_path):
             '2|Line 2\n'
             '3|REPLACE TEXT\n'
             '4|Line 4\n'
-            '5|Line 5\n' + MSG_FILE_UPDATED + '\n'
+            '5|Line 5\n'
+            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -500,7 +502,8 @@ def test_edit_file_multiline(tmp_path):
             '2|REPLACE TEXT\n'
             '3|Line 2\n'
             '4|Line 4\n'
-            '5|Line 5\n' + MSG_FILE_UPDATED + '\n'
+            '5|Line 5\n'
+            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -542,7 +545,8 @@ def test_insert_content_at_line(tmp_path):
             '1|Line 1\n'
             '2|Inserted Line\n'
             '3|Line 2\n'
-            '4|Line 3\n' + MSG_FILE_UPDATED + '\n'
+            '4|Line 3\n'
+            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -569,17 +573,16 @@ def test_insert_content_at_line_from_scratch(tmp_path):
             )
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (2 lines total after edit)]\n'
+            f'[File: {temp_file_path} (1 lines total after edit)]\n'
             '1|REPLACE TEXT\n'
-            '2|\n' + MSG_FILE_UPDATED + '\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 2
+    assert len(lines) == 1
     assert lines[0].rstrip() == 'REPLACE TEXT'
-    assert lines[1].rstrip() == ''
 
 
 def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
@@ -598,7 +601,8 @@ def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED + '\n'
+            '1|REPLACE TEXT\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -626,7 +630,8 @@ def test_insert_content_at_line_emptyline(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|Line 1\n'
             '2|Inserted Line\n'
-            '3|\n' + MSG_FILE_UPDATED + '\n'
+            '3|\n'
+            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -635,7 +640,6 @@ def test_insert_content_at_line_emptyline(tmp_path):
     assert len(lines) == 3
     assert lines[0].rstrip() == 'Line 1'
     assert lines[1].rstrip() == 'Inserted Line'
-    assert lines[2].rstrip() == ''
 
 
 def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second_edit(
@@ -654,21 +658,20 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
             )
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|`REPLACE TEXT1`\n'
             '2|`REPLACE TEXT2`\n'
             '3|`REPLACE TEXT3`\n'
-            '4|\n' + MSG_FILE_UPDATED + '\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 4
+    assert len(lines) == 3
     assert lines[0].rstrip() == '`REPLACE TEXT1`'
     assert lines[1].rstrip() == '`REPLACE TEXT2`'
     assert lines[2].rstrip() == '`REPLACE TEXT3`'
-    assert lines[3].rstrip() == ''
 
     # Check that no backticks are escaped in the edit_file call
     assert '\\`' not in result
@@ -683,21 +686,20 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
             )
         second_result = buf.getvalue()
         second_expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|`REPLACED TEXT1`\n'
             '2|`REPLACED TEXT2`\n'
             '3|`REPLACED TEXT3`\n'
-            '4|\n' + MSG_FILE_UPDATED + '\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert second_result.split('\n') == second_expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 4
+    assert len(lines) == 3
     assert lines[0].rstrip() == '`REPLACED TEXT1`'
     assert lines[1].rstrip() == '`REPLACED TEXT2`'
     assert lines[2].rstrip() == '`REPLACED TEXT3`'
-    assert lines[3].rstrip() == ''
 
     # Check that no backticks are escaped in the second edit_file call
     assert '\\`' not in second_result
@@ -717,21 +719,20 @@ def test_insert_content_at_line_from_scratch_multiline(tmp_path):
             )
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|REPLACE TEXT1\n'
             '2|REPLACE TEXT2\n'
             '3|REPLACE TEXT3\n'
-            '4|\n' + MSG_FILE_UPDATED + '\n'
+            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 4
+    assert len(lines) == 3
     assert lines[0].rstrip() == 'REPLACE TEXT1'
     assert lines[1].rstrip() == 'REPLACE TEXT2'
     assert lines[2].rstrip() == 'REPLACE TEXT3'
-    assert lines[3].rstrip() == ''
 
 
 def test_insert_content_at_line_not_opened():
@@ -929,9 +930,9 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
         "1|print('hello')\n"
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -961,7 +962,6 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
         '1|undefined_name()\n'
-        '2|\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
@@ -1038,9 +1038,9 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
         '1|undefined_name()\n'
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 

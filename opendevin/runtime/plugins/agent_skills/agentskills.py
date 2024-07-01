@@ -395,13 +395,23 @@ def _edit_or_insert_file(
                     ]
                 elif start is not None:
                     if len(lines) == 1 and lines[0].strip() == '':
-                        # if the file is empty with only 1 line
-                        lines = ['\n']
-                    new_lines = (
-                        lines[: start - 1]
-                        + [content + '\n' if not content.endswith('\n') else content]
-                        + lines[start - 1 :]
-                    )
+                        # if the file with only 1 line and that line is empty
+                        lines = []
+
+                    if len(lines) == 0:
+                        new_lines = [
+                            content + '\n' if not content.endswith('\n') else content
+                        ]
+                    else:
+                        new_lines = (
+                            lines[: start - 1]
+                            + [
+                                content + '\n'
+                                if not content.endswith('\n')
+                                else content
+                            ]
+                            + lines[start - 1 :]
+                        )
                 else:
                     assert start is None
                     ret_str += (
@@ -522,6 +532,7 @@ def _edit_or_insert_file(
     ret_str += f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]\n'
     CURRENT_FILE = file_name
     ret_str += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True) + '\n'
+    ret_str += f'[File edited at line {CURRENT_LINE}.]\n'
     ret_str += MSG_FILE_UPDATED
     return ret_str
 
