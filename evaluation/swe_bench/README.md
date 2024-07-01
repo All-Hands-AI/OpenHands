@@ -126,7 +126,7 @@ After running the inference, you will obtain a `output.jsonl` (by default it wil
 
 With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patches, and produce a fine-grained report.
 
-**This evaluation is performed using the official dockerized evaluation annouced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
+**This evaluation is performed using the official dockerized evaluation announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
 If you want to evaluate existing results, you should first run this to clone existing outputs
 
