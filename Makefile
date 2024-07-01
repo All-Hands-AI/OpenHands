@@ -210,6 +210,10 @@ start-frontend:
 
 # Common setup for running the app (non-callable)
 _run_setup:
+	@if [ "$(OS)" = "Windows_NT" ]; then \
+		echo "$(RED) Windows is not supported, use WSL instead!$(RESET)"; \
+		exit 1; \
+	fi
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
@@ -220,10 +224,6 @@ _run_setup:
 # Run the app (standard mode)
 run:
 	@echo "$(YELLOW)Running the app...$(RESET)"
-	@if [ "$(OS)" = "Windows_NT" ]; then \
-		echo "$(RED)`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately.$(RESET)"; \
-		exit 1; \
-	fi
 	@$(MAKE) -s _run_setup
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
