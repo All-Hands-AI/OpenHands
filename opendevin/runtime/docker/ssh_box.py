@@ -35,13 +35,26 @@ class SSHExecCancellableStream(CancellableStream):
         self.closed = True
 
     def exit_code(self):
-        self.ssh.sendline('echo $?')
-        success = self.ssh.prompt(timeout=self.timeout)
-        if not success:
-            return -1
+        marker = f'EXIT_CODE_MARKER_{uuid.uuid4().hex}'
+        self.ssh.sendline(f'echo "{marker}$?{marker}"')
 
-        _exit_code = self.ssh.before.strip()
-        return int(_exit_code)
+        if not self.ssh.prompt(timeout=self.timeout):
+            return None  # Timeout occurred
+
+        output = self.ssh.before
+        match = re.search(f'{marker}(\\d+){marker}', output)
+
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                # Log the unexpected format
+                logger.error(f'Unexpected exit code format: {match.group(1)}')
+                return None
+        else:
+            # If we can't find our marked exit code, log the output and return None
+            logger.error(f'Could not find exit code in output: {output}')
+            return None
 
     def read_output(self):
         st = time.time()
@@ -348,14 +361,18 @@ class DockerSSHBox(Sandbox):
                 )
             # check the miniforge3 directory exist
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1'],
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
                 if exit_code == 1:
                     raise Exception(
-                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
+                        'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
                     )
                 else:
                     raise Exception(
@@ -487,17 +504,12 @@ class DockerSSHBox(Sandbox):
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
-            logger.debug('WAITING FOR .prompt()')
             self.ssh.sendline('\n')
             timeout_not_reached = self.ssh.prompt(timeout=1)
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
                 break
-            logger.debug('WAITING FOR .before')
             output = self.ssh.before
-            logger.debug(
-                f'WAITING FOR END OF command output ({bool(output)}): {output}'
-            )
             if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
@@ -511,7 +523,6 @@ class DockerSSHBox(Sandbox):
         while not exit_code_str:
             self.ssh.prompt(timeout=1)
             exit_code_str = self.ssh.before.strip()
-            logger.debug(f'WAITING FOR exit code: {exit_code_str}')
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
