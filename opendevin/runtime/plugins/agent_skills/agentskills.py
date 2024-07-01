@@ -41,7 +41,7 @@ WINDOW = 100
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
 # This is also used in unit tests!
-MSG_FILE_UPDATED = '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
 
 # OPENAI
 OPENAI_API_KEY = os.getenv(
@@ -549,8 +549,7 @@ def _edit_file_impl(
     ret_str += f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]\n'
     CURRENT_FILE = file_name
     ret_str += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True) + '\n'
-    ret_str += f'[File edited at line {CURRENT_LINE}.]\n'
-    ret_str += MSG_FILE_UPDATED
+    ret_str += MSG_FILE_UPDATED.format(line_number=CURRENT_LINE)
     return ret_str
 
 

@@ -438,8 +438,7 @@ def test_edit_file_by_replace(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|REPLACE TEXT\n'
             '2|Line 4\n'
-            '3|Line 5\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|Line 5\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -472,8 +471,7 @@ def test_edit_file_by_replace_sameline(tmp_path):
             '2|Line 2\n'
             '3|REPLACE TEXT\n'
             '4|Line 4\n'
-            '5|Line 5\n'
-            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
+            '5|Line 5\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -508,8 +506,7 @@ def test_edit_file_by_replace_multiline(tmp_path):
             '2|REPLACE TEXT\n'
             '3|Line 2\n'
             '4|Line 4\n'
-            '5|Line 5\n'
-            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
+            '5|Line 5\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -553,8 +550,7 @@ def test_edit_file_by_line(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|REPLACE TEXT\n'
             '2|Line 4\n'
-            '3|Line 5\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|Line 5\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -582,8 +578,7 @@ def test_edit_file_by_line_from_scratch(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -613,8 +608,7 @@ def test_edit_file_by_line_from_scratch_multiline_with_backticks_and_second_edit
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|`REPLACE TEXT1`\n'
             '2|`REPLACE TEXT2`\n'
-            '3|`REPLACE TEXT3`\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|`REPLACE TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -642,8 +636,7 @@ def test_edit_file_by_line_from_scratch_multiline_with_backticks_and_second_edit
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|`REPLACED TEXT1`\n'
             '2|`REPLACED TEXT2`\n'
-            '3|`REPLACED TEXT3`\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|`REPLACED TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert second_result.split('\n') == second_expected.split('\n')
 
@@ -676,8 +669,7 @@ def test_edit_file_by_line_from_scratch_multiline(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|REPLACE TEXT1\n'
             '2|REPLACE TEXT2\n'
-            '3|REPLACE TEXT3\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|REPLACE TEXT3\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -718,8 +710,7 @@ def test_insert_content_at_line(tmp_path):
             '1|Line 1\n'
             '2|Inserted Line\n'
             '3|Line 2\n'
-            '4|Line 3\n'
-            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
+            '4|Line 3\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -747,8 +738,7 @@ def test_insert_content_at_line_from_scratch(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -774,8 +764,7 @@ def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -803,8 +792,7 @@ def test_insert_content_at_line_emptyline(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|Line 1\n'
             '2|Inserted Line\n'
-            '3|\n'
-            '[File edited at line 2.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -834,8 +822,7 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|`REPLACE TEXT1`\n'
             '2|`REPLACE TEXT2`\n'
-            '3|`REPLACE TEXT3`\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|`REPLACE TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -862,8 +849,7 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|`REPLACED TEXT1`\n'
             '2|`REPLACED TEXT2`\n'
-            '3|`REPLACED TEXT3`\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|`REPLACED TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert second_result.split('\n') == second_expected.split('\n')
 
@@ -895,8 +881,7 @@ def test_insert_content_at_line_from_scratch_multiline(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|REPLACE TEXT1\n'
             '2|REPLACE TEXT2\n'
-            '3|REPLACE TEXT3\n'
-            '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+            '3|REPLACE TEXT3\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -932,9 +917,7 @@ def test_append_file(tmp_path):
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
             '1|Line 1\n'
             '2|Line 2\n'
-            '3|APPENDED TEXT\n'
-            '[File edited at line 2.]\n'
-            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+            '3|APPENDED TEXT\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -957,9 +940,7 @@ def test_append_file_from_scratch(tmp_path):
             result = buf.getvalue()
             expected = (
                 f'[File: {temp_file_path} (1 lines total after edit)]\n'
-                '1|APPENDED TEXT\n'
-                '[File edited at line 1.]\n'
-                '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+                '1|APPENDED TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
             )
             assert result.split('\n') == expected.split('\n')
 
@@ -987,9 +968,7 @@ def test_append_file_from_scratch_multiline(tmp_path):
                 f'[File: {temp_file_path} (3 lines total after edit)]\n'
                 '1|APPENDED TEXT1\n'
                 '2|APPENDED TEXT2\n'
-                '3|APPENDED TEXT3\n'
-                '[File edited at line 1.]\n'
-                '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+                '3|APPENDED TEXT3\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
             )
             assert result.split('\n') == expected.split('\n')
 
@@ -1195,8 +1174,7 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
         f'[File: {file_path} (1 lines total after edit)]\n'
-        "1|print('hello')\n"
-        '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        "1|print('hello')\n" + MSG_FILE_UPDATED.format(line_number=1) + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -1303,8 +1281,7 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
         f'[File: {file_path} (1 lines total after edit)]\n'
-        '1|undefined_name()\n'
-        '[File edited at line 1.]\n' + MSG_FILE_UPDATED + '\n'
+        '1|undefined_name()\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
