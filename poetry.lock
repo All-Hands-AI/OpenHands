@@ -6335,7 +6335,7 @@ files = [
 
 [[package]]
 name = "swebench"
-version = "2.0.1"
+version = "2.0.2"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
 python-versions = ">=3.8"
@@ -6357,9 +6357,9 @@ tqdm = "*"
 
 [package.source]
 type = "git"
-url = "git@github.com:princeton-nlp/SWE-bench.git"
+url = "https://github.com/OpenDevin/SWE-bench.git"
 reference = "HEAD"
-resolved_reference = "0ed007151d1397d017163305cb40f422e0f45885"
+resolved_reference = "7f67c1f4e264e3221848a218937a6f11c360b915"
 
 [[package]]
 name = "sympy"

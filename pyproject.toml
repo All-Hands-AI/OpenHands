@@ -74,7 +74,7 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = { git = "git@github.com:princeton-nlp/SWE-bench.git" }
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
