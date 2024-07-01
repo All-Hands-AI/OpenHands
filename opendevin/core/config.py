@@ -354,7 +354,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
 
                 # As suggested, commented for a separate PR
                 # old_configs = ['INITIALIZE_PLUGINS']
-                # if field_name == 'sandbox':  
+                # if field_name == 'sandbox':
                 #     for old_config in old_configs:
                 #         if (
                 #             old_config.lower() in nested_sub_config.__annotations__
