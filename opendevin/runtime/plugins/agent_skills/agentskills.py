@@ -252,7 +252,6 @@ def open_file(
     # Override WINDOW with context_lines
     if context_lines is None or context_lines < 1:
         context_lines = 100
-    # WINDOW = _clamp(context_lines, 1, 2000)
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
