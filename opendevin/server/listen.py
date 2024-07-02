@@ -67,18 +67,9 @@ def load_file_upload_config() -> tuple[int, bool, list[str]]:
     restrict_file_types = config.file_uploads_restrict_file_types
     allowed_extensions = config.file_uploads_allowed_extensions
 
-    # Sanity check for max_file_size_mb
-    MAX_ALLOWED_SIZE = 1024  # Maximum allowed file size 1 GB
-    if not isinstance(max_file_size_mb, int) or max_file_size_mb < 0:
-        logger.warning(
-            f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).'
-        )
-        max_file_size_mb = 0
-    elif max_file_size_mb > MAX_ALLOWED_SIZE:
-        logger.warning(
-            f'max_file_size_mb exceeds maximum allowed size. Capping at {MAX_ALLOWED_SIZE}MB.'
-        )
-        max_file_size_mb = MAX_ALLOWED_SIZE
+    max_file_size_mb = max_file_size_mb if (isinstance(max_file_size_mb, int) and max_file_size_mb >= 0) else 0
+    if max_file_size_mb == 0:
+        logger.warning(f'Using unlimited (0) file size for uploads.')
 
     # Sanity check for allowed_extensions
     if not isinstance(allowed_extensions, (list, set)) or not allowed_extensions:
@@ -371,7 +362,7 @@ def list_files(request: Request, path: str = '/'):
         filtered_entries = [
             entry
             for entry in entries
-            if not spec.match_file(os.path.relpath(entry, full_path))
+            if not spec.match_file(os.path.relpath(entry, str(full_path)))
         ]
 
         # Separate directories and files
@@ -391,8 +382,8 @@ def list_files(request: Request, path: str = '/'):
                     files.append(entry)
 
         # Sort directories and files separately
-        directories.sort(key=str.lower)
-        files.sort(key=str.lower)
+        directories.sort(key=lambda s: s.lower())
+        files.sort(key=lambda s: s.lower())
 
         # Combine sorted directories and files
         sorted_entries = directories + files

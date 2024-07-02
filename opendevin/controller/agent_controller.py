@@ -225,8 +225,8 @@ class AgentController:
         return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
-        AgentCls: Type[Agent] = Agent.get_cls(action.agent)
-        agent = AgentCls(llm=self.agent.llm)
+        agent_cls: Type[Agent] = Agent.get_cls(action.agent)
+        agent = agent_cls(llm=self.agent.llm)
         state = State(
             inputs=action.inputs or {},
             iteration=0,
@@ -367,6 +367,9 @@ class AgentController:
 
     def get_state(self):
         return self.state
+
+    def set_state(self, state: State):
+        self.state = state
 
     def _set_initial_state(
         self, state: State | None, max_iterations: int = MAX_ITERATIONS
