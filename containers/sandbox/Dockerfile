@@ -1,5 +1,6 @@
 FROM ubuntu:22.04
 
+ENV DEBIAN_FRONTEND noninteractive 
 # For Python 3.11
 RUN apt-get update && apt-get install -y \
     software-properties-common
