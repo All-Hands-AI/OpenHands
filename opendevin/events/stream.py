@@ -13,11 +13,11 @@ from .event import Event, EventSource
 
 class EventStreamSubscriber(str, Enum):
     AGENT_CONTROLLER = 'agent_controller'
+    SECURITY_ANALYZER = 'security_analyzer'
     SERVER = 'server'
     RUNTIME = 'runtime'
     MAIN = 'main'
     TEST = 'test'
-    SECURITY_ANALYZER = 'security_analyzer'
 
 
 class EventStream:
@@ -107,7 +107,8 @@ class EventStream:
             self._file_store.write(
                 self._get_filename_for_id(event.id), json.dumps(data)
             )
-        for stack in self._subscribers.values():
+        for key in sorted(self._subscribers.keys()):
+            stack = self._subscribers[key]
             callback = stack[-1]
             logger.debug(f'Notifying subscriber {callback} of event {event}')
             await callback(event)

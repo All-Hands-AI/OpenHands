@@ -7,6 +7,7 @@ import commandReducer from "./state/commandSlice";
 import errorsReducer from "./state/errorsSlice";
 import taskReducer from "./state/taskSlice";
 import jupyterReducer from "./state/jupyterSlice";
+import invariantReducer from "./state/invariantSlice";
 
 export const rootReducer = combineReducers({
   browser: browserReducer,
@@ -17,6 +18,7 @@ export const rootReducer = combineReducers({
   task: taskReducer,
   agent: agentReducer,
   jupyter: jupyterReducer,
+  invariant: invariantReducer,
 });
 
 const store = configureStore({

@@ -13,6 +13,7 @@ import Browser from "./Browser";
 import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
 import Jupyter from "./Jupyter";
+import SecurityInvariant from "./SecurityInvariant";
 import { getSettings } from "#/services/settings";
 
 function Workspace() {
@@ -20,13 +21,16 @@ function Workspace() {
   const task = useSelector((state: RootState) => state.task.task);
   const code = useSelector((state: RootState) => state.code.code);
 
-  const { AGENT } = getSettings();
+  const { AGENT, SECURITY_INVARIANT } = getSettings();
   const baseTabs = [TabOption.CODE, TabOption.BROWSER];
   const extraTabsMap: { [key: string]: TabOption[] } = {
     CodeActAgent: [TabOption.JUPYTER],
     PlannerAgent: [TabOption.PLANNER],
   };
   const extraTabs = extraTabsMap[AGENT] || [];
+  if (SECURITY_INVARIANT === "true") {
+    extraTabs.push(TabOption.INVARIANT);
+  }
   const showTabs = [...baseTabs, ...extraTabs];
 
   const screenshotSrc = useSelector(
@@ -39,6 +43,7 @@ function Workspace() {
     [TabOption.CODE]: false,
     [TabOption.BROWSER]: false,
     [TabOption.JUPYTER]: false,
+    [TabOption.INVARIANT]: false,
   });
 
   const iconSize = 18;
@@ -64,6 +69,11 @@ function Workspace() {
         icon: <VscCode size={iconSize} />,
         component: <Jupyter key="jupyter" />,
       },
+      [TabOption.INVARIANT]: {
+        name: "Invariant",
+        icon: <VscCode size={iconSize} />,
+        component: <SecurityInvariant key="invariant" />,
+      }
     }),
     [t],
   );
