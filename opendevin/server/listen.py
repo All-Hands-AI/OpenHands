@@ -411,7 +411,7 @@ def list_files(request: Request, path: str = '/'):
         filtered_entries = [
             entry
             for entry in entries
-            if not spec.match_file(os.path.relpath(entry, full_path))
+            if not spec.match_file(os.path.relpath(entry, str(full_path)))
         ]
 
         # Separate directories and files
@@ -431,8 +431,8 @@ def list_files(request: Request, path: str = '/'):
                     files.append(entry)
 
         # Sort directories and files separately
-        directories.sort(key=str.lower)
-        files.sort(key=str.lower)
+        directories.sort(key=lambda s: s.lower())
+        files.sort(key=lambda s: s.lower())
 
         # Combine sorted directories and files
         sorted_entries = directories + files
