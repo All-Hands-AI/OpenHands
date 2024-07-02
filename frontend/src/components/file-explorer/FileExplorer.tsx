@@ -244,7 +244,7 @@ function FileExplorer() {
           </div>
           <div className="overflow-auto flex-grow">
             <div style={{ display: isHidden ? "none" : "block" }}>
-              <ExplorerTree files={files} defaultOpen />
+              <ExplorerTree files={files} />
             </div>
           </div>
         </div>

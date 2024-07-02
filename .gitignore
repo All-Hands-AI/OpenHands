@@ -213,3 +213,7 @@ config.toml
 config.toml.bak
 
 containers/agnostic_sandbox
+
+# swe-bench-eval
+image_build_logs
+run_instance_logs
