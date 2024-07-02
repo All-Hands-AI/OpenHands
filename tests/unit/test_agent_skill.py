@@ -237,10 +237,10 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += f'({301 - WINDOW//2 - 1} more lines above)\n'
-    for i in range(301 - WINDOW // 2, 301 + WINDOW // 2 + 1):
+    expected += f'({WINDOW + 1 - WINDOW//2 - 1} more lines above)\n'
+    for i in range(WINDOW + 1 - WINDOW // 2, WINDOW + 1 + WINDOW // 2 + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - (301 + WINDOW//2)} more lines below)\n'
+    expected += f'({1000 - (WINDOW + 1 + WINDOW//2)} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -367,32 +367,38 @@ def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
 
     # Define the parameters for the test
     current_line = 800
-    window = 200
+    cur_window = 300
 
     # Test _print_window especially with backticks
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             # _print_window(str(test_file_path), current_line, window, return_str=False)
-            open_file(str(test_file_path), current_line, window)
+            open_file(str(test_file_path), current_line, cur_window)
         result = buf.getvalue()
         expected = f'[File: {test_file_path} (999 lines total)]\n'
-        expected += '(699 more lines above)\n'
-        for i in range(700, 900 + 1):
+        expected += f'({current_line-cur_window//2 - 1} more lines above)\n'
+        for i in range(
+            current_line - cur_window // 2, current_line + cur_window // 2 + 1
+        ):
             expected += f'{i}|Line `{i}`\n'
-        expected += '(99 more lines below)\n'
+        expected += f'({1000 - (current_line + cur_window//2 + 1)} more lines below)\n'
         assert result == expected
 
-    # open_file **SHOULD NOT** Change the "window size" to 200
-    # the window size should still be 100
+    # open_file **SHOULD NOT** Change the "window size" to 300
+    # the window size should still be WINDOW
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             scroll_up()
         result = buf.getvalue()
         expected = f'[File: {test_file_path} (999 lines total)]\n'
-        expected += f'({500 - WINDOW//2 - 1} more lines above)\n'
-        for i in range(500 - WINDOW // 2, 500 + WINDOW // 2 + 1):
+        expected += f'({(current_line-WINDOW) - WINDOW//2 - 1} more lines above)\n'
+        for i in range(
+            current_line - WINDOW - WINDOW // 2, current_line - WINDOW + WINDOW // 2 + 1
+        ):
             expected += f'{i}|Line `{i}`\n'
-        expected += f'({1000 - (500 + WINDOW//2 + 1)} more lines below)\n'
+        expected += (
+            f'({1000 - (current_line-WINDOW + WINDOW//2 + 1)} more lines below)\n'
+        )
         assert result == expected
 
 
