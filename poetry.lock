@@ -6259,8 +6259,8 @@ tqdm = "*"
 [package.source]
 type = "git"
 url = "https://github.com/OpenDevin/SWE-bench.git"
-reference = "xw/attempt-fix-django-parsing"
-resolved_reference = "c61bc104ae5113dd58c228004e7b52293ed73bbd"
+reference = "HEAD"
+resolved_reference = "4498af933679c518df6d1f8485864f72afc21500"
 
 [[package]]
 name = "sympy"
