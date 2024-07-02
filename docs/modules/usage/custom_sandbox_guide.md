@@ -6,6 +6,25 @@ The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https:
 
 Make sure you are able to run OpenDevin using the [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) first.
 
+
+## Using Pre-existing Docker Images
+
+Creating a custom Docker image is optional. You can also use pre-existing images from Docker Hub, which can simplify and speed up the process. 
+
+### Example with Node.js
+
+If you need a sandbox with Node.js installed, you can specify the desired Docker image directly. 
+Here is an example of how to do this:
+
+```python
+from opendevin.sandbox import DockerSSHBox
+
+sandbox = DockerSSHBox(
+   container_image="node:21"
+)
+````
+
+
 ## Create Your Docker Image
 
 Next you must create your custom docker image, which should be debian/ubuntu based. For example if we want want OpenDevin to have access to the "node" binary, we would use the following Dockerfile:
