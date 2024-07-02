@@ -1,4 +1,0 @@
-Thank you for the information. Now that we've initialized a git repository and added all files to staging, let's check the status to see what files are staged for commit.
-
-<execute_bash>
-git status
