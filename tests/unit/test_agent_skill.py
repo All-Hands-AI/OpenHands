@@ -47,6 +47,18 @@ def _generate_test_file_with_lines(temp_path, num_lines) -> str:
     return file_path
 
 
+def _calculate_window_bounds(current_line, total_lines, window_size):
+    """Calculate the bounds of the window around the current line."""
+    half_window = window_size // 2
+    if current_line - half_window < 0:
+        start = 1
+        end = window_size
+    else:
+        start = current_line - half_window
+        end = current_line + half_window
+    return start, end
+
+
 def test_open_file_unexist_path():
     with pytest.raises(FileNotFoundError):
         open_file('/unexist/path/a.txt')
@@ -130,21 +142,17 @@ def test_open_file_long_with_lineno(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     # since 100 is < WINDOW and 100 - WINDOW//2 < 0, so it should show all lines from 1 to WINDOW
 
-    if cur_line - WINDOW // 2 < 0:
-        start = 1
-        end = WINDOW
+    start, end = _calculate_window_bounds(cur_line, 1000, WINDOW)
+    if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
-        expected += f'({WINDOW - WINDOW//2 - 1} more lines above)\n'
-        start = cur_line - WINDOW // 2
-        end = cur_line + WINDOW // 2
+        expected += f'({start - 1} more lines above)\n'
     for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-
-    if cur_line + WINDOW // 2 > 1000:
-        expected += f'({1000 - WINDOW} more lines below)\n'
+    if end == 1000:
+        expected += '(this is the end of the file)\n'
     else:
-        expected += f'({1000 - (cur_line + WINDOW//2)} more lines below)\n'
+        expected += f'({1000 - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -172,7 +180,8 @@ def test_create_file(tmp_path):
 
 def test_goto_line(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    total_lines = 1000
+    content = '\n'.join([f'Line {i}' for i in range(1, total_lines + 1)])
     temp_file_path.write_text(content)
 
     with io.StringIO() as buf:
@@ -181,11 +190,11 @@ def test_goto_line(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
     expected += '(this is the beginning of the file)\n'
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - WINDOW} more lines below)\n'
+    expected += f'({total_lines - WINDOW} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -194,11 +203,19 @@ def test_goto_line(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += f'({500 - WINDOW//2 - 1} more lines above)\n'
-    for i in range(500 - WINDOW // 2, 500 + WINDOW // 2 + 1):
+    cur_line = 500
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - (500 + WINDOW//2)} more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -228,7 +245,8 @@ def test_goto_line_out_of_bound(tmp_path):
 
 def test_scroll_down(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    total_lines = 1000
+    content = '\n'.join([f'Line {i}' for i in range(1, total_lines + 1)])
     temp_file_path.write_text(content)
 
     with io.StringIO() as buf:
@@ -237,11 +255,18 @@ def test_scroll_down(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(this is the beginning of the file)\n'
-    for i in range(1, WINDOW + 1):
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(1, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - WINDOW} more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -250,17 +275,25 @@ def test_scroll_down(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += f'({WINDOW + 1 - WINDOW//2 - 1} more lines above)\n'
-    for i in range(WINDOW + 1 - WINDOW // 2, WINDOW + 1 + WINDOW // 2 + 1):
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(WINDOW + 1, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - (WINDOW + 1 + WINDOW//2)} more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
 def test_scroll_up(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    total_lines = 1000
+    content = '\n'.join([f'Line {i}' for i in range(1, total_lines + 1)])
     temp_file_path.write_text(content)
 
     cur_line = 300
@@ -270,23 +303,18 @@ def test_scroll_up(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    if cur_line - WINDOW // 2 < 0:
-        start = 1
-        end = WINDOW
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
-        start = cur_line - WINDOW // 2
-        end = cur_line + WINDOW // 2
         expected += f'({start - 1} more lines above)\n'
-
     for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-
-    if cur_line + WINDOW // 2 > 1000:
+    if end == total_lines:
         expected += '(this is the end of the file)\n'
     else:
-        expected += f'({1000 - end} more lines below)\n'
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -296,24 +324,19 @@ def test_scroll_up(tmp_path):
     assert result is not None
 
     cur_line = cur_line - WINDOW
-    # already at the top when WINDOW=300
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
 
-    if cur_line - WINDOW // 2 < 0:
-        start = 1
-        end = WINDOW
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
-        start = cur_line - WINDOW // 2
-        end = cur_line + WINDOW // 2
         expected += f'({start - 1} more lines above)\n'
     for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-
-    if cur_line + WINDOW > 1000:
+    if end == total_lines:
         expected += '(this is the end of the file)\n'
     else:
-        expected += f'({1000 - end} more lines below)\n'
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -401,8 +424,9 @@ def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
     test_file_path = tmp_path / 'a.txt'
     create_file(str(test_file_path))
     open_file(str(test_file_path))
+    total_lines = 1000
     with open(test_file_path, 'w') as file:
-        for i in range(1, 1000):
+        for i in range(1, total_lines + 1):
             file.write(f'Line `{i}`\n')
 
     # Define the parameters for the test
@@ -415,30 +439,41 @@ def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
             # _print_window(str(test_file_path), current_line, window, return_str=False)
             open_file(str(test_file_path), current_line, cur_window)
         result = buf.getvalue()
-        expected = f'[File: {test_file_path} (999 lines total)]\n'
-        expected += f'({current_line-cur_window//2 - 1} more lines above)\n'
+        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
+        start, end = _calculate_window_bounds(current_line, total_lines, cur_window)
+        if start == 1:
+            expected += '(this is the beginning of the file)\n'
+        else:
+            expected += f'({start - 1} more lines above)\n'
         for i in range(
             current_line - cur_window // 2, current_line + cur_window // 2 + 1
         ):
             expected += f'{i}|Line `{i}`\n'
-        expected += f'({1000 - (current_line + cur_window//2 + 1)} more lines below)\n'
+        if end == total_lines:
+            expected += '(this is the end of the file)\n'
+        else:
+            expected += f'({total_lines - end} more lines below)\n'
         assert result == expected
 
     # open_file **SHOULD NOT** Change the "window size" to 300
     # the window size should still be WINDOW
+    current_line = current_line - WINDOW
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             scroll_up()
         result = buf.getvalue()
-        expected = f'[File: {test_file_path} (999 lines total)]\n'
-        expected += f'({(current_line-WINDOW) - WINDOW//2 - 1} more lines above)\n'
-        for i in range(
-            current_line - WINDOW - WINDOW // 2, current_line - WINDOW + WINDOW // 2 + 1
-        ):
+        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
+        start, end = _calculate_window_bounds(current_line, total_lines, WINDOW)
+        if start == 1:
+            expected += '(this is the beginning of the file)\n'
+        else:
+            expected += f'({start - 1} more lines above)\n'
+        for i in range(start, end + 1):
             expected += f'{i}|Line `{i}`\n'
-        expected += (
-            f'({1000 - (current_line-WINDOW + WINDOW//2 + 1)} more lines below)\n'
-        )
+        if end == total_lines:
+            expected += '(this is the end of the file)\n'
+        else:
+            expected += f'({total_lines - end} more lines below)\n'
         assert result == expected
 
 
