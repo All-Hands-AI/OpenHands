@@ -15,11 +15,13 @@ from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
+    ActionConfirmationStatus,
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
     ChangeAgentStateAction,
+    CmdRunAction,
     MessageAction,
     ModifyTaskAction,
     NullAction,
@@ -173,9 +175,19 @@ class AgentController:
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
+            if (
+                self._pending_action
+                and self._pending_action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
                 self._pending_action = None
+                if self.state.agent_state == AgentState.ACTION_CONFIRMED:
+                    await self.set_agent_state_to(AgentState.RUNNING)
+                if self.state.agent_state == AgentState.ACTION_REJECTED:
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
                 await self.add_history(NullAction(), event)
@@ -209,6 +221,18 @@ class AgentController:
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
+
+        if self._pending_action is not None and (
+            new_state == AgentState.ACTION_CONFIRMED
+            or new_state == AgentState.ACTION_REJECTED
+        ):
+            if hasattr(self._pending_action, 'thought'):
+                self._pending_action.thought = ''  # type: ignore[union-attr]
+            if new_state == AgentState.ACTION_CONFIRMED:
+                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED
+            else:
+                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED
+            await self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
@@ -352,11 +376,15 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if action.runnable:
+            if type(action) is CmdRunAction:
+                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
             self._pending_action = action
         else:
             await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
+            if action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
             await self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()

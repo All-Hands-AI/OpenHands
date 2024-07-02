@@ -37,3 +37,15 @@ class AgentState(str, Enum):
     ERROR = 'error'
     """An error occurred during the task.
     """
+
+    AWAITING_USER_CONFIRMATION = 'awaiting_user_confirmation'
+    """The agent is awaiting user confirmation.
+    """
+
+    ACTION_CONFIRMED = 'action_confirmed'
+    """The user confirmed the agent's action.
+    """
+
+    ACTION_REJECTED = 'action_rejected'
+    """The user rejected the agent's action.
+    """

@@ -8,6 +8,8 @@ import { changeAgentState } from "#/services/agentStateService";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
+import ConfirmIcon from "#/assets/confirm";
+import RejectIcon from "#/assets/reject";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
@@ -17,6 +19,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.RUNNING]: [
     AgentState.INIT,
@@ -25,8 +28,12 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
+  [AgentState.ACTION_CONFIRMED]: [AgentState.RUNNING],
+  [AgentState.ACTION_REJECTED]: [AgentState.RUNNING],
+  [AgentState.AWAITING_USER_CONFIRMATION]: [],
 };
 
 interface ButtonProps {
@@ -101,6 +108,7 @@ function AgentControlBar() {
   }, [curAgentState]);
 
   return (
+    <div className="flex justify-between items-center gap-20">
     <div className="flex items-center gap-3">
       {curAgentState === AgentState.PAUSED ? (
         <ActionButton
@@ -137,6 +145,30 @@ function AgentControlBar() {
       >
         <ArrowIcon />
       </ActionButton>
+    </div>
+    <div className="flex items-center gap-3">
+    <ActionButton
+        isDisabled={isLoading
+          ||  curAgentState != AgentState.AWAITING_USER_CONFIRMATION
+        }
+        content="Confirm the requested action"
+        action={AgentState.ACTION_CONFIRMED}
+        handleAction={handleAction}
+      >
+        <ConfirmIcon />
+      </ActionButton>
+      <ActionButton
+        isDisabled={isLoading
+          || curAgentState != AgentState.AWAITING_USER_CONFIRMATION
+        }
+        content="Reject the requested action"
+        action={AgentState.ACTION_REJECTED}
+        handleAction={handleAction}
+      >
+        <RejectIcon />
+      </ActionButton>
+
+    </div>
     </div>
   );
 }

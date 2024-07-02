@@ -567,6 +567,21 @@
     "de": "Agent ist auf einen Fehler gelaufen.",
     "zh-CN": "智能体遇到错误"
   },
+  "CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE": {
+    "en": "Agent is awaiting user confirmation for the pending action.",
+    "de": "Agent wartet auf die Bestätigung des Benutzers für die ausstehende Aktion.",
+    "zh-CN": "代理正在等待用户确认待处理的操作。"
+  },
+  "CHAT_INTERFACE$AGENT_ACTION_CONFIRMED_MESSAGE": {
+    "en": "Agent action has been confirmed!",
+    "de": "Die Aktion des Agenten wurde bestätigt!",
+    "zh-CN": "代理操作已确认！"
+  },
+  "CHAT_INTERFACE$AGENT_ACTION_REJECTED_MESSAGE": {
+    "en": "Agent action has been rejected!",
+    "de": "Die Aktion des Agenten wurde abgelehnt!",
+    "zh-CN": "代理操作已被拒绝！"
+  },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Message assistant...",
     "zh-CN": "给助理发消息",

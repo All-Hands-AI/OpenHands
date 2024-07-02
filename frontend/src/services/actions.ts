@@ -67,6 +67,15 @@ const messageActions = {
 };
 
 export function handleActionMessage(message: ActionMessage) {
+  if (message.action == ActionType.RUN && message.args.is_confirmed == "awaiting_confirmation") {
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    }
+    store.dispatch(addAssistantMessage(message.message));
+    store.dispatch(addAssistantMessage("I am waiting for user confirmation before running the command above."));
+    return;
+  }
+
   if (message.action in messageActions) {
     const actionFn =
       messageActions[message.action as keyof typeof messageActions];

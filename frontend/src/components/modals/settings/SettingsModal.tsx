@@ -48,7 +48,8 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     const isRunning =
       curAgentState === AgentState.RUNNING ||
       curAgentState === AgentState.PAUSED ||
-      curAgentState === AgentState.AWAITING_USER_INPUT;
+      curAgentState === AgentState.AWAITING_USER_INPUT ||
+      curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
     setAgentIsRunning(isRunning);
   }, [curAgentState]);
 
