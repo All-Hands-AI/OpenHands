@@ -39,7 +39,7 @@ If $GITHUB_TOKEN is not set, ask the user to set it."""
 SYSTEM_SUFFIX = """Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
 Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
-If the assistent is finished with the task you MUST include <finish></finish> in your response.
+If the assistant is finished with the task you MUST include <finish></finish> in your response.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 When handling files, try to use full paths and pwd to avoid errors.
 """
