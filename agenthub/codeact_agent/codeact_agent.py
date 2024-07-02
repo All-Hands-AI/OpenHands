@@ -10,18 +10,18 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
+    AgentDelegateAction,
     AgentFinishAction,
-    BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from opendevin.events.observation import (
     AgentDelegateObservation,
-    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -38,8 +38,8 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
     elif isinstance(action, IPythonRunCellAction):
         return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, BrowseInteractiveAction):
-        return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
+    elif isinstance(action, AgentDelegateAction):
+        return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
     elif isinstance(action, MessageAction):
         return action.content
     return ''
@@ -47,7 +47,7 @@ def action_to_str(action: Action) -> str:
 
 def get_action_message(action: Action) -> dict[str, str] | None:
     if (
-        isinstance(action, BrowseInteractiveAction)
+        isinstance(action, AgentDelegateAction)
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
@@ -61,7 +61,7 @@ def get_action_message(action: Action) -> dict[str, str] | None:
 
 def get_observation_message(obs) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content = 'OBSERVATION:\n' + truncate_content(obs.content)
         content += (
             f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
@@ -76,29 +76,12 @@ def get_observation_message(obs) -> dict[str, str] | None:
                     '![image](data:image/png;base64, ...) already displayed to user'
                 )
         content = '\n'.join(splitted)
-        content = truncate_observation(content)
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, BrowserOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content = truncate_content(content)
         return {'role': 'user', 'content': content}
     elif isinstance(obs, AgentDelegateObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(str(obs.outputs))
+        content = 'OBSERVATION:\n' + truncate_content(str(obs.outputs))
         return {'role': 'user', 'content': content}
     return None
-
-
-def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
-    """
-    Truncate the middle of the observation if it is too long.
-    """
-    if len(observation) <= max_chars:
-        return observation
-    half = max_chars // 2
-    return (
-        observation[:half]
-        + '\n[... Observation truncated due to length ...]\n'
-        + observation[-half:]
-    )
 
 
 # FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
@@ -230,9 +213,6 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
         return self.action_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:

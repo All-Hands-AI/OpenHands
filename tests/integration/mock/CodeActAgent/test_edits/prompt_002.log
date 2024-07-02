@@ -419,17 +419,19 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's start by opening the `bad.txt` file to identify and fix the typos.
+Sure! Let's start by opening the `bad.txt` file to identify the typos.
 <execute_ipython>
-find_file('bad.txt')
+open_file('bad.txt')
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-[Found 1 matches for "bad.txt" in ./]
-./bad.txt
-[End of matches for "bad.txt" in ./]
+[File: /workspace/bad.txt (4 lines total)]
+1|This is a stupid typoo.
+2|Really?
+3|No mor typos!
+4|Enjoy!
 
 
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.

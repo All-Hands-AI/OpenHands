@@ -657,8 +657,44 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
 def edit_file_by_line(file_name: str, start: int, end: int, new_content: str) -> None:
     """Edit a file.
 
-    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
-    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+    Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
+
+    Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
+    `edit_file` will only replace the *first* matching occurrences.
+
+    For example, given a file "/workspace/example.txt" with the following content:
+    ```
+    line 1
+    line 2
+    line 2
+    line 3
+    ```
+
+    EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
+
+    edit_file(
+        '/workspace/example.txt',
+        to_replace='line 2\nline 3',
+        new_content='new line\nline 3',
+    )
+
+    This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
+
+    The resulting file will be:
+    ```
+    line 1
+    line 2
+    new line
+    line 3
+    ```
+
+    REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
+
+    edit_file(
+        '/workspace/example.txt',
+        to_replace='line 2\nline 3',
+        new_content='',
+    )
 
     For example, given a file "/workspace/example.txt" with the following content (line numbers are included for clarity):
     ```
@@ -677,9 +713,8 @@ def edit_file_by_line(file_name: str, start: int, end: int, new_content: str) ->
 
     Args:
         file_name: str: The name of the file to edit.
-        start: int: The start line number. Must satisfy start >= 1.
-        end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
-        content: str: The content to replace the lines with.
+        to_replace: str: The content to search for and replace.
+        new_content: str: The new content to replace the old content with.
     """
     ret_str = _edit_file_impl(
         file_name,
@@ -732,8 +767,9 @@ def append_file(file_name: str, content: str) -> None:
     """Append content to the given file.
     It appends text `content` to the end of the specified file.
     Args:
-        file_name: str: The name of the file to append to.
-        content: str: The content to append to the file.
+        file_name: str: The name of the file to edit.
+        line_number: int: The line number (starting from 1) to insert the content after.
+        content: str: The content to insert.
     """
     ret_str = _edit_file_impl(
         file_name,

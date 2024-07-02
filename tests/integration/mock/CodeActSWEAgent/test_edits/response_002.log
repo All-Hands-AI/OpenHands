@@ -4,6 +4,7 @@ Let's correct the typos in the `bad.txt` file.
 2. "No mor typos!" should be "No more typos!".
 
 I will make these changes now.
+
 <execute_ipython>
 edit_file_by_line('bad.txt', 1, 1, 'This is a stupid typo.')
 edit_file_by_line('bad.txt', 3, 3, 'No more typos!')

@@ -419,7 +419,7 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's start by opening the `bad.txt` file to identify and fix the typos.
+Sure! Let's start by opening the `bad.txt` file to identify the typos.
 <execute_ipython>
 find_file('bad.txt')
 </execute_ipython>
@@ -447,6 +447,28 @@ OBSERVATION:
 2|Really?
 3|No mor typos!
 4|Enjoy!
+
+
+----------
+
+I will now correct the typos in the `bad.txt` file.
+<execute_ipython>
+edit_file(
+    'bad.txt',
+    to_replace="This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!",
+    new_content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!"
+)
+</execute_ipython>
+
+----------
+
+OBSERVATION:
+[File: /workspace/bad.txt (4 lines total after edit)]
+1|This is a stupid typo.
+2|Really?
+3|No more typos!
+4|Enjoy!
+[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 
 ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
