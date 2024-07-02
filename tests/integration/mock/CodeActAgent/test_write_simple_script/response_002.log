@@ -1,4 +1,9 @@
-The shell script `hello.sh` has been created and made executable. Let's run it to ensure it works correctly.
+The shell script `hello.sh` has been created and made executable. Here is the content of the script:
 
-<execute_bash>
-./hello.sh
+```bash
+#!/bin/bash
+
+echo "hello"
+```
+
+Would you like me to run the script to verify it works as expected?

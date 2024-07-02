@@ -3,6 +3,11 @@
 echo "Cloning OpenDevin SWE-Bench Fork"
 git clone https://github.com/OpenDevin/SWE-bench.git evaluation/swe_bench/eval_workspace/SWE-bench
 
+# checkout to main-old
+pushd evaluation/swe_bench/eval_workspace/SWE-bench
+git checkout main-old
+popd
+
 echo "Pulling all evaluation dockers..."
 evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh
 

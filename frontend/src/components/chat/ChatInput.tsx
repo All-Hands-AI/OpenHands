@@ -34,7 +34,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   };
 
   return (
-    <div className="w-full relative text-base flex">
+    <div className="w-full relative text-base flex pt-3">
       <Textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
