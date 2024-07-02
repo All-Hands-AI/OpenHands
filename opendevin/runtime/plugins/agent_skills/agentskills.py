@@ -343,6 +343,120 @@ def create_file(filename: str) -> None:
 LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
 
 
+class LineNumberError(Exception):
+    pass
+
+
+def _append_impl(lines, content):
+    """Internal method to handle appending to a file.
+
+    Args:
+        lines: list[str]: The lines in the original file.
+        content: str: The content to append to the file.
+
+    Returns:
+        content: str: The new content of the file.
+        n_added_lines: int: The number of lines added to the file.
+    """
+
+    content_lines = content.splitlines(keepends=True)
+    n_added_lines = len(content_lines)
+    if lines and not (len(lines) == 1 and lines[0].strip() == ''):
+        # file is not empty
+        if not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
+        new_lines = lines + content_lines
+        content = ''.join(new_lines)
+    else:
+        # file is empty
+        content = ''.join(content_lines)
+
+    return content, n_added_lines
+
+
+def _insert_impl(lines, start, content):
+    """Internal method to handle inserting to a file.
+
+    Args:
+        lines: list[str]: The lines in the original file.
+        start: int: The start line number for inserting.
+        content: str: The content to insert to the file.
+
+    Returns:
+        content: str: The new content of the file.
+        n_added_lines: int: The number of lines added to the file.
+
+    Raises:
+        LineNumberError: If the start line number is invalid.
+    """
+    inserted_lines = [content + '\n' if not content.endswith('\n') else content]
+    if len(lines) == 0:
+        new_lines = inserted_lines
+    elif start is not None:
+        if len(lines) == 1 and lines[0].strip() == '':
+            # if the file with only 1 line and that line is empty
+            lines = []
+
+        if len(lines) == 0:
+            new_lines = inserted_lines
+        else:
+            new_lines = lines[: start - 1] + inserted_lines + lines[start - 1 :]
+    else:
+        raise LineNumberError(
+            f'Invalid line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        )
+
+    content = ''.join(new_lines)
+    n_added_lines = len(inserted_lines)
+    return content, n_added_lines
+
+
+def _edit_impl(lines, start, end, content):
+    """Internal method to handle editing a file.
+
+    REQUIRES (should be checked by caller):
+        start <= end
+        start and end are between 1 and len(lines) (inclusive)
+        content ends with a newline
+
+    Args:
+        lines: list[str]: The lines in the original file.
+        start: int: The start line number for editing.
+        end: int: The end line number for editing.
+        content: str: The content to replace the lines with.
+
+    Returns:
+        content: str: The new content of the file.
+        n_added_lines: int: The number of lines added to the file.
+    """
+    # Handle cases where start or end are None
+    if start is None:
+        start = 1  # Default to the beginning
+    if end is None:
+        end = len(lines)  # Default to the end
+    # Check arguments
+    if not (1 <= start <= len(lines)):
+        raise LineNumberError(
+            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        )
+    if not (1 <= end <= len(lines)):
+        raise LineNumberError(
+            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        )
+    if start > end:
+        raise LineNumberError(
+            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.'
+        )
+
+    if not content.endswith('\n'):
+        content += '\n'
+    content_lines = content.splitlines(True)
+    n_added_lines = len(content_lines)
+    new_lines = lines[: start - 1] + content_lines + lines[end:]
+    content = ''.join(new_lines)
+    return content, n_added_lines
+
+
 def _edit_file_impl(
     file_name: str,
     start: int | None = None,
@@ -391,6 +505,7 @@ def _edit_file_impl(
     temp_file_path = ''
     src_abs_path = os.path.abspath(file_name)
     first_error_line = None
+
     try:
         n_added_lines = None
         # Create a temporary file
@@ -402,77 +517,19 @@ def _edit_file_impl(
                 lines = original_file.readlines()
 
             if is_append:
-                content_lines = content.splitlines(keepends=True)
-                n_added_lines = len(content_lines)
-                if lines and not (len(lines) == 1 and lines[0].strip() == ''):
-                    # file is not empty
-                    if not lines[-1].endswith('\n'):
-                        lines[-1] += '\n'
-                    new_lines = lines + content_lines
-                    content = ''.join(new_lines)
-                else:
-                    # file is empty
-                    content = ''.join(content_lines)
-
+                content, n_added_lines = _append_impl(lines, content)
             elif is_insert:
-                inserted_lines = [
-                    content + '\n' if not content.endswith('\n') else content
-                ]
-                if len(lines) == 0:
-                    new_lines = inserted_lines
-                elif start is not None:
-                    if len(lines) == 1 and lines[0].strip() == '':
-                        # if the file with only 1 line and that line is empty
-                        lines = []
-
-                    if len(lines) == 0:
-                        new_lines = inserted_lines
-                    else:
-                        new_lines = (
-                            lines[: start - 1] + inserted_lines + lines[start - 1 :]
-                        )
-                else:
-                    assert start is None
-                    ret_str += (
-                        f'{ERROR_MSG}\n'
-                        f'Invalid line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
-                        f'{ERROR_MSG_SUFFIX}'
-                    ) + '\n'
+                try:
+                    content, n_added_lines = _insert_impl(lines, start, content)
+                except LineNumberError as e:
+                    ret_str += (f'{ERROR_MSG}\n' f'{e}\n' f'{ERROR_MSG_SUFFIX}') + '\n'
                     return ret_str
-
-                content = ''.join(new_lines)
-                n_added_lines = len(inserted_lines)
             else:
-                # Handle cases where start or end are None
-                if start is None:
-                    start = 1  # Default to the beginning
-                if end is None:
-                    end = len(lines)  # Default to the end
-                # Check arguments
-                if not (1 <= start <= len(lines)):
-                    ret_str += (
-                        f'{ERROR_MSG}\n'
-                        f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
-                        f'{ERROR_MSG_SUFFIX}'
-                    ) + '\n'
-                if not (1 <= end <= len(lines)):
-                    ret_str += (
-                        f'{ERROR_MSG}\n'
-                        f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
-                        f'{ERROR_MSG_SUFFIX}'
-                    ) + '\n'
-                if start > end:
-                    ret_str += (
-                        f'{ERROR_MSG}\n'
-                        f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
-                        f'{ERROR_MSG_SUFFIX}'
-                    ) + '\n'
-                if not content.endswith('\n'):
-                    content += '\n'
-                content_lines = content.splitlines(True)
-                n_added_lines = len(content_lines)
-                new_lines = lines[: start - 1] + content_lines + lines[end:]
-                content = ''.join(new_lines)
+                try:
+                    content, n_added_lines = _edit_impl(lines, start, end, content)
+                except LineNumberError as e:
+                    ret_str += (f'{ERROR_MSG}\n' f'{e}\n' f'{ERROR_MSG_SUFFIX}') + '\n'
+                    return ret_str
 
             if not content.endswith('\n'):
                 content += '\n'
