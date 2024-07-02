@@ -3,23 +3,23 @@
     "message": "OpenDevin"
   },
   "footer.docs": {
-    "message": "Docs"
+    "message": "文档"
   },
   "footer.community": {
-    "message": "Community"
+    "message": "社区"
   },
   "footer.copyright": {
-    "message": "Copyright © {year} OpenDevin"
+    "message": "版权所有 © {year} OpenDevin"
   },
   "faq.title": {
-    "message": "Frequently Asked Questions",
+    "message": "常见问题解答",
     "description": "FAQ Title"
   },
   "faq.description": {
-    "message": "Frequently Asked Questions"
+    "message": "常见问题解答"
   },
   "faq.section.title.1": {
-    "message": "What is OpenDevin?",
+    "message": "什么是OpenDevin？",
     "description": "First Section Title"
   },
   "faq.section.highlight": {
@@ -27,63 +27,63 @@
     "description": "Highlight Text"
   },
   "faq.section.description.1": {
-    "message": "is an autonomous software engineer that can solve software engineering and web-browsing tasks end-to-end. It can perform data science queries, such as \"Find the number of pull requests to the OpenDevin repository in the last month,\" and software engineering tasks, such as \"Please add tests to this file and verify that all the tests pass. If they don't fix the file.\"",
+    "message": "是一个自主的软件工程师，能够端到端地解决软件工程和网页浏览任务。它能执行数据科学查询，如 \"查找上个月OpenDevin仓库中的拉取请求数量\"，还能处理软件工程任务，例如 \"请为这个文件添加测试并验证所有测试都通过，如果没有修复该文件\"。",
     "description": "Description for OpenDevin"
   },
   "faq.section.description.2": {
-    "message": "At the same time, OpenDevin is a platform and community for agent developers to test out and evaluate new agents.",
+    "message": "同时，OpenDevin是一个代理开发者平台和社区，用于测试和评估新代理的环境。",
     "description": "Further Description for OpenDevin"
   },
   "faq.section.title.2": {
-    "message": "Support",
+    "message": "支持",
     "description": "Support Section Title"
   },
   "faq.section.support.answer": {
-    "message": "Please file a bug on {githubLink} if you notice a problem that likely affects others. If you're having trouble installing, or have general questions, reach out on {discordLink} or {slackLink}.",
+    "message": "如果您发现了可能影响他人的问题，请在 {githubLink} 上提交一个 bug。如果遇到安装困难或有其他疑问，可以访问 {discordLink} 或 {slackLink} 进行提问。",
     "description": "Support Answer"
   },
   "faq.section.title.3": {
-    "message": "How to fix a GitHub issue with OpenDevin?",
+    "message": "如何使用OpenDevin解决GitHub上的问题？",
     "description": "GitHub Issue Section Title"
   },
   "faq.section.github.steps.intro": {
-    "message": "To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow steps like the following:",
+    "message": "要通过OpenDevin解决GitHub上的问题，您可以发送一个提示给OpenDevin，请它按照以下步骤操作：",
     "description": "GitHub Steps Introduction"
   },
   "faq.section.github.step1": {
-    "message": "Read the issue https://github.com/OpenDevin/OpenDevin/issues/1611",
+    "message": "阅读问题 https://github.com/OpenDevin/OpenDevin/issues/1611",
     "description": "GitHub Step 1"
   },
   "faq.section.github.step2": {
-    "message": "Clone the repository and check out a new branch",
+    "message": "克隆仓库并创建新分支",
     "description": "GitHub Step 2"
   },
   "faq.section.github.step3": {
-    "message": "Based on the instructions in the issue description, modify files to fix the issue",
+    "message": "根据问题描述中的说明，修改文件以解决问题",
     "description": "GitHub Step 3"
   },
   "faq.section.github.step4": {
-    "message": "Push the resulting output to GitHub using the GITHUB_TOKEN environment variable",
+    "message": "使用GITHUB_TOKEN环境变量将结果推送到GitHub",
     "description": "GitHub Step 4"
   },
   "faq.section.github.step5": {
-    "message": "Tell me the link that I need to go to to send a pull request",
+    "message": "告诉我需要前往的链接来提交拉取请求",
     "description": "GitHub Step 5"
   },
   "faq.section.github.steps.preRun": {
-    "message": "Before you run OpenDevin, you can do:",
+    "message": "在运行OpenDevin之前，您可以：",
     "description": "GitHub Steps Pre-Run"
   },
   "faq.section.github.steps.tokenInfo": {
-    "message": "where XXX is a GitHub token that you created that has permissions to push to the OpenDevin repo. If you don’t have write permission to the OpenDevin repo, you might need to change that to:",
+    "message": "其中XXX是您创建的一个具有对OpenDevin仓库写权限的GitHub令牌。如果您的写入权限不足，请将其更改为：",
     "description": "GitHub Steps Token Info"
   },
   "faq.section.github.steps.usernameInfo": {
-    "message": "where USERNAME is your GitHub username.",
+    "message": "其中USERNAME是您的GitHub用户名。",
     "description": "GitHub Steps Username Info"
   },
   "faq.section.title.4": {
-    "message": "How is OpenDevin different from Devin?",
+    "message": "OpenDevin与Devin有何不同？",
     "description": "Devin Section Title"
   },
   "faq.section.devin.linkText": {
@@ -91,37 +91,37 @@
     "description": "Devin Link Text"
   },
   "faq.section.devin.description": {
-    "message": "is a commercial product by Cognition Inc., that served as the initial inspiration for OpenDevin. They both aim to do a good job at solving software engineering tasks, but OpenDevin you can download, use, and modify, while Devin you can only use through the Cognition site. In addition, OpenDevin has evolved beyond the initial inspiration, and now serves as a community-driven ecosystem for agent development in general, and we'd love to have you join and",
+    "message": "是由Cognition Inc.开发的商业产品，它最初为OpenDevin提供了灵感。它们都旨在擅长解决软件工程任务，但您可以下载、使用和修改OpenDevin，而Devin只能通过Cognition网站进行访问。此外，OpenDevin已超越最初的灵感，并成为一个面向代理开发者的社区驱动生态系统，在这里我们欢迎您加入并",
     "description": "Devin Description"
   },
   "faq.section.devin.contribute": {
-    "message": "contribute",
+    "message": "贡献",
     "description": "Contribute Link"
   },
   "faq.section.title.5": {
-    "message": "How is OpenDevin different from ChatGPT?",
+    "message": "OpenDevin与ChatGPT有何不同？",
     "description": "ChatGPT Section Title"
   },
   "faq.section.chatgpt.description": {
-    "message": "ChatGPT you can access online, it does not interface with local files, and its ability to execute code is limited. So it can write code, but it is not easy to test or execute it.",
+    "message": "您可以通过网络访问ChatGPT，它不与本地文件交互，并且其执行代码的能力有限。因此，它可以编写代码，但测试或执行起来可能不太容易。",
     "description": "ChatGPT Description"
   },
   "homepage.description": {
-    "message": "AI-powered code generation for software engineering.",
+    "message": "使用AI生成代码的软件工程工具。",
     "description": "The homepage description"
   },
   "homepage.getStarted": {
-    "message": "Get Started"
+    "message": "开始使用"
   },
   "welcome.message": {
-    "message": "Welcome to OpenDevin, an open-source autonomous AI software engineer that is capable of executing complex engineering tasks and collaborating actively with users on software development projects."
+    "message": "欢迎来到OpenDevin，这是一个开源自主AI软件工程师，能够执行复杂的工程任务，并积极参与用户在软件开发项目中的协作。"
   },
   "theme.ErrorPageContent.title": {
     "message": "页面已崩溃。",
     "description": "The title of the fallback page when the page crashed"
   },
   "theme.BackToTopButton.buttonAriaLabel": {
-    "message": "回到顶部",
+    "message": "返回顶部",
     "description": "The ARIA label for the back to top button"
   },
   "theme.blog.archive.title": {
@@ -296,7 +296,7 @@
     "description": "The copied button label on code blocks"
   },
   "theme.CodeBlock.copyButtonAriaLabel": {
-    "message": "复制代码到剪贴板",
+    "message": "将代码复制到剪贴板",
     "description": "The ARIA label for copy code blocks button"
   },
   "theme.CodeBlock.copy": {

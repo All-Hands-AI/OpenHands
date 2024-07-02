@@ -3,11 +3,13 @@ import { screen, act, fireEvent } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
+import { useTranslation } from "react-i18next";
 import ChatInterface from "./ChatInterface";
 import Session from "#/services/session";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
+import { I18nKey } from "#/i18n/declaration";
 
 // avoid typing side-effect
 vi.mock("#/hooks/useTyping", () => ({
@@ -113,7 +115,11 @@ describe("ChatInterface", () => {
       },
     });
 
-    const submitButton = screen.getByLabelText(/send message/i);
+    const { t } = useTranslation();
+
+    const submitButton = screen.getByLabelText(
+      t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE),
+    );
 
     expect(submitButton).toBeDisabled();
   });
