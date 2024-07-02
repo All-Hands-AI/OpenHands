@@ -20,6 +20,7 @@ describe("getSettings", () => {
       .mockReturnValueOnce("llm_value")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
+      .mockReturnValueOnce("api_key")
       .mockReturnValueOnce("true")
       .mockReturnValueOnce("true");
 
@@ -30,7 +31,8 @@ describe("getSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
-      SECURITY_INVARIANT: "security_invariant",
+      CONFIRMATION_MODE: true,
+      SECURITY_INVARIANT: true,
     });
   });
 

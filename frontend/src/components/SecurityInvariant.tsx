@@ -9,6 +9,7 @@ import { RootState } from "#/store";
 import { ActionSecurityRisk } from "#/state/invariantSlice";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { I18nKey } from "#/i18n/declaration";
+import { Invariant } from "#/state/invariantSlice";
 
 
 function SecurityInvariant(): JSX.Element {
@@ -49,9 +50,11 @@ function SecurityInvariant(): JSX.Element {
 
   return (
     <div className="flex-1 p-4 overflow-auto max-h-screen" ref={logsRef}>
-      {logs.map((log: { content: string, security_risk: ActionSecurityRisk }, index: number) => (
+      {logs.map((log: Invariant, index: number) => (
         <div key={index} className={`mb-2 p-2 rounded-lg`} style={{ backgroundColor: 'rgba(128, 128, 128, 0.2)' }}>
-          <p className="text-sm">{log.content}</p>
+          <p className="text-sm">{log.content}{log.requires_confirmation && (
+            <span className="text-red-500"> ({t(I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE)})</span>
+          )}</p>
           <p className={`text-xs ${getRiskColor(log.security_risk)}`}>
             {getRiskText(log.security_risk)}
           </p>

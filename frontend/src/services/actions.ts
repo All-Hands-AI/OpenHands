@@ -68,6 +68,8 @@ const messageActions = {
 };
 
 export function handleActionMessage(message: ActionMessage) {
+  if ("args" in message && "security_risk" in message.args) store.dispatch(appendInvariantInput(message.args));
+
   if (message.action == ActionType.RUN && message.args.is_confirmed == "awaiting_confirmation") {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
@@ -81,7 +83,6 @@ export function handleActionMessage(message: ActionMessage) {
     const actionFn =
       messageActions[message.action as keyof typeof messageActions];
     actionFn(message);
-    if ("args" in message && "security_risk" in message.args) store.dispatch(appendInvariantInput(message.args));
   }
 }
 

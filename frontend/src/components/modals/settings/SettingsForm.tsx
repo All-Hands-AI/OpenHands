@@ -93,17 +93,20 @@ function SettingsForm({
       <Switch
         aria-label="confirmationmode"
         data-testid="confirmationmode"
-        defaultSelected={settings.CONFIRMATION_MODE}
+        defaultSelected={settings.CONFIRMATION_MODE || settings.SECURITY_INVARIANT}
         onValueChange={onConfirmationModeChange}
-        isDisabled={disabled}
+        isDisabled={disabled || settings.SECURITY_INVARIANT}
+        isSelected={settings.CONFIRMATION_MODE}
         >
         {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
         </Switch>
       <Switch
         aria-label="invariant"
-        defaultSelected={settings.SECURITY_INVARIANT === "true"}
+        data-testid="invariant"
+        defaultSelected={settings.SECURITY_INVARIANT}
         onValueChange={onSecurityInvariantChange}
         isDisabled={disabled}
+        isSelected={settings.SECURITY_INVARIANT}
       >
         {t(I18nKey.SETTINGS$SECURITY_INVARIANT)}
       </Switch>

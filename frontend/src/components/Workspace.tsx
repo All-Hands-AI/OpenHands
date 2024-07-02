@@ -28,7 +28,7 @@ function Workspace() {
     PlannerAgent: [TabOption.PLANNER],
   };
   const extraTabs = extraTabsMap[AGENT] || [];
-  if (SECURITY_INVARIANT === "true") {
+  if (SECURITY_INVARIANT) {
     extraTabs.push(TabOption.INVARIANT);
   }
   const showTabs = [...baseTabs, ...extraTabs];

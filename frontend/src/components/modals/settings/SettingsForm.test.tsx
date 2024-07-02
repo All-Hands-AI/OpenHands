@@ -22,7 +22,8 @@ const renderSettingsForm = (settings?: Settings) => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
-          SECURITY_INVARIANT: "true",
+          CONFIRMATION_MODE: true,
+          SECURITY_INVARIANT: true,
         }
       }
       models={["model1", "model2", "model3"]}
@@ -62,7 +63,7 @@ describe("SettingsForm", () => {
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
-      SECURITY_INVARIANT: "true",
+      SECURITY_INVARIANT: true,
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -83,7 +84,7 @@ describe("SettingsForm", () => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
-          SECURITY_INVARIANT: "true",
+          SECURITY_INVARIANT: true,
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
@@ -106,7 +107,7 @@ describe("SettingsForm", () => {
     expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
     expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
-    expect(securityInvariantInput).toBeDisabled();
+    expect(securityInvariantInput).toHaveAttribute("data-disabled", "true");
   });
 
   describe("onChange handlers", () => {

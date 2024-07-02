@@ -95,7 +95,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleSecurityInvariantChange = (securityInvariant: boolean) => {
-    setSettings((prev) => ({ ...prev, SECURITY_INVARIANT: securityInvariant.toString() }));
+    setSettings((prev) => ({ ...prev, CONFIRMATION_MODE:true, SECURITY_INVARIANT: securityInvariant }));
   };
 
   const handleResetSettings = () => {

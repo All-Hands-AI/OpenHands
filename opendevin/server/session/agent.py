@@ -71,7 +71,7 @@ class AgentSession:
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
         logger.info(f'Creating security analyzer with args {args}')
-        if args.get(ConfigType.SECURITY_INVARIANT, False) == 'true':
+        if args.get(ConfigType.SECURITY_INVARIANT, config.security_invariant):
             self.security_analyzer = InvariantAnalyzer(self.event_stream)
 
     async def _create_runtime(self):

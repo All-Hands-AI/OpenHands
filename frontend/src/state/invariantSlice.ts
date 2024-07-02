@@ -10,6 +10,7 @@ export enum ActionSecurityRisk {
 export type Invariant = {
   content: string;
   security_risk: ActionSecurityRisk;
+  requires_confirmation: boolean;
 };
 
 const initialLogs: Invariant[] = [];
@@ -21,7 +22,7 @@ export const invariantSlice = createSlice({
   },
   reducers: {
     appendInvariantInput: (state, action) => {
-      state.logs.push({ content: action.payload.command || action.payload.code || action.payload.content , security_risk: action.payload.security_risk as ActionSecurityRisk });
+      state.logs.push({ content: action.payload.command || action.payload.code || action.payload.content , security_risk: action.payload.security_risk as ActionSecurityRisk, requires_confirmation: action.payload.is_confirmed === "awaiting_confirmation"});
     },
   },
 });

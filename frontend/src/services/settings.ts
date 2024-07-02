@@ -6,7 +6,7 @@ export type Settings = {
   LANGUAGE: string;
   LLM_API_KEY: string;
   CONFIRMATION_MODE: boolean;
-  SECURITY_INVARIANT: string;
+  SECURITY_INVARIANT: boolean;
 };
 
 export type SettingsInput = {
@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LANGUAGE: "en",
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
-  SECURITY_INVARIANT: "false",
+  SECURITY_INVARIANT: false,
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof SettingsInput)[];
@@ -60,7 +60,7 @@ export const getSettings = (): Settings => {
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
-  const securityInvariant = localStorage.getItem("SECURITY_INVARIANT");
+  const securityInvariant = localStorage.getItem("SECURITY_INVARIANT") === "true";
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
