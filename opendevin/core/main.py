@@ -227,7 +227,8 @@ async def main(
         logger.info('Successfully shut down the OpenDevin server.')
         if not loop.is_closed():
             loop.stop()
-        return controller.get_state()
+
+    return controller.get_state()
 
 
 if __name__ == '__main__':

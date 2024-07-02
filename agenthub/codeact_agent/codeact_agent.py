@@ -6,7 +6,7 @@ from agenthub.codeact_agent.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
-from opendevin.controller.agent import AsyncAgent
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
@@ -215,9 +215,6 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
         return self.action_parser.parse(response)
 
     async def _common_step_logic_async(
@@ -240,9 +237,6 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
         return self.action_parser.parse(response)
 
     def _prepare_messages(self, state: State) -> list[dict[str, str]]:
