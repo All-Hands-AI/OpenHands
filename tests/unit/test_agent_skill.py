@@ -317,6 +317,71 @@ def test_print_window_internal(tmp_path):
         assert result == expected
 
 
+def test_open_file_large_line_number(tmp_path):
+    test_file_path = tmp_path / 'a.txt'
+    create_file(str(test_file_path))
+    open_file(str(test_file_path))
+    with open(test_file_path, 'w') as file:
+        for i in range(1, 1000):
+            file.write(f'Line `{i}`\n')
+
+    # Define the parameters for the test
+    current_line = 800
+    window = 100
+
+    # Test _print_window especially with backticks
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            # _print_window(str(test_file_path), current_line, window, return_str=False)
+            open_file(str(test_file_path), current_line, window)
+        result = buf.getvalue()
+        expected = f'[File: {test_file_path} (999 lines total)]\n'
+        expected += '(749 more lines above)\n'
+        for i in range(750, 850 + 1):
+            expected += f'{i}|Line `{i}`\n'
+        expected += '(149 more lines below)\n'
+        assert result == expected
+
+
+def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
+    test_file_path = tmp_path / 'a.txt'
+    create_file(str(test_file_path))
+    open_file(str(test_file_path))
+    with open(test_file_path, 'w') as file:
+        for i in range(1, 1000):
+            file.write(f'Line `{i}`\n')
+
+    # Define the parameters for the test
+    current_line = 800
+    window = 200
+
+    # Test _print_window especially with backticks
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            # _print_window(str(test_file_path), current_line, window, return_str=False)
+            open_file(str(test_file_path), current_line, window)
+        result = buf.getvalue()
+        expected = f'[File: {test_file_path} (999 lines total)]\n'
+        expected += '(699 more lines above)\n'
+        for i in range(700, 900 + 1):
+            expected += f'{i}|Line `{i}`\n'
+        expected += '(99 more lines below)\n'
+        assert result == expected
+
+    # open_file **SHOULD NOT** Change the "window size" to 200
+    # the window size should still be 100
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            scroll_up()
+        result = buf.getvalue()
+        expected = f'[File: {test_file_path} (999 lines total)]\n'
+        expected += '(649 more lines above)\n'
+        for i in range(650, 750 + 1):
+            expected += f'{i}|Line `{i}`\n'
+        expected += '(249 more lines below)\n'
+        assert result == expected
+
+
 def test_edit_file_by_replace_window(tmp_path, monkeypatch):
     # Set environment variable via monkeypatch does NOT work!
     monkeypatch.setattr(
