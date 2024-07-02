@@ -86,7 +86,7 @@ class AgentController:
         )
 
         # state from the previous session, state from a parent agent, or a fresh state
-        self._set_initial_state(
+        self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
         )
@@ -368,10 +368,7 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def set_state(self, state: State):
-        self.state = state
-
-    def _set_initial_state(
+    def set_initial_state(
         self, state: State | None, max_iterations: int = MAX_ITERATIONS
     ):
         # state from the previous session, state from a parent agent, or a new state

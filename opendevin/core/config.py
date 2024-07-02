@@ -248,16 +248,16 @@ class AppConfig(metaclass=Singleton):
         return self.__str__()
 
 
-def get_field_info(_field):
+def get_field_info(f):
     """
     Extract information about a dataclass field: type, optional, and default.
 
     Args:
-        _field: The field to extract information from.
+        f: The field to extract information from.
 
     Returns: A dict with the field's type, whether it's optional, and its default value.
     """
-    field_type = _field.type
+    field_type = f.type
     optional = False
 
     # for types like str | None, find the non-None type and set optional to True
@@ -277,7 +277,7 @@ def get_field_info(_field):
     )
 
     # default is always present
-    default = _field.default
+    default = f.default
 
     # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
@@ -369,16 +369,17 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     try:
         # set llm config from the toml file
+        llm_config = cfg.llm
         if 'llm' in toml_config:
-            cfg.llm = LLMConfig(**toml_config['llm'])
+            llm_config = LLMConfig(**toml_config['llm'])
 
         # set agent config from the toml file
+        agent_config = cfg.agent
         if 'agent' in toml_config:
-            cfg.agent = AgentConfig(**toml_config['agent'])
+            agent_config = AgentConfig(**toml_config['agent'])
 
-        # set the core config from the toml file
-        for key, value in core_config.items():
-            setattr(cfg, key, value)
+        # update the config object with the new values
+        AppConfig(llm=llm_config, agent=agent_config, **core_config)
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
