@@ -51,6 +51,7 @@ class AgentController:
     max_iterations: int
     event_stream: EventStream
     state: State
+    confirmation_mode: bool
     agent_task: Optional[asyncio.Task] = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
@@ -62,6 +63,7 @@ class AgentController:
         event_stream: EventStream,
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
+        confirmation_mode: bool = False,
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -88,9 +90,14 @@ class AgentController:
         )
 
         # state from the previous session, state from a parent agent, or a fresh state
+        logger.info(
+            'Starting AgentController with confirmation_mode: %s'
+            % repr(confirmation_mode)
+        )
         self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
+            confirmation_mode=confirmation_mode,
         )
 
         self.max_budget_per_task = max_budget_per_task
@@ -376,7 +383,7 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if action.runnable:
-            if type(action) is CmdRunAction:
+            if self.state.confirmation_mode and type(action) is CmdRunAction:
                 action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
             self._pending_action = action
         else:
@@ -397,12 +404,19 @@ class AgentController:
         return self.state
 
     def set_initial_state(
-        self, state: State | None, max_iterations: int = MAX_ITERATIONS
+        self,
+        state: State | None,
+        max_iterations: int = MAX_ITERATIONS,
+        confirmation_mode: bool = False,
     ):
         # state from the previous session, state from a parent agent, or a new state
         # note that this is called twice when restoring a previous session, first with state=None
         if state is None:
-            self.state = State(inputs={}, max_iterations=max_iterations)
+            self.state = State(
+                inputs={},
+                max_iterations=max_iterations,
+                confirmation_mode=confirmation_mode,
+            )
         else:
             self.state = state
 

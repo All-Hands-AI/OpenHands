@@ -42,6 +42,7 @@ class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     max_iterations: int = 100
+    confirmation_mode: bool = False
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
     history: list[tuple[Action, Observation]] = field(default_factory=list)
     updated_info: list[tuple[Action, Observation]] = field(default_factory=list)

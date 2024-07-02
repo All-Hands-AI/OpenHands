@@ -90,6 +90,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     setSettings((prev) => ({ ...prev, LLM_API_KEY: key }));
   };
 
+  const handleConfirmationModeChange = (confirmationMode: boolean) => {
+    setSettings((prev) => ({ ...prev, CONFIRMATION_MODE: confirmationMode }));
+  };
+
   const handleResetSettings = () => {
     setSettings(getDefaultSettings);
   };
@@ -171,6 +175,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
+          onConfirmationModeChange={handleConfirmationModeChange}
         />
       )}
     </BaseModal>

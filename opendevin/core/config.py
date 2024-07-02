@@ -180,6 +180,7 @@ class AppConfig(metaclass=Singleton):
         else ':main'
     )
     run_as_devin: bool = True
+    confirmation_mode: bool = False
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''

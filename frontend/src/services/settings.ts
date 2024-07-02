@@ -5,16 +5,22 @@ export type Settings = {
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY: string;
+  CONFIRMATION_MODE: boolean;
 };
+
+export type SettingsInput = {
+  [K in keyof Settings]: Settings[K];
+}[keyof Settings];
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-4o",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
+  CONFIRMATION_MODE: false,
 };
 
-const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
+const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof SettingsInput)[];
 
 export const getCurrentSettingsVersion = () => {
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
@@ -51,12 +57,14 @@ export const getSettings = (): Settings => {
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
+  const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
   };
 };
 
@@ -66,10 +74,10 @@ export const getSettings = (): Settings => {
  */
 export const saveSettings = (settings: Partial<Settings>) => {
   Object.keys(settings).forEach((key) => {
-    const isValid = validKeys.includes(key as keyof Settings);
+    const isValid = validKeys.includes(key as keyof SettingsInput);
     const value = settings[key as keyof Settings];
 
-    if (isValid && value) localStorage.setItem(key, value);
+    if (isValid && (value || typeof value === 'boolean')) localStorage.setItem(key, value.toString());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
 };
@@ -91,11 +99,12 @@ export const getSettingsDifference = (settings: Partial<Settings>) => {
   const updatedSettings: Partial<Settings> = {};
 
   Object.keys(settings).forEach((key) => {
+    const typedKey = key as keyof SettingsInput;
     if (
-      validKeys.includes(key as keyof Settings) &&
-      settings[key as keyof Settings] !== currentSettings[key as keyof Settings]
+      validKeys.includes(typedKey) &&
+      settings[typedKey] !== currentSettings[typedKey]
     ) {
-      updatedSettings[key as keyof Settings] = settings[key as keyof Settings];
+      updatedSettings[typedKey] = settings[typedKey];
     }
   });
 

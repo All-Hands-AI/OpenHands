@@ -696,6 +696,9 @@
     "zh-TW": "輸入您的 API 金鑰。",
     "de": "Modell API Schlüssel."
   },
+  "SETTINGS$CONFIRMATION_MODE": {
+    "en": "Enable Confirmation Mode"
+  },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",
     "zh-CN": "页面未加载",

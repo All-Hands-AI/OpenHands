@@ -89,6 +89,10 @@ class AgentSession:
         agent_cls = args.get(ConfigType.AGENT, config.agent.name)
         model = args.get(ConfigType.LLM_MODEL, config.llm.model)
         api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
+        logger.info('Debug args: %s' % repr(args))
+        confirmation_mode = args.get(
+            ConfigType.CONFIRMATION_MODE, config.confirmation_mode
+        )
         api_base = config.llm.base_url
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
 
@@ -109,6 +113,7 @@ class AgentSession:
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
+            confirmation_mode=confirmation_mode,
         )
         try:
             agent_state = State.restore_from_session(self.sid)
