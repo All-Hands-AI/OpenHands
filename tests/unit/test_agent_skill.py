@@ -8,6 +8,7 @@ import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
+    WINDOW,
     _print_window,
     append_file,
     create_file,
@@ -120,10 +121,10 @@ def test_open_file_long_with_lineno(tmp_path):
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(49 more lines above)\n'
-    for i in range(50, 151):
+    # since 100 is < WINDOW and 100 - WINDOW//2 < 0, so it should show all lines from 1 to WINDOW
+    for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(850 more lines below)\n'
+    expected += f'({1000 - WINDOW} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -159,22 +160,22 @@ def test_goto_line(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 101):
+    for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(900 more lines below)\n'
+    expected += f'({1000 - WINDOW} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            goto_line(100)
+            goto_line(500)
         result = buf.getvalue()
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(49 more lines above)\n'
-    for i in range(50, 151):
+    expected += f'({500 - WINDOW//2 - 1} more lines above)\n'
+    for i in range(500 - WINDOW // 2, 500 + WINDOW // 2 + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(850 more lines below)\n'
+    expected += f'({1000 - (500 + WINDOW//2)} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -214,9 +215,9 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 101):
+    for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(900 more lines below)\n'
+    expected += f'({1000 - WINDOW} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -226,10 +227,10 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(50 more lines above)\n'
-    for i in range(51, 152):
+    expected += f'({301 - WINDOW//2 - 1} more lines above)\n'
+    for i in range(301 - WINDOW // 2, 301 + WINDOW // 2 + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(849 more lines below)\n'
+    expected += f'({1000 - (301 + WINDOW//2)} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -245,10 +246,10 @@ def test_scroll_up(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(249 more lines above)\n'
-    for i in range(250, 351):
+    expected += f'({300 - WINDOW//2 - 1} more lines above)\n'
+    for i in range(300 - WINDOW // 2, 300 + WINDOW // 2 + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(650 more lines below)\n'
+    expected += f'({1000 - (300 + WINDOW//2)} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -257,11 +258,11 @@ def test_scroll_up(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
+    # already at the top when WINDOW=300
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(149 more lines above)\n'
-    for i in range(150, 251):
+    for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(750 more lines below)\n'
+    expected += f'({1000 - WINDOW} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -375,10 +376,10 @@ def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
             scroll_up()
         result = buf.getvalue()
         expected = f'[File: {test_file_path} (999 lines total)]\n'
-        expected += '(649 more lines above)\n'
-        for i in range(650, 750 + 1):
+        expected += f'({500 - WINDOW//2 - 1} more lines above)\n'
+        for i in range(500 - WINDOW // 2, 500 + WINDOW // 2 + 1):
             expected += f'{i}|Line `{i}`\n'
-        expected += '(249 more lines below)\n'
+        expected += f'({1000 - (500 + WINDOW//2 + 1)} more lines below)\n'
         assert result == expected
 
 
@@ -1289,7 +1290,6 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
 
     num_lines = 1000
     error_line = 500
-    window = 100
 
     file_path = _generate_test_file_with_lines(tmp_path, num_lines)
 
@@ -1301,11 +1301,11 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
     result = capsys.readouterr().out
     assert result is not None
 
-    open_lines = '\n'.join([f'{i}|' for i in range(1, window + 1)])
+    open_lines = '\n'.join([f'{i}|' for i in range(1, WINDOW + 1)])
     expected = (
         f'[File: {file_path} ({num_lines} lines total)]\n'
         f'{open_lines}\n'
-        '(900 more lines below)\n'
+        f'({num_lines - WINDOW} more lines below)\n'
         '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
         f'ERRORS:\n{error_message}\n'
         '[This is how your edit would have looked if applied]\n'

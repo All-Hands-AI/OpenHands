@@ -36,7 +36,7 @@ from pylatexenc.latex2text import LatexNodes2Text
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
-WINDOW = 100
+WINDOW = 300
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
@@ -224,17 +224,17 @@ def _cur_file_header(CURRENT_FILE, total_lines) -> str:
 
 @update_pwd_decorator
 def open_file(
-    path: str, line_number: int | None = 1, context_lines: int | None = 100
+    path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
+    It only shows the first 300 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
 
     Args:
         path: str: The path to the file to open, preferredly absolute path.
         line_number: int | None = 1: The line number to move to. Defaults to 1.
-        context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
+        context_lines: int | None = 300: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 300.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -251,7 +251,7 @@ def open_file(
 
     # Override WINDOW with context_lines
     if context_lines is None or context_lines < 1:
-        context_lines = 100
+        context_lines = WINDOW
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
