@@ -86,7 +86,7 @@ class AgentController:
         )
 
         # state from the previous session, state from a parent agent, or a fresh state
-        self._set_initial_state(
+        self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
         )
@@ -228,8 +228,8 @@ class AgentController:
         return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
-        AgentCls: Type[Agent] = Agent.get_cls(action.agent)
-        agent = AgentCls(llm=self.agent.llm)
+        agent_cls: Type[Agent] = Agent.get_cls(action.agent)
+        agent = agent_cls(llm=self.agent.llm)
         state = State(
             inputs=action.inputs or {},
             iteration=0,
@@ -371,7 +371,7 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def _set_initial_state(
+    def set_initial_state(
         self, state: State | None, max_iterations: int = MAX_ITERATIONS
     ):
         # state from the previous session, state from a parent agent, or a new state
