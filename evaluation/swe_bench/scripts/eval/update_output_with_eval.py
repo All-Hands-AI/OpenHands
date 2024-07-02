@@ -14,24 +14,44 @@ report_json = os.path.join(dirname, 'report.json')
 
 df = pd.read_json(args.input_file, lines=True)
 
-instance_id_to_status = defaultdict(dict)
+output_md_filepath = os.path.join(dirname, 'README.md')
+instance_id_to_status = defaultdict(lambda: {'resolved': False})
 if os.path.exists(report_json):
     with open(report_json, 'r') as f:
         report = json.load(f)
 
+    output_md = (
+        "# SWE-bench Report\n"
+        "This folder contains the evaluation results of the SWE-bench using the [official evaluation docker containerization](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level).\n\n"
+        "## Summary\n"
+        f"- total instances: {report['total_instances']}\n"
+        f"- completed instances: {report['completed_instances']}\n"
+        f"- resolved instances: {report['resolved_instances']}\n"
+        f"- unresolved instances: {report['unresolved_instances']}\n"
+        f"- error instances: {report['error_instances']}\n"
+        f"- unstopped instances: {report['unstopped_instances']}\n"
+    )
+
+    output_md += '\n## Resolved Instances\n'
     # instance_id to status
-    for status, instance_ids in report.items():
-        for instance_id in instance_ids:
-            if status == 'resolved':
-                instance_id_to_status[instance_id]['resolved'] = True
-            elif status == 'applied':
-                instance_id_to_status[instance_id]['applied'] = True
-            elif status == 'test_timeout':
-                instance_id_to_status[instance_id]['test_timeout'] = True
-            elif status == 'test_errored':
-                instance_id_to_status[instance_id]['test_errored'] = True
-            elif status == 'no_generation':
-                instance_id_to_status[instance_id]['empty_generation'] = True
+    for instance_id in report['resolved_ids']:
+        instance_id_to_status[instance_id]['resolved'] = True
+        output_md += (
+            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
+        )
+
+    output_md += '\n## Unresolved Instances\n'
+    for instance_id in report['unresolved_ids']:
+        output_md += (
+            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
+        )
+
+    output_md += '\n## Error Instances\n'
+    for instance_id in report['error_ids']:
+        instance_id_to_status[instance_id]['error_eval'] = True
+        output_md += (
+            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
+        )
 
     # Apply the status to the dataframe
     def apply_report(row):
@@ -52,3 +72,6 @@ if os.path.exists(args.input_file + '.bak'):
 # backup the original file
 os.rename(args.input_file, args.input_file + '.bak')
 df.to_json(args.input_file, orient='records', lines=True)
+
+with open(output_md_filepath, 'w') as f:
+    f.write(output_md)

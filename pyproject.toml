@@ -46,7 +46,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.4.10"
+ruff = "0.5.0"
 mypy = "1.10.1"
 pre-commit = "3.7.1"
 
@@ -68,12 +68,13 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git", rev = "xw/attempt-fix-django-parsing" }
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
