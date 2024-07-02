@@ -107,6 +107,7 @@ describe("SettingsModal", () => {
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
+      CONFIRMATION_MODE: true,
     };
 
     it("should save the settings", async () => {
