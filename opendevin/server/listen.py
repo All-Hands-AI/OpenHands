@@ -67,9 +67,13 @@ def load_file_upload_config() -> tuple[int, bool, list[str]]:
     restrict_file_types = config.file_uploads_restrict_file_types
     allowed_extensions = config.file_uploads_allowed_extensions
 
-    max_file_size_mb = max_file_size_mb if (isinstance(max_file_size_mb, int) and max_file_size_mb >= 0) else 0
+    max_file_size_mb = (
+        max_file_size_mb
+        if (isinstance(max_file_size_mb, int) and max_file_size_mb >= 0)
+        else 0
+    )
     if max_file_size_mb == 0:
-        logger.warning(f'Using unlimited (0) file size for uploads.')
+        logger.warning('Using unlimited (0) file size for uploads.')
 
     # Sanity check for allowed_extensions
     if not isinstance(allowed_extensions, (list, set)) or not allowed_extensions:

@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
-from typing import Any, ClassVar, get_args, get_origin, MutableMapping
+from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
