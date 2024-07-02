@@ -12,7 +12,7 @@ from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 import toml
 from dotenv import load_dotenv
 
-from opendevin.core.utils import Singleton
+from opendevin.core.utils import CustomSingleton
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ load_dotenv()
 
 
 @dataclass
-class LLMConfig(metaclass=Singleton):
+class LLMConfig(metaclass=CustomSingleton):
     """
     Configuration for the LLM model.
 
@@ -99,7 +99,7 @@ class LLMConfig(metaclass=Singleton):
 
 
 @dataclass
-class AgentConfig(metaclass=Singleton):
+class AgentConfig(metaclass=CustomSingleton):
     """
     Configuration for the agent.
 
@@ -128,7 +128,7 @@ class UndefinedString(str, Enum):
 
 
 @dataclass
-class AppConfig(metaclass=Singleton):
+class AppConfig(metaclass=CustomSingleton):
     """
     Configuration for the app.
 
@@ -447,7 +447,7 @@ def get_llm_config_arg(llm_config_arg: str):
     with the settings of this group, from the config file, and set it as the LLMConfig object for the app.
 
     Args:
-        llm_config_arg: The group of llm settings to get from the config.toml file.
+        llm_config_arg: The group of llm settings, e.g. a [llama3] section in the toml file.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.

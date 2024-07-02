@@ -1,12 +1,12 @@
 import dataclasses
 
 
-class Singleton(type):
+class CustomSingleton(type):
     _instances: dict = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super(CustomSingleton, cls).__call__(*args, **kwargs)
         else:
             # allow updates, just update existing instance
             # perhaps not the most orthodox way to do it, though it simplifies client code

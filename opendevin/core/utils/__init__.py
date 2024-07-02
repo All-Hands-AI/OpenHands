@@ -1,3 +1,3 @@
-from .singleton import Singleton
+from .custom_singleton import CustomSingleton
 
-__all__ = ['Singleton']
+__all__ = ['CustomSingleton']
