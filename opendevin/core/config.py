@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
-from typing import Any, ClassVar, get_args, get_origin
+from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -76,10 +76,10 @@ class LLMConfig(metaclass=Singleton):
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
-        dict = {}
+        result = {}
         for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
+            result[f.name] = get_field_info(f)
+        return result
 
     def __str__(self):
         attr_str = []
@@ -117,10 +117,10 @@ class AgentConfig(metaclass=Singleton):
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
-        dict = {}
+        result = {}
         for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
+            result[f.name] = get_field_info(f)
+        return result
 
 
 class UndefinedString(str, Enum):
@@ -215,16 +215,16 @@ class AppConfig(metaclass=Singleton):
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
-        dict = {}
+        result = {}
         for f in fields(self):
             field_value = getattr(self, f.name)
 
             # dataclasses compute their defaults themselves
             if is_dataclass(type(field_value)):
-                dict[f.name] = field_value.defaults_to_dict()
+                result[f.name] = field_value.defaults_to_dict()
             else:
-                dict[f.name] = get_field_info(f)
-        return dict
+                result[f.name] = get_field_info(f)
+        return result
 
     def __str__(self):
         attr_str = []
@@ -248,16 +248,16 @@ class AppConfig(metaclass=Singleton):
         return self.__str__()
 
 
-def get_field_info(field):
+def get_field_info(f):
     """
     Extract information about a dataclass field: type, optional, and default.
 
     Args:
-        field: The field to extract information from.
+        f: The field to extract information from.
 
     Returns: A dict with the field's type, whether it's optional, and its default value.
     """
-    field_type = field.type
+    field_type = f.type
     optional = False
 
     # for types like str | None, find the non-None type and set optional to True
@@ -277,23 +277,23 @@ def get_field_info(field):
     )
 
     # default is always present
-    default = field.default
+    default = f.default
 
     # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
-def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
+def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
     Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
 
     Args:
-        config: The AppConfig object to set attributes on.
+        cfg: The AppConfig object to set attributes on.
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
     def get_optional_type(union_type: UnionType) -> Any:
-        """Returns the non-None type from an Union."""
+        """Returns the non-None type from a Union."""
         types = get_args(union_type)
         return next((t for t in types if t is not type(None)), None)
 
@@ -334,19 +334,18 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                     )
 
     # Start processing from the root of the config object
-    set_attr_from_env(config)
+    set_attr_from_env(cfg)
 
 
-def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
-        config: The AppConfig object to update attributes of.
+        cfg: The AppConfig object to update attributes of.
+        toml_file: The path to the toml file. Defaults to 'config.toml'.
     """
 
     # try to read the config.toml file into the config object
-    toml_config = {}
-
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
@@ -363,24 +362,24 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     # if there was an exception or core is not in the toml, try to use the old-style toml
     if 'core' not in toml_config:
         # re-use the env loader to set the config from env-style vars
-        load_from_env(config, toml_config)
+        load_from_env(cfg, toml_config)
         return
 
     core_config = toml_config['core']
 
     try:
         # set llm config from the toml file
-        llm_config = config.llm
+        llm_config = cfg.llm
         if 'llm' in toml_config:
             llm_config = LLMConfig(**toml_config['llm'])
 
         # set agent config from the toml file
-        agent_config = config.agent
+        agent_config = cfg.agent
         if 'agent' in toml_config:
             agent_config = AgentConfig(**toml_config['agent'])
 
         # update the config object with the new values
-        config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
+        AppConfig(llm=llm_config, agent=agent_config, **core_config)
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
@@ -388,38 +387,38 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
         )
 
 
-def finalize_config(config: AppConfig):
+def finalize_config(cfg: AppConfig):
     """
     More tweaks to the config after it's been loaded.
     """
 
     # Set workspace_mount_path if not set by the user
-    if config.workspace_mount_path is UndefinedString.UNDEFINED:
-        config.workspace_mount_path = os.path.abspath(config.workspace_base)
-    config.workspace_base = os.path.abspath(config.workspace_base)
+    if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
+        cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
+    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if config.sandbox_type == 'local':
-        config.workspace_mount_path_in_sandbox = config.workspace_mount_path
+    if cfg.sandbox_type == 'local':
+        cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
-    if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:
+    if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?
-        base = config.workspace_base or os.getcwd()
-        parts = config.workspace_mount_rewrite.split(':')
-        config.workspace_mount_path = base.replace(parts[0], parts[1])
+        base = cfg.workspace_base or os.getcwd()
+        parts = cfg.workspace_mount_rewrite.split(':')
+        cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    if config.llm.embedding_base_url is None:
-        config.llm.embedding_base_url = config.llm.base_url
+    if cfg.llm.embedding_base_url is None:
+        cfg.llm.embedding_base_url = cfg.llm.base_url
 
-    if config.use_host_network and platform.system() == 'Darwin':
+    if cfg.use_host_network and platform.system() == 'Darwin':
         logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
 
     # make sure cache dir exists
-    if config.cache_dir:
-        pathlib.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)
+    if cfg.cache_dir:
+        pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
 
 config = AppConfig()
@@ -565,11 +564,11 @@ def parse_arguments():
     Parse the command line arguments.
     """
     parser = get_parser()
-    args, _ = parser.parse_known_args()
-    if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
+    parsed_args, _ = parser.parse_known_args()
+    if parsed_args.directory:
+        config.workspace_base = os.path.abspath(parsed_args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
-    return args
+    return parsed_args
 
 
 args = parse_arguments()
