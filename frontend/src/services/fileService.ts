@@ -5,7 +5,8 @@ import { request } from "./api";
 const translate = (key: I18nKey) => i18next.t(key);
 
 export async function selectFile(file: string): Promise<string> {
-  const data = await request(`/api/select-file?file=${file}`);
+  const encodedFile = encodeURIComponent(file);
+  const data = await request(`/api/select-file?file=${encodedFile}`);
   return data.code as string;
 }
 
