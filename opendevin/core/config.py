@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
-from typing import Any, ClassVar, MutableMapping, get_args, get_origin
+from typing import Any, ClassVar, Dict, MutableMapping, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -107,11 +107,13 @@ class AgentConfig(metaclass=Singleton):
         name: The name of the agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
+        llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
     name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
+    llm_config: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """
@@ -133,8 +135,8 @@ class AppConfig(metaclass=Singleton):
     Configuration for the app.
 
     Attributes:
-        llm: The LLM configuration.
-        agent: The agent configuration.
+        llms: A list of LLM configuration. The first one is the default choice.
+        agents: A list of agent configurations. One agent shall have at most one config.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
@@ -162,8 +164,8 @@ class AppConfig(metaclass=Singleton):
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
-    llm: LLMConfig = field(default_factory=LLMConfig)
-    agent: AgentConfig = field(default_factory=AgentConfig)
+    llms: Dict[str, LLMConfig] = {}
+    agents: Dict[str, AgentConfig] = {}
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
@@ -204,6 +206,32 @@ class AppConfig(metaclass=Singleton):
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
 
     defaults_dict: ClassVar[dict] = {}
+
+    @property
+    def llm(self) -> LLMConfig:
+        if 'default' not in self.llms:
+            raise ValueError('No default LLMConfig available')
+        return self.llms['default']
+
+    @llm.setter
+    def llm(self, value: LLMConfig):
+        """
+        legacy API to set default LLM config.
+        """
+        self.llms['default'] = value
+
+    @property
+    def agent(self) -> AgentConfig:
+        if 'default' not in self.agents:
+            raise ValueError('No default AgentConfig available')
+        return self.agents['default']
+
+    @agent.setter
+    def agent(self, value: AgentConfig):
+        """
+        legacy API to set Agent config.
+        """
+        self.agents['default'] = value
 
     def __post_init__(self):
         """
@@ -368,18 +396,26 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     core_config = toml_config['core']
 
     try:
-        # set llm config from the toml file
+        # set default llm config from the toml file
         llm_config = cfg.llm
         if 'llm' in toml_config:
             llm_config = LLMConfig(**toml_config['llm'])
 
-        # set agent config from the toml file
+        # TODO: read other llm configs
+        llm_configs = dict()
+        llm_configs['default'] = llm_config
+
+        # set default agent config from the toml file
         agent_config = cfg.agent
         if 'agent' in toml_config:
             agent_config = AgentConfig(**toml_config['agent'])
 
+        # TODO: read other agent configs
+        agent_configs = dict()
+        agent_configs['default'] = agent_config
+
         # update the config object with the new values
-        AppConfig(llm=llm_config, agent=agent_config, **core_config)
+        AppConfig(llms=llm_configs, agents=agent_configs, **core_config)
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
