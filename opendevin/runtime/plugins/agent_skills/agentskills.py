@@ -36,7 +36,7 @@ from pylatexenc.latex2text import LatexNodes2Text
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
-WINDOW = 200
+WINDOW = 100
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 

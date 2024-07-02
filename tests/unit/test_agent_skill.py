@@ -120,17 +120,31 @@ def test_open_file_long_with_lineno(tmp_path):
     content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
     temp_file_path.write_text(content)
 
+    cur_line = 100
+
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            open_file(str(temp_file_path), 100)
+            open_file(str(temp_file_path), cur_line)
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(this is the beginning of the file)\n'
     # since 100 is < WINDOW and 100 - WINDOW//2 < 0, so it should show all lines from 1 to WINDOW
-    for i in range(1, WINDOW + 1):
+
+    if cur_line - WINDOW // 2 < 0:
+        start = 1
+        end = WINDOW
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({WINDOW - WINDOW//2 - 1} more lines above)\n'
+        start = cur_line - WINDOW // 2
+        end = cur_line + WINDOW // 2
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - WINDOW} more lines below)\n'
+
+    if cur_line + WINDOW // 2 > 1000:
+        expected += f'({1000 - WINDOW} more lines below)\n'
+    else:
+        expected += f'({1000 - (cur_line + WINDOW//2)} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -249,17 +263,30 @@ def test_scroll_up(tmp_path):
     content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
     temp_file_path.write_text(content)
 
+    cur_line = 300
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            open_file(str(temp_file_path), 300)
+            open_file(str(temp_file_path), cur_line)
         result = buf.getvalue()
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += f'({300 - WINDOW//2 - 1} more lines above)\n'
-    for i in range(300 - WINDOW // 2, 300 + WINDOW // 2 + 1):
+    if cur_line - WINDOW // 2 < 0:
+        start = 1
+        end = WINDOW
+        expected += '(this is the beginning of the file)\n'
+    else:
+        start = cur_line - WINDOW // 2
+        end = cur_line + WINDOW // 2
+        expected += f'({start - 1} more lines above)\n'
+
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - (300 + WINDOW//2)} more lines below)\n'
+
+    if cur_line + WINDOW // 2 > 1000:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({1000 - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -268,12 +295,25 @@ def test_scroll_up(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
+    cur_line = cur_line - WINDOW
     # already at the top when WINDOW=300
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(this is the beginning of the file)\n'
-    for i in range(1, WINDOW + 1):
+
+    if cur_line - WINDOW // 2 < 0:
+        start = 1
+        end = WINDOW
+        expected += '(this is the beginning of the file)\n'
+    else:
+        start = cur_line - WINDOW // 2
+        end = cur_line + WINDOW // 2
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += f'({1000 - WINDOW} more lines below)\n'
+
+    if cur_line + WINDOW > 1000:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({1000 - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
