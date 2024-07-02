@@ -219,7 +219,7 @@ function FileExplorer() {
           isHidden ? "w-12" : "w-60",
         )}
       >
-        <div className="flex flex-col relative h-full p-4">
+        <div className="flex flex-col relative h-full p-2">
           <div className="sticky top-0 bg-neutral-800 z-10">
             <div
               className={twMerge(
