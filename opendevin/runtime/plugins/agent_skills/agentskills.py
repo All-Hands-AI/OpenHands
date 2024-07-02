@@ -201,6 +201,8 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
         # only display this when there's at least one line above
         if start > 1:
             output += f'({start - 1} more lines above)\n'
+        else:
+            output += '(this is the beginning of the file)\n'
         for i in range(start, end + 1):
             _new_line = f'{i}|{lines[i-1]}'
             if not _new_line.endswith('\n'):
@@ -208,6 +210,8 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
             output += _new_line
         if end < total_lines:
             output += f'({total_lines - end} more lines below)\n'
+        else:
+            output += '(this is the end of the file)\n'
         output = output.rstrip()
 
         if return_str:

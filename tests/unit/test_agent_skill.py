@@ -64,11 +64,13 @@ def test_open_file(tmp_path):
     assert result is not None
     expected = (
         f'[File: {temp_file_path} (5 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|Line 1\n'
         '2|Line 2\n'
         '3|Line 3\n'
         '4|Line 4\n'
         '5|Line 5\n'
+        '(this is the end of the file)\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -84,11 +86,13 @@ def test_open_file_with_indentation(tmp_path):
     assert result is not None
     expected = (
         f'[File: {temp_file_path} (5 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|Line 1\n'
         '2|    Line 2\n'
         '3|Line 3\n'
         '4|Line 4\n'
         '5|Line 5\n'
+        '(this is the end of the file)\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -104,6 +108,7 @@ def test_open_file_long(tmp_path):
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, 51):
         expected += f'{i}|Line {i}\n'
     expected += '(950 more lines below)\n'
@@ -121,6 +126,7 @@ def test_open_file_long_with_lineno(tmp_path):
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     # since 100 is < WINDOW and 100 - WINDOW//2 < 0, so it should show all lines from 1 to WINDOW
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
@@ -142,7 +148,9 @@ def test_create_file(tmp_path):
 
     expected = (
         f'[File: {temp_file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         f'[File {temp_file_path} created.]\n'
     )
     assert result.split('\n') == expected.split('\n')
@@ -160,6 +168,7 @@ def test_goto_line(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
     expected += f'({1000 - WINDOW} more lines below)\n'
@@ -215,6 +224,7 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
     expected += f'({1000 - WINDOW} more lines below)\n'
@@ -260,6 +270,7 @@ def test_scroll_up(tmp_path):
 
     # already at the top when WINDOW=300
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
     expected += f'({1000 - WINDOW} more lines below)\n'
@@ -278,8 +289,10 @@ def test_scroll_down_edge(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (9 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, 10):
         expected += f'{i}|Line {i}\n'
+    expected += '(this is the end of the file)\n'
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
@@ -502,9 +515,13 @@ def test_edit_file_by_replace(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT\n'
             '2|Line 4\n'
-            '3|Line 5\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -533,11 +550,15 @@ def test_edit_file_by_replace_sameline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Line 2\n'
             '3|REPLACE TEXT\n'
             '4|Line 4\n'
-            '5|Line 5\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
+            '5|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -568,11 +589,15 @@ def test_edit_file_by_replace_multiline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|REPLACE TEXT\n'
             '3|Line 2\n'
             '4|Line 4\n'
-            '5|Line 5\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
+            '5|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -614,9 +639,13 @@ def test_edit_file_by_line(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT\n'
             '2|Line 4\n'
-            '3|Line 5\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -644,7 +673,11 @@ def test_edit_file_by_line_from_scratch(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '(this is the beginning of the file)\n'
+            '1|REPLACE TEXT\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -672,9 +705,13 @@ def test_edit_file_by_line_from_scratch_multiline_with_backticks_and_second_edit
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|`REPLACE TEXT1`\n'
             '2|`REPLACE TEXT2`\n'
-            '3|`REPLACE TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|`REPLACE TEXT3`\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -700,9 +737,13 @@ def test_edit_file_by_line_from_scratch_multiline_with_backticks_and_second_edit
         second_result = buf.getvalue()
         second_expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|`REPLACED TEXT1`\n'
             '2|`REPLACED TEXT2`\n'
-            '3|`REPLACED TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|`REPLACED TEXT3`\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert second_result.split('\n') == second_expected.split('\n')
 
@@ -733,9 +774,13 @@ def test_edit_file_by_line_from_scratch_multiline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT1\n'
             '2|REPLACE TEXT2\n'
-            '3|REPLACE TEXT3\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|REPLACE TEXT3\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -773,10 +818,14 @@ def test_insert_content_at_line(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Inserted Line\n'
             '3|Line 2\n'
-            '4|Line 3\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
+            '4|Line 3\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -804,7 +853,11 @@ def test_insert_content_at_line_from_scratch(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '(this is the beginning of the file)\n'
+            '1|REPLACE TEXT\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -830,7 +883,11 @@ def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '(this is the beginning of the file)\n'
+            '1|REPLACE TEXT\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -856,9 +913,13 @@ def test_insert_content_at_line_emptyline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Inserted Line\n'
-            '3|\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
+            '3|\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -886,9 +947,13 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|`REPLACE TEXT1`\n'
             '2|`REPLACE TEXT2`\n'
-            '3|`REPLACE TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|`REPLACE TEXT3`\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -913,9 +978,13 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
         second_result = buf.getvalue()
         second_expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|`REPLACED TEXT1`\n'
             '2|`REPLACED TEXT2`\n'
-            '3|`REPLACED TEXT3`\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|`REPLACED TEXT3`\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert second_result.split('\n') == second_expected.split('\n')
 
@@ -945,9 +1014,13 @@ def test_insert_content_at_line_from_scratch_multiline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT1\n'
             '2|REPLACE TEXT2\n'
-            '3|REPLACE TEXT3\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+            '3|REPLACE TEXT3\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -981,9 +1054,13 @@ def test_append_file(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Line 2\n'
-            '3|APPENDED TEXT\n' + MSG_FILE_UPDATED.format(line_number=2) + '\n'
+            '3|APPENDED TEXT\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -1006,7 +1083,11 @@ def test_append_file_from_scratch(tmp_path):
             result = buf.getvalue()
             expected = (
                 f'[File: {temp_file_path} (1 lines total after edit)]\n'
-                '1|APPENDED TEXT\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+                '(this is the beginning of the file)\n'
+                '1|APPENDED TEXT\n'
+                '(this is the end of the file)\n'
+                + MSG_FILE_UPDATED.format(line_number=1)
+                + '\n'
             )
             assert result.split('\n') == expected.split('\n')
 
@@ -1032,9 +1113,13 @@ def test_append_file_from_scratch_multiline(tmp_path):
             result = buf.getvalue()
             expected = (
                 f'[File: {temp_file_path} (3 lines total after edit)]\n'
+                '(this is the beginning of the file)\n'
                 '1|APPENDED TEXT1\n'
                 '2|APPENDED TEXT2\n'
-                '3|APPENDED TEXT3\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+                '3|APPENDED TEXT3\n'
+                '(this is the end of the file)\n'
+                + MSG_FILE_UPDATED.format(line_number=1)
+                + '\n'
             )
             assert result.split('\n') == expected.split('\n')
 
@@ -1238,9 +1323,15 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
     assert result is not None
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         f'[File: {file_path} (1 lines total after edit)]\n'
-        "1|print('hello')\n" + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+        '(this is the beginning of the file)\n'
+        "1|print('hello')\n"
+        '(this is the end of the file)\n'
+        + MSG_FILE_UPDATED.format(line_number=1)
+        + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -1263,17 +1354,23 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
 
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
         'ERRORS:\n'
         f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
         '1|undefined_name()\n'
+        '(this is the end of the file)\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         '-------------------------------------------------\n'
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
         'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -1304,6 +1401,7 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
     open_lines = '\n'.join([f'{i}|' for i in range(1, WINDOW + 1)])
     expected = (
         f'[File: {file_path} ({num_lines} lines total)]\n'
+        '(this is the beginning of the file)\n'
         f'{open_lines}\n'
         f'({num_lines - WINDOW} more lines below)\n'
         '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
@@ -1344,9 +1442,15 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     assert result is not None
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         f'[File: {file_path} (1 lines total after edit)]\n'
-        '1|undefined_name()\n' + MSG_FILE_UPDATED.format(line_number=1) + '\n'
+        '(this is the beginning of the file)\n'
+        '1|undefined_name()\n'
+        '(this is the end of the file)\n'
+        + MSG_FILE_UPDATED.format(line_number=1)
+        + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
