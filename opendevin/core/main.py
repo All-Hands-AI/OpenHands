@@ -1,5 +1,6 @@
 import asyncio
 import os
+import signal
 import sys
 from typing import Callable, Type
 
@@ -17,6 +18,35 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.server.runtime import ServerRuntime
+
+_is_shutting_down = False
+
+
+async def shutdown(
+    sig: signal.Signals,
+    loop: asyncio.AbstractEventLoop,
+    shutdown_event: asyncio.Event,
+) -> None:
+    global _is_shutting_down
+    if _is_shutting_down:
+        return
+    _is_shutting_down = True
+
+    logger.info(f'Received exit signal {sig.name}...')
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
+    shutdown_event.set()
+    loop.stop()
+
+
+def create_signal_handler(
+    sig: signal.Signals, loop: asyncio.AbstractEventLoop, shutdown_event: asyncio.Event
+) -> Callable[[], None]:
+    def handler() -> None:
+        asyncio.create_task(shutdown(sig, loop, shutdown_event))
+
+    return handler
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -55,6 +85,12 @@ async def run_agent_controller(
     logger.info(
         f'Running agent {type(agent)}, model {agent.llm.model_name}, with task: "{task_str}"'
     )
+
+    loop = asyncio.get_running_loop()
+    shutdown_event = asyncio.Event()
+    signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
+    for sig in signals:
+        loop.add_signal_handler(sig, create_signal_handler(sig, loop, shutdown_event))
 
     # set up the event stream
     cli_session = 'main' + ('_' + sid if sid else '')
@@ -123,23 +159,42 @@ async def run_agent_controller(
                 event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.state.agent_state not in [
-        AgentState.FINISHED,
-        AgentState.REJECTED,
-        AgentState.ERROR,
-        AgentState.PAUSED,
-        AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    # save session when we're about to close
-    if config.enable_cli_session:
-        end_state = controller.get_state()
-        end_state.save_to_session(cli_session)
+    # Use an event to keep the main coroutine running
+    shutdown_event = asyncio.Event()
 
-    # close when done
-    await controller.close()
-    runtime.close()
+    try:
+        while not _is_shutting_down:
+            if controller.get_agent_state() in [
+                AgentState.FINISHED,
+                AgentState.REJECTED,
+                AgentState.ERROR,
+                AgentState.PAUSED,
+                AgentState.STOPPED,
+            ]:
+                break
+
+            try:
+                await asyncio.wait_for(shutdown_event.wait(), timeout=1)
+                break  # Exit the loop if shutdown_event is set
+            except asyncio.TimeoutError:
+                # Timeout occurred, continue the loop
+                pass
+
+        # save session when we're about to close
+        if config.enable_cli_session:
+            end_state = controller.get_state()
+            end_state.save_to_session(cli_session)
+
+    except asyncio.CancelledError:
+        logger.info('Main task cancelled')
+    finally:
+        await controller.close()
+        runtime.close()
+        logger.info('Successfully shut down the OpenDevin server.')
+        if not loop.is_closed():
+            loop.stop()
+
     return controller.get_state()
 
 

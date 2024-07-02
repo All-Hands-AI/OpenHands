@@ -255,7 +255,7 @@ class LLM:
             ),
             after=attempt_on_error,
         )
-        async def async_wrapper(*args, **kwargs):
+        async def async_completion_wrapper(*args, **kwargs):
             """
             Async wrapper for the litellm acompletion function. Logs the input and output of the completion function.
             """
@@ -311,90 +311,7 @@ class LLM:
                 for task in pending:
                     task.cancel()
 
-        self._async_completion = async_wrapper  # type: ignore
-
-        # Async version
-        self._async_completion = partial(
-            litellm_acompletion,
-            model=self.model_name,
-            api_key=self.api_key,
-            base_url=self.base_url,
-            api_version=self.api_version,
-            custom_llm_provider=custom_llm_provider,
-            max_tokens=self.max_output_tokens,
-            timeout=self.llm_timeout,
-            temperature=llm_temperature,
-            top_p=llm_top_p,
-        )
-
-        async_completion_unwrapped = self._async_completion
-
-        @retry(
-            reraise=True,
-            stop=stop_after_attempt(num_retries),
-            wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
-            retry=retry_if_exception_type(
-                (RateLimitError, APIConnectionError, ServiceUnavailableError)
-            ),
-            after=attempt_on_error,
-        )
-        async def async_wrapper(*args, **kwargs):
-            """
-            Async wrapper for the litellm acompletion function. Logs the input and output of the completion function.
-            """
-            # some callers might just send the messages directly
-            if 'messages' in kwargs:
-                messages = kwargs['messages']
-            else:
-                messages = args[1]
-
-            # log the prompt
-            debug_message = ''
-            for message in messages:
-                debug_message += message_separator + message['content']
-            llm_prompt_logger.debug(debug_message)
-
-            async def check_stopped():
-                while True:
-                    if (
-                        self.stop_requested_callback is not None
-                        and await self.stop_requested_callback()
-                    ):
-                        return True
-                    await asyncio.sleep(0.1)  # Check every 100ms
-
-            litellm_task = asyncio.create_task(
-                async_completion_unwrapped(*args, **kwargs)
-            )
-            stop_check_task = asyncio.create_task(check_stopped())
-
-            try:
-                done, pending = await asyncio.wait(
-                    [litellm_task, stop_check_task], return_when=asyncio.FIRST_COMPLETED
-                )
-
-                if stop_check_task in done:
-                    litellm_task.cancel()
-                    raise asyncio.CancelledError(
-                        'LLM request cancelled due to STOPPED state'
-                    )
-
-                resp = await litellm_task
-
-                # log the response
-                message_back = resp['choices'][0]['message']['content']
-                llm_response_logger.debug(message_back)
-
-                # post-process to log costs
-                self._post_completion(resp)
-
-                return resp
-
-            finally:
-                for task in pending:
-                    task.cancel()
-
-        self._async_completion = async_wrapper  # type: ignore
+        self._async_completion = async_completion_wrapper  # type: ignore
 
     @property
     def completion(self):
@@ -409,8 +326,7 @@ class LLM:
     def async_completion(self):
         """
         Decorator for the async litellm completion function.
-
-        Check the complete documentation at https://litellm.vercel.app/docs/completion
+        Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
         return self._async_completion
 
@@ -428,14 +344,6 @@ class LLM:
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
-
-    @property
-    def async_completion(self):
-        """
-        Decorator for the async litellm completion function.
-        Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
-        """
-        return self._async_completion
 
     def get_token_count(self, messages):
         """

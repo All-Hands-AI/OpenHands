@@ -6,7 +6,7 @@ from agenthub.codeact_agent.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
-from opendevin.controller.agent import AsyncAgent
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,

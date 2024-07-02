@@ -6,6 +6,7 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.utils import json
+from opendevin.core.utils.async_utils import async_to_sync
 from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
@@ -63,7 +64,11 @@ class MicroAgent(Agent):
         self.delegates = all_microagents.copy()
         del self.delegates[self.agent_definition['name']]
 
+    @async_to_sync
     def step(self, state: State) -> Action:
+        return self.step_async(state)  # type: ignore
+
+    async def step_async(self, state: State) -> Action:
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
