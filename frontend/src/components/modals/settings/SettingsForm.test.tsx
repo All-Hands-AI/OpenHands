@@ -22,6 +22,7 @@ const renderSettingsForm = (settings?: Settings) => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          SECURITY_INVARIANT: "true",
         }
       }
       models={["model1", "model2", "model3"]}
@@ -51,6 +52,7 @@ describe("SettingsForm", () => {
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
+    expect(securityInvariantInput).toHaveAttribute("data-selected", "true");
   });
 
   it("should display the existing values if it they are present", () => {

@@ -30,6 +30,7 @@ describe("getSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
+      SECURITY_INVARIANT: "security_invariant",
     });
   });
 

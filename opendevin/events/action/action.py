@@ -10,6 +10,7 @@ class ActionConfirmationStatus(str, Enum):
     REJECTED = 'rejected'
     AWAITING_CONFIRMATION = 'awaiting_confirmation'
 
+
 class ActionSecurityRisk(int, Enum):
     UNKNOWN = -1
     LOW = 0
