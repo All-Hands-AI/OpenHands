@@ -392,6 +392,7 @@ def _edit_file_impl(
     src_abs_path = os.path.abspath(file_name)
     first_error_line = None
     try:
+        n_added_lines = None
         # Create a temporary file
         with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
             temp_file_path = temp_file.name
@@ -401,35 +402,34 @@ def _edit_file_impl(
                 lines = original_file.readlines()
 
             if is_append:
+                content_lines = content.splitlines(keepends=True)
+                n_added_lines = len(content_lines)
                 if lines and not (len(lines) == 1 and lines[0].strip() == ''):
+                    # file is not empty
                     if not lines[-1].endswith('\n'):
                         lines[-1] += '\n'
-                    content_lines = content.splitlines(keepends=True)
                     new_lines = lines + content_lines
                     content = ''.join(new_lines)
+                else:
+                    # file is empty
+                    content = ''.join(content_lines)
+
             elif is_insert:
+                inserted_lines = [
+                    content + '\n' if not content.endswith('\n') else content
+                ]
                 if len(lines) == 0:
-                    new_lines = [
-                        content + '\n' if not content.endswith('\n') else content
-                    ]
+                    new_lines = inserted_lines
                 elif start is not None:
                     if len(lines) == 1 and lines[0].strip() == '':
                         # if the file with only 1 line and that line is empty
                         lines = []
 
                     if len(lines) == 0:
-                        new_lines = [
-                            content + '\n' if not content.endswith('\n') else content
-                        ]
+                        new_lines = inserted_lines
                     else:
                         new_lines = (
-                            lines[: start - 1]
-                            + [
-                                content + '\n'
-                                if not content.endswith('\n')
-                                else content
-                            ]
-                            + lines[start - 1 :]
+                            lines[: start - 1] + inserted_lines + lines[start - 1 :]
                         )
                 else:
                     assert start is None
@@ -438,8 +438,10 @@ def _edit_file_impl(
                         f'Invalid line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
                         f'{ERROR_MSG_SUFFIX}'
                     ) + '\n'
+                    return ret_str
 
                 content = ''.join(new_lines)
+                n_added_lines = len(inserted_lines)
             else:
                 # Handle cases where start or end are None
                 if start is None:
@@ -468,6 +470,7 @@ def _edit_file_impl(
                 if not content.endswith('\n'):
                     content += '\n'
                 content_lines = content.splitlines(True)
+                n_added_lines = len(content_lines)
                 new_lines = lines[: start - 1] + content_lines + lines[end:]
                 content = ''.join(new_lines)
 
@@ -493,14 +496,26 @@ def _edit_file_impl(
             lint_error, first_error_line = _lint_file(file_name)
             if lint_error is not None:
                 if first_error_line is not None:
-                    CURRENT_LINE = int(first_error_line)
+                    show_line = int(first_error_line)
+                elif is_append:
+                    # original end-of-file
+                    show_line = len(lines)
+                # insert OR edit WILL provide meaningful line numbers
+                elif start is not None and end is not None:
+                    show_line = int((start + end) / 2)
+                else:
+                    raise ValueError('Invalid state. This should never happen.')
+
                 ret_str += LINTER_ERROR_MSG
                 ret_str += lint_error + '\n'
+
+                editor_lines = n_added_lines + 20
 
                 ret_str += '[This is how your edit would have looked if applied]\n'
                 ret_str += '-------------------------------------------------\n'
                 ret_str += (
-                    _print_window(file_name, CURRENT_LINE, 10, return_str=True) + '\n'
+                    _print_window(file_name, show_line, editor_lines, return_str=True)
+                    + '\n'
                 )
                 ret_str += '-------------------------------------------------\n\n'
 
@@ -508,7 +523,10 @@ def _edit_file_impl(
                 ret_str += '-------------------------------------------------\n'
                 ret_str += (
                     _print_window(
-                        original_file_backup_path, CURRENT_LINE, 10, return_str=True
+                        original_file_backup_path,
+                        show_line,
+                        editor_lines,
+                        return_str=True,
                     )
                     + '\n'
                 )
