@@ -326,7 +326,7 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     if config.enable_auto_lint:
         # edit file, but make a mistake in indentation
         exit_code, output = box.execute(
-            'echo "edit_file(\'hello.py\', 1, 1, \'  print(\\"hello world\\")\')" | execute_cli'
+            'echo "insert_content_at_line(\'hello.py\', 1, \'  print(\\"hello world\\")\')" | execute_cli'
         )
         print(output)
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -338,6 +338,7 @@ hello.py:1:3: E999 IndentationError: unexpected indent
 [This is how your edit would have looked if applied]
 -------------------------------------------------
 1|  print("hello world")
+2|
 -------------------------------------------------
 
 [This is the original code before your edit]
@@ -352,14 +353,15 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
     # edit file with correct indentation
     exit_code, output = box.execute(
-        'echo "edit_file(\'hello.py\', 1, 1, \'print(\\"hello world\\")\')" | execute_cli'
+        'echo "insert_content_at_line(\'hello.py\', 1, \'print(\\"hello world\\")\')" | execute_cli'
     )
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
         """
-[File: /workspace/test/hello.py (1 lines total after edit)]
+[File: /workspace/test/hello.py (2 lines total after edit)]
 1|print("hello world")
+2|
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 """
     ).strip().split('\n')

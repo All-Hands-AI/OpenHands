@@ -70,7 +70,7 @@ class PluginMixin:
                     for line in output:
                         # Removes any trailing whitespace, including \n and \r\n
                         line = line.rstrip()
-                        logger.debug(line)
+                        # logger.debug(line)
                         # Avoid text from lines running into each other
                         total_output += line + ' '
                     _exit_code = output.exit_code()
