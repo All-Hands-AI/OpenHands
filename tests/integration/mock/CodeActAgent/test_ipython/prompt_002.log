@@ -158,6 +158,7 @@ Please note that THE `edit_file` and `insert_content_at_line` FUNCTIONS REQUIRE 
 Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
 Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
+If the assistent is finished with the task you MUST include <finish></finish> in your response.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 When handling files, try to use full paths and pwd to avoid errors.
 
@@ -376,6 +377,7 @@ Observation:
 
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+<finish></finish>
 
 --- END OF EXAMPLE ---
 
@@ -388,15 +390,17 @@ Use Jupyter IPython to write a text file containing 'hello world' to '/workspace
 
 ----------
 
-Sure! Let me write 'hello world' to a text file named 'test.txt' in the '/workspace' directory without asking for confirmation:
+Certainly! I'll use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Here's how we'll do it:
 <execute_ipython>
 with open('/workspace/test.txt', 'w') as f:
     f.write('hello world')
+print("File created successfully.")
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-[Code executed successfully with no output]
+File created successfully.
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>.

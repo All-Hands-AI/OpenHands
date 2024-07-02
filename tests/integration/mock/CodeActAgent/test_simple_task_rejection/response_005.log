@@ -1,0 +1,4 @@
+Great, now we have a file staged for commit. Let's write a commit message for this new file.
+
+<execute_bash>
+git commit -m "Add hello.txt with initial greeting"
