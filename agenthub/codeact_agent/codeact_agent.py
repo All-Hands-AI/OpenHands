@@ -205,7 +205,8 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        if config.agent.is_autonomous:
+        is_autonomous = config.agent.is_autonomous
+        if is_autonomous:
             messages.append({'role': 'user', 'content': f'Give step {state.iteration}'})
 
         response = self.llm.completion(
@@ -217,7 +218,17 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        return self.action_parser.parse(response)
+        action = self.action_parser.parse(response)
+        if is_autonomous:
+            user_msg = (
+                '\n----------\n'
+                'Please continue working on the task on whatever approach you think is suitable.\n'
+                'If you think you have solved the task, you can give <finish> to end the interaction.\n'
+                'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
+            )
+            action.content += user_msg
+            action.wait_for_response = False
+        return action
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
