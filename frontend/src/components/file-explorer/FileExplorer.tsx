@@ -216,10 +216,10 @@ function FileExplorer() {
       <div
         className={twMerge(
           "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring",
-          isHidden ? "min-w-[48px]" : "min-w-[228px]",
+          isHidden ? "w-12" : "w-60",
         )}
       >
-        <div className="flex flex-col relative h-full">
+        <div className="flex flex-col relative h-full p-2">
           <div className="sticky top-0 bg-neutral-800 z-10">
             <div
               className={twMerge(
