@@ -127,6 +127,13 @@ insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     line_number: int: The line number (starting from 1) to insert the content after.
     content: str: The content to insert.
 
+append_file(file_name: str, content: str) -> None:
+    Append content to the given file.
+    It appends text `content` to the end of the specified file.
+    Args:
+    file_name: str: The name of the file to append to.
+    content: str: The content to append to the file.
+
 search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
     Args:
