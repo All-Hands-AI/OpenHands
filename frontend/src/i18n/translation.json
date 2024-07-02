@@ -666,6 +666,18 @@
     "de": "Nach unten",
     "zh-CN": "回到底部"
   },
+  "SECURITY_INVARIANT$UNKNOWN_RISK": {
+    "en": "Unknown Risk"
+  },
+  "SECURITY_INVARIANT$LOW_RISK": {
+    "en": "Low Risk"
+  },
+  "SECURITY_INVARIANT$MEDIUM_RISK": {
+    "en": "Medium Risk"
+  },
+  "SECURITY_INVARIANT$HIGH_RISK": {
+    "en": "High Risk"
+  },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
     "zh-CN": "选择要使用的语言模型",

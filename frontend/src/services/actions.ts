@@ -2,6 +2,7 @@ import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
+import { appendInvariantInput } from "#/state/invariantSlice";
 import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
@@ -80,6 +81,7 @@ export function handleActionMessage(message: ActionMessage) {
     const actionFn =
       messageActions[message.action as keyof typeof messageActions];
     actionFn(message);
+    if ("args" in message && "security_risk" in message.args) store.dispatch(appendInvariantInput(message.args));
   }
 }
 
