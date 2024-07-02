@@ -98,7 +98,7 @@ describe("SettingsForm", () => {
     expect(modelInput).toBeDisabled();
     expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
-    expect(confirmationModeInput).toBeDisabled();
+    expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
   });
 
   describe("onChange handlers", () => {

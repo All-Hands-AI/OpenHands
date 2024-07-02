@@ -90,6 +90,7 @@ function SettingsForm({
       />
       <Switch
         aria-label="confirmationmode"
+        data-testid="confirmationmode"
         defaultSelected={settings.CONFIRMATION_MODE}
         onValueChange={onConfirmationModeChange}
         isDisabled={disabled}
