@@ -17,6 +17,3 @@ coverage:
 comment: false
 github_checks:
     annotations: false
-
-ignore:
-  - "agenthub/SWE_agent/**" # SWE agent is deprecated
