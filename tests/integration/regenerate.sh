@@ -24,9 +24,6 @@ echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 
 mkdir -p $WORKSPACE_BASE
 
-CONFIG_FILE="./config.toml"
-echo "CONFIG_FILE: $CONFIG_FILE"
-
 # use environmental variable if exists, otherwise use "ssh"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 # TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
@@ -159,13 +156,6 @@ regenerate_with_llm() {
     cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
   fi
 
-  # Use config file for LLM if it exists
-  if [ -f "$CONFIG_FILE" ]; then
-    LLM_CONFIG_ARG="-l integration-test-llm"
-  else
-    LLM_CONFIG_ARG=""
-  fi
-
   rm -rf logs
   rm -rf tests/integration/mock/$agent/$test_name/*
   # set -x to print the command being executed
@@ -180,8 +170,7 @@ regenerate_with_llm() {
     poetry run python ./opendevin/core/main.py \
     -i $MAX_ITERATIONS \
     -t "$task Do not ask me for confirmation at any point." \
-    -c $agent \
-    $LLM_CONFIG_ARG
+    -c $agent
   set +x
 
   mkdir -p tests/integration/mock/$agent/$test_name/
