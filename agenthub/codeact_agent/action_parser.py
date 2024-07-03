@@ -40,8 +40,9 @@ class CodeActResponseParser(ResponseParser):
     def parse_response(self, response) -> str:
         action = response.choices[0].message.content
         for lang in ['bash', 'ipython', 'browse']:
-            if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
-                action += f'</execute_{lang}>'
+            open_tag, close_tag = f'<execute_{lang}>', f'</execute_{lang}>'
+            if open_tag in action and close_tag not in action:
+                action += close_tag
         return action
 
     def parse_action(self, action_str: str) -> Action:
@@ -99,6 +100,7 @@ class CodeActActionParserCmdRun(ActionParser):
         thought = action_str.replace(self.bash_command.group(0), '').strip()
         # a command was found
         command_group = self.bash_command.group(1).strip()
+        command_group = command_group.split('<execute_bash>')[-1]
         if command_group.strip() == 'exit':
             return AgentFinishAction()
         return CmdRunAction(command=command_group, thought=thought)
@@ -127,6 +129,7 @@ class CodeActActionParserIPythonRunCell(ActionParser):
             self.python_code is not None
         ), 'self.python_code should not be None when parse is called'
         code_group = self.python_code.group(1).strip()
+        code_group = code_group.split('<execute_ipython>')[-1]
         thought = action_str.replace(self.python_code.group(0), '').strip()
         return IPythonRunCellAction(
             code=code_group,
@@ -158,6 +161,7 @@ class CodeActActionParserAgentDelegate(ActionParser):
         ), 'self.agent_delegate should not be None when parse is called'
         thought = action_str.replace(self.agent_delegate.group(0), '').strip()
         browse_actions = self.agent_delegate.group(1).strip()
+        browse_actions = browse_actions.split('<execute_browse>')[-1]
         task = f'{thought}. I should start with: {browse_actions}'
         return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
 
