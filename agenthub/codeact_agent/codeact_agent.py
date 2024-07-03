@@ -8,7 +8,6 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -205,7 +204,7 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        is_autonomous = config.agent.is_autonomous
+        is_autonomous = self.is_autonomous
         if is_autonomous:
             messages.append({'role': 'user', 'content': f'Give step {state.iteration}'})
 

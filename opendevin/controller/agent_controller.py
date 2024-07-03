@@ -189,13 +189,12 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, ErrorObservation):
                 await self.add_history(NullAction(), event)
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})             
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
         elif isinstance(event, AgentAutoModeAction):
-            config.agent.is_autonomous = event.is_enabled
+            self.agent.is_autonomous = event.is_enabled
             logger.info(f'Auto mode {event.is_enabled = }')
         else:
             logger.warning(f'Unhandled event: {event}')
-
 
     def reset_task(self):
         self.agent.reset()
