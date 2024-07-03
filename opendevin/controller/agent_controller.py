@@ -63,7 +63,7 @@ class AgentController:
         agent: Agent,
         event_stream: EventStream,
         sid: str = 'default',
-        max_iterations: int = MAX_ITERATIONS,
+        max_iterations: int | None = MAX_ITERATIONS,
         confirmation_mode: bool = False,
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
@@ -91,9 +91,8 @@ class AgentController:
         )
 
         # state from the previous session, state from a parent agent, or a fresh state
-        logger.info(
-            'Starting AgentController with confirmation_mode: %s'
-            % repr(confirmation_mode)
+        max_iterations = (
+            max_iterations if max_iterations is not None else MAX_ITERATIONS
         )
         self.set_initial_state(
             state=initial_state,

@@ -33,13 +33,15 @@ import pandas as pd
 from datasets import load_dataset
 from tqdm import tqdm
 
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
+from opendevin.llm.llm import LLM
 
 
 def cleanup():
@@ -154,8 +156,8 @@ def convert_instance_dict(instance):
 
 
 def process_instance(
+    agent: Agent,
     instance: dict,
-    agent_class: str,
     metadata: dict,
     skip_workspace_mount: bool,
     eval_output_dir: str,
@@ -242,18 +244,20 @@ def process_instance(
         """
 
         # NOTE: You can actually set slightly different instruction for different agents
-        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        state: State = asyncio.run(
-            main(
+        state: State | None = asyncio.run(
+            run_agent_controller(
+                agent,
                 instruction,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent_class
+                    agent.__class__.__name__
                 ),
                 sid=instance.instance_id,
             )
         )
+        assert state is not None, 'State should not be None.'
 
         # ======= Attempt to evaluate the agent's edits =======
         # get the final message from the state history (default to None if not found)
@@ -441,6 +445,9 @@ if __name__ == '__main__':
     skip_workspace_mount = agent_class == 'CodeActAgent'
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -448,8 +455,8 @@ if __name__ == '__main__':
             for row_idx, instance in gpqa_dataset.iterrows():
                 future = executor.submit(
                     process_instance,
+                    agent,
                     instance,
-                    agent_class,
                     metadata,
                     skip_workspace_mount,
                     eval_output_dir,
