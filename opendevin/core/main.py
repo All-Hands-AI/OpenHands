@@ -32,7 +32,6 @@ def read_task_from_stdin() -> str:
 
 async def run_agent_controller(
     agent: Agent,
-    llm: LLM,
     task_str: str,
     max_iterations: int | None = None,
     max_budget_per_task: float | None = None,
@@ -173,7 +172,6 @@ if __name__ == '__main__':
     asyncio.run(
         run_agent_controller(
             agent=agent,
-            llm=llm,
             task_str=task_str,
             exit_on_message=args.exit_on_message,
             fake_user_response_fn=None,
