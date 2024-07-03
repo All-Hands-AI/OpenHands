@@ -68,11 +68,14 @@ check-python:
 		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
 		if command -v apt > /dev/null; then \
-			echo "$(GREEN)Python $(PYTHON_VERSION) is not installed. Installing Python $(PYTHON_VERSION)...$(RESET)"; \
-			sudo add-apt-repository ppa:deadsnakes/ppa; \
-			sudo apt update; \
-			sudo apt install -y python$(PYTHON_VERSION); \
-			sudo apt install -y python$(PYTHON_VERSION)-distutils; \
+			echo "$(GREEN)Python $(PYTHON_VERSION) is not installed.$(RESET)"; \
+			@read -p "Do you want to install Python $(PYTHON_VERSION)? [y/n]:" consent; \
+			if [ "$$consent" = "y" ]; then \
+				sudo add-apt-repository ppa:deadsnakes/ppa; \
+				sudo apt update; \
+				sudo apt install -y python$(PYTHON_VERSION); \
+				sudo apt install -y python$(PYTHON_VERSION)-distutils; \
+			fi; \
 		else \
 			echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 			exit 1; \
@@ -82,13 +85,16 @@ check-python:
 check-netcat:
 	@echo "$(YELLOW)Checking netcat installation...$(RESET)"
 	@if command -v nc > /dev/null; then \
-		echo "$(BLUE)nc is already installed.$(RESET)"; \
+		echo "$(BLUE)netcat is already installed.$(RESET)"; \
 	else \
 		if command -v apt > /dev/null; then \
-			echo "$(GREEN)nc is not installed. Installing nc...$(RESET)"; \
-			sudo apt install -y netcat; \
+			echo "$(GREEN)netcat is not installed.$(RESET)"; \
+			@read -p "Do you want to install netcat $(PYTHON_VERSION)? [y/n]:" consent; \
+			if [ "$$consent" = "y" ]; then \
+				sudo apt install -y netcat; \
+			fi; \
 		else \
-			echo "$(RED)nc is not installed. Please install nc to continue.$(RESET)"; \
+			echo "$(RED)netcat is not installed. Please install it to continue.$(RESET)"; \
 			exit 1; \
 		fi; \
 	fi
