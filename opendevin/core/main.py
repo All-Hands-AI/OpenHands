@@ -94,8 +94,8 @@ async def run_agent_controller(
         with open(
             os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
         ) as f:
-            task = f.read()
-            logger.info(f'Dynamic Eval task: {task}')
+            task_str = f.read()
+            logger.info(f'Dynamic Eval task: {task_str}')
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
@@ -108,7 +108,7 @@ async def run_agent_controller(
         )
     elif initial_state is None:
         # init with the provided task
-        await event_stream.add_event(MessageAction(content=task), EventSource.USER)
+        await event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
