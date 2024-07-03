@@ -133,7 +133,7 @@ function ChatInterface() {
               onChange={handleCheckboxChange}
               className="mr-2"
             />
-            Autonomous Mode
+            Auto
           </label>
         </div>
       </div>
