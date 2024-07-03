@@ -34,12 +34,14 @@
     "react-syntax-highlighter": "^15.5.0",
     "tailwind-merge": "^2.3.0",
     "vite": "^5.3.2",
+    "vite-tsconfig-paths": "^4.3.2",
     "web-vitals": "^3.5.2"
   },
   "scripts": {
     "start": "npm run make-i18n && vite",
     "build": "npm run make-i18n && tsc && vite build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
@@ -71,6 +73,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
+    "@vitest/coverage-v8": "^1.6.0",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",
@@ -88,7 +91,6 @@
     "prettier": "^3.3.2",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.3",
-    "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^1.6.0"
   },
   "packageManager": "npm@10.5.0",
