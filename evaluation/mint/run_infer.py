@@ -45,7 +45,7 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
         task=task,
         task_config=task_config,
     )
-    last_action, _ = state.history[-1]
+    last_action = state.history.get_last_action()
     result_state: TaskState = env.step(last_action.message)
 
     state.task_state = result_state

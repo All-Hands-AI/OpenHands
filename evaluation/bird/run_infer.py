@@ -40,12 +40,13 @@ def codeact_user_response(state: State) -> str:
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
     if state.history:
+        # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
-        if len(user_msgs) >= 2:
+        if len(user_msgs) > 2:
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg

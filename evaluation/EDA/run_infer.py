@@ -21,7 +21,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
 
 game = None
 
@@ -37,11 +36,14 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     global game
     model_guess = ''
+
+    # retrieve the latest model message from history
     if state.history:
-        for act, _ in reversed(state.history):
-            if isinstance(act, MessageAction) and act.source == 'agent':
-                model_guess = act.content
+        for event in state.history.get_events(reverse=True):
+            if isinstance(event, MessageAction) and event.source == 'agent':
+                model_guess = event.content
                 break
+
     msg = game.generate_user_response(model_guess)
     game.curr_turn += 1
     logger.info(f'Model guess: {model_guess}')
@@ -137,14 +139,19 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     final_message = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            final_message = act.content
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, MessageAction) and event.source == 'agent':
+            final_message = event.content
             break
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
     metrics = state.metrics.get() if state.metrics else None
+
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = state.history.compatibility_for_eval_history_tuples()
 
     # Save the output
     output = {
@@ -153,7 +160,7 @@ def process_instance(
         'instruction': instruction,
         'metadata': metadata,
         'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+            history_tuples,
         ],
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
