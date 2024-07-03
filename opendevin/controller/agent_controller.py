@@ -347,9 +347,6 @@ class AgentController:
             await self.report_error(str(e))
             return
 
-        await self.update_state_after_step()
-        logger.info(action, extra={'msg_type': 'ACTION'})
-
         if action.runnable:
             self._pending_action = action
         else:
