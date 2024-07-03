@@ -6,7 +6,7 @@ from agenthub.codeact_agent.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
-from opendevin.controller.agent import Agent
+from opendevin.controller.agent import AsyncAgent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
@@ -96,7 +96,7 @@ def get_in_context_example() -> str:
     return EXAMPLES
 
 
-class CodeActAgent(Agent):
+class CodeActAgent(AsyncAgent):
     VERSION = '1.7'
     """
     The Code Act Agent is a minimalist agent.
