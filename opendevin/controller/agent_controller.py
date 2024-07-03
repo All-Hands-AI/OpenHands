@@ -132,9 +132,9 @@ class AgentController:
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
+        await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
-    async def add_history(self, action: Action, observation: Observation):
+    def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
             return
         self.state.history.append((action, observation))
@@ -255,7 +255,7 @@ class AgentController:
         elif new_state == AgentState.ERROR:
             self.reset_task()
 
-        self.event_stream.add_event(
+        await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
@@ -343,7 +343,7 @@ class AgentController:
                 # clean up delegate status
                 self.delegate = None
                 self.delegateAction = None
-                self.event_stream.add_event(obs, EventSource.AGENT)
+                await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
         logger.info(
@@ -403,7 +403,7 @@ class AgentController:
             await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
-            self.event_stream.add_event(action, EventSource.AGENT)
+            await self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
 

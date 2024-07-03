@@ -136,7 +136,7 @@ async def run_agent_controller(
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
         # we're resuming the previous session
-        event_stream.add_event(
+        await event_stream.add_event(
             MessageAction(
                 content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
             ),
@@ -144,7 +144,7 @@ async def run_agent_controller(
         )
     elif initial_state is None:
         # init with the provided task
-        event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
+        await event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
@@ -156,7 +156,7 @@ async def run_agent_controller(
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
-                event_stream.add_event(action, EventSource.USER)
+                await event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
 
