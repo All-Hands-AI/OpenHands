@@ -1,14 +1,5 @@
 import threading
 
-try:
-    # workaround for GitHub Codespaces
-    __import__('pysqlite3')
-    import sys
-
-    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-except:
-    pass
-
 import chromadb
 import llama_index.embeddings.openai.base as llama_openai
 from llama_index.core import Document, VectorStoreIndex

@@ -4,5 +4,6 @@ sudo apt install -y netcat
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt install -y python3.11
 curl -sSL https://install.python-poetry.org | python3.11 -
-poetry env use python3.11
-poetry run pip install pysqlite3-binary
+cd /usr/local/lib/libsqlite3.so.0
+cp /lib/x86_64-linux-gnu/libsqlite3.so.0 libsqlite3.so.0.backup
+sudo cp libsqlite3.so.0 /lib/x86_64-linux-gnu/libsqlite3.so.0
