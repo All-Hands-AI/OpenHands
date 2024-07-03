@@ -1,34 +1,30 @@
 import React, { useState } from "react";
 import Markdown from "react-markdown";
-import { useSelector } from "react-redux";
-import store, { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
 import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
+import { Tooltip } from "@nextui-org/react";
+import AgentState from "#/types/AgentState";
 import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
-import { getSettings } from "#/services/settings";
 import ConfirmIcon from "#/assets/confirm";
 import RejectIcon from "#/assets/reject";
 import { changeAgentState } from "#/services/agentStateService";
-import { Tooltip } from "@nextui-org/react";
 
 interface MessageProps {
   message: Message;
-  isLastMessage: boolean;
+  isLastMessage?: boolean;
+  awaitsUserConfirmation?: boolean;
 }
 
-function ChatMessage({ message, isLastMessage }: MessageProps) {
+function ChatMessage({
+  message,
+  isLastMessage,
+  awaitsUserConfirmation,
+}: MessageProps) {
   const [isCopy, setIsCopy] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-
-  const { CONFIRMATION_MODE } = getSettings();
-  let curAgentState;
-  if (CONFIRMATION_MODE) {
-    curAgentState = useSelector((state: RootState) => state.agent).curAgentState;
-  }
 
   const className = twMerge(
     "markdown-body",
@@ -73,22 +69,42 @@ function ChatMessage({ message, isLastMessage }: MessageProps) {
         </button>
       )}
       <Markdown components={{ code }}>{message.content}</Markdown>
-      {isLastMessage && CONFIRMATION_MODE && curAgentState === AgentState.AWAITING_USER_CONFIRMATION && (
+      {isLastMessage && awaitsUserConfirmation && (
         <div className="flex justify-between items-center pt-4">
-        <p>Do you want to continue with this action?</p>
-        <div className="flex items-center gap-3">
-          <Tooltip content="Confirm the requested action" closeDelay={100}>
-            <button className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800" onClick={()=>{changeAgentState(AgentState.ACTION_CONFIRMED)}}>
-              <ConfirmIcon />
-            </button>
-          </Tooltip>
-          <Tooltip content="Reject the requested action" closeDelay={100}>
-            <button className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800" onClick={()=>{changeAgentState(AgentState.ACTION_REJECTED)}}>
-              <RejectIcon />
-            </button>
-          </Tooltip>
-      </div>
-      </div>
+          <p>Do you want to continue with this action?</p>
+          <div className="flex items-center gap-3">
+            <Tooltip
+              content={t(I18nKey.CHAT_INTERFACE$CONFIRM_ACTION)}
+              closeDelay={100}
+            >
+              <button
+                type="button"
+                aria-label="Confirm action"
+                className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
+                onClick={() => {
+                  changeAgentState(AgentState.ACTION_CONFIRMED);
+                }}
+              >
+                <ConfirmIcon />
+              </button>
+            </Tooltip>
+            <Tooltip
+              content={t(I18nKey.CHAT_INTERFACE$REJECT_ACTION)}
+              closeDelay={100}
+            >
+              <button
+                type="button"
+                aria-label="Reject action"
+                className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
+                onClick={() => {
+                  changeAgentState(AgentState.ACTION_REJECTED);
+                }}
+              >
+                <RejectIcon />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
       )}
     </div>
   );
