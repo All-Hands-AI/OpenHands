@@ -164,8 +164,8 @@ class AppConfig(metaclass=Singleton):
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
-    llms: Dict[str, LLMConfig] = {}
-    agents: Dict[str, AgentConfig] = {}
+    llms: Dict[str, LLMConfig] = field(default_factory=dict)
+    agents: Dict[str, AgentConfig] = field(default_factory=dict)
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
@@ -209,8 +209,9 @@ class AppConfig(metaclass=Singleton):
 
     @property
     def llm(self) -> LLMConfig:
+        print('\n\n\n#### LLM getter', self.llms)
         if 'default' not in self.llms:
-            raise ValueError('No default LLMConfig available')
+            self.llms['default'] = LLMConfig()
         return self.llms['default']
 
     @llm.setter
@@ -218,12 +219,13 @@ class AppConfig(metaclass=Singleton):
         """
         legacy API to set default LLM config.
         """
+        print('\n\n\n#### LLM setter')
         self.llms['default'] = value
 
     @property
     def agent(self) -> AgentConfig:
         if 'default' not in self.agents:
-            raise ValueError('No default AgentConfig available')
+            self.agents['default'] = AgentConfig()
         return self.agents['default']
 
     @agent.setter
