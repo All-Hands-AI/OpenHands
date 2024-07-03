@@ -6256,7 +6256,7 @@ tqdm = "*"
 type = "git"
 url = "https://github.com/OpenDevin/SWE-bench.git"
 reference = "HEAD"
-resolved_reference = "fd13837addd6c62169a3d3c95ae2e2867e67508e"
+resolved_reference = "4498af933679c518df6d1f8485864f72afc21500"
 
 [[package]]
 name = "sympy"
