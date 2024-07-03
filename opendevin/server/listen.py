@@ -324,8 +324,6 @@ async def get_litellm_models():
                 model_list.append('ollama/' + model['name'])
         except requests.exceptions.RequestException as e:
             logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
-        except Exception as e:
-            logger.error(f'Error getting OLLAMA models: OLLAMA API Schema changed: {e}', exc_info=True)
 
     return list(sorted(set(model_list)))
 
