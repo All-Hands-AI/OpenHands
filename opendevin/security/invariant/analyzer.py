@@ -6,7 +6,10 @@ import docker
 
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.action import Action, ActionSecurityRisk
+from opendevin.events.action.action import (
+    Action,
+    ActionSecurityRisk,
+)
 from opendevin.events.event import Event
 from opendevin.events.observation import Observation
 from opendevin.events.stream import EventStream
@@ -109,17 +112,17 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
-        self.trace.extend(new_elements)
         input = [asdict(e) for e in new_elements]  # type: ignore [call-overload]
+        self.trace.extend(new_elements)
+        self.input.extend(input)
         logger.info(f'before policy: {input}')
         result, err = self.monitor.check(input)
-        if not err:
-            logger.info('policy result:')
-            logger.info('errors: ' + str(result))
-            if len(result) > 0:
-                return ActionSecurityRisk.MEDIUM
-            else:
-                return ActionSecurityRisk.LOW
+        if err:
+            logger.warning(f'Error checking policy: {err}')
+            return ActionSecurityRisk.UNKNOWN
 
-        logger.warning(f'Error checking policy: {err}')
-        return ActionSecurityRisk.LOW
+        # send event to confirm action
+        if len(result) > 0:
+            return ActionSecurityRisk.MEDIUM
+        else:
+            return ActionSecurityRisk.LOW

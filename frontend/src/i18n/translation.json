@@ -209,6 +209,9 @@
     "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
+  "WORKSPACE$SECURITY_TAB_LABEL": {
+    "en": "Security"
+  },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",

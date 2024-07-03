@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoIosGlobe } from "react-icons/io";
 import { VscCode, VscListOrdered } from "react-icons/vsc";
+import {  IoLockClosedOutline } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { initialState as initialBrowserState } from "#/state/browserSlice";
@@ -70,8 +71,8 @@ function Workspace() {
         component: <Jupyter key="jupyter" />,
       },
       [TabOption.INVARIANT]: {
-        name: "Invariant",
-        icon: <VscCode size={iconSize} />,
+        name: t(I18nKey.WORKSPACE$SECURITY_TAB_LABEL),
+        icon: <IoLockClosedOutline size={iconSize} />,
         component: <SecurityInvariant key="invariant" />,
       }
     }),

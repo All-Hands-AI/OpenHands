@@ -152,7 +152,7 @@ function AgentControlBar() {
       <div className="flex items-center gap-3">
       <ActionButton
           isDisabled={isLoading
-            ||  curAgentState != AgentState.AWAITING_USER_CONFIRMATION
+            && curAgentState != AgentState.AWAITING_USER_CONFIRMATION
           }
           content="Confirm the requested action"
           action={AgentState.ACTION_CONFIRMED}
@@ -162,7 +162,7 @@ function AgentControlBar() {
         </ActionButton>
         <ActionButton
           isDisabled={isLoading
-            || curAgentState != AgentState.AWAITING_USER_CONFIRMATION
+            && curAgentState != AgentState.AWAITING_USER_CONFIRMATION
           }
           content="Reject the requested action"
           action={AgentState.ACTION_REJECTED}
