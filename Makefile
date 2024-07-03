@@ -220,7 +220,7 @@ _run_setup:
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Application started successfully.$(RESET)"
 
-# Run the app
+# Run the app (development mode)
 run-dev:
 	@echo "$(YELLOW)Running the app...$(RESET)"
 	@if [ "$(OS)" = "Windows_NT" ]; then \
