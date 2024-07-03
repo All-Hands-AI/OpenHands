@@ -1,4 +1,5 @@
 // frontend/src/components/chat/ChatInterface.tsx
+import { Tooltip } from "@nextui-org/react";
 import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
@@ -122,20 +123,20 @@ function ChatInterface() {
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
         <IoMdChatbubbles />
         Chat
+        <Tooltip
+          content="⚠️ Use with caution! The agent will automatically continue task execution without requesting user inputs."
+          closeDelay={100}
+        >
         <div className="ml-auto">
-          <label
-            className="flex items-center text-sm"
-            title="Autonomous mode - the agent will automatically continue task execution without requesting user inputs - use with caution!"
-          >
-            <input
-              type="checkbox"
-              checked={autoMode}
-              onChange={handleCheckboxChange}
-              className="mr-2"
-            />
-            Auto mode
-          </label>
+          <input
+            type="checkbox"
+            checked={autoMode}
+            onChange={handleCheckboxChange}
+            className="mr-2"
+          />
+          Auto Mode
         </div>
+        </Tooltip>
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div
