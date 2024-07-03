@@ -1,13 +1,12 @@
-from opendevin.core.config import config
 from opendevin.core.utils import json
-from opendevin.events.observation import (
-    CmdOutputObservation,
-)
 from opendevin.events.action import (
     Action,
 )
-
+from opendevin.events.observation import (
+    CmdOutputObservation,
+)
 from opendevin.events.serialization.action import action_from_dict
+
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
 %(task)s
@@ -153,7 +152,10 @@ def get_request_action_prompt(
     task: str,
     thoughts: list[dict],
     recent_events: list[dict],
-    background_commands_obs: list[CmdOutputObservation] | None = None,
+    background_commands_obs: list[CmdOutputObservation] | None,
+    run_as_devin: bool,
+    sandbox_timeout: int,
+    workspace_mount_path_in_sandbox: str,
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -196,7 +198,7 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
 
-    user = 'opendevin' if config.run_as_devin else 'root'
+    user = 'opendevin' if run_as_devin else 'root'
 
     monologue = thoughts + recent_events
 
@@ -206,8 +208,8 @@ def get_request_action_prompt(
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.sandbox_timeout,
-        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
+        'timeout': sandbox_timeout,
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': workspace_mount_path_in_sandbox,
     }
 
 

@@ -6,6 +6,7 @@ from browsergym.utils.obs import flatten_axtree_to_str
 from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
@@ -97,6 +98,7 @@ class BrowsingAgent(Agent):
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """
         Initializes a new instance of the BrowsingAgent class.
@@ -104,7 +106,7 @@ class BrowsingAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']

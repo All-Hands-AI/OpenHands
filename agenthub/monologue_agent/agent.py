@@ -3,7 +3,7 @@ from agenthub.monologue_agent.response_parser import MonologueResponseParser
 from agenthub.monologue_agent.utils.prompts import INITIAL_THOUGHTS
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
+from opendevin.core.config import AgentConfig
 from opendevin.core.exceptions import AgentNoInstructionError
 from opendevin.core.schema import ActionType
 from opendevin.events.action import (
@@ -27,10 +27,8 @@ from opendevin.events.observation import (
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
+from opendevin.memory.memory import LongTermMemory
 from opendevin.runtime.tools import RuntimeTool
-
-if config.agent.memory_enabled:
-    from opendevin.memory.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
@@ -51,14 +49,14 @@ class MonologueAgent(Agent):
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = MonologueResponseParser()
 
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, config: AgentConfig):
         """
         Initializes the Monologue Agent with an llm.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
 
     def _initialize(self, task: str):
         """
@@ -81,7 +79,7 @@ class MonologueAgent(Agent):
             raise AgentNoInstructionError()
 
         self.initial_thoughts = []
-        if config.agent.memory_enabled:
+        if self.config.memory_enabled:
             self.memory = LongTermMemory()
         else:
             self.memory = None

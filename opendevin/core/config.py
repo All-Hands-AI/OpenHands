@@ -4,23 +4,19 @@ import os
 import pathlib
 import platform
 import uuid
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
 from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
-
-from opendevin.core.utils import Singleton
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
 
-
-@dataclass
-class LLMConfig(metaclass=Singleton):
+class LLMConfig(BaseModel):
     """
     Configuration for the LLM model.
 
@@ -98,8 +94,7 @@ class LLMConfig(metaclass=Singleton):
         return self.__str__()
 
 
-@dataclass
-class AgentConfig(metaclass=Singleton):
+class AgentConfig(BaseModel):
     """
     Configuration for the agent.
 
@@ -127,8 +122,7 @@ class UndefinedString(str, Enum):
     UNDEFINED = 'UNDEFINED'
 
 
-@dataclass
-class AppConfig(metaclass=Singleton):
+class AppConfig(BaseModel):
     """
     Configuration for the app.
 
@@ -283,7 +277,11 @@ def get_field_info(f):
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
-def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
+def load_from_env(
+    cfg: AppConfig,
+    env_or_toml_dict: dict | MutableMapping[str, str],
+    run_dotenv: bool = True,
+):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
     Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
 
@@ -291,6 +289,9 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         cfg: The AppConfig object to set attributes on.
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
+
+    if run_dotenv:
+        load_dotenv()
 
     def get_optional_type(union_type: UnionType) -> Any:
         """Returns the non-None type from a Union."""
@@ -421,12 +422,6 @@ def finalize_config(cfg: AppConfig):
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
 
-config = AppConfig()
-load_from_toml(config)
-load_from_env(config, os.environ)
-finalize_config(config)
-
-
 # Utility function for command line --group argument
 def get_llm_config_arg(llm_config_arg: str):
     """
@@ -499,28 +494,28 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.agent.name,
+        default=None,
         type=str,
         help='The agent class to use',
     )
     parser.add_argument(
         '-m',
         '--model-name',
-        default=config.llm.model,
+        default=None,
         type=str,
         help='The (litellm) model name to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=config.max_iterations,
+        default=None,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
     parser.add_argument(
         '-b',
         '--max-budget-per-task',
-        default=config.max_budget_per_task,
+        default=None,
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
@@ -565,7 +560,4 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = get_parser()
     parsed_args, _ = parser.parse_known_args()
-    if parsed_args.directory:
-        config.workspace_base = os.path.abspath(parsed_args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
     return parsed_args

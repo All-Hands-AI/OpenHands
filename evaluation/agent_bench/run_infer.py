@@ -21,7 +21,7 @@ from evaluation.agent_bench.helper import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -84,6 +84,8 @@ def process_instance(
     instance,
     metadata,
     eval_output_dir,
+    workspace_base,
+    workspace_mount_path_in_sandbox,
     reset_logger: bool = True,
 ):
     # =============================================

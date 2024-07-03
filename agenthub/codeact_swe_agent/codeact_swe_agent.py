@@ -7,6 +7,7 @@ from agenthub.codeact_swe_agent.prompt import (
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -108,6 +109,7 @@ class CodeActSWEAgent(Agent):
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """
         Initializes a new instance of the CodeActAgent class.
@@ -115,7 +117,7 @@ class CodeActSWEAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
         self.reset()
 
     def reset(self) -> None:

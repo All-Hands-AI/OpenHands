@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Type
 if TYPE_CHECKING:
     from opendevin.controller.state.state import State
     from opendevin.events.action import Action
+from opendevin.core.config import AgentConfig
 from opendevin.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
@@ -29,8 +30,10 @@ class Agent(ABC):
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ):
         self.llm = llm
+        self.config = config
         self._complete = False
 
     @property

@@ -1,6 +1,7 @@
 from agenthub.monologue_agent.response_parser import MonologueResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.events.action import Action, AgentFinishAction
 from opendevin.llm.llm import LLM
 from opendevin.runtime.tools import RuntimeTool
@@ -17,14 +18,14 @@ class PlannerAgent(Agent):
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = MonologueResponseParser()
 
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, config: AgentConfig):
         """
         Initialize the Planner Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
 
     def step(self, state: State) -> Action:
         """
