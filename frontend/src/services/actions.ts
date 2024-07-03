@@ -67,12 +67,17 @@ const messageActions = {
 };
 
 export function handleActionMessage(message: ActionMessage) {
-  if (message.action == ActionType.RUN && message.args.is_confirmed == "awaiting_confirmation") {
+  if ((message.action === ActionType.RUN || message.action === ActionType.RUN_IPYTHON) && message.args.is_confirmed == "awaiting_confirmation") {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    store.dispatch(addAssistantMessage(message.message));
-    store.dispatch(addAssistantMessage("I am waiting for user confirmation before running the command above."));
+    if (message.args.command) {
+      store.dispatch(addAssistantMessage(`Running this command now: \n\`\`\`\`bash\n${message.args.command}\n\`\`\`\`\n`));
+    } else if (message.args.code) {
+      store.dispatch(addAssistantMessage(`Running this code now: \n\`\`\`\`python\n${message.args.code}\n\`\`\`\`\n`));
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
+    }
     return;
   }
 

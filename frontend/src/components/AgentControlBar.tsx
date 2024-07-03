@@ -8,8 +8,6 @@ import { changeAgentState } from "#/services/agentStateService";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
-import ConfirmIcon from "#/assets/confirm";
-import RejectIcon from "#/assets/reject";
 import { getSettings } from "#/services/settings";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
@@ -79,7 +77,6 @@ function AgentControlBar() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
   const [isLoading, setIsLoading] = React.useState(false);
-  const { CONFIRMATION_MODE } = getSettings();
 
   const handleAction = (action: AgentState) => {
     if (IgnoreTaskStateMap[action].includes(curAgentState)) {
@@ -148,31 +145,6 @@ function AgentControlBar() {
         <ArrowIcon />
       </ActionButton>
     </div>
-    { CONFIRMATION_MODE && (
-      <div className="flex items-center gap-3">
-      <ActionButton
-          isDisabled={isLoading
-            ||  curAgentState != AgentState.AWAITING_USER_CONFIRMATION
-          }
-          content="Confirm the requested action"
-          action={AgentState.ACTION_CONFIRMED}
-          handleAction={handleAction}
-        >
-          <ConfirmIcon />
-        </ActionButton>
-        <ActionButton
-          isDisabled={isLoading
-            || curAgentState != AgentState.AWAITING_USER_CONFIRMATION
-          }
-          content="Reject the requested action"
-          action={AgentState.ACTION_REJECTED}
-          handleAction={handleAction}
-        >
-          <RejectIcon />
-        </ActionButton>
-
-      </div>
-    )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ from opendevin.events.action import (
     AgentRejectAction,
     ChangeAgentStateAction,
     CmdRunAction,
+    IPythonRunCellAction,
     MessageAction,
     ModifyTaskAction,
     NullAction,
@@ -383,7 +384,9 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if action.runnable:
-            if self.state.confirmation_mode and type(action) is CmdRunAction:
+            if self.state.confirmation_mode and (
+                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+            ):
                 action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
             self._pending_action = action
         else:
