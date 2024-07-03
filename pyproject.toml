@@ -65,7 +65,7 @@ python-docx = "*"
 PyPDF2 = "*"
 pylatexenc = "*"
 python-pptx = "*"
-opencv-python = "4.10.0.82"
+opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 grep-ast = "0.3.2"
@@ -73,7 +73,6 @@ tree-sitter = "0.21.3"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

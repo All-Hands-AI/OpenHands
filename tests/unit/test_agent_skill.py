@@ -7,25 +7,10 @@ import docx
 import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
-    MSG_FILE_UPDATED,
-    WINDOW,
-    _print_window,
-    append_file,
-    create_file,
-    edit_file_by_replace,
-    find_file,
-    goto_line,
-    insert_content_at_line,
-    open_file,
-    parse_docx,
-    parse_latex,
-    parse_pdf,
-    parse_pptx,
-    scroll_down,
-    scroll_up,
-    search_dir,
-    search_file,
-)
+    MSG_FILE_UPDATED, WINDOW, _print_window, append_file, create_file,
+    edit_file_by_replace, find_file, goto_line, insert_content_at_line,
+    open_file, parse_docx, parse_latex, parse_pdf, parse_pptx, scroll_down,
+    scroll_up, search_dir, search_file)
 
 
 # CURRENT_FILE must be reset for each test
@@ -56,6 +41,11 @@ def _calculate_window_bounds(current_line, total_lines, window_size):
         start = current_line - half_window
         end = current_line + half_window
     return start, end
+    
+def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
+    file_path = temp_path / 'test_file.rb'
+    file_path.write_text('\n' * num_lines)
+    return file_path
 
 
 def test_open_file_unexist_path():
@@ -1490,3 +1480,41 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f'Expected output does not match. Got: {output}'
+
+
+def test_lint_file_fail_non_python(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    current_line = 1
+
+    file_path = _generate_ruby_test_file_with_lines(tmp_path, 1)
+
+    open_file(str(file_path), current_line)
+    insert_content_at_line(
+        str(file_path), 1, "def print_hello_world()\n    puts 'Hello World'"
+    )
+    result = capsys.readouterr().out
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '1|\n'
+        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+        'ERRORS:\n'
+        f'{file_path}:1\n'
+        '[This is how your edit would have looked if applied]\n'
+        '-------------------------------------------------\n'
+        '1|def print_hello_world()\n'
+        "2|    puts 'Hello World'\n"
+        '3|\n'
+        '-------------------------------------------------\n\n'
+        '[This is the original code before your edit]\n'
+        '-------------------------------------------------\n'
+        '1|\n'
+        '-------------------------------------------------\n'
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+    )
+    assert result.split('\n') == expected.split('\n')
