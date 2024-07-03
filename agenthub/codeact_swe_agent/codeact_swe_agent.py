@@ -143,10 +143,10 @@ class CodeActSWEAgent(Agent):
         latest_user_message = state.history.get_latest_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
-        
+
         # prepare what we want to send to the LLM
         messages: list[dict[str, str]] = self._get_messages(state)
-        
+
         response = self.llm.completion(
             messages=messages,
             stop=[
@@ -160,7 +160,7 @@ class CodeActSWEAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
-    
+
     def _get_messages(self, state: State) -> list[dict[str, str]]:
         messages = [
             {'role': 'system', 'content': self.system_message},

@@ -150,7 +150,7 @@ class DummyAgent(Agent):
             if 'observations' in prev_step:
                 # one obs, or multiple obs if action is a background command
                 expected_observations = prev_step['observations']
-                
+
                 # check if the history matches the expected observations
                 hist_events = history.get_last_events(len(expected_observations))
                 for i in range(len(expected_observations)):

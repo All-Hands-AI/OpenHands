@@ -128,7 +128,9 @@ class AgentController:
     async def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
             return
-        logger.debug(f'Adding history ({type(action).__name__} with id={action.id}, {type(observation).__name__} with id={observation.id})')
+        logger.debug(
+            f'Adding history ({type(action).__name__} with id={action.id}, {type(observation).__name__} with id={observation.id})'
+        )
 
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')

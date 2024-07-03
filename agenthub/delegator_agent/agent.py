@@ -43,7 +43,7 @@ class DelegatorAgent(Agent):
 
         # last observation in history should be from the delegate
         last_observation = state.history.get_last_observation()
-        
+
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 
