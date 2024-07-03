@@ -6,9 +6,6 @@ from opendevin.events.action import (
     Action,
     NullAction,
 )
-from opendevin.events.observation import (
-    NullObservation,
-)
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 
@@ -152,7 +149,7 @@ def get_prompt(state: State) -> str:
 
     # history_dicts is in reverse order, lets fix it
     history_dicts.reverse()
-    
+
     # and get it as a JSON string
     history_str = json.dumps(history_dicts, indent=2)
 
@@ -164,12 +161,12 @@ def get_prompt(state: State) -> str:
             plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
-    
+
     # the hint, based on the last action
     hint = get_hint(event_to_memory(latest_action).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
-    # the last relevant user message
+    # the last relevant user message (the task)
     task = state.get_current_user_intent()
 
     # finally, fill in the prompt
