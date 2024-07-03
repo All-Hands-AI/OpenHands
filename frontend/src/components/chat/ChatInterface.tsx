@@ -116,7 +116,6 @@ function ChatInterface() {
   const handleCheckboxChange = () => {
     setAutoMode(!autoMode);
     enableAutoMode(!autoMode);
-    console.log(`Auto mode is now ${!autoMode ? "enabled" : "disabled"}`);
   };
   return (
     <div className="flex flex-col h-full bg-neutral-800">
@@ -126,7 +125,7 @@ function ChatInterface() {
         <div className="ml-auto">
           <label
             className="flex items-center text-sm"
-            title="Autonomous mode - the bot will automatically send messages without user input."
+            title="Autonomous mode - the agent will automatically continue task execution without requesting user inputs - use with caution!"
           >
             <input
               type="checkbox"

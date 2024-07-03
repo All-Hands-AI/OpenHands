@@ -226,8 +226,8 @@ class CodeActAgent(Agent):
                 'If you think you have solved the task, you can give <finish> to end the interaction.\n'
                 'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
             )
-            action.content += user_msg
-            action.wait_for_response = False
+            action.content += user_msg  # type: ignore
+            action.wait_for_response = False  # type: ignore
         return action
 
     def search_memory(self, query: str) -> list[str]:
