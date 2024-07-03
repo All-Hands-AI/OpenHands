@@ -219,15 +219,15 @@ class CodeActAgent(Agent):
             temperature=0.0,
         )
         action = self.action_parser.parse(response)
-        if is_autonomous:
+        if is_autonomous and isinstance(action, MessageAction):
             user_msg = (
                 '\n----------\n'
                 'Please continue working on the task on whatever approach you think is suitable.\n'
                 'If you think you have solved the task, you can give <finish> to end the interaction.\n'
                 'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
             )
-            action.content += user_msg  # type: ignore
-            action.wait_for_response = False  # type: ignore
+            action.content += user_msg
+            action.wait_for_response = False
         return action
 
     def search_memory(self, query: str) -> list[str]:
