@@ -10,12 +10,14 @@ import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environment
 import gymnasium as gym
 from tqdm import tqdm
 
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.serialization.event import event_to_dict
+from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.tools import RuntimeTool
 
@@ -23,6 +25,7 @@ SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
 
 def process_instance(
+    agent: Agent,
     env_id: str,
     metadata: dict,
     eval_output_dir: str,
@@ -60,8 +63,9 @@ def process_instance(
         }
     }
 
-    state: State = asyncio.run(
-        main(
+    state: State | None = asyncio.run(
+        run_agent_controller(
+            agent,
             'PLACEHOLDER_GOAL',
             runtime_tools_config=runtime_tools_config,
             sandbox=docker_sandbox,
@@ -108,6 +112,8 @@ def process_instance(
 
 
 if __name__ == '__main__':
+    args = parse_arguments()
+
     env_ids = [
         id for id in gym.envs.registry.keys() if id.startswith('browsergym/miniwob')
     ]
@@ -195,11 +201,14 @@ if __name__ == '__main__':
     )
 
     # =============================================
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
 
     docker_sandbox = DockerSSHBox()
     for env_id in tqdm(env_ids):
         try:
             output = process_instance(
+                agent=agent,
                 env_id=env_id,
                 metadata=metadata,
                 eval_output_dir=eval_output_dir,
