@@ -201,15 +201,15 @@ class ShortTermHistory(list[Event]):
     # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
     # we rebuild the pairs here
     # for compatibility with the existing output format in evaluations
-    def compatibility_for_eval_history_tuples(self) -> list[tuple[dict, dict]]:
-        history_tuples = []
+    def compatibility_for_eval_history_pairs(self) -> list[tuple[dict, dict]]:
+        history_pairs = []
 
-        for action, observation in self.get_tuples():
-            history_tuples.append((event_to_dict(action), event_to_dict(observation)))
+        for action, observation in self.get_pairs():
+            history_pairs.append((event_to_dict(action), event_to_dict(observation)))
 
-        return history_tuples
+        return history_pairs
 
-    def get_tuples(self) -> list[tuple[Action, Observation]]:
+    def get_pairs(self) -> list[tuple[Action, Observation]]:
         """
         Return the history as a list of tuples (action, observation).
         """

@@ -136,7 +136,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_tuples()
+    histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
     output = {

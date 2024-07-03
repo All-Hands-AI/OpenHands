@@ -12,6 +12,8 @@ from opendevin.events.action import (
     AgentFinishAction,
     AgentRejectAction,
 )
+from opendevin.events.observation.browse import BrowserOutputObservation
+from opendevin.events.observation.delegate import AgentDelegateObservation
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
@@ -141,7 +143,7 @@ def test_simple_task_rejection():
     final_state: State = asyncio.run(main(task))
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
-    assert isinstance(final_state.history[-1][0], AgentRejectAction)
+    assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
 
 @pytest.mark.skipif(
@@ -187,5 +189,17 @@ def test_browse_internet(http_server):
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
-    assert isinstance(final_state.history[-1][0], AgentFinishAction)
-    assert 'OpenDevin is all you need!' in str(final_state.history)
+
+    # last action
+    last_action = final_state.history.get_last_action()
+    assert isinstance(last_action, AgentFinishAction)
+
+    # last observation
+    last_observation = final_state.history.get_last_observation()
+    assert isinstance(
+        last_observation, (BrowserOutputObservation, AgentDelegateObservation)
+    )
+    if isinstance(last_observation, BrowserOutputObservation):
+        assert 'OpenDevin is all you need!' in last_observation.content
+    elif isinstance(last_observation, AgentDelegateObservation):
+        assert 'OpenDevin is all you need!' in last_observation.outputs['content']
