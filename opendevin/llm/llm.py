@@ -177,7 +177,7 @@ class LLM:
                 f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
                 exc_info=False,
             )
-            return True
+            return None
 
         @retry(
             reraise=True,
@@ -233,7 +233,8 @@ class LLM:
         """
         try:
             cur_cost = self.completion_cost(response)
-        except Exception:
+        except Exception as e:
+            logger.warning(f'Cost calculation failed: {e}')
             cur_cost = 0
         if self.cost_metric_supported:
             logger.info(
@@ -276,7 +277,7 @@ class LLM:
         Add the current cost into total cost in metrics.
 
         Args:
-            response (list): A response from a model invocation.
+            response: A response from a model invocation.
 
         Returns:
             number: The cost of the response.
@@ -303,9 +304,11 @@ class LLM:
                 )
                 self.metrics.add_cost(cost)
                 return cost
-            except Exception:
+            except Exception as e:
                 self.cost_metric_supported = False
-                logger.warning('Cost calculation not supported for this model.')
+                logger.warning(
+                    f'Cost calculation failed: {e}, maybe the model does not support cost calculation'
+                )
         return 0.0
 
     def __str__(self):

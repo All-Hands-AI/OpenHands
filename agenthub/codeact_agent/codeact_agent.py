@@ -136,8 +136,8 @@ class CodeActAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions
-        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        # AgentSkillsRequirement provides a lot of Python functions,
+        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
