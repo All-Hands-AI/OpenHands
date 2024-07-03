@@ -117,7 +117,7 @@ class TestStuckDetector:
 
         assert len(collect_events(event_stream)) == 10
         assert len(list(stuck_detector.state.history.get_events())) == 8
-        assert len(stuck_detector.state.history.get_tuples()) == 5
+        assert len(stuck_detector.state.history.get_pairs()) == 5
 
         assert stuck_detector.is_stuck() is False
         assert stuck_detector.state.almost_stuck == 1
@@ -133,7 +133,7 @@ class TestStuckDetector:
 
         assert len(collect_events(event_stream)) == 12
         assert len(list(stuck_detector.state.history.get_events())) == 10
-        assert len(stuck_detector.state.history.get_tuples()) == 6
+        assert len(stuck_detector.state.history.get_pairs()) == 6
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
