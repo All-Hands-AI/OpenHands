@@ -39,10 +39,14 @@ class LocalFileStore(FileStore):
     def delete(self, path: str) -> None:
         try:
             full_path = self.get_full_path(path)
-            if os.path.exists(full_path):
+            if not os.path.exists(full_path):
+                logger.debug(f'Local path does not exist: {full_path}')
+                return
+            if os.path.isfile(full_path):
+                os.remove(full_path)
+                logger.debug(f'Removed local file: {full_path}')
+            elif os.path.isdir(full_path):
                 shutil.rmtree(full_path)
-                logger.debug(f'Cleared local file store: {full_path}')
-            else:
-                logger.debug(f'Local file store does not exist: {full_path}')
+                logger.debug(f'Removed local directory: {full_path}')
         except Exception as e:
             logger.error(f'Error clearing local file store: {str(e)}')
