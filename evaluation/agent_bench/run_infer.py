@@ -19,13 +19,15 @@ from evaluation.agent_bench.helper import (
     create_sh_file,
     try_parse_answer,
 )
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.action import CmdRunAction, MessageAction
 from opendevin.events.serialization.event import event_to_dict
+from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -78,8 +80,8 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(
+    agent,
     instance,
-    agent_class,
     metadata,
     eval_output_dir,
     reset_logger: bool = True,
@@ -138,7 +140,7 @@ def process_instance(
         'to you AND NEVER ASK FOR HUMAN HELP.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
     # =============================================
     # create sandbox and run the agent
@@ -158,10 +160,13 @@ def process_instance(
         logger.info(f'Init script result: {init_res}')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
+    state: State | None = asyncio.run(
+        run_agent_controller(
+            agent,
             instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                agent.__class__.__name__
+            ],
             sandbox=sandbox,
             sid=inst_id,
         )
@@ -380,6 +385,9 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
+    # Create the agent
+    agent = Agent.get_cls(agent_cls)(llm=LLM(config.llm))
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -387,8 +395,8 @@ if __name__ == '__main__':
             for inst in agent_bench_tests:
                 future = executor.submit(
                     process_instance,
+                    agent,
                     inst,
-                    agent_cls,
                     meta,
                     eval_op_dir,
                     reset_logger=bool(num_workers > 1),

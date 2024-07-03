@@ -225,7 +225,9 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                agent.__class__.__name__
+            ],
             sid=sid,
         )
     )
