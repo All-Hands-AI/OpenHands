@@ -958,6 +958,47 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
+@update_pwd_decorator
+def search_class(cls_name: str) -> None:
+    pass
+
+
+@update_pwd_decorator
+def search_class_in_file(cls_name: str, file_path: str) -> None:
+    # TODO:
+    pass
+
+
+@update_pwd_decorator
+def search_method(method_name: str) -> None:
+    # TODO:
+    pass
+
+
+@update_pwd_decorator
+def search_method_in_class(method_name: str, cls_name: str) -> None:
+    # TODO:
+    pass
+
+
+@update_pwd_decorator
+def search_method_in_file(method_name: str, file_path: str) -> None:
+    # TODO:
+    pass
+
+
+@update_pwd_decorator
+def earch_code(code_content: str) -> None:
+    # TODO:
+    pass
+
+
+@update_pwd_decorator
+def search_code_in_file(code_content: str, file_path: str) -> None:
+    # TODO:
+    pass
+
+
 __all__ = [
     # file operation
     'open_file',
