@@ -25,6 +25,7 @@ class Agent(ABC):
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
     runtime_tools: list[RuntimeTool] = []
+    is_autonomous: bool = False
 
     def __init__(
         self,
