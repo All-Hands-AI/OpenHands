@@ -135,8 +135,8 @@ class AppConfig(metaclass=Singleton):
     Configuration for the app.
 
     Attributes:
-        llms: A list of LLM configuration. The first one is the default choice.
-        agents: A list of agent configurations. One agent shall have at most one config.
+        llms: A dictionary of name -> LLM configuration. Default config is under 'default' key.
+        agents: A dictionary of name -> Agent configuration. Default config is under 'default' key.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
