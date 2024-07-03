@@ -41,8 +41,11 @@ class EventStream:
         try:
             events = self._file_store.list(f'sessions/{self.sid}/events')
         except FileNotFoundError:
-            logger.warning(f'No events found for session {self.sid}')
+            logger.debug(f'No events found for session {self.sid}')
+            self._cur_id = 0
             return
+
+        # if we have events, we need to find the highest id to prepare for new events
         for event_str in events:
             id = self._get_id_from_filename(event_str)
             if id >= self._cur_id:

@@ -32,7 +32,7 @@ def history_to_json(history: ShortTermHistory, max_events=20, **kwargs):
     """
     Serialize and simplify history to str format
     """
-    
+
     processed_history = []
     event_count = 0
 

@@ -28,7 +28,7 @@ def test_basic_flow(event_stream: EventStream):
 def test_stream_storage(event_stream: EventStream):
     event_stream.add_event(NullObservation(''), EventSource.AGENT)
     assert len(collect_events(event_stream)) == 1
-    content = event_stream._file_store.read('sessions/def/events/0.json')
+    content = event_stream._file_store.read('sessions/abc/events/0.json')
     assert content is not None
     data = json.loads(content)
     assert 'timestamp' in data
@@ -51,7 +51,7 @@ def test_rehydration(event_stream: EventStream):
     stream2 = EventStream('es2')
     assert len(collect_events(stream2)) == 0
 
-    stream1rehydrated = EventStream('es1')
+    stream1rehydrated = EventStream('abc')
     events = collect_events(stream1rehydrated)
     assert len(events) == 2
     assert events[0].content == 'obs1'
