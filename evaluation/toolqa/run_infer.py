@@ -17,7 +17,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
 
 
 def cleanup():
@@ -121,14 +120,24 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
         raise ValueError('State should not be None.')
 
     model_answer_raw = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            model_answer_raw = act.content
+
+    # retrieve the last message from the agent
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, MessageAction) and event.source == 'agent':
+            model_answer_raw = event.content
             break
+
     # attempt to parse model_answer
     correct = eval_answer(str(model_answer_raw), str(answer))
-    metrics = state.metrics.get() if state.metrics else None
     logger.info(f'Final message: {model_answer_raw} | Correctness: {correct}')
+
+    metrics = state.metrics.get() if state.metrics else None
+
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_tuples()
+
     # Save the output
     output = {
         'qid': qid,
@@ -137,9 +146,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
         'answer_id': 'None',
         'model_id': metadata['model_name'],
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
     }

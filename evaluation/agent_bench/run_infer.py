@@ -25,7 +25,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -190,13 +189,15 @@ def process_instance(
     else:
         logger.info('Retrieving agent answer from history.')
         raw_ans = ''
-        for act, _ in reversed(state.history):
-            if isinstance(act, MessageAction) and act.source == 'agent':
-                raw_ans = act.content
-                break
-            if isinstance(act, CmdRunAction) and act.source == 'agent':
-                raw_ans = act.thought
-                break
+
+        # retrieve the last agent message or thought
+        for event in state.history.get_events(reverse=True):
+            if isinstance(event, MessageAction) and event.source == 'agent':
+                raw_ans = event.content
+            elif isinstance(event, CmdRunAction) and event.source == 'agent':
+                raw_ans = event.thought
+
+        # parse the answer for a solution tag
         agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)
         if len(agent_answer) == 0:
             logger.warning(f'Failed to parse model answer: {raw_ans}')
@@ -224,9 +225,11 @@ def process_instance(
     )
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
-    histories = [
-        (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-    ]
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_tuples()
+
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output

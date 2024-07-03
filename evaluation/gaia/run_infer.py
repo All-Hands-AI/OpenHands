@@ -21,7 +21,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.serialization.event import event_to_dict
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
@@ -158,13 +157,13 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
             raise ValueError('State should not be None.')
 
         model_answer_raw = ''
-        for act, _ in reversed(state.history):
-            if isinstance(act, CmdRunAction) and act.source == 'agent':
-                model_answer_raw = act.thought
-                break
-            elif isinstance(act, MessageAction) and act.source == 'agent':
-                model_answer_raw = act.content
-                break
+
+        # get the last message or thought from the agent
+        for event in state.history.get_events(reverse=True):
+            if isinstance(event, CmdRunAction) and event.source == 'agent':
+                model_answer_raw = event.thought
+            elif isinstance(event, MessageAction) and event.source == 'agent':
+                model_answer_raw = event.content
 
         # attempt to parse model_answer
         model_answer = re.findall(r'<solution>(.*?)</solution>', model_answer_raw)
@@ -188,16 +187,18 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         }
         metrics = state.metrics.get() if state.metrics else None
 
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_tuples()
+
         # Save the output
         output = {
             'instance_id': instance['task_id'],
             'instance': instance,
             'instruction': instance['Question'],
             'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            'history': histories,
             'metrics': metrics,
             'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
