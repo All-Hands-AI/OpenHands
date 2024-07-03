@@ -13,6 +13,8 @@ const openMock = vi.fn();
 const writeMock = vi.fn();
 const writelnMock = vi.fn();
 const disposeMock = vi.fn();
+const onKeyMock = vi.fn();
+const attachCustomKeyEventHandlerMock = vi.fn();
 
 vi.mock("@xterm/xterm", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@xterm/xterm")>()),
@@ -21,6 +23,8 @@ vi.mock("@xterm/xterm", async (importOriginal) => ({
     write: writeMock,
     writeln: writelnMock,
     dispose: disposeMock,
+    onKey: onKeyMock,
+    attachCustomKeyEventHandler: attachCustomKeyEventHandlerMock,
     loadAddon: vi.fn(),
   })),
 }));
@@ -42,7 +46,7 @@ describe("Terminal", () => {
   it("should render a terminal", () => {
     renderTerminal();
 
-    expect(screen.getByText("Terminal (read-only)")).toBeInTheDocument();
+    expect(screen.getByText("Terminal")).toBeInTheDocument();
     expect(openMock).toHaveBeenCalledTimes(1);
 
     expect(writeMock).toHaveBeenCalledWith("$ ");

@@ -18,6 +18,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -52,7 +53,7 @@ def get_action_message(action: Action) -> dict[str, str] | None:
 
 def get_observation_message(obs) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content = 'OBSERVATION:\n' + truncate_content(obs.content)
         content += (
             f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
@@ -67,23 +68,9 @@ def get_observation_message(obs) -> dict[str, str] | None:
                     '![image](data:image/png;base64, ...) already displayed to user'
                 )
         content = '\n'.join(splitted)
-        content = truncate_observation(content)
+        content = truncate_content(content)
         return {'role': 'user', 'content': content}
     return None
-
-
-def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
-    """
-    Truncate the middle of the observation if it is too long.
-    """
-    if len(observation) <= max_chars:
-        return observation
-    half = max_chars // 2
-    return (
-        observation[:half]
-        + '\n[... Observation truncated due to length ...]\n'
-        + observation[-half:]
-    )
 
 
 def get_system_message() -> str:
@@ -173,7 +160,7 @@ class CodeActSWEAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        response = self.llm.do_completion(
+        response = self.llm.completion(
             messages=messages,
             stop=[
                 '</execute_ipython>',
@@ -181,9 +168,6 @@ class CodeActSWEAgent(Agent):
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
 
         return self.response_parser.parse(response)
 

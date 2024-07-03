@@ -1,1 +1,10 @@
-The typos in `bad.txt` have been corrected successfully. If there are no further changes needed, we can consider this task complete.
+The typos in `bad.txt` have been corrected successfully. The file now reads:
+
+```
+This is a stupid typo.
+Really?
+No more typos!
+Enjoy!
+```
+
+If there are no further actions required, the task is complete.
