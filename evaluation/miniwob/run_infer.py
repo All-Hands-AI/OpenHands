@@ -11,7 +11,7 @@ import gymnasium as gym
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -108,6 +108,8 @@ def process_instance(
 
 
 if __name__ == '__main__':
+    args = parse_arguments()
+
     env_ids = [
         id for id in gym.envs.registry.keys() if id.startswith('browsergym/miniwob')
     ]

@@ -17,7 +17,7 @@ from tqdm import tqdm
 import agenthub
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -369,6 +369,8 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
+    args = parse_arguments()
+
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')

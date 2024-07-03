@@ -25,7 +25,7 @@ from evaluate import load
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -254,6 +254,8 @@ def process_instance(
 
 
 if __name__ == '__main__':
+    args = parse_arguments()
+
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset(

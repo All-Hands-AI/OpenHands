@@ -20,7 +20,7 @@ from evaluation.agent_bench.helper import (
     try_parse_answer,
 )
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -257,10 +257,11 @@ def process_instance(
 
 
 if __name__ == '__main__':
+    args = parse_arguments()
+
     # =============================================
     # load datasets
     # =============================================
-
     dataset = load_dataset('iFurySt/AgentBench')
     agent_bench_tests = dataset['osbench'].to_pandas()
     logger.info(f'Loaded {len(agent_bench_tests)} tests.')
