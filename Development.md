@@ -5,7 +5,7 @@ Otherwise, you can clone the OpenDevin project directly.
 
 ## Start the server for development
 ### 1. Requirements
-* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
+* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)  [ Ubuntu <= 22.04]
 * [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
 * [Python](https://www.python.org/downloads/) = 3.11
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
@@ -44,7 +44,6 @@ To configure the LM of your choice, run:
    ```
    
    This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
-   Set `persist_sandbox` to false if you want to use a clean sandbox for each task. If `persist_sandbox` is set to true, you will need to set the `ssh_password` as well.
    
    Note: If you have previously run OpenDevin using the docker command, you may have already set some environmental variables in your terminal. The final configurations are set from highest to lowest priority:
    Environment variables > config.toml variables > default variables

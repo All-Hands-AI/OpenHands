@@ -2,7 +2,9 @@
 {
   "action": "reject",
   "args": {
-    "reason": "The current repository is not a valid git repository or there is no diff in the staging area."
+    "outputs": {
+      "reason": "Not a valid git repository."
+    }
   }
 }
 ```

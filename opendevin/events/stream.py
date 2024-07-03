@@ -95,6 +95,7 @@ class EventStream:
 
     # TODO: make this not async
     async def add_event(self, event: Event, source: EventSource):
+        logger.debug(f'Adding event {event} from {source}')
         async with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
@@ -105,6 +106,7 @@ class EventStream:
             self._file_store.write(
                 self._get_filename_for_id(event.id), json.dumps(data)
             )
-        for key, stack in self._subscribers.items():
+        for stack in self._subscribers.values():
             callback = stack[-1]
+            logger.debug(f'Notifying subscriber {callback} of event {event}')
             await callback(event)

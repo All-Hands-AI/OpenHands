@@ -18,7 +18,6 @@ cache_dir = "/path/to/cache"
 workspace_base = "/path/to/workspace"
 workspace_mount_path = "/path/to/workspace"
 
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
 sandbox_timeout = 120
 ssh_hostname = "localhost"

@@ -232,32 +232,22 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def get_llm_prompt_file_handler():
-    """
-    Returns a file handler for LLM prompt logging.
-    """
-    llm_prompt_file_handler = LlmFileHandler('prompt', delay=True)
-    llm_prompt_file_handler.setFormatter(llm_formatter)
-    llm_prompt_file_handler.setLevel(logging.DEBUG)
-    return llm_prompt_file_handler
+def _get_llm_file_handler(name, debug_level=logging.DEBUG):
+    # The 'delay' parameter, when set to True, postpones the opening of the log file
+    # until the first log message is emitted.
+    llm_file_handler = LlmFileHandler(name, delay=True)
+    llm_file_handler.setFormatter(llm_formatter)
+    llm_file_handler.setLevel(debug_level)
+    return llm_file_handler
 
 
-def get_llm_response_file_handler():
-    """
-    Returns a file handler for LLM response logging.
-    """
-    llm_response_file_handler = LlmFileHandler('response', delay=True)
-    llm_response_file_handler.setFormatter(llm_formatter)
-    llm_response_file_handler.setLevel(logging.DEBUG)
-    return llm_response_file_handler
+def _setup_llm_logger(name, debug_level=logging.DEBUG):
+    logger = logging.getLogger(name)
+    logger.propagate = False
+    logger.setLevel(debug_level)
+    logger.addHandler(_get_llm_file_handler(name, debug_level))
+    return logger
 
 
-llm_prompt_logger = logging.getLogger('prompt')
-llm_prompt_logger.propagate = False
-llm_prompt_logger.setLevel(logging.DEBUG)
-llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
-
-llm_response_logger = logging.getLogger('response')
-llm_response_logger.propagate = False
-llm_response_logger.setLevel(logging.DEBUG)
-llm_response_logger.addHandler(get_llm_response_file_handler())
+llm_prompt_logger = _setup_llm_logger('prompt', logging.DEBUG)
+llm_response_logger = _setup_llm_logger('response', logging.DEBUG)

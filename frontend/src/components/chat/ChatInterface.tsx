@@ -1,3 +1,4 @@
+// frontend/src/components/chat/ChatInterface.tsx
 import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
@@ -8,6 +9,7 @@ import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
 import { useDisclosure } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
+import TypingIndicator from "./TypingIndicator";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
@@ -71,7 +73,6 @@ function ChatInterface() {
   } = useDisclosure();
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
-    setFeedbackShared(messages.length);
     setFeedback((prev) => ({
       ...prev,
       feedback: polarity,
@@ -128,19 +129,27 @@ function ChatInterface() {
 
       <div className="relative">
         <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
-          {!hitBottom &&
-            ScrollButton({
-              onClick: scrollDomToBottom,
-              icon: <VscArrowDown className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$TO_BOTTOM),
-            })}
-          {curAgentState === AgentState.AWAITING_USER_INPUT &&
-            hitBottom &&
-            ScrollButton({
-              onClick: handleSendContinueMsg,
-              icon: <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE),
-            })}
+          {!hitBottom && (
+            <ScrollButton
+              onClick={scrollDomToBottom}
+              icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
+              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
+            />
+          )}
+          {hitBottom && (
+            <>
+              {curAgentState === AgentState.AWAITING_USER_INPUT && (
+                <ScrollButton
+                  onClick={handleSendContinueMsg}
+                  icon={
+                    <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
+                  }
+                  label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                />
+              )}
+              {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+            </>
+          )}
         </div>
 
         {feedbackShared !== messages.length && messages.length > 3 && (
@@ -169,6 +178,7 @@ function ChatInterface() {
         handlePermissionsChange={handlePermissionsChange}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
+        onSendFeedback={() => setFeedbackShared(messages.length)}
       />
     </div>
   );
