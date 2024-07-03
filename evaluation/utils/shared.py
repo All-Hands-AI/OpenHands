@@ -67,6 +67,10 @@ def codeact_user_response(
     return msg
 
 
+def monologue_user_response(state: State) -> str:
+    raise NotImplementedError('MonologueAgent should never ask for user responses.')
+
+
 def cleanup():
     print('Cleaning up child processes...')
     for process in mp.active_children():
