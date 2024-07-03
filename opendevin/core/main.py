@@ -173,10 +173,7 @@ if __name__ == '__main__':
         run_agent_controller(
             agent=agent,
             task_str=task_str,
-            exit_on_message=args.exit_on_message,
-            fake_user_response_fn=None,
-            sandbox=None,
-            runtime_tools_config=None,
-            sid=None,
+            max_iterations=args.max_iterations,
+            max_budget_per_task=args.max_budget_per_task,
         )
     )
