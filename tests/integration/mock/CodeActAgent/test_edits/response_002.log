@@ -1,7 +1,10 @@
-Thank you for showing me the contents of the file. I can see there are a few typos that need to be fixed. I'll correct them now.
+Thank you for showing me the contents of the file. I can see there are a few typos that need to be fixed. I'll correct them one by one.
+
+Let's start with the first line:
 
 <execute_ipython>
-edit_file('bad.txt', 1, 4, """This is a stupid typo.
-Really?
-No more typos!
-Enjoy!""")
+edit_file(
+    'bad.txt',
+    to_replace="This is a stupid typoo.",
+    new_content="This is a stupid typo."
+)

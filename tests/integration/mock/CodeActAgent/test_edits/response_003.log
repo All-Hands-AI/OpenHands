@@ -1,8 +1,8 @@
-The typos in the bad.txt file have been successfully corrected. Here's a summary of the changes made:
+Thank you for the update. Now let's fix the third line:
 
-1. Line 1: Changed "typoo" to "typo"
-2. Line 3: Changed "mor" to "more"
-
-The file now contains the correct spelling and no more typos. The task is complete.
-
-<finish></finish>
+<execute_ipython>
+edit_file(
+    'bad.txt',
+    to_replace="No mor typos!",
+    new_content="No more typos!"
+)
