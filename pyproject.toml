@@ -65,7 +65,7 @@ python-docx = "*"
 PyPDF2 = "*"
 pylatexenc = "*"
 python-pptx = "*"
-opencv-python = "4.10.0.82"
+opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 

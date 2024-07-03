@@ -5,7 +5,6 @@ import traceback
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict
 
 from grep_ast import TreeContext, filename_to_lang
 from tree_sitter_languages import get_parser  # noqa: E402
