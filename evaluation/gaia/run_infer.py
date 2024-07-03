@@ -15,13 +15,15 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 from evaluation.gaia.scorer import question_scorer
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.action import CmdRunAction, MessageAction
 from opendevin.events.serialization.event import event_to_dict
+from opendevin.llm.llm import LLM
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
@@ -72,7 +74,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+def process_instance(agent, instance, metadata, reset_logger: bool = True):
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -135,16 +137,17 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
             'For example: The answer to the question is <solution> 42 </solution>.\n'
         )
         # NOTE: You can actually set slightly different instruction for different agents
-        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent.__class__.__name__, '')
         logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        state: State = asyncio.run(
-            main(
+        state: State | None = asyncio.run(
+            run_agent_controller(
+                agent,
                 instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent_class
-                ),
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                    agent.__class__.__name__
+                ],
                 sid=instance['task_id'],
             )
         )
@@ -344,6 +347,9 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -351,8 +357,8 @@ if __name__ == '__main__':
             for instance in gaia_tests:
                 future = executor.submit(
                     process_instance,
+                    agent,
                     instance,
-                    agent_class,
                     metadata,
                     reset_logger=bool(num_workers > 1),
                 )
