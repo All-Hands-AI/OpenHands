@@ -7,10 +7,8 @@ from opendevin.events.serialization.action import action_from_dict
 
 
 class MonologueResponseParser(ResponseParser):
-    def __init__(
-        self,
-    ):
-        pass
+    def __init__(self):
+        super().__init__()
 
     def parse(self, response: str) -> Action:
         action_str = self.parse_response(response)
