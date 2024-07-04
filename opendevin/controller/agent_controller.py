@@ -3,7 +3,7 @@ import traceback
 from typing import Optional, Type
 
 from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import TRAFFIC_CONTROL_STATE, State
+from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
@@ -108,7 +108,6 @@ class AgentController:
         self.state.iteration += 1
 
     async def update_state_after_step(self):
-        self.state.updated_info = []
         # update metrics especially for cost
         self.state.metrics = self.agent.llm.metrics
 
@@ -129,7 +128,6 @@ class AgentController:
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
             return
         self.state.history.append((action, observation))
-        self.state.updated_info.append((action, observation))
 
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
@@ -204,10 +202,10 @@ class AgentController:
         if (
             self.state.agent_state == AgentState.PAUSED
             and new_state == AgentState.RUNNING
-            and self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.THROTTLING
+            and self.state.traffic_control_state == TrafficControlState.THROTTLING
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
-            self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.PAUSED
+            self.state.traffic_control_state = TrafficControlState.PAUSED
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
@@ -312,13 +310,13 @@ class AgentController:
         )
 
         if self.state.iteration >= self.state.max_iterations:
-            if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
+            if self.state.traffic_control_state == TrafficControlState.PAUSED:
                 logger.info(
                     'Hitting traffic control, temporarily resume upon user request'
                 )
-                self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
+                self.state.traffic_control_state = TrafficControlState.NORMAL
             else:
-                self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.THROTTLING
+                self.state.traffic_control_state = TrafficControlState.THROTTLING
                 await self.report_error(
                     f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
                 )
@@ -327,13 +325,13 @@ class AgentController:
         elif self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
-                if self.state.traffic_control_state == TRAFFIC_CONTROL_STATE.PAUSED:
+                if self.state.traffic_control_state == TrafficControlState.PAUSED:
                     logger.info(
                         'Hitting traffic control, temporarily resume upon user request'
                     )
-                    self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.NORMAL
+                    self.state.traffic_control_state = TrafficControlState.NORMAL
                 else:
-                    self.state.traffic_control_state = TRAFFIC_CONTROL_STATE.THROTTLING
+                    self.state.traffic_control_state = TrafficControlState.THROTTLING
                     await self.report_error(
                         f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
                     )

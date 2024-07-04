@@ -18,7 +18,7 @@ from opendevin.events.observation import (
 from opendevin.storage import get_file_store
 
 
-class TRAFFIC_CONTROL_STATE(str, Enum):
+class TrafficControlState(str, Enum):
     # default state, no rate limiting
     NORMAL = 'normal'
 
@@ -44,13 +44,12 @@ class State:
     max_iterations: int = 100
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
     history: list[tuple[Action, Observation]] = field(default_factory=list)
-    updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
     last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    traffic_control_state: TRAFFIC_CONTROL_STATE = TRAFFIC_CONTROL_STATE.NORMAL
+    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
