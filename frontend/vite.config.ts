@@ -64,6 +64,7 @@ export default defineConfig(({ mode }) => {
       coverage: {
         reporter: ["text", "json", "html", "lcov"],
         reportsDirectory: "coverage",
+        include: ["src/**/*.{ts,tsx}"],
       },
     },
   };
