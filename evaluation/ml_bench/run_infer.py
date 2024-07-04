@@ -27,12 +27,14 @@ from concurrent.futures import ProcessPoolExecutor
 from datasets import load_dataset
 from tqdm import tqdm
 
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
+from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -100,7 +102,7 @@ ID2CONDA = {
 
 
 def process_instance(
-    instance, agent_class, metadata, eval_output_dir, reset_logger: bool = True
+    agent: Agent, instance, metadata, eval_output_dir, reset_logger: bool = True
 ):
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
@@ -178,19 +180,21 @@ def process_instance(
             )
             + 'You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).'
         )
-        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
         # Run the agent
-        state: State = asyncio.run(
-            main(
+        state: State | None = asyncio.run(
+            run_agent_controller(
+                agent,
                 instruction,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent_class
+                    agent.__class__.__name__
                 ),
                 sandbox=sandbox,
                 sid=sid,
             )
         )
+        assert state is not None
         metrics = state.metrics.get() if state.metrics else {}
 
         # Evaluate the agent's script
@@ -368,14 +372,17 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
             for _, instance in enumerate(new_instances):
                 future = executor.submit(
                     process_instance,
+                    agent,
                     instance,
-                    agent_class,
                     metadata,
                     eval_output_dir,
                     reset_logger=bool(num_workers > 1),

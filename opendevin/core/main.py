@@ -7,7 +7,7 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
@@ -30,8 +30,11 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(
-    task_str: str = '',
+async def run_agent_controller(
+    agent: Agent,
+    task_str: str,
+    max_iterations: int | None = None,
+    max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
     sandbox: Sandbox | None = None,
@@ -48,43 +51,10 @@ async def main(
         sandbox: An optional sandbox to run the agent in.
     """
 
-    # Determine the task source
-    if task_str:
-        task = task_str
-    elif args.file:
-        task = read_task_from_file(args.file)
-    elif args.task:
-        task = args.task
-    elif not sys.stdin.isatty():
-        task = read_task_from_stdin()
-    else:
-        raise ValueError('No task provided. Please specify a task through -t, -f.')
-
-    # only one of model_name or llm_config is required
-    if args.llm_config:
-        # --llm_config
-        # llm_config can contain any of the attributes of LLMConfig
-        llm_config = get_llm_config_arg(args.llm_config)
-
-        if llm_config is None:
-            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
-
-        logger.info(
-            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {args.llm_config}) with task: "{task}"'
-        )
-
-        # create LLM instance with the given config
-        llm = LLM(llm_config=llm_config)
-    else:
-        # --model-name model_name
-        logger.info(
-            f'Running agent {args.agent_cls} (model: {args.model_name}), with task: "{task}"'
-        )
-        llm = LLM(args.model_name)
-
-    # set up the agent
-    AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
-    agent = AgentCls(llm=llm)
+    # Logging
+    logger.info(
+        f'Running agent {type(agent)}, model {agent.llm.model_name}, with task: "{task_str}"'
+    )
 
     # set up the event stream
     cli_session = 'main' + ('_' + sid if sid else '')
@@ -102,8 +72,8 @@ async def main(
     # init controller with this initial state
     controller = AgentController(
         agent=agent,
-        max_iterations=args.max_iterations,
-        max_budget_per_task=args.max_budget_per_task,
+        max_iterations=max_iterations,
+        max_budget_per_task=max_budget_per_task,
         event_stream=event_stream,
         initial_state=initial_state,
     )
@@ -124,8 +94,8 @@ async def main(
         with open(
             os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
         ) as f:
-            task = f.read()
-            logger.info(f'Dynamic Eval task: {task}')
+            task_str = f.read()
+            logger.info(f'Dynamic Eval task: {task_str}')
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
@@ -138,7 +108,7 @@ async def main(
         )
     elif initial_state is None:
         # init with the provided task
-        event_stream.add_event(MessageAction(content=task), EventSource.USER)
+        event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
@@ -174,4 +144,36 @@ async def main(
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    args = parse_arguments()
+
+    # Determine the task
+    if args.file:
+        task_str = read_task_from_file(args.file)
+    elif args.task:
+        task_str = args.task
+    elif not sys.stdin.isatty():
+        task_str = read_task_from_stdin()
+    else:
+        raise ValueError('No task provided. Please specify a task through -t, -f.')
+
+    # Figure out the LLM config
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+        if llm_config is None:
+            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+        llm = LLM(llm_config=llm_config)
+    else:
+        llm = LLM(model=args.model_name)
+
+    # Create the agent
+    AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
+    agent = AgentCls(llm=llm)
+
+    asyncio.run(
+        run_agent_controller(
+            agent=agent,
+            task_str=task_str,
+            max_iterations=args.max_iterations,
+            max_budget_per_task=args.max_budget_per_task,
+        )
+    )

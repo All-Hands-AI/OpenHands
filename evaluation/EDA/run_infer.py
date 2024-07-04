@@ -13,14 +13,16 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 from evaluation.EDA.game import Q20Game, Q20GameCelebrity
+from opendevin.controller.agent import Agent
 
 # from evaluation.EDA.scorer import question_scorer
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
+from opendevin.llm.llm import LLM
 
 game = None
 
@@ -44,6 +46,7 @@ def codeact_user_response(state: State) -> str:
                 model_guess = event.content
                 break
 
+    assert game is not None, 'Game is not initialized.'
     msg = game.generate_user_response(model_guess)
     game.curr_turn += 1
     logger.info(f'Model guess: {model_guess}')
@@ -68,7 +71,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(
-    instance, agent_class, metadata, openai_api_key, reset_logger: bool = True
+    agent: Agent, instance, metadata, openai_api_key, reset_logger: bool = True
 ):
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
@@ -120,14 +123,17 @@ def process_instance(
 
     # instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
 
-    state: State = asyncio.run(
-        main(
+    state: State | None = asyncio.run(
+        run_agent_controller(
+            agent,
             instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                agent.__class__.__name__
+            ],
             sid=instance['text'].strip(),
         )
     )
@@ -314,6 +320,9 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -321,8 +330,8 @@ if __name__ == '__main__':
             for instance in eda_dataset:
                 future = executor.submit(
                     process_instance,
+                    agent,
                     instance,
-                    agent_class,
                     metadata,
                     args.OPENAI_API_KEY,
                     reset_logger=bool(num_workers > 1),

@@ -11,20 +11,23 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Dict
 
 import tasks
-from config_variables import TASK_INFO_MAP
 from datasets import load_dataset
-from datatypes import TaskState
-from env import SimplifiedEnv
-from prompts import ToolPromptTemplate
-from tasks import Task
 from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import DockerSSHBox
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
+from opendevin.llm.llm import LLM
+
+from .config_variables import TASK_INFO_MAP
+from .datatypes import TaskState
+from .env import SimplifiedEnv
+from .prompts import ToolPromptTemplate
+from .tasks import Task
 
 
 def cleanup():
@@ -143,11 +146,11 @@ def process_instance(
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the concise RESULT inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
 
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     fake_user_response_fn = functools.partial(
-        AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+        AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[agent.__class__.__name__],
         task=instance,
         task_config={
             'max_iterations': metadata['max_iterations'],
@@ -155,8 +158,9 @@ def process_instance(
         },
     )
 
-    state: State = asyncio.run(
-        main(
+    state: State | None = asyncio.run(
+        run_agent_controller(
+            agent,
             instruction,
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
@@ -339,6 +343,9 @@ if __name__ == '__main__':
     skip_workspace_mount = agent_class == 'CodeActAgent'
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -346,8 +353,8 @@ if __name__ == '__main__':
             for instance in mint_dataset:
                 future = executor.submit(
                     process_instance,
+                    agent,
                     instance,
-                    agent_class,
                     metadata,
                     skip_workspace_mount,
                     eval_output_dir,
