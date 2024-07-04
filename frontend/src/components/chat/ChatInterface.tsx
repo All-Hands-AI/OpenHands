@@ -83,8 +83,8 @@ function ChatInterface() {
     onFeedbackModalOpen();
   };
 
-  const handleSendMessage = (content: string) => {
-    dispatch(addUserMessage(content));
+  const handleSendMessage = (content: string, dispatchContent: string = '') => {
+    dispatch(addUserMessage(dispatchContent || content));
     sendChatMessage(content);
   };
 
@@ -102,11 +102,7 @@ function ChatInterface() {
   };
 
   const handleAutoMsg = () => {
-    handleSendMessage(
-      "Please continue working on the task on whatever approach you think is suitable.\n" +
-        "If you think you have solved the task, you can give <finish> to end the interaction.\n" +
-        "IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n"
-    );
+    handleSendMessage(t(I18nKey.CHAT_INTERFACE$AUTO_MESSAGE), t(I18nKey.CHAT_INTERFACE$INPUT_AUTO_MESSAGE));
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -586,6 +586,12 @@
     "zh-CN": "继续",
     "de": "Fortfahren"
   },
+  "CHAT_INTERFACE$AUTO_MESSAGE": {
+    "en": "Please continue working on the task on whatever approach you think is suitable.\nIf you think you have solved the task, you can give <finish> to end the interaction.\nIMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n"
+  },
+  "CHAT_INTERFACE$INPUT_AUTO_MESSAGE":{
+    "en": "Sent the default Auto Msg 🤖"
+  },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
     "zh-CN": "发送",
