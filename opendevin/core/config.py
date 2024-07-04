@@ -47,6 +47,7 @@ class LLMConfig(metaclass=Singleton):
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
+        ollama_base_url: The base URL for the OLLAMA API.
     """
 
     model: str = 'gpt-4o'
@@ -71,6 +72,7 @@ class LLMConfig(metaclass=Singleton):
     max_output_tokens: int | None = None
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
+    ollama_base_url: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """
@@ -514,7 +516,7 @@ def get_llm_config_arg(llm_config_arg: str):
 
 
 # Command line arguments
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     """
     Get the parser for the command line arguments.
     """
@@ -597,7 +599,7 @@ def get_parser():
     return parser
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """
     Parse the command line arguments.
     """
@@ -607,6 +609,3 @@ def parse_arguments():
         config.workspace_base = os.path.abspath(parsed_args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
     return parsed_args
-
-
-args = parse_arguments()

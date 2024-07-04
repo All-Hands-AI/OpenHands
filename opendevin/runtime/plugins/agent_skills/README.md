@@ -5,7 +5,7 @@ This folder implements a skill/tool set `agentskills` for OpenDevin.
 It is intended to be used by the agent **inside sandbox**.
 The skill set will be exposed as a `pip` package that can be installed as a plugin inside the sandbox.
 
-The skill set can contains a bunch of wrapped tools for agent ([many examples here](https://github.com/OpenDevin/OpenDevin/pull/1914)), for example:
+The skill set can contain a bunch of wrapped tools for agent ([many examples here](https://github.com/OpenDevin/OpenDevin/pull/1914)), for example:
 - Audio/Video to text (these are a temporary solution, and we should switch to multimodal models when they are sufficiently cheap
 - PDF to text
 - etc.

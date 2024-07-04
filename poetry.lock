@@ -417,17 +417,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.137"
+version = "1.34.139"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.137-py3-none-any.whl", hash = "sha256:7cb697d67fd138ceebc6f789919ae370c092a50c6b0ccc4ef483027935502eab"},
-    {file = "boto3-1.34.137.tar.gz", hash = "sha256:0b21b84db4619b3711a6f643d465a5a25e81231ee43615c55a20ff6b89c6cc3c"},
+    {file = "boto3-1.34.139-py3-none-any.whl", hash = "sha256:98b2a12bcb30e679fa9f60fc74145a39db5ec2ca7b7c763f42896e3bd9b3a38d"},
+    {file = "boto3-1.34.139.tar.gz", hash = "sha256:32b99f0d76ec81fdca287ace2c9744a2eb8b92cb62bf4d26d52a4f516b63a6bf"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.137,<1.35.0"
+botocore = ">=1.34.139,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -436,13 +436,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.137"
+version = "1.34.139"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.137-py3-none-any.whl", hash = "sha256:a980fa4adec4bfa23fff70a3512622e9412c69c791898a52cafc2458b0be6040"},
-    {file = "botocore-1.34.137.tar.gz", hash = "sha256:e29c8e9bfda0b20a1997792968e85868bfce42fefad9730f633a81adcff3f2ef"},
+    {file = "botocore-1.34.139-py3-none-any.whl", hash = "sha256:dd1e085d4caa2a4c1b7d83e3bc51416111c8238a35d498e9d3b04f3b63b086ba"},
+    {file = "botocore-1.34.139.tar.gz", hash = "sha256:df023d8cf8999d574214dad4645cb90f9d2ccd1494f6ee2b57b1ab7522f6be77"},
 ]
 
 [package.dependencies]
@@ -2669,13 +2669,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.41.3"
+version = "1.41.6"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.41.3-py3-none-any.whl", hash = "sha256:50b20805e6892ef57ee5833764ae77bc2021042814b4bdbd89b3744d4b84bb02"},
-    {file = "litellm-1.41.3.tar.gz", hash = "sha256:2178f4a9b605603295f6aebf623e0a4dd45c3b595090fa37c606f1c1e04d2121"},
+    {file = "litellm-1.41.6-py3-none-any.whl", hash = "sha256:7f31cc345ab8aef53b928595c0471de3ee3d859824c2da6b5ae7841f62a7029b"},
+    {file = "litellm-1.41.6.tar.gz", hash = "sha256:ac0c4bc51b64ce38d6290d6e9b5683c19a6bcb76b4ca64381e286256c013d39a"},
 ]
 
 [package.dependencies]
@@ -4084,13 +4084,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.35.8"
+version = "1.35.10"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.8-py3-none-any.whl", hash = "sha256:69d5b0f47f0c806d5da83fb0f84c147661395226d7f79acc78aa1d9b8c635887"},
-    {file = "openai-1.35.8.tar.gz", hash = "sha256:3f6101888bb516647edade74c503f2b937b8bab73408e799d58f2aba68bbe51c"},
+    {file = "openai-1.35.10-py3-none-any.whl", hash = "sha256:962cb5c23224b5cbd16078308dabab97a08b0a5ad736a4fdb3dc2ffc44ac974f"},
+    {file = "openai-1.35.10.tar.gz", hash = "sha256:85966949f4f960f3e4b239a659f9fd64d3a97ecc43c44dc0a044b5c7f11cccc6"},
 ]
 
 [package.dependencies]
@@ -6259,8 +6259,8 @@ tqdm = "*"
 [package.source]
 type = "git"
 url = "https://github.com/OpenDevin/SWE-bench.git"
-reference = "xw/attempt-fix-django-parsing"
-resolved_reference = "c61bc104ae5113dd58c228004e7b52293ed73bbd"
+reference = "HEAD"
+resolved_reference = "4498af933679c518df6d1f8485864f72afc21500"
 
 [[package]]
 name = "sympy"
@@ -7647,4 +7647,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "bcee6d5cbe7f6ef236173bf5e94c8859a097c3d2ecde0e757be5f2c45b45a8cd"
+content-hash = "bfb5c89e3fe1763ed5b539f77e714e9c269366ece66507ed8811dff7df614c93"

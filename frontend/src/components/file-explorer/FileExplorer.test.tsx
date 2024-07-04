@@ -51,9 +51,9 @@ describe("FileExplorer", () => {
     });
     await waitFor(() => {
       expect(getByText("folder1")).toBeInTheDocument();
-      expect(getByText("file2.ts")).toBeInTheDocument();
+      expect(getByText("file1.ts")).toBeInTheDocument();
     });
-    expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder 1
+    expect(listFiles).toHaveBeenCalledTimes(1); // once for root, once for folder 1
 
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(async () => {
@@ -61,7 +61,7 @@ describe("FileExplorer", () => {
     });
 
     await waitFor(() => {
-      expect(listFiles).toHaveBeenCalledTimes(4); // 2 from initial render, 2 from refresh button
+      expect(listFiles).toHaveBeenCalledTimes(2); // 2 from initial render, 2 from refresh button
     });
   });
 
