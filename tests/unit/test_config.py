@@ -52,6 +52,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('AGENT', 'CodeActAgent')
     monkeypatch.setenv('SANDBOX_TYPE', 'local')
+    monkeypatch.setenv('SANDBOX_TIMEOUT', '10')
 
     config = AppConfig()
     load_from_env(config, os.environ)
@@ -66,6 +67,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert config.agent.memory_enabled is True
     assert config.agent.name == 'CodeActAgent'
     assert config.sandbox.box_type == 'local'
+    assert config.sandbox.timeout == 10
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
@@ -74,6 +76,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('AGENT_NAME', 'PlannerAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
+    monkeypatch.setenv('SANDBOX_CONTAINER_IMAGE', 'custom_image')
 
     load_from_env(default_config, os.environ)
 
@@ -87,6 +90,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     assert (
         default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
     )
+    assert default_config.sandbox.container_image == 'custom_image'
 
 
 def test_load_from_new_style_toml(default_config, temp_toml_file):
@@ -135,8 +139,50 @@ sandbox_type = "local"
     assert default_config.workspace_mount_path == '/opt/files2/workspace'
 
 
-def test_env_overrides_toml(monkeypatch, default_config, temp_toml_file):
-    # Test that environment variables override TOML values using monkeypatch
+def test_compat_load_sandbox_from_toml(default_config, temp_toml_file):
+    # test loading configuration from a new-style TOML file
+    # uses a toml file with sandbox_vars instead of a sandbox section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[llm]
+model = "test-model"
+
+[agent]
+name = "TestAgent"
+memory_enabled = true
+
+[core]
+workspace_base = "/opt/files2/workspace"
+sandbox_type = "local"
+sandbox_timeout = 500
+sandbox_container_image = "node:14"
+sandbox_user_id = 1001
+"""
+        )
+
+    load_from_toml(default_config, temp_toml_file)
+
+    assert default_config.llm.model == 'test-model'
+    assert default_config.agent.name == 'TestAgent'
+    assert default_config.agent.memory_enabled is True
+    assert default_config.workspace_base == '/opt/files2/workspace'
+    assert default_config.sandbox.box_type == 'local'
+    assert default_config.sandbox.timeout == 500
+    assert default_config.sandbox.container_image == 'node:14'
+    assert default_config.sandbox.user_id == 1001
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+
+    finalize_config(default_config)
+
+    # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
+    # if it was undefined
+    assert default_config.workspace_mount_path == '/opt/files2/workspace'
+
+
+def test_env_overrides_compat_toml(monkeypatch, default_config, temp_toml_file):
+    # test that environment variables override TOML values using monkeypatch
+    # uses a toml file with sandbox_vars instead of a sandbox section
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write("""
 [llm]
@@ -147,11 +193,15 @@ api_key = "toml-api-key"
 workspace_base = "/opt/files3/workspace"
 sandbox_type = "local"
 disable_color = true
+sandbox_timeout = 500
+sandbox_user_id = 1001
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
     monkeypatch.setenv('SANDBOX_TYPE', 'exec')
+    monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
+    monkeypatch.setenv('SANDBOX_USER_ID', '1002')
 
     load_from_toml(default_config, temp_toml_file)
 
@@ -174,6 +224,59 @@ disable_color = true
 
     assert default_config.sandbox.box_type == 'exec'
     assert default_config.disable_color is True
+    assert default_config.sandbox.timeout == 1000
+    assert default_config.sandbox.user_id == 1002
+
+    finalize_config(default_config)
+    # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
+    assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
+
+
+def test_env_overrides_sandbox_toml(monkeypatch, default_config, temp_toml_file):
+    # test that environment variables override TOML values using monkeypatch
+    # uses a toml file with a sandbox section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[llm]
+model = "test-model"
+api_key = "toml-api-key"
+
+[core]
+workspace_base = "/opt/files3/workspace"
+
+[sandbox]
+sandbox_type = "e2b"
+sandbox_timeout = 500
+sandbox_user_id = 1001
+""")
+
+    monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
+    monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
+    monkeypatch.setenv('SANDBOX_TYPE', 'local')
+    monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
+    monkeypatch.setenv('SANDBOX_USER_ID', '1002')
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
+    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+
+    # before load_from_env, values are set to the values from the toml file
+    assert default_config.llm.api_key == 'toml-api-key'
+    assert default_config.sandbox.box_type == 'e2b'
+    assert default_config.sandbox.timeout == 500
+    assert default_config.sandbox.user_id == 1001
+
+    load_from_env(default_config, os.environ)
+
+    # values from env override values from toml
+    assert os.environ.get('LLM_MODEL') is None
+    assert default_config.llm.model == 'test-model'
+    assert default_config.llm.api_key == 'env-api-key'
+
+    assert default_config.sandbox.box_type == 'local'
+    assert default_config.sandbox.timeout == 1000
+    assert default_config.sandbox.user_id == 1002
 
     finalize_config(default_config)
     # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
@@ -186,6 +289,9 @@ def test_defaults_dict_after_updates(default_config):
     assert (
         initial_defaults['workspace_mount_path']['default'] is UndefinedString.UNDEFINED
     )
+    assert initial_defaults['llm']['api_key']['default'] is None
+    assert initial_defaults['agent']['name']['default'] == 'CodeActAgent'
+
     updated_config = AppConfig()
     updated_config.llm.api_key = 'updated-api-key'
     updated_config.agent.name = 'MonologueAgent'
@@ -196,6 +302,12 @@ def test_defaults_dict_after_updates(default_config):
     assert (
         defaults_after_updates['workspace_mount_path']['default']
         is UndefinedString.UNDEFINED
+    )
+    assert defaults_after_updates['sandbox']['box_type']['default'] == 'ssh'
+    assert defaults_after_updates['sandbox']['timeout']['default'] == 120
+    assert (
+        defaults_after_updates['sandbox']['container_image']['default']
+        == 'ghcr.io/opendevin/sandbox:main'
     )
     assert defaults_after_updates == initial_defaults
 
