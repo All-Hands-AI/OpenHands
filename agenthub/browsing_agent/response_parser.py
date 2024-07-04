@@ -9,10 +9,9 @@ from opendevin.events.action import (
 
 
 class BrowsingResponseParser(ResponseParser):
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         # Need to pay attention to the item order in self.action_parsers
+        super().__init__()
         self.action_parsers = [BrowsingActionParserMessage()]
         self.default_parser = BrowsingActionParserBrowseInteractive()
 
