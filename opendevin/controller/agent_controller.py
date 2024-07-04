@@ -121,7 +121,7 @@ class AgentController:
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
+        self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
@@ -210,7 +210,7 @@ class AgentController:
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
 
-        await self.event_stream.add_event(
+        self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
@@ -220,8 +220,6 @@ class AgentController:
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
-        if self.delegate is not None:
-            return self.delegate.get_agent_state()
         return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
@@ -300,7 +298,7 @@ class AgentController:
                 # clean up delegate status
                 self.delegate = None
                 self.delegateAction = None
-                await self.event_stream.add_event(obs, EventSource.AGENT)
+                self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
         logger.info(
@@ -357,7 +355,7 @@ class AgentController:
             await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
-            await self.event_stream.add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
 
