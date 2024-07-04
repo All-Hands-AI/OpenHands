@@ -26,6 +26,9 @@ class EvalMetadata(BaseModel):
     eval_output_dir: str
     start_time: str
     git_commit: str
+    dataset: str | None = None
+    data_split: str | None = None
+    details: dict[str, Any] | None = None
 
 
 def codeact_user_response(
@@ -86,6 +89,8 @@ def make_metadata(
     max_iterations: int,
     eval_note: str | None,
     eval_output_dir: str,
+    data_split: str | None = None,
+    details: dict[str, Any] | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
     eval_note = f'_N_{eval_note}' if eval_note else ''
@@ -112,6 +117,9 @@ def make_metadata(
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
+        dataset=dataset_name,
+        data_split=data_split,
+        details=details,
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
