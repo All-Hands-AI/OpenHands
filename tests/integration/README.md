@@ -51,7 +51,7 @@ of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 
 ## Run Integration Tests
 
-Take a look at `run-integration-tests.yml` (in the `.github` folder) to learn
+Take a look at `ghcr.yml` (in the `.github/workflow` folder) to learn
 how integration tests are launched in a CI environment. You can also simply run:
 
 ```bash

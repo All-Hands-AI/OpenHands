@@ -220,10 +220,10 @@ class EventStream:
     async def add_event(self, event: Event, source: EventSource):
         logger.debug(f'Adding event {event} from {source}')
         async with self._lock:
-            event._id = self._cur_id  # type: ignore [attr-defined]
+            event._id = self._cur_id  # type: ignore[attr-defined]
             self._cur_id += 1
-        event._timestamp = datetime.now()  # type: ignore [attr-defined]
-        event._source = source  # type: ignore [attr-defined]
+        event._timestamp = datetime.now()  # type: ignore[attr-defined]
+        event._source = source  # type: ignore[attr-defined]
         data = event_to_dict(event)
         if event.id is not None:
             self._file_store.write(

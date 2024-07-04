@@ -182,7 +182,7 @@ class LLM:
                 f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
                 exc_info=False,
             )
-            return True
+            return None
 
         @retry(
             reraise=True,
@@ -374,7 +374,7 @@ class LLM:
         Add the current cost into total cost in metrics.
 
         Args:
-            response (list): A response from a model invocation.
+            response: A response from a model invocation.
 
         Returns:
             number: The cost of the response.

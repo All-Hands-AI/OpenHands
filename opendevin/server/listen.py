@@ -253,7 +253,6 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
 
-    session = None
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
         sid = get_sid_from_token(token)

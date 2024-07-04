@@ -30,7 +30,7 @@ open_file(path: str, line_number: int | None = 1, context_lines: int | None = 10
     It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
     Args:
-    path: str: The path to the file to open, preferredly absolute path.
+    path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
     context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
 
