@@ -1,7 +1,6 @@
 FROM ubuntu:22.04
 
 # install basic packages
-RUN sed -i 's/ports.ubuntu.com/mirrors.bfsu.edu.cn/g' /etc/apt/sources.list
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
