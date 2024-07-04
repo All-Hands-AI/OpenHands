@@ -75,7 +75,7 @@ class AgentSession:
         """Creates an AgentController instance.
 
         Args:
-            start_event: The start event data (optional).
+            start_event: The start event data.
         """
         if self.controller is not None:
             raise Exception('Controller already created')
@@ -98,7 +98,8 @@ class AgentSession:
         if isinstance(agent, CodeActAgent):
             if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
                 logger.warning(
-                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
+                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
+                    ' (LocalBox, DockerExecBox) will not work properly.'
                 )
         self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         self.runtime.init_runtime_tools(agent.runtime_tools)
@@ -111,7 +112,7 @@ class AgentSession:
         )
         try:
             agent_state = State.restore_from_session(self.sid)
-            self.controller._set_initial_state(agent_state)
+            self.controller.set_initial_state(agent_state)
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             print('Error restoring state', e)
