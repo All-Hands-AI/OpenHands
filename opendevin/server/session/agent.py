@@ -75,7 +75,7 @@ class AgentSession:
         """Creates an AgentController instance.
 
         Args:
-            start_event: The start event data (optional).
+            start_event: The start event data.
         """
         if self.controller is not None:
             raise Exception('Controller already created')

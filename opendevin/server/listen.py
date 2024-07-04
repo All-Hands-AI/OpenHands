@@ -3,6 +3,7 @@ import re
 import uuid
 import warnings
 
+import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
@@ -190,7 +191,7 @@ async def attach_session(request: Request, call_next):
 async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for receiving events from the client (i.e., the browser).
-    Once connected, you can send various actions:
+    Once connected, the client can send various actions:
     - Initialize the agent:
     session management, and event streaming.
         ```json
@@ -253,7 +254,6 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
 
-    session = None
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
         sid = get_sid_from_token(token)
@@ -312,6 +312,18 @@ async def get_litellm_models():
     )
     bedrock_model_list = bedrock.list_foundation_models()
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    ollama_base_url = config.llm.ollama_base_url
+    if config.llm.model.startswith('ollama'):
+        if not ollama_base_url:
+            ollama_base_url = config.llm.base_url
+    if ollama_base_url:
+        ollama_url = ollama_base_url.strip('/') + '/api/tags'
+        try:
+            ollama_models_list = requests.get(ollama_url, timeout=3).json()['models']
+            for model in ollama_models_list:
+                model_list.append('ollama/' + model['name'])
+        except requests.exceptions.RequestException as e:
+            logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
 
     return list(sorted(set(model_list)))
 
