@@ -16,6 +16,7 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     major_version=$(echo "$GITHUB_REF_NAME" | cut -d. -f1)
     minor_version=$(echo "$GITHUB_REF_NAME" | cut -d. -f1,2)
     tags+=("$major_version" "$minor_version")
+    tags+=("latest")
   fi
   sanitized=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
   OPEN_DEVIN_BUILD_VERSION=$sanitized
