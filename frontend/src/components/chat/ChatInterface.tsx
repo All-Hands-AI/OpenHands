@@ -20,6 +20,7 @@ import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { removeApiKey } from "#/utils/utils";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
+import beep from "#/utils/beep";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -124,6 +125,16 @@ function ChatInterface() {
       handleAutoMsg();
     }
   }, [autoMode, curAgentState]);
+
+  useEffect(() => {
+    if (
+      (!autoMode && curAgentState === AgentState.AWAITING_USER_INPUT) ||
+      curAgentState === AgentState.ERROR ||
+      curAgentState === AgentState.INIT
+    ) {
+      if (document.cookie.indexOf("audio") !== -1) beep();
+    }
+  }, [curAgentState]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">
