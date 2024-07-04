@@ -41,8 +41,7 @@ ASSISTANT:
 {
   "action": "run",
   "args": {
-    "command": "ls",
-    "background": false
+    "command": "ls"
   }
 }
 

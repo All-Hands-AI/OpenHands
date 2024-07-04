@@ -24,7 +24,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
     NullAction,
 )
-from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
@@ -471,9 +470,6 @@ class AgentController:
         ):
             # for loop detection, ignore command_id, which is the pid
             return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
-        elif isinstance(obj1, CmdKillAction) and isinstance(obj2, CmdKillAction):
-            # for loop detection, ignore command_id, which is the pid
-            return obj1.thought == obj2.thought
         else:
             # this is the default comparison
             return obj1 == obj2
