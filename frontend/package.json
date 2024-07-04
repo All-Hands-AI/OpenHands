@@ -41,7 +41,7 @@
     "start": "npm run make-i18n && vite",
     "build": "npm run make-i18n && tsc && vite build",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "npm run make-i18n && vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
