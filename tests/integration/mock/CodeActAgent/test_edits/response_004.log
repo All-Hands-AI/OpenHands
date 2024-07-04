@@ -1,0 +1,4 @@
+Great! All the typos in the file have been corrected. Let's review the final content of the file to make sure everything is in order:
+
+<execute_ipython>
+open_file('bad.txt')
