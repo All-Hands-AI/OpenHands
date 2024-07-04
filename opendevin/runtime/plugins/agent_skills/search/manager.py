@@ -6,6 +6,7 @@ if __package__ is None or __package__ == '':
         SearchResult,
         find_python_files,
         get_class_signature,
+        get_code_snippets,
         parse_python_file,
     )
 else:
@@ -13,6 +14,7 @@ else:
         SearchResult,
         find_python_files,
         get_class_signature,
+        get_code_snippets,
         parse_python_file,
     )
 
@@ -85,6 +87,41 @@ class SearchManager:
         summary = f'The tool returned information about class `{class_name}`.'
         return tool_result, summary, True
 
+    def search_class_in_file(self, class_name, file_name: str) -> tuple[str, str, bool]:
+        # (1) check whether we can get the file
+        candidate_py_abs_paths = [f for f in self.parsed_files if f.endswith(file_name)]
+        if not candidate_py_abs_paths:
+            tool_output = f'Could not find file {file_name} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # (2) search for this class in the entire code base (we do filtering later)
+        if class_name not in self.class_index:
+            tool_output = f'Could not find class {class_name} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # (3) class is there, check whether it exists in the file specified.
+        search_res: list[SearchResult] = []
+        for fname, (start_line, end_line) in self.class_index[class_name]:
+            if fname in candidate_py_abs_paths:
+                class_code = get_code_snippets(fname, start_line, end_line)
+                res = SearchResult(fname, class_name, None, class_code)
+                search_res.append(res)
+
+        if not search_res:
+            tool_output = f'Could not find class {class_name} in file {file_name}.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # good path; we have result, now just form a response
+        tool_output = f'Found {len(search_res)} classes with name {class_name} in file {file_name}:\n\n'
+        summary = tool_output
+        for idx, res in enumerate(search_res):
+            res_str = res.to_tagged_str(self.project_path)
+            tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+        return tool_output, summary, True
+
     def _build_index(self):
         """
         With all source code of the project, build two indexes:
@@ -148,3 +185,4 @@ if __name__ == '__main__':
     # for testing
     sm = SearchManager('.')
     pprint.pprint(sm.search_class('SearchResult'))
+    pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))

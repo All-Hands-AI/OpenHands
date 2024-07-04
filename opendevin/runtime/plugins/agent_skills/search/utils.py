@@ -264,3 +264,19 @@ def to_relative_path(file_path: str, project_root: str) -> str:
         return str(Path(file_path).relative_to(project_root))
     else:
         return file_path
+
+
+def get_code_snippets(file_full_path: str, start: int, end: int) -> str:
+    """Get the code snippet in the range in the file, without line numbers.
+
+    Args:
+        file_path (str): Full path to the file.
+        start (int): Start line number. (1-based)
+        end (int): End line number. (1-based)
+    """
+    with open(file_full_path) as f:
+        file_content = f.readlines()
+    snippet = ''
+    for i in range(start - 1, end):
+        snippet += file_content[i]
+    return snippet
