@@ -34,17 +34,20 @@ export const invariantSlice = createSlice({
         is_confirmed: action.payload.args.is_confirmed,
         confirmed_changed: false,
       };
-      const lastLog = state.logs[state.logs.length - 1];
-      const isDuplicateLog =
-        lastLog &&
-        lastLog.content === log.content &&
-        lastLog.is_confirmed === "awaiting_confirmation" &&
-        log.is_confirmed !== lastLog.is_confirmed;
 
-      if (isDuplicateLog) {
-        lastLog.is_confirmed = log.is_confirmed;
-        lastLog.confirmed_changed = true;
-      } else if (!lastLog || lastLog.id !== log.id) {
+      const existingLog = state.logs.find(
+        (stateLog) =>
+          stateLog.id === log.id ||
+          (stateLog.is_confirmed === "awaiting_confirmation" &&
+            stateLog.content === log.content),
+      );
+
+      if (existingLog) {
+        if (existingLog.is_confirmed !== log.is_confirmed) {
+          existingLog.is_confirmed = log.is_confirmed;
+          existingLog.confirmed_changed = true;
+        }
+      } else {
         state.logs.push(log);
       }
     },
