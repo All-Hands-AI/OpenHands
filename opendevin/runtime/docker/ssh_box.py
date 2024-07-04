@@ -741,7 +741,7 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    plugins = []
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
     ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
