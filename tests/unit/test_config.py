@@ -245,9 +245,9 @@ api_key = "toml-api-key"
 workspace_base = "/opt/files3/workspace"
 
 [sandbox]
-sandbox_type = "e2b"
-sandbox_timeout = 500
-sandbox_user_id = 1001
+box_type = "e2b"
+timeout = 500
+user_id = 1001
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
@@ -281,6 +281,36 @@ sandbox_user_id = 1001
     finalize_config(default_config)
     # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
     assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
+
+
+def test_sandbox_config_from_toml(default_config, temp_toml_file):
+    # Test loading configuration from a new-style TOML file
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[core]
+workspace_base = "/opt/files/workspace"
+
+[llm]
+model = "test-model"
+
+[sandbox]
+box_type = "local"
+timeout = 1
+container_image = "custom_image"
+user_id = 1001
+"""
+        )
+
+    load_from_toml(default_config, temp_toml_file)
+    load_from_env(default_config, os.environ)
+    finalize_config(default_config)
+
+    assert default_config.llm.model == 'test-model'
+    assert default_config.sandbox.box_type == 'local'
+    assert default_config.sandbox.timeout == 1
+    assert default_config.sandbox.container_image == 'custom_image'
+    assert default_config.sandbox.user_id == 1001
 
 
 def test_defaults_dict_after_updates(default_config):
