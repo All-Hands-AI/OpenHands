@@ -59,9 +59,9 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert isinstance(config.llm, LLMConfig)
     assert config.llm.api_key == 'sk-proj-rgMV0...'
     assert config.llm.model == 'gpt-4o'
-    assert isinstance(config.agent, AgentConfig)
-    assert isinstance(config.agent.memory_max_threads, int)
-    assert config.agent.memory_max_threads == 4
+    assert isinstance(config.get_agent_config(), AgentConfig)
+    assert isinstance(config.get_agent_config().memory_max_threads, int)
+    assert config.get_agent_config().memory_max_threads == 4
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
@@ -74,8 +74,8 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     load_from_env(default_config, os.environ)
 
     assert default_config.llm.api_key == 'test-api-key'
-    assert default_config.agent.memory_enabled is True
-    assert default_config.agent.name == 'PlannerAgent'
+    assert default_config.get_agent_config().memory_enabled is True
+    assert default_config.agent == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
     assert (
         default_config.workspace_mount_path is UndefinedString.UNDEFINED
@@ -94,19 +94,19 @@ model = "test-model"
 api_key = "toml-api-key"
 
 [agent]
-name = "TestAgent"
 memory_enabled = true
 
 [core]
 workspace_base = "/opt/files2/workspace"
+agent = "TestAgent"
 """)
 
     load_from_toml(default_config, temp_toml_file)
 
     assert default_config.llm.model == 'test-model'
     assert default_config.llm.api_key == 'toml-api-key'
-    assert default_config.agent.name == 'TestAgent'
-    assert default_config.agent.memory_enabled is True
+    assert default_config.agent == 'TestAgent'
+    assert default_config.get_agent_config().memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
 
     # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
@@ -176,7 +176,7 @@ def test_defaults_dict_after_updates(default_config):
     )
     updated_config = AppConfig()
     updated_config.llm.api_key = 'updated-api-key'
-    updated_config.agent.name = 'MonologueAgent'
+    updated_config.agent = 'MonologueAgent'
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['llm']['api_key']['default'] is None

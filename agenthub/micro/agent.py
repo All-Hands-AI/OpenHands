@@ -2,6 +2,7 @@ from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.utils import json
 from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
@@ -31,12 +32,18 @@ def history_to_json(obj, **kwargs):
     """
     Serialize and simplify history to str format
     """
+    # TODO: get agent specific llm config
+    llm_config = config.get_llm_config()
+    max_message_chars = llm_config.max_message_chars
     if isinstance(obj, list):
         # process history, make it simpler.
         processed_history = []
         for action, observation in obj:
             processed_history.append(
-                (event_to_memory(action), event_to_memory(observation))
+                (
+                    event_to_memory(action, max_message_chars),
+                    event_to_memory(observation, max_message_chars),
+                )
             )
         return json.dumps(processed_history, **kwargs)
 

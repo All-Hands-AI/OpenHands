@@ -69,6 +69,7 @@ async def run_agent_controller(
         except Exception as e:
             print('Error restoring state', e)
 
+    print('\n\n about to init agent ', agent)
     # init controller with this initial state
     controller = AgentController(
         agent=agent,

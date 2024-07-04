@@ -106,13 +106,11 @@ class AgentConfig(metaclass=Singleton):
     Configuration for the agent.
 
     Attributes:
-        name: The name of the agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
-    name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | None = None
@@ -139,6 +137,7 @@ class AppConfig(metaclass=Singleton):
     Attributes:
         llms: A dictionary of name -> LLM configuration. Default config is under 'default' key.
         agents: A dictionary of name -> Agent configuration. Default config is under 'default' key.
+        agent: The name of the (root) agent to use.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
@@ -168,6 +167,7 @@ class AppConfig(metaclass=Singleton):
 
     llms: Dict[str, LLMConfig] = field(default_factory=dict)
     agents: Dict[str, AgentConfig] = field(default_factory=dict)
+    agent: str = 'CodeActAgent'
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
@@ -209,33 +209,36 @@ class AppConfig(metaclass=Singleton):
 
     defaults_dict: ClassVar[dict] = {}
 
-    @property
-    def llm(self) -> LLMConfig:
-        print('\n\n\n#### LLM getter', self.llms)
-        if 'default' not in self.llms:
-            self.llms['default'] = LLMConfig()
-        return self.llms['default']
+    def get_llm_config(self, name='llm') -> LLMConfig:
+        """
+        llm is the name for default config (for backward compatibility prior to 0.8)
+        """
+        if name in self.llms:
+            return self.llms[name]
+        if 'llm' not in self.llms:
+            self.llms['llm'] = LLMConfig()
+        return self.llms['llm']
 
-    @llm.setter
-    def llm(self, value: LLMConfig):
-        """
-        legacy API to set default LLM config.
-        """
-        print('\n\n\n#### LLM setter')
-        self.llms['default'] = value
+    def set_llm_config(self, value: LLMConfig, name='llm'):
+        self.llms[name] = value
 
-    @property
-    def agent(self) -> AgentConfig:
-        if 'default' not in self.agents:
-            self.agents['default'] = AgentConfig()
-        return self.agents['default']
+    def get_agent_config(self, name='agent') -> AgentConfig:
+        """
+        agent is the name for default config (for backward compability prior to 0.8)
+        """
+        if name in self.agents:
+            return self.agents[name]
+        if 'agent' not in self.agents:
+            self.agents['agent'] = AgentConfig()
+        return self.agents['agent']
 
-    @agent.setter
-    def agent(self, value: AgentConfig):
-        """
-        legacy API to set Agent config.
-        """
-        self.agents['default'] = value
+    def set_agent_config(self, value: AgentConfig, name='agent'):
+        self.agents[name] = value
+
+    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        llm_config_name = agent_config.llm_config
+        return self.get_llm_config(llm_config_name)
 
     def __post_init__(self):
         """
@@ -340,11 +343,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             if is_dataclass(field_type):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
-
-                # the agent field: the env var for agent.name is just 'AGENT'
-                if field_name == 'agent' and 'AGENT' in env_or_toml_dict:
-                    setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
-
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
@@ -399,27 +397,24 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     core_config = toml_config['core']
 
+    # load llm configs and agent configs
+    for key, value in toml_config.items():
+        if isinstance(value, dict):
+            try:
+                llm_config = LLMConfig(**value)
+                cfg.set_llm_config(llm_config, key)
+                continue
+            except (TypeError, KeyError):
+                pass
+            try:
+                agent_config = AgentConfig(**value)
+                cfg.set_agent_config(agent_config, key)
+            except (TypeError, KeyError):
+                pass
+
     try:
-        # set default llm config from the toml file
-        llm_config = cfg.llm
-        if 'llm' in toml_config:
-            llm_config = LLMConfig(**toml_config['llm'])
-
-        # TODO: read other llm configs
-        llm_configs = dict()
-        llm_configs['default'] = llm_config
-
-        # set default agent config from the toml file
-        agent_config = cfg.agent
-        if 'agent' in toml_config:
-            agent_config = AgentConfig(**toml_config['agent'])
-
-        # TODO: read other agent configs
-        agent_configs = dict()
-        agent_configs['default'] = agent_config
-
         # update the config object with the new values
-        AppConfig(llms=llm_configs, agents=agent_configs, **core_config)
+        AppConfig(**core_config)
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
@@ -447,8 +442,9 @@ def finalize_config(cfg: AppConfig):
         parts = cfg.workspace_mount_rewrite.split(':')
         cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    if cfg.llm.embedding_base_url is None:
-        cfg.llm.embedding_base_url = cfg.llm.base_url
+    for llm in cfg.llms.values():
+        if llm.embedding_base_url is None:
+            llm.embedding_base_url = llm.base_url
 
     if cfg.use_host_network and platform.system() == 'Darwin':
         logger.warning(
@@ -539,14 +535,14 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.agent.name,
+        default=config.agent,
         type=str,
         help='The agent class to use',
     )
     parser.add_argument(
         '-m',
         '--model-name',
-        default=config.llm.model,
+        default='llm',
         type=str,
         help='The (litellm) model name to use',
     )

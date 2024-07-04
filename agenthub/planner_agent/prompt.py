@@ -1,4 +1,5 @@
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.core.utils import json
@@ -134,17 +135,19 @@ def get_prompt(state: State) -> str:
     Returns:
     - str: The formatted string prompt with historical values
     """
-
+    max_message_chars = config.get_llm_config_from_agent(
+        'PlannerAgent'
+    ).max_message_chars
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
     sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
-            history_dicts.append(event_to_memory(action))
+            history_dicts.append(event_to_memory(action, max_message_chars))
             latest_action = action
         if not isinstance(observation, NullObservation):
-            observation_dict = event_to_memory(observation)
+            observation_dict = event_to_memory(observation, max_message_chars)
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
     current_task = state.root_task.get_current_task()
@@ -154,7 +157,7 @@ def get_prompt(state: State) -> str:
             plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
-    hint = get_hint(event_to_memory(latest_action).get('action', ''))
+    hint = get_hint(event_to_memory(latest_action, max_message_chars).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
     task = state.get_current_user_intent()
     return prompt % {
