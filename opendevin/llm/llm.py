@@ -233,8 +233,7 @@ class LLM:
         """
         try:
             cur_cost = self.completion_cost(response)
-        except Exception as e:
-            logger.warning(f'Cost calculation failed: {e}')
+        except Exception:
             cur_cost = 0
         if self.cost_metric_supported:
             logger.info(
@@ -304,11 +303,9 @@ class LLM:
                 )
                 self.metrics.add_cost(cost)
                 return cost
-            except Exception as e:
+            except Exception:
                 self.cost_metric_supported = False
-                logger.warning(
-                    f'Cost calculation failed: {e}, maybe the model does not support cost calculation'
-                )
+                logger.warning('Cost calculation not supported for this model.')
         return 0.0
 
     def __str__(self):
