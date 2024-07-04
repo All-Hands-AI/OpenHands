@@ -1,12 +1,11 @@
-// frontend/src/components/chat/ChatInterface.tsx
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
 import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
-import { useDisclosure } from "@nextui-org/react";
+import { useDisclosure, Tooltip } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
@@ -65,6 +64,7 @@ function ChatInterface() {
     version: feedbackVersion,
   });
   const [feedbackShared, setFeedbackShared] = React.useState(0);
+  const [autoMode, setAutoMode] = useState(false);
 
   const {
     isOpen: feedbackModalIsOpen,
@@ -100,12 +100,20 @@ function ChatInterface() {
     handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
   };
 
+  const handleAutoMsg = () => {
+    handleSendMessage(
+      "Please continue working on the task on whatever approach you think is suitable.\n" +
+        "If you think you have solved the task, you can give <finish> to end the interaction.\n" +
+        "IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n"
+    );
+  };
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (curAgentState === AgentState.INIT && messages.length === 0) {
       dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
     }
@@ -116,6 +124,19 @@ function ChatInterface() {
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
         <IoMdChatbubbles />
         Chat
+        <div className="ml-auto">
+          <Tooltip content="⚠️ Use with caution! The agent will automatically continue task execution without requesting user inputs.">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={autoMode}
+                onChange={() => setAutoMode(!autoMode)}
+                aria-label="Auto Mode"
+              />
+              <span>Auto mode</span>
+            </label>
+          </Tooltip>
+        </div>
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div
@@ -139,13 +160,15 @@ function ChatInterface() {
           {hitBottom && (
             <>
               {curAgentState === AgentState.AWAITING_USER_INPUT && (
-                <ScrollButton
-                  onClick={handleSendContinueMsg}
-                  icon={
-                    <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
-                  }
-                  label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-                />
+                  autoMode ? (
+                    handleAutoMsg()
+                  ) : (
+                    <ScrollButton
+                      onClick={handleSendContinueMsg}
+                      icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
+                      label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                    />
+                  )
               )}
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
             </>
