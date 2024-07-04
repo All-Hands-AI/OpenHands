@@ -1,6 +1,7 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithProviders } from "test-utils";
 import Chat from "./Chat";
 
 const MESSAGES: Message[] = [
@@ -13,7 +14,7 @@ HTMLElement.prototype.scrollTo = vi.fn(() => {});
 
 describe("Chat", () => {
   it("should render chat messages", () => {
-    render(<Chat messages={MESSAGES} />);
+    renderWithProviders(<Chat messages={MESSAGES} />);
 
     const messages = screen.getAllByTestId("message");
 

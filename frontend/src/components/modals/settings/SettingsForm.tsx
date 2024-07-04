@@ -1,4 +1,4 @@
-import { Input, Switch, useDisclosure } from "@nextui-org/react";
+import { Input, Switch, Tooltip, useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -93,13 +93,21 @@ function SettingsForm({
       <Switch
         aria-label="confirmationmode"
         data-testid="confirmationmode"
-        defaultSelected={settings.CONFIRMATION_MODE || settings.SECURITY_INVARIANT}
+        defaultSelected={
+          settings.CONFIRMATION_MODE || settings.SECURITY_INVARIANT
+        }
         onValueChange={onConfirmationModeChange}
         isDisabled={disabled || settings.SECURITY_INVARIANT}
         isSelected={settings.CONFIRMATION_MODE}
+      >
+        <Tooltip
+          content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+          closeDelay={100}
+          delay={500}
         >
-        {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-        </Switch>
+          {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+        </Tooltip>
+      </Switch>
       <Switch
         aria-label="invariant"
         data-testid="invariant"

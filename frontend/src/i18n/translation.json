@@ -604,6 +604,12 @@
     "zh-CN": "继续",
     "de": "Fortfahren"
   },
+  "CHAT_INTERFACE$CONFIRM_ACTION": {
+    "en": "Confirm the requested action"
+  },
+  "CHAT_INTERFACE$REJECT_ACTION": {
+    "en": "Reject the requested action"
+  },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
     "zh-CN": "发送",
@@ -716,6 +722,9 @@
   },
   "SETTINGS$CONFIRMATION_MODE": {
     "en": "Enable Confirmation Mode"
+  },
+  "SETTINGS$CONFIRMATION_MODE_TOOLTIP": {
+    "en": "Awaits for user confirmation before executing code."
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",

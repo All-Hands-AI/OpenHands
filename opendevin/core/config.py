@@ -478,7 +478,7 @@ def get_llm_config_arg(llm_config_arg: str):
 
 
 # Command line arguments
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     """
     Get the parser for the command line arguments.
     """
@@ -561,7 +561,7 @@ def get_parser():
     return parser
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """
     Parse the command line arguments.
     """
@@ -571,6 +571,3 @@ def parse_arguments():
         config.workspace_base = os.path.abspath(parsed_args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
     return parsed_args
-
-
-args = parse_arguments()
