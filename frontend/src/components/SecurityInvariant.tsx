@@ -30,7 +30,11 @@ function SecurityInvariant(): JSX.Element {
     };
     const fetchRiskSeverity = async () => {
       const data = await request(`/api/security/settings`);
-      setSelectedRisk(data.RISK_SEVERITY || ActionSecurityRisk.MEDIUM);
+      setSelectedRisk(
+        data.RISK_SEVERITY === 0
+          ? ActionSecurityRisk.LOW
+          : data.RISK_SEVERITY || ActionSecurityRisk.MEDIUM,
+      );
     };
 
     fetchPolicy();
