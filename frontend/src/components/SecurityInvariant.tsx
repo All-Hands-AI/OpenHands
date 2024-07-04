@@ -1,87 +1,267 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
-import SyntaxHighlighter from "react-syntax-highlighter";
-import Markdown from "react-markdown";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { VscArrowDown } from "react-icons/vsc";
 import { IoAlertCircle } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
+import { Editor, Monaco } from "@monaco-editor/react";
+import { editor } from "monaco-editor";
+import { Button, Select, SelectItem } from "@nextui-org/react";
 import { RootState } from "#/store";
-import { Tooltip } from "@nextui-org/react";
-import { ActionSecurityRisk } from "#/state/invariantSlice";
+import { ActionSecurityRisk, Invariant } from "#/state/invariantSlice";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { I18nKey } from "#/i18n/declaration";
-import { Invariant } from "#/state/invariantSlice";
+import { request } from "#/services/api";
+import toast from "#/utils/toast";
 
-type SectionType = 'logs' | 'policy' | 'settings';
+type SectionType = "logs" | "policy" | "settings";
 
 function SecurityInvariant(): JSX.Element {
   const { t } = useTranslation();
   const { logs } = useSelector((state: RootState) => state.invariant);
-  const [activeSection, setActiveSection] = useState('logs');
+  const [activeSection, setActiveSection] = useState("logs");
 
   const logsRef = useRef<HTMLDivElement>(null);
+  const [policy, setPolicy] = useState<string>("");
+  const [selectedRisk, setSelectedRisk] = useState(ActionSecurityRisk.MEDIUM);
+
+  useEffect(() => {
+    const fetchPolicy = async () => {
+      const data = await request(`/api/security/policy`);
+      setPolicy(data.policy);
+    };
+    const fetchRiskSeverity = async () => {
+      const data = await request(`/api/security/settings`);
+      setSelectedRisk(data.RISK_SEVERITY || ActionSecurityRisk.MEDIUM);
+    };
+
+    fetchPolicy();
+    fetchRiskSeverity();
+  }, []);
 
   useScrollToBottom(logsRef);
 
-  const getRiskColor = (risk: ActionSecurityRisk) => {
+  const getRiskColor = useCallback((risk: ActionSecurityRisk) => {
     switch (risk) {
       case ActionSecurityRisk.LOW:
-        return 'text-green-500';
+        return "text-green-500";
       case ActionSecurityRisk.MEDIUM:
-        return 'text-yellow-500';
+        return "text-yellow-500";
       case ActionSecurityRisk.HIGH:
-        return 'text-red-500';
+        return "text-red-500";
       case ActionSecurityRisk.UNKNOWN:
       default:
-        return 'text-gray-500';
+        return "text-gray-500";
     }
+  }, []);
+
+  const getRiskText = useCallback(
+    (risk: ActionSecurityRisk) => {
+      switch (risk) {
+        case ActionSecurityRisk.LOW:
+          return t(I18nKey.SECURITY_INVARIANT$LOW_RISK);
+        case ActionSecurityRisk.MEDIUM:
+          return t(I18nKey.SECURITY_INVARIANT$MEDIUM_RISK);
+        case ActionSecurityRisk.HIGH:
+          return t(I18nKey.SECURITY_INVARIANT$HIGH_RISK);
+        case ActionSecurityRisk.UNKNOWN:
+        default:
+          return t(I18nKey.SECURITY_INVARIANT$UNKNOWN_RISK);
+      }
+    },
+    [t],
+  );
+
+  const handleEditorDidMount = useCallback(
+    (_: editor.IStandaloneCodeEditor, monaco: Monaco): void => {
+      monaco.editor.defineTheme("my-theme", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": "#171717",
+        },
+      });
+
+      monaco.editor.setTheme("my-theme");
+    },
+    [],
+  );
+
+  const getFormattedDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hour = String(now.getHours()).padStart(2, "0");
+    const minute = String(now.getMinutes()).padStart(2, "0");
+    const second = String(now.getSeconds()).padStart(2, "0");
+
+    return `${year}-${month}-${day}-${hour}-${minute}-${second}`;
   };
 
-  const getRiskText = (risk: ActionSecurityRisk) => {
-    switch (risk) {
-      case ActionSecurityRisk.LOW:
-        return t('SECURITY_INVARIANT$LOW_RISK');
-      case ActionSecurityRisk.MEDIUM:
-        return t('SECURITY_INVARIANT$MEDIUM_RISK');
-      case ActionSecurityRisk.HIGH:
-        return t('SECURITY_INVARIANT$HIGH_RISK');
-      case ActionSecurityRisk.UNKNOWN:
-      default:
-        return t('SECURITY_INVARIANT$UNKNOWN_RISK');
-    }
+  // Function to download JSON data as a file
+  const downloadJSON = (data: object, filename: string) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
+
+  async function exportTraces(): Promise<void> {
+    const data = await request(`/api/security/export-trace`);
+    toast.info("Trace exported");
+
+    const filename = `opendevin-trace-${getFormattedDateTime()}.json`;
+    downloadJSON(data, filename);
+  }
+
+  async function updatePolicy(): Promise<void> {
+    toast.info("Policy updated");
+    await request(`/api/security/policy`, {
+      method: "POST",
+      body: JSON.stringify({ policy }),
+    });
+  }
+
+  async function updateSettings(): Promise<void> {
+    toast.info("Settings updated");
+    const payload = { RISK_SEVERITY: selectedRisk };
+    await request(`/api/security/settings`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  const handleExportTraces = useCallback(() => {
+    exportTraces();
+  }, [exportTraces]);
+
+  const handleUpdatePolicy = useCallback(() => {
+    updatePolicy();
+  }, [updatePolicy]);
+
+  const handleUpdateSettings = useCallback(() => {
+    updateSettings();
+  }, [updateSettings]);
 
   const sections: { [key in SectionType]: JSX.Element } = {
     logs: (
-      <div className="flex-1 p-4 max-h-screen">
-        {logs.map((log: Invariant, index: number) => (
-          <div key={index} className={`mb-2 p-2 rounded-lg ${log.confirmed_changed && log.is_confirmed === "confirmed" ? 'border-green-800' : log.confirmed_changed && log.is_confirmed === "rejected" ? 'border-red-800' : ''}`}
-          style={{ backgroundColor: 'rgba(128, 128, 128, 0.2)', borderWidth: log.confirmed_changed ? '2px' : '0' }}>
+      <>
+        <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
+          <h2 className="text-2xl">Logs</h2>
+          <Button onClick={handleExportTraces} className="bg-neutral-700">
+            Export Trace
+          </Button>
+        </div>
+        <div className="flex-1 p-4 max-h-screen overflow-y-auto" ref={logsRef}>
+          {logs.map((log: Invariant, index: number) => (
+            <div
+              key={index}
+              className={`mb-2 p-2 rounded-lg ${log.confirmed_changed && log.is_confirmed === "confirmed" ? "border-green-800" : "border-red-800"}`}
+              style={{
+                backgroundColor: "rgba(128, 128, 128, 0.2)",
+                borderWidth: log.confirmed_changed ? "2px" : "0",
+              }}
+            >
               <p className="text-sm relative break-words">
                 {log.content}
-                {(log.is_confirmed === "awaiting_confirmation" || log.confirmed_changed) && (
-                  <IoAlertCircle className="absolute top-0 right-0"></IoAlertCircle>
+                {(log.is_confirmed === "awaiting_confirmation" ||
+                  log.confirmed_changed) && (
+                  <IoAlertCircle className="absolute top-0 right-0" />
                 )}
               </p>
-            <p className={`text-xs ${getRiskColor(log.security_risk)}`}>
-              {getRiskText(log.security_risk)}
-            </p>
-          </div>
-        ))}
-      </div>
+              <p className={`text-xs ${getRiskColor(log.security_risk)}`}>
+                {getRiskText(log.security_risk)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </>
     ),
     policy: (
-      <div className="flex-1 p-4 max-h-screen">
-        <h2 className="text-2xl mb-4">Policy</h2>
-        <p>Policy content goes here.</p>
-      </div>
+      <>
+        <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
+          <h2 className="text-2xl">Policy</h2>
+          <Button className="bg-neutral-700" onClick={handleUpdatePolicy}>
+            Update Policy
+          </Button>
+        </div>
+        <div className="flex grow items-center justify-center">
+          <Editor
+            path="policy.py"
+            height="100%"
+            onMount={handleEditorDidMount}
+            value={policy}
+            onChange={(value) => setPolicy(`${value}`)}
+          />
+        </div>
+      </>
     ),
     settings: (
-      <div className="flex-1 p-4 max-h-screen">
-        <h2 className="text-2xl mb-4">Settings</h2>
-        <p>Settings content goes here.</p>
-      </div>
+      <>
+        <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
+          <h2 className="text-2xl">Settings</h2>
+          <Button className="bg-neutral-700" onClick={handleUpdateSettings}>
+            Update Settings
+          </Button>
+        </div>
+        <div className="flex grow p-4">
+          <div className="flex flex-col w-full">
+            <p className="mb-2">Ask for user confirmation on risk severity:</p>
+            <Select
+              placeholder="Select risk severity"
+              value={selectedRisk}
+              onChange={(e) =>
+                setSelectedRisk(Number(e.target.value) as ActionSecurityRisk)
+              }
+              className={getRiskColor(selectedRisk)}
+              selectedKeys={new Set([selectedRisk.toString()])}
+              aria-label="Select risk severity"
+            >
+              <SelectItem
+                key={ActionSecurityRisk.UNKNOWN}
+                aria-label="Unknown Risk"
+                className={getRiskColor(ActionSecurityRisk.UNKNOWN)}
+              >
+                {getRiskText(ActionSecurityRisk.UNKNOWN)}
+              </SelectItem>
+              <SelectItem
+                key={ActionSecurityRisk.LOW}
+                aria-label="Low Risk"
+                className={getRiskColor(ActionSecurityRisk.LOW)}
+              >
+                {getRiskText(ActionSecurityRisk.LOW)}
+              </SelectItem>
+              <SelectItem
+                key={ActionSecurityRisk.MEDIUM}
+                aria-label="Medium Risk"
+                className={getRiskColor(ActionSecurityRisk.MEDIUM)}
+              >
+                {getRiskText(ActionSecurityRisk.MEDIUM)}
+              </SelectItem>
+              <SelectItem
+                key={ActionSecurityRisk.HIGH}
+                aria-label="High Risk"
+                className={getRiskColor(ActionSecurityRisk.HIGH)}
+              >
+                {getRiskText(ActionSecurityRisk.HIGH)}
+              </SelectItem>
+              <SelectItem
+                key={ActionSecurityRisk.HIGH + 1}
+                aria-label="Don't ask for confirmation"
+              >
+                Don&apos;t ask for confirmation
+              </SelectItem>
+            </Select>
+          </div>
+        </div>
+      </>
     ),
   };
 
@@ -89,35 +269,45 @@ function SecurityInvariant(): JSX.Element {
     <div className="flex w-full">
       <div className="w-60 bg-neutral-800 border-r border-r-neutral-600 p-4 flex-shrink-0">
         <b>Invariant Analyzer</b>
-        <p style={{fontSize:"10px"}}>Invariant Analyzer continuously monitors your OpenDevin agent for security issues. <a className="underline" href="https://github.com/invariantlabs-ai/invariant" target="_blank">Click to learn more</a></p>
+        <p style={{ fontSize: "10px" }}>
+          Invariant Analyzer continuously monitors your OpenDevin agent for
+          security issues.{" "}
+          <a
+            className="underline"
+            href="https://github.com/invariantlabs-ai/invariant"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Click to learn more
+          </a>
+        </p>
         <hr className="border-t border-neutral-600 my-2" />
         <ul className="space-y-2">
-          <li
-            className={`cursor-pointer p-2 rounded ${activeSection === 'logs' && 'bg-neutral-600'}`}
-            onClick={() => setActiveSection('logs')}
+          <div
+            className={`cursor-pointer p-2 rounded ${activeSection === "logs" && "bg-neutral-600"}`}
+            onClick={() => setActiveSection("logs")}
           >
             Logs
-          </li>
-          <li
-            className={`cursor-pointer p-2 rounded ${activeSection === 'policy' && 'bg-neutral-600'}`}
-            onClick={() => setActiveSection('policy')}
+          </div>
+          <div
+            className={`cursor-pointer p-2 rounded ${activeSection === "policy" && "bg-neutral-600"}`}
+            onClick={() => setActiveSection("policy")}
           >
             Policy
-          </li>
-          <li
-            className={`cursor-pointer p-2 rounded ${activeSection === 'settings' && 'bg-neutral-600'}`}
-            onClick={() => setActiveSection('settings')}
+          </div>
+          <div
+            className={`cursor-pointer p-2 rounded ${activeSection === "settings" && "bg-neutral-600"}`}
+            onClick={() => setActiveSection("settings")}
           >
             Settings
-          </li>
+          </div>
         </ul>
       </div>
-      <div className="flex-1 p-4 bg-neutral-900 overflow-y-auto" ref={logsRef}>
+      <div className="flex flex-col min-h-0 w-full overflow-y-auto bg-neutral-900">
         {sections[activeSection as SectionType]}
       </div>
     </div>
   );
 }
-
 
 export default SecurityInvariant;

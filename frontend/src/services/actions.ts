@@ -2,7 +2,10 @@ import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
-import { appendInvariantInput } from "#/state/invariantSlice";
+import {
+  ActionSecurityRisk,
+  appendInvariantInput,
+} from "#/state/invariantSlice";
 import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
@@ -77,6 +80,20 @@ const messageActions = {
   },
 };
 
+function getRiskText(risk: ActionSecurityRisk) {
+  switch (risk) {
+    case ActionSecurityRisk.LOW:
+      return "Low Risk";
+    case ActionSecurityRisk.MEDIUM:
+      return "Medium Risk";
+    case ActionSecurityRisk.HIGH:
+      return "High Risk";
+    case ActionSecurityRisk.UNKNOWN:
+    default:
+      return "Unknown Risk";
+  }
+}
+
 export function handleActionMessage(message: ActionMessage) {
   if ("args" in message && "security_risk" in message.args)
     store.dispatch(appendInvariantInput(message.args));
@@ -92,13 +109,13 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args.command) {
       store.dispatch(
         addAssistantMessage(
-          `Running this command now: \n\`\`\`\`bash\n${message.args.command}\n\`\`\`\`\n`,
+          `Running this command now: \n\`\`\`\`bash\n${message.args.command}\n\`\`\`\`\nEstimated security risk: ${getRiskText(message.args.security_risk as unknown as ActionSecurityRisk)}`,
         ),
       );
     } else if (message.args.code) {
       store.dispatch(
         addAssistantMessage(
-          `Running this code now: \n\`\`\`\`python\n${message.args.code}\n\`\`\`\`\n`,
+          `Running this code now: \n\`\`\`\`python\n${message.args.code}\n\`\`\`\`\nEstimated security risk: ${getRiskText(message.args.security_risk as unknown as ActionSecurityRisk)}`,
         ),
       );
     } else {

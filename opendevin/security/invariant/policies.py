@@ -1,5 +1,4 @@
-DEFAULT_INVARIANT_POLICY = """
-from invariant.detectors import semgrep, secrets, CodeIssue
+DEFAULT_INVARIANT_POLICY = """from invariant.detectors import semgrep, secrets, CodeIssue
 
 raise "Disallow secrets in bash commands [risk=medium]" if:
     (call: ToolCall)

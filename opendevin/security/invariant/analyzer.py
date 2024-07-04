@@ -12,6 +12,7 @@ from opendevin.events.action.action import (
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import Observation
+from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.stream import EventStream
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.security.analyzer import SecurityAnalyzer
@@ -29,6 +30,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
     image_name: str = 'invariant-server'
     api_host: str = 'http://localhost'
     timeout: int = 120
+    settings: dict = {}
 
     def __init__(
         self,
@@ -40,6 +42,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         super().__init__(event_stream)
         self.trace = []
         self.input = []
+        self.settings = {}
         if policy is None:
             policy = DEFAULT_INVARIANT_POLICY
         if sid is None:
@@ -117,12 +120,20 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self.input.extend(input)
         logger.info(f'before policy: {input}')
         result, err = self.monitor.check(input)
+        risk = ActionSecurityRisk.UNKNOWN
         if err:
             logger.warning(f'Error checking policy: {err}')
-            return ActionSecurityRisk.UNKNOWN
+            return risk
 
         # send event to confirm action
         if len(result) > 0:
-            return ActionSecurityRisk.MEDIUM
+            risk = ActionSecurityRisk.MEDIUM
         else:
-            return ActionSecurityRisk.LOW
+            risk = ActionSecurityRisk.LOW
+
+        if risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and event.is_confirmed == "awaiting_confirmation":
+            logger.info(f'Should handle this event automatically {event}')
+            new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"action_confirmed"}})
+            await self.event_stream.add_event(new_event, event.source)
+
+        return risk

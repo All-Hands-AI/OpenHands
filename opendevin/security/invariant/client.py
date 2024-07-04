@@ -89,6 +89,7 @@ class InvariantClient:
         def __init__(self, invariant):
             self.server = invariant.server
             self.session_id = invariant.session_id
+            self.policy = ''
 
         def _create_monitor(self, rule) -> Tuple[Optional[str], Optional[Exception]]:
             try:
@@ -107,6 +108,7 @@ class InvariantClient:
             if err:
                 return err
             self.monitor_id = monitor_id
+            self.policy = rule
             return self
 
         def check(self, trace) -> Union[Any, Exception]:
