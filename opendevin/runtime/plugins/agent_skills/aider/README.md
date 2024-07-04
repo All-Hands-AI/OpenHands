@@ -5,4 +5,4 @@ to edit code in your local git repository.
 
 Please see the [original repository](https://github.com/paul-gauthier/aider) for more information.
 
-OpenDevin has adapted and integrated it's linter module ([original code](https://github.com/paul-gauthier/aider/blob/main/aider/linter.py)).
+OpenDevin has adapted and integrated its linter module ([original code](https://github.com/paul-gauthier/aider/blob/main/aider/linter.py)).
