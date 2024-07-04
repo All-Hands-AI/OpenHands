@@ -6,6 +6,7 @@ if __package__ is None or __package__ == '':
         SearchResult,
         find_python_files,
         get_class_signature,
+        get_code_region_containing_code,
         get_code_snippets,
         parse_python_file,
     )
@@ -14,6 +15,7 @@ else:
         SearchResult,
         find_python_files,
         get_class_signature,
+        get_code_region_containing_code,
         get_code_snippets,
         parse_python_file,
     )
@@ -225,6 +227,44 @@ class SearchManager:
             tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
         return tool_output, summary, True
 
+    def search_code(self, code_str: str) -> tuple[str, str, bool]:
+        # attempt to search for this code string in all py files
+        all_search_results: list[SearchResult] = []
+        for file_path in self.parsed_files:
+            searched_line_and_code: list[tuple[int, str]] = (
+                get_code_region_containing_code(file_path, code_str)
+            )
+            if not searched_line_and_code:
+                continue
+            for searched in searched_line_and_code:
+                line_no, code_region = searched
+                # from line_no, check which function and class we are in
+                class_name, func_name = self.file_line_to_class_and_func(
+                    file_path, line_no
+                )
+                res = SearchResult(file_path, class_name, func_name, code_region)
+                all_search_results.append(res)
+
+        if not all_search_results:
+            tool_output = f'Could not find code {code_str} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # good path
+        tool_output = f'Found {len(all_search_results)} snippets containing `{code_str}` in the codebase:\n\n'
+        summary = tool_output
+
+        if len(all_search_results) > RESULT_SHOW_LIMIT:
+            tool_output += 'They appeared in the following files:\n'
+            tool_output += SearchResult.collapse_to_file_level(
+                all_search_results, self.project_path
+            )
+        else:
+            for idx, res in enumerate(all_search_results):
+                res_str = res.to_tagged_str(self.project_path)
+                tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+        return tool_output, summary, True
+
     def _build_index(self):
         """
         With all source code of the project, build two indexes:
@@ -347,6 +387,30 @@ class SearchManager:
             result.append(res)
         return result
 
+    def file_line_to_class_and_func(
+        self, file_path: str, line_no: int
+    ) -> tuple[str | None, str | None]:
+        """
+        Given a file path and a line number, return the class and function name.
+        If the line is not inside a class or function, return None.
+        """
+        # check whether this line is inside a class
+        for class_name in self.class_func_index:
+            func_dict = self.class_func_index[class_name]
+            for func_name, func_info in func_dict.items():
+                for file_name, (start, end) in func_info:
+                    if file_name == file_path and start <= line_no <= end:
+                        return class_name, func_name
+
+        # not in any class; check whether this line is inside a top-level function
+        for func_name in self.function_index:
+            for file_name, (start, end) in self.function_index[func_name]:
+                if file_name == file_path and start <= line_no <= end:
+                    return None, func_name
+
+        # this file-line is not recorded in any of the indexes
+        return None, None
+
 
 if __name__ == '__main__':
     import pprint
@@ -354,6 +418,7 @@ if __name__ == '__main__':
     sm = SearchManager('.')
     # pprint.pprint(sm.search_class('SearchResult'))
     # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
-    pprint.pprint(sm.search_method('search_class'))
+    # pprint.pprint(sm.search_method('search_class'))
     # pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
     # pprint.pprint(sm.search_method_in_file('search_class', 'manager.py'))
+    pprint.pprint(sm.search_code('for func_name in self.function_index:'))

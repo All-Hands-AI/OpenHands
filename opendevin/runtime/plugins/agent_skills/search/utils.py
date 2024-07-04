@@ -1,5 +1,6 @@
 import ast
 import glob
+import re
 from dataclasses import dataclass
 from os.path import join as pjoin
 from pathlib import Path
@@ -282,3 +283,62 @@ def get_code_snippets(file_full_path: str, start: int, end: int) -> str:
     for i in range(start - 1, end):
         snippet += file_content[i]
     return snippet
+
+
+def get_code_region_containing_code(
+    file_full_path: str, code_str: str
+) -> list[tuple[int, str]]:
+    """In a file, get the region of code that contains a specific string.
+
+    Args:
+        - file_full_path: Path to the file. (absolute path)
+        - code_str: The string that the function should contain.
+    Returns:
+        - A list of tuple, each of them is a pair of (line_no, code_snippet).
+        line_no is the starting line of the matched code; code snippet is the
+        source code of the searched region.
+    """
+    with open(file_full_path) as f:
+        file_content = f.read()
+
+    context_size = 3
+    # since the code_str may contain multiple lines, let's not split the source file.
+
+    # we want a few lines before and after the matched string. Since the matched string
+    # can also contain new lines, this is a bit trickier.
+    pattern = re.compile(re.escape(code_str))
+    # each occurrence is a tuple of (line_no, code_snippet) (1-based line number)
+    occurrences: list[tuple[int, str]] = []
+    for match in pattern.finditer(file_content):
+        matched_start_pos = match.start()
+        # first, find the line number of the matched start position (1-based)
+        matched_line_no = file_content.count('\n', 0, matched_start_pos) + 1
+        # next, get a few surrounding lines as context
+        search_start = match.start() - 1
+        search_end = match.end() + 1
+        # from the matched position, go left to find 5 new lines.
+        for _ in range(context_size):
+            # find the \n to the left
+            left_newline = file_content.rfind('\n', 0, search_start)
+            if left_newline == -1:
+                # no more new line to the left
+                search_start = 0
+                break
+            else:
+                search_start = left_newline
+        # go right to fine 5 new lines
+        for _ in range(context_size):
+            right_newline = file_content.find('\n', search_end + 1)
+            if right_newline == -1:
+                # no more new line to the right
+                search_end = len(file_content)
+                break
+            else:
+                search_end = right_newline
+
+        start = max(0, search_start)
+        end = min(len(file_content), search_end)
+        context = file_content[start:end]
+        occurrences.append((matched_line_no, context))
+
+    return occurrences
