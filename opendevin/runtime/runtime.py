@@ -26,7 +26,6 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime import (
-    DockerExecBox,
     DockerSSHBox,
     E2BBox,
     LocalBox,
@@ -38,10 +37,8 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
-def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
-    if sandbox_type == 'exec':
-        return DockerExecBox(sid=sid)
-    elif sandbox_type == 'local':
+def create_sandbox(sid: str = 'default', sandbox_type: str = 'ssh') -> Sandbox:
+    if sandbox_type == 'local':
         return LocalBox()
     elif sandbox_type == 'ssh':
         return DockerSSHBox(sid=sid)
