@@ -122,6 +122,31 @@ class SearchManager:
             tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
         return tool_output, summary, True
 
+    def search_method(self, method_name: str) -> tuple[str, str, bool]:
+        """
+        Search for a method in the entire codebase.
+        """
+        search_res: list[SearchResult] = self._search_func_in_code_base(method_name)
+        if not search_res:
+            tool_output = f'Could not find method {method_name} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        tool_output = f'Found {len(search_res)} methods with name {method_name} in the codebase:\n\n'
+        summary = tool_output
+
+        if len(search_res) > RESULT_SHOW_LIMIT:
+            tool_output += 'They appeared in the following files:\n'
+            tool_output += SearchResult.collapse_to_file_level(
+                search_res, self.project_path
+            )
+        else:
+            for idx, res in enumerate(search_res):
+                res_str = res.to_tagged_str(self.project_path)
+                tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+
+        return tool_output, summary, True
+
     def _build_index(self):
         """
         With all source code of the project, build two indexes:
@@ -178,11 +203,77 @@ class SearchManager:
 
         return class_index, class_func_index, function_index, parsed_py_files
 
+    def _search_func_in_code_base(self, function_name: str) -> list[SearchResult]:
+        """
+        Search for this function, from both top-level and all class definitions.
+        """
+        result: list[SearchResult] = []  # list of (file_name, func_code)
+        # (1) search in top level
+        top_level_res = self._search_top_level_func(function_name)
+        class_res = self._search_func_in_all_classes(function_name)
+        result.extend(top_level_res)
+        result.extend(class_res)
+        return result
+
+    def _search_top_level_func(self, function_name: str) -> list[SearchResult]:
+        """
+        Search for top-level function name in the entire project.
+        Args:
+            function_name (str): Name of the function.
+        Returns:
+            The list of code snippets searched.
+        """
+        result: list[SearchResult] = []
+        if function_name not in self.function_index:
+            return result
+
+        for fname, (start, end) in self.function_index[function_name]:
+            func_code = get_code_snippets(fname, start, end)
+            res = SearchResult(fname, None, function_name, func_code)
+            result.append(res)
+        return result
+
+    def _search_func_in_all_classes(self, function_name: str) -> list[SearchResult]:
+        """
+        Search for the function name in all classes.
+        Args:
+            function_name (str): Name of the function.
+        Returns:
+            The list of code snippets searched.
+        """
+        result: list[SearchResult] = []
+        for class_name in self.class_index:
+            res = self._search_func_in_class(function_name, class_name)
+            result.extend(res)
+        return result
+
+    def _search_func_in_class(
+        self, function_name: str, class_name: str
+    ) -> list[SearchResult]:
+        """
+        Search for the function name in the class.
+        Args:
+            function_name (str): Name of the function.
+            class_name (str): Name of the class.
+        Returns:
+            The list of code snippets searched.
+        """
+        result: list[SearchResult] = []
+        if class_name not in self.class_func_index:
+            return result
+        if function_name not in self.class_func_index[class_name]:
+            return result
+        for fname, (start, end) in self.class_func_index[class_name][function_name]:
+            func_code = get_code_snippets(fname, start, end)
+            res = SearchResult(fname, class_name, function_name, func_code)
+            result.append(res)
+        return result
+
 
 if __name__ == '__main__':
     import pprint
 
-    # for testing
     sm = SearchManager('.')
-    pprint.pprint(sm.search_class('SearchResult'))
-    pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
+    # pprint.pprint(sm.search_class('SearchResult'))
+    # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
+    pprint.pprint(sm.search_method('step'))
