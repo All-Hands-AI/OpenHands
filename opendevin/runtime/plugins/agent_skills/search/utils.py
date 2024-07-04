@@ -67,6 +67,7 @@ def parse_python_file(file_full_path: str):
     # (3) get top-level functions in the file (exclues functions defined in classes)
     top_level_funcs = []
 
+    function_nodes_in_class = []
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             ## class part (1): collect class info
@@ -77,14 +78,15 @@ def parse_python_file(file_full_path: str):
             classes.append((class_name, start_lineno, end_lineno))
 
             ## class part (2): collect function info inside this class
-            class_funcs = [
-                (n.name, n.lineno, n.end_lineno)
-                for n in ast.walk(node)
-                if isinstance(n, ast.FunctionDef)
-            ]
+            class_funcs = []
+            for n in ast.walk(node):
+                if isinstance(n, ast.FunctionDef):
+                    class_funcs.append((n.name, n.lineno, n.end_lineno))
+                    function_nodes_in_class.append(n)
             class_to_funcs[class_name] = class_funcs
 
-        elif isinstance(node, ast.FunctionDef):
+        # top-level functions, excluding functions defined in classes
+        elif isinstance(node, ast.FunctionDef) and node not in function_nodes_in_class:
             function_name = node.name
             start_lineno = node.lineno
             end_lineno = node.end_lineno

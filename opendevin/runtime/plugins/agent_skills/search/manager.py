@@ -182,6 +182,49 @@ class SearchManager:
             tool_output += SearchResult.collapse_to_file_level(rest, self.project_path)
         return tool_output, summary, True
 
+    def search_method_in_file(
+        self, method_name: str, file_name: str
+    ) -> tuple[str, str, bool]:
+        # (1) check whether we can get the file
+        # supports both when file_name is relative to project root, and when
+        # it is just a short name
+        candidate_py_abs_paths = [f for f in self.parsed_files if f.endswith(file_name)]
+        # print(candidate_py_files)
+        if not candidate_py_abs_paths:
+            tool_output = f'Could not find file {file_name} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # (2) search for this method in the entire code base (we do filtering later)
+        search_res: list[SearchResult] = self._search_func_in_code_base(method_name)
+        if not search_res:
+            tool_output = f'The method {method_name} does not appear in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # (3) filter the search result => they need to be in one of the files!
+        filtered_res: list[SearchResult] = [
+            res for res in search_res if res.file_path in candidate_py_abs_paths
+        ]
+
+        # (4) done with search, now prepare result
+        if not filtered_res:
+            tool_output = (
+                f'There is no method with name `{method_name}` in file {file_name}.'
+            )
+            summary = tool_output
+            return tool_output, summary, False
+
+        tool_output = f'Found {len(filtered_res)} methods with name `{method_name}` in file {file_name}:\n\n'
+        summary = tool_output
+
+        # when searching for a method in one file, it's rare that there are
+        # many candidates, so we do not trim the result
+        for idx, res in enumerate(filtered_res):
+            res_str = res.to_tagged_str(self.project_path)
+            tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+        return tool_output, summary, True
+
     def _build_index(self):
         """
         With all source code of the project, build two indexes:
@@ -311,5 +354,6 @@ if __name__ == '__main__':
     sm = SearchManager('.')
     # pprint.pprint(sm.search_class('SearchResult'))
     # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
-    # pprint.pprint(sm.search_method('step'))
-    pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
+    pprint.pprint(sm.search_method('search_class'))
+    # pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
+    # pprint.pprint(sm.search_method_in_file('search_class', 'manager.py'))
