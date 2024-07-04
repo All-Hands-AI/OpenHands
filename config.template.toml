@@ -19,9 +19,6 @@ workspace_base = "./workspace"
 # Cache directory path
 #cache_dir = "/tmp/cache"
 
-# Container image to use for the sandbox
-#sandbox_container_image = "ghcr.io/opendevin/sandbox:main"
-
 # Debugging enabled
 #debug = false
 
@@ -78,15 +75,6 @@ persist_sandbox = false
 
 # SSH port for the sandbox
 #ssh_port = 63710
-
-# Sandbox timeout in seconds
-#sandbox_timeout = 120
-
-# Sandbox type (ssh, exec, e2b, local)
-#sandbox_type = "ssh"
-
-# Sandbox user ID
-#sandbox_user_id = 1000
 
 # Use host network
 #use_host_network = false
@@ -173,6 +161,22 @@ model = "gpt-4o"
 
 # Name of the agent
 #name = "CodeActAgent"
+
+#################################### Sandbox ###################################
+# Configuration for the sandbox
+##############################################################################
+[sandbox]
+# Sandbox timeout in seconds
+#timeout = 120
+
+# Sandbox type (ssh, exec, e2b, local)
+#box_type = "ssh"
+
+# Sandbox user ID
+#user_id = 1000
+
+# Container image to use for the sandbox
+#container_image = "ghcr.io/opendevin/sandbox:main"
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation
