@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     metadata = make_metadata(
         config.llm,
-        'eda',
+        f'eda-{args.dataset}',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
