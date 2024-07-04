@@ -147,6 +147,41 @@ class SearchManager:
 
         return tool_output, summary, True
 
+    def search_method_in_class(
+        self, method_name: str, class_name: str
+    ) -> tuple[str, str, bool]:
+        if class_name not in self.class_index:
+            tool_output = f'Could not find class {class_name} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # has this class, check its methods
+        search_res: list[SearchResult] = self._search_func_in_class(
+            method_name, class_name
+        )
+        if not search_res:
+            tool_output = f'Could not find method {method_name} in class {class_name}`.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # found some methods, prepare the result
+        tool_output = f'Found {len(search_res)} methods with name {method_name} in class {class_name}:\n\n'
+        summary = tool_output
+
+        # There can be multiple classes defined in multiple files, which contain the same method
+        # still trim the result, just in case
+        if len(search_res) > RESULT_SHOW_LIMIT:
+            tool_output += f'Too many results, showing full code for {RESULT_SHOW_LIMIT} of them, and the rest just file names:\n'
+        first_five = search_res[:RESULT_SHOW_LIMIT]
+        for idx, res in enumerate(first_five):
+            res_str = res.to_tagged_str(self.project_path)
+            tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+        # for the rest, collect the file names into a set
+        if rest := search_res[RESULT_SHOW_LIMIT:]:
+            tool_output += 'Other results are in these files:\n'
+            tool_output += SearchResult.collapse_to_file_level(rest, self.project_path)
+        return tool_output, summary, True
+
     def _build_index(self):
         """
         With all source code of the project, build two indexes:
@@ -276,4 +311,5 @@ if __name__ == '__main__':
     sm = SearchManager('.')
     # pprint.pprint(sm.search_class('SearchResult'))
     # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
-    pprint.pprint(sm.search_method('step'))
+    # pprint.pprint(sm.search_method('step'))
+    pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
