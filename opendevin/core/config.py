@@ -135,8 +135,6 @@ class SandboxConfig(metaclass=Singleton):
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
-        fast_boot: Whether to fast boot the sandbox.
-
 
     """
 
@@ -148,7 +146,6 @@ class SandboxConfig(metaclass=Singleton):
     )
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
-    fast_boot: bool = False
 
     def defaults_to_dict(self) -> dict:
         """

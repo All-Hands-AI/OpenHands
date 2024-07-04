@@ -769,8 +769,7 @@ class DockerSSHBox(Sandbox):
             try:
                 if container.name.startswith(self.container_name):
                     if config.persist_sandbox:
-                        if not config.sandbox.fast_boot:
-                            container.stop()
+                        container.stop()
                     else:
                         # only remove the container we created
                         # otherwise all other containers with the same prefix will be removed

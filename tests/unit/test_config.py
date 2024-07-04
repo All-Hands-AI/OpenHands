@@ -151,7 +151,7 @@ disable_color = true
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
-    monkeypatch.setenv('SANDBOX_TYPE', 'ssh')
+    monkeypatch.setenv('SANDBOX_TYPE', 'exec')
 
     load_from_toml(default_config, temp_toml_file)
 
@@ -172,7 +172,7 @@ disable_color = true
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     assert default_config.workspace_mount_path == 'UNDEFINED'
 
-    assert default_config.sandbox.box_type == 'ssh'
+    assert default_config.sandbox.box_type == 'exec'
     assert default_config.disable_color is True
 
     finalize_config(default_config)
