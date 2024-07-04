@@ -2,9 +2,19 @@ from collections import defaultdict, namedtuple
 from collections.abc import MutableMapping
 
 if __package__ is None or __package__ == '':
-    from utils import find_python_files, parse_python_file
+    from utils import (
+        SearchResult,
+        find_python_files,
+        get_class_signature,
+        parse_python_file,
+    )
 else:
-    from .utils import find_python_files, parse_python_file
+    from .utils import (
+        SearchResult,
+        find_python_files,
+        get_class_signature,
+        parse_python_file,
+    )
 
 
 LineRange = namedtuple('LineRange', ['start', 'end'])
@@ -18,25 +28,62 @@ FuncIndexType = MutableMapping[
     str, list[tuple[str, LineRange]]
 ]  # function_name -> [(file_path, line_range)]
 
+RESULT_SHOW_LIMIT = 3
+
 
 class SearchManager:
     def __init__(self, project_path) -> None:
         self.project_path = project_path
-
-        # List of all files ending with .py, which are likely not test files.
+        # list of all files ending with .py, which are likely not test files
         # These are all ABSOLUTE paths.
         self.parsed_files: list[str] = []
-        self.class_index: ClassIndexType = {}
-        self.class_func_index: ClassFuncIndexType = {}
-        self.func_index: FuncIndexType = {}
 
+        # for file name in the indexes, assume they are absolute path
+        # class name -> [(file_name, line_range)]
+        self.class_index: ClassIndexType = {}
+
+        # {class_name -> {func_name -> [(file_name, line_range)]}}
+        # inner dict is a list, since we can have (1) overloading func names,
+        # and (2) multiple classes with the same name, having the same method
+        self.class_func_index: ClassFuncIndexType = {}
+
+        # function name -> [(file_name, line_range)]
+        self.function_index: FuncIndexType = {}
         self._build_index()
 
     def search_class(self, class_name):
+        # initialize them to error case
+        summary = f'Class {class_name} did not appear in the codebase.'
+        tool_result = f'Could not find class {class_name} in the codebase.'
+
         if class_name not in self.class_index:
-            return None
-        # TODO:
-        pass
+            return tool_result, summary, None
+
+        search_res: list[SearchResult] = []
+        for fname, _ in self.class_index[class_name]:
+            # there are some classes; we return their signatures
+            code = get_class_signature(fname, class_name)
+            res = SearchResult(fname, class_name, None, code)
+            search_res.append(res)
+
+        if not search_res:
+            # this should not happen, but just in case
+            return tool_result, summary, False
+
+        # the good path
+        # for all the searched result, append them and form the final result
+        tool_result = f'Found {len(search_res)} classes with name {class_name} in the codebase:\n\n'
+        if len(search_res) > RESULT_SHOW_LIMIT:
+            tool_result += 'They appeared in the following files:\n'
+            tool_result += SearchResult.collapse_to_file_level(
+                search_res, self.project_path
+            )
+        else:
+            for idx, res in enumerate(search_res):
+                res_str = res.to_tagged_str(self.project_path)
+                tool_result += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+        summary = f'The tool returned information about class `{class_name}`.'
+        return tool_result, summary, True
 
     def _build_index(self):
         """
@@ -58,7 +105,7 @@ class SearchManager:
     ):
         self.class_index.update(class_index)
         self.class_func_index.update(class_func_index)
-        self.func_index.update(func_index)
+        self.function_index.update(func_index)
         self.parsed_files.extend(parsed_files)
 
     def _build_python_index(self):
@@ -93,3 +140,11 @@ class SearchManager:
                 function_index[f].append((py_file, LineRange(start, end)))
 
         return class_index, class_func_index, function_index, parsed_py_files
+
+
+if __name__ == '__main__':
+    import pprint
+
+    # for testing
+    sm = SearchManager('.')
+    pprint.pprint(sm.search_class('SearchResult'))
