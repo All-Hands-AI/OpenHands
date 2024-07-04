@@ -4,6 +4,7 @@ import os
 import pathlib
 import re
 import shutil
+from functools import partial
 
 import huggingface_hub
 from datasets import load_dataset
@@ -31,7 +32,7 @@ DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': codeact_user_response,
+    'CodeActAgent': partial(codeact_user_response, encapsulate_solution=True),
     'MonologueAgent': monologue_user_response,
 }
 
