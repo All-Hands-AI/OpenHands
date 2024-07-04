@@ -119,6 +119,12 @@ function ChatInterface() {
     }
   }, [curAgentState, dispatch, messages.length, t]);
 
+  useEffect(() => {
+    if (autoMode && curAgentState === AgentState.AWAITING_USER_INPUT) {
+      handleAutoMsg();
+    }
+  }, [autoMode, curAgentState]);
+
   return (
     <div className="flex flex-col h-full bg-neutral-800">
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
@@ -159,16 +165,12 @@ function ChatInterface() {
           )}
           {hitBottom && (
             <>
-              {curAgentState === AgentState.AWAITING_USER_INPUT && (
-                  autoMode ? (
-                    handleAutoMsg()
-                  ) : (
-                    <ScrollButton
-                      onClick={handleSendContinueMsg}
-                      icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
-                      label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-                    />
-                  )
+              {curAgentState === AgentState.AWAITING_USER_INPUT && !autoMode && (
+                <ScrollButton
+                  onClick={handleSendContinueMsg}
+                  icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
+                  label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                />
               )}
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
             </>
