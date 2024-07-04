@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: ["vitest.setup.ts"],
       coverage: {
-        reporter: ["text", "json", "html", "lcov"],
+        reporter: ["text", "json", "html", "lcov", "text-summary"],
         reportsDirectory: "coverage",
         include: ["src/**/*.{ts,tsx}"],
       },
