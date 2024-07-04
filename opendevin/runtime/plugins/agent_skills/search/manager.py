@@ -265,6 +265,54 @@ class SearchManager:
                 tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
         return tool_output, summary, True
 
+    def search_code_in_file(
+        self, code_str: str, file_name: str
+    ) -> tuple[str, str, bool]:
+        code_str = code_str.removesuffix(')')
+
+        candidate_py_files = [f for f in self.parsed_files if f.endswith(file_name)]
+        if not candidate_py_files:
+            tool_output = f'Could not find file {file_name} in the codebase.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # start searching for code in the filtered files
+        all_search_results: list[SearchResult] = []
+        for file_path in candidate_py_files:
+            searched_line_and_code: list[tuple[int, str]] = (
+                get_code_region_containing_code(file_path, code_str)
+            )
+            if not searched_line_and_code:
+                continue
+            for searched in searched_line_and_code:
+                line_no, code_region = searched
+                # from line_no, check which function and class we are in
+                class_name, func_name = self.file_line_to_class_and_func(
+                    file_path, line_no
+                )
+                res = SearchResult(file_path, class_name, func_name, code_region)
+                all_search_results.append(res)
+
+        if not all_search_results:
+            tool_output = f'Could not find code {code_str} in file {file_name}.'
+            summary = tool_output
+            return tool_output, summary, False
+
+        # good path
+        # There can be a lot of results, from multiple files.
+        tool_output = f'Found {len(all_search_results)} snippets with code {code_str} in file {file_name}:\n\n'
+        summary = tool_output
+        if len(all_search_results) > RESULT_SHOW_LIMIT:
+            tool_output += 'They appeared in the following methods:\n'
+            tool_output += SearchResult.collapse_to_method_level(
+                all_search_results, self.project_path
+            )
+        else:
+            for idx, res in enumerate(all_search_results):
+                res_str = res.to_tagged_str(self.project_path)
+                tool_output += f'- Search result {idx + 1}:\n```\n{res_str}\n```\n'
+        return tool_output, summary, True
+
     def _build_index(self):
         """
         With all source code of the project, build two indexes:
@@ -421,4 +469,7 @@ if __name__ == '__main__':
     # pprint.pprint(sm.search_method('search_class'))
     # pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
     # pprint.pprint(sm.search_method_in_file('search_class', 'manager.py'))
-    pprint.pprint(sm.search_code('for func_name in self.function_index:'))
+    # pprint.pprint(sm.search_code('for func_name in self.function_index:'))
+    pprint.pprint(
+        sm.search_code_in_file('for func_name in self.function_index:', 'manager.py')
+    )

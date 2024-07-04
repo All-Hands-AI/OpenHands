@@ -252,6 +252,32 @@ class SearchResult:
             res_str += f'- {file_part} ({count} matches)\n'
         return res_str
 
+    @staticmethod
+    def collapse_to_method_level(
+        result_list: list['SearchResult'], project_root: str
+    ) -> str:
+        """Collapse search results to method level."""
+        res: dict[str, dict] = dict()  # file -> dict(method -> count)
+        for r in result_list:
+            if r.file_path not in res:
+                res[r.file_path] = dict()
+            func_str = r.func_name if r.func_name is not None else 'Not in a function'
+            if func_str not in res[r.file_path]:
+                res[r.file_path][func_str] = 1
+            else:
+                res[r.file_path][func_str] += 1
+        res_str = ''
+        for file_path, funcs in res.items():
+            rel_path = to_relative_path(file_path, project_root)
+            file_part = f'<file>{rel_path}</file>'
+            for func, count in funcs.items():
+                if func == 'Not in a function':
+                    func_part = func
+                else:
+                    func_part = f' <func>{func}</func>'
+                res_str += f'- {file_part}{func_part} ({count} matches)\n'
+        return res_str
+
 
 def to_relative_path(file_path: str, project_root: str) -> str:
     """Convert an absolute path to a path relative to the project root.
