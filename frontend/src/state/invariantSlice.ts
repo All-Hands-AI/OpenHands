@@ -8,6 +8,7 @@ export enum ActionSecurityRisk {
 }
 
 export type Invariant = {
+  id: number;
   content: string;
   security_risk: ActionSecurityRisk;
   is_confirmed?: "awaiting_confirmation" | "confirmed" | "rejected";
@@ -24,12 +25,13 @@ export const invariantSlice = createSlice({
   reducers: {
     appendInvariantInput: (state, action) => {
       const log = {
+        id: action.payload.id,
         content:
-          action.payload.command ||
-          action.payload.code ||
-          action.payload.content,
-        security_risk: action.payload.security_risk as ActionSecurityRisk,
-        is_confirmed: action.payload.is_confirmed,
+          action.payload.args.command ||
+          action.payload.args.code ||
+          action.payload.args.content,
+        security_risk: action.payload.args.security_risk as ActionSecurityRisk,
+        is_confirmed: action.payload.args.is_confirmed,
         confirmed_changed: false,
       };
       const lastLog = state.logs[state.logs.length - 1];
@@ -39,11 +41,11 @@ export const invariantSlice = createSlice({
         lastLog.is_confirmed === "awaiting_confirmation" &&
         log.is_confirmed !== lastLog.is_confirmed;
 
-      if (!isDuplicateLog) {
-        state.logs.push(log);
-      } else {
+      if (isDuplicateLog) {
         lastLog.is_confirmed = log.is_confirmed;
         lastLog.confirmed_changed = true;
+      } else if (!lastLog || lastLog.id !== log.id) {
+        state.logs.push(log);
       }
     },
   },

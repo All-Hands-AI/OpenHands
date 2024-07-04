@@ -95,8 +95,9 @@ function getRiskText(risk: ActionSecurityRisk) {
 }
 
 export function handleActionMessage(message: ActionMessage) {
-  if ("args" in message && "security_risk" in message.args)
-    store.dispatch(appendInvariantInput(message.args));
+  if ("args" in message && "security_risk" in message.args) {
+    store.dispatch(appendInvariantInput(message));
+  }
 
   if (
     (message.action === ActionType.RUN ||
