@@ -8,19 +8,17 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
-    Action,
     MessageAction,
 )
 from opendevin.events.action.agent import AgentFinishAction
 from opendevin.events.observation import (
     CmdOutputObservation,
-    Observation,
 )
 from opendevin.memory.history import ShortTermHistory
 from opendevin.storage import get_file_store
 
 
-class TRAFFIC_CONTROL_STATE(str, Enum):
+class TrafficControlState(str, Enum):
     # default state, no rate limiting
     NORMAL = 'normal'
 
@@ -51,7 +49,7 @@ class State:
     last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    traffic_control_state: TRAFFIC_CONTROL_STATE = TRAFFIC_CONTROL_STATE.NORMAL
+    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0

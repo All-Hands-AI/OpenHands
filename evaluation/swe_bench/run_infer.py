@@ -194,13 +194,17 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    agent: Agent,
+    agent_class: str,
+    llm_config: dict,
     instance: Any,
     metadata: dict,
     skip_workspace_mount: bool,
     eval_output_dir: str,
     reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config=llm_config))
+
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -500,9 +504,6 @@ if __name__ == '__main__':
     skip_workspace_mount = agent_class == 'CodeActAgent'
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
-    # Create the agent
-    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
-
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -510,7 +511,8 @@ if __name__ == '__main__':
             for row_idx, instance in swe_bench_tests.iterrows():
                 future = executor.submit(
                     process_instance,
-                    agent,
+                    agent_class,
+                    config.llm,
                     instance,
                     metadata,
                     skip_workspace_mount,

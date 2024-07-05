@@ -136,8 +136,8 @@ class CodeActAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions
-        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        # AgentSkillsRequirement provides a lot of Python functions,
+        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
@@ -232,7 +232,7 @@ class CodeActAgent(Agent):
         # add a reminder to the prompt
         if latest_user_message:
             latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>'
             )
 
         return messages

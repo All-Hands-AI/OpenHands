@@ -31,8 +31,6 @@ workspace_base = "/path/to/your/workspace"
 workspace_mount_path = "/path/to/your/workspace"
 # ==========================
 
-sandbox_type = "ssh"
-sandbox_timeout = 120
 ssh_hostname = "localhost"
 
 # SWEBench eval specific - but you can tweak it to your needs
@@ -40,6 +38,10 @@ use_host_network = false
 run_as_devin = false
 # linting python after editing helps LLM fix indentations
 enable_auto_lint = true
+
+[sandbox]
+box_type = "ssh"
+timeout = 120
 
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate

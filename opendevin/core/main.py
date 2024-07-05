@@ -123,7 +123,7 @@ async def run_agent_controller(
                 event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.get_agent_state() not in [
+    while controller.state.agent_state not in [
         AgentState.FINISHED,
         AgentState.REJECTED,
         AgentState.ERROR,
