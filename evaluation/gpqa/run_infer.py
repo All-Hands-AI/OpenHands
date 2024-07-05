@@ -128,7 +128,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.config.llm))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
@@ -266,11 +266,8 @@ if __name__ == '__main__':
         help='data split to evaluate, eg. gpqa_diamond',
     )
     args, _ = parser.parse_known_args()
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
 
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
     logger.info(f'Config for evaluation: {config}')
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -286,7 +283,7 @@ if __name__ == '__main__':
     # gpqa_dataset = dataset['train'].to_pandas().sort_values(by='id').reset_index(drop=True)
 
     metadata = make_metadata(
-        llm_config=config.llm,
+        llm_config=llm_config,
         dataset_name='gpqa',
         agent_class=args.agent_cls,
         max_iterations=args.max_iterations,

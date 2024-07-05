@@ -13,14 +13,14 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
-from opendevin.core.config import AppConfig
+from opendevin.core.config import LLMConfig
 from opendevin.events.action import Action
 from opendevin.events.action.message import MessageAction
 
 
 class EvalMetadata(BaseModel):
     agent_class: str
-    config: AppConfig
+    llm_config: LLMConfig
     max_iterations: int
     eval_output_dir: str
     start_time: str
@@ -82,7 +82,7 @@ def cleanup():
 
 
 def make_metadata(
-    config: AppConfig,
+    llm_config: LLMConfig,
     dataset_name: str,
     agent_class: str,
     max_iterations: int,
@@ -91,7 +91,7 @@ def make_metadata(
     data_split: str | None = None,
     details: dict[str, Any] | None = None,
 ) -> EvalMetadata:
-    model_name = config.llm.model.split('/')[-1]
+    model_name = llm_config.model.split('/')[-1]
     eval_note = f'_N_{eval_note}' if eval_note else ''
 
     eval_output_path = os.path.join(
@@ -109,7 +109,7 @@ def make_metadata(
 
     metadata = EvalMetadata(
         agent_class=agent_class,
-        config=config,
+        llm_config=llm_config,
         max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -166,7 +166,7 @@ def run_evaluation(
 ):
     logger.info(
         f'Evaluation started with Agent {metadata.agent_class}, '
-        f'model {metadata.config.llm.model}, max iterations {metadata.max_iterations}.'
+        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.'
     )
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')

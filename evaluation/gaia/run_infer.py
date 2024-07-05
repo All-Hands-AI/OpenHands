@@ -49,7 +49,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.config.llm))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -200,15 +200,11 @@ if __name__ == '__main__':
         config.workspace_base = os.path.abspath(args.directory)
         logger.info(f'Setting workspace base to {config.workspace_base}')
 
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
-
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
     logger.info(f'Config for evaluation: {config}')
 
     metadata = make_metadata(
-        config=config,
+        llm_config=llm_config,
         dataset_name='gaia',
         agent_class=args.agent_cls,
         max_iterations=args.max_iterations,

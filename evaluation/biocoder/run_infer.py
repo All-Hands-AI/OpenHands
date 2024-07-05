@@ -98,7 +98,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.config.llm))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     instance = BiocoderData(**instance)
     print(instance)
     workspace_dir_name = (
@@ -221,14 +221,12 @@ if __name__ == '__main__':
     args = parse_arguments()
     dataset = load_dataset('lilbillbiscuit/biocoder_public')
     biocoder_tests = dataset['test'].to_pandas()
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
+
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
     logger.info(f'Config for evaluation: {config}')
 
     metadata = make_metadata(
-        config,
+        llm_config,
         args.dataset_name,
         args.agent_cls,
         args.max_iterations,

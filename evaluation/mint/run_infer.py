@@ -69,7 +69,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.config.llm))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
@@ -210,15 +210,11 @@ if __name__ == '__main__':
     mint_tests = mint_dataset.to_pandas()
 
     id_column = 'id'
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
-
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
     logger.info(f'Config for evaluation: {config}')
 
     metadata = make_metadata(
-        config,
+        llm_config,
         args.dataset_name,
         args.agent_cls,
         args.max_iterations,
