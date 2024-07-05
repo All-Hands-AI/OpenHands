@@ -128,14 +128,22 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
 
     if file_path.endswith('.py'):
         # Define the flake8 command with selected error codes
-        command = [
-            '/opendevin/miniforge3/bin/flake8',
-            '--isolated',
-            '--select=F821,F822,F831,E112,E113,E999,E902',
-            file_path,
-        ]
+        def _command_fn(executable):
+            return [
+                executable,
+                '--isolated',
+                '--select=F821,F822,F831,E112,E113,E999,E902',
+                file_path,
+            ]
 
-        # Run the command using subprocess and redirect stderr to stdout
+        if os.path.exists('/opendevin/miniforge3/bin/flake8'):
+            # when this function is called from the docker sandbox,
+            # the flake8 command is available at /opendevin/miniforge3/bin/flake8
+            executable = '/opendevin/miniforge3/bin/flake8'
+        else:
+            executable = 'flake8'
+
+        command = _command_fn(executable)
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,
