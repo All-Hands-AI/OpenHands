@@ -131,7 +131,7 @@ class SandboxConfig(metaclass=Singleton):
     Configuration for the sandbox.
 
     Attributes:
-        box_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
+        box_type: The type of sandbox to use. Options are: ssh, e2b, local.
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
@@ -434,6 +434,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             else:
                 logger.warning(f'Unknown sandbox config: {key}')
 
+        # the new style values override the old style values
         if 'sandbox' in toml_config:
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
 

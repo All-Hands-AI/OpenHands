@@ -169,7 +169,7 @@ model = "gpt-4o"
 # Sandbox timeout in seconds
 #timeout = 120
 
-# Sandbox type (ssh, exec, e2b, local)
+# Sandbox type (ssh, e2b, local)
 #box_type = "ssh"
 
 # Sandbox user ID

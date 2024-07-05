@@ -208,7 +208,7 @@ sandbox_user_id = 1001
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
-    monkeypatch.setenv('SANDBOX_TYPE', 'exec')
+    monkeypatch.setenv('SANDBOX_TYPE', 'e2b')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
     monkeypatch.setenv('SANDBOX_USER_ID', '1002')
 
@@ -231,7 +231,7 @@ sandbox_user_id = 1001
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     assert default_config.workspace_mount_path == 'UNDEFINED'
 
-    assert default_config.sandbox.box_type == 'exec'
+    assert default_config.sandbox.box_type == 'e2b'
     assert default_config.disable_color is True
     assert default_config.sandbox.timeout == 1000
     assert default_config.sandbox.user_id == 1002
