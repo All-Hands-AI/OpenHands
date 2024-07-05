@@ -64,7 +64,7 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name opendevin-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.7
+    ghcr.io/opendevin/opendevin
 ```
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
