@@ -168,10 +168,7 @@ class MonologueAgent(Agent):
 
         # the action prompt with initial thoughts and recent events
         prompt = prompts.get_request_action_prompt(
-            goal,
-            self.initial_thoughts,
-            recent_events,
-            state.background_commands_obs,
+            goal, self.initial_thoughts, recent_events
         )
 
         messages: list[dict[str, str]] = [

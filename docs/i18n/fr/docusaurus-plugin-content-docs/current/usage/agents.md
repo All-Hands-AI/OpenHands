@@ -112,7 +112,6 @@ L'agent reçoit ses paires action-observation précédentes, la tâche actuelle,
 
 `NullAction`,
 `CmdRunAction`,
-`CmdKillAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `FileReadAction`,
