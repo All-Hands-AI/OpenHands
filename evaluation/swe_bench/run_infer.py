@@ -19,7 +19,7 @@ import agenthub
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import AppConfig, config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -194,7 +194,7 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 def process_instance(
     agent_class: str,
-    llm_config: dict,
+    config: AppConfig,
     instance: Any,
     metadata: dict,
     skip_workspace_mount: bool,
@@ -202,7 +202,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config=llm_config))
+    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config=config.llm))
 
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
@@ -316,6 +316,7 @@ IMPORTANT TIPS:
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=config.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -508,7 +509,7 @@ if __name__ == '__main__':
                 future = executor.submit(
                     process_instance,
                     agent_class,
-                    config.llm,
+                    config,
                     instance,
                     metadata,
                     skip_workspace_mount,
