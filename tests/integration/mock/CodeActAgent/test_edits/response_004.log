@@ -1,4 +1,11 @@
-Great! All the typos in the file have been corrected. Let's review the final content of the file to make sure everything is in order:
+The typos in `bad.txt` have been corrected. Here are the updated contents:
 
-<execute_ipython>
-open_file('bad.txt')
+```
+This is a stupid typo.
+Really?
+No more typos!
+Enjoy!
+```
+
+If you have any further requests, feel free to let me know!
+<finish></finish>

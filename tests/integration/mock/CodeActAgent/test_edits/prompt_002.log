@@ -390,19 +390,15 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Certainly! I'll fix the typos in the bad.txt file. Let's start by opening the file and examining its contents.
-<execute_ipython>
-open_file('bad.txt')
-</execute_ipython>
+Sure! Let's start by locating the `bad.txt` file and examining its contents.
+<execute_bash>
+find . -name "bad.txt"
+</execute_bash>
 
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (4 lines total)]
-1|This is a stupid typoo.
-2|Really?
-3|No mor typos!
-4|Enjoy!
+./bad.txt
+[Command -1 finished with exit code 0]
 
-
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
