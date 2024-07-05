@@ -60,9 +60,6 @@ This list may grow over time.
   * `content` - the content to write to the file
 * `run` - runs a command.
   * `command` - the command to run
-  * `background` - if true, run the command in the background
-* `kill` - kills a background command
-  * `id` - the ID of the background command to kill
 * `browse` - opens a web page.
   * `url` - the URL to open
 * `recall` - searches long-term memory

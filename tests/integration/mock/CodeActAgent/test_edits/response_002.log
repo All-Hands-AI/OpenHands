@@ -1,10 +1,4 @@
-Thank you for showing me the contents of the file. I can see there are a few typos that need to be fixed. I'll correct them one by one.
-
-Let's start with the first line:
+Let's open the `bad.txt` file and review its contents to identify and fix any typos.
 
 <execute_ipython>
-edit_file(
-    'bad.txt',
-    to_replace="This is a stupid typoo.",
-    new_content="This is a stupid typo."
-)
+open_file('./bad.txt')

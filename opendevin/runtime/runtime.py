@@ -1,4 +1,3 @@
-import asyncio
 from abc import abstractmethod
 from typing import Any, Optional
 
@@ -11,7 +10,6 @@ from opendevin.events.action import (
     AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
-    CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -19,7 +17,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import (
-    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -37,15 +34,15 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
-def create_sandbox(sid: str = 'default', sandbox_type: str = 'ssh') -> Sandbox:
-    if sandbox_type == 'local':
+def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+    if box_type == 'local':
         return LocalBox()
-    elif sandbox_type == 'ssh':
+    elif box_type == 'ssh':
         return DockerSSHBox(sid=sid)
-    elif sandbox_type == 'e2b':
+    elif box_type == 'e2b':
         return E2BBox()
     else:
-        raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+        raise ValueError(f'Invalid sandbox type: {box_type}')
 
 
 class Runtime:
@@ -67,7 +64,7 @@ class Runtime:
     ):
         self.sid = sid
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox_type)
+            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
@@ -76,14 +73,12 @@ class Runtime:
         self.file_store = InMemoryFileStore()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self._bg_task = asyncio.create_task(self._start_background_observation_loop())
 
     def close(self):
         if not self._is_external_sandbox:
             self.sandbox.close()
         if self.browser is not None:
             self.browser.close()
-        self._bg_task.cancel()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         self.sandbox.init_plugins(plugins)
@@ -132,34 +127,8 @@ class Runtime:
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
-    async def _start_background_observation_loop(self):
-        while True:
-            await self.submit_background_obs()
-            await asyncio.sleep(1)
-
-    async def submit_background_obs(self):
-        """
-        Returns all observations that have accumulated in the runtime's background.
-        Right now, this is just background commands, but could include e.g. asynchronous
-        events happening in the browser.
-        """
-        for _id, cmd in self.sandbox.background_commands.items():
-            output = cmd.read_logs()
-            if output:
-                self.event_stream.add_event(
-                    CmdOutputObservation(
-                        content=output, command_id=_id, command=cmd.command
-                    ),
-                    EventSource.AGENT,  # FIXME: use the original action's source
-                )
-        await asyncio.sleep(1)
-
     @abstractmethod
     async def run(self, action: CmdRunAction) -> Observation:
-        pass
-
-    @abstractmethod
-    async def kill(self, action: CmdKillAction) -> Observation:
         pass
 
     @abstractmethod
