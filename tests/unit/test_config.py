@@ -125,6 +125,9 @@ sandbox_type = "local"
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1
 
+    # default config doesn't have a field sandbox_type
+    assert not hasattr(default_config, 'sandbox_type')
+
     # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     assert (
@@ -174,6 +177,12 @@ sandbox_user_id = 1001
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
     finalize_config(default_config)
+
+    # app config doesn't have fields sandbox_*
+    assert not hasattr(default_config, 'sandbox_type')
+    assert not hasattr(default_config, 'sandbox_timeout')
+    assert not hasattr(default_config, 'sandbox_container_image')
+    assert not hasattr(default_config, 'sandbox_user_id')
 
     # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
     # if it was undefined
