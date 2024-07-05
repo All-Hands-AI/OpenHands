@@ -395,7 +395,7 @@ You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
 Notes:
-* you are logged in as root, but sudo will always work without a password.
+* you are logged in as opendevin, but sudo will always work without a password.
 * all non-background commands will be forcibly stopped if they remain running for over 120 seconds.
 * your environment is Debian Linux. You can install software with `sudo apt-get`, but remember to use -y.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
