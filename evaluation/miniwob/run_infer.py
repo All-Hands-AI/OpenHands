@@ -15,7 +15,7 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, get_llm_config_arg, parse_arguments
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -81,6 +81,7 @@ def process_instance(
         run_agent_controller(
             agent,
             'PLACEHOLDER_GOAL',
+            max_iterations=metadata.max_iterations,
             runtime_tools_config=runtime_tools_config,
             sandbox=get_sandbox(),
             sid=env_id,
@@ -139,7 +140,9 @@ if __name__ == '__main__':
     )
 
     id_column = 'id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
         llm_config,
         args.dataset_name,
@@ -150,7 +153,6 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     _ = get_sandbox()  # Initialize the sandbox
     run_evaluation(
         instances,

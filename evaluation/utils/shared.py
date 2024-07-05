@@ -12,12 +12,10 @@ import pandas as pd
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import LLMConfig
 from opendevin.events.action import Action
 from opendevin.events.action.message import MessageAction
-from opendevin.llm.llm import LLM
 
 
 class EvalMetadata(BaseModel):
@@ -166,10 +164,9 @@ def run_evaluation(
     process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
     id_column: str,
 ):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
     logger.info(
-        f'Evaluation started with Agent {agent.__class__.name}, '
-        f'model {agent.llm.model_name}, max iterations {metadata.max_iterations}.'
+        f'Evaluation started with Agent {metadata.agent_class}, '
+        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.'
     )
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')
