@@ -66,7 +66,6 @@ en particulier Windows, cela semble échouer.
 * Assurez-vous d'avoir les dernières versions de WSL et Docker
 * Vérifiez que votre distribution dans WSL est également à jour
 * Essayez [ce guide de réinstallation](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
-* Définissez `-e SANDBOX_BOX_TYPE=exec` pour passer au conteneur ExecBox de Docker
 
 ## Impossible de se connecter à LLM
 
