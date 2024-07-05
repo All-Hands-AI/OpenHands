@@ -542,7 +542,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-m',
         '--model-name',
-        default='llm',
+        default=config.get_llm_config().model,
         type=str,
         help='The (litellm) model name to use',
     )
