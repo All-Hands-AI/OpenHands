@@ -129,7 +129,7 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     if file_path.endswith('.py'):
         # Define the flake8 command with selected error codes
         command = [
-            'flake8',
+            '/opendevin/miniforge3/bin/flake8',
             '--isolated',
             '--select=F821,F822,F831,E112,E113,E999,E902',
             file_path,
