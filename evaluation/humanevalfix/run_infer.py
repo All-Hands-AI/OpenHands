@@ -11,7 +11,6 @@ TODOs:
 
 import asyncio
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 from typing import Any
@@ -21,7 +20,9 @@ from evaluate import load
 
 from evaluation.utils.shared import (
     EvalMetadata,
+    codeact_user_response,
     make_metadata,
+    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -31,7 +32,6 @@ from opendevin.core.config import LLMConfig, config, get_llm_config_arg, parse_a
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
@@ -63,40 +63,6 @@ LANGUAGE_TO_TIMEOUT = {
 LANGUAGE_TO_NUM_WORKERS = {
     'python': 4,
 }
-
-
-def cleanup():
-    logger.info('Cleaning up child processes...')
-    for process in mp.active_children():
-        logger.info(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
-
-def codeact_user_response(state: State) -> str:
-    msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
-    )
-    if state.history:
-        user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
-    return msg
-
-
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
