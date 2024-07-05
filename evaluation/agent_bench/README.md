@@ -18,14 +18,16 @@ cache_dir = "/path/to/cache"
 workspace_base = "/path/to/workspace"
 workspace_mount_path = "/path/to/workspace"
 
-sandbox_type = "ssh"
-sandbox_timeout = 120
 ssh_hostname = "localhost"
 
 use_host_network = false
 # AgentBench specific
 run_as_devin = true
 enable_auto_lint = true
+
+[sandbox]
+box_type = "ssh"
+timeout = 120
 
 [eval_gpt35_turbo]
 model = "gpt-3.5-turbo"

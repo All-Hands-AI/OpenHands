@@ -25,7 +25,7 @@ from opendevin.runtime.sandbox import Sandbox
 
 
 class LocalBox(Sandbox):
-    def __init__(self, timeout: int = config.sandbox_timeout):
+    def __init__(self, timeout: int = config.sandbox.timeout):
         os.makedirs(config.workspace_base, exist_ok=True)
         self.timeout = timeout
         atexit.register(self.cleanup)

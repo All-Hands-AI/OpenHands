@@ -183,7 +183,7 @@ def get_request_action_prompt(
         'monologue': json.dumps(monologue, indent=2),
         'hint': hint,
         'user': user,
-        'timeout': config.sandbox_timeout,
+        'timeout': config.sandbox.timeout,
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 
