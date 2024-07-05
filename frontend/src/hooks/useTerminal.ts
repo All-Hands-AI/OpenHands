@@ -2,7 +2,10 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { Command } from "#/state/commandSlice";
-import { sendTerminalCommand } from "#/services/terminalService";
+import {
+  sendTerminalCommand,
+  subscribeToTerminalOutput,
+} from "#/services/terminalService";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -81,9 +84,15 @@ export const useTerminal = (commands: Command[] = []) => {
       resizeObserver.observe(ref.current);
     }
 
+    // Subscribe to terminal output
+    const unsubscribe = subscribeToTerminalOutput((output) => {
+      terminal.current?.write(output);
+    });
+
     return () => {
       terminal.current?.dispose();
       resizeObserver.disconnect();
+      unsubscribe();
     };
   }, []);
 

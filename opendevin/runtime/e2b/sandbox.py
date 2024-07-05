@@ -1,6 +1,7 @@
 import os
 import tarfile
 from glob import glob
+from typing import Generator
 
 from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
@@ -64,6 +65,24 @@ class E2BBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
+        """
+        Execute a command in the sandbox.
+
+        Args:
+            cmd (str): The command to execute.
+            stream (bool, optional): Whether to stream the output. Defaults to False.
+            timeout (int | None, optional): The timeout for the command execution.
+                If None, uses the default timeout. Defaults to None.
+
+        Returns:
+            tuple[int, str | CancellableStream]: A tuple containing:
+                - The exit code of the command (int).
+                - Either the command output as a string (if stream is False)
+                  or a CancellableStream object (if stream is True).
+
+        Raises:
+            TimeoutException: If the command execution times out.
+        """
         timeout = timeout if timeout is not None else self.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
@@ -82,7 +101,24 @@ class E2BBox(Sandbox):
         return process_output.exit_code, logs_str
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        """Copies a local file or directory to the sandbox."""
+        """
+        Copies a local file or directory to the sandbox.
+
+        Args:
+            host_src (str): The path to the source file or directory on the host machine.
+            sandbox_dest (str): The destination path in the sandbox where the file or directory will be copied.
+            recursive (bool, optional): If True, copies directories recursively. Defaults to False.
+
+        Raises:
+            RuntimeError: If the extraction process fails in the sandbox.
+            FileNotFoundError: If the source file or directory does not exist on the host machine.
+            PermissionError: If there are insufficient permissions to read the source or write to the destination.
+
+        Note:
+            - If the destination directory in the sandbox doesn't exist, it will be created.
+            - The method uses tar archiving for efficient transfer of files and directories.
+            - After successful copy, the temporary archive files are cleaned up both locally and in the sandbox.
+        """
         tar_filename = self._archive(host_src, recursive)
 
         # Prepend the sandbox destination with our sandbox cwd
@@ -102,7 +138,7 @@ class E2BBox(Sandbox):
                 f'sudo tar -xf {uploaded_path} -C {sandbox_dest} && sudo rm {uploaded_path}'
             )
             if process.exit_code != 0:
-                raise Exception(
+                raise RuntimeError(
                     f'Failed to extract {uploaded_path} to {sandbox_dest}: {process.stderr}'
                 )
 
@@ -114,3 +150,22 @@ class E2BBox(Sandbox):
 
     def get_working_directory(self):
         return self.sandbox.cwd
+
+    def stream_logs(self, process_id: int) -> Generator[str, None, None]:
+        """
+        Stream logs from a background process.
+
+        Args:
+            process_id (int): The ID of the background process.
+
+        Yields:
+            str: Log lines as they become available.
+
+        Raises:
+            ValueError: If the process with the given ID is not found.
+        """
+        proc = self.background_commands.get(process_id)
+        if proc is None:
+            raise ValueError(f'Process {process_id} not found')
+        assert isinstance(proc, E2BProcess)
+        yield from proc.stream_logs()

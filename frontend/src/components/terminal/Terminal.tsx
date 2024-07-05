@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { VscTerminal } from "react-icons/vsc";
 import { RootState } from "#/store";
-import { useTerminal } from "../../hooks/useTerminal";
+import { useTerminal } from "#/hooks/useTerminal";
 
 import "@xterm/xterm/css/xterm.css";
 

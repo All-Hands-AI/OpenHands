@@ -4,9 +4,11 @@ import re
 import sys
 import tarfile
 import tempfile
+import threading
 import time
 import uuid
 from glob import glob
+from queue import Empty, Queue
 
 import docker
 from pexpect import exceptions, pxssh
@@ -20,6 +22,9 @@ from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
+from opendevin.runtime.utils.bash_command_splitter import split_bash_commands
+
+PEXPECT_PROMPT = '[PEXPECT]$'
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -28,9 +33,16 @@ class SSHExecCancellableStream(CancellableStream):
         self.ssh = ssh
         self.cmd = cmd
         self.timeout = timeout
+        self.output_queue: Queue[str] = Queue()
+        self.thread = threading.Thread(target=self._read_output_thread)
+        self.thread.daemon = True
+        self.thread.start()
+        self.eof_reached = False
+        self.closed = False
 
     def close(self):
         self.closed = True
+        self.thread.join(timeout=1)
 
     def exit_code(self):
         marker = f'EXIT_CODE_MARKER_{uuid.uuid4().hex}'
@@ -50,143 +62,80 @@ class SSHExecCancellableStream(CancellableStream):
                 logger.error(f'Unexpected exit code format: {match.group(1)}')
                 return None
         else:
-            # If we can't find our marked exit code, log the output and return None
-            logger.error(f'Could not find exit code in output: {output}')
             return None
 
-    def read_output(self):
-        st = time.time()
-        buf = ''
-        crlf = '\r\n'
-        lf = '\n'
-        prompt_len = len(self.ssh.PROMPT)
-        while True:
+    def _read_output_thread(self):
+        while not self.closed:
             try:
-                if self.closed:
-                    break
-                _output = self.ssh.read_nonblocking(timeout=1)
-                if not _output:
-                    continue
-
-                buf += _output
-
-                if len(buf) < prompt_len:
-                    continue
-
-                match = re.search(self.ssh.PROMPT, buf)
-                if match:
-                    idx, _ = match.span()
-                    yield buf[:idx].replace(crlf, lf)
-                    buf = ''
-                    break
-
-                res = buf[:-prompt_len]
-                if len(res) == 0 or res.find(crlf) == -1:
-                    continue
-                buf = buf[-prompt_len:]
-                yield res.replace(crlf, lf)
-            except exceptions.TIMEOUT:
-                if time.time() - st < self.timeout:
-                    match = re.search(self.ssh.PROMPT, buf)
-                    if match:
-                        idx, _ = match.span()
-                        yield buf[:idx].replace(crlf, lf)
+                new_output = self.ssh.read_nonblocking(size=512, timeout=1)
+                if new_output:
+                    self.output_queue.put(new_output)
+                    if PEXPECT_PROMPT in new_output:
+                        self.eof_reached = True
                         break
-                    continue
-                else:
-                    yield buf.replace(crlf, lf)
+            except pxssh.TIMEOUT:
+                pass
+            except pxssh.EOF:
+                self.eof_reached = True
                 break
-            except exceptions.EOF:
+            except Exception as e:
+                logger.error(f'Error reading output: {e}')
+                self.eof_reached = True
                 break
 
+    def read_output(self):
+        while not self.closed:
+            try:
+                yield self.output_queue.get(timeout=0.1)
+            except Empty:
+                if self.eof_reached:
+                    break
+                # Check if the command has finished
+                if self.ssh.prompt(timeout=0.1):
+                    break
 
-def split_bash_commands(commands):
-    # States
-    NORMAL = 0
-    IN_SINGLE_QUOTE = 1
-    IN_DOUBLE_QUOTE = 2
-    IN_HEREDOC = 3
+            # If the queue is empty and EOF is reached, break the loop
+            if self.output_queue.empty() and self.eof_reached:
+                break
 
-    state = NORMAL
-    heredoc_trigger = None
-    result = []
-    current_command: list[str] = []
+    def _read_and_process_buffer(self, buf):
+        try:
+            new_output = self._read_nonblocking()
+            if not new_output:
+                return buf
+            buf += new_output
+            buf, yield_data = self._check_and_yield_buffer(buf)
+            if yield_data:
+                yield yield_data
+        except exceptions.TIMEOUT:
+            buf = self._handle_timeout(buf)
+        except exceptions.EOF:
+            return ''
+        return buf
 
-    i = 0
-    while i < len(commands):
-        char = commands[i]
+    def _read_nonblocking(self):
+        return self.ssh.read_nonblocking(timeout=1)
 
-        if state == NORMAL:
-            if char == "'":
-                state = IN_SINGLE_QUOTE
-            elif char == '"':
-                state = IN_DOUBLE_QUOTE
-            elif char == '\\':
-                # Check if this is escaping a newline
-                if i + 1 < len(commands) and commands[i + 1] == '\n':
-                    i += 1  # Skip the newline
-                    # Continue with the next line as part of the same command
-                    i += 1  # Move to the first character of the next line
-                    continue
-            elif char == '\n':
-                if not heredoc_trigger and current_command:
-                    result.append(''.join(current_command).strip())
-                    current_command = []
-            elif char == '<' and commands[i : i + 2] == '<<':
-                # Detect heredoc
-                state = IN_HEREDOC
-                i += 2  # Skip '<<'
-                while commands[i] == ' ':
-                    i += 1
-                start = i
-                while commands[i] not in [' ', '\n']:
-                    i += 1
-                heredoc_trigger = commands[start:i]
-                current_command.append(commands[start - 2 : i])  # Include '<<'
-                continue  # Skip incrementing i at the end of the loop
-            current_command.append(char)
+    def _check_and_yield_buffer(self, buf):
+        prompt_len = len(self.ssh.PROMPT)
+        if len(buf) < prompt_len:
+            return buf, None
+        match = re.search(self.ssh.PROMPT, buf)
+        if match:
+            idx, _ = match.span()
+            return '', buf[:idx].replace('\r\n', '\n')
+        if '\r\n' not in buf[:-prompt_len]:
+            return buf, None
+        yield_data = buf[:-prompt_len].replace('\r\n', '\n')
+        return buf[-prompt_len:], yield_data
 
-        elif state == IN_SINGLE_QUOTE:
-            current_command.append(char)
-            if char == "'" and commands[i - 1] != '\\':
-                state = NORMAL
-
-        elif state == IN_DOUBLE_QUOTE:
-            current_command.append(char)
-            if char == '"' and commands[i - 1] != '\\':
-                state = NORMAL
-
-        elif state == IN_HEREDOC:
-            current_command.append(char)
-            if (
-                char == '\n'
-                and heredoc_trigger
-                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
-                == heredoc_trigger + '\n'
-            ):
-                # Check if the next line starts with the heredoc trigger followed by a newline
-                i += (
-                    len(heredoc_trigger) + 1
-                )  # Move past the heredoc trigger and newline
-                current_command.append(
-                    heredoc_trigger + '\n'
-                )  # Include the heredoc trigger and newline
-                result.append(''.join(current_command).strip())
-                current_command = []
-                heredoc_trigger = None
-                state = NORMAL
-                continue
-
-        i += 1
-
-    # Add the last command if any
-    if current_command:
-        result.append(''.join(current_command).strip())
-
-    # Remove any empty strings from the result
-    result = [cmd for cmd in result if cmd]
-
-    return result
+    def _handle_timeout(self, buf):
+        match = re.search(self.ssh.PROMPT, buf)
+        if match:
+            idx, _ = match.span()
+            yield buf[:idx].replace('\r\n', '\n')
+            return ''
+        return buf
 
 
 class DockerSSHBox(Sandbox):
@@ -481,17 +430,21 @@ class DockerSSHBox(Sandbox):
                 all_output += str(output)
                 if exit_code != 0:
                     return exit_code, all_output
+                if PEXPECT_PROMPT in output:
+                    logger.info('Detected [PEXPECT]$ prompt, ending command execution.')
+                    break
             return 0, all_output
 
         self.ssh.sendline(cmd)
         if stream:
-            return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
+            return 0, SSHExecCancellableStream(self.ssh, cmd, timeout)
+
         success = self.ssh.prompt(timeout=timeout)
         if not success:
             return self._send_interrupt(cmd)
         command_output = self.ssh.before
 
-        # once out, make sure that we have *every* output, we while loop until we get an empty output
+        # Ensure we have all output, loop until we get an empty output
         while True:
             self.ssh.sendline('\n')
             timeout_not_reached = self.ssh.prompt(timeout=1)
@@ -502,6 +455,9 @@ class DockerSSHBox(Sandbox):
             if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
+            if PEXPECT_PROMPT in output:
+                logger.info('Detected [PEXPECT]$ prompt, ending command execution.')
+                break
         command_output = command_output.removesuffix('\r\n')
 
         # get the exit code
@@ -516,6 +472,9 @@ class DockerSSHBox(Sandbox):
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
                 )
+            if PEXPECT_PROMPT in exit_code_str:
+                logger.info('Detected [PEXPECT]$ prompt, ending command execution.')
+                break
         cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
 
         try:
@@ -766,4 +725,8 @@ if __name__ == '__main__':
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')
-    ssh_box.close()
+    finally:
+        # Ensure we kill the background process before exiting
+        if bg_process.pid in ssh_box.background_commands:
+            ssh_box.kill_background(bg_process.pid)
+        ssh_box.close()
