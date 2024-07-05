@@ -8,6 +8,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -200,7 +201,12 @@ class LLM:
             stop=stop_after_attempt(num_retries),
             wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
             retry=retry_if_exception_type(
-                (RateLimitError, APIConnectionError, ServiceUnavailableError)
+                (
+                    RateLimitError,
+                    APIConnectionError,
+                    ServiceUnavailableError,
+                    InternalServerError,
+                )
             ),
             after=attempt_on_error,
         )

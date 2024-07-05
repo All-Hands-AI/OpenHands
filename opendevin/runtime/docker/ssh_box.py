@@ -209,7 +209,7 @@ class DockerSSHBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = config.sandbox_timeout,
+        timeout: int = config.sandbox.timeout,
         sid: str | None = None,
     ):
         logger.info(
@@ -235,7 +235,7 @@ class DockerSSHBox(Sandbox):
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = container_image or config.sandbox_container_image
+        self.container_image = container_image or config.sandbox.container_image
         self.container_image = get_od_sandbox_image(
             self.container_image, self.docker_client
         )
@@ -661,11 +661,7 @@ class DockerSSHBox(Sandbox):
 
     @property
     def user_id(self):
-        return config.sandbox_user_id
-
-    @property
-    def sandbox_user_id(self):
-        return config.sandbox_user_id
+        return config.sandbox.user_id
 
     @property
     def run_as_devin(self):
