@@ -184,6 +184,7 @@ class AgentController:
         elif isinstance(event, Observation):
             if (
                 self._pending_action
+                and hasattr(self._pending_action, 'is_confirmed')
                 and self._pending_action.is_confirmed
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
@@ -236,9 +237,9 @@ class AgentController:
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
             if new_state == AgentState.USER_CONFIRMED:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED
+                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
             else:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED
+                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
             await self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         await self.event_stream.add_event(
@@ -392,7 +393,11 @@ class AgentController:
             await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
-            if action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
             await self.event_stream.add_event(action, EventSource.AGENT)
 
