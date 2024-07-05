@@ -1,13 +1,13 @@
 from opendevin.core.config import config
 from opendevin.core.utils import json
-from opendevin.events.observation import (
-    CmdOutputObservation,
-)
 from opendevin.events.action import (
     Action,
 )
-
+from opendevin.events.observation import (
+    CmdOutputObservation,
+)
 from opendevin.events.serialization.action import action_from_dict
+
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
 %(task)s
@@ -206,7 +206,7 @@ def get_request_action_prompt(
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.sandbox_timeout,
+        'timeout': config.sandbox.timeout,
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 

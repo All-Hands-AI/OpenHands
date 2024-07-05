@@ -79,25 +79,20 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox()]:
-            box.init_plugins([JupyterRequirement])
-            test_code = "print('Hello, `World`!')"
-            expected_write_command = (
-                "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
-            )
-            expected_execute_command = (
-                'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-            )
-            exit_code, output = box.execute(expected_write_command)
-            exit_code, output = box.execute(expected_execute_command)
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip() == 'Hello, `World`!', (
-                'The output should be the same as the input for '
-                + box.__class__.__name__
-            )
-            box.close()
+        box = DockerSSHBox()
+        box.init_plugins([JupyterRequirement])
+        test_code = "print('Hello, `World`!')"
+        expected_write_command = (
+            "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
+        )
+        expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+        exit_code, output = box.execute(expected_write_command)
+        exit_code, output = box.execute(expected_execute_command)
+        print(output)
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        assert output.strip() == 'Hello, `World`!', (
+            'The output should be the same as the input for ' + box.__class__.__name__
+        )
+        box.close()
