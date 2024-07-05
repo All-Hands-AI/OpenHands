@@ -134,6 +134,7 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -205,7 +206,7 @@ if __name__ == '__main__':
         specified_llm_config = get_llm_config_arg(args.llm_config)
         if specified_llm_config:
             config.llm = specified_llm_config
-    config.max_iterations = args.max_iterations
+
     logger.info(f'Config for evaluation: {config}')
 
     eda_dataset = load_dataset(

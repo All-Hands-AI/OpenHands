@@ -85,6 +85,7 @@ def make_metadata(
     config: AppConfig,
     dataset_name: str,
     agent_class: str,
+    max_iterations: int,
     eval_note: str | None,
     eval_output_dir: str,
     data_split: str | None = None,
@@ -97,7 +98,7 @@ def make_metadata(
         eval_output_dir,
         dataset_name,
         agent_class,
-        f'{model_name}_maxiter_{config.max_iterations}{eval_note}',
+        f'{model_name}_maxiter_{max_iterations}{eval_note}',
     )
 
     pathlib.Path(eval_output_path).mkdir(parents=True, exist_ok=True)
@@ -109,7 +110,7 @@ def make_metadata(
     metadata = EvalMetadata(
         agent_class=agent_class,
         config=config,
-        max_iterations=config.max_iterations,
+        max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])

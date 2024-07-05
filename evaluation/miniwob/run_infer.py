@@ -81,6 +81,7 @@ def process_instance(
         run_agent_controller(
             agent,
             'PLACEHOLDER_GOAL',
+            max_iterations=metadata.max_iterations,
             runtime_tools_config=runtime_tools_config,
             sandbox=get_sandbox(),
             sid=env_id,
@@ -143,7 +144,7 @@ if __name__ == '__main__':
         specified_llm_config = get_llm_config_arg(args.llm_config)
         if specified_llm_config:
             config.llm = specified_llm_config
-    config.max_iterations = args.max_iterations
+
     logger.info(f'Config for evaluation: {config}')
 
     metadata = make_metadata(
