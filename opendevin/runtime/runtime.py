@@ -26,7 +26,6 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime import (
-    DockerExecBox,
     DockerSSHBox,
     E2BBox,
     LocalBox,
@@ -38,17 +37,15 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
-def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
-    if sandbox_type == 'exec':
-        return DockerExecBox(sid=sid)
-    elif sandbox_type == 'local':
+def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+    if box_type == 'local':
         return LocalBox()
-    elif sandbox_type == 'ssh':
+    elif box_type == 'ssh':
         return DockerSSHBox(sid=sid)
-    elif sandbox_type == 'e2b':
+    elif box_type == 'e2b':
         return E2BBox()
     else:
-        raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+        raise ValueError(f'Invalid sandbox type: {box_type}')
 
 
 class Runtime:
@@ -70,7 +67,7 @@ class Runtime:
     ):
         self.sid = sid
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox_type)
+            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
@@ -114,7 +111,7 @@ class Runtime:
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
+            self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action) -> Observation:
         """
@@ -154,7 +151,7 @@ class Runtime:
         for _id, cmd in self.sandbox.background_commands.items():
             output = cmd.read_logs()
             if output:
-                await self.event_stream.add_event(
+                self.event_stream.add_event(
                     CmdOutputObservation(
                         content=output, command_id=_id, command=cmd.command
                     ),
