@@ -3,7 +3,6 @@ import logging
 import os
 import re
 import shutil
-from typing import Any
 
 import docker
 import pandas as pd
@@ -34,14 +33,12 @@ from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
 def process_instance(
-    agent: Agent,
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-) -> dict[str, Any]:
-    # =============================================
-    # preparation
-    # =============================================
+):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
 
     inst_id = instance.instance_id
     question = instance.description
@@ -232,7 +229,6 @@ if __name__ == '__main__':
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

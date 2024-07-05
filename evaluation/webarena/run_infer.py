@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import os
-from typing import Any
 
 import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
 import gymnasium as gym
@@ -39,11 +38,12 @@ def get_sandbox():
 
 
 def process_instance(
-    agent: Agent,
-    instance: Any,
+    instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     env_id = instance.id
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -155,10 +155,8 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     _ = get_sandbox()  # Initialize the sandbox
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

@@ -3,7 +3,6 @@ import logging
 import multiprocessing as mp
 import os
 import pathlib
-from typing import Any
 
 import pandas as pd
 import toml
@@ -170,14 +169,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    agent_class: str,
-    llm_config: dict,
-    instance: Any,
+    instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config=llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
 
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
@@ -380,9 +377,7 @@ if __name__ == '__main__':
     instances = prepare_dataset(
         swe_bench_tests, output_file, args.eval_n_limit, id_column
     )
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

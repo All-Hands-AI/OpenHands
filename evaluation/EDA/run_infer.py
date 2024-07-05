@@ -3,11 +3,14 @@ import logging
 import multiprocessing as mp
 import os
 
+import pandas as pd
+
 # import huggingface_hub
 from datasets import load_dataset
 
 from evaluation.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
+    EvalMetadata,
     make_metadata,
     monologue_user_response,
     prepare_dataset,
@@ -65,8 +68,12 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(
-    agent: Agent, instance, metadata, openai_api_key, reset_logger: bool = True
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata.eval_output_dir
     if reset_logger:
@@ -103,12 +110,14 @@ def process_instance(
 
     # Use codeactagent as guesser_model
     global game
+    assert metadata.dataset is not None
+    assert metadata.details is not None
     game = _game_class[metadata.dataset](
         item=instance['text'].strip(),
         answerer_model=metadata.details['answerer_model'],
         guesser_model=None,
         num_turns=metadata.max_iterations,
-        openai_api_key=openai_api_key,
+        openai_api_key=metadata.details['openai_api_key'],
         guesser_kargs=guesser_kargs,
     )
 
@@ -223,7 +232,6 @@ if __name__ == '__main__':
     agent = Agent.get_cls(args.agent_cls)(llm=LLM(config.llm))
 
     run_evaluation(
-        agent,
         prepared_dataset,
         metadata,
         output_file,

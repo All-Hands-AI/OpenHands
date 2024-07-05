@@ -5,8 +5,8 @@ import multiprocessing as mp
 import os
 import pathlib
 from functools import partial
-from typing import Any
 
+import pandas as pd
 from datasets import load_dataset
 
 from evaluation.biocoder.biocoder_env_box import BiocoderData, BiocoderSSHBox
@@ -93,11 +93,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    agent: Agent,
-    instance: Any,
+    instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     instance = BiocoderData(**instance)
     print(instance)
     workspace_dir_name = (
@@ -232,7 +233,6 @@ if __name__ == '__main__':
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

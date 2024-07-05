@@ -13,8 +13,8 @@ import asyncio
 import logging
 import os
 import pathlib
-from typing import Any
 
+import pandas as pd
 from datasets import load_dataset
 from evaluate import load
 
@@ -105,8 +105,12 @@ def get_test_result(instance, path, language='python', timeout=10):
 
 
 def process_instance(
-    agent: Agent, instance: Any, metadata: EvalMetadata, reset_logger: bool = True
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
 
@@ -243,7 +247,6 @@ if __name__ == '__main__':
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

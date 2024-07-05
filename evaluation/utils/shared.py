@@ -17,11 +17,12 @@ from opendevin.controller.state.state import State
 from opendevin.core.config import LLMConfig
 from opendevin.events.action import Action
 from opendevin.events.action.message import MessageAction
+from opendevin.llm.llm import LLM
 
 
 class EvalMetadata(BaseModel):
     agent_class: str
-    model_name: str
+    llm_config: LLMConfig
     max_iterations: int
     eval_output_dir: str
     start_time: str
@@ -110,7 +111,7 @@ def make_metadata(
 
     metadata = EvalMetadata(
         agent_class=agent_class,
-        model_name=model_name,
+        llm_config=llm_config,
         max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -158,14 +159,14 @@ def prepare_dataset(dataset: pd.DataFrame, output_file, eval_n_limit, id_column)
 
 
 def run_evaluation(
-    agent: Agent,
     dataset: pd.DataFrame,
     metadata: EvalMetadata,
     output_file: str,
     num_workers: int,
-    process_instance_func: Callable[[Agent, pd.Series, EvalMetadata, bool], Any],
+    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
     id_column: str,
 ):
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
     logger.info(
         f'Evaluation started with Agent {agent.__class__.name}, '
         f'model {agent.llm.model_name}, max iterations {metadata.max_iterations}.'
@@ -190,7 +191,6 @@ def run_evaluation(
             for _, instance in dataset.iterrows():
                 future = executor.submit(
                     process_instance_func,
-                    agent,
                     instance,
                     metadata,
                     bool(num_workers > 1),

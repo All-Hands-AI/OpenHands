@@ -7,10 +7,12 @@ import shutil
 from functools import partial
 
 import huggingface_hub
+import pandas as pd
 from datasets import load_dataset
 
 from evaluation.gaia.scorer import question_scorer
 from evaluation.utils.shared import (
+    EvalMetadata,
     codeact_user_response,
     make_metadata,
     monologue_user_response,
@@ -41,7 +43,13 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(agent, instance, metadata, reset_logger: bool = True):
+def process_instance(
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
+):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -56,7 +64,7 @@ def process_instance(agent, instance, metadata, reset_logger: bool = True):
         config.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-        eval_output_dir = metadata['eval_output_dir']
+        eval_output_dir = metadata.eval_output_dir
         if reset_logger:
             # Set up logger
             log_file = os.path.join(
@@ -82,8 +90,9 @@ def process_instance(agent, instance, metadata, reset_logger: bool = True):
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
         if instance['file_name'] != '':
             # if this question comes with a file, we need to save it to the workspace
+            assert metadata.data_split is not None
             src_file = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata['data_split'], instance['file_name']
+                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
             )
             extension_name = instance['file_name'].split('.')[-1]
             dest_file = os.path.join(workspace_mount_path, f'file.{extension_name}')
@@ -217,7 +226,6 @@ if __name__ == '__main__':
     agent = Agent.get_cls(args.agent_cls)(llm=LLM(config.llm))
 
     run_evaluation(
-        agent=agent,
         dataset=prepared_dataset,
         metadata=metadata,
         output_file=output_file,

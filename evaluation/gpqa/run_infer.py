@@ -23,11 +23,12 @@ import os
 import pathlib
 import random
 import re
-from typing import Any
 
+import pandas as pd
 from datasets import load_dataset
 
 from evaluation.utils.shared import (
+    EvalMetadata,
     codeact_user_response,
     make_metadata,
     monologue_user_response,
@@ -122,15 +123,12 @@ def convert_instance_dict(instance):
 
 
 def process_instance(
-    agent: Agent,
-    instance: Any,
-    metadata: dict,
-    eval_output_dir: str,
+    instance: pd.Series,
+    metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    """
-    Process a single instance from the dataset
-    """
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
@@ -149,7 +147,7 @@ def process_instance(
         if reset_logger:
             # Set up logger
             log_file = os.path.join(
-                eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+                metadata.eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
             )
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
@@ -298,7 +296,6 @@ if __name__ == '__main__':
     agent = Agent.get_cls(args.agent_cls)(llm=LLM(config.llm))
 
     run_evaluation(
-        agent=agent,
         dataset=prepared_dataset,
         metadata=metadata,
         output_file=output_file,
