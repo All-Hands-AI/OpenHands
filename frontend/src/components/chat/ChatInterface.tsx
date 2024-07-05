@@ -83,7 +83,7 @@ function ChatInterface() {
     onFeedbackModalOpen();
   };
 
-  const handleSendMessage = (content: string, dispatchContent: string = '') => {
+  const handleSendMessage = (content: string, dispatchContent: string = "") => {
     dispatch(addUserMessage(dispatchContent || content));
     sendChatMessage(content);
   };
@@ -102,7 +102,10 @@ function ChatInterface() {
   };
 
   const handleAutoMsg = () => {
-    handleSendMessage(t(I18nKey.CHAT_INTERFACE$AUTO_MESSAGE), t(I18nKey.CHAT_INTERFACE$INPUT_AUTO_MESSAGE));
+    handleSendMessage(
+      t(I18nKey.CHAT_INTERFACE$AUTO_MESSAGE),
+      t(I18nKey.CHAT_INTERFACE$INPUT_AUTO_MESSAGE),
+    );
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -172,13 +175,16 @@ function ChatInterface() {
           )}
           {hitBottom && (
             <>
-              {curAgentState === AgentState.AWAITING_USER_INPUT && !autoMode && (
-                <ScrollButton
-                  onClick={handleSendContinueMsg}
-                  icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
-                  label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-                />
-              )}
+              {curAgentState === AgentState.AWAITING_USER_INPUT &&
+                !autoMode && (
+                  <ScrollButton
+                    onClick={handleSendContinueMsg}
+                    icon={
+                      <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
+                    }
+                    label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                  />
+                )}
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
             </>
           )}
