@@ -15,7 +15,7 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, get_llm_config_arg, parse_arguments
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -43,7 +43,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.config.llm))
     env_id = instance.id
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -144,9 +144,15 @@ if __name__ == '__main__':
     )
 
     id_column = 'id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    if args.llm_config:
+        specified_llm_config = get_llm_config_arg(args.llm_config)
+        if specified_llm_config:
+            config.llm = specified_llm_config
+    config.max_iterations = args.max_iterations
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
-        llm_config,
+        config,
         args.dataset_name,
         args.agent_cls,
         args.max_iterations,

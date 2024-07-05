@@ -28,7 +28,7 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -110,7 +110,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.config.llm))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
 
@@ -234,9 +234,15 @@ if __name__ == '__main__':
     hefix_tests = dataset['test'].to_pandas()
 
     id_column = 'task_id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    if args.llm_config:
+        specified_llm_config = get_llm_config_arg(args.llm_config)
+        if specified_llm_config:
+            config.llm = specified_llm_config
+    config.max_iterations = args.max_iterations
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
-        llm_config,
+        config,
         args.dataset_name,
         args.agent_cls,
         args.max_iterations,
@@ -245,7 +251,7 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
+
     run_evaluation(
         instances,
         metadata,

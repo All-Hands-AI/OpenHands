@@ -12,17 +12,15 @@ import pandas as pd
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig
+from opendevin.core.config import AppConfig
 from opendevin.events.action import Action
 from opendevin.events.action.message import MessageAction
-from opendevin.llm.llm import LLM
 
 
 class EvalMetadata(BaseModel):
     agent_class: str
-    llm_config: LLMConfig
+    config: AppConfig
     max_iterations: int
     eval_output_dir: str
     start_time: str
@@ -84,23 +82,22 @@ def cleanup():
 
 
 def make_metadata(
-    llm_config: LLMConfig,
+    config: AppConfig,
     dataset_name: str,
     agent_class: str,
-    max_iterations: int,
     eval_note: str | None,
     eval_output_dir: str,
     data_split: str | None = None,
     details: dict[str, Any] | None = None,
 ) -> EvalMetadata:
-    model_name = llm_config.model.split('/')[-1]
+    model_name = config.llm.model.split('/')[-1]
     eval_note = f'_N_{eval_note}' if eval_note else ''
 
     eval_output_path = os.path.join(
         eval_output_dir,
         dataset_name,
         agent_class,
-        f'{model_name}_maxiter_{max_iterations}{eval_note}',
+        f'{model_name}_maxiter_{config.max_iterations}{eval_note}',
     )
 
     pathlib.Path(eval_output_path).mkdir(parents=True, exist_ok=True)
@@ -111,8 +108,8 @@ def make_metadata(
 
     metadata = EvalMetadata(
         agent_class=agent_class,
-        llm_config=llm_config,
-        max_iterations=max_iterations,
+        config=config,
+        max_iterations=config.max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
@@ -166,10 +163,9 @@ def run_evaluation(
     process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
     id_column: str,
 ):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
     logger.info(
-        f'Evaluation started with Agent {agent.__class__.name}, '
-        f'model {agent.llm.model_name}, max iterations {metadata.max_iterations}.'
+        f'Evaluation started with Agent {metadata.agent_class}, '
+        f'model {metadata.config.llm.model}, max iterations {metadata.max_iterations}.'
     )
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')

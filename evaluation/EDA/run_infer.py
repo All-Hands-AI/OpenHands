@@ -73,7 +73,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.config.llm))
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata.eval_output_dir
     if reset_logger:
@@ -205,13 +205,15 @@ if __name__ == '__main__':
         specified_llm_config = get_llm_config_arg(args.llm_config)
         if specified_llm_config:
             config.llm = specified_llm_config
+    config.max_iterations = args.max_iterations
+    logger.info(f'Config for evaluation: {config}')
 
     eda_dataset = load_dataset(
         'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
     )
 
     metadata = make_metadata(
-        config.llm,
+        config,
         f'eda-{args.dataset}',
         args.agent_cls,
         args.max_iterations,
