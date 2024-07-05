@@ -191,9 +191,9 @@ class AgentController:
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
                 self._pending_action = None
-                if self.state.agent_state == AgentState.ACTION_CONFIRMED:
+                if self.state.agent_state == AgentState.USER_CONFIRMED:
                     await self.set_agent_state_to(AgentState.RUNNING)
-                if self.state.agent_state == AgentState.ACTION_REJECTED:
+                if self.state.agent_state == AgentState.USER_REJECTED:
                     await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
@@ -230,12 +230,12 @@ class AgentController:
             self.reset_task()
 
         if self._pending_action is not None and (
-            new_state == AgentState.ACTION_CONFIRMED
-            or new_state == AgentState.ACTION_REJECTED
+            new_state == AgentState.USER_CONFIRMED
+            or new_state == AgentState.USER_REJECTED
         ):
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
-            if new_state == AgentState.ACTION_CONFIRMED:
+            if new_state == AgentState.USER_CONFIRMED:
                 self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED
             else:
                 self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED

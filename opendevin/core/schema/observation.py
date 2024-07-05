@@ -44,7 +44,7 @@ class ObservationTypeSchema(BaseModel):
 
     AGENT_STATE_CHANGED: str = Field(default='agent_state_changed')
 
-    ACTION_REJECTED: str = Field(default='action_rejected')
+    USER_REJECTED: str = Field(default='user_rejected')
 
 
 ObservationType = ObservationTypeSchema()

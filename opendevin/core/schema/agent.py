@@ -42,10 +42,10 @@ class AgentState(str, Enum):
     """The agent is awaiting user confirmation.
     """
 
-    ACTION_CONFIRMED = 'action_confirmed'
+    USER_CONFIRMED = 'user_confirmed'
     """The user confirmed the agent's action.
     """
 
-    ACTION_REJECTED = 'action_rejected'
+    USER_REJECTED = 'user_rejected'
     """The user rejected the agent's action.
     """

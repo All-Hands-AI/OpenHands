@@ -8,9 +8,7 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
 };
 
-export type SettingsInput = {
-  [K in keyof Settings]: Settings[K];
-}[keyof Settings];
+type SettingsInput = Settings[keyof Settings];
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-4o",
@@ -20,7 +18,7 @@ export const DEFAULT_SETTINGS: Settings = {
   CONFIRMATION_MODE: false,
 };
 
-const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof SettingsInput)[];
+const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
 
 export const getCurrentSettingsVersion = () => {
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
@@ -74,10 +72,11 @@ export const getSettings = (): Settings => {
  */
 export const saveSettings = (settings: Partial<Settings>) => {
   Object.keys(settings).forEach((key) => {
-    const isValid = validKeys.includes(key as keyof SettingsInput);
+    const isValid = validKeys.includes(key as keyof Settings);
     const value = settings[key as keyof Settings];
 
-    if (isValid && (value || typeof value === 'boolean')) localStorage.setItem(key, value.toString());
+    if (isValid && (value || typeof value === "boolean"))
+      localStorage.setItem(key, value.toString());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
 };
@@ -99,12 +98,14 @@ export const getSettingsDifference = (settings: Partial<Settings>) => {
   const updatedSettings: Partial<Settings> = {};
 
   Object.keys(settings).forEach((key) => {
-    const typedKey = key as keyof SettingsInput;
+    const typedKey = key as keyof Settings;
     if (
       validKeys.includes(typedKey) &&
       settings[typedKey] !== currentSettings[typedKey]
     ) {
-      updatedSettings[typedKey] = settings[typedKey];
+      (updatedSettings[typedKey] as SettingsInput) = settings[
+        typedKey
+      ] as SettingsInput;
     }
   });
 

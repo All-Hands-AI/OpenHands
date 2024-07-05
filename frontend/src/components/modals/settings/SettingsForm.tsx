@@ -88,17 +88,21 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
-          <Switch
-            aria-label="confirmationmode"
-            data-testid="confirmationmode"
-            defaultSelected={settings.CONFIRMATION_MODE}
-            onValueChange={onConfirmationModeChange}
-            isDisabled={disabled}
-            >
-              <Tooltip content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)} closeDelay={100} delay={500}>
-            {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-            </Tooltip>
-          </Switch>
+      <Switch
+        aria-label="confirmationmode"
+        data-testid="confirmationmode"
+        defaultSelected={settings.CONFIRMATION_MODE}
+        onValueChange={onConfirmationModeChange}
+        isDisabled={disabled}
+      >
+        <Tooltip
+          content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+          closeDelay={100}
+          delay={500}
+        >
+          {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+        </Tooltip>
+      </Switch>
     </>
   );
 }

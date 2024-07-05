@@ -59,15 +59,17 @@ function AgentStatusBar() {
       indicator: IndicatorColor.RED,
     },
     [AgentState.AWAITING_USER_CONFIRMATION]: {
-      message: t(I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE),
+      message: t(
+        I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE,
+      ),
       indicator: IndicatorColor.ORANGE,
     },
-    [AgentState.ACTION_CONFIRMED]: {
-      message: t(I18nKey.CHAT_INTERFACE$AGENT_ACTION_CONFIRMED_MESSAGE),
+    [AgentState.USER_CONFIRMED]: {
+      message: t(I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_CONFIRMED_MESSAGE),
       indicator: IndicatorColor.GREEN,
     },
-    [AgentState.ACTION_REJECTED]: {
-      message: t(I18nKey.CHAT_INTERFACE$AGENT_ACTION_REJECTED_MESSAGE),
+    [AgentState.USER_REJECTED]: {
+      message: t(I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE),
       indicator: IndicatorColor.RED,
     },
   };
