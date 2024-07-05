@@ -323,7 +323,7 @@ def get_field_info(f):
 
 def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
+    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
 
     Args:
         cfg: The AppConfig object to set attributes on.
@@ -421,18 +421,21 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
         # set sandbox config from the toml file
         sandbox_config = config.sandbox
+
+        # migrate old sandbox configs from [core] section to sandbox config
+        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
+        for key in keys_to_migrate:
+            new_key = key.replace('sandbox_', '')
+            if new_key == 'type':
+                new_key = 'box_type'
+            if new_key in sandbox_config.__annotations__:
+                # read the key in sandbox and remove it from core
+                setattr(sandbox_config, new_key, core_config.pop(key))
+            else:
+                logger.warning(f'Unknown sandbox config: {key}')
+
         if 'sandbox' in toml_config:
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
-        # migrate old configs
-        for key in core_config:
-            if key.startswith('sandbox_'):
-                new_key = key.replace('sandbox_', '')
-                if new_key == 'type':
-                    new_key = 'box_type'
-                if new_key in sandbox_config.__annotations__:
-                    setattr(sandbox_config, new_key, core_config[key])
-                else:
-                    logger.error(f'Unknown sandbox config: {key}')
 
         # update the config object with the new values
         AppConfig(
