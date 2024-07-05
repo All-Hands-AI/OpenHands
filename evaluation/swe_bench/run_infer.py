@@ -170,11 +170,15 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    agent: Agent,
+    agent_class: str,
+    llm_config: dict,
     instance: Any,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config=llm_config))
+
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))

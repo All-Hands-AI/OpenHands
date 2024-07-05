@@ -97,6 +97,11 @@ if [ -z "$INSTANCE_ID" ]; then
 
     # move the eval results to the target directory
     mkdir -p $RESULT_OUTPUT_DIR
+    # rm eval_outputs directory if it exists
+    if [ -d $RESULT_OUTPUT_DIR/eval_outputs ]; then
+        rm -rf $RESULT_OUTPUT_DIR/eval_outputs
+    fi
+
     mv run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
     mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
     echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
