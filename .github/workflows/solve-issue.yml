@@ -35,7 +35,7 @@ jobs:
         echo "" >> task.txt
         echo "BODY:" >> task.txt
         echo "${ISSUE_BODY}" >> task.txt
-    
+
     - name: Set up environment
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
@@ -50,7 +50,7 @@ jobs:
         ISSUE_BODY: ${{ github.event.issue.body }}
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        SANDBOX_TYPE: exec
+        SANDBOX_BOX_TYPE: ssh
       run: |
         # Append path to launch poetry
         export PATH="/github/home/.local/bin:$PATH"

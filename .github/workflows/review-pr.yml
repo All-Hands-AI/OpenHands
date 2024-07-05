@@ -55,7 +55,7 @@ jobs:
       env:
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        SANDBOX_TYPE: exec
+        SANDBOX_BOX_TYPE: ssh
       run: |
         # Append path to launch poetry
         export PATH="/github/home/.local/bin:$PATH"
