@@ -149,7 +149,7 @@ function ChatInterface() {
                 onChange={() => setAutoMode(!autoMode)}
                 aria-label="Auto Mode"
               />
-              <span>Auto mode</span>
+              <span>Auto Mode</span>
             </label>
           </Tooltip>
         </div>
