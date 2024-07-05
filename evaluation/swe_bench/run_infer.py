@@ -202,7 +202,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config))
+    agent = Agent.get_cls(agent_class)(llm=LLM(llm_config=llm_config))
 
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
