@@ -35,7 +35,10 @@ But when running `docker run`, you'll need to add a few more arguments:
 --add-host host.docker.internal:host-gateway \
 -e LLM_API_KEY="ollama" \
 -e LLM_BASE_URL="http://host.docker.internal:11434" \
+-e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
 ```
+
+LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI. 
 
 For example:
 
