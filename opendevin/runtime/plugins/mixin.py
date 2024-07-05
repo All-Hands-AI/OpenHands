@@ -28,9 +28,6 @@ class SandboxProtocol(Protocol):
 
 
 def _source_bashrc(sandbox: SandboxProtocol):
-    # exit_code, output = sandbox.execute(
-    #     'source /opendevin/bash.bashrc && source ~/.bashrc'
-    # )
     exit_code1, output1 = sandbox.execute('source /opendevin/bash.bashrc')
     if exit_code1 != 0:
         raise RuntimeError(
@@ -60,7 +57,7 @@ def _handle_stream_output(output: CancellableStream, plugin_name: str):
             last_output_time = time.time()
 
             if line.endswith('[PEXPECT]$') or '[PEXPECT]$' in line:
-                logger.info('Detected [PEXPECT]$ prompt, ending stream.')
+                logger.debug('Detected [PEXPECT]$ prompt, ending stream.')
                 break
 
             if time.time() - start_time > timeout:
@@ -143,21 +140,11 @@ class PluginMixin:
         logger.info('Initializing plugins in the sandbox')
 
         # clean-up ~/.bashrc and touch ~/.bashrc
-        self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
+        exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
         if exit_code != 0:
             logger.warning(
                 f'Failed to clean-up ~/.bashrc with exit code {exit_code} and output: {output}'
             )
-
-        # Copy the entire runtime folder to the sandbox
-        # runtime_host_path = os.path.dirname(
-        #     os.path.dirname(__file__)
-        # )  # Get the path to the runtime folder
-        # runtime_sandbox_path = '/opendevin/runtime'
-        # self.copy_to(runtime_host_path, runtime_sandbox_path, recursive=True)
-        # logger.info(
-        #     f'Copied runtime folder from [{runtime_host_path}] to [{runtime_sandbox_path}] inside sandbox.'
-        # )
 
         for index, requirement in enumerate(requirements, 1):
             logger.info(
@@ -184,7 +171,7 @@ class PluginMixin:
                 )
                 logger.info(f'Executing [{abs_path_to_bash_script}] in the sandbox.')
 
-                exit_code, output = self.execute(abs_path_to_bash_script, stream=False)
+                exit_code, output = self.execute(abs_path_to_bash_script, stream=True)
                 if isinstance(output, CancellableStream):
                     _handle_stream_output(output, requirement.name)
                 else:

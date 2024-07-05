@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Generator
 
 
 class Process(ABC):
@@ -15,8 +14,4 @@ class Process(ABC):
 
     @abstractmethod
     def read_logs(self) -> str:
-        pass
-
-    @abstractmethod
-    def stream_logs(self) -> Generator[str, None, None]:
         pass

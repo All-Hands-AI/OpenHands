@@ -32,7 +32,7 @@ class SSHExecCancellableStream(CancellableStream):
         super().__init__(self.read_output())
         self.ssh = ssh
         self.cmd = cmd
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else 120
         self.output_queue: Queue[str] = Queue()
         self.thread = threading.Thread(target=self._read_output_thread)
         self.thread.daemon = True
@@ -171,7 +171,7 @@ class DockerSSHBox(Sandbox):
 
         if config.persist_sandbox:
             if not self.run_as_devin:
-                raise Exception(
+                raise RuntimeError(
                     'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
                 )
             self.instance_id = 'persisted'
@@ -188,7 +188,7 @@ class DockerSSHBox(Sandbox):
         # set up random user password
         if config.persist_sandbox:
             if not config.ssh_password:
-                raise Exception(
+                raise RuntimeError(
                     'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
             self._ssh_password = config.ssh_password
@@ -248,7 +248,7 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
         if exit_code != 0:
-            raise Exception(
+            raise RuntimeError(
                 f'Failed to make all users passwordless sudoers in sandbox: {logs}'
             )
 
@@ -291,7 +291,7 @@ class DockerSSHBox(Sandbox):
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(f'Failed to set password in sandbox: {logs}')
+                raise RuntimeError(f'Failed to set password in sandbox: {logs}')
 
             # chown the home directory
             exit_code, logs = self.container.exec_run(
@@ -300,7 +300,7 @@ class DockerSSHBox(Sandbox):
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(
+                raise RuntimeError(
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
                 )
             # check the miniforge3 directory exist
@@ -315,11 +315,11 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 if exit_code == 1:
-                    raise Exception(
+                    raise RuntimeError(
                         'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
                     )
                 else:
-                    raise Exception(
+                    raise RuntimeError(
                         f'An error occurred while checking if miniforge3 directory exists: {logs}'
                     )
             exit_code, logs = self.container.exec_run(
@@ -344,11 +344,24 @@ class DockerSSHBox(Sandbox):
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(f'Failed to set password for root in sandbox: {logs}')
+                raise RuntimeError(
+                    f'Failed to set password for root in sandbox: {logs}'
+                )
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
+        )
+
+    def __update_sandbox_runtime(self):
+        # Copy the entire runtime folder to the sandbox
+        runtime_host_path = os.path.dirname(
+            os.path.dirname(__file__)
+        )  # Get the path to the runtime folder
+        runtime_sandbox_path = '/opendevin/runtime'
+        self.copy_to(runtime_host_path, runtime_sandbox_path, recursive=True)
+        logger.info(
+            f'Copied runtime folder from [{runtime_host_path}] to [{runtime_sandbox_path}] inside sandbox.'
         )
 
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
@@ -374,6 +387,7 @@ class DockerSSHBox(Sandbox):
             )
             self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
             logger.info('Connected to SSH session')
+            self.__update_sandbox_runtime()
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
@@ -431,7 +445,9 @@ class DockerSSHBox(Sandbox):
                 if exit_code != 0:
                     return exit_code, all_output
                 if PEXPECT_PROMPT in output:
-                    logger.info('Detected [PEXPECT]$ prompt, ending command execution.')
+                    logger.debug(
+                        'Detected [PEXPECT]$ prompt, ending command execution.'
+                    )
                     break
             return 0, all_output
 
@@ -456,7 +472,7 @@ class DockerSSHBox(Sandbox):
                 break
             command_output += output
             if PEXPECT_PROMPT in output:
-                logger.info('Detected [PEXPECT]$ prompt, ending command execution.')
+                logger.debug('Detected [PEXPECT]$ prompt, ending command execution.')
                 break
         command_output = command_output.removesuffix('\r\n')
 
@@ -473,7 +489,7 @@ class DockerSSHBox(Sandbox):
                     cmd, command_output, ignore_last_output=True
                 )
             if PEXPECT_PROMPT in exit_code_str:
-                logger.info('Detected [PEXPECT]$ prompt, ending command execution.')
+                logger.debug('Detected [PEXPECT]$ prompt, ending command execution.')
                 break
         cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
 
@@ -494,7 +510,7 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
         if exit_code != 0:
-            raise Exception(
+            raise RuntimeError(
                 f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
             )
 
@@ -726,7 +742,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger.info('Exiting...')
     finally:
-        # Ensure we kill the background process before exiting
-        if bg_process.pid in ssh_box.background_commands:
-            ssh_box.kill_background(bg_process.pid)
         ssh_box.close()

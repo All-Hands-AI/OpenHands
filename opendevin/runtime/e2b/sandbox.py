@@ -1,7 +1,6 @@
 import os
 import tarfile
 from glob import glob
-from typing import Generator
 
 from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
@@ -150,22 +149,3 @@ class E2BBox(Sandbox):
 
     def get_working_directory(self):
         return self.sandbox.cwd
-
-    def stream_logs(self, process_id: int) -> Generator[str, None, None]:
-        """
-        Stream logs from a background process.
-
-        Args:
-            process_id (int): The ID of the background process.
-
-        Yields:
-            str: Log lines as they become available.
-
-        Raises:
-            ValueError: If the process with the given ID is not found.
-        """
-        proc = self.background_commands.get(process_id)
-        if proc is None:
-            raise ValueError(f'Process {process_id} not found')
-        assert isinstance(proc, E2BProcess)
-        yield from proc.stream_logs()

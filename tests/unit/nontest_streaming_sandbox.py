@@ -6,7 +6,6 @@ import pytest
 
 from opendevin.core.config import config
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
@@ -30,7 +29,7 @@ def test_streaming_execution(temp_dir, mock_ssh):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ), patch('opendevin.runtime.docker.ssh_box.pxssh.pxssh', return_value=mock_ssh):
         box = DockerSSHBox()
         exit_code, output = box.execute('echo "Hello, World!"', stream=True)
@@ -56,7 +55,7 @@ def test_streaming_execution_with_error(temp_dir, mock_ssh):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ), patch('opendevin.runtime.docker.ssh_box.pxssh.pxssh', return_value=mock_ssh):
         box = DockerSSHBox()
         exit_code, output = box.execute('non_existing_command', stream=True)
@@ -80,10 +79,10 @@ def test_streaming_execution_timeout(temp_dir, mock_ssh):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ), patch('opendevin.runtime.docker.ssh_box.pxssh.pxssh', return_value=mock_ssh):
         box = DockerSSHBox()
-        exit_code, output = box.execute('sleep 10', stream=True, timeout=1)
+        _, output = box.execute('sleep 10', stream=True, timeout=1)
 
         assert isinstance(
             output, CancellableStream
@@ -97,12 +96,12 @@ def test_streaming_execution_timeout(temp_dir, mock_ssh):
         box.close()
 
 
-@pytest.mark.parametrize('box_class', [DockerSSHBox, DockerExecBox, LocalBox])
+@pytest.mark.parametrize('box_class', [DockerSSHBox, LocalBox])
 def test_streaming_execution_across_boxes(temp_dir, box_class):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
         box = box_class()
         exit_code, output = box.execute(
@@ -133,7 +132,7 @@ def test_streaming_execution_cancellation(temp_dir, mock_ssh):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ), patch('opendevin.runtime.docker.ssh_box.pxssh.pxssh', return_value=mock_ssh):
         box = DockerSSHBox()
         exit_code, output = box.execute('long_running_command', stream=True)
@@ -162,7 +161,7 @@ def test_streaming_execution_large_output(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
         box = DockerSSHBox()
         exit_code, output = box.execute(f'echo "{large_output}"', stream=True)
