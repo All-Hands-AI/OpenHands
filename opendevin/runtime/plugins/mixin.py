@@ -36,9 +36,6 @@ class PluginMixin:
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
 
-        if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
-            return
-
         if self.initialize_plugins:
             logger.info('Initializing plugins in the sandbox')
 
@@ -95,5 +92,3 @@ class PluginMixin:
 
         if len(requirements) > 0:
             _source_bashrc(self)
-
-        self.plugin_initialized = True
