@@ -17,7 +17,7 @@ def generate_dockerfile_content(base_image: str) -> str:
         'RUN apt update && apt install -y openssh-server wget sudo\n'
         'RUN mkdir -p -m0755 /var/run/sshd\n'
         'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
-        'RUN echo "" > /opendevin/bash.bashrc'
+        'RUN echo "" > /opendevin/bash.bashrc\n'
         'RUN { test -d /opendevin/miniforge3 && echo "/opendevin/miniforge3 already in base image"; } || { \\\n'
         '    wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
         '    bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
