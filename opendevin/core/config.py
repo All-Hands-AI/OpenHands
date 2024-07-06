@@ -20,7 +20,7 @@ load_dotenv()
 
 
 @dataclass
-class LLMConfig(metaclass=Singleton):
+class LLMConfig:
     """
     Configuration for the LLM model.
 
@@ -101,7 +101,7 @@ class LLMConfig(metaclass=Singleton):
 
 
 @dataclass
-class AgentConfig(metaclass=Singleton):
+class AgentConfig:
     """
     Configuration for the agent.
 
@@ -251,6 +251,8 @@ class AppConfig(metaclass=Singleton):
         """
         if name in self.llms:
             return self.llms[name]
+        if name is not None and name != 'llm':
+            logger.warning(f'llm config group {name} not found, using default config')
         if 'llm' not in self.llms:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
@@ -453,17 +455,20 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key.lower().endswith('agent'):
-                    logger.info(f'Loading agent config {key} from config toml')
+                    logger.info(
+                        f'Attempt to load group {key} from config toml as agent config'
+                    )
                     agent_config = AgentConfig(**value)
                     cfg.set_agent_config(agent_config, key)
-                else:
-                    logger.info(f'Loading llm config {key} from config toml')
+                elif key.lower().endswith('llm'):
+                    logger.info(
+                        f'Attempt to load group {key} from config toml as LLM config'
+                    )
                     llm_config = LLMConfig(**value)
                     cfg.set_llm_config(llm_config, key)
-                    print('llm config set!')
             except (TypeError, KeyError) as e:
                 logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
+                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
                     exc_info=False,
                 )
 

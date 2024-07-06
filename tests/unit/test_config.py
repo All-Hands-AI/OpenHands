@@ -102,8 +102,16 @@ def test_load_from_new_style_toml(default_config, temp_toml_file):
 model = "test-model"
 api_key = "toml-api-key"
 
+[cheap_llm]
+model = "some-cheap-model"
+api_key = "cheap-model-api-key"
+
 [agent]
 memory_enabled = true
+
+[BrowsingAgent]
+llm_config = "cheap_llm"
+memory_enabled = false
 
 [sandbox]
 timeout = 1
@@ -117,10 +125,29 @@ sandbox_type = "local"
 
     load_from_toml(default_config, temp_toml_file)
 
+    # default llm & agent configs
+    assert default_config.default_agent == 'TestAgent'
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.get_llm_config().api_key == 'toml-api-key'
-    assert default_config.default_agent == 'TestAgent'
     assert default_config.get_agent_config().memory_enabled is True
+
+    # undefined agent config inherits default ones
+    assert (
+        default_config.get_llm_config_from_agent('CodeActAgent')
+        == default_config.get_llm_config()
+    )
+    assert default_config.get_agent_config('CodeActAgent').memory_enabled is True
+
+    # defined agent config overrides default ones
+    assert default_config.get_llm_config_from_agent(
+        'BrowsingAgent'
+    ) == default_config.get_llm_config('cheap_llm')
+    assert (
+        default_config.get_llm_config_from_agent('BrowsingAgent').model
+        == 'some-cheap-model'
+    )
+    assert default_config.get_agent_config('BrowsingAgent').memory_enabled is False
+
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1
