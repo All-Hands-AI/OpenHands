@@ -39,7 +39,7 @@ def attempt_on_error(retry_state):
         f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
         exc_info=False,
     )
-    return True
+    return None
 
 
 @retry(

@@ -31,7 +31,6 @@ ColorType = Literal[
 ]
 
 LOG_COLORS: Mapping[str, ColorType] = {
-    'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
     'OBSERVATION': 'yellow',
     'DETAIL': 'cyan',
@@ -114,6 +113,8 @@ def get_console_handler():
     """
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
+    if config.debug:
+        console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(console_formatter)
     return console_handler
 
@@ -156,7 +157,10 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
-opendevin_logger.setLevel(logging.INFO)
+if config.debug:
+    opendevin_logger.setLevel(logging.DEBUG)
+else:
+    opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))

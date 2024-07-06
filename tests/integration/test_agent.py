@@ -5,13 +5,16 @@ import subprocess
 
 import pytest
 
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.main import main
+from opendevin.core.config import parse_arguments
+from opendevin.core.main import run_agent_controller
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
     AgentRejectAction,
 )
+from opendevin.llm.llm import LLM
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
@@ -29,7 +32,7 @@ print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 )
 @pytest.mark.skipif(
     (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
-    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
@@ -38,7 +41,14 @@ print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
-    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    args = parse_arguments()
+
+    # Create the agent
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
+    )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
 
@@ -61,7 +71,7 @@ def test_write_simple_script():
 )
 @pytest.mark.skipif(
     (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
-    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
@@ -69,10 +79,11 @@ def test_write_simple_script():
     reason='We only keep basic tests for MonologueAgent and PlannerAgent',
 )
 @pytest.mark.skipif(
-    os.getenv('SANDBOX_TYPE') == 'local',
+    os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
 def test_edits():
+    args = parse_arguments()
     # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
@@ -82,9 +93,14 @@ def test_edits():
             os.remove(dest_file)
         shutil.copy(os.path.join(source_dir, file), dest_file)
 
+    # Create the agent
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
+    )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
 
@@ -104,13 +120,20 @@ Enjoy!
     reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
-    os.getenv('SANDBOX_TYPE') != 'ssh',
+    os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
 def test_ipython():
+    args = parse_arguments()
+
+    # Create the agent
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
-    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
+    )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
 
@@ -131,14 +154,19 @@ def test_ipython():
     reason='Currently, only ManagerAgent supports task rejection',
 )
 @pytest.mark.skipif(
-    os.getenv('SANDBOX_TYPE') == 'local',
+    os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='FIXME: local sandbox does not capture stderr',
 )
 def test_simple_task_rejection():
+    args = parse_arguments()
+
+    # Create the agent
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_state: State = asyncio.run(main(task))
+    final_state: State | None = asyncio.run(run_agent_controller(agent, task))
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
     assert isinstance(final_state.history[-1][0], AgentRejectAction)
@@ -149,13 +177,20 @@ def test_simple_task_rejection():
     reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
-    os.getenv('SANDBOX_TYPE') != 'ssh',
+    os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
 def test_ipython_module():
+    args = parse_arguments()
+
+    # Create the agent
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
-    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
+    )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
 
@@ -178,13 +213,20 @@ def test_ipython_module():
 )
 @pytest.mark.skipif(
     (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
-    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):
+    args = parse_arguments()
+
+    # Create the agent
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
-    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
+    )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
     assert isinstance(final_state.history[-1][0], AgentFinishAction)

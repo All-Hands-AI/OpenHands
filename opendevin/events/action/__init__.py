@@ -8,7 +8,7 @@ from .agent import (
     ChangeAgentStateAction,
 )
 from .browse import BrowseInteractiveAction, BrowseURLAction
-from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
+from .commands import CmdRunAction, IPythonRunCellAction
 from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
 from .message import MessageAction
@@ -18,7 +18,6 @@ __all__ = [
     'Action',
     'NullAction',
     'CmdRunAction',
-    'CmdKillAction',
     'BrowseURLAction',
     'BrowseInteractiveAction',
     'FileReadAction',

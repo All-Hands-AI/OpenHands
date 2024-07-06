@@ -25,12 +25,20 @@ echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 mkdir -p $WORKSPACE_BASE
 
 # use environmental variable if exists, otherwise use "ssh"
-SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
+SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
 # TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
 PERSIST_SANDBOX=false
-MAX_ITERATIONS=10
+MAX_ITERATIONS=15
 
-agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
+agents=(
+  "DelegatorAgent"
+  "ManagerAgent"
+  "BrowsingAgent"
+  "MonologueAgent"
+  "CodeActAgent"
+  "PlannerAgent"
+  "CodeActSWEAgent"
+)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -64,7 +72,7 @@ run_test() {
     pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
   fi
 
-  SANDBOX_TYPE=$SANDBOX_TYPE \
+  SANDBOX_BOX_TYPE=$SANDBOX_BOX_TYPE \
     PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
@@ -133,7 +141,7 @@ trap cleanup EXIT
 regenerate_without_llm() {
   # set -x to print the command being executed
   set -x
-  SANDBOX_TYPE=$SANDBOX_TYPE \
+  SANDBOX_BOX_TYPE=$SANDBOX_BOX_TYPE \
     PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
@@ -162,7 +170,7 @@ regenerate_with_llm() {
   set -x
   echo -e "/exit\n" | \
     DEBUG=true \
-    SANDBOX_TYPE=$SANDBOX_TYPE \
+    SANDBOX_BOX_TYPE=$SANDBOX_BOX_TYPE \
     PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
