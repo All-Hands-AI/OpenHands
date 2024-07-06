@@ -37,7 +37,7 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_parser
+from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -200,6 +200,7 @@ def process_instance(
             run_agent_controller(
                 agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),
@@ -266,6 +267,9 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('Idavidrein/gpqa', args.data_split)
@@ -279,7 +283,7 @@ if __name__ == '__main__':
     # gpqa_dataset = dataset['train'].to_pandas().sort_values(by='id').reset_index(drop=True)
 
     metadata = make_metadata(
-        llm_config=config.llm,
+        llm_config=llm_config,
         dataset_name='gpqa',
         agent_class=args.agent_cls,
         max_iterations=args.max_iterations,
@@ -292,8 +296,6 @@ if __name__ == '__main__':
     prepared_dataset = prepare_dataset(
         gpqa_dataset, output_file, args.eval_n_limit, 'task_id'
     )
-
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(config.llm))
 
     run_evaluation(
         dataset=prepared_dataset,

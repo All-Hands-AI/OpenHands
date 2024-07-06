@@ -21,7 +21,7 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -176,7 +176,9 @@ def process_instance(
     # Create the agent
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
 
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    workspace_mount_path = os.path.join(
+        metadata.config.workspace_mount_path, '_eval_workspace'
+    )
     # create process-specific workspace dir
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
@@ -283,6 +285,7 @@ IMPORTANT TIPS:
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -354,7 +357,8 @@ if __name__ == '__main__':
     swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 
     id_column = 'instance_id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
 
     details = {}
     _agent_cls = agenthub.Agent.get_cls(args.agent_cls)
@@ -367,7 +371,6 @@ if __name__ == '__main__':
         llm_config,
         'swe-bench-lite',
         args.agent_cls,
-        args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
         details=details,
