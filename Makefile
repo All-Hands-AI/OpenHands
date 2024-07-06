@@ -142,6 +142,7 @@ install-python-dependencies:
 		poetry run pip install chroma-hnswlib; \
 	fi
 	@poetry install
+	@poetry run pip install -q -U google-generativeai
 	@if [ -f "/etc/manjaro-release" ]; then \
 		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
 		poetry run pip install playwright; \
