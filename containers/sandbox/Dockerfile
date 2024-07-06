@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     git \
     vim \
+    nano \
     unzip \
     zip \
     python3 \
