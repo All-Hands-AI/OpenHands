@@ -9,7 +9,7 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
@@ -587,14 +587,14 @@ Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt
 ----------
 
 Let's start by installing the `pymsgbox` package.
-<execute_bash>
-pip install pymsgbox==1.0.9
-</execute_bash>
+<execute_ipython>
+%pip install pymsgbox==1.0.9
+</execute_ipython>
 
 ----------
 
 OBSERVATION:
 [Package installed successfully]
-[Command -1 finished with exit code 0]
+[Kernel restarted successfully to load the package]
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task.

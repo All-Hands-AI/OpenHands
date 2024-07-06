@@ -217,15 +217,11 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l", "background": false, "thought": ""}}
+        {"action": "run", "args": {"command": "ls -l", "thought": ""}}
         ```
     - Run an IPython command:
         ```json
         {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
-        ```
-    - Kill a background command:
-        ```json
-        {"action": "kill", "args": {"id": "command_id"}}
         ```
     - Open a web page:
         ```json

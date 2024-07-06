@@ -1,23 +1,24 @@
 import asyncio
-import json
 import logging
-import multiprocessing as mp
 import os
-import pathlib
 import re
 import shutil
-import subprocess
-import time
-from concurrent.futures import ProcessPoolExecutor
 
 import docker
+import pandas as pd
 from datasets import load_dataset
-from tqdm import tqdm
 
 from evaluation.agent_bench.helper import (
+    FAKE_RESPONSES,
+    INST_SUFFIXES,
     compare_results,
     create_sh_file,
-    try_parse_answer,
+)
+from evaluation.utils.shared import (
+    EvalMetadata,
+    make_metadata,
+    prepare_dataset,
+    run_evaluation,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -31,64 +32,13 @@ from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
-
-def codeact_user_response(state: State) -> str:
-    msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through '
-        'message and then <execute_bash> exit </execute_bash>.\n'
-        'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
-        'For example: The answer to the question is <solution> 42 </solution>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
-    )
-    if state.history:
-        # check if the last action is an answer, if so, return exit for early exit
-        last_action, _ = state.history[-1]
-        ans = try_parse_answer(last_action)
-        if ans is not None:
-            return '/exit'
-
-        user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
-    return msg
-
-
-AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': codeact_user_response,
-}
-
-AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, '
-    'please first send your answer to user through message and then exit.\n'
-}
-
-
 def process_instance(
-    agent,
-    instance,
-    metadata,
-    eval_output_dir,
+    instance: pd.Series,
+    metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    # =============================================
-    # preparation
-    # =============================================
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
 
     inst_id = instance.instance_id
     question = instance.description
@@ -104,7 +54,9 @@ def process_instance(
     # Set up the logger properly, so you can run multiprocessing to parallel the evaluation
     if reset_logger:
         # Set up logger
-        log_file = os.path.join(eval_output_dir, 'logs', f'instance_{inst_id}.log')
+        log_file = os.path.join(
+            metadata.eval_output_dir, 'logs', f'instance_{inst_id}.log'
+        )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
@@ -140,7 +92,7 @@ def process_instance(
         'to you AND NEVER ASK FOR HUMAN HELP.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
+    instruction += INST_SUFFIXES[agent.__class__.__name__]
 
     # =============================================
     # create sandbox and run the agent
@@ -164,9 +116,8 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                agent.__class__.__name__
-            ],
+            max_iterations=metadata.max_iterations,
+            fake_user_response_fn=FAKE_RESPONSES[agent.__class__.__name__],
             sandbox=sandbox,
             sid=inst_id,
         )
@@ -262,154 +213,30 @@ def process_instance(
 
 
 if __name__ == '__main__':
+    id_column = 'instance_id'
     args = parse_arguments()
-
-    # =============================================
-    # load datasets
-    # =============================================
     dataset = load_dataset('iFurySt/AgentBench')
     agent_bench_tests = dataset['osbench'].to_pandas()
-    logger.info(f'Loaded {len(agent_bench_tests)} tests.')
 
-    # =============================================
-    # handle arguments and prepare for evaluation
-    # =============================================
-
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
     logger.info(f'Config for evaluation: {config}')
 
-    # TEST METADATA
-    agent_cls = args.agent_cls
-    assert (
-        agent_cls in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
-    ), f'Unsupported agent class: {agent_cls}'
-    model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
-    eval_note = ''
-    if args.eval_note is not None:
-        eval_note += '_N_' + args.eval_note
-    eval_op_dir = str(
-        os.path.join(
-            args.eval_output_dir,
-            'agent_bench',
-            agent_cls,
-            model_name + '_maxiter_' + str(max_iterations) + eval_note,
-        )
+    metadata = make_metadata(
+        llm_config,
+        args.dataset_name,
+        args.agent_cls,
+        args.max_iterations,
+        args.eval_note,
+        args.eval_output_dir,
     )
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
 
-    pathlib.Path(eval_op_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(str(os.path.join(eval_op_dir, 'logs'))).mkdir(
-        parents=True, exist_ok=True
+    run_evaluation(
+        instances,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
+        id_column,
     )
-    logger.info(f'Using evaluation output directory: {eval_op_dir}')
-
-    meta = {
-        'agent_class': agent_cls,
-        'model_name': model_name,
-        'max_iterations': max_iterations,
-        'eval_output_dir': eval_op_dir,
-        'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproducibility
-        'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        .decode('utf-8')
-        .strip(),
-    }
-    logger.info(f'Metadata: {meta}')
-    with open(os.path.join(eval_op_dir, 'metadata.json'), 'w') as f:
-        json.dump(meta, f)
-
-    # LIMIT EVALUATION
-    eval_n_limit = args.eval_n_limit
-    if eval_n_limit:
-        agent_bench_tests = agent_bench_tests[:eval_n_limit]
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
-
-    # OUTPUT FILE
-    output_file = os.path.join(eval_op_dir, 'output.jsonl')
-    logger.info(f'Writing evaluation output to {output_file}')
-    finished_instance_ids = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                finished_instance_ids.add(data['instance_id'])
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
-        )
-    output_fp = open(output_file, 'a')
-
-    logger.info(
-        f'Evaluation started with Agent {agent_cls}, model {model_name}, max iterations {max_iterations}.'
-    )
-
-    # =============================================
-    # filter out finished instances
-    # =============================================
-
-    new_agent_bench_tests = []
-    for idx, inst in agent_bench_tests.iterrows():
-        if inst.instance_id in finished_instance_ids:
-            logger.info(
-                f'Skipping instance {inst.instance_id} as it is already finished.'
-            )
-            continue
-        new_agent_bench_tests.append(inst)
-
-    agent_bench_tests = new_agent_bench_tests
-    logger.info(
-        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(agent_bench_tests)}'
-    )
-
-    # =============================================
-    # start task
-    # =============================================
-
-    pbar = tqdm(total=len(agent_bench_tests))
-
-    # This function tracks the progress AND write the output to a JSONL file
-    def update_progress(fut):
-        pbar.update(1)
-        output = fut.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
-        logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
-        )
-        output_fp.write(json.dumps(output) + '\n')
-        output_fp.flush()
-
-    # This sets the multiprocessing
-    num_workers = args.eval_num_workers
-    logger.info(f'Using {num_workers} workers for evaluation.')
-
-    # Create the agent
-    agent = Agent.get_cls(agent_cls)(llm=LLM(config.llm))
-
-    try:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
-            # This is how we perform multiprocessing
-            for inst in agent_bench_tests:
-                future = executor.submit(
-                    process_instance,
-                    agent,
-                    inst,
-                    meta,
-                    eval_op_dir,
-                    reset_logger=bool(num_workers > 1),
-                )
-                future.add_done_callback(update_progress)
-                futures.append(future)
-
-            # Wait for all futures to complete
-            for future in futures:
-                future.result()
-    except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
-        cleanup()
-
-    output_fp.close()
-    logger.info('Evaluation finished.')

@@ -6,7 +6,6 @@ from opendevin.events.action import (
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
-    CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -85,18 +84,10 @@ def test_agent_reject_action_serialization_deserialization():
     serialization_deserialization(original_action_dict, AgentRejectAction)
 
 
-def test_cmd_kill_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'kill',
-        'args': {'command_id': '1337', 'thought': ''},
-    }
-    serialization_deserialization(original_action_dict, CmdKillAction)
-
-
 def test_cmd_run_action_serialization_deserialization():
     original_action_dict = {
         'action': 'run',
-        'args': {'command': 'echo "Hello world"', 'background': True, 'thought': ''},
+        'args': {'command': 'echo "Hello world"', 'thought': ''},
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
 

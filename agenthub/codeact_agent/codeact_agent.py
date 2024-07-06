@@ -179,7 +179,7 @@ class CodeActAgent(Agent):
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
-        - state (State): used to get updated info and background commands
+        - state (State): used to get updated info
 
         Returns:
         - CmdRunAction(command) - bash command to run

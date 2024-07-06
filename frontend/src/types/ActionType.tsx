@@ -17,9 +17,6 @@ enum ActionType {
   // Runs a IPython command.
   RUN_IPYTHON = "run_ipython",
 
-  // Kills a background command.
-  KILL = "kill",
-
   // Opens a web page.
   BROWSE = "browse",
 
