@@ -74,13 +74,13 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     # Test loading configuration from old-style environment variables using monkeypatch
     monkeypatch.setenv('LLM_API_KEY', 'test-api-key')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
-    monkeypatch.setenv('AGENT_NAME', 'PlannerAgent')
+    monkeypatch.setenv('DEFAULT_AGENT', 'PlannerAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
     monkeypatch.setenv('SANDBOX_CONTAINER_IMAGE', 'custom_image')
 
     load_from_env(default_config, os.environ)
 
-    assert default_config.llm.api_key == 'test-api-key'
+    assert default_config.get_llm_config().api_key == 'test-api-key'
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.default_agent == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'

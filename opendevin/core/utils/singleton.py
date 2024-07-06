@@ -13,16 +13,20 @@ class Singleton(type):
             # useful for pre-defined groups of settings
             instance = cls._instances[cls]
             for key, value in kwargs.items():
+                if not hasattr(instance, key):
+                    raise KeyError(f'Invalid field: {key}')
                 setattr(instance, key, value)
         return cls._instances[cls]
 
     @classmethod
     def reset(cls):
-        # used by pytest to reset the state of the singleton instances
+        # Used by pytest to reset the state of the singleton instances
         for instance_type, instance in cls._instances.items():
             print('resetting... ', instance_type)
-            for field in dataclasses.fields(instance_type):
-                if dataclasses.is_dataclass(field.type):
-                    setattr(instance, field.name, field.type())
+            for field_info in dataclasses.fields(instance_type):
+                if dataclasses.is_dataclass(field_info.type):
+                    setattr(instance, field_info.name, field_info.type())
+                elif field_info.default_factory is not dataclasses.MISSING:
+                    setattr(instance, field_info.name, field_info.default_factory())
                 else:
-                    setattr(instance, field.name, field.default)
+                    setattr(instance, field_info.name, field_info.default)

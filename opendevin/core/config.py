@@ -452,16 +452,20 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     for key, value in toml_config.items():
         if isinstance(value, dict):
             try:
-                llm_config = LLMConfig(**value)
-                cfg.set_llm_config(llm_config, key)
-                continue
-            except (TypeError, KeyError):
-                pass
-            try:
-                agent_config = AgentConfig(**value)
-                cfg.set_agent_config(agent_config, key)
-            except (TypeError, KeyError):
-                pass
+                if key.lower().endswith('agent'):
+                    logger.info(f'Loading agent config {key} from config toml')
+                    agent_config = AgentConfig(**value)
+                    cfg.set_agent_config(agent_config, key)
+                else:
+                    logger.info(f'Loading llm config {key} from config toml')
+                    llm_config = LLMConfig(**value)
+                    cfg.set_llm_config(llm_config, key)
+                    print('llm config set!')
+            except (TypeError, KeyError) as e:
+                logger.warning(
+                    f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
+                    exc_info=False,
+                )
 
     try:
         # set sandbox config from the toml file
