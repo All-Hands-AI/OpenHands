@@ -33,7 +33,7 @@ if config.agent.memory_enabled:
     from opendevin.memory.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
-MAX_OUTPUT_LENGTH = 5000
+MAX_OUTPUT_LENGTH = config.agent.max_monologue_length if hasattr(config.agent, 'max_monologue_length') else 5000
 
 
 class MonologueAgent(Agent):
