@@ -12,7 +12,6 @@ from opendevin.events.action import (
     MessageAction,
 )
 from opendevin.events.observation import (
-    CmdOutputObservation,
     Observation,
 )
 from opendevin.storage import get_file_store
@@ -42,7 +41,6 @@ class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     max_iterations: int = 100
-    background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
     history: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)

@@ -67,12 +67,23 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name opendevin-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.7
+    ghcr.io/opendevin/opendevin
 ```
+
+> [!NOTE]
+> By default, this command pulls the `latest` tag, which represents the most recent release of OpenDevin. You have other options as well:
+> - For a specific release version, use `ghcr.io/opendevin/opendevin:<OpenDevin_version>` (replace <OpenDevin_version> with the desired version number).
+> - For the most up-to-date development version, use `ghcr.io/opendevin/opendevin:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
+> 
+> Choose the tag that best suits your needs based on stability requirements and desired features.
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
 
 OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
+
+For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
+
+Are you having trouble? Check out our [Troubleshooting Guide](https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting).
 
 ## 🚀 Documentation
 

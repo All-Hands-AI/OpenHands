@@ -28,9 +28,17 @@ mkdir -p $WORKSPACE_BASE
 SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
 # TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
 PERSIST_SANDBOX=false
-MAX_ITERATIONS=10
+MAX_ITERATIONS=15
 
-agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
+agents=(
+  "DelegatorAgent"
+  "ManagerAgent"
+  "BrowsingAgent"
+  "MonologueAgent"
+  "CodeActAgent"
+  "PlannerAgent"
+  "CodeActSWEAgent"
+)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."

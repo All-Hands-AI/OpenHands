@@ -26,15 +26,6 @@ class AgentNotRegisteredError(Exception):
         super().__init__(message)
 
 
-class SandboxInvalidBackgroundCommandError(Exception):
-    def __init__(self, id=None):
-        if id is not None:
-            message = f'Invalid background command id {id}'
-        else:
-            message = 'Invalid background command id'
-        super().__init__(message)
-
-
 class TaskInvalidStateError(Exception):
     def __init__(self, state=None):
         if state is not None:

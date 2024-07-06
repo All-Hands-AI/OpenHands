@@ -134,6 +134,7 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -201,17 +202,15 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
 
     eda_dataset = load_dataset(
         'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
     )
 
     metadata = make_metadata(
-        config.llm,
+        llm_config,
         f'eda-{args.dataset}',
         args.agent_cls,
         args.max_iterations,
