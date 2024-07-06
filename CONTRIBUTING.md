@@ -12,7 +12,7 @@ There are many ways that you can contribute:
 
 ## Understanding OpenDevin's CodeBase
 
-In order to understand the codebase, please refer to the README in each module:
+To understand the codebase, please refer to the README in each module:
 - [frontend](./frontend/README.md)
 - [agenthub](./agenthub/README.md)
 - [evaluation](./evaluation/README.md)
@@ -20,7 +20,7 @@ In order to understand the codebase, please refer to the README in each module:
     - [server](./opendevin/server/README.md)
 
 When you write code, it is also good to write tests. Please navigate to the `tests` folder to see existing test suites.
-At the moment, we have two kinds of tests: `unit` and `integration`. Please refer to the README for each test suite. These tests also run on github's continuous integration to ensure quality of the project.
+At the moment, we have two kinds of tests: `unit` and `integration`. Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
 
 ## Sending Pull Requests to OpenDevin
 
@@ -77,7 +77,7 @@ git push origin my_branch
 
 ### 6. Open a Pull Request
 
-* On Github, go to the page of your forked repository, and create a Pull Request:
+* On GitHub, go to the page of your forked repository, and create a Pull Request:
    - Click on `Branches`
    - Click on the `...` beside your branch and click on `New pull request`
    - Set `base repository` to `OpenDevin/OpenDevin`
@@ -96,7 +96,7 @@ As described [here](https://github.com/commitizen/conventional-commit-types/blob
 - `feat`: A new feature
 - `fix`: A bug fix
 - `docs`: Documentation only changes
-- `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+- `style`: Changes that do not affect the meaning of the code (white space, formatting, missing semicolons, etc.)
 - `refactor`: A code change that neither fixes a bug nor adds a feature
 - `perf`: A code change that improves performance
 - `test`: Adding missing tests or correcting existing tests
@@ -110,8 +110,6 @@ For example, a PR title could be:
 - `feat(frontend): xxxx`, where `(frontend)` means that this PR mainly focuses on the frontend component.
 
 You may also check out previous PRs in the [PR list](https://github.com/OpenDevin/OpenDevin/pulls).
-
-As described [here](https://github.com/OpenDevin/OpenDevin/labels), we have created several labels. Every PR should be tagged with the corresponding labels.
 
 ### 2. Pull Request description
 - If your PR is small (such as a typo fix), you can go brief.

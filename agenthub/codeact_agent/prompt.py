@@ -5,7 +5,7 @@ _AGENT_SKILLS_DOCS = AgentSkillsRequirement.documentation
 COMMAND_DOCS = (
     '\nApart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:\n'
     f'{_AGENT_SKILLS_DOCS}'
-    "Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
+    "Please note that THE `edit_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
 # ======= SYSTEM MESSAGE =======
@@ -39,6 +39,7 @@ If $GITHUB_TOKEN is not set, ask the user to set it."""
 SYSTEM_SUFFIX = """Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
 Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
+If the assistant is finished with the task you MUST include <finish></finish> in your response.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 When handling files, try to use full paths and pwd to avoid errors.
 """
@@ -75,7 +76,12 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)\"\"\"
-edit_file('app.py', start=1, end=1, content=EDITED_CODE)
+
+insert_content_at_line(
+  'app.py',
+  1,
+  EDITED_CODE,
+)
 </execute_ipython>
 
 USER:
@@ -90,6 +96,7 @@ OBSERVATION:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
+11|
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
@@ -199,7 +206,7 @@ open_file('app.py')
 </execute_ipython>
 
 USER:
-[File: /workspace/app.py (10 lines total)]
+[File: /workspace/app.py (11 lines total)]
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -210,16 +217,21 @@ USER:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
+11|
 
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file('app.py', start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+edit_file(
+  'app.py',
+  to_replace="    return str(numbers)",
+  new_content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'",
+)
 </execute_ipython>
 
 USER:
 Observation:
-[File: /workspace/app.py (10 lines total after edit)]
+[File: /workspace/app.py (11 lines total after edit)]
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -230,6 +242,7 @@ Observation:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
+11|
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
@@ -244,6 +257,7 @@ Observation:
 
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+<finish></finish>
 
 --- END OF EXAMPLE ---
 """

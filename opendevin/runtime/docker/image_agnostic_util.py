@@ -17,17 +17,22 @@ def generate_dockerfile_content(base_image: str) -> str:
         'RUN apt update && apt install -y openssh-server wget sudo\n'
         'RUN mkdir -p -m0755 /var/run/sshd\n'
         'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
-        'RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"\n'
-        'RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3\n'
-        'RUN bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"\n'
-        'RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc\n'
-        'RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> /opendevin/bash.bashrc\n'
+        'RUN echo "" > /opendevin/bash.bashrc\n'
+        'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
+        '        wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
+        '        bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
+        '        chmod -R g+w /opendevin/miniforge3 && \\\n'
+        '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
+        '    fi\n'
+        'RUN /opendevin/miniforge3/bin/pip install --upgrade pip\n'
+        'RUN /opendevin/miniforge3/bin/pip install jupyterlab notebook jupyter_kernel_gateway flake8\n'
+        'RUN /opendevin/miniforge3/bin/pip install python-docx PyPDF2 python-pptx pylatexenc openai\n'
     ).strip()
     return dockerfile_content
 
 
 def _build_sandbox_image(
-        base_image: str, target_image_name: str, docker_client: docker.DockerClient
+    base_image: str, target_image_name: str, docker_client: docker.DockerClient
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -61,10 +66,11 @@ def _build_sandbox_image(
 
 
 def _get_new_image_name(base_image: str) -> str:
-    if ":" not in base_image:
-        base_image = base_image + ":latest"
+    if ':' not in base_image:
+        base_image = base_image + ':latest'
 
     [repo, tag] = base_image.split(':')
+    repo = repo.replace('/', '___')
     return f'od_sandbox:{repo}__{tag}'
 
 

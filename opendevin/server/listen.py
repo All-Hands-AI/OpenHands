@@ -1,14 +1,27 @@
+import os
+import re
 import uuid
 import warnings
+
+import requests
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from pathlib import Path
 
-from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    WebSocket,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
@@ -18,8 +31,12 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import AgentState  # Add this import
 from opendevin.events.action import ChangeAgentStateAction, NullAction
-from opendevin.events.observation import AgentStateChangedObservation, NullObservation
+from opendevin.events.observation import (
+    AgentStateChangedObservation,
+    NullObservation,
+)
 from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
@@ -37,8 +54,105 @@ app.add_middleware(
 security_scheme = HTTPBearer()
 
 
+def load_file_upload_config() -> tuple[int, bool, list[str]]:
+    """
+    Load file upload configuration from the config object.
+
+    This function retrieves the file upload settings from the global config object.
+    It handles the following settings:
+    - Maximum file size for uploads
+    - Whether to restrict file types
+    - List of allowed file extensions
+
+    It also performs sanity checks on the values to ensure they are valid and safe.
+
+    Returns:
+        tuple: A tuple containing:
+            - max_file_size_mb (int): Maximum file size in MB. 0 means no limit.
+            - restrict_file_types (bool): Whether file type restrictions are enabled.
+            - allowed_extensions (set): Set of allowed file extensions.
+    """
+    # Retrieve values from config
+    max_file_size_mb = config.file_uploads_max_file_size_mb
+    restrict_file_types = config.file_uploads_restrict_file_types
+    allowed_extensions = config.file_uploads_allowed_extensions
+
+    # Sanity check for max_file_size_mb
+    if not isinstance(max_file_size_mb, int) or max_file_size_mb < 0:
+        logger.warning(
+            f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).'
+        )
+        max_file_size_mb = 0
+
+    # Sanity check for allowed_extensions
+    if not isinstance(allowed_extensions, (list, set)) or not allowed_extensions:
+        logger.warning(
+            f'Invalid allowed_extensions: {allowed_extensions}. Setting to [".*"].'
+        )
+        allowed_extensions = ['.*']
+    else:
+        # Ensure all extensions start with a dot and are lowercase
+        allowed_extensions = [
+            ext.lower() if ext.startswith('.') else f'.{ext.lower()}'
+            for ext in allowed_extensions
+        ]
+
+    # If restrictions are disabled, allow all
+    if not restrict_file_types:
+        allowed_extensions = ['.*']
+
+    logger.debug(
+        f'File upload config: max_size={max_file_size_mb}MB, '
+        f'restrict_types={restrict_file_types}, '
+        f'allowed_extensions={allowed_extensions}'
+    )
+
+    return max_file_size_mb, restrict_file_types, allowed_extensions
+
+
+# Load configuration
+MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_config()
+
+
+def is_extension_allowed(filename):
+    """
+    Check if the file extension is allowed based on the current configuration.
+
+    This function supports wildcards and files without extensions.
+    The check is case-insensitive for extensions.
+
+    Args:
+        filename (str): The name of the file to check.
+
+    Returns:
+        bool: True if the file extension is allowed, False otherwise.
+    """
+    if not RESTRICT_FILE_TYPES:
+        return True
+
+    file_ext = os.path.splitext(filename)[1].lower()  # Convert to lowercase
+    return (
+        '.*' in ALLOWED_EXTENSIONS
+        or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
+        or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
+    )
+
+
 @app.middleware('http')
 async def attach_session(request: Request, call_next):
+    """
+    Middleware to attach session information to the request.
+
+    This middleware checks for the Authorization header, validates the token,
+    and attaches the corresponding session to the request state.
+
+    Args:
+        request (Request): The incoming request object.
+        call_next (Callable): The next middleware or route handler in the chain.
+
+    Returns:
+        Response: The response from the next middleware or route handler.
+    """
     if request.url.path.startswith('/api/options/') or not request.url.path.startswith(
         '/api/'
     ):
@@ -46,11 +160,10 @@ async def attach_session(request: Request, call_next):
         return response
 
     if not request.headers.get('Authorization'):
-        response = JSONResponse(
+        return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Missing Authorization header'},
         )
-        return response
 
     auth_token = request.headers.get('Authorization')
     if 'Bearer' in auth_token:
@@ -58,35 +171,34 @@ async def attach_session(request: Request, call_next):
 
     request.state.sid = get_sid_from_token(auth_token)
     if request.state.sid == '':
-        response = JSONResponse(
+        return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
         )
-        return response
 
     request.state.session = session_manager.get_session(request.state.sid)
     if request.state.session is None:
-        response = JSONResponse(
+        return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
         )
-        return response
 
     response = await call_next(request)
     return response
 
 
-# This endpoint receives events from the client (i.e. the browser)
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for receiving events from the client (i.e., the browser).
-
-    Once connected, you can send various actions:
+    Once connected, the client can send various actions:
     - Initialize the agent:
+    session management, and event streaming.
         ```json
         {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
+    Args:
         ```
+        websocket (WebSocket): The WebSocket connection object.
     - Start a new development task:
         ```json
         {"action": "start", "args": {"task": "write a bash script that prints hello"}}
@@ -105,15 +217,11 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l", "background": false, "thought": ""}}
+        {"action": "run", "args": {"command": "ls -l", "thought": ""}}
         ```
     - Run an IPython command:
         ```json
         {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
-        ```
-    - Kill a background command:
-        ```json
-        {"action": "kill", "args": {"id": "command_id"}}
         ```
     - Open a web page:
         ```json
@@ -142,7 +250,6 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
 
-    session = None
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
         sid = get_sid_from_token(token)
@@ -164,10 +271,14 @@ async def websocket_endpoint(websocket: WebSocket):
     for event in session.agent_session.event_stream.get_events(
         start_id=latest_event_id + 1
     ):
-        if isinstance(event, NullAction) or isinstance(event, NullObservation):
-            continue
-        if isinstance(event, ChangeAgentStateAction) or isinstance(
-            event, AgentStateChangedObservation
+        if isinstance(
+            event,
+            (
+                NullAction,
+                NullObservation,
+                ChangeAgentStateAction,
+                AgentStateChangedObservation,
+            ),
         ):
             continue
         await websocket.send_json(event_to_dict(event))
@@ -180,10 +291,16 @@ async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
 
+    This function combines models from litellm and Bedrock, removing any
+    error-prone Bedrock models.
+
     To get the models:
     ```sh
     curl http://localhost:3000/api/litellm-models
     ```
+
+    Returns:
+        list: A sorted list of unique model names.
     """
     litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
@@ -191,6 +308,18 @@ async def get_litellm_models():
     )
     bedrock_model_list = bedrock.list_foundation_models()
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    ollama_base_url = config.llm.ollama_base_url
+    if config.llm.model.startswith('ollama'):
+        if not ollama_base_url:
+            ollama_base_url = config.llm.base_url
+    if ollama_base_url:
+        ollama_url = ollama_base_url.strip('/') + '/api/tags'
+        try:
+            ollama_models_list = requests.get(ollama_url, timeout=3).json()['models']
+            for model in ollama_models_list:
+                model_list.append('ollama/' + model['name'])
+        except requests.exceptions.RequestException as e:
+            logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
 
     return list(sorted(set(model_list)))
 
@@ -204,6 +333,9 @@ async def get_agents():
     ```sh
     curl http://localhost:3000/api/agents
     ```
+
+    Returns:
+        list: A sorted list of agent names.
     """
     agents = sorted(Agent.list_agents())
     return agents
@@ -212,12 +344,25 @@ async def get_agents():
 @app.get('/api/list-files')
 def list_files(request: Request, path: str = '/'):
     """
-    List files.
+    List files in the specified path.
+
+    This function retrieves a list of files from the agent's runtime file store,
+    excluding certain system and hidden files/directories.
 
     To list files:
     ```sh
     curl http://localhost:3000/api/list-files
     ```
+
+    Args:
+        request (Request): The incoming request object.
+        path (str, optional): The path to list files from. Defaults to '/'.
+
+    Returns:
+        list: A list of file names in the specified path.
+
+    Raises:
+        HTTPException: If there's an error listing the files.
     """
     if not request.state.session.agent_session.runtime:
         return JSONResponse(
@@ -225,59 +370,106 @@ def list_files(request: Request, path: str = '/'):
             content={'error': 'Runtime not yet initialized'},
         )
 
-    exclude_list = (
-        '.git',
-        '.DS_Store',
-        '.svn',
-        '.hg',
-        '.idea',
-        '.vscode',
-        '.settings',
-        '.pytest_cache',
-        '__pycache__',
-        'node_modules',
-        'vendor',
-        'build',
-        'dist',
-        'bin',
-        'logs',
-        'log',
-        'tmp',
-        'temp',
-        'coverage',
-        'venv',
-        'env',
-    )
-
     try:
+        # Get the full path of the requested directory
+        full_path = (
+            request.state.session.agent_session.runtime.file_store.get_full_path(path)
+        )
+
+        # Check if the directory exists
+        if not os.path.exists(full_path) or not os.path.isdir(full_path):
+            return []
+
+        # Check if .gitignore exists
+        gitignore_path = os.path.join(full_path, '.gitignore')
+        if os.path.exists(gitignore_path):
+            # Use PathSpec to parse .gitignore
+            with open(gitignore_path, 'r') as f:
+                spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
+        else:
+            # Fallback to default exclude list if .gitignore doesn't exist
+            default_exclude = [
+                '.git',
+                '.DS_Store',
+                '.svn',
+                '.hg',
+                '.idea',
+                '.vscode',
+                '.settings',
+                '.pytest_cache',
+                '__pycache__',
+                'node_modules',
+                'vendor',
+                'build',
+                'dist',
+                'bin',
+                'logs',
+                'log',
+                'tmp',
+                'temp',
+                'coverage',
+                'venv',
+                'env',
+            ]
+            spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
+
         entries = request.state.session.agent_session.runtime.file_store.list(path)
 
-        # Filter entries, excluding special folders
-        if entries:
-            return [
-                entry
-                for entry in entries
-                if Path(entry).parts and Path(entry).parts[-1] not in exclude_list
-            ]
-        return []
+        # Filter entries using PathSpec
+        filtered_entries = [
+            entry
+            for entry in entries
+            if not spec.match_file(os.path.relpath(entry, str(full_path)))
+        ]
+
+        # Separate directories and files
+        directories = []
+        files = []
+        for entry in filtered_entries:
+            # Remove leading slash and any parent directory components
+            entry_relative = entry.lstrip('/').split('/')[-1]
+
+            # Construct the full path by joining the base path with the relative entry path
+            full_entry_path = os.path.join(full_path, entry_relative)
+            if os.path.exists(full_entry_path):
+                is_dir = os.path.isdir(full_entry_path)
+                if is_dir:
+                    directories.append(entry)
+                else:
+                    files.append(entry)
+
+        # Sort directories and files separately
+        directories.sort(key=lambda s: s.lower())
+        files.sort(key=lambda s: s.lower())
+
+        # Combine sorted directories and files
+        sorted_entries = directories + files
+        return sorted_entries
+
     except Exception as e:
-        logger.error(f'Error refreshing files: {e}', exc_info=False)
-        error_msg = f'Error refreshing files: {e}'
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': error_msg},
-        )
+        logger.error(f'Error listing files: {e}', exc_info=True)
+        return []
 
 
 @app.get('/api/select-file')
 def select_file(file: str, request: Request):
     """
-    Select a file.
+    Retrieve the content of a specified file.
 
     To select a file:
     ```sh
     curl http://localhost:3000/api/select-file?file=<file_path>
     ```
+
+    Args:
+        file (str): The path of the file to be retrieved.
+        request (Request): The incoming request object.
+
+    Returns:
+        dict: A dictionary containing the file content.
+
+    Raises:
+        HTTPException: If there's an error opening the file.
     """
     try:
         content = request.state.session.agent_session.runtime.file_store.read(file)
@@ -291,48 +483,128 @@ def select_file(file: str, request: Request):
     return {'code': content}
 
 
+def sanitize_filename(filename):
+    """
+    Sanitize the filename to prevent directory traversal
+    """
+    # Remove any directory components
+    filename = os.path.basename(filename)
+    # Remove any non-alphanumeric characters except for .-_
+    filename = re.sub(r'[^\w\-_\.]', '', filename)
+    # Limit the filename length
+    max_length = 255
+    if len(filename) > max_length:
+        name, ext = os.path.splitext(filename)
+        filename = name[: max_length - len(ext)] + ext
+    return filename
+
+
 @app.post('/api/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
     """
-    Upload files to the workspace.
+    Upload a list of files to the workspace.
 
-    To upload files:
+    To upload a files:
     ```sh
     curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/upload-files
     ```
+
+    Args:
+        request (Request): The incoming request object.
+        files (list[UploadFile]): A list of files to be uploaded.
+
+    Returns:
+        dict: A message indicating the success of the upload operation.
+
+    Raises:
+        HTTPException: If there's an error saving the files.
     """
     try:
+        uploaded_files = []
+        skipped_files = []
         for file in files:
+            safe_filename = sanitize_filename(file.filename)
             file_contents = await file.read()
+
+            if (
+                MAX_FILE_SIZE_MB > 0
+                and len(file_contents) > MAX_FILE_SIZE_MB * 1024 * 1024
+            ):
+                skipped_files.append(
+                    {
+                        'name': safe_filename,
+                        'reason': f'Exceeds maximum size limit of {MAX_FILE_SIZE_MB}MB',
+                    }
+                )
+                continue
+
+            if not is_extension_allowed(safe_filename):
+                skipped_files.append(
+                    {'name': safe_filename, 'reason': 'File type not allowed'}
+                )
+                continue
+
             request.state.session.agent_session.runtime.file_store.write(
-                file.filename, file_contents
+                safe_filename, file_contents
             )
+            uploaded_files.append(safe_filename)
+
+        response_content = {
+            'message': 'File upload process completed',
+            'uploaded_files': uploaded_files,
+            'skipped_files': skipped_files,
+        }
+
+        if not uploaded_files and skipped_files:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    **response_content,
+                    'error': 'No files were uploaded successfully',
+                },
+            )
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=response_content)
+
     except Exception as e:
-        logger.error(f'Error saving files: {e}', exc_info=True)
+        logger.error(f'Error during file upload: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving file:s {e}'},
+            content={
+                'error': f'Error during file upload: {str(e)}',
+                'uploaded_files': [],
+                'skipped_files': [],
+            },
         )
-    return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
 
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request, feedback: FeedbackDataModel):
     """
-    Upload files to the workspace.
+    Submit user feedback.
 
-    To upload files:
+    This function stores the provided feedback data.
+
+    To submit feedback:
     ```sh
     curl -X POST -F "email=test@example.com" -F "token=abc" -F "feedback=positive" -F "permissions=private" -F "trajectory={}" http://localhost:3000/api/submit-feedback
     ```
+
+    Args:
+        request (Request): The incoming request object.
+        feedback (FeedbackDataModel): The feedback data to be stored.
+
+    Returns:
+        dict: The stored feedback data.
+
+    Raises:
+        HTTPException: If there's an error submitting the feedback.
     """
     # Assuming the storage service is already configured in the backend
-    # and there is a function  to handle the storage.
+    # and there is a function to handle the storage.
     try:
-        store_feedback(feedback)
-        return JSONResponse(
-            status_code=200, content={'message': 'Feedback submitted successfully'}
-        )
+        feedback_data = store_feedback(feedback)
+        return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')
         return JSONResponse(
@@ -343,12 +615,21 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
 @app.get('/api/root_task')
 def get_root_task(request: Request):
     """
-    Get root_task.
+    Retrieve the root task of the current agent session.
 
     To get the root_task:
     ```sh
     curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/root_task
     ```
+
+    Args:
+        request (Request): The incoming request object.
+
+    Returns:
+        dict: The root task data if available.
+
+    Raises:
+        HTTPException: If the root task is not available.
     """
     controller = request.state.session.agent_session.controller
     if controller is not None:
@@ -364,14 +645,77 @@ def get_root_task(request: Request):
 @app.get('/api/defaults')
 async def appconfig_defaults():
     """
-    Get default configurations.
+    Retrieve the default configuration settings.
 
     To get the default configurations:
     ```sh
     curl http://localhost:3000/api/defaults
     ```
+
+    Returns:
+        dict: The default configuration settings.
     """
     return config.defaults_dict
+
+
+@app.post('/api/save-file')
+async def save_file(request: Request):
+    """
+    Save a file to the agent's runtime file store.
+
+    This endpoint allows saving a file when the agent is in a paused, finished,
+    or awaiting user input state. It checks the agent's state before proceeding
+    with the file save operation.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+
+    Raises:
+        HTTPException:
+            - 403 error if the agent is not in an allowed state for editing.
+            - 400 error if the file path or content is missing.
+            - 500 error if there's an unexpected error during the save operation.
+    """
+    try:
+        # Get the agent's current state
+        controller = request.state.session.agent_session.controller
+        agent_state = controller.get_agent_state()
+
+        # Check if the agent is in an allowed state for editing
+        if agent_state not in [
+            AgentState.INIT,
+            AgentState.PAUSED,
+            AgentState.FINISHED,
+            AgentState.AWAITING_USER_INPUT,
+        ]:
+            raise HTTPException(
+                status_code=403,
+                detail='Code editing is only allowed when the agent is paused, finished, or awaiting user input',
+            )
+
+        # Extract file path and content from the request
+        data = await request.json()
+        file_path = data.get('filePath')
+        content = data.get('content')
+
+        # Validate the presence of required data
+        if not file_path or content is None:
+            raise HTTPException(status_code=400, detail='Missing filePath or content')
+
+        # Save the file to the agent's runtime file store
+        request.state.session.agent_session.runtime.file_store.write(file_path, content)
+
+        # Return a success response
+        return JSONResponse(
+            status_code=200, content={'message': 'File saved successfully'}
+        )
+    except Exception as e:
+        # Log the error and return a 500 response
+        logger.error(f'Error saving file: {e}', exc_info=True)
+        raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
 
 
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

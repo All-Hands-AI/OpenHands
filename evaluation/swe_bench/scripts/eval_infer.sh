@@ -19,8 +19,6 @@ echo "INSTANCE_ID: $INSTANCE_ID"
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
-mkdir -p $FILE_DIR/logs
-mkdir -p $FILE_DIR/swe_bench_format
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
 DOCKERHUB_NAMESPACE="xingyaoww"
@@ -75,27 +73,63 @@ echo "=============================================================="
 echo "Running SWE-bench evaluation"
 echo "=============================================================="
 
+RUN_ID=$(date +"%Y%m%d_%H%M%S")
+N_PROCESS=16
+
 if [ -z "$INSTANCE_ID" ]; then
     echo "Running SWE-bench evaluation on the whole input file..."
+    # Default to SWE-Bench-lite
+    # change `--dataset_name` and `--split` to alter dataset
 
-    poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
+    poetry run python -m swebench.harness.run_evaluation \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --log_dir $FILE_DIR/logs \
-        --swe_bench_tasks $SWEBENCH_TASKS \
-        --namespace $DOCKERHUB_NAMESPACE \
-        --timeout 1800
+        --timeout 1800 \
+        --cache_level instance \
+        --max_workers $N_PROCESS \
+        --run_id $RUN_ID
+
+    # get the "model_name_or_path" from the first line of the SWEBENCH_FORMAT_JSONL
+    MODEL_NAME_OR_PATH=$(jq -r '.model_name_or_path' $SWEBENCH_FORMAT_JSONL | head -n 1)
+    echo "MODEL_NAME_OR_PATH: $MODEL_NAME_OR_PATH"
+
+    RESULT_OUTPUT_DIR=$(dirname $SWEBENCH_FORMAT_JSONL)
+    echo "RESULT_OUTPUT_DIR: $RESULT_OUTPUT_DIR"
+
+    # move the eval results to the target directory
+    mkdir -p $RESULT_OUTPUT_DIR
+    # rm eval_outputs directory if it exists
+    if [ -d $RESULT_OUTPUT_DIR/eval_outputs ]; then
+        rm -rf $RESULT_OUTPUT_DIR/eval_outputs
+    fi
+
+    mv run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
+    mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
+    echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
+
+    # move report file
+    REPORT_PATH=$MODEL_NAME_OR_PATH.$RUN_ID.json
+    if [ -f $REPORT_PATH ]; then
+        # check if $RESULT_OUTPUT_DIR/report.json exists
+        if [ -f $RESULT_OUTPUT_DIR/report.json ]; then
+            echo "Report file $RESULT_OUTPUT_DIR/report.json already exists. Overwriting..."
+            if [ -f $RESULT_OUTPUT_DIR/report.json.bak ]; then
+                rm $RESULT_OUTPUT_DIR/report.json.bak
+            fi
+            mv $RESULT_OUTPUT_DIR/report.json $RESULT_OUTPUT_DIR/report.json.bak
+        fi
+
+        mv $REPORT_PATH $RESULT_OUTPUT_DIR/report.json
+    fi
+
+    poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $PROCESS_FILEPATH
 
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
-    poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_single_instance.py \
+    poetry run python -m swebench.harness.run_evaluation \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --swe_bench_tasks $SWEBENCH_TASKS \
-        --namespace $DOCKERHUB_NAMESPACE \
-        --instance_id $INSTANCE_ID
+        --timeout 1800 \
+        --instance_ids $INSTANCE_ID \
+        --cache_level instance \
+        --max_workers $N_PROCESS \
+        --run_id $RUN_ID
 fi
-
-poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
-    --predictions_path $SWEBENCH_FORMAT_JSONL \
-    --log_dir $FILE_DIR/logs \
-    --output_dir $FILE_DIR \
-    --swe_bench_tasks $SWEBENCH_TASKS

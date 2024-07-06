@@ -9,15 +9,18 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 from tqdm import tqdm
-from utils import encode_question, get_data
 
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
+from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
+from opendevin.llm.llm import LLM
+
+from .utils import encode_question, get_data
 
 
 def cleanup():
@@ -63,9 +66,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(
-    question_id, question, agent_class, metadata, reset_logger: bool = True
-):
+def process_instance(agent, question_id, question, metadata, reset_logger: bool = True):
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -107,16 +108,19 @@ def process_instance(
         instruction = encode_question(question, metadata['hub'])
         instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
         # NOTE: You can actually set slightly different instruction for different agents
-        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
         # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        state: State = asyncio.run(
-            main(
+        state: State | None = asyncio.run(
+            run_agent_controller(
+                agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent_class
+                    agent.__class__.__name__
                 ),
+                sid=question_id,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
@@ -152,7 +156,7 @@ def process_instance(
                 for action, obs in state.history
             ],
             'metrics': metrics,
-            'error': state.error if state and state.error else None,
+            'error': state.last_error if state and state.last_error else None,
         }
     except Exception:
         logger.error('Process instance failed')
@@ -294,6 +298,9 @@ if __name__ == '__main__':
             output_fp.flush()
             finished_task_ids.add(output['question_id'])
 
+        # Create the agent
+        agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
+
         # This sets the multi-processing
         num_workers = args.eval_num_workers
         logger.info(f'Using {num_workers} workers for evaluation.')
@@ -307,9 +314,9 @@ if __name__ == '__main__':
                         question = questions[i]
                         future = executor.submit(
                             process_instance,
+                            agent,
                             question_id,
                             question,
-                            agent_class,
                             metadata,
                             reset_logger=bool(num_workers > 1),
                         )

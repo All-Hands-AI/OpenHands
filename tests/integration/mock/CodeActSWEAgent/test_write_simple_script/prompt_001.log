@@ -9,7 +9,7 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
@@ -18,7 +18,7 @@ open_file(path: str, line_number: int | None = 1, context_lines: int | None = 10
     It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
     Args:
-    path: str: The path to the file to open, preferredly absolute path.
+    path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
     context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
 
@@ -42,22 +42,66 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-append_file(file_name: str, content: str) -> None:
-    Append content to the given file.
-    It appends text `content` to the end of the specified file.
-    Args:
-    file_name: str: The name of the file to append to.
-    content: str: The content to append to the file.
-
-edit_file(file_name: str, start: int, end: int, content: str) -> None:
-    Edit a file.
-    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
-    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+    Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
+    Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
+    Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
+    `edit_file` will only replace the *first* matching occurrences.
+    For example, given a file "/workspace/example.txt" with the following content:
+    ```
+    line 1
+    line 2
+    line 2
+    line 3
+    ```
+    EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
+    edit_file(
+    '/workspace/example.txt',
+    to_replace='line 2
+    line 3',
+    new_content='new line
+    line 3',
+    )
+    This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
+    The resulting file will be:
+    ```
+    line 1
+    line 2
+    new line
+    line 3
+    ```
+    REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
+    edit_file(
+    '/workspace/example.txt',
+    to_replace='line 2
+    line 3',
+    new_content='',
+    )
     Args:
     file_name: str: The name of the file to edit.
-    start: int: The start line number. Must satisfy start >= 1.
-    end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
-    content: str: The content to replace the lines with.
+    to_replace: str: The content to search for and replace.
+    new_content: str: The new content to replace the old content with.
+
+insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
+    Insert content at the given line number in a file.
+    This will NOT modify the content of the lines before OR after the given line number.
+    For example, if the file has the following content:
+    ```
+    line 1
+    line 2
+    line 3
+    ```
+    and you call `insert_content_at_line('file.txt', 2, 'new line')`, the file will be updated to:
+    ```
+    line 1
+    new line
+    line 2
+    line 3
+    ```
+    Args:
+    file_name: str: The name of the file to edit.
+    line_number: int: The line number (starting from 1) to insert the content after.
+    content: str: The content to insert.
 
 search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
@@ -540,4 +584,4 @@ NOW, LET'S START!
 
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 14 turns left to complete the task.

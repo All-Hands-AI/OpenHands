@@ -12,13 +12,14 @@ Functions:
 - search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
-- edit_file(file_name, start, end, content): Replaces lines in a file with the given content.
-- append_file(file_name, content): Appends given content to a file.
+- edit_file(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
+- insert_content_at_line(file_name: str, line_number: int, content: str): Inserts given content at the specified line number in a file.
 """
 
 import base64
 import functools
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -127,14 +128,22 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
 
     if file_path.endswith('.py'):
         # Define the flake8 command with selected error codes
-        command = [
-            'flake8',
-            '--isolated',
-            '--select=F821,F822,F831,E112,E113,E999,E902',
-            file_path,
-        ]
+        def _command_fn(executable):
+            return [
+                executable,
+                '--isolated',
+                '--select=F821,F822,F831,E112,E113,E999,E902',
+                file_path,
+            ]
 
-        # Run the command using subprocess and redirect stderr to stdout
+        if os.path.exists('/opendevin/miniforge3/bin/flake8'):
+            # when this function is called from the docker sandbox,
+            # the flake8 command is available at /opendevin/miniforge3/bin/flake8
+            executable = '/opendevin/miniforge3/bin/flake8'
+        else:
+            executable = 'flake8'
+
+        command = _command_fn(executable)
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,
@@ -166,7 +175,7 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     return None, None
 
 
-def _print_window(file_path, targeted_line, WINDOW, return_str=False):
+def _print_window(file_path, targeted_line, window, return_str=False):
     global CURRENT_LINE
     _check_current_file(file_path)
     with open(file_path) as file:
@@ -181,7 +190,7 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
 
         # cover edge cases
         CURRENT_LINE = _clamp(targeted_line, 1, total_lines)
-        half_window = max(1, WINDOW // 2)
+        half_window = max(1, window // 2)
 
         # Ensure at least one line above and below the targeted line
         start = max(1, CURRENT_LINE - half_window)
@@ -189,9 +198,9 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
 
         # Adjust start and end to ensure at least one line above and below
         if start == 1:
-            end = min(total_lines, start + WINDOW - 1)
+            end = min(total_lines, start + window - 1)
         if end == total_lines:
-            start = max(1, end - WINDOW + 1)
+            start = max(1, end - window + 1)
 
         output = ''
 
@@ -213,10 +222,10 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
             print(output)
 
 
-def _cur_file_header(CURRENT_FILE, total_lines) -> str:
-    if not CURRENT_FILE:
+def _cur_file_header(current_file, total_lines) -> str:
+    if not current_file:
         return ''
-    return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
+    return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'
 
 
 @update_pwd_decorator
@@ -229,7 +238,7 @@ def open_file(
     to view the file if you want to see more.
 
     Args:
-        path: str: The path to the file to open, preferredly absolute path.
+        path: str: The path to the file to open, preferred absolute path.
         line_number: int | None = 1: The line number to move to. Defaults to 1.
         context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
     """
@@ -332,13 +341,16 @@ def create_file(filename: str) -> None:
     print(f'[File {filename} created.]')
 
 
-def _edit_or_append_file(
+LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+
+
+def _edit_or_insert_file(
     file_name: str,
     start: int | None = None,
     end: int | None = None,
     content: str = '',
-    is_append: bool = False,
-) -> None:
+    is_insert: bool = False,
+) -> str:
     """Internal method to handle common logic for edit_/append_file methods.
 
     Args:
@@ -346,14 +358,15 @@ def _edit_or_append_file(
         start: int | None = None: The start line number for editing. Ignored if is_append is True.
         end: int | None = None: The end line number for editing. Ignored if is_append is True.
         content: str: The content to replace the lines with or to append.
-        is_append: bool = False: Whether to append content to the file instead of editing.
+        is_insert: bool = False: Whether to insert content at the given line number instead of editing.
     """
+    ret_str = ''
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
     ERROR_MSG = f'[Error editing file {file_name}. Please confirm the file is correct.]'
     ERROR_MSG_SUFFIX = (
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-        'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
+        'You either need to 1) Open the correct file and try again or 2) Specify the correct line number arguments.\n'
         'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
     )
 
@@ -383,13 +396,29 @@ def _edit_or_append_file(
             with open(file_name) as original_file:
                 lines = original_file.readlines()
 
-            if is_append:
-                if lines and not (len(lines) == 1 and lines[0].strip() == ''):
-                    if not lines[-1].endswith('\n'):
-                        lines[-1] += '\n'
-                    content_lines = content.splitlines(keepends=True)
-                    new_lines = lines + content_lines
-                    content = ''.join(new_lines)
+            if is_insert:
+                if len(lines) == 0:
+                    new_lines = [
+                        content + '\n' if not content.endswith('\n') else content
+                    ]
+                elif start is not None:
+                    if len(lines) == 1 and lines[0].strip() == '':
+                        # if the file is empty with only 1 line
+                        lines = ['\n']
+                    new_lines = (
+                        lines[: start - 1]
+                        + [content + '\n' if not content.endswith('\n') else content]
+                        + lines[start - 1 :]
+                    )
+                else:
+                    assert start is None
+                    ret_str += (
+                        f'{ERROR_MSG}\n'
+                        f'Invalid line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+                        f'{ERROR_MSG_SUFFIX}'
+                    ) + '\n'
+
+                content = ''.join(new_lines)
             else:
                 # Handle cases where start or end are None
                 if start is None:
@@ -398,26 +427,23 @@ def _edit_or_append_file(
                     end = len(lines)  # Default to the end
                 # Check arguments
                 if not (1 <= start <= len(lines)):
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
                 if not (1 <= end <= len(lines)):
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
                 if start > end:
-                    print(
+                    ret_str += (
                         f'{ERROR_MSG}\n'
                         f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
                         f'{ERROR_MSG_SUFFIX}'
-                    )
-                    return
+                    ) + '\n'
                 if not content.endswith('\n'):
                     content += '\n'
                 content_lines = content.splitlines(True)
@@ -447,22 +473,27 @@ def _edit_or_append_file(
             if lint_error is not None:
                 if first_error_line is not None:
                     CURRENT_LINE = int(first_error_line)
-                print(
-                    '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+                ret_str += LINTER_ERROR_MSG
+                ret_str += lint_error + '\n'
+
+                ret_str += '[This is how your edit would have looked if applied]\n'
+                ret_str += '-------------------------------------------------\n'
+                ret_str += (
+                    _print_window(file_name, CURRENT_LINE, 10, return_str=True) + '\n'
                 )
-                print(lint_error)
+                ret_str += '-------------------------------------------------\n\n'
 
-                print('[This is how your edit would have looked if applied]')
-                print('-------------------------------------------------')
-                _print_window(file_name, CURRENT_LINE, 10)
-                print('-------------------------------------------------\n')
+                ret_str += '[This is the original code before your edit]\n'
+                ret_str += '-------------------------------------------------\n'
+                ret_str += (
+                    _print_window(
+                        original_file_backup_path, CURRENT_LINE, 10, return_str=True
+                    )
+                    + '\n'
+                )
+                ret_str += '-------------------------------------------------\n'
 
-                print('[This is the original code before your edit]')
-                print('-------------------------------------------------')
-                _print_window(original_file_backup_path, CURRENT_LINE, 10)
-                print('-------------------------------------------------')
-
-                print(
+                ret_str += (
                     'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                     'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
                     'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
@@ -474,14 +505,14 @@ def _edit_or_append_file(
                 ) as fout:
                     fout.write(fin.read())
                 os.remove(original_file_backup_path)
-                return
+                return ret_str
 
     except FileNotFoundError as e:
-        print(f'File not found: {e}')
+        ret_str += f'File not found: {e}\n'
     except IOError as e:
-        print(f'An error occurred while handling the file: {e}')
+        ret_str += f'An error occurred while handling the file: {e}\n'
     except ValueError as e:
-        print(f'Invalid input: {e}')
+        ret_str += f'Invalid input: {e}\n'
     except Exception as e:
         # Clean up the temporary file if an error occurs
         if temp_file_path and os.path.exists(temp_file_path):
@@ -495,47 +526,137 @@ def _edit_or_append_file(
     if first_error_line is not None and int(first_error_line) > 0:
         CURRENT_LINE = first_error_line
     else:
-        if is_append:
-            CURRENT_LINE = max(1, len(lines))  # end of original file
-        else:
-            CURRENT_LINE = start or n_total_lines or 1
-    print(
-        f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]'
-    )
+        CURRENT_LINE = start or n_total_lines or 1
+    ret_str += f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]\n'
     CURRENT_FILE = file_name
-    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
-    print(MSG_FILE_UPDATED)
+    ret_str += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True) + '\n'
+    ret_str += MSG_FILE_UPDATED
+    return ret_str
 
 
 @update_pwd_decorator
-def edit_file(file_name: str, start: int, end: int, content: str) -> None:
-    """Edit a file.
+def edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+    """Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
 
-    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
-    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+    Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
+
+    Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
+    `edit_file` will only replace the *first* matching occurrences.
+
+    For example, given a file "/workspace/example.txt" with the following content:
+    ```
+    line 1
+    line 2
+    line 2
+    line 3
+    ```
+
+    EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
+
+    edit_file(
+        '/workspace/example.txt',
+        to_replace='line 2\nline 3',
+        new_content='new line\nline 3',
+    )
+
+    This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
+
+    The resulting file will be:
+    ```
+    line 1
+    line 2
+    new line
+    line 3
+    ```
+
+    REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
+
+    edit_file(
+        '/workspace/example.txt',
+        to_replace='line 2\nline 3',
+        new_content='',
+    )
 
     Args:
         file_name: str: The name of the file to edit.
-        start: int: The start line number. Must satisfy start >= 1.
-        end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
-        content: str: The content to replace the lines with.
+        to_replace: str: The content to search for and replace.
+        new_content: str: The new content to replace the old content with.
     """
-    _edit_or_append_file(
-        file_name, start=start, end=end, content=content, is_append=False
+    # FIXME: support replacing *all* occurrences
+    if to_replace.strip() == '':
+        raise ValueError('`to_replace` must not be empty.')
+
+    # search for `to_replace` in the file
+    # if found, replace it with `new_content`
+    # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`
+    with open(file_name, 'r') as file:
+        file_content = file.read()
+
+    start = file_content.find(to_replace)
+    if start != -1:
+        # Convert start from index to line number
+        start_line_number = file_content[:start].count('\n') + 1
+        end_line_number = start_line_number + len(to_replace.splitlines()) - 1
+    else:
+
+        def _fuzzy_transform(s: str) -> str:
+            # remove all space except newline
+            return re.sub(r'[^\S\n]+', '', s)
+
+        # perform a fuzzy search (remove all spaces except newlines)
+        to_replace_fuzzy = _fuzzy_transform(to_replace)
+        file_content_fuzzy = _fuzzy_transform(file_content)
+        # find the closest match
+        start = file_content_fuzzy.find(to_replace_fuzzy)
+        if start == -1:
+            print(
+                f'[No exact match found in {file_name} for\n```\n{to_replace}\n```\n]'
+            )
+            return
+        # Convert start from index to line number for fuzzy match
+        start_line_number = file_content_fuzzy[:start].count('\n') + 1
+        end_line_number = start_line_number + len(to_replace.splitlines()) - 1
+
+    ret_str = _edit_or_insert_file(
+        file_name,
+        start=start_line_number,
+        end=end_line_number,
+        content=new_content,
+        is_insert=False,
     )
+    # lint_error = bool(LINTER_ERROR_MSG in ret_str)
+    # TODO: automatically tries to fix linter error (maybe involve some static analysis tools on the location near the edit to figure out indentation)
+    print(ret_str)
 
 
 @update_pwd_decorator
-def append_file(file_name: str, content: str) -> None:
-    """Append content to the given file.
+def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
+    """Insert content at the given line number in a file.
+    This will NOT modify the content of the lines before OR after the given line number.
 
-    It appends text `content` to the end of the specified file.
+    For example, if the file has the following content:
+    ```
+    line 1
+    line 2
+    line 3
+    ```
+    and you call `insert_content_at_line('file.txt', 2, 'new line')`, the file will be updated to:
+    ```
+    line 1
+    new line
+    line 2
+    line 3
+    ```
 
     Args:
-        file_name: str: The name of the file to append to.
-        content: str: The content to append to the file.
+        file_name: str: The name of the file to edit.
+        line_number: int: The line number (starting from 1) to insert the content after.
+        content: str: The content to insert.
     """
-    _edit_or_append_file(file_name, start=1, end=None, content=content, is_append=True)
+    ret_str = _edit_or_insert_file(
+        file_name, start=line_number, end=line_number, content=content, is_insert=True
+    )
+    print(ret_str)
 
 
 @update_pwd_decorator
@@ -852,8 +973,8 @@ __all__ = [
     'scroll_down',
     'scroll_up',
     'create_file',
-    'append_file',
     'edit_file',
+    'insert_content_at_line',
     'search_dir',
     'search_file',
     'find_file',

@@ -1,4 +1,4 @@
-FROM ghcr.io/opendevin/sandbox:latest
+FROM ghcr.io/opendevin/sandbox:main
 
 RUN apt-get update && \
     apt-get install -y libffi-dev bash gcc git jq wget pkg-config libfreetype-dev libfreetype6 libfreetype6-dev rsync && \

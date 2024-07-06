@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
-from typing import Any, ClassVar, get_args, get_origin
+from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -39,7 +39,7 @@ class LLMConfig(metaclass=Singleton):
         retry_min_wait: The minimum time to wait between retries, in seconds. This is exponential backoff minimum. For models with very low limits, this can be set to 15-20.
         retry_max_wait: The maximum time to wait between retries, in seconds. This is exponential backoff maximum.
         timeout: The timeout for the API.
-        max_chars: The maximum number of characters to send to and receive from the API. This is a fallback for token counting, which doesn't work in all cases.
+        max_message_chars: The approximate max number of characters in the content of an event included in the prompt to the LLM. Larger observations are truncated.
         temperature: The temperature for the API.
         top_p: The top p for the API.
         custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
@@ -47,6 +47,7 @@ class LLMConfig(metaclass=Singleton):
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
+        ollama_base_url: The base URL for the OLLAMA API.
     """
 
     model: str = 'gpt-4o'
@@ -63,7 +64,7 @@ class LLMConfig(metaclass=Singleton):
     retry_min_wait: int = 3
     retry_max_wait: int = 60
     timeout: int | None = None
-    max_chars: int = 5_000_000  # fallback for token counting
+    max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0
     top_p: float = 0.5
     custom_llm_provider: str | None = None
@@ -71,15 +72,16 @@ class LLMConfig(metaclass=Singleton):
     max_output_tokens: int | None = None
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
+    ollama_base_url: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
-        dict = {}
+        result = {}
         for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
+            result[f.name] = get_field_info(f)
+        return result
 
     def __str__(self):
         attr_str = []
@@ -117,10 +119,55 @@ class AgentConfig(metaclass=Singleton):
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
+        result = {}
+        for f in fields(self):
+            result[f.name] = get_field_info(f)
+        return result
+
+
+@dataclass
+class SandboxConfig(metaclass=Singleton):
+    """
+    Configuration for the sandbox.
+
+    Attributes:
+        box_type: The type of sandbox to use. Options are: ssh, e2b, local.
+        container_image: The container image to use for the sandbox.
+        user_id: The user ID for the sandbox.
+        timeout: The timeout for the sandbox.
+
+    """
+
+    box_type: str = 'ssh'
+    container_image: str = 'ghcr.io/opendevin/sandbox' + (
+        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
+        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
+        else ':main'
+    )
+    user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
+    timeout: int = 120
+
+    def defaults_to_dict(self) -> dict:
+        """
+        Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
+        """
         dict = {}
         for f in fields(self):
             dict[f.name] = get_field_info(f)
         return dict
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"SandboxConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class UndefinedString(str, Enum):
@@ -135,6 +182,7 @@ class AppConfig(metaclass=Singleton):
     Attributes:
         llm: The LLM configuration.
         agent: The agent configuration.
+        sandbox: The sandbox configuration.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
@@ -143,23 +191,25 @@ class AppConfig(metaclass=Singleton):
         workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
-        sandbox_container_image: The container image to use for the sandbox.
         run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
-        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
-        sandbox_user_id: The user ID for the sandbox.
-        sandbox_timeout: The timeout for the sandbox.
+        initialize_plugins: Whether to initialize plugins.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
+        enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
+        file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
+        file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
+        file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
+    sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
@@ -170,21 +220,13 @@ class AppConfig(metaclass=Singleton):
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-    sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (
-        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
-        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
-        else ':main'
-    )
     run_as_devin: bool = True
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
-    sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
-    sandbox_timeout: int = 120
     initialize_plugins: bool = True
     persist_sandbox: bool = False
     ssh_port: int = 63710
@@ -194,6 +236,10 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    enable_cli_session: bool = False
+    file_uploads_max_file_size_mb: int = 0
+    file_uploads_restrict_file_types: bool = False
+    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -207,16 +253,16 @@ class AppConfig(metaclass=Singleton):
         """
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
-        dict = {}
+        result = {}
         for f in fields(self):
             field_value = getattr(self, f.name)
 
             # dataclasses compute their defaults themselves
             if is_dataclass(type(field_value)):
-                dict[f.name] = field_value.defaults_to_dict()
+                result[f.name] = field_value.defaults_to_dict()
             else:
-                dict[f.name] = get_field_info(f)
-        return dict
+                result[f.name] = get_field_info(f)
+        return result
 
     def __str__(self):
         attr_str = []
@@ -240,16 +286,16 @@ class AppConfig(metaclass=Singleton):
         return self.__str__()
 
 
-def get_field_info(field):
+def get_field_info(f):
     """
     Extract information about a dataclass field: type, optional, and default.
 
     Args:
-        field: The field to extract information from.
+        f: The field to extract information from.
 
     Returns: A dict with the field's type, whether it's optional, and its default value.
     """
-    field_type = field.type
+    field_type = f.type
     optional = False
 
     # for types like str | None, find the non-None type and set optional to True
@@ -269,23 +315,23 @@ def get_field_info(field):
     )
 
     # default is always present
-    default = field.default
+    default = f.default
 
     # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
-def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
+def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
+    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
 
     Args:
-        config: The AppConfig object to set attributes on.
+        cfg: The AppConfig object to set attributes on.
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
     def get_optional_type(union_type: UnionType) -> Any:
-        """Returns the non-None type from an Union."""
+        """Returns the non-None type from a Union."""
         types = get_args(union_type)
         return next((t for t in types if t is not type(None)), None)
 
@@ -325,20 +371,22 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
+    if 'SANDBOX_TYPE' in env_or_toml_dict:
+        logger.error('SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.')
+        env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
-    set_attr_from_env(config)
+    set_attr_from_env(cfg)
 
 
-def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
-        config: The AppConfig object to update attributes of.
+        cfg: The AppConfig object to update attributes of.
+        toml_file: The path to the toml file. Defaults to 'config.toml'.
     """
 
     # try to read the config.toml file into the config object
-    toml_config = {}
-
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
@@ -355,24 +403,48 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     # if there was an exception or core is not in the toml, try to use the old-style toml
     if 'core' not in toml_config:
         # re-use the env loader to set the config from env-style vars
-        load_from_env(config, toml_config)
+        load_from_env(cfg, toml_config)
         return
 
     core_config = toml_config['core']
 
     try:
         # set llm config from the toml file
-        llm_config = config.llm
+        llm_config = cfg.llm
         if 'llm' in toml_config:
             llm_config = LLMConfig(**toml_config['llm'])
 
         # set agent config from the toml file
-        agent_config = config.agent
+        agent_config = cfg.agent
         if 'agent' in toml_config:
             agent_config = AgentConfig(**toml_config['agent'])
 
+        # set sandbox config from the toml file
+        sandbox_config = config.sandbox
+
+        # migrate old sandbox configs from [core] section to sandbox config
+        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
+        for key in keys_to_migrate:
+            new_key = key.replace('sandbox_', '')
+            if new_key == 'type':
+                new_key = 'box_type'
+            if new_key in sandbox_config.__annotations__:
+                # read the key in sandbox and remove it from core
+                setattr(sandbox_config, new_key, core_config.pop(key))
+            else:
+                logger.warning(f'Unknown sandbox config: {key}')
+
+        # the new style values override the old style values
+        if 'sandbox' in toml_config:
+            sandbox_config = SandboxConfig(**toml_config['sandbox'])
+
         # update the config object with the new values
-        config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
+        AppConfig(
+            llm=llm_config,
+            agent=agent_config,
+            sandbox=sandbox_config,
+            **core_config,
+        )
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
@@ -380,38 +452,38 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
         )
 
 
-def finalize_config(config: AppConfig):
+def finalize_config(cfg: AppConfig):
     """
     More tweaks to the config after it's been loaded.
     """
 
     # Set workspace_mount_path if not set by the user
-    if config.workspace_mount_path is UndefinedString.UNDEFINED:
-        config.workspace_mount_path = os.path.abspath(config.workspace_base)
-    config.workspace_base = os.path.abspath(config.workspace_base)
+    if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
+        cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
+    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if config.sandbox_type == 'local':
-        config.workspace_mount_path_in_sandbox = config.workspace_mount_path
+    if cfg.sandbox.box_type == 'local':
+        cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
-    if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:
+    if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?
-        base = config.workspace_base or os.getcwd()
-        parts = config.workspace_mount_rewrite.split(':')
-        config.workspace_mount_path = base.replace(parts[0], parts[1])
+        base = cfg.workspace_base or os.getcwd()
+        parts = cfg.workspace_mount_rewrite.split(':')
+        cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    if config.llm.embedding_base_url is None:
-        config.llm.embedding_base_url = config.llm.base_url
+    if cfg.llm.embedding_base_url is None:
+        cfg.llm.embedding_base_url = cfg.llm.base_url
 
-    if config.use_host_network and platform.system() == 'Darwin':
+    if cfg.use_host_network and platform.system() == 'Darwin':
         logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
 
     # make sure cache dir exists
-    if config.cache_dir:
-        pathlib.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)
+    if cfg.cache_dir:
+        pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
 
 config = AppConfig()
@@ -469,7 +541,7 @@ def get_llm_config_arg(llm_config_arg: str):
 
 
 # Command line arguments
-def get_parser():
+def get_parser() -> argparse.ArgumentParser:
     """
     Get the parser for the command line arguments.
     """
@@ -517,13 +589,6 @@ def get_parser():
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
-    parser.add_argument(
-        '-n',
-        '--max-chars',
-        default=config.llm.max_chars,
-        type=int,
-        help='The maximum number of characters to send to and receive from LLM per task',
-    )
     # --eval configs are for evaluations only
     parser.add_argument(
         '--eval-output-dir',
@@ -559,16 +624,13 @@ def get_parser():
     return parser
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """
     Parse the command line arguments.
     """
     parser = get_parser()
-    args, _ = parser.parse_known_args()
-    if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
+    parsed_args, _ = parser.parse_known_args()
+    if parsed_args.directory:
+        config.workspace_base = os.path.abspath(parsed_args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
-    return args
-
-
-args = parse_arguments()
+    return parsed_args
