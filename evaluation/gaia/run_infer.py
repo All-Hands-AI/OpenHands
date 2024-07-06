@@ -21,7 +21,7 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_parser
+from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -121,6 +121,7 @@ def process_instance(
             run_agent_controller(
                 agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     agent.__class__.__name__
                 ],
@@ -199,8 +200,11 @@ if __name__ == '__main__':
         config.workspace_base = os.path.abspath(args.directory)
         logger.info(f'Setting workspace base to {config.workspace_base}')
 
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
-        llm_config=config.llm,
+        llm_config=llm_config,
         dataset_name='gaia',
         agent_class=args.agent_cls,
         max_iterations=args.max_iterations,
