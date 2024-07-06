@@ -166,8 +166,9 @@ default_agent = "TestAgent"
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.llm.model == 'test-model'
-    assert default_config.default_agent.name == 'TestAgent'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config_from_agent().model == 'test-model'
+    assert default_config.default_agent == 'TestAgent'
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.box_type == 'local'
@@ -220,8 +221,10 @@ sandbox_user_id = 1001
     load_from_env(default_config, os.environ)
 
     assert os.environ.get('LLM_MODEL') is None
-    assert default_config.llm.model == 'test-model'
-    assert default_config.llm.api_key == 'env-api-key'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config('llm').model == 'test-model'
+    assert default_config.get_llm_config_from_agent().model == 'test-model'
+    assert default_config.get_llm_config().api_key == 'env-api-key'
 
     # after we set workspace_base to 'UNDEFINED' in the environment,
     # workspace_base should be set to that
@@ -271,7 +274,7 @@ user_id = 1001
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
 
     # before load_from_env, values are set to the values from the toml file
-    assert default_config.llm.api_key == 'toml-api-key'
+    assert default_config.get_llm_config().api_key == 'toml-api-key'
     assert default_config.sandbox.box_type == 'e2b'
     assert default_config.sandbox.timeout == 500
     assert default_config.sandbox.user_id == 1001
@@ -280,8 +283,8 @@ user_id = 1001
 
     # values from env override values from toml
     assert os.environ.get('LLM_MODEL') is None
-    assert default_config.llm.model == 'test-model'
-    assert default_config.llm.api_key == 'env-api-key'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config().api_key == 'env-api-key'
 
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1000
@@ -315,7 +318,7 @@ user_id = 1001
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
 
-    assert default_config.llm.model == 'test-model'
+    assert default_config.get_llm_config().model == 'test-model'
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1
     assert default_config.sandbox.container_image == 'custom_image'
@@ -328,8 +331,7 @@ def test_defaults_dict_after_updates(default_config):
     assert (
         initial_defaults['workspace_mount_path']['default'] is UndefinedString.UNDEFINED
     )
-    assert initial_defaults['llm']['api_key']['default'] is None
-    assert initial_defaults['agent']['name']['default'] == 'CodeActAgent'
+    assert initial_defaults['default_agent']['default'] == 'CodeActAgent'
 
     updated_config = AppConfig()
     updated_config.get_llm_config().api_key = 'updated-api-key'
@@ -341,8 +343,7 @@ def test_defaults_dict_after_updates(default_config):
     updated_config.default_agent = 'MonologueAgent'
 
     defaults_after_updates = updated_config.defaults_dict
-    assert defaults_after_updates['llm']['api_key']['default'] is None
-    assert defaults_after_updates['agent']['name']['default'] == 'CodeActAgent'
+    assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
     assert (
         defaults_after_updates['workspace_mount_path']['default']
         is UndefinedString.UNDEFINED
@@ -368,9 +369,9 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     load_from_env(default_config, os.environ)
     default_config.ssh_password = None  # prevent leak
     default_config.jwt_secret = None  # prevent leak
-    assert default_config.llm.model == 'gpt-5-turbo-1106'
-    assert default_config.llm.custom_llm_provider is None
-    if default_config.llm.api_key is not None:  # prevent leak
+    assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
+    assert default_config.get_llm_config().custom_llm_provider is None
+    if default_config.get_llm_config().api_key is not None:  # prevent leak
         pytest.fail('LLM API key should be empty.')
     assert default_config.workspace_mount_path == '/home/user/project'
 
@@ -418,9 +419,12 @@ def test_workspace_mount_rewrite(default_config, monkeypatch):
 
 
 def test_embedding_base_url_default(default_config):
-    default_config.llm.base_url = 'https://api.exampleapi.com'
+    default_config.get_llm_config().base_url = 'https://api.exampleapi.com'
     finalize_config(default_config)
-    assert default_config.llm.embedding_base_url == 'https://api.exampleapi.com'
+    assert (
+        default_config.get_llm_config().embedding_base_url
+        == 'https://api.exampleapi.com'
+    )
 
 
 def test_cache_dir_creation(default_config, tmpdir):
@@ -466,9 +470,7 @@ def test_api_keys_repr_str():
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
-    agent_config = AgentConfig(
-        name='my_agent', memory_enabled=True, memory_max_threads=4
-    )
+    agent_config = AgentConfig(memory_enabled=True, memory_max_threads=4)
     for attr_name in dir(AgentConfig):
         if not attr_name.startswith('__'):
             assert (
@@ -480,8 +482,8 @@ def test_api_keys_repr_str():
 
     # Test AppConfig
     app_config = AppConfig(
-        llm=llm_config,
-        agent=agent_config,
+        llms={'llm': llm_config},
+        agents={'agent': agent_config},
         e2b_api_key='my_e2b_api_key',
         jwt_secret='my_jwt_secret',
         ssh_password='my_ssh_password',
