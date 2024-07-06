@@ -136,8 +136,8 @@ class CodeActAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions
-        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        # AgentSkillsRequirement provides a lot of Python functions,
+        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
@@ -173,7 +173,7 @@ class CodeActAgent(Agent):
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
-        - state (State): used to get updated info and background commands
+        - state (State): used to get updated info
 
         Returns:
         - CmdRunAction(command) - bash command to run
@@ -201,7 +201,7 @@ class CodeActAgent(Agent):
             if latest_user_message['content'].strip() == '/exit':
                 return AgentFinishAction()
             latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             )
 
         response = self.llm.completion(

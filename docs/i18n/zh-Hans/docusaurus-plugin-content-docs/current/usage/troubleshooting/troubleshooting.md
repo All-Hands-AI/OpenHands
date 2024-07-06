@@ -63,7 +63,6 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 * 确保拥有最新版本的 WSL 和 Docker
 * 检查您的 WSL 分发版也已更新
 * 尝试[此重新安装指南](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
-* 设置 `-e SANDBOX_TYPE=exec` 切换到 ExecBox Docker 容器
 
 ## 无法连接到 LLM
 

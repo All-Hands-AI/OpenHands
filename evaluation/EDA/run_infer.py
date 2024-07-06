@@ -1,18 +1,21 @@
 import asyncio
-import json
 import logging
 import multiprocessing as mp
 import os
-import pathlib
-import subprocess
-import time
-from concurrent.futures import ProcessPoolExecutor
+
+import pandas as pd
 
 # import huggingface_hub
 from datasets import load_dataset
-from tqdm import tqdm
 
 from evaluation.EDA.game import Q20Game, Q20GameCelebrity
+from evaluation.utils.shared import (
+    EvalMetadata,
+    make_metadata,
+    monologue_user_response,
+    prepare_dataset,
+    run_evaluation,
+)
 from opendevin.controller.agent import Agent
 
 # from evaluation.EDA.scorer import question_scorer
@@ -36,7 +39,7 @@ def cleanup():
         process.join()
 
 
-def codeact_user_response(state: State) -> str:
+def codeact_user_response_eda(state: State) -> str:
     global game
     model_guess = ''
     if state.history:
@@ -54,12 +57,8 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': codeact_user_response,
+    'CodeActAgent': codeact_user_response_eda,
     'MonologueAgent': monologue_user_response,
 }
 
@@ -69,10 +68,14 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(
-    agent: Agent, instance, metadata, openai_api_key, reset_logger: bool = True
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
 ):
+    # Create the agent
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-    eval_output_dir = metadata['eval_output_dir']
+    eval_output_dir = metadata.eval_output_dir
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
@@ -107,12 +110,14 @@ def process_instance(
 
     # Use codeactagent as guesser_model
     global game
-    game = _game_class[metadata['dataset']](
+    assert metadata.dataset is not None
+    assert metadata.details is not None
+    game = _game_class[metadata.dataset](
         item=instance['text'].strip(),
-        answerer_model=metadata['answerer_model'],
+        answerer_model=metadata.details['answerer_model'],
         guesser_model=None,
-        num_turns=metadata['max_iterations'],
-        openai_api_key=openai_api_key,
+        num_turns=metadata.max_iterations,
+        openai_api_key=metadata.details['openai_api_key'],
         guesser_kargs=guesser_kargs,
     )
 
@@ -129,6 +134,7 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -195,151 +201,40 @@ if __name__ == '__main__':
         help='data split, eg, test',
     )
     args, _ = parser.parse_known_args()
-    if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
-    # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to OpenDevin's repo
+
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     eda_dataset = load_dataset(
         'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
     )
-    logger.info(
-        f'Evaluating Entity Deduction Arena {args.dataset} {args.data_split} split'
-    )
 
-    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
-    # for details of how to set `llm_config`
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
-    logger.info(f'Config for evaluation: {config}')
-
-    # TEST METADATA
-    agent_class = args.agent_cls
-    assert (
-        agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
-    ), f'Unsupported agent class: {agent_class}'
-    model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
-    eval_note = ''
-    if args.eval_note is not None:
-        eval_note += '_N_' + args.eval_note
-    eval_output_dir = os.path.join(
+    metadata = make_metadata(
+        llm_config,
+        f'eda-{args.dataset}',
+        args.agent_cls,
+        args.max_iterations,
+        args.eval_note,
         args.eval_output_dir,
-        'eda',
-        agent_class,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note,
+        data_split=args.data_split,
+        details={
+            'answerer_model': str(args.answerer_model),
+            'openai_api_key': str(args.OPENAI_API_KEY),
+        },
     )
 
-    pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
-        parents=True, exist_ok=True
-    )
-    logger.info(f'Using evaluation output directory: {eval_output_dir}')
-
-    metadata = {
-        'dataset': args.dataset,
-        'data_split': args.data_split,
-        'answerer_model': args.answerer_model,
-        'agent_class': agent_class,
-        'model_name': model_name,
-        'max_iterations': max_iterations,
-        'eval_output_dir': eval_output_dir,
-        'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproducibility
-        'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        .decode('utf-8')
-        .strip(),
-    }
-    logger.info(f'Metadata: {metadata}')
-    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
-        json.dump(metadata, f)
-
-    # LIMIT EVALUATION
-    eval_n_limit = args.eval_n_limit
-    if eval_n_limit:
-        eda_dataset = eda_dataset.select(list(range(eval_n_limit)))
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
-
-    # OUTPUT FILE
-    output_file = os.path.join(eval_output_dir, 'output.jsonl')
-    logger.info(f'Writing evaluation output to {output_file}')
-    finished_items = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                finished_items.add(data['instance_id'])
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded {len(finished_items)} finished instances.'
-        )
-    output_fp = open(output_file, 'a')
-
-    logger.info(
-        f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    prepared_dataset = prepare_dataset(
+        eda_dataset.to_pandas(), output_file, args.eval_n_limit, 'text'
     )
 
-    # =============================================
-    # filter out finished instances
-    new_eda_dataset = []
-    for instance in eda_dataset:
-        if instance['text'].strip() in finished_items:
-            logger.info(
-                f'Skipping instance {instance["text"].strip()} as it is already finished.'
-            )
-            continue
-        new_eda_dataset.append(instance)
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(config.llm))
 
-    eda_dataset = new_eda_dataset
-    logger.info(
-        f'Finished instances: {len(finished_items)}, Remaining instances: {len(eda_dataset)}'
+    run_evaluation(
+        prepared_dataset,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
+        'text',
     )
-    # =============================================
-
-    pbar = tqdm(total=len(eda_dataset))
-
-    # This function tracks the progress AND write the output to a JSONL file
-    def update_progress(future):
-        pbar.update(1)
-        output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
-        logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]}'
-        )
-        output_fp.write(json.dumps(output) + '\n')
-        output_fp.flush()
-
-    # This sets the multi-processing
-    num_workers = args.eval_num_workers
-    logger.info(f'Using {num_workers} workers for evaluation.')
-
-    # Create the agent
-    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
-
-    try:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
-            # This is how we perform multi-processing
-            for instance in eda_dataset:
-                future = executor.submit(
-                    process_instance,
-                    agent,
-                    instance,
-                    metadata,
-                    args.OPENAI_API_KEY,
-                    reset_logger=bool(num_workers > 1),
-                )
-                future.add_done_callback(update_progress)
-                futures.append(future)
-
-            # Wait for all futures to complete
-            for future in futures:
-                future.result()
-    except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
-        cleanup()
-
-    output_fp.close()
-    logger.info('Evaluation finished.')

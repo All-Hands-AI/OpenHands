@@ -9,7 +9,14 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 20
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/frontend" # Location of package manifests
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 20
+  - package-ecosystem: "npm" # See documentation for possible values
+    directory: "/docs" # Location of package manifests
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 20
