@@ -9,7 +9,7 @@
         }
     },
 	"onCreateCommand": "sh ./.devcontainer/on_create.sh",
-	"postCreateCommand": "mv config.toml.default config.toml && make build",
-	"postStartCommand": "nohup bash -c 'make run &'"
+	"postCreateCommand": "make build",
+	"postStartCommand": "USE_HOST_NETWORK=True nohup bash -c 'make run &'"
 
 }
