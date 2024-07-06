@@ -50,7 +50,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
-    monkeypatch.setenv('AGENT', 'CodeActAgent')
+    monkeypatch.setenv('DEFAULT_AGENT', 'CodeActAgent')
     monkeypatch.setenv('SANDBOX_TYPE', 'local')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '10')
 
@@ -58,14 +58,14 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     load_from_env(config, os.environ)
 
     assert config.workspace_base == '/repos/opendevin/workspace'
-    assert isinstance(config.llm, LLMConfig)
-    assert config.llm.api_key == 'sk-proj-rgMV0...'
-    assert config.llm.model == 'gpt-4o'
+    assert isinstance(config.get_llm_config(), LLMConfig)
+    assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
+    assert config.get_llm_config().model == 'gpt-4o'
     assert isinstance(config.get_agent_config(), AgentConfig)
     assert isinstance(config.get_agent_config().memory_max_threads, int)
     assert config.get_agent_config().memory_max_threads == 4
     assert config.get_agent_config().memory_enabled is True
-    assert config.agent == 'CodeActAgent'
+    assert config.default_agent == 'CodeActAgent'
     assert config.sandbox.box_type == 'local'
     assert config.sandbox.timeout == 10
 
@@ -82,7 +82,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 
     assert default_config.llm.api_key == 'test-api-key'
     assert default_config.get_agent_config().memory_enabled is True
-    assert default_config.agent == 'PlannerAgent'
+    assert default_config.default_agent == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
     assert (
         default_config.workspace_mount_path is UndefinedString.UNDEFINED
@@ -110,16 +110,16 @@ timeout = 1
 
 [core]
 workspace_base = "/opt/files2/workspace"
-agent = "TestAgent"
+default_agent = "TestAgent"
 sandbox_type = "local"
 """
         )
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.llm.model == 'test-model'
-    assert default_config.llm.api_key == 'toml-api-key'
-    assert default_config.agent == 'TestAgent'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config().api_key == 'toml-api-key'
+    assert default_config.default_agent == 'TestAgent'
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.box_type == 'local'
@@ -152,7 +152,6 @@ def test_compat_load_sandbox_from_toml(default_config, temp_toml_file):
 model = "test-model"
 
 [agent]
-name = "TestAgent"
 memory_enabled = true
 
 [core]
@@ -161,14 +160,15 @@ sandbox_type = "local"
 sandbox_timeout = 500
 sandbox_container_image = "node:14"
 sandbox_user_id = 1001
+default_agent = "TestAgent"
 """
         )
 
     load_from_toml(default_config, temp_toml_file)
 
     assert default_config.llm.model == 'test-model'
-    assert default_config.agent.name == 'TestAgent'
-    assert default_config.agent.memory_enabled is True
+    assert default_config.default_agent.name == 'TestAgent'
+    assert default_config.get_agent_config().memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 500
@@ -332,8 +332,13 @@ def test_defaults_dict_after_updates(default_config):
     assert initial_defaults['agent']['name']['default'] == 'CodeActAgent'
 
     updated_config = AppConfig()
-    updated_config.llm.api_key = 'updated-api-key'
-    updated_config.agent = 'MonologueAgent'
+    updated_config.get_llm_config().api_key = 'updated-api-key'
+    updated_config.get_llm_config('llm').api_key = 'updated-api-key'
+    updated_config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
+    updated_config.get_llm_config_from_agent(
+        'MonologueAgent'
+    ).api_key = 'updated-api-key'
+    updated_config.default_agent = 'MonologueAgent'
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['llm']['api_key']['default'] is None

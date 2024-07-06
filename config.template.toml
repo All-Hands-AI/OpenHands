@@ -79,6 +79,9 @@ persist_sandbox = false
 # Use host network
 #use_host_network = false
 
+# Name of the default agent
+#agent = "CodeActAgent"
+
 #################################### LLM #####################################
 # Configuration for the LLM model
 ##############################################################################
@@ -158,9 +161,6 @@ model = "gpt-4o"
 
 # Memory maximum threads
 #memory_max_threads = 2
-
-# Name of the agent
-#name = "CodeActAgent"
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox

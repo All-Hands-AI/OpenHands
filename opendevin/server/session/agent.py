@@ -86,8 +86,8 @@ class AgentSession:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = args.get(ConfigType.AGENT, config.agent)
-        llm_config = config.get_llm_config_from_agent(config.agent)
+        agent_cls = args.get(ConfigType.AGENT, config.default_agent)
+        llm_config = config.get_llm_config_from_agent(config.default_agent)
         model = args.get(ConfigType.LLM_MODEL, llm_config.model)
         api_key = args.get(ConfigType.LLM_API_KEY, llm_config.api_key)
         api_base = llm_config.base_url

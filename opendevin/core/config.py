@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
-from typing import Any, ClassVar, Dict, MutableMapping, get_args, get_origin
+from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -208,9 +208,9 @@ class AppConfig(metaclass=Singleton):
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
-    llms: Dict[str, LLMConfig] = field(default_factory=dict)
-    agents: Dict[str, AgentConfig] = field(default_factory=dict)
-    agent: str = 'CodeActAgent'
+    llms: dict = field(default_factory=dict)
+    agents: dict = field(default_factory=dict)
+    default_agent: str = 'CodeActAgent'
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     runtime: str = 'server'
     file_store: str = 'memory'
@@ -371,6 +371,11 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     # helper function to set attributes based on env vars
     def set_attr_from_env(sub_config: Any, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
+        print(
+            '\n\n\n\n###### sub_config.__annotations__.items() = ',
+            sub_config.__annotations__.items(),
+            '############\n',
+        )
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name
             # e.g. LLM_BASE_URL
@@ -404,6 +409,13 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
+
+    # load default LLM config from env
+    default_llm_config = config.get_llm_config()
+    set_attr_from_env(default_llm_config, 'LLM_')
+    # load default agent config from env
+    default_agent_config = config.get_agent_config()
+    set_attr_from_env(default_agent_config, 'AGENT_')
 
 
 def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
@@ -593,9 +605,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.agent,
+        default=config.default_agent,
         type=str,
-        help='The agent class to use',
+        help='Name of the default agent to use',
     )
     parser.add_argument(
         '-m',

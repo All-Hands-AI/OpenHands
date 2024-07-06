@@ -70,7 +70,7 @@ run_test() {
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
-    AGENT=$agent \
+    DEFAULT_AGENT=$agent \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -140,7 +140,7 @@ regenerate_without_llm() {
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     FORCE_APPLY_PROMPTS=true \
-    AGENT=$agent \
+    DEFAULT_AGENT=$agent \
     poetry run pytest -s ./tests/integration/test_agent.py::$test_name
   set +x
 }
