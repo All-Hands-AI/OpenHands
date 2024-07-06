@@ -8,10 +8,10 @@ Functions:
 - goto_line(line_number): Moves the window to show the specified line number.
 - scroll_down(): Moves the window down by the number of lines specified in WINDOW.
 - scroll_up(): Moves the window up by the number of lines specified in WINDOW.
-- create_file(filename): Creates and opens a new file with the given name.
 - search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
+- create_file(filename): Creates a file with the given name.
 - edit_file(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
 - insert_content_at_line(file_name: str, line_number: int, content: str): Inserts given content at the specified line number in a file.
 """
@@ -318,19 +318,18 @@ def scroll_up() -> None:
 
 @update_pwd_decorator
 def create_file(filename: str) -> None:
-    """Creates and opens a new file with the given name.
+    """Creates a file with the given name.
 
     Args:
         filename: str: The name of the file to create.
     """
     if os.path.exists(filename):
-        raise FileExistsError(f"File '{filename}' already exists.")
+        print(f"File '{filename}' already exists.")
+    else:
+        with open(filename, 'w') as file:
+            file.write('\n')
 
-    with open(filename, 'w') as file:
-        file.write('\n')
-
-    open_file(filename)
-    print(f'[File {filename} created.]')
+        print(f'[File {filename} created.]')
 
 
 LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
