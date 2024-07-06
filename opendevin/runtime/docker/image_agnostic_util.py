@@ -23,7 +23,10 @@ def generate_dockerfile_content(base_image: str) -> str:
         '        bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
         '        chmod -R g+w /opendevin/miniforge3 && \\\n'
         '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
-        '    fi'
+        '    fi\n'
+        'RUN /opendevin/miniforge3/bin/pip install --upgrade pip\n'
+        'RUN /opendevin/miniforge3/bin/pip install jupyterlab notebook jupyter_kernel_gateway flake8\n'
+        'RUN /opendevin/miniforge3/bin/pip install python-docx PyPDF2 python-pptx pylatexenc openai\n'
     ).strip()
     return dockerfile_content
 
