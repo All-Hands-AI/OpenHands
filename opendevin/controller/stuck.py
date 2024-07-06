@@ -3,7 +3,6 @@ from typing import cast
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
-from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.action.empty import NullAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
@@ -233,9 +232,6 @@ class StuckDetector:
         ):
             # for loop detection, ignore command_id, which is the pid
             return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
-        elif isinstance(obj1, CmdKillAction) and isinstance(obj2, CmdKillAction):
-            # for loop detection, ignore command_id, which is the pid
-            return obj1.thought == obj2.thought
         else:
             # this is the default comparison
             return obj1 == obj2

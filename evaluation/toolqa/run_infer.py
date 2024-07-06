@@ -1,15 +1,19 @@
 import asyncio
-import json
 import logging
-import multiprocessing as mp
 import os
 import pathlib
-import subprocess
-import time
-from concurrent.futures import ProcessPoolExecutor
+from typing import Any
 
-from tqdm import tqdm
+import pandas as pd
 
+from evaluation.utils.shared import (
+    EvalMetadata,
+    codeact_user_response,
+    make_metadata,
+    monologue_user_response,
+    prepare_dataset,
+    run_evaluation,
+)
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
@@ -21,42 +25,6 @@ from opendevin.llm.llm import LLM
 
 from .utils import download_data, download_tools, encode_question, eval_answer, get_data
 
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
-
-def codeact_user_response(state: State) -> str:
-    msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'When you think you finished the task, respond with `Finish[answer]` where you include your answer in `[]`\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
-    )
-
-    # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-    if state.history:
-        user_msgs = [
-            event
-            for event in state.history.get_events()
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
-        if len(user_msgs) > 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
-    return msg
-
-
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
     'MonologueAgent': monologue_user_response,
@@ -67,7 +35,8 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(agent: Agent, task, metadata, reset_logger: bool = True):
+def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -75,10 +44,10 @@ def process_instance(agent: Agent, task, metadata, reset_logger: bool = True):
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-    eval_output_dir = metadata['eval_output_dir']
-    qid = task['qid']
-    question = task['question']
-    answer = task['answer']
+    eval_output_dir = metadata.eval_output_dir
+    qid = instance.qid
+    question = instance.question
+    answer = instance.answer
     if reset_logger:
         # Set up logger
         log_file = os.path.join(eval_output_dir, 'logs', f'instance_{qid}.log')
@@ -112,6 +81,7 @@ def process_instance(agent: Agent, task, metadata, reset_logger: bool = True):
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -150,7 +120,7 @@ def process_instance(agent: Agent, task, metadata, reset_logger: bool = True):
         'text': model_answer_raw,
         'correct': correct,
         'answer_id': 'None',
-        'model_id': metadata['model_name'],
+        'model_id': metadata.model_name,
         'metadata': metadata,
         'history': histories,
         'metrics': metrics,
@@ -180,36 +150,8 @@ if __name__ == '__main__':
         default='YOUR_WOLFRAMALPHA_APPID',
     )
     args, _ = parser.parse_known_args()
-    if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
-    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
-    # for details of how to set `llm_config`
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
     logger.info(f'Config for evaluation: {config}')
-    agent_class = args.agent_cls
-    assert (
-        agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
-    ), f'Unsupported agent class: {agent_class}'
-    model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
-    eval_note = ''
-    if args.eval_note is not None:
-        eval_note += '_N_' + args.eval_note
-    eval_output_dir = os.path.join(
-        args.eval_output_dir,
-        'toolqa',
-        agent_class,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note,
-    )
-    pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
-        parents=True, exist_ok=True
-    )
-    logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
     dataset = ''
     hardness = ''
@@ -224,149 +166,35 @@ if __name__ == '__main__':
         'yelp',
         'genda',
     ]
-    if args.dataset in dataset_choices:
-        dataset = args.dataset
-    else:
+    if args.dataset not in dataset_choices:
         raise ValueError(
             'Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset.'
         )
-    if args.hardness == 'easy':
-        hardness = 'easy'
-    elif args.hardness == 'hard':
-        hardness = 'hard'
-    else:
+    if args.hardness not in ['easy', 'hard']:
         raise ValueError('Please choose from easy and hard for hardness.')
 
-    logger.info(f'Evaluating ToolQA {dataset} {hardness} test')
     # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     workspace_mount_path = config.workspace_mount_path
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-    toolqa_test = get_data(dataset, hardness)
+    toolqa_test = pd.DataFrame(get_data(dataset, hardness))
     toolqa_data_path = download_data(workspace_mount_path)
     toolqa_tool_path = download_tools(workspace_mount_path, args.wolfram_alpha_appid)
 
-    # TEST METADATA
-    metadata = {
-        'dataset': dataset,
-        'hardness': hardness,
-        'agent_class': agent_class,
-        'model_name': model_name,
-        'max_iterations': max_iterations,
-        'eval_output_dir': eval_output_dir,
-        'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
-        'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        .decode('utf-8')
-        .strip(),
-    }
-    logger.info(f'Metadata: {metadata}')
-    with open(
-        os.path.join(eval_output_dir, f'metadata_{dataset}_{hardness}.json'), 'w'
-    ) as f:
-        json.dump(metadata, f)
-    # LIMIT EVALUATION
-    eval_n_limit = args.eval_n_limit
-    if eval_n_limit:
-        toolqa_test = toolqa_test[:eval_n_limit]
-        logger.info(
-            f'Limiting evaluation to a total of first {eval_n_limit} instances.'
-        )
-    output_file = os.path.join(
-        eval_output_dir, f'output_{model_name}_{dataset}_{hardness}.jsonl'
+    id_column = 'qid'
+    metadata = make_metadata(
+        llm_config,
+        f'toolqa-{args.dataset}-{args.hardness}',
+        args.agent_cls,
+        args.eval_note,
+        args.eval_output_dir,
     )
-    logger.info(f'Writing evaluation output to {output_file}')
-    finished_task_ids = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            for line in f:
-                task = json.loads(line)
-                finished_task_ids.add(task['qid'])
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded {len(finished_task_ids)} finished instances.'
-        )
-    output_fp = open(output_file, 'a')
-    logger.info(
-        f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
-    )
-    # =============================================
-    # filter out finished instances
-    new_toolqa_test = []
-    for task in toolqa_test:
-        qid = task['qid']
-        if qid in finished_task_ids:
-            logger.info(f'Skipping instance {qid} as it is already finished.')
-            continue
-        new_toolqa_test.append(task)
-    finished_task_number = len(finished_task_ids)
-    toolqa_test = new_toolqa_test
-    logger.info(
-        f'Finished instances: {finished_task_number}, Remaining instances: {len(toolqa_test)}'
-    )
-
-    # =============================================
-    pbar = tqdm(total=len(toolqa_test))
-
-    # This function tracks the progress AND write the output to a JSONL file
-    def update_progress(future):
-        pbar.update(1)
-        output = future.result()
-        pbar.set_description(f'Instance {output["qid"]}')
-        pbar.set_postfix_str(f'Test Result: {output["correct"]}')
-        logger.info(
-            f'Finished evaluation for instance {output["qid"]}: {output["correct"]}'
-        )
-        output_fp.write(json.dumps(output) + '\n')
-        output_fp.flush()
-        finished_task_ids.add(output['qid'])
-
-    # Create the agent
-    agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
-
-    # This sets the multi-processing
-    num_workers = args.eval_num_workers
-    logger.info(f'Using {num_workers} workers for evaluation.')
-    try:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
-            # This is how we perform multi-processing
-            for task in toolqa_test:
-                try:
-                    future = executor.submit(
-                        process_instance,
-                        agent,
-                        task,
-                        metadata,
-                        reset_logger=bool(num_workers > 1),
-                    )
-                    future.add_done_callback(update_progress)
-                    futures.append(future)
-                except Exception:
-                    continue
-            # Wait for all futures to complete
-            for future in futures:
-                try:
-                    future.result()
-                except Exception:
-                    continue
-    except KeyboardInterrupt:
-        logger.info('KeyboardInterrupt received. Cleaning up...')
-        cleanup()
-    output_fp.close()
-    total_correct = 0
-    output = []
-    with open(output_file, 'r') as f:
-        for line in f:
-            data = json.loads(line)
-            output.append(data)
-            if data['qid'] in finished_task_ids:
-                if str(data['correct']).lower() == 'true':
-                    total_correct += 1
-    # sort all output by question_id
-    output = sorted(output, key=lambda x: x['qid'])
-    with open(output_file, 'w') as f:
-        for dat in output:
-            f.write(json.dumps(dat) + '\n')
-            f.flush()
-    logger.info(
-        f'Evaluation finished for {dataset}-{hardness}. Total: {len(toolqa_test)+finished_task_number}; Correct: {total_correct}; Accuracy: {total_correct / (len(toolqa_test)+finished_task_number)}'
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit, id_column)
+    run_evaluation(
+        instances,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
+        id_column,
     )

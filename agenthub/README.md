@@ -29,7 +29,6 @@ The `state` contains:
 Here is a list of available Actions, which can be returned by `agent.step()`:
 
 - [`CmdRunAction`](../opendevin/events/action/commands.py) - Runs a command inside a sandboxed terminal
-- [`CmdKillAction`](../opendevin/events/action/commands.py) - Kills a background command
 - [`IPythonRunCellAction`](../opendevin/events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../opendevin/runtime/plugins) as a requirement.
 - [`FileReadAction`](../opendevin/events/action/files.py) - Reads the content of a file
 - [`FileWriteAction`](../opendevin/events/action/files.py) - Writes new content to a file
@@ -47,8 +46,7 @@ You can use `action.to_dict()` and `action_from_dict` to serialize and deseriali
 ## Observations
 
 There are also several types of Observations. These are typically available in the step following the corresponding Action.
-But they may also appear as a result of asynchronous events (e.g. a message from the user, logs from a command running
-in the background).
+But they may also appear as a result of asynchronous events (e.g. a message from the user).
 
 Here is a list of available Observations:
 

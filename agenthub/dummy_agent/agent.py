@@ -31,15 +31,12 @@ from opendevin.llm.llm import LLM
 """
 FIXME: There are a few problems this surfaced
 * FileWrites seem to add an unintended newline at the end of the file
-* Why isn't the output of the background command split between two steps?
 * Browser not working
 """
 
 ActionObs = TypedDict(
     'ActionObs', {'action': Action, 'observations': list[Observation]}
 )
-
-BACKGROUND_CMD = 'echo "This is in the background" && sleep .1 && echo "This too"'
 
 
 class DummyAgent(Agent):
@@ -95,25 +92,9 @@ class DummyAgent(Agent):
                 ],
             },
             {
-                'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
-                'observations': [
-                    CmdOutputObservation(
-                        'Background command started. To stop it, send a `kill` action with command_id 42',
-                        command_id=42,
-                        command=BACKGROUND_CMD,
-                    ),
-                    CmdOutputObservation(
-                        'This is in the background\nThis too\n',
-                        command_id=42,
-                        command=BACKGROUND_CMD,
-                    ),
-                ],
-            },
-            {
                 'action': AgentRecallAction(query='who am I?'),
                 'observations': [
                     AgentRecallObservation('', memories=['I am a computer.']),
-                    # CmdOutputObservation('This too\n', command_id=42, command=BACKGROUND_CMD),
                 ],
             },
             {

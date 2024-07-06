@@ -31,7 +31,6 @@ ColorType = Literal[
 ]
 
 LOG_COLORS: Mapping[str, ColorType] = {
-    'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
     'OBSERVATION': 'yellow',
     'DETAIL': 'cyan',
