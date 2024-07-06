@@ -7,7 +7,7 @@ from opendevin.controller.agent_controller import AgentController
 from opendevin.controller.state.state import State
 from opendevin.controller.stuck import StuckDetector
 from opendevin.events.action import CmdRunAction, FileReadAction, MessageAction
-from opendevin.events.action.commands import CmdKillAction, IPythonRunCellAction
+from opendevin.events.action.commands import IPythonRunCellAction
 from opendevin.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
@@ -456,8 +456,8 @@ class TestStuckDetector:
         event_stream.add_event(message_action_3, EventSource.USER)
         message_action_3._source = EventSource.USER
 
-        cmd_kill_action = CmdKillAction(
-            command_id=42, thought="I'm not stuck, he's stuck"
+        cmd_kill_action = CmdRunAction(
+            command='echo 42', thought="I'm not stuck, he's stuck"
         )
         event_stream.add_event(cmd_kill_action, EventSource.AGENT)
 
