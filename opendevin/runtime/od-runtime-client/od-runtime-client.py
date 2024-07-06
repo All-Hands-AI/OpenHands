@@ -1,6 +1,6 @@
-# from opendevin.runtime.plugins import PluginRequirement
-# from opendevin.runtime.tools import RuntimeTool
-# from typing import Any
+from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.tools import RuntimeTool
+from typing import Any
 import asyncio
 import websockets
 from opendevin.events.action.action import Action
@@ -11,12 +11,7 @@ from opendevin.events.serialization import event_to_dict, event_from_dict
 from opendevin.events.observation import Observation
 from opendevin.events.action import (
     Action,
-    AgentRecallAction,
-    BrowseInteractiveAction,
-    BrowseURLAction,
     CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
     IPythonRunCellAction,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
@@ -29,15 +24,18 @@ from opendevin.events.observation import (
 )
 
 class RuntimeClient:
+    # This runtime will listen to the websocket
+    # When receive an event, it will run the action and send the observation back to the websocket
+
     def __init__(self) -> None:
         self.init_websocket()
         self.init_shell()
 
-    # def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-    #     print("Not implemented yet.")
+    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+        print("Not implemented yet.")
     
-    # def init_runtime_tools(self, runtime_tools: list[RuntimeTool], runtime_tools_config: dict[RuntimeTool, Any] | None = None, is_async: bool = True) -> None:
-    #     print("Not implemented yet.")
+    def init_runtime_tools(self, runtime_tools: list[RuntimeTool], runtime_tools_config: dict[RuntimeTool, Any] | None = None, is_async: bool = True) -> None:
+        print("Not implemented yet.")
 
     def init_websocket(self) -> None:
         server = websockets.serve(self.listen, "0.0.0.0", 8080)

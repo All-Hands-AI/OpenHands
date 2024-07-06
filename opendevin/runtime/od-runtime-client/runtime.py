@@ -8,10 +8,8 @@ from opendevin.events.action.action import Action
 from opendevin.events.event import Event
 from opendevin.events.observation import Observation
 from opendevin.events.stream import EventStream
-from opendevin.runtime.plugins import PluginRequirement
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.tools import RuntimeTool
 from opendevin.runtime.server.browse import browse
 from opendevin.runtime.server.files import read_file, write_file
 from opendevin.core.config import config
@@ -34,6 +32,9 @@ import asyncio
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 
 class EventStreamRuntime(Runtime):
+    # This runtime will subscribe the event stream
+    # When receive an event, it will send the event to od-runtime-client which run inside the docker environment
+    
     # websocket uri
     uri = 'ws://localhost:8080'
 
@@ -56,12 +57,6 @@ class EventStreamRuntime(Runtime):
     
     def close(self):
         pass
-
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        print("Not implemented yet.")
-    
-    def init_runtime_tools(self, runtime_tools: list[RuntimeTool], runtime_tools_config: dict[RuntimeTool, Any] | None = None, is_async: bool = True) -> None:
-        print("Not implemented yet.")
     
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
@@ -92,6 +87,7 @@ class EventStreamRuntime(Runtime):
     async def execute(
         self, action: Action, stream: bool = False, timeout: int | None = None
     ) -> Observation:
+        # Send action into websocket and get the result
         if self.websocket is None:
             raise Exception("WebSocket is not connected.")
         await self.websocket.send(json.dumps(event_to_dict(action)))
