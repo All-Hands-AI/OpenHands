@@ -26,7 +26,7 @@ options:
   -f FILE, --file FILE  Path to a file containing the task. Overrides -t if
                         both are provided.
   -c AGENT_CLS, --agent-cls AGENT_CLS
-                        The agent class to use
+                        Name of the default agent to use
   -m MODEL_NAME, --model-name MODEL_NAME
                         The (litellm) model name to use
   -i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS
