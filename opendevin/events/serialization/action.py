@@ -9,7 +9,6 @@ from opendevin.events.action.agent import (
 )
 from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from opendevin.events.action.commands import (
-    CmdKillAction,
     CmdRunAction,
     IPythonRunCellAction,
 )
@@ -20,7 +19,6 @@ from opendevin.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     NullAction,
-    CmdKillAction,
     CmdRunAction,
     IPythonRunCellAction,
     BrowseURLAction,
