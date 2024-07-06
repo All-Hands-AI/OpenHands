@@ -14,7 +14,6 @@ from opendevin.events.action import (
     AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
-    CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -76,16 +75,9 @@ class RuntimeClient:
         return output, exit_code
                     
     async def run(self, action: CmdRunAction) -> Observation:
-        return self._run_command(action.command, background=action.background)
+        return self._run_command(action.command)
     
-    def _run_command(self, command: str, background: bool = False) -> Observation:
-        if background:
-            return self._run_background(command)
-        else:
-            return self._run_immediately(command)
-
-
-    def _run_immediately(self, command: str) -> Observation:
+    def _run_command(self, command: str) -> Observation:
         try:
             output, exit_code = self.execute_command(command)
             return CmdOutputObservation(
@@ -97,69 +89,61 @@ class RuntimeClient:
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         obs = self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
-            background=False,
         )
 
         # run the code
-        obs = self._run_command(
-            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
-        )
+        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
-        if 'pip install' in action.code and 'Successfully installed' in output:
+        if 'pip install' in action.code:
             print(output)
-            restart_kernel = 'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
-            if (
-                'Note: you may need to restart the kernel to use updated packages.'
-                in output
-            ):
-                obs = self._run_command(
-                    (
-                        "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
-                        f'{restart_kernel}\n'
-                        'EOL'
-                    ),
-                    background=False,
-                )
-                obs = self._run_command(
-                    ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'),
-                    background=False,
-                )
-                output = '[Package installed successfully]'
-                if "{'status': 'ok', 'restart': True}" != obs.content.strip():
-                    print(obs.content)
-                    output += '\n[But failed to restart the kernel to load the package]'
-                else:
-                    output += '\n[Kernel restarted successfully to load the package]'
+            package_names = action.code.split(' ', 2)[-1]
+            is_single_package = ' ' not in package_names
 
-                # re-init the kernel after restart
-                if action.kernel_init_code:
-                    obs = self._run_command(
+            if 'Successfully installed' in output:
+                restart_kernel = 'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
+                if (
+                    'Note: you may need to restart the kernel to use updated packages.'
+                    in output
+                ):
+                    self._run_command(
                         (
-                            f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
-                            f'{action.kernel_init_code}\n'
+                            "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
+                            f'{restart_kernel}\n'
                             'EOL'
-                        ),
-                        background=False,
+                        )
                     )
                     obs = self._run_command(
-                        'cat /tmp/opendevin_jupyter_init.py | execute_cli',
-                        background=False,
+                        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
                     )
+                    output = '[Package installed successfully]'
+                    if "{'status': 'ok', 'restart': True}" != obs.content.strip():
+                        print(obs.content)
+                        output += (
+                            '\n[But failed to restart the kernel to load the package]'
+                        )
+                    else:
+                        output += (
+                            '\n[Kernel restarted successfully to load the package]'
+                        )
 
+                    # re-init the kernel after restart
+                    if action.kernel_init_code:
+                        obs = self._run_command(
+                            (
+                                f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
+                                f'{action.kernel_init_code}\n'
+                                'EOL'
+                            ),
+                        )
+                        obs = self._run_command(
+                            'cat /tmp/opendevin_jupyter_init.py | execute_cli',
+                        )
+            elif (
+                is_single_package
+                and f'Requirement already satisfied: {package_names}' in output
+            ):
+                output = '[Package already installed]'
         return IPythonRunCellObservation(content=output, code=action.code)
-
-    ############################################################################ 
-    # Background Functions
-    ############################################################################ 
-    async def kill(self, action: CmdKillAction) -> Observation:
-        raise NotImplementedError
-    
-    def _run_background(self, command: str) -> Observation:
-        raise NotImplementedError
-    
-    # TODO: Need a function to read background output
-    # Potentioanl solution: write into a log file?
-    
 
     def close(self):
         self.shell.close()

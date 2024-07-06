@@ -6,7 +6,6 @@ import websockets
 
 from opendevin.core.config import config
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import Process
 from opendevin.runtime.sandbox import Sandbox
 
 
@@ -52,12 +51,6 @@ class WebSocketBox(Sandbox):
         print('Exit Code:', exit_code)
         print(output)
         return exit_code, output
-
-    def execute_in_background(self, cmd: str) -> Process:
-        raise NotImplementedError
-
-    def kill_background(self, id: int) -> Process:
-        raise NotImplementedError
 
     def read_logs(self, id: int) -> str:
         raise NotImplementedError

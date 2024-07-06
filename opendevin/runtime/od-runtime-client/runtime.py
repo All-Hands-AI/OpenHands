@@ -11,7 +11,6 @@ from opendevin.events.stream import EventStream
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.tools import RuntimeTool
 from opendevin.runtime.server.browse import browse
 from opendevin.runtime.server.files import read_file, write_file
@@ -26,13 +25,11 @@ from opendevin.events.action import (
     AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
-    CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.core.schema import CancellableStream
 import asyncio
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 
@@ -40,14 +37,14 @@ class EventStreamRuntime(Runtime):
     # websocket uri
     uri = 'ws://localhost:8080'
 
-    def __init__(self, event_stream: EventStream, sid: str = 'default', sandbox: Sandbox | None = None):
+    def __init__(self, event_stream: EventStream, sid: str = 'default'):
+        # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
         self.event_stream = event_stream
         # self._init_event_stream()
         self._init_websocket()
     
     def _init_event_stream(self):
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self._bg_task = asyncio.create_task(self._start_background_observation_loop())
 
     def _init_websocket(self):
         self.websocket = None
@@ -105,20 +102,6 @@ class EventStreamRuntime(Runtime):
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         raise NotImplementedError
 
-    async def _start_background_observation_loop(self):
-        while True:
-            await self.submit_background_obs()
-            await asyncio.sleep(1)
-
-    async def submit_background_obs(self):
-        """
-        Returns all observations that have accumulated in the runtime's background.
-        Right now, this is just background commands, but could include e.g. asynchronous
-        events happening in the browser.
-        """
-        print("Not implemented yet.")
-        await asyncio.sleep(2)
-
     ############################################################################ 
     # Keep the same with other runtimes
     ############################################################################ 
@@ -152,8 +135,6 @@ class EventStreamRuntime(Runtime):
     async def run(self, action: CmdRunAction) -> Observation:
         raise NotImplementedError
     
-    async def kill(self, action: CmdKillAction) -> Observation:
-        raise NotImplementedError
 
 if __name__ == "__main__":
     event_stream = EventStream("1")
