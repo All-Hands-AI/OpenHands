@@ -42,7 +42,7 @@ describe("FileExplorer", () => {
       expect(getByText("folder1")).toBeInTheDocument();
       expect(getByText("file1.ts")).toBeInTheDocument();
     });
-    expect(listFiles).toHaveBeenCalledTimes(1);
+    expect(listFiles).toHaveBeenCalledTimes(1); // once for root
   });
 
   it.todo("should render an empty workspace");
@@ -59,14 +59,14 @@ describe("FileExplorer", () => {
       expect(getByText("folder1")).toBeInTheDocument();
       expect(getByText("file1.ts")).toBeInTheDocument();
     });
-    expect(listFiles).toHaveBeenCalledTimes(1);
+    expect(listFiles).toHaveBeenCalledTimes(1); // once for root
 
     await act(async () => {
       await userEvent.click(getByTestId("refresh"));
     });
 
     await waitFor(() => {
-      expect(listFiles).toHaveBeenCalledTimes(2);
+      expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for refresh button
     });
   });
 
@@ -96,7 +96,7 @@ describe("FileExplorer", () => {
 
   it("should upload files", async () => {
     // TODO: Improve this test by passing expected argument to `uploadFiles`
-    const { getByTestId } = renderWithProviders(<FileExplorer />, {
+    const { findByTestId } = renderWithProviders(<FileExplorer />, {
       preloadedState: {
         agent: {
           curAgentState: AgentState.RUNNING,
@@ -107,7 +107,7 @@ describe("FileExplorer", () => {
     const file = new File([""], "file-name");
     const file2 = new File([""], "file-name-2");
 
-    const uploadFileInput = await waitFor(() => getByTestId("file-input"));
+    const uploadFileInput = await findByTestId("file-input");
 
     await act(async () => {
       await userEvent.upload(uploadFileInput, file);
@@ -116,7 +116,7 @@ describe("FileExplorer", () => {
     expect(uploadFiles).toHaveBeenCalledOnce();
     expect(listFiles).toHaveBeenCalled();
 
-    const uploadDirInput = getByTestId("file-input");
+    const uploadDirInput = await findByTestId("file-input");
 
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(async () => {
