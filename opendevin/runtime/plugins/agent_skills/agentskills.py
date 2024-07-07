@@ -13,7 +13,6 @@ Functions:
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
 - edit_file_by_replace(file_name: str, to_replace: str, new_content: str): Replaces lines in a file with the given content.
-- edit_file_by_line(file_name: str, start: int, end: int, content: str): Replaces lines in a file with the given content.
 - insert_content_at_line(file_name: str, line_number: int, content: str): Inserts given content at the specified line number in a file.
 - append_file(file_name: str, content: str): Appends the given content to the end of the specified file.
 """
@@ -737,80 +736,6 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
 
 
 @update_pwd_decorator
-def edit_file_by_line(file_name: str, start: int, end: int, new_content: str) -> None:
-    """Edit a file.
-
-    Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
-
-    Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file` will only replace the *first* matching occurrences.
-
-    For example, given a file "/workspace/example.txt" with the following content:
-    ```
-    line 1
-    line 2
-    line 2
-    line 3
-    ```
-
-    EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
-
-    edit_file(
-        '/workspace/example.txt',
-        to_replace='line 2\nline 3',
-        new_content='new line\nline 3',
-    )
-
-    This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
-
-    The resulting file will be:
-    ```
-    line 1
-    line 2
-    new line
-    line 3
-    ```
-
-    REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
-
-    edit_file(
-        '/workspace/example.txt',
-        to_replace='line 2\nline 3',
-        new_content='',
-    )
-
-    For example, given a file "/workspace/example.txt" with the following content (line numbers are included for clarity):
-    ```
-    1|line 1
-    2|line 2
-    3|line 3
-    ```
-    If you want to replace the second line, you can call:
-    edit_file_by_line('/workspace/example.txt', 2, 2, 'new line')
-    This will give the following result:
-    ```
-    1|line 1
-    2|new line
-    3|line 3
-    ```
-
-    Args:
-        file_name: str: The name of the file to edit.
-        to_replace: str: The content to search for and replace.
-        new_content: str: The new content to replace the old content with.
-    """
-    ret_str = _edit_file_impl(
-        file_name,
-        start=start,
-        end=end,
-        content=new_content,
-        is_insert=False,
-        is_append=False,
-    )
-    print(ret_str)
-
-
-@update_pwd_decorator
 def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     """Insert content at the given line number in a file.
     This will NOT modify the content of the lines before OR after the given line number.
@@ -1180,7 +1105,6 @@ __all__ = [
     'scroll_up',
     'create_file',
     'edit_file_by_replace',
-    'edit_file_by_line',
     'insert_content_at_line',
     'append_file',
     'search_dir',
