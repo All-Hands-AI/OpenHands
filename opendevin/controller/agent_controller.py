@@ -153,12 +153,10 @@ class AgentController:
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 await self.add_history(event, NullObservation(''))
                 if self.get_agent_state() != AgentState.RUNNING:
                     await self.set_agent_state_to(AgentState.RUNNING)
             elif event.source == EventSource.AGENT and event.wait_for_response:
-                logger.info(event, extra={'msg_type': 'ACTION'})
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         elif isinstance(event, AgentDelegateAction):
             await self.start_delegate(event)
@@ -347,8 +345,6 @@ class AgentController:
             await self.report_error(str(e))
             return
 
-        logger.info(action, extra={'msg_type': 'ACTION'})
-
         if action.runnable:
             self._pending_action = action
         else:
@@ -358,6 +354,7 @@ class AgentController:
             self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
+        logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
