@@ -7,17 +7,15 @@ from opendevin.events.action.action import Action
 from opendevin.events.event import Event
 from opendevin.events.observation import Observation
 from opendevin.events.stream import EventStream
-from opendevin.events.serialization import event_to_dict,event_from_dict, observation_from_dict
+from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.browse import browse
 from opendevin.runtime.server.files import read_file, write_file
 from opendevin.core.config import config
 from opendevin.events.observation import (
-    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
-    IPythonRunCellObservation,
 )
 from opendevin.events.action import (
     AgentRecallAction,
@@ -86,7 +84,7 @@ class EventStreamRuntime(Runtime):
             )
         observation = await getattr(self, action_type)(action)
         # TODO: fix ID problem
-        # observation._parent = action.id  # type: ignore[attr-defined]
+        observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     
     async def run(self, action: CmdRunAction) -> Observation:
@@ -108,9 +106,6 @@ class EventStreamRuntime(Runtime):
         except asyncio.TimeoutError:
             print("No response received within the timeout period.")
         await self.websocket.close()
-
-        # TODO: need to assign it in od runtime client
-        output['observation'] = 'success'
         return observation_from_dict(output)
         
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:

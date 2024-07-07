@@ -20,13 +20,13 @@ from opendevin.events.observation import (
     IPythonRunCellObservation
 )
 
-class RuntimeClient:
+class RuntimeClient():
     # This runtime will listen to the websocket
     # When receive an event, it will run the action and send the observation back to the websocket
 
     def __init__(self) -> None:
-        self.init_websocket()
         self.init_shell()
+        self.init_websocket()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         print("Not implemented yet.")
@@ -63,10 +63,9 @@ class RuntimeClient:
         return observation
     
     async def run(self, action: CmdRunAction) -> Observation:
-        return self._run_command(action)
+        return await self._run_command(action.command)
     
-    async def _run_command(self, action: CmdRunAction) -> Observation:
-        command = action.command
+    async def _run_command(self, command: str) -> Observation:
         try:
             output, exit_code = self.execute_command(command)
             return CmdOutputObservation(
@@ -84,11 +83,11 @@ class RuntimeClient:
         return output, exit_code
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        obs = self._run_command(
+        obs = await self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
         # run the code
-        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        obs = await self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
         if 'pip install' in action.code:
             print(output)
@@ -143,3 +142,25 @@ class RuntimeClient:
 
     def close(self):
         self.shell.close()
+
+async def test_run_commond():
+    client = RuntimeClient()
+    command = CmdRunAction(command="ls -l")
+    obs = await client.run_action(command)
+    print(obs)
+
+
+def test_shell(message):
+    shell = pexpect.spawn('/bin/bash', encoding='utf-8')
+    shell.expect(r'[$#] ')
+    print(f"Received command: {message}")
+    shell.sendline(message)
+    shell.expect(r'[$#] ')
+    output = shell.before.strip().split('\r\n', 1)[1].strip()
+    shell.close()
+
+if __name__ == "__main__":
+    # print(test_shell("ls -l"))
+    RuntimeClient()
+    # asyncio.run(test_run_commond())
+    
