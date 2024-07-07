@@ -373,11 +373,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     # helper function to set attributes based on env vars
     def set_attr_from_env(sub_config: Any, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
-        print(
-            '\n\n\n\n###### sub_config.__annotations__.items() = ',
-            sub_config.__annotations__.items(),
-            '############\n',
-        )
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name
             # e.g. LLM_BASE_URL

@@ -76,7 +76,6 @@ class AgentController:
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
-        print('\n\n\n\\ agent =', agent)
         self.agent = agent
 
         # subscribe to the event stream
