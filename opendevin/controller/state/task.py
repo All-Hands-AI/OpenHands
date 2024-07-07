@@ -47,7 +47,7 @@ class Task:
             self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        logger.debug('Creating task {self.id} with parent={parent.id}, goal={goal}')
+        logger.debug(f'Creating task {self.id} with parent={parent.id}, goal={goal}')
         self.subtasks = []
         for subtask in subtasks or []:
             if isinstance(subtask, Task):
@@ -56,7 +56,7 @@ class Task:
                 goal = subtask.get('goal')
                 state = subtask.get('state')
                 subtasks = subtask.get('subtasks')
-                logger.debug('Reading: {goal}, {state}, {subtasks}')
+                logger.debug(f'Reading: {goal}, {state}, {subtasks}')
                 self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE
