@@ -153,7 +153,7 @@ model = "gpt-4o"
 # Top p for the API
 #top_p = 0.5
 
-[gpt3_llm]
+[llm.gpt3]
 # API key to use
 api_key = "your-api-key"
 
@@ -175,10 +175,10 @@ model = "gpt-3.5"
 # LLM config group to use
 #llm_config = 'llm'
 
-[RepoExplorerAgent]
+[agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
-llm_config = 'gpt3_llm'
+llm_config = 'gpt3'
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox

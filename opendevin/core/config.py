@@ -449,18 +449,34 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     for key, value in toml_config.items():
         if isinstance(value, dict):
             try:
-                if key.lower().endswith('agent'):
-                    logger.info(
-                        f'Attempt to load group {key} from config toml as agent config'
-                    )
-                    agent_config = AgentConfig(**value)
-                    cfg.set_agent_config(agent_config, key)
-                elif key.lower().endswith('llm'):
-                    logger.info(
-                        f'Attempt to load group {key} from config toml as LLM config'
-                    )
-                    llm_config = LLMConfig(**value)
-                    cfg.set_llm_config(llm_config, key)
+                if key is not None and key.lower() == 'agent':
+                    logger.info('Attempt to load default agent config from config toml')
+                    non_dict_fields = {
+                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    }
+                    agent_config = AgentConfig(**non_dict_fields)
+                    cfg.set_agent_config(agent_config, 'agent')
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            logger.info(
+                                f'Attempt to load group {nested_key} from config toml as agent config'
+                            )
+                            agent_config = AgentConfig(**nested_value)
+                            cfg.set_agent_config(agent_config, nested_key)
+                if key is not None and key.lower() == 'llm':
+                    logger.info('Attempt to load default LLM config from config toml')
+                    non_dict_fields = {
+                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    }
+                    llm_config = LLMConfig(**non_dict_fields)
+                    cfg.set_llm_config(llm_config, 'llm')
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            logger.info(
+                                f'Attempt to load group {nested_key} from config toml as llm config'
+                            )
+                            llm_config = LLMConfig(**nested_value)
+                            cfg.set_llm_config(llm_config, nested_key)
             except (TypeError, KeyError) as e:
                 logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',

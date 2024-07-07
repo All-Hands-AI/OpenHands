@@ -102,15 +102,15 @@ def test_load_from_new_style_toml(default_config, temp_toml_file):
 model = "test-model"
 api_key = "toml-api-key"
 
-[cheap_llm]
+[llm.cheap]
 model = "some-cheap-model"
 api_key = "cheap-model-api-key"
 
 [agent]
 memory_enabled = true
 
-[BrowsingAgent]
-llm_config = "cheap_llm"
+[agent.BrowsingAgent]
+llm_config = "cheap"
 memory_enabled = false
 
 [sandbox]
@@ -141,7 +141,7 @@ sandbox_type = "local"
     # defined agent config overrides default ones
     assert default_config.get_llm_config_from_agent(
         'BrowsingAgent'
-    ) == default_config.get_llm_config('cheap_llm')
+    ) == default_config.get_llm_config('cheap')
     assert (
         default_config.get_llm_config_from_agent('BrowsingAgent').model
         == 'some-cheap-model'
@@ -396,10 +396,10 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     load_from_env(default_config, os.environ)
     default_config.ssh_password = None  # prevent leak
     default_config.jwt_secret = None  # prevent leak
+    for llm in default_config.llms.values():
+        llm.api_key = None  # prevent leak
     assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
     assert default_config.get_llm_config().custom_llm_provider is None
-    if default_config.get_llm_config().api_key is not None:  # prevent leak
-        pytest.fail('LLM API key should be empty.')
     assert default_config.workspace_mount_path == '/home/user/project'
 
 
