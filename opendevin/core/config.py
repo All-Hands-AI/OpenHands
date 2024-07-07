@@ -554,7 +554,9 @@ finalize_config(config)
 
 
 # Utility function for command line --group argument
-def get_llm_config_arg(llm_config_arg: str) -> LLMConfig | None:
+def get_llm_config_arg(
+    llm_config_arg: str, toml_file: str = 'config.toml'
+) -> LLMConfig | None:
     """
     Get a group of llm settings from the config file.
 
@@ -592,8 +594,8 @@ def get_llm_config_arg(llm_config_arg: str) -> LLMConfig | None:
 
     # load the toml file
     try:
-        with open('config.toml', 'r', encoding='utf-8') as toml_file:
-            toml_config = toml.load(toml_file)
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
+            toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
         logger.error(f'Config file not found: {e}')
         return None

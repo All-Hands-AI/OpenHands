@@ -576,6 +576,6 @@ embedding_model="openai"
     with open(temp_toml_file, 'w') as f:
         f.write(temp_toml)
 
-    llm_config = get_llm_config_arg('gpt3')
+    llm_config = get_llm_config_arg('gpt3', temp_toml_file)
     assert llm_config.model == 'gpt-3.5-turbo'
     assert llm_config.embedding_model == 'openai'
