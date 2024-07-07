@@ -112,7 +112,6 @@ Planner agent利用特殊的提示策略为解决问题创建长期计划。
 
 `NullAction`,
 `CmdRunAction`,
-`CmdKillAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `FileReadAction`,

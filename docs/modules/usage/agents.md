@@ -107,7 +107,6 @@ The agent is given its previous action-observation pairs, current task, and hint
 
 `NullAction`,
 `CmdRunAction`,
-`CmdKillAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `FileReadAction`,

@@ -1,27 +1,38 @@
 # 💿 How to Create a Custom Docker Sandbox
 
-The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https://github.com/OpenDevin/OpenDevin/blob/main/containers/sandbox/Dockerfile). Your use case may need additional software installed by default. This guide will teach you how to accomplish this by utilizing a custom docker image.
+The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https://github.com/OpenDevin/OpenDevin/blob/main/containers/sandbox/Dockerfile). 
+
+Your use case may need additional software installed by default.
+
+There are two ways you can do so:
+1. Use an existing image from docker hub. For instance, if you want to have `nodejs` installed, you can do so by using the `node:20` image.
+2. Creating your own custom docker image.
+
+If you want to take the first approach, you can skip the next section.
 
 ## Setup
 
 Make sure you are able to run OpenDevin using the [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) first.
 
 ## Create Your Docker Image
+To create a custom docker image, it must be debian/ubuntu based. 
 
-Next you must create your custom docker image, which should be debian/ubuntu based. For example if we want want OpenDevin to have access to the "node" binary, we would use the following Dockerfile:
+For example, if we want OpenDevin to have access to the "node" binary, we would use the following Dockerfile:
 
-```bash
+```dockerfile
 # Start with latest ubuntu image
 FROM ubuntu:latest
 
 # Run needed updates
-RUN apt-get update && apt-get install
+RUN apt-get update && apt-get install -y
 
 # Install node
 RUN apt-get install -y nodejs
 ```
 
-Next build your docker image with the name of your choice, for example "custom_image". To do this you can create a directory and put your file inside it with the name "Dockerfile", and inside the directory run the following command:
+Next build your docker image with the name of your choice, for example "custom_image". 
+
+To do this you can create a directory and put your file inside it with the name "Dockerfile", and inside the directory run the following command:
 
 ```bash
 docker build -t custom_image .
@@ -33,11 +44,11 @@ This will produce a new image called ```custom_image``` that will be available i
 >
 > Installing with apt-get above installs node for all users.
 
+## Specify your sandbox image in config.toml file
 
-## Specify your custom image in config.toml file
+OpenDevin configuration occurs via the top-level `config.toml` file. 
 
-OpenDevin configuration occurs via the top level ```config.toml``` file.
-Create a ```config.toml``` file in the OpenDevin directory and enter these contents:
+Create a `config.toml` file in the OpenDevin directory and enter these contents:
 
 ```toml
 [core]
@@ -46,14 +57,17 @@ persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="custom_image"
 ```
-> Ensure that sandbox_container_image is set to the name of your custom image from the previous step.
+
+For sandbox_container_image, you can specify either:
+1. The name of your custom image that you built in the previous step (e.g., "custom_image")
+2. A pre-existing image from Docker Hub (e.g., "node:20" if you want a sandbox with Node.js pre-installed)
 
 ## Run
 Run OpenDevin by running ```make run``` in the top level directory.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.
 
-In the case of the example above, running ```node -v``` in the terminal produces ```v18.19.1```
+In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```
 
 Congratulations!
 
@@ -69,16 +83,21 @@ The custom image is built using [_build_sandbox_image()](https://github.com/Open
 
 ```python
 dockerfile_content = (
-        f'FROM {base_image}\n'
-        'RUN apt update && apt install -y openssh-server wget sudo\n'
-        'RUN mkdir -p -m0755 /var/run/sshd\n'
-        'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
-        'RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"\n'
-        'RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3\n'
-        'RUN bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"\n'
-        'RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc\n'
-        'RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> /opendevin/bash.bashrc\n'
-    ).strip()
+    f'FROM {base_image}\n'
+    'RUN apt update && apt install -y openssh-server wget sudo\n'
+    'RUN mkdir -p -m0755 /var/run/sshd\n'
+    'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
+    'RUN echo "" > /opendevin/bash.bashrc\n'
+    'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
+    '        wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
+    '        bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
+    '        chmod -R g+w /opendevin/miniforge3 && \\\n'
+    '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
+    '    fi\n'
+    'RUN /opendevin/miniforge3/bin/pip install --upgrade pip\n'
+    'RUN /opendevin/miniforge3/bin/pip install jupyterlab notebook jupyter_kernel_gateway flake8\n'
+    'RUN /opendevin/miniforge3/bin/pip install python-docx PyPDF2 python-pptx pylatexenc openai\n'
+).strip()
 ```
 
 > Note: the name of the image is modified via [_get_new_image_name()](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py#L63) and it is the modified name that is searched for on subsequent runs.

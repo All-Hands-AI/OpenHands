@@ -137,6 +137,11 @@ class SWEBenchSSHBox(DockerSSHBox):
             logger.error('Failed to cd to the repo')
             return ''
 
+        exit_code, _output = self.execute('git config --global core.pager ""')
+        if exit_code != 0:
+            logger.error('Failed to change git config')
+            return ''
+
         # add everything to the index
         exit_code, output = self.execute('git add -A')
         if exit_code != 0:
@@ -199,10 +204,6 @@ if __name__ == '__main__':
     assert exit_code == 0, 'Failed to reset the repo'
     logger.info(f'git reset --hard: {output}')
 
-    bg_cmd = sandbox.execute_in_background(
-        "while true; do echo 'dot ' && sleep 10; done"
-    )
-
     sys.stdout.flush()
     try:
         while True:
@@ -214,16 +215,9 @@ if __name__ == '__main__':
             if user_input.lower() == 'exit':
                 logger.info('Exiting...')
                 break
-            if user_input.lower() == 'kill':
-                sandbox.kill_background(bg_cmd.pid)
-                logger.info('Background process killed')
-                continue
             exit_code, output = sandbox.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.pid in sandbox.background_commands:
-                logs = sandbox.read_logs(bg_cmd.pid)
-                logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')

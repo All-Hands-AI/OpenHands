@@ -88,7 +88,6 @@ For each problem, OpenDevin is given a set number of iterations to fix the faili
                 "action": "run",
                 "args": {
                     "command": "open Python__2.py",
-                    "background": false,
                     "thought": "Let's start by opening the Python__2.py file to see the current implementation of the function."
                 }
             },
@@ -116,7 +115,6 @@ For each problem, OpenDevin is given a set number of iterations to fix the faili
                 "action": "run",
                 "args": {
                     "command": "edit 2:2 <<EOF\n    return number % 1.0\nEOF",
-                    "background": false,
                     "thought": "The current implementation of the function `truncate_number` is incorrect because it adds 1.0 to the fractional part of the number. This is not necessary and is causing the function to fail the test cases. \n\nThe correct implementation should only return the fractional part of the number. This can be achieved by using the modulus operator with 1.0, which will return the fractional part of the number.\n\nLet's correct the function implementation."
                 }
             },
@@ -144,7 +142,6 @@ For each problem, OpenDevin is given a set number of iterations to fix the faili
                 "action": "run",
                 "args": {
                     "command": "python3 Python__2.py",
-                    "background": false,
                     "thought": "The function `truncate_number` has been updated. Now, let's run the Python file to see if the test cases pass."
                 }
             },

@@ -10,21 +10,17 @@ from e2b.sandbox.exception import (
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.e2b.process import E2BProcess
-from opendevin.runtime.process import Process
 from opendevin.runtime.sandbox import Sandbox
 
 
 class E2BBox(Sandbox):
     closed = False
-    cur_background_id = 0
-    background_commands: dict[int, Process] = {}
     _cwd: str = '/home/user'
 
     def __init__(
         self,
         template: str = 'open-devin',
-        timeout: int = config.sandbox_timeout,
+        timeout: int = config.sandbox.timeout,
     ):
         self.sandbox = E2BSandbox(
             api_key=config.e2b_api_key,
@@ -64,14 +60,6 @@ class E2BBox(Sandbox):
             with tarfile.open(tar_filename, mode='w') as tar:
                 tar.add(host_src, arcname=srcname)
         return tar_filename
-
-    # TODO: This won't work if we didn't wait for the background process to finish
-    def read_logs(self, process_id: int) -> str:
-        proc = self.background_commands.get(process_id)
-        if proc is None:
-            raise ValueError(f'Process {process_id} not found')
-        assert isinstance(proc, E2BProcess)
-        return '\n'.join([m.line for m in proc.output_messages])
 
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
@@ -120,21 +108,6 @@ class E2BBox(Sandbox):
 
         # Delete the local archive
         os.remove(tar_filename)
-
-    def execute_in_background(self, cmd: str) -> Process:
-        process = self.sandbox.process.start(cmd)
-        e2b_process = E2BProcess(process, cmd)
-        self.cur_background_id += 1
-        self.background_commands[self.cur_background_id] = e2b_process
-        return e2b_process
-
-    def kill_background(self, process_id: int):
-        process = self.background_commands.get(process_id)
-        if process is None:
-            raise ValueError(f'Process {process_id} not found')
-        assert isinstance(process, E2BProcess)
-        process.kill()
-        return process
 
     def close(self):
         self.sandbox.close()

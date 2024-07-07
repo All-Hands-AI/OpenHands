@@ -44,13 +44,8 @@ class opendevin.action.base.Action {
 class opendevin.action.base.NullAction {
   action: str
 }
-class opendevin.action.bash.CmdKillAction {
-  id: int
-  action: str
-}
 class opendevin.action.bash.CmdRunAction {
   command: str
-  background: bool
   action: str
 }
 class opendevin.action.browse.BrowseURLAction {
@@ -133,7 +128,6 @@ class opendevin.plan.Plan {
 class opendevin.state.State {
   plan: Plan
   iteration: int
-  background_commands_obs: List[CmdOutputObservation]
   history: List[Tuple[Action, Observation]]
   updated_info: List[Tuple[Action, Observation]]
 }
@@ -144,7 +138,6 @@ class opendevin.observation.CmdOutputObservation {
   observation: str
 }
 class opendevin.sandbox.sandbox.DockerInteractive {
-  background_commands: Dict[int, BackgroundCommand] {static}
   instance_id: None
   instance_id: None
   workspace_dir: None
@@ -187,7 +180,6 @@ opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentThink
 opendevin.action.base.Action <|-- opendevin.action.base.ExecutableAction
 opendevin.action.base.Action <|-- opendevin.action.base.NotExecutableAction
 opendevin.action.base.NotExecutableAction <|-- opendevin.action.base.NullAction
-opendevin.action.base.ExecutableAction <|-- opendevin.action.bash.CmdKillAction
 opendevin.action.base.ExecutableAction <|-- opendevin.action.bash.CmdRunAction
 opendevin.action.base.ExecutableAction <|-- opendevin.action.browse.BrowseURLAction
 opendevin.observation.Observation <|-- opendevin.observation.BrowserOutputObservation
@@ -208,7 +200,6 @@ opendevin.state.State *-- opendevin.observation.CmdOutputObservation
 opendevin.state.State *-- opendevin.action.base.Action
 opendevin.state.State *-- opendevin.observation.Observation
 opendevin.observation.Observation <|-- opendevin.observation.CmdOutputObservation
-opendevin.sandbox.sandbox.DockerInteractive *-- opendevin.sandbox.sandbox.BackgroundCommand
 opendevin.observation.Observation <|-- opendevin.observation.UserMessageObservation
 opendevin.plan.Task *-- opendevin.plan.Task
 opendevin.server.session.Session *-- opendevin.controller.agent_controller.AgentController

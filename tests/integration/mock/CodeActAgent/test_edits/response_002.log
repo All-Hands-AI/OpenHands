@@ -1,8 +1,4 @@
 Let's open the `bad.txt` file to identify the typos and fix them.
 
 <execute_ipython>
-edit_file(
-    'bad.txt',
-    to_replace="This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!",
-    new_content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!"
-)
+open_file('./bad.txt')

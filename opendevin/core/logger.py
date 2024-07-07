@@ -31,7 +31,6 @@ ColorType = Literal[
 ]
 
 LOG_COLORS: Mapping[str, ColorType] = {
-    'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
     'OBSERVATION': 'yellow',
     'DETAIL': 'cyan',
@@ -114,6 +113,8 @@ def get_console_handler():
     """
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
+    if config.debug:
+        console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(console_formatter)
     return console_handler
 

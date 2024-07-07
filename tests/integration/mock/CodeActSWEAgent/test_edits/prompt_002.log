@@ -9,7 +9,7 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
@@ -18,7 +18,7 @@ open_file(path: str, line_number: int | None = 1, context_lines: int | None = 10
     It only shows the first 300 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
     Args:
-    path: str: The path to the file to open, preferredly absolute path.
+    path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
     context_lines: int | None = 300: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 300.
 
@@ -665,4 +665,4 @@ OBSERVATION:
 (this is the end of the file)
 
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task.
