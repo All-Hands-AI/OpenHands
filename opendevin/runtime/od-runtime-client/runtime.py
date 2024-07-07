@@ -7,7 +7,7 @@ from opendevin.events.action.action import Action
 from opendevin.events.event import Event
 from opendevin.events.observation import Observation
 from opendevin.events.stream import EventStream
-from opendevin.events.serialization import event_to_dict, observation_from_dict
+from opendevin.events.serialization import event_to_dict,event_from_dict, observation_from_dict
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.browse import browse
 from opendevin.runtime.server.files import read_file, write_file
@@ -41,7 +41,7 @@ class EventStreamRuntime(Runtime):
     def __init__(self, event_stream: EventStream, sid: str = 'default'):
         # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
         self.event_stream = event_stream
-        # self._init_event_stream()
+        self._init_event_stream()
         self._init_websocket()
     
     def _init_event_stream(self):
@@ -60,9 +60,11 @@ class EventStreamRuntime(Runtime):
         pass
     
     async def on_event(self, event: Event) -> None:
+        print("EventStreamRuntime: on_event triggered")
         if isinstance(event, Action):
             observation = await self.run_action(event)
-            observation._cause = event.id  # type: ignore[attr-defined]
+            print("EventStreamRuntime: observation", observation)
+            # observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
     
@@ -83,11 +85,12 @@ class EventStreamRuntime(Runtime):
                 f'Action {action_type} is not supported in the current runtime.'
             )
         observation = await getattr(self, action_type)(action)
-        observation._parent = action.id  # type: ignore[attr-defined]
+        # TODO: fix ID problem
+        # observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     
     async def run(self, action: CmdRunAction) -> Observation:
-        return self._run_command(action.command)
+        return await self._run_command(action)
     
     async def _run_command(
         self, action: Action, _stream: bool = False, timeout: int | None = None
@@ -101,6 +104,7 @@ class EventStreamRuntime(Runtime):
             await self.websocket.send(json.dumps(event_to_dict(action)))
             output = await asyncio.wait_for(self.websocket.recv(), timeout=timeout)
             output = json.loads(output)
+            print("Received output: ", output)
         except asyncio.TimeoutError:
             print("No response received within the timeout period.")
         await self.websocket.close()
@@ -110,7 +114,7 @@ class EventStreamRuntime(Runtime):
         return observation_from_dict(output)
         
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        self.run(action)
+        return await self.run(action)
 
     ############################################################################ 
     # Keep the same with other runtimes
@@ -131,25 +135,54 @@ class EventStreamRuntime(Runtime):
         )
     
     async def browse(self, action: BrowseURLAction) -> Observation:
-        return await browse(action, self.browser)
+        return await browse(action, self.browse)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await browse(action, self.browser)
+        return await browse(action, self.browse)
 
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
     
-    ############################################################################ 
-    # Function that should impelement in od-runtime-client
-    ############################################################################
-    async def run(self, action: CmdRunAction) -> Observation:
-        raise NotImplementedError
+def test_run_command():
+    sid = "test"
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
+    runtime = EventStreamRuntime(event_stream)
+    asyncio.run(runtime._run_command(CmdRunAction('ls -l')))
+
+async def test_event_stream():
+    sid = "test"
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
+    runtime = EventStreamRuntime(event_stream)
+    # Test run command
+    action = CmdRunAction(command='ls -l')
+    print(await runtime.run_action(action))
+
+    # Test run ipython
+    test_code = "print('Hello, `World`!\n')"
+    action = IPythonRunCellAction(code=test_code)
+    print(await runtime.run_action(action))
+
+    # Test read file
+    action = FileReadAction(path='hello.sh')
+    print(await runtime.run_action(action))
+
+    # Test write file
+    action = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
+    print(await runtime.run_action(action))
+
+    # Test browse
+    action = BrowseURLAction(url='https://google.com')
+    print(await runtime.run_action(action))
+
+    # Test recall
+    action = AgentRecallAction(query='who am I?')
+    print(await runtime.run_action(action))
     
 
 if __name__ == "__main__":
-    event_stream = EventStream("1")
-    runtime = EventStreamRuntime(event_stream)
-    asyncio.run(runtime._run_command(CmdRunAction('ls -l')))
+    asyncio.run(test_event_stream())
 
 
     
