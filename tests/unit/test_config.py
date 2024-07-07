@@ -8,6 +8,7 @@ from opendevin.core.config import (
     LLMConfig,
     UndefinedString,
     finalize_config,
+    get_llm_config_arg,
     load_from_env,
     load_from_toml,
 )
@@ -553,3 +554,28 @@ max_budget_per_task = 4.0
 
     assert config.max_iterations == 100
     assert config.max_budget_per_task == 4.0
+
+
+def test_get_llm_config_arg(temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 100
+max_budget_per_task = 4.0
+
+[llm.gpt3]
+model="gpt-3.5-turbo"
+api_key="redacted"
+embedding_model="openai"
+
+[llm.gpt4o]
+model="gpt-4o"
+api_key="redacted"
+embedding_model="openai"
+"""
+
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    llm_config = get_llm_config_arg('gpt3')
+    assert llm_config.model == 'gpt-3.5-turbo'
+    assert llm_config.embedding_model == 'openai'

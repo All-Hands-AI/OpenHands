@@ -554,14 +554,14 @@ finalize_config(config)
 
 
 # Utility function for command line --group argument
-def get_llm_config_arg(llm_config_arg: str):
+def get_llm_config_arg(llm_config_arg: str) -> LLMConfig | None:
     """
     Get a group of llm settings from the config file.
 
     A group in config.toml can look like this:
 
     ```
-    [gpt-3.5-for-eval]
+    [llm.gpt-3.5-for-eval]
     model = 'gpt-3.5-turbo'
     api_key = '...'
     temperature = 0.5
@@ -572,6 +572,8 @@ def get_llm_config_arg(llm_config_arg: str):
     The user-defined group name, like "gpt-3.5-for-eval", is the argument to this function. The function will load the LLMConfig object
     with the settings of this group, from the config file, and set it as the LLMConfig object for the app.
 
+    Note that the group must be under "llm" group, or in other words, the group name must start with "llm.".
+
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
 
@@ -581,6 +583,11 @@ def get_llm_config_arg(llm_config_arg: str):
 
     # keep only the name, just in case
     llm_config_arg = llm_config_arg.strip('[]')
+
+    # truncate the prefix, just in case
+    if llm_config_arg.startswith('llm.'):
+        llm_config_arg = llm_config_arg[4:]
+
     logger.info(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
@@ -595,8 +602,8 @@ def get_llm_config_arg(llm_config_arg: str):
         return None
 
     # update the llm config with the specified section
-    if llm_config_arg in toml_config:
-        return LLMConfig(**toml_config[llm_config_arg])
+    if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
+        return LLMConfig(**toml_config['llm'][llm_config_arg])
     logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
