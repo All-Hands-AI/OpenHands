@@ -222,7 +222,7 @@ def process_instance(
             'id': instance['id'],
             'instance': instance,
             'instruction': instruction,
-            # 'metadata': metadata,
+            # 'metadata': metadata.model_dump(),
             'history': [
                 (event_to_dict(action), event_to_dict(obs))
                 for action, obs in state.history

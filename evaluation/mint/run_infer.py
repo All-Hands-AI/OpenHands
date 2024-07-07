@@ -167,7 +167,7 @@ def process_instance(
         'id': instance.task_id,
         'instance': instance.to_dict(),
         'instruction': instruction,
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
