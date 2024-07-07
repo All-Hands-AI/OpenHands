@@ -125,7 +125,7 @@ class ShortTermHistory(list[Event]):
 
         return last_observation
 
-    def get_latest_user_message(self) -> str:
+    def get_last_user_message(self) -> str:
         """
         Return the latest user message from the event stream.
         """
@@ -158,9 +158,6 @@ class ShortTermHistory(list[Event]):
                 filter_out_type=self.filter_out,
             )
         )
-
-    def get_latest_event_id(self):
-        return self._event_stream.get_latest_event_id()
 
     def on_event(self, event: Event):
         if not isinstance(event, AgentDelegateObservation):

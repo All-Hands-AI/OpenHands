@@ -123,7 +123,6 @@ class DummyAgent(Agent):
 
     def step(self, state: State) -> Action:
         time.sleep(0.1)
-        history = state.history
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
 
@@ -133,7 +132,7 @@ class DummyAgent(Agent):
                 expected_observations = prev_step['observations']
 
                 # check if the history matches the expected observations
-                hist_events = history.get_last_events(len(expected_observations))
+                hist_events = state.history.get_last_events(len(expected_observations))
                 for i in range(len(expected_observations)):
                     hist_obs = event_to_dict(hist_events[i])
                     expected_obs = event_to_dict(expected_observations[i])
@@ -149,9 +148,6 @@ class DummyAgent(Agent):
                     ):
                         del expected_obs['extras']['command_id']
                         expected_obs['content'] = ''
-                    if hist_obs != expected_obs:
-                        print('\nactual', hist_obs)
-                        print('\nexpect', expected_obs)
                     assert (
                         hist_obs == expected_obs
                     ), f'Expected observation {expected_obs}, got {hist_obs}'

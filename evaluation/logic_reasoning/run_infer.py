@@ -200,6 +200,7 @@ def process_instance(
         messages = []
         for event in state.history.get_events(reverse=True):
             # will this be a MessageAction?
+            # TODO we can filter for types of events if we know what to expect
             messages.append(event.content)
             if str(event.content) in ["'A'", "'B'", "'C'"]:
                 final_message = event.content

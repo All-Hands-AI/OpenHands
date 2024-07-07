@@ -140,7 +140,7 @@ class CodeActSWEAgent(Agent):
         """
 
         # if we're done, go back
-        latest_user_message = state.history.get_latest_user_message()
+        latest_user_message = state.history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
