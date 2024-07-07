@@ -230,7 +230,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     TEST_STATUS=1
-    if [ -z $SKIP_TEST ]; then
+    if [ -z $FORCE_REGENERATE ]; then
       run_test
       TEST_STATUS=$?
     fi
