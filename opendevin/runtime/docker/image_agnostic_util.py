@@ -1,7 +1,4 @@
-import curses
-import os
 import tempfile
-from collections import deque
 
 import docker
 
