@@ -112,7 +112,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         'correct': correct,
         'answer_id': 'None',
         'model_id': metadata.model_name,
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],

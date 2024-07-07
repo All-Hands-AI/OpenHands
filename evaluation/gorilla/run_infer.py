@@ -150,7 +150,7 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
             'hallucination': hallucination,
             'answer_id': 'None',
             'model_id': metadata['model_name'],
-            'metadata': metadata,
+            'metadata': metadata.model_dump(),
             'history': [
                 (event_to_dict(action), event_to_dict(obs))
                 for action, obs in state.history

@@ -316,7 +316,7 @@ IMPORTANT TIPS:
         'swe_instance': instance.to_dict(),  # SWE Bench specific
         'instruction': instruction,
         'git_patch': git_patch,  # SWE Bench specific
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
