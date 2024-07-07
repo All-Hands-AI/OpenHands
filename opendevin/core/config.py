@@ -180,9 +180,9 @@ class AppConfig(metaclass=Singleton):
     Configuration for the app.
 
     Attributes:
-        llms: A dictionary of name -> LLM configuration. Default config is under 'default' key.
-        agents: A dictionary of name -> Agent configuration. Default config is under 'default' key.
-        agent: The name of the (root) agent to use.
+        llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
+        agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
+        default_agent: The name of the default agent to use.
         sandbox: The sandbox configuration.
         runtime: The runtime environment.
         file_store: The file store to use.
