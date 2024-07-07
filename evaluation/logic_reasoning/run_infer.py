@@ -225,7 +225,7 @@ def process_instance(
             'id': instance['id'],
             'instance': instance,
             'instruction': instruction,
-            # 'metadata': metadata,
+            # 'metadata': metadata.model_dump(),
             'history': histories,
             'metrics': metrics,
             'final_message': final_message,

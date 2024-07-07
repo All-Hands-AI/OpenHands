@@ -210,7 +210,7 @@ def process_instance(
         output = {
             'task_id': instance.task_id,
             'instruction': instruction,
-            'metadata': metadata,
+            'metadata': metadata.model_dump(),
             'history': histories,
             'metrics': metrics,
             'error': state.last_error if state and state.last_error else None,

@@ -121,7 +121,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         'correct': correct,
         'answer_id': 'None',
         'model_id': metadata.model_name,
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,

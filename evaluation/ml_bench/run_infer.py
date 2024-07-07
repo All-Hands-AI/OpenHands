@@ -204,7 +204,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
             'instance_id': instance['id'],
             'repo': repo_url,
             'instruction': instruction,
-            'metadata': metadata,
+            'metadata': metadata.model_dump(),
             'history': histories,
             'eval_script': eval_script_content,
             'eval_exit_code': exit_code,

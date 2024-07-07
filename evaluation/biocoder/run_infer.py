@@ -206,7 +206,7 @@ def process_instance(
         'biocoder_instance': instance.to_dict(),
         'instruction': instruction,
         'generated': test_result['metadata']['1_copy_change_code'],
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,

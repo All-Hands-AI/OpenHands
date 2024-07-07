@@ -159,7 +159,7 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
             'hallucination': hallucination,
             'answer_id': 'None',
             'model_id': metadata['model_name'],
-            'metadata': metadata,
+            'metadata': metadata.model_dump(),
             'history': histories,
             'metrics': metrics,
             'error': state.last_error if state and state.last_error else None,
