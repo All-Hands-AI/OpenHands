@@ -43,8 +43,9 @@ options:
   --eval-note EVAL_NOTE
                         The note to add to the evaluation directory
   -l LLM_CONFIG, --llm-config LLM_CONFIG
-                        The group of llm settings, e.g. a [llama3] section in
-                        the toml file. Overrides model if both are provided.
+                        The group of llm settings, e.g. "llama3" for
+                        [llm.llama3] section in the toml file. Overrides model
+                        if both are provided.
 """
 
     actual_lines = captured.out.strip().split('\n')
