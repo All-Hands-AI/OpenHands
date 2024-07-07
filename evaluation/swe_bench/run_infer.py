@@ -356,6 +356,8 @@ if __name__ == '__main__':
 
     id_column = 'instance_id'
     llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    if args.llm_config and llm_config is None:
+        raise ValueError(f'Could not find LLM config {args.llm_config}')
     logger.info(f'Config for evaluation: {config}')
 
     details = {}
