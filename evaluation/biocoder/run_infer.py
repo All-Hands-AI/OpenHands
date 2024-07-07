@@ -202,7 +202,7 @@ def process_instance(
         'biocoder_instance': instance.to_dict(),
         'instruction': instruction,
         'generated': test_result['metadata']['1_copy_change_code'],
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
