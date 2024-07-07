@@ -185,7 +185,20 @@ class OpenDevinSession:
         if self.ws:
             self.ws.close()
         now = time.time()
-        json.dump(self.raw_messages, open(f'frontend_logs/{now}_steps.json', 'w'))
+        from datetime import datetime
+
+        os.makedirs('frontend_logs', exist_ok=True)
+
+        # Get current date and time
+        now = datetime.now()
+        # Format date and time
+        formatted_now = now.strftime('%Y-%m-%d-%H:%M:%S')
+        formatted_model = self.model.replace('/', '-')
+        output_path = (
+            f'frontend_logs/{formatted_now}_{self.agent}_{formatted_model}_steps.json'
+        )
+        print('Saving log to', output_path)
+        json.dump(self.raw_messages, open(output_path, 'w'))
         self._reset()
 
     def __del__(self):
