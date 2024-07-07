@@ -1,7 +1,6 @@
 from typing import Any
 import asyncio
 import json
-import os
 import websockets
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.events.action.action import Action
@@ -49,8 +48,9 @@ class EventStreamRuntime(Runtime):
 
     def _init_websocket(self):
         self.websocket = None
-        self.loop = asyncio.get_event_loop()
-        self.loop.run_until_complete(self._init_websocket_connect())
+        # self.loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(self.loop)
+        # self.loop.run_until_complete(self._init_websocket_connect())
     
     async def _init_websocket_connect(self):
         self.websocket = await websockets.connect(self.uri)
@@ -88,12 +88,21 @@ class EventStreamRuntime(Runtime):
         self, action: Action, stream: bool = False, timeout: int | None = None
     ) -> Observation:
         # Send action into websocket and get the result
+        # TODO: need to initialization globally only once
+        self.websocket = await websockets.connect(self.uri)
         if self.websocket is None:
             raise Exception("WebSocket is not connected.")
-        await self.websocket.send(json.dumps(event_to_dict(action)))
-        output = await self.websocket.recv()
-        print(output)
-        return observation_from_dict(json.loads(output))
+        try:
+            await self.websocket.send(json.dumps(event_to_dict(action)))
+            output = await asyncio.wait_for(self.websocket.recv(), timeout=10)
+            output = json.loads(output)
+        except asyncio.TimeoutError:
+            print("No response received within the timeout period.")
+        await self.websocket.close()
+
+        # TODO: need to assign it in od runtime client
+        output['observation'] = 'success'
+        return observation_from_dict(output)
         
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         raise NotImplementedError
