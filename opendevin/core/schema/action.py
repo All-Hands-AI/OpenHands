@@ -32,10 +32,6 @@ class ActionTypeSchema(BaseModel):
     """Runs a IPython cell.
     """
 
-    KILL: str = Field(default='kill')
-    """Kills a background command.
-    """
-
     BROWSE: str = Field(default='browse')
     """Opens a web page.
     """

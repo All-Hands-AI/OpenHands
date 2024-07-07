@@ -1,7 +1,7 @@
 from agenthub.codeact_swe_agent.prompt import (
     COMMAND_DOCS,
-    MINIMAL_SYSTEM_PREFIX,
     SWE_EXAMPLE,
+    SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
@@ -74,7 +74,7 @@ def get_observation_message(obs) -> dict[str, str] | None:
 
 
 def get_system_message() -> str:
-    return f'{MINIMAL_SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
 
 
 def get_in_context_example() -> str:
@@ -82,7 +82,7 @@ def get_in_context_example() -> str:
 
 
 class CodeActSWEAgent(Agent):
-    VERSION = '1.5'
+    VERSION = '1.6'
     """
     This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of OpenDevin.
 
@@ -93,8 +93,8 @@ class CodeActSWEAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions
-        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        # AgentSkillsRequirement provides a lot of Python functions,
+        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]

@@ -128,14 +128,22 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
 
     if file_path.endswith('.py'):
         # Define the flake8 command with selected error codes
-        command = [
-            'flake8',
-            '--isolated',
-            '--select=F821,F822,F831,E112,E113,E999,E902',
-            file_path,
-        ]
+        def _command_fn(executable):
+            return [
+                executable,
+                '--isolated',
+                '--select=F821,F822,F831,E112,E113,E999,E902',
+                file_path,
+            ]
 
-        # Run the command using subprocess and redirect stderr to stdout
+        if os.path.exists('/opendevin/miniforge3/bin/flake8'):
+            # when this function is called from the docker sandbox,
+            # the flake8 command is available at /opendevin/miniforge3/bin/flake8
+            executable = '/opendevin/miniforge3/bin/flake8'
+        else:
+            executable = 'flake8'
+
+        command = _command_fn(executable)
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,
@@ -167,7 +175,7 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     return None, None
 
 
-def _print_window(file_path, targeted_line, WINDOW, return_str=False):
+def _print_window(file_path, targeted_line, window, return_str=False):
     global CURRENT_LINE
     _check_current_file(file_path)
     with open(file_path) as file:
@@ -182,7 +190,7 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
 
         # cover edge cases
         CURRENT_LINE = _clamp(targeted_line, 1, total_lines)
-        half_window = max(1, WINDOW // 2)
+        half_window = max(1, window // 2)
 
         # Ensure at least one line above and below the targeted line
         start = max(1, CURRENT_LINE - half_window)
@@ -190,9 +198,9 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
 
         # Adjust start and end to ensure at least one line above and below
         if start == 1:
-            end = min(total_lines, start + WINDOW - 1)
+            end = min(total_lines, start + window - 1)
         if end == total_lines:
-            start = max(1, end - WINDOW + 1)
+            start = max(1, end - window + 1)
 
         output = ''
 
@@ -214,10 +222,10 @@ def _print_window(file_path, targeted_line, WINDOW, return_str=False):
             print(output)
 
 
-def _cur_file_header(CURRENT_FILE, total_lines) -> str:
-    if not CURRENT_FILE:
+def _cur_file_header(current_file, total_lines) -> str:
+    if not current_file:
         return ''
-    return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
+    return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'
 
 
 @update_pwd_decorator
@@ -230,7 +238,7 @@ def open_file(
     to view the file if you want to see more.
 
     Args:
-        path: str: The path to the file to open, preferredly absolute path.
+        path: str: The path to the file to open, preferred absolute path.
         line_number: int | None = 1: The line number to move to. Defaults to 1.
         context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
     """

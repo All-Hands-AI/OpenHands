@@ -17,10 +17,9 @@ class CodeActSWEResponseParser(ResponseParser):
         - AgentFinishAction() - end the interaction
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         # Need pay attention to the item order in self.action_parsers
+        super().__init__()
         self.action_parsers = [
             CodeActSWEActionParserFinish(),
             CodeActSWEActionParserCmdRun(),
