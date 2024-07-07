@@ -200,7 +200,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
             'instance_id': instance['id'],
             'repo': repo_url,
             'instruction': instruction,
-            'metadata': metadata,
+            'metadata': metadata.model_dump(),
             'history': [
                 (event_to_dict(action), event_to_dict(obs))
                 for action, obs in state.history
