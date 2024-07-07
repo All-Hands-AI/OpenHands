@@ -4,7 +4,7 @@ from typing import Any, Optional
 from opendevin.core.config import config
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
