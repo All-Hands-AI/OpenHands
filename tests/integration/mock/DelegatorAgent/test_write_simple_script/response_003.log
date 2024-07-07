@@ -1,7 +1,9 @@
+```json
 {
   "action": "write",
   "args": {
     "path": "hello.sh",
-    "content": "#!/bin/bash\necho 'hello'"
+    "content": "#!/bin/bash\n\n# Print hello\necho 'hello'"
   }
 }
+```

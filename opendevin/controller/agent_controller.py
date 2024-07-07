@@ -4,6 +4,7 @@ from typing import Optional, Type
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
+from opendevin.controller.stuck import StuckDetector
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
@@ -94,6 +95,10 @@ class AgentController:
         )
 
         self.max_budget_per_task = max_budget_per_task
+
+        # stuck helper
+        self._stuck_detector = StuckDetector(self.state)
+
         if not is_delegate:
             self.agent_task = asyncio.create_task(self._start_step_loop())
 
@@ -114,9 +119,9 @@ class AgentController:
         """
         This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
 
-        This method should be called for a particular type of errors:
-        - the string message should be user-friendly, it will be shown in the UI
-        - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
+        This method should be called for a particular type of errors, which have:
+        - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
+        - an ErrorObservation that can be sent to the LLM by the agent, with the exception message, so it can self-correct next time.
         """
         self.state.last_error = message
         if exception:
@@ -126,7 +131,9 @@ class AgentController:
     async def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
             return
-        self.state.history.append((action, observation))
+        logger.debug(
+            f'Adding history ({type(action).__name__} with id={action.id}, {type(observation).__name__} with id={observation.id})'
+        )
 
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
@@ -180,12 +187,14 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
                 await self.add_history(NullAction(), event)
+                self.state.history.on_event(event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, ErrorObservation):
                 await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
+        self.almost_stuck = 0
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
@@ -244,7 +253,6 @@ class AgentController:
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self):
-        logger.debug(f'[Agent Controller {self.id}] Entering step method')
         if self.get_agent_state() != AgentState.RUNNING:
             await asyncio.sleep(1)
             return
@@ -347,11 +355,12 @@ class AgentController:
 
         if action.runnable:
             self._pending_action = action
-        else:
-            await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
             self.event_stream.add_event(action, EventSource.AGENT)
+
+        if not action.runnable:
+            await self.add_history(action, NullObservation(''))
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -373,83 +382,32 @@ class AgentController:
         else:
             self.state = state
 
+        # when restored from a previous session, the State object will have history, start_id, and end_id
+        # connect it to the event stream
+        self.state.history.set_event_stream(self.event_stream)
+
+        # if start_id was not set in State, we're starting fresh, at the top of the stream
+        start_id = self.state.start_id
+        if start_id == -1:
+            start_id = self.event_stream.get_latest_event_id() + 1
+        else:
+            logger.debug(f'AgentController {self.id} restoring from event {start_id}')
+
+        # make sure history is in sync
+        self.state.start_id = start_id
+        self.state.history.start_id = start_id
+
+        # if there was an end_id saved in State, set it in history
+        # currently not used, later useful for delegates
+        if self.state.end_id > -1:
+            self.state.history.end_id = self.state.end_id
+
     def _is_stuck(self):
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():
             return True
 
-        # filter out MessageAction with source='user' from history
-        filtered_history = [
-            _tuple
-            for _tuple in self.state.history
-            if not (
-                isinstance(_tuple[0], MessageAction)
-                and _tuple[0].source == EventSource.USER
-            )
-        ]
-
-        if len(filtered_history) < 3:
-            return False
-
-        # FIXME rewrite this to be more readable
-
-        # Scenario 1: the same (Action, Observation) loop
-        # 3 pairs of (action, observation) to stop the agent
-        last_three_tuples = filtered_history[-3:]
-
-        if all(
-            # (Action, Observation) tuples
-            # compare the last action to the last three actions
-            self._eq_no_pid(last_three_tuples[-1][0], _tuple[0])
-            for _tuple in last_three_tuples
-        ) and all(
-            # compare the last observation to the last three observations
-            self._eq_no_pid(last_three_tuples[-1][1], _tuple[1])
-            for _tuple in last_three_tuples
-        ):
-            logger.warning('Action, Observation loop detected')
-            return True
-
-        if len(filtered_history) < 4:
-            return False
-
-        last_four_tuples = filtered_history[-4:]
-
-        # Scenario 2: (action, error) pattern, not necessary identical error
-        # 4 pairs of (action, error) to stop the agent
-        if all(
-            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
-            for _tuple in last_four_tuples
-        ):
-            # It repeats the same action, give it a chance, but not if:
-            if all(
-                isinstance(_tuple[1], ErrorObservation) for _tuple in last_four_tuples
-            ):
-                logger.warning('Action, ErrorObservation loop detected')
-                return True
-
-        # check if the agent repeats the same (Action, Observation)
-        # every other step in the last six tuples
-        # step1 = step3 = step5
-        # step2 = step4 = step6
-        if len(filtered_history) >= 6:
-            last_six_tuples = filtered_history[-6:]
-            if (
-                # this pattern is every other step, like:
-                # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
-                self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
-                and self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
-                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
-                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
-                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
-                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
-                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
-                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
-            ):
-                logger.warning('Action, Observation pattern detected')
-                return True
-
-        return False
+        return self._stuck_detector.is_stuck()
 
     def __repr__(self):
         return (
@@ -458,13 +416,3 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
-
-    def _eq_no_pid(self, obj1, obj2):
-        if isinstance(obj1, CmdOutputObservation) and isinstance(
-            obj2, CmdOutputObservation
-        ):
-            # for loop detection, ignore command_id, which is the pid
-            return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
-        else:
-            # this is the default comparison
-            return obj1 == obj2
