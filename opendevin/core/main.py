@@ -53,7 +53,7 @@ async def run_agent_controller(
 
     # Logging
     logger.info(
-        f'Running agent {type(agent)}, model {agent.llm.model_name}, with task: "{task_str}"'
+        f'Running agent {agent.name}, model {agent.llm.model_name}, with task: "{task_str}"'
     )
 
     # set up the event stream

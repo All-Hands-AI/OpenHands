@@ -33,6 +33,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.llm.llm import LLM
 
 MAX_ITERATIONS = config.max_iterations
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
@@ -224,7 +225,9 @@ class AgentController:
 
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
-        agent = agent_cls(llm=self.agent.llm)
+        llm_config = config.get_llm_config_from_agent(action.agent)
+        llm = LLM(llm_config=llm_config)
+        delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
             iteration=0,
@@ -233,10 +236,12 @@ class AgentController:
             # metrics should be shared between parent and child
             metrics=self.state.metrics,
         )
-        logger.info(f'[Agent Controller {self.id}]: start delegate')
+        logger.info(
+            f'[Agent Controller {self.id}]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
+        )
         self.delegate = AgentController(
             sid=self.id + '-delegate',
-            agent=agent,
+            agent=delegate_agent,
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
