@@ -129,7 +129,7 @@ class DummyAgent(Agent):
 
             # a step is (action, observations list)
             if 'observations' in prev_step:
-                # one obs, or multiple obs if action is a background command
+                # one obs, at most
                 expected_observations = prev_step['observations']
 
                 # check if the history matches the expected observations
