@@ -175,8 +175,9 @@ model = "gpt-3.5"
 # LLM config group to use
 #llm_config = 'llm'
 
-[BrowsingAgent]
-# e.g. use a cheaper model for BrowsingAgent
+[RepoExplorerAgent]
+# Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
+# useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3_llm'
 
 #################################### Sandbox ###################################
