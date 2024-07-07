@@ -176,9 +176,7 @@ def process_instance(
     # Create the agent
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
 
-    workspace_mount_path = os.path.join(
-        metadata.config.workspace_mount_path, '_eval_workspace'
-    )
+    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
@@ -371,6 +369,7 @@ if __name__ == '__main__':
         llm_config,
         'swe-bench-lite',
         args.agent_cls,
+        args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
         details=details,
