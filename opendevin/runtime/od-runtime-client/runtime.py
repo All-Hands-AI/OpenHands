@@ -17,6 +17,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    IPythonRunCellObservation,
 )
 from opendevin.events.action import (
     AgentRecallAction,
@@ -70,6 +71,7 @@ class EventStreamRuntime(Runtime):
         Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
+        We will filter some action and execute in runtime. Pass others into od-runtime-client
         """
         if not action.runnable:
             return NullObservation('')
@@ -80,12 +82,15 @@ class EventStreamRuntime(Runtime):
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
-        observation = await self.execute(action)
+        observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     
-    async def execute(
-        self, action: Action, stream: bool = False, timeout: int | None = None
+    async def run(self, action: CmdRunAction) -> Observation:
+        return self._run_command(action.command)
+    
+    async def _run_command(
+        self, action: Action, _stream: bool = False, timeout: int | None = None
     ) -> Observation:
         # Send action into websocket and get the result
         # TODO: need to initialization globally only once
@@ -94,7 +99,7 @@ class EventStreamRuntime(Runtime):
             raise Exception("WebSocket is not connected.")
         try:
             await self.websocket.send(json.dumps(event_to_dict(action)))
-            output = await asyncio.wait_for(self.websocket.recv(), timeout=10)
+            output = await asyncio.wait_for(self.websocket.recv(), timeout=timeout)
             output = json.loads(output)
         except asyncio.TimeoutError:
             print("No response received within the timeout period.")
@@ -105,7 +110,7 @@ class EventStreamRuntime(Runtime):
         return observation_from_dict(output)
         
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        raise NotImplementedError
+        self.run(action)
 
     ############################################################################ 
     # Keep the same with other runtimes
@@ -144,7 +149,7 @@ class EventStreamRuntime(Runtime):
 if __name__ == "__main__":
     event_stream = EventStream("1")
     runtime = EventStreamRuntime(event_stream)
-    asyncio.run(runtime.execute(CmdRunAction('ls -l')))
+    asyncio.run(runtime._run_command(CmdRunAction('ls -l')))
 
 
     

@@ -3,7 +3,6 @@ from opendevin.runtime.tools import RuntimeTool
 from typing import Any
 import asyncio
 import websockets
-from opendevin.events.action.action import Action
 import pexpect
 import json
 from websockets.exceptions import ConnectionClosed
@@ -14,8 +13,6 @@ from opendevin.events.action import (
     CmdRunAction,
     IPythonRunCellAction,
 )
-from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.events.event import Event
 from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -59,23 +56,17 @@ class RuntimeClient:
             print("Connection closed")
     
     async def run_action(self, action) -> Observation:
+        # Should only receive Action CmdRunAction and IPythonRunCellAction
         action_type = action.action  # type: ignore[attr-defined]
         observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
-                
-    def execute_command(self, command):
-        print(f"Received command: {command}")
-        self.shell.sendline(command)
-        self.shell.expect(r'[$#] ')
-        output = self.shell.before.strip().split('\r\n', 1)[1].strip()
-        exit_code = output[-1].strip()
-        return output, exit_code
-                    
-    async def run(self, action: CmdRunAction) -> Observation:
-        return self._run_command(action.command)
     
-    def _run_command(self, command: str) -> Observation:
+    async def run(self, action: CmdRunAction) -> Observation:
+        return self._run_command(action)
+    
+    async def _run_command(self, action: CmdRunAction) -> Observation:
+        command = action.command
         try:
             output, exit_code = self.execute_command(command)
             return CmdOutputObservation(
@@ -83,12 +74,19 @@ class RuntimeClient:
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
+           
+    def execute_command(self, command):
+        print(f"Received command: {command}")
+        self.shell.sendline(command)
+        self.shell.expect(r'[$#] ')
+        output = self.shell.before.strip().split('\r\n', 1)[1].strip()
+        exit_code = output[-1].strip()
+        return output, exit_code
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         obs = self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
-
         # run the code
         obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
