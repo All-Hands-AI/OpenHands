@@ -137,7 +137,10 @@ class SWEBenchSSHBox(DockerSSHBox):
             logger.error('Failed to cd to the repo')
             return ''
 
-        exit_code, output = self.execute('git config --global core.pager ""')
+        exit_code, _output = self.execute('git config --global core.pager ""')
+        if exit_code != 0:
+            logger.error('Failed to change git config')
+            return ''
 
         # add everything to the index
         exit_code, output = self.execute('git add -A')
