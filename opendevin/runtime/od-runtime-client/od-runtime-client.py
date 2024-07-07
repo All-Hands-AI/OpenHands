@@ -50,22 +50,22 @@ class RuntimeClient():
                 event_str = json.loads(message)
                 event = event_from_dict(event_str)
                 if isinstance(event, Action):
-                    observation = await self.run_action(event)
+                    observation = self.run_action(event)
                     await websocket.send(json.dumps(event_to_dict(observation)))
         except ConnectionClosed:
             print("Connection closed")
     
-    async def run_action(self, action) -> Observation:
+    def run_action(self, action) -> Observation:
         # Should only receive Action CmdRunAction and IPythonRunCellAction
         action_type = action.action  # type: ignore[attr-defined]
-        observation = await getattr(self, action_type)(action)
+        observation = getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     
-    async def run(self, action: CmdRunAction) -> Observation:
-        return await self._run_command(action.command)
+    def run(self, action: CmdRunAction) -> Observation:
+        return self._run_command(action.command)
     
-    async def _run_command(self, command: str) -> Observation:
+    def _run_command(self, command: str) -> Observation:
         try:
             output, exit_code = self.execute_command(command)
             return CmdOutputObservation(
@@ -82,12 +82,12 @@ class RuntimeClient():
         exit_code = output[-1].strip()
         return output, exit_code
 
-    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        obs = await self._run_command(
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        obs = self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
         # run the code
-        obs = await self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
         if 'pip install' in action.code:
             print(output)
@@ -143,10 +143,10 @@ class RuntimeClient():
     def close(self):
         self.shell.close()
 
-async def test_run_commond():
+def test_run_commond():
     client = RuntimeClient()
     command = CmdRunAction(command="ls -l")
-    obs = await client.run_action(command)
+    obs = client.run_action(command)
     print(obs)
 
 
@@ -162,5 +162,5 @@ def test_shell(message):
 if __name__ == "__main__":
     # print(test_shell("ls -l"))
     RuntimeClient()
-    # asyncio.run(test_run_commond())
+    # test_run_commond()
     

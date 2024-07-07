@@ -109,7 +109,7 @@ class EventStreamRuntime(Runtime):
         return observation_from_dict(output)
         
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        return await self.run(action)
+        return await self._run_command(action)
 
     ############################################################################ 
     # Keep the same with other runtimes
@@ -130,10 +130,10 @@ class EventStreamRuntime(Runtime):
         )
     
     async def browse(self, action: BrowseURLAction) -> Observation:
-        return await browse(action, self.browse)
+        return await browse(action, self.browser)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await browse(action, self.browse)
+        return await browse(action, self.browser)
 
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
@@ -151,30 +151,29 @@ async def test_event_stream():
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(event_stream)
     # Test run command
-    action = CmdRunAction(command='ls -l')
-    print(await runtime.run_action(action))
+    action_cmd = CmdRunAction(command='ls -l')
+    print(await runtime.run_action(action_cmd))
 
     # Test run ipython
     test_code = "print('Hello, `World`!\n')"
-    action = IPythonRunCellAction(code=test_code)
-    print(await runtime.run_action(action))
+    action_opython = IPythonRunCellAction(code=test_code)
+    print(await runtime.run_action(action_opython))
 
     # Test read file
-    action = FileReadAction(path='hello.sh')
-    print(await runtime.run_action(action))
+    action_read = FileReadAction(path='hello.sh')
+    print(await runtime.run_action(action_read))
 
     # Test write file
-    action = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
-    print(await runtime.run_action(action))
+    action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
+    print(await runtime.run_action(action_write))
 
     # Test browse
-    action = BrowseURLAction(url='https://google.com')
-    print(await runtime.run_action(action))
+    action_browse = BrowseURLAction(url='https://google.com')
+    print(await runtime.run_action(action_browse))
 
     # Test recall
-    action = AgentRecallAction(query='who am I?')
-    print(await runtime.run_action(action))
-    
+    action_recall = AgentRecallAction(query='who am I?')
+    print(await runtime.run_action(action_recall))
 
 if __name__ == "__main__":
     asyncio.run(test_event_stream())
