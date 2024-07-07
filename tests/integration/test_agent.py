@@ -27,16 +27,19 @@ print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'BrowsingAgent',
+    os.getenv('DEFAULT_AGENT') == 'BrowsingAgent',
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    (
+        os.getenv('DEFAULT_AGENT') == 'CodeActAgent'
+        or os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent'
+    )
     and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'ManagerAgent',
+    os.getenv('DEFAULT_AGENT') == 'ManagerAgent',
     reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
 def test_write_simple_script():
@@ -66,16 +69,20 @@ def test_write_simple_script():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'BrowsingAgent',
+    os.getenv('DEFAULT_AGENT') == 'BrowsingAgent',
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    (
+        os.getenv('DEFAULT_AGENT') == 'CodeActAgent'
+        or os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent'
+    )
     and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
+    os.getenv('DEFAULT_AGENT') == 'MonologueAgent'
+    or os.getenv('DEFAULT_AGENT') == 'PlannerAgent',
     reason='We only keep basic tests for MonologueAgent and PlannerAgent',
 )
 @pytest.mark.skipif(
@@ -116,7 +123,8 @@ Enjoy!
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
+    os.getenv('DEFAULT_AGENT') != 'CodeActAgent'
+    and os.getenv('DEFAULT_AGENT') != 'CodeActSWEAgent',
     reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
@@ -150,7 +158,7 @@ def test_ipython():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'ManagerAgent',
+    os.getenv('DEFAULT_AGENT') != 'ManagerAgent',
     reason='Currently, only ManagerAgent supports task rejection',
 )
 @pytest.mark.skipif(
@@ -173,7 +181,8 @@ def test_simple_task_rejection():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
+    os.getenv('DEFAULT_AGENT') != 'CodeActAgent'
+    and os.getenv('DEFAULT_AGENT') != 'CodeActSWEAgent',
     reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
@@ -208,11 +217,15 @@ def test_ipython_module():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'BrowsingAgent' and os.getenv('AGENT') != 'CodeActAgent',
+    os.getenv('DEFAULT_AGENT') != 'BrowsingAgent'
+    and os.getenv('DEFAULT_AGENT') != 'CodeActAgent',
     reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 @pytest.mark.skipif(
-    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    (
+        os.getenv('DEFAULT_AGENT') == 'CodeActAgent'
+        or os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent'
+    )
     and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
