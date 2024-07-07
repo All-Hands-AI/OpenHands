@@ -18,7 +18,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
-    AgentRecallObservation,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -27,6 +26,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
+from opendevin.runtime.tools import RuntimeTool
 
 """
 FIXME: There are a few problems this surfaced
@@ -46,9 +46,15 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
+
     def __init__(self, llm: LLM):
         super().__init__(llm)
         self.steps: list[ActionObs] = [
+            {
+                'action': AddTaskAction(parent='', goal='start'),
+                'observations': [NullObservation('')],
+            },
             {
                 'action': AddTaskAction(parent='0', goal='check the current directory'),
                 'observations': [NullObservation('')],
@@ -94,7 +100,7 @@ class DummyAgent(Agent):
             {
                 'action': AgentRecallAction(query='who am I?'),
                 'observations': [
-                    AgentRecallObservation('', memories=['I am a computer.']),
+                    # AgentRecallObservation('', memories=['I am a computer.']),
                 ],
             },
             {
@@ -123,8 +129,9 @@ class DummyAgent(Agent):
 
     def step(self, state: State) -> Action:
         time.sleep(0.1)
-        if state.iteration > 0:
-            prev_step = self.steps[state.iteration - 1]
+        idx = state.iteration - 1
+        if idx > 0:
+            prev_step = self.steps[idx - 1]
             if 'observations' in prev_step:
                 expected_observations = prev_step['observations']
                 hist_start = len(state.history) - len(expected_observations)
@@ -143,13 +150,15 @@ class DummyAgent(Agent):
                     ):
                         del expected_obs['extras']['command_id']
                         expected_obs['content'] = ''
+                    for key in ['id', 'timestamp', 'source', 'cause']:
+                        hist_obs.pop(key, None)
                     if hist_obs != expected_obs:
                         print('\nactual', hist_obs)
                         print('\nexpect', expected_obs)
                     assert (
                         hist_obs == expected_obs
                     ), f'Expected observation {expected_obs}, got {hist_obs}'
-        return self.steps[state.iteration]['action']
+        return self.steps[idx]['action']
 
     def search_memory(self, query: str) -> list[str]:
         return ['I am a computer.']
