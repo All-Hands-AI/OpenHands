@@ -465,12 +465,7 @@ find . -name "bad.txt"
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (4 lines total)]
-(this is the beginning of the file)
-1|This is a stupid typoo.
-2|Really?
-3|No mor typos!
-4|Enjoy!
-(this is the end of the file)
+./bad.txt
+[Command -1 finished with exit code 0]
 
 ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.

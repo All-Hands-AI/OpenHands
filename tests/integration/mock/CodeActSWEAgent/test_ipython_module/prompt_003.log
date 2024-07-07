@@ -648,12 +648,9 @@ Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt
 
 ----------
 
-Let's start by installing the `pymsgbox` package.
+Understood. Let's start by installing the `pymsgbox` package.
 <execute_ipython>
-import pymsgbox
-
-with open('/workspace/test.txt', 'w') as file:
-    file.write(f"pymsgbox version: {pymsgbox.__version__}\n")
+%pip install pymsgbox==1.0.9
 </execute_ipython>
 
 ----------
@@ -664,25 +661,19 @@ OBSERVATION:
 
 ----------
 
-Next, let's import `pymsgbox`, print its version, and save the output to `/workspace/test.txt`.
+Next, let's import `pymsgbox` and print its version to `/workspace/test.txt`.
 <execute_ipython>
 import pymsgbox
 
-# Print the version of pymsgbox and save it to /workspace/test.txt
-version_info = pymsgbox.__version__
-with open("/workspace/test.txt", "w") as file:
-    file.write(f"pymsgbox version: {version_info}\n")
+version = pymsgbox.__version__
 
-# Verify the content of the file
-with open("/workspace/test.txt", "r") as file:
-    print(file.read())
+with open("/workspace/test.txt", "w") as file:
+    file.write(f"pymsgbox version: {version}\n")
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-pymsgbox version: 1.0.9
-
-
+[Code executed successfully with no output]
 
 ENVIRONMENT REMINDER: You have 12 turns left to complete the task.

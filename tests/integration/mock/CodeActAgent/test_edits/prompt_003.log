@@ -470,7 +470,7 @@ OBSERVATION:
 
 ----------
 
-Let's open the `bad.txt` file and review its contents to identify and fix any typos.
+Let's open the `bad.txt` file to identify the typos and fix them.
 <execute_ipython>
 open_file('./bad.txt')
 </execute_ipython>
@@ -487,29 +487,4 @@ OBSERVATION:
 (this is the end of the file)
 
 
-----------
-
-Let's open the `bad.txt` file to identify the typos and fix them.
-<execute_ipython>
-edit_file(
-    'bad.txt',
-    to_replace="This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!",
-    new_content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!"
-)
-</execute_ipython>
-
-----------
-
-OBSERVATION:
----------------------------------------------------------------------------
-NameError                                 Traceback (most recent call last)
-Cell In[1], line 1
-----> 1 edit_file(
-      2     'bad.txt',
-      3     to_replace="This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!",
-      4     new_content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!"
-      5 )
-
-NameError: name 'edit_file' is not defined
-
-ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>.
