@@ -1,5 +1,3 @@
-import asyncio
-import inspect
 import os
 import pathlib
 import tempfile
@@ -21,37 +19,38 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-import logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 def test_env_vars():
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
     for box_class in [DockerSSHBox, LocalBox]:
         box = box_class()
 
         try:
-            assert 'FOOBAR' in box._env, f"FOOBAR not found in environment for {box_class.__name__}"
-            assert box._env['FOOBAR'] == 'BAZ', f"FOOBAR not set correctly for {box_class.__name__}"
+            assert (
+                'FOOBAR' in box._env
+            ), f'FOOBAR not found in environment for {box_class.__name__}'
+            assert (
+                box._env['FOOBAR'] == 'BAZ'
+            ), f'FOOBAR not set correctly for {box_class.__name__}'
 
             box.add_to_env('QUUX', 'abc"def')
 
-            logger.info(f"Environment variables for {box_class.__name__} after adding QUUX:")
-            for key, value in box._env.items():
-                logger.info(f"  {key}: {value}")
-
-            assert 'FOOBAR' in box._env, f"FOOBAR not found in environment for {box_class.__name__}"
-            assert box._env['FOOBAR'] == 'BAZ', f"FOOBAR not set correctly for {box_class.__name__}"
-            assert box._env['QUUX'] == 'abc"def', f"QUUX not set correctly for {box_class.__name__}"
+            assert (
+                'FOOBAR' in box._env
+            ), f'FOOBAR not found in environment for {box_class.__name__}'
+            assert (
+                box._env['FOOBAR'] == 'BAZ'
+            ), f'FOOBAR not set correctly for {box_class.__name__}'
+            assert (
+                box._env['QUUX'] == 'abc"def'
+            ), f'QUUX not set correctly for {box_class.__name__}'
 
             exit_code, output = box.execute('echo $FOOBAR $QUUX')
-
-            logger.info(f"Execute command for {box_class.__name__}: 'echo $FOOBAR $QUUX'")
-            logger.info(f"Execute output for {box_class.__name__}: '{output.strip()}'")
-            logger.info(f"Execute exit code for {box_class.__name__}: {exit_code}")
-
-            assert exit_code == 0, f'The exit code should be 0 for {box_class.__name__}.'
-            assert output.strip() == 'BAZ abc"def', f'Unexpected output: {output.strip()} for {box_class.__name__}'
+            assert (
+                exit_code == 0
+            ), f'The exit code should be 0 for {box_class.__name__}.'
+            assert (
+                output.strip() == 'BAZ abc"def'
+            ), f'Unexpected output: {output.strip()} for {box_class.__name__}'
 
         finally:
             box.close()
@@ -281,6 +280,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
             'The output should be the same as the input for ' + box.__class__.__name__
         )
         box.close()
+
 
 @pytest.mark.skipif(
     os.getenv('TEST_IN_CI') != 'true',
