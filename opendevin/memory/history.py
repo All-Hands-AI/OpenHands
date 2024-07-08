@@ -127,7 +127,7 @@ class ShortTermHistory(list[Event]):
 
     def get_last_user_message(self) -> str:
         """
-        Return the latest user message from the event stream.
+        Return the content of the last user message from the event stream.
         """
 
         last_user_message = next(
@@ -140,6 +140,23 @@ class ShortTermHistory(list[Event]):
         )
 
         return last_user_message if last_user_message is not None else ''
+
+    def get_last_agent_message(self) -> str:
+        """
+        Return the content of the last agent message from the event stream.
+        """
+
+        last_agent_message = next(
+            (
+                event.content
+                for event in self._event_stream.get_events(reverse=True)
+                if isinstance(event, MessageAction)
+                and event.source == EventSource.AGENT
+            ),
+            None,
+        )
+
+        return last_agent_message if last_agent_message is not None else ''
 
     def get_last_events(self, n: int) -> list[Event]:
         """
