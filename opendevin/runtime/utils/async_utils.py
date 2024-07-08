@@ -1,8 +1,12 @@
 import asyncio
+import logging
 from functools import wraps
 from typing import Any, Callable, TypeVar
 
+logger = logging.getLogger(__name__)
+
 T = TypeVar('T')
+
 
 def async_to_sync(func):
     # type: (Callable[..., Any]) -> Callable[..., Any]
@@ -19,26 +23,35 @@ def async_to_sync(func):
     Returns:
         A synchronous callable that executes the function.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # type: (*Any, **Any) -> Any
+
+        async def run_async():
+            result = await func(*args, **kwargs)
+            return result
+
+        def run_sync():
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+
+            if loop.is_running():
+                return asyncio.run_coroutine_threadsafe(run_async(), loop).result()
+            else:
+                return loop.run_until_complete(run_async())
+
+        # Check if we're in an event loop
         try:
             loop = asyncio.get_event_loop()
+            if loop.is_running():
+                return run_async()
+            else:
+                return run_sync()
         except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        try:
-            result = func(*args, **kwargs)
-            if asyncio.iscoroutine(result):
-                return loop.run_until_complete(result)
-            return result
-        finally:
-            if loop != asyncio.get_event_loop():
-                loop.close()
+            return run_sync()
 
     return wrapper

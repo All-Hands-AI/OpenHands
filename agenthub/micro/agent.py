@@ -6,11 +6,11 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.utils import json
-from opendevin.core.utils.async_utils import async_to_sync
 from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
+from opendevin.runtime.utils.async_utils import async_to_sync
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -84,6 +84,7 @@ class MicroAgent(Agent):
             resp = await self.llm.completion(messages=messages)
         else:
             # If it's not async, use to_thread
+            # resp = await asyncio.to_thread(self.llm.completion, messages=messages)
             resp = await asyncio.to_thread(self.llm.completion, messages=messages)
 
         # Handle both real responses and mock responses in tests

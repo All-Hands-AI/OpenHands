@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 from typing import Optional, Tuple, Type
 
 from opendevin.controller.agent import Agent, AsyncAgent
@@ -113,6 +112,8 @@ class AgentController:
 
         await self.set_agent_state_to(AgentState.STOPPED)
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
+        logger.info(f'AgentController closed for {self.id}')
+        self._close_event.set()
 
     def update_state_before_step(self):
         self.state.iteration += 1
@@ -141,23 +142,26 @@ class AgentController:
 
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
-        while not self._is_closing:
-            try:
-                await self._step()
-            except asyncio.CancelledError:
-                logger.info('AgentController task was cancelled')
-                break
-            except Exception as e:
-                traceback.print_exc()
-                logger.error(f'Error while running the agent: {e}')
-                logger.error(traceback.format_exc())
-                await self.report_error(
-                    'There was an unexpected error while running the agent', exception=e
-                )
-                await self.set_agent_state_to(AgentState.ERROR)
-                break
+        try:
+            while not self._is_closing:
+                try:
+                    await self._step()
+                except asyncio.CancelledError:
+                    logger.info(f'AgentController step was cancelled for {self.id}')
+                    break
+                except Exception as e:
+                    logger.error(f'Error while running the agent: {e}', exc_info=True)
+                    await self.report_error(
+                        'There was an unexpected error while running the agent',
+                        exception=e,
+                    )
+                    await self.set_agent_state_to(AgentState.ERROR)
+                    break
 
-            await asyncio.sleep(0.1)
+                await asyncio.sleep(0.1)
+        finally:
+            logger.info(f'[Agent Controller {self.id}] Step loop ended')
+            self._close_event.set()
 
     async def on_event(self, event: Event):
         # Only parse agent_state for ChangeAgentStateAction
@@ -231,8 +235,8 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
-        logger.info(
-            f'[Agent Controller] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
+        logger.debug(
+            f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
         if (
@@ -246,12 +250,12 @@ class AgentController:
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED:
             self.reset_task()
-            # tobitege: should we instead reset to AWAITING_USER_INPUT on STOPPED
-            # new_state = AgentState.AWAITING_USER_INPUT
-            # self.state.agent_state = new_state
-            # logger.info(
-            #     f'[Agent Controller] Setting agent({type(self.agent).__name__}) to {new_state}'
-            # )
+            # Reset to AWAITING_USER_INPUT after STOPPED
+            new_state = AgentState.AWAITING_USER_INPUT
+            self.state.agent_state = new_state
+            logger.info(
+                f'[Agent Controller] Setting agent({type(self.agent).__name__}) to {new_state}'
+            )
         elif new_state == AgentState.ERROR:
             self.reset_task()
 

@@ -1,6 +1,5 @@
-import atexit
 import asyncio
-import docker
+import atexit
 import json
 import os
 import re
@@ -10,10 +9,11 @@ import tempfile
 import time
 import uuid
 from glob import glob
+from typing import Tuple, Union  # type: ignore[unused-import]
 
+import docker
 from pexpect import exceptions, pxssh
 from tenacity import retry, stop_after_attempt, wait_fixed
-from typing import cast
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -317,12 +317,14 @@ class DockerSSHBox(Sandbox):
                         raise e
                     await asyncio.sleep(2)
             try:
-                await asyncio.wait_for(self.setup_user(), timeout=60)  # 60 second timeout
+                await asyncio.wait_for(
+                    self.setup_user(), timeout=60
+                )  # 60 second timeout
             except asyncio.TimeoutError:
-                logger.error("User setup timed out after 60 seconds")
+                logger.error('User setup timed out after 60 seconds')
                 raise
             except Exception as e:
-                logger.exception("Error during user setup")
+                logger.exception('Error during user setup')
                 raise e
         else:
             self.container = self.docker_client.containers.get(self.container_name)
@@ -333,16 +335,18 @@ class DockerSSHBox(Sandbox):
             await asyncio.sleep(2)
             await self.start_ssh_session()
         except Exception as e:
-            logger.info("SSH session failed, closing container")
+            logger.info('SSH session failed, closing container')
             self.close()
             raise e
 
         try:
             _, _ = await self.execute_async('mkdir -p /tmp')
             _, _ = await self.execute_async('git config --global user.name "OpenDevin"')
-            _, _ = await self.execute_async('git config --global user.email "opendevin@all-hands.dev"')
+            _, _ = await self.execute_async(
+                'git config --global user.email "opendevin@all-hands.dev"'
+            )
         except Exception as e:
-            logger.exception(f"Error during initialization: {e}")
+            logger.exception(f'Error during initialization: {e}')
             raise
         finally:
             self._init_complete.set()
@@ -356,11 +360,13 @@ class DockerSSHBox(Sandbox):
         if exit_code == 0:
             self._env[key] = value
         else:
-            raise RuntimeError(f"Failed to set environment variable {key}")
+            raise RuntimeError(f'Failed to set environment variable {key}')
 
     async def container_exec_run(self, *args, **kwargs):
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, lambda: self.container.exec_run(*args, **kwargs))
+        result = await loop.run_in_executor(
+            None, lambda: self.container.exec_run(*args, **kwargs)
+        )
         return result  # Returns a tuple (exit_code, output)
 
     async def setup_user(self):
@@ -469,13 +475,15 @@ class DockerSSHBox(Sandbox):
                 environment=self._env,
             )
             if exit_code != 0:
-                raise RuntimeError(f'Failed to set password for root in sandbox: {logs}')
+                raise RuntimeError(
+                    f'Failed to set password for root in sandbox: {logs}'
+                )
         exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
-        logger.info("User setup in sandbox completed")
+        logger.info('User setup in sandbox completed')
 
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
     @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
@@ -489,7 +497,9 @@ class DockerSSHBox(Sandbox):
                 else:
                     password_msg = f"using the password '{self._ssh_password}'"
                 ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
-                logger.info(f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}')
+                logger.info(
+                    f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
+                )
                 self._ssh_debug_logged = True
 
             self.ssh = pxssh.pxssh(
@@ -509,11 +519,13 @@ class DockerSSHBox(Sandbox):
             )
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
-                logger.exception('Failed to login to SSH session, retrying...', exc_info=False)
-                raise e
+            logger.exception(
+                'Failed to login to SSH session, retrying...', exc_info=False
+            )
+            raise e
 
     async def start_ssh_session(self):
-        logger.info("Starting SSH session")
+        logger.info('Starting SSH session')
         if hasattr(self, '_ssh_debug_logged'):
             delattr(self, '_ssh_debug_logged')
         await self.__ssh_login()
@@ -531,7 +543,7 @@ class DockerSSHBox(Sandbox):
         else:
             return ['/bin/bash', '-c', cmd]
 
-    async def _send_interrupt(
+    def _send_interrupt(
         self,
         cmd: str,
         prev_output: str = '',
@@ -542,7 +554,7 @@ class DockerSSHBox(Sandbox):
         )
         # send a SIGINT to the process
         self.ssh.sendintr()
-        await asyncio.to_thread(self.ssh.prompt)
+        self.ssh.prompt()
         command_output = prev_output
         if not ignore_last_output:
             command_output += '\n' + self.ssh.before
@@ -554,12 +566,12 @@ class DockerSSHBox(Sandbox):
     @async_to_sync
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
-    ) -> tuple[int, str | CancellableStream]:
+    ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
         return self.execute_async(cmd, stream, timeout)  # type: ignore
 
     async def execute_async(
         self, cmd: str, stream: bool = False, timeout: int | None = None
-    ) -> tuple[int, str | CancellableStream]:
+    ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
         if len(commands) > 1:
@@ -574,8 +586,10 @@ class DockerSSHBox(Sandbox):
             return 0, all_output
 
         # Prepare environment variables
-        env_exports = ' '.join([f"export {key}={json.dumps(value)}" for key, value in self._env.items()])
-        full_cmd = f"{env_exports} && {cmd}"
+        env_exports = ' '.join(
+            [f'export {key}={json.dumps(value)}' for key, value in self._env.items()]
+        )
+        full_cmd = f'{env_exports} && {cmd}'
 
         self.ssh.sendline(full_cmd)
         if stream:
@@ -583,7 +597,7 @@ class DockerSSHBox(Sandbox):
 
         success = await asyncio.to_thread(self.ssh.prompt, timeout=timeout)
         if not success:
-            return await self._send_interrupt(full_cmd)  # type: ignore
+            return self._send_interrupt(full_cmd)  # type: ignore
         command_output = self.ssh.before
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
@@ -608,7 +622,7 @@ class DockerSSHBox(Sandbox):
             await asyncio.to_thread(self.ssh.prompt, timeout=1)
             exit_code_str = self.ssh.before.strip()
             if time.time() - _start_time > timeout:
-                return await self._send_interrupt(  # type: ignore
+                return self._send_interrupt(  # type: ignore
                     cmd, command_output, ignore_last_output=True
                 )
         cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
@@ -626,7 +640,9 @@ class DockerSSHBox(Sandbox):
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         return self.copy_to_async(host_src, sandbox_dest, recursive)
 
-    async def copy_to_async(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+    async def copy_to_async(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ):
         # mkdir -p sandbox_dest if it doesn't exist
         exit_code, logs = await self.container_exec_run(  # type: ignore
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
@@ -832,13 +848,13 @@ class DockerSSHBox(Sandbox):
                         except docker.errors.NotFound:
                             pass
                         except Exception as e:
-                            logger.error(f"Error during container cleanup: {e}")
+                            logger.error(f'Error during container cleanup: {e}')
 
                 # Close the Docker client
                 if hasattr(self.docker_client, 'close'):
                     await asyncio.to_thread(self.docker_client.close)
         except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
+            logger.error(f'Error during cleanup: {e}')
         finally:
             self._cleanup_done = True
 
@@ -858,11 +874,11 @@ class DockerSSHBox(Sandbox):
                         except docker.errors.NotFound:
                             pass
                         except Exception as e:
-                            logger.error(f"Error during container cleanup: {e}")
+                            logger.error(f'Error during container cleanup: {e}')
 
                 self.docker_client.close()
         except Exception as e:
-            logger.error(f"Error during sync cleanup: {e}")
+            logger.error(f'Error during sync cleanup: {e}')
         finally:
             self._cleanup_done = True
 
@@ -881,6 +897,7 @@ class DockerSSHBox(Sandbox):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.sync_cleanup()
+
 
 if __name__ == '__main__':
     try:
