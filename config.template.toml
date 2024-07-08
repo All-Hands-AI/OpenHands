@@ -83,7 +83,7 @@ persist_sandbox = false
 #default_agent = "CodeActAgent"
 
 #################################### LLM #####################################
-# Configuration for LLM models (group name ends with 'llm')
+# Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
 ##############################################################################
 [llm]
@@ -161,9 +161,10 @@ api_key = "your-api-key"
 model = "gpt-3.5"
 
 #################################### Agent ###################################
-# Configuration for agents (group name ends with 'agent')
+# Configuration for agents (group name starts with 'agent')
 # Use 'agent' for the default agent config
-# otherwise, group name must be agent name
+# otherwise, group name must be `agent.<agent_name>` (case-sensitive), e.g.
+# agent.CodeActAgent
 ##############################################################################
 [agent]
 # Memory enabled
