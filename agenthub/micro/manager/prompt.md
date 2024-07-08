@@ -14,7 +14,8 @@ continue to delegate to one of the agents below to until the full task is finish
 task you send to. You should revisit the input you send to the delegate, and consider
 whether any other delegate would be able to solve the task. If you cannot find
 a proper delegate agent, or the delegate attempts keep failing, call the `reject`
-action.
+action. In `reason` attribute, make sure you include your attempts (e.g. what agent
+you have delegated to, and why they failed).
 
 ## Agents
 {% for name, details in delegates.items() %}
@@ -26,7 +27,7 @@ action.
 
 ## History
 {{ instructions.history_truncated }}
-{{ history_to_json(state.history[-10:]) }}
+{{ history_to_json(state.history, max_events=20) }}
 
 If the last item in the history is an error, you should try to fix it. If you
 cannot fix it, call the `reject` action.

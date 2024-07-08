@@ -14,10 +14,9 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
-from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import DockerProcess, Process
+from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
@@ -34,13 +33,26 @@ class SSHExecCancellableStream(CancellableStream):
         self.closed = True
 
     def exit_code(self):
-        self.ssh.sendline('echo $?')
-        success = self.ssh.prompt(timeout=self.timeout)
-        if not success:
-            return -1
+        marker = f'EXIT_CODE_MARKER_{uuid.uuid4().hex}'
+        self.ssh.sendline(f'echo "{marker}$?{marker}"')
 
-        _exit_code = self.ssh.before.strip()
-        return int(_exit_code)
+        if not self.ssh.prompt(timeout=self.timeout):
+            return None  # Timeout occurred
+
+        output = self.ssh.before
+        match = re.search(f'{marker}(\\d+){marker}', output)
+
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                # Log the unexpected format
+                logger.error(f'Unexpected exit code format: {match.group(1)}')
+                return None
+        else:
+            # If we can't find our marked exit code, log the output and return None
+            logger.error(f'Could not find exit code in output: {output}')
+            return None
 
     def read_output(self):
         st = time.time()
@@ -189,13 +201,10 @@ class DockerSSHBox(Sandbox):
     _ssh_port: int
     ssh: pxssh.pxssh
 
-    cur_background_id = 0
-    background_commands: dict[int, Process] = {}
-
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = config.sandbox_timeout,
+        timeout: int = config.sandbox.timeout,
         sid: str | None = None,
     ):
         logger.info(
@@ -221,7 +230,10 @@ class DockerSSHBox(Sandbox):
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = container_image or config.sandbox_container_image
+        self.container_image = container_image or config.sandbox.container_image
+        self.container_image = get_od_sandbox_image(
+            self.container_image, self.docker_client
+        )
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -271,7 +283,7 @@ class DockerSSHBox(Sandbox):
         self.execute('mkdir -p /tmp')
         # set git config
         self.execute('git config --global user.name "OpenDevin"')
-        self.execute('git config --global user.email "opendevin@opendevin.ai"')
+        self.execute('git config --global user.email "opendevin@all-hands.dev"')
         atexit.register(self.close)
         super().__init__()
 
@@ -342,6 +354,25 @@ class DockerSSHBox(Sandbox):
                 raise Exception(
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
                 )
+            # check the miniforge3 directory exist
+            exit_code, logs = self.container.exec_run(
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
+            )
+            if exit_code != 0:
+                if exit_code == 1:
+                    raise Exception(
+                        'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
+                    )
+                else:
+                    raise Exception(
+                        f'An error occurred while checking if miniforge3 directory exists: {logs}'
+                    )
             exit_code, logs = self.container.exec_run(
                 [
                     '/bin/bash',
@@ -416,12 +447,6 @@ class DockerSSHBox(Sandbox):
         else:
             return ['/bin/bash', '-c', cmd]
 
-    def read_logs(self, id) -> str:
-        if id not in self.background_commands:
-            raise SandboxInvalidBackgroundCommandError()
-        bg_cmd = self.background_commands[id]
-        return bg_cmd.read_logs()
-
     def _send_interrupt(
         self,
         cmd: str,
@@ -468,17 +493,12 @@ class DockerSSHBox(Sandbox):
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
-            logger.debug('WAITING FOR .prompt()')
             self.ssh.sendline('\n')
             timeout_not_reached = self.ssh.prompt(timeout=1)
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
                 break
-            logger.debug('WAITING FOR .before')
             output = self.ssh.before
-            logger.debug(
-                f'WAITING FOR END OF command output ({bool(output)}): {output}'
-            )
             if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
@@ -492,7 +512,6 @@ class DockerSSHBox(Sandbox):
         while not exit_code_str:
             self.ssh.prompt(timeout=1)
             exit_code_str = self.ssh.before.strip()
-            logger.debug(f'WAITING FOR exit code: {exit_code_str}')
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
@@ -549,46 +568,6 @@ class DockerSSHBox(Sandbox):
                 data = f.read()
             self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
-    def execute_in_background(self, cmd: str) -> Process:
-        result = self.container.exec_run(
-            self.get_exec_cmd(cmd),
-            socket=True,
-            workdir=self.sandbox_workspace_dir,
-            environment=self._env,
-        )
-        result.output._sock.setblocking(0)
-        pid = self.get_pid(cmd)
-        bg_cmd = DockerProcess(self.cur_background_id, cmd, result, pid)
-        self.background_commands[bg_cmd.pid] = bg_cmd
-        self.cur_background_id += 1
-        return bg_cmd
-
-    def get_pid(self, cmd):
-        exec_result = self.container.exec_run('ps aux', environment=self._env)
-        processes = exec_result.output.decode('utf-8').splitlines()
-        cmd = ' '.join(self.get_exec_cmd(cmd))
-
-        for process in processes:
-            if cmd in process:
-                pid = process.split()[1]  # second column is the pid
-                return pid
-        return None
-
-    def kill_background(self, id: int) -> Process:
-        if id not in self.background_commands:
-            raise SandboxInvalidBackgroundCommandError()
-        bg_cmd = self.background_commands[id]
-        if bg_cmd.pid is not None:
-            self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}',
-                workdir=self.sandbox_workspace_dir,
-                environment=self._env,
-            )
-        assert isinstance(bg_cmd, DockerProcess)
-        bg_cmd.result.output.close()
-        self.background_commands.pop(id)
-        return bg_cmd
-
     def start_docker_container(self):
         try:
             container = self.docker_client.containers.get(self.container_name)
@@ -631,11 +610,7 @@ class DockerSSHBox(Sandbox):
 
     @property
     def user_id(self):
-        return config.sandbox_user_id
-
-    @property
-    def sandbox_user_id(self):
-        return config.sandbox_user_id
+        return config.sandbox.user_id
 
     @property
     def run_as_devin(self):
@@ -666,7 +641,6 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         mount_dir = config.workspace_mount_path
-        logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
@@ -714,7 +688,7 @@ class DockerSSHBox(Sandbox):
             )
             logger.info('Container started')
         except Exception as ex:
-            logger.exception('Failed to start container', exc_info=False)
+            logger.exception('Failed to start container: ' + str(ex), exc_info=False)
             raise ex
 
         # wait for container to be ready
@@ -766,15 +740,12 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+    ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
         f'{AgentSkillsRequirement().documentation}\n'
         '---'
-    )
-
-    bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo -n '.' && sleep 10; done"
     )
 
     sys.stdout.flush()
@@ -788,16 +759,9 @@ if __name__ == '__main__':
             if user_input.lower() == 'exit':
                 logger.info('Exiting...')
                 break
-            if user_input.lower() == 'kill':
-                ssh_box.kill_background(bg_cmd.pid)
-                logger.info('Background process killed')
-                continue
             exit_code, output = ssh_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.pid in ssh_box.background_commands:
-                logs = ssh_box.read_logs(bg_cmd.pid)
-                logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')

@@ -1,9 +1,6 @@
-```json
 {
-  "action": "run",
+  "action": "reject",
   "args": {
-    "command": "git diff --staged",
-    "background": false
+    "reason": "Not a valid git repository."
   }
 }
-```

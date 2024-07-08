@@ -1,5 +1,3 @@
-import re
-
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -10,22 +8,20 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
+    AgentDelegateAction,
     AgentFinishAction,
-    BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from opendevin.events.observation import (
     AgentDelegateObservation,
-    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.indexing import IndexSettings, RAGIndex
+from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -35,7 +31,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
-ENABLE_VECTOR_INDEX = False
 
 
 def action_to_str(action: Action) -> str:
@@ -43,8 +38,8 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
     elif isinstance(action, IPythonRunCellAction):
         return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, BrowseInteractiveAction):
-        return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
+    elif isinstance(action, AgentDelegateAction):
+        return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
     elif isinstance(action, MessageAction):
         return action.content
     return ''
@@ -52,7 +47,7 @@ def action_to_str(action: Action) -> str:
 
 def get_action_message(action: Action) -> dict[str, str] | None:
     if (
-        isinstance(action, BrowseInteractiveAction)
+        isinstance(action, AgentDelegateAction)
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
@@ -64,21 +59,9 @@ def get_action_message(action: Action) -> dict[str, str] | None:
     return None
 
 
-def get_action_thought(action: Action | None) -> str:
-    if (
-        isinstance(action, CmdRunAction)
-        or isinstance(action, IPythonRunCellAction)
-        or isinstance(action, BrowseInteractiveAction)
-    ):
-        return action.thought
-    elif isinstance(action, MessageAction):
-        return action.content
-    return ''
-
-
 def get_observation_message(obs) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content = 'OBSERVATION:\n' + truncate_content(obs.content)
         content += (
             f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
@@ -93,29 +76,12 @@ def get_observation_message(obs) -> dict[str, str] | None:
                     '![image](data:image/png;base64, ...) already displayed to user'
                 )
         content = '\n'.join(splitted)
-        content = truncate_observation(content)
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, BrowserOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content = truncate_content(content)
         return {'role': 'user', 'content': content}
     elif isinstance(obs, AgentDelegateObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(str(obs.outputs))
+        content = 'OBSERVATION:\n' + truncate_content(str(obs.outputs))
         return {'role': 'user', 'content': content}
     return None
-
-
-def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
-    """
-    Truncate the middle of the observation if it is too long.
-    """
-    if len(observation) <= max_chars:
-        return observation
-    half = max_chars // 2
-    return (
-        observation[:half]
-        + '\n[... Observation truncated due to length ...]\n'
-        + observation[-half:]
-    )
 
 
 # FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
@@ -131,7 +97,7 @@ def get_in_context_example() -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.6'
+    VERSION = '1.7'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -170,8 +136,8 @@ class CodeActAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions
-        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        # AgentSkillsRequirement provides a lot of Python functions,
+        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
@@ -195,16 +161,6 @@ class CodeActAgent(Agent):
         super().__init__(llm)
         self.reset()
 
-        index_settings = IndexSettings(
-            vector_engine='pinecone',
-            existing_index_name=config.agent.existing_index_name,
-        )
-
-        # nodes = rag_index.run_ingestion()
-        # print(f'Indexed {len(nodes)} nodes.')
-
-        self.vector_index = RAGIndex(index_settings) if ENABLE_VECTOR_INDEX else None
-
     def reset(self) -> None:
         """
         Resets the CodeAct Agent.
@@ -217,7 +173,7 @@ class CodeActAgent(Agent):
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
-        - state (State): used to get updated info and background commands
+        - state (State): used to get updated info
 
         Returns:
         - CmdRunAction(command) - bash command to run
@@ -226,74 +182,14 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
-        ]
 
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
+        # if we're done, go back
+        latest_user_message = state.history.get_last_user_message()
+        if latest_user_message and latest_user_message.strip() == '/exit':
+            return AgentFinishAction()
 
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
-
-        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
-        latest_action, _ = state.history[-1] if state.history else (None, None)
-        latest_action_thought = get_action_thought(latest_action)
-
-        # TODO: maybe consider retrieving latest observation as well, as for some actions like `open_file` we can also get some relevant context
-
-        if latest_user_message:
-            if latest_user_message['content'].strip() == '/exit':
-                return AgentFinishAction()
-
-            if self.vector_index:
-                # search the workspace for similar content
-                if len(latest_action_thought.strip()) == 0:
-                    # use the problem statement as the query
-                    # FIXME: this is a hacky way to get the problem statement
-                    first_user_message = [m for m in messages if m['role'] == 'user'][
-                        0
-                    ]['content']
-                    pattern = re.compile(
-                        r'# Problem Statement(.*?)IMPORTANT:', re.DOTALL
-                    )
-                    match = pattern.search(first_user_message)
-
-                    if match:
-                        content = match.group(1).strip()
-                        print('Problem statement: ' + content)
-                        latest_action_thought = content
-                    else:
-                        print('No match found.')
-
-                if latest_action_thought:
-                    search_results = self.vector_index.semantic_search(
-                        query=latest_action_thought, top_k=3
-                    )
-                    search_results_str = ''
-
-                    for i, r in enumerate(search_results):
-                        search_results_str += 'Snippet ' + str(i + 1) + ':' + '\n'
-                        text, metadata = r
-                        # for key, value in metadata.items():
-                        #     search_results_str += (key + ": " + value + "\n")
-                        search_results_str += (
-                            'Relative file name' + ': ' + metadata['file_name'] + '\n'
-                        )
-
-                        search_results_str += '\n' + text + '\n\n'
-
-                    latest_user_message['content'] += (
-                        f'\n\nNote that you should NOT eagerly try to solve the task, but carefully consider multiple files that may be involved. Some context code snippets that may be relevant to help you solve the task (the file name is not absolute and you should find the correct location yourself):\n{search_results_str}'
-                    )
-
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
-            )
+        # prepare what we want to send to the LLM
+        messages: list[dict[str, str]] = self._get_messages(state)
 
         response = self.llm.completion(
             messages=messages,
@@ -301,14 +197,42 @@ class CodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
-                '</execute_search>,',
             ],
             temperature=0.0,
         )
-        state.num_of_chars += sum(
-            len(message['content']) for message in messages
-        ) + len(response.choices[0].message.content)
         return self.action_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def _get_messages(self, state: State) -> list[dict[str, str]]:
+        messages = [
+            {'role': 'system', 'content': self.system_message},
+            {'role': 'user', 'content': self.in_context_example},
+        ]
+
+        for event in state.history.get_events():
+            # create a regular message from an event
+            message = (
+                get_action_message(event)
+                if isinstance(event, Action)
+                else get_observation_message(event)
+            )
+
+            # add regular message
+            if message:
+                messages.append(message)
+
+        # the latest user message is important:
+        # we want to remind the agent of the environment constraints
+        latest_user_message = next(
+            (m for m in reversed(messages) if m['role'] == 'user'), None
+        )
+
+        # add a reminder to the prompt
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>'
+            )
+
+        return messages

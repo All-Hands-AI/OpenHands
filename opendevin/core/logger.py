@@ -31,9 +31,10 @@ ColorType = Literal[
 ]
 
 LOG_COLORS: Mapping[str, ColorType] = {
-    'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
+    'USER_ACTION': 'light_red',
     'OBSERVATION': 'yellow',
+    'USER_OBSERVATION': 'light_green',
     'DETAIL': 'cyan',
     'ERROR': 'red',
     'PLAN': 'light_magenta',
@@ -42,7 +43,12 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
-        msg_type = record.__dict__.get('msg_type', None)
+        msg_type = record.__dict__.get('msg_type')
+        event_source = record.__dict__.get('event_source')
+        if event_source:
+            new_msg_type = f'{event_source.upper()}_{msg_type}'
+            if new_msg_type in LOG_COLORS:
+                msg_type = new_msg_type
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])
@@ -51,7 +57,7 @@ class ColoredFormatter(logging.Formatter):
             )
             name_str = colored(record.name, LOG_COLORS[msg_type])
             level_str = colored(record.levelname, LOG_COLORS[msg_type])
-            if msg_type in ['ERROR']:
+            if msg_type in ['ERROR'] or config.debug:
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
@@ -114,6 +120,8 @@ def get_console_handler():
     """
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
+    if config.debug:
+        console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(console_formatter)
     return console_handler
 
@@ -157,6 +165,8 @@ sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
+if config.debug:
+    opendevin_logger.setLevel(logging.DEBUG)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
@@ -225,32 +235,22 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def get_llm_prompt_file_handler():
-    """
-    Returns a file handler for LLM prompt logging.
-    """
-    llm_prompt_file_handler = LlmFileHandler('prompt', delay=True)
-    llm_prompt_file_handler.setFormatter(llm_formatter)
-    llm_prompt_file_handler.setLevel(logging.DEBUG)
-    return llm_prompt_file_handler
+def _get_llm_file_handler(name, debug_level=logging.DEBUG):
+    # The 'delay' parameter, when set to True, postpones the opening of the log file
+    # until the first log message is emitted.
+    llm_file_handler = LlmFileHandler(name, delay=True)
+    llm_file_handler.setFormatter(llm_formatter)
+    llm_file_handler.setLevel(debug_level)
+    return llm_file_handler
 
 
-def get_llm_response_file_handler():
-    """
-    Returns a file handler for LLM response logging.
-    """
-    llm_response_file_handler = LlmFileHandler('response', delay=True)
-    llm_response_file_handler.setFormatter(llm_formatter)
-    llm_response_file_handler.setLevel(logging.DEBUG)
-    return llm_response_file_handler
+def _setup_llm_logger(name, debug_level=logging.DEBUG):
+    logger = logging.getLogger(name)
+    logger.propagate = False
+    logger.setLevel(debug_level)
+    logger.addHandler(_get_llm_file_handler(name, debug_level))
+    return logger
 
 
-llm_prompt_logger = logging.getLogger('prompt')
-llm_prompt_logger.propagate = False
-llm_prompt_logger.setLevel(logging.DEBUG)
-llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
-
-llm_response_logger = logging.getLogger('response')
-llm_response_logger.propagate = False
-llm_response_logger.setLevel(logging.DEBUG)
-llm_response_logger.addHandler(get_llm_response_file_handler())
+llm_prompt_logger = _setup_llm_logger('prompt', logging.DEBUG)
+llm_response_logger = _setup_llm_logger('response', logging.DEBUG)

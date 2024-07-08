@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from opendevin.core.config import config
-from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -22,7 +21,7 @@ def temp_dir(monkeypatch):
 
 def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    for box_class in [DockerSSHBox, DockerExecBox, LocalBox]:
+    for box_class in [DockerSSHBox, LocalBox]:
         box = box_class()
         box.add_to_env('QUUX', 'abc"def')
         assert box._env['FOOBAR'] == 'BAZ'
@@ -93,7 +92,7 @@ def test_ssh_box_run_as_devin(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
         for box in [
             DockerSSHBox()
@@ -135,20 +134,17 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('pwd && ls -l')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            expected_lines = ['/workspace', 'total 0']
-            line_sep = '\r\n' if isinstance(box, DockerSSHBox) else '\n'
-            assert output == line_sep.join(expected_lines), (
-                'The output should be the same as the input for '
-                + box.__class__.__name__
-            )
-            box.close()
+        box = DockerSSHBox()
+        exit_code, output = box.execute('pwd && ls -l')
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        expected_lines = ['/workspace', 'total 0']
+        line_sep = '\r\n' if isinstance(box, DockerSSHBox) else '\n'
+        assert output == line_sep.join(expected_lines), (
+            'The output should be the same as the input for ' + box.__class__.__name__
+        )
+        box.close()
 
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
@@ -156,31 +152,25 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [
-            DockerSSHBox()
-        ]:  # FIXME: DockerExecBox() does not work with stateful commands
-            exit_code, output = box.execute('mkdir test')
-            assert exit_code == 0, 'The exit code should be 0.'
-            assert output.strip() == ''
+        box = DockerSSHBox()
+        exit_code, output = box.execute('mkdir test')
+        assert exit_code == 0, 'The exit code should be 0.'
+        assert output.strip() == ''
 
-            exit_code, output = box.execute('cd test')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip() == '', (
-                'The output should be empty for ' + box.__class__.__name__
-            )
+        exit_code, output = box.execute('cd test')
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        assert output.strip() == '', (
+            'The output should be empty for ' + box.__class__.__name__
+        )
 
-            exit_code, output = box.execute('pwd')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip() == '/workspace/test', (
-                'The output should be /workspace for ' + box.__class__.__name__
-            )
-            box.close()
+        exit_code, output = box.execute('pwd')
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        assert output.strip() == '/workspace/test', (
+            'The output should be /workspace for ' + box.__class__.__name__
+        )
+        box.close()
 
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
@@ -188,65 +178,47 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('non_existing_command')
-            assert exit_code != 0, (
-                'The exit code should not be 0 for a failed command for '
-                + box.__class__.__name__
-            )
-            box.close()
+        box = DockerSSHBox()
+        exit_code, output = box.execute('non_existing_command')
+        assert exit_code != 0, (
+            'The exit code should not be 0 for a failed command for '
+            + box.__class__.__name__
+        )
+        box.close()
 
 
 def test_single_multiline_command(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('echo \\\n -e "foo"')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            if isinstance(box, DockerExecBox):
-                assert output == 'foo', (
-                    'The output should be the same as the input for '
-                    + box.__class__.__name__
-                )
-            else:
-                # FIXME: why is there a `>` in the output? Probably PS2?
-                assert output == '> foo', (
-                    'The output should be the same as the input for '
-                    + box.__class__.__name__
-                )
-            box.close()
+        box = DockerSSHBox()
+        exit_code, output = box.execute('echo \\\n -e "foo"')
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        # FIXME: why is there a `>` in the output? Probably PS2?
+        assert output == '> foo', (
+            'The output should be the same as the input for ' + box.__class__.__name__
+        )
+        box.close()
 
 
 def test_multiline_echo(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('echo -e "hello\nworld"')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            if isinstance(box, DockerExecBox):
-                assert output == 'hello\nworld', (
-                    'The output should be the same as the input for '
-                    + box.__class__.__name__
-                )
-            else:
-                # FIXME: why is there a `>` in the output?
-                assert output == '> hello\r\nworld', (
-                    'The output should be the same as the input for '
-                    + box.__class__.__name__
-                )
-            box.close()
+        box = DockerSSHBox()
+        exit_code, output = box.execute('echo -e "hello\nworld"')
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        # FIXME: why is there a `>` in the output?
+        assert output == '> hello\r\nworld', (
+            'The output should be the same as the input for ' + box.__class__.__name__
+        )
+        box.close()
 
 
 def test_sandbox_whitespace(temp_dir):
@@ -254,24 +226,15 @@ def test_sandbox_whitespace(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('echo -e "\\n\\n\\n"')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            if isinstance(box, DockerExecBox):
-                assert output == '\n\n\n', (
-                    'The output should be the same as the input for '
-                    + box.__class__.__name__
-                )
-            else:
-                assert output == '\r\n\r\n\r\n', (
-                    'The output should be the same as the input for '
-                    + box.__class__.__name__
-                )
-            box.close()
+        box = DockerSSHBox()
+        exit_code, output = box.execute('echo -e "\\n\\n\\n"')
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        assert output == '\r\n\r\n\r\n', (
+            'The output should be the same as the input for ' + box.__class__.__name__
+        )
+        box.close()
 
 
 def test_sandbox_jupyter_plugin(temp_dir):
@@ -279,20 +242,93 @@ def test_sandbox_jupyter_plugin(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'box_type', new='ssh'
     ):
-        for box in [DockerSSHBox()]:
-            box.init_plugins([JupyterRequirement])
-            exit_code, output = box.execute('echo "print(1)" | execute_cli')
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output == '1\r\n', (
-                'The output should be the same as the input for '
-                + box.__class__.__name__
-            )
-            box.close()
+        box = DockerSSHBox()
+        box.init_plugins([JupyterRequirement])
+        exit_code, output = box.execute('echo "print(1)" | execute_cli')
+        print(output)
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        assert output == '1\r\n', (
+            'The output should be the same as the input for ' + box.__class__.__name__
+        )
+        box.close()
+
+
+def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
+    box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+    exit_code, output = box.execute('mkdir test')
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+
+    exit_code, output = box.execute('echo "create_file(\'hello.py\')" | execute_cli')
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip().split('\r\n') == (
+        '[File: /workspace/hello.py (1 lines total)]\r\n'
+        '1|\r\n'
+        '[File hello.py created.]'
+    ).strip().split('\r\n')
+
+    exit_code, output = box.execute('cd test')
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+
+    exit_code, output = box.execute('echo "create_file(\'hello.py\')" | execute_cli')
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip().split('\r\n') == (
+        '[File: /workspace/test/hello.py (1 lines total)]\r\n'
+        '1|\r\n'
+        '[File hello.py created.]'
+    ).strip().split('\r\n')
+
+    if config.enable_auto_lint:
+        # edit file, but make a mistake in indentation
+        exit_code, output = box.execute(
+            'echo "insert_content_at_line(\'hello.py\', 1, \'  print(\\"hello world\\")\')" | execute_cli'
+        )
+        print(output)
+        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+        assert output.strip().split('\r\n') == (
+            """
+[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
+ERRORS:
+hello.py:1:3: E999 IndentationError: unexpected indent
+[This is how your edit would have looked if applied]
+-------------------------------------------------
+1|  print("hello world")
+2|
+-------------------------------------------------
+
+[This is the original code before your edit]
+-------------------------------------------------
+1|
+-------------------------------------------------
+Your changes have NOT been applied. Please fix your edit command and try again.
+You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+"""
+        ).strip().split('\n')
+
+    # edit file with correct indentation
+    exit_code, output = box.execute(
+        'echo "insert_content_at_line(\'hello.py\', 1, \'print(\\"hello world\\")\')" | execute_cli'
+    )
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip().split('\r\n') == (
+        """
+[File: /workspace/test/hello.py (2 lines total after edit)]
+1|print("hello world")
+2|
+[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+"""
+    ).strip().split('\n')
+
+    exit_code, output = box.execute('rm -rf /workspace/*')
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    box.close()
 
 
 def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
@@ -300,44 +336,27 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
-    ):
-        for box in [DockerSSHBox()]:
-            box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
-            exit_code, output = box.execute('mkdir test')
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
+        config.sandbox, 'box_type', new='ssh'
+    ), patch.object(config, 'enable_auto_lint', new=True):
+        assert config.enable_auto_lint
+        box = DockerSSHBox()
+        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
-            exit_code, output = box.execute(
-                'echo "create_file(\'a.txt\')" | execute_cli'
-            )
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip().split('\r\n') == (
-                '[File: /workspace/a.txt (1 lines total)]\r\n'
-                '1|\r\n'
-                '[File a.txt created.]'
-            ).strip().split('\r\n')
 
-            exit_code, output = box.execute('cd test')
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-
-            exit_code, output = box.execute(
-                'echo "create_file(\'a.txt\')" | execute_cli'
-            )
-            print(output)
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip().split('\r\n') == (
-                '[File: /workspace/test/a.txt (1 lines total)]\r\n'
-                '1|\r\n'
-                '[File a.txt created.]'
-            ).strip().split('\r\n')
+@pytest.mark.skipif(
+    os.getenv('TEST_IN_CI') != 'true',
+    reason='The unittest need to download image, so only run on CI',
+)
+def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+    for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
+        # get a temporary directory
+        with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+            config, 'workspace_mount_path', new=temp_dir
+        ), patch.object(config, 'run_as_devin', new=True), patch.object(
+            config.sandbox, 'box_type', new='ssh'
+        ), patch.object(
+            config.sandbox, 'container_image', new=base_sandbox_image
+        ), patch.object(config, 'enable_auto_lint', new=False):
+            assert not config.enable_auto_lint
+            box = DockerSSHBox()
+            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)

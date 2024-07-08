@@ -57,47 +57,7 @@ Explore the codebase of OpenDevin on [GitHub](https://github.com/OpenDevin/OpenD
 :::
 
 ## 🛠️ Getting Started
-
-The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
-You must be using Linux, Mac OS, or WSL on Windows.
-
-To start OpenDevin in a docker container, run the following commands in your terminal:
-
-:::warning
-When you run the following command, files in `./workspace` may be modified or deleted.
-:::
-
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-docker run -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e PERSIST_SANDBOX="true" \
-    -e SSH_PASSWORD="make something up here" \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    --add-host host.docker.internal:host-gateway \
-    --name opendevin-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.6.2
-```
-
-You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
-
-OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
-
-:::tip
-If you want to use the **(unstable!)** bleeding edge, you can use `ghcr.io/opendevin/opendevin:main` as the image (last line).
-:::
-
-For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
-
-Are you having trouble? Check out our [Troubleshooting Guide](https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting).
-
-:::warning
-OpenDevin is currently a work in progress, but you can already run the alpha version to see the end-to-end system in action.
-:::
+[Check out the getting started guide on Github](https://github.com/OpenDevin/OpenDevin?tab=readme-ov-file#-getting-started)
 
 [contributors-shield]: https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge
 [contributors-url]: https://github.com/OpenDevin/OpenDevin/graphs/contributors

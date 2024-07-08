@@ -30,7 +30,7 @@ open_file(path: str, line_number: int | None = 1, context_lines: int | None = 10
     It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
     Args:
-    path: str: The path to the file to open, preferredly absolute path.
+    path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
     context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
 
@@ -54,22 +54,66 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-append_file(file_name: str, content: str) -> None:
-    Append content to the given file.
-    It appends text `content` to the end of the specified file.
-    Args:
-    file_name: str: The name of the file to append to.
-    content: str: The content to append to the file.
-
-edit_file(file_name: str, start: int, end: int, content: str) -> None:
-    Edit a file.
-    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
-    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
+edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+    Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
+    Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
+    Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
+    `edit_file` will only replace the *first* matching occurrences.
+    For example, given a file "/workspace/example.txt" with the following content:
+    ```
+    line 1
+    line 2
+    line 2
+    line 3
+    ```
+    EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
+    edit_file(
+    '/workspace/example.txt',
+    to_replace='line 2
+    line 3',
+    new_content='new line
+    line 3',
+    )
+    This will replace only the second "line 2" with "new line". The first "line 2" will remain unchanged.
+    The resulting file will be:
+    ```
+    line 1
+    line 2
+    new line
+    line 3
+    ```
+    REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
+    edit_file(
+    '/workspace/example.txt',
+    to_replace='line 2
+    line 3',
+    new_content='',
+    )
     Args:
     file_name: str: The name of the file to edit.
-    start: int: The start line number. Must satisfy start >= 1.
-    end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
-    content: str: The content to replace the lines with.
+    to_replace: str: The content to search for and replace.
+    new_content: str: The new content to replace the old content with.
+
+insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
+    Insert content at the given line number in a file.
+    This will NOT modify the content of the lines before OR after the given line number.
+    For example, if the file has the following content:
+    ```
+    line 1
+    line 2
+    line 3
+    ```
+    and you call `insert_content_at_line('file.txt', 2, 'new line')`, the file will be updated to:
+    ```
+    line 1
+    new line
+    line 2
+    line 3
+    ```
+    Args:
+    file_name: str: The name of the file to edit.
+    line_number: int: The line number (starting from 1) to insert the content after.
+    content: str: The content to insert.
 
 search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
@@ -109,11 +153,12 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
+Please note that THE `edit_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
 Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
+If the assistant is finished with the task you MUST include <finish></finish> in your response.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 When handling files, try to use full paths and pwd to avoid errors.
 
@@ -151,7 +196,12 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)"""
-edit_file('app.py', start=1, end=1, content=EDITED_CODE)
+
+insert_content_at_line(
+  'app.py',
+  1,
+  EDITED_CODE,
+)
 </execute_ipython>
 
 USER:
@@ -166,6 +216,7 @@ OBSERVATION:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
+11|
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
@@ -275,7 +326,7 @@ open_file('app.py')
 </execute_ipython>
 
 USER:
-[File: /workspace/app.py (10 lines total)]
+[File: /workspace/app.py (11 lines total)]
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -286,16 +337,21 @@ USER:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
+11|
 
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file('app.py', start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+edit_file(
+  'app.py',
+  to_replace="    return str(numbers)",
+  new_content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'",
+)
 </execute_ipython>
 
 USER:
 Observation:
-[File: /workspace/app.py (10 lines total after edit)]
+[File: /workspace/app.py (11 lines total after edit)]
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -306,6 +362,7 @@ Observation:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
+11|
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
@@ -320,6 +377,7 @@ Observation:
 
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+<finish></finish>
 
 --- END OF EXAMPLE ---
 
@@ -330,4 +388,4 @@ NOW, LET'S START!
 
 Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 14 turns left to complete the task. When finished reply with <finish></finish>

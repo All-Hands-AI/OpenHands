@@ -70,7 +70,12 @@ class Agent(ABC):
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
+        # TODO clear history
         self._complete = False
+
+    @property
+    def name(self):
+        return self.__class__.__name__
 
     @classmethod
     def register(cls, name: str, agent_cls: Type['Agent']):

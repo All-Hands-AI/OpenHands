@@ -11,7 +11,7 @@ def test_help_message(capsys):
     expected_help_message = """
 usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
               [-m MODEL_NAME] [-i MAX_ITERATIONS] [-b MAX_BUDGET_PER_TASK]
-              [-n MAX_CHARS] [--eval-output-dir EVAL_OUTPUT_DIR]
+              [--eval-output-dir EVAL_OUTPUT_DIR]
               [--eval-n-limit EVAL_N_LIMIT]
               [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
               [-l LLM_CONFIG]
@@ -34,9 +34,6 @@ options:
   -b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK
                         The maximum budget allowed per task, beyond which the
                         agent will stop.
-  -n MAX_CHARS, --max-chars MAX_CHARS
-                        The maximum number of characters to send to and
-                        receive from LLM per task
   --eval-output-dir EVAL_OUTPUT_DIR
                         The directory to save evaluation output
   --eval-n-limit EVAL_N_LIMIT

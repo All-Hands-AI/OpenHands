@@ -1,5 +1,6 @@
-Sure! I'll create the shell script `hello.sh` for you.
+Certainly! I'll create a shell script named 'hello.sh' that prints 'hello'. Here's how we'll do it:
 
 <execute_bash>
-echo 'echo "hello"' > hello.sh
+echo '#!/bin/bash' > hello.sh
+echo 'echo "hello"' >> hello.sh
 chmod +x hello.sh

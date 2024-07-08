@@ -1,11 +1,12 @@
-I have identified the typos in the file. Let's correct them:
+Let's correct the typos in the `bad.txt` file.
 
-1. "typoo" should be "typo".
-2. "mor" should be "more".
+1. "stupid typoo" should be "stupid typo".
+2. "No mor typos!" should be "No more typos!".
 
-I will now edit the file to fix these typos.
+I will make these corrections now.
 <execute_ipython>
-edit_file('/workspace/bad.txt', start=1, end=4, content="""This is a stupid typo.
-Really?
-No more typos!
-Enjoy!""")
+edit_file(
+    './bad.txt',
+    to_replace="This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!",
+    new_content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!"
+)

@@ -92,11 +92,16 @@ class MoatlessSearchAgent(Agent):
         messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
         ]
-        for prev_action, _ in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
-                break  # only include the problem message
+
+        for event in state.history.get_events():
+            task_message = (
+                get_action_message(event) if isinstance(event, Action) else None
+            )
+
+            # add regular message
+            if task_message:
+                messages.append(task_message)
+                break  # only add the last message
 
         for tool_call in self._tool_calls:
             arguments_json = (

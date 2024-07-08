@@ -1,0 +1,184 @@
+###################### OpenDevin Configuration Example ######################
+#
+# All settings have default values, so you only need to uncomment and
+# modify what you want to change
+# The fields within each section are sorted in alphabetical order.
+#
+##############################################################################
+
+#################################### Core ####################################
+# General core configurations
+##############################################################################
+[core]
+# API key for E2B
+#e2b_api_key = ""
+
+# Base path for the workspace
+workspace_base = "./workspace"
+
+# Cache directory path
+#cache_dir = "/tmp/cache"
+
+# Debugging enabled
+#debug = false
+
+# Disable color in terminal output
+#disable_color = false
+
+# Enable auto linting after editing
+#enable_auto_lint = false
+
+# Enable saving and restoring the session when run from CLI
+#enable_cli_session = false
+
+# File store path
+#file_store_path = "/tmp/file_store"
+
+# File store type
+#file_store = "memory"
+
+# List of allowed file extensions for uploads
+#file_uploads_allowed_extensions = [".*"]
+
+# Maximum file size for uploads, in megabytes
+#file_uploads_max_file_size_mb = 0
+
+# Maximum budget per task, 0.0 means no limit
+#max_budget_per_task = 0.0
+
+# Maximum number of iterations
+#max_iterations = 100
+
+# Path to mount the workspace in the sandbox
+#workspace_mount_path_in_sandbox = "/workspace"
+
+# Path to mount the workspace
+#workspace_mount_path = ""
+
+# Path to rewrite the workspace mount path to
+#workspace_mount_rewrite = ""
+
+# Persist the sandbox
+persist_sandbox = false
+
+# Run as devin
+#run_as_devin = true
+
+# Runtime environment
+#runtime = "server"
+
+# SSH hostname for the sandbox
+#ssh_hostname = "localhost"
+
+# SSH password for the sandbox
+#ssh_password = ""
+
+# SSH port for the sandbox
+#ssh_port = 63710
+
+# Use host network
+#use_host_network = false
+
+#################################### LLM #####################################
+# Configuration for the LLM model
+##############################################################################
+[llm]
+# AWS access key ID
+#aws_access_key_id = ""
+
+# AWS region name
+#aws_region_name = ""
+
+# AWS secret access key
+#aws_secret_access_key = ""
+
+# API key to use
+api_key = "your-api-key"
+
+# API base URL
+#base_url = ""
+
+# API version
+#api_version = ""
+
+# Cost per input token
+#input_cost_per_token = 0.0
+
+# Cost per output token
+#output_cost_per_token = 0.0
+
+# Custom LLM provider
+#custom_llm_provider = ""
+
+# Embedding API base URL
+#embedding_base_url = ""
+
+# Embedding deployment name
+#embedding_deployment_name = ""
+
+# Embedding model to use
+embedding_model = ""
+
+# Maximum number of characters in an observation's content
+#max_message_chars = 10000
+
+# Maximum number of input tokens
+#max_input_tokens = 0
+
+# Maximum number of output tokens
+#max_output_tokens = 0
+
+# Model to use
+model = "gpt-4o"
+
+# Number of retries to attempt
+#num_retries = 5
+
+# Retry maximum wait time
+#retry_max_wait = 60
+
+# Retry minimum wait time
+#retry_min_wait = 3
+
+# Temperature for the API
+#temperature = 0.0
+
+# Timeout for the API
+#timeout = 0
+
+# Top p for the API
+#top_p = 0.5
+
+#################################### Agent ###################################
+# Configuration for the agent
+##############################################################################
+[agent]
+# Memory enabled
+#memory_enabled = false
+
+# Memory maximum threads
+#memory_max_threads = 2
+
+# Name of the agent
+#name = "CodeActAgent"
+
+#################################### Sandbox ###################################
+# Configuration for the sandbox
+##############################################################################
+[sandbox]
+# Sandbox timeout in seconds
+#timeout = 120
+
+# Sandbox type (ssh, e2b, local)
+#box_type = "ssh"
+
+# Sandbox user ID
+#user_id = 1000
+
+# Container image to use for the sandbox
+#container_image = "ghcr.io/opendevin/sandbox:main"
+
+#################################### Eval ####################################
+# Configuration for the evaluation, please refer to the specific evaluation
+# plugin for the available options
+##############################################################################

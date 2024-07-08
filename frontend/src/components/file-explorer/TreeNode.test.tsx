@@ -50,12 +50,12 @@ describe("TreeNode", () => {
     expect(await findByText("folder1")).toBeInTheDocument();
     expect(await findByText("file2.ts")).toBeInTheDocument();
 
-    act(async () => {
-      userEvent.click(await findByText("folder1"));
+    await act(async () => {
+      await userEvent.click(await findByText("folder1"));
     });
 
     expect(await findByText("folder1")).toBeInTheDocument();
-    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(queryByText("file2.ts")).not.toBeInTheDocument();
   });
 
   it("should open a folder when clicking on it", async () => {
@@ -64,10 +64,10 @@ describe("TreeNode", () => {
     );
 
     expect(await findByText("folder1")).toBeInTheDocument();
-    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(queryByText("file2.ts")).not.toBeInTheDocument();
 
-    act(() => {
-      userEvent.click(getByText("folder1"));
+    await act(async () => {
+      await userEvent.click(getByText("folder1"));
     });
     expect(listFiles).toHaveBeenCalledWith("/folder1/");
 
@@ -75,16 +75,16 @@ describe("TreeNode", () => {
     expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 
-  it.only("should call a fn and return the full path of a file when clicking on it", () => {
+  it("should call a fn and return the full path of a file when clicking on it", async () => {
     const { getByText } = renderWithProviders(
       <TreeNode path="/folder1/file2.ts" defaultOpen />,
     );
 
-    act(() => {
-      userEvent.click(getByText("file2.ts"));
+    await act(async () => {
+      await userEvent.click(getByText("file2.ts"));
     });
 
-    waitFor(() => {
+    await waitFor(() => {
       expect(selectFile).toHaveBeenCalledWith("/folder1/file2.ts");
     });
   });
@@ -98,10 +98,10 @@ describe("TreeNode", () => {
 
     expect(await findByText("file1.ts")).toBeInTheDocument();
     expect(await findByText("folder1")).toBeInTheDocument();
-    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(queryByText("file2.ts")).not.toBeInTheDocument();
 
-    act(() => {
-      userEvent.click(getByText("folder1"));
+    await act(async () => {
+      await userEvent.click(getByText("folder1"));
     });
 
     expect(listFiles).toHaveBeenCalledWith("folder1/");
@@ -117,10 +117,10 @@ describe("TreeNode", () => {
     );
 
     expect(await findByText("folder1")).toBeInTheDocument();
-    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(queryByText("file2.ts")).not.toBeInTheDocument();
 
-    act(() => {
-      userEvent.click(getByText("folder1"));
+    await act(async () => {
+      await userEvent.click(getByText("folder1"));
     });
     expect(listFiles).toHaveBeenCalledWith("/folder1/");
 
