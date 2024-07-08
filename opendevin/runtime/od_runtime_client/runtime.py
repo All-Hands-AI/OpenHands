@@ -11,6 +11,7 @@ from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.browse import browse
 from opendevin.runtime.server.files import read_file, write_file
+from opendevin.runtime.plugins import PluginRequirement
 from opendevin.core.config import config
 from opendevin.events.observation import (
     ErrorObservation,
@@ -137,6 +138,19 @@ class EventStreamRuntime(Runtime):
 
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
+
+    ############################################################################ 
+    # Initialization work inside sandbox image
+    ############################################################################ 
+    
+    # init_runtime_tools direcctly do as what Runtime do
+
+    # Do in the od_runtime_client
+    # Overwrite the init_sandbox_plugins
+    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+        pass
+
+
     
 def test_run_command():
     sid = "test"

@@ -1,13 +1,14 @@
-from opendevin.runtime.plugins import PluginRequirement
-from opendevin.runtime.tools import RuntimeTool
-from typing import Any
 import asyncio
+import os
 import websockets
 import pexpect
 import json
+import shutil
+from typing import Any
 from websockets.exceptions import ConnectionClosed
 from opendevin.events.serialization import event_to_dict, event_from_dict
 from opendevin.events.observation import Observation
+from opendevin.runtime.plugins import PluginRequirement
 from opendevin.events.action import (
     Action,
     CmdRunAction,
@@ -19,6 +20,11 @@ from opendevin.events.observation import (
     Observation,
     IPythonRunCellObservation
 )
+from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
+    JupyterRequirement,
+    PluginRequirement,
+)
 
 class RuntimeClient():
     # This runtime will listen to the websocket
@@ -27,12 +33,6 @@ class RuntimeClient():
     def __init__(self) -> None:
         self.init_shell()
         self.init_websocket()
-
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        print("Not implemented yet.")
-    
-    def init_runtime_tools(self, runtime_tools: list[RuntimeTool], runtime_tools_config: dict[RuntimeTool, Any] | None = None, is_async: bool = True) -> None:
-        print("Not implemented yet.")
 
     def init_websocket(self) -> None:
         server = websockets.serve(self.listen, "0.0.0.0", 8080)
@@ -67,14 +67,14 @@ class RuntimeClient():
     
     def _run_command(self, command: str) -> Observation:
         try:
-            output, exit_code = self.execute_command(command)
+            output, exit_code = self.execute(command)
             return CmdOutputObservation(
                 command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
            
-    def execute_command(self, command):
+    def execute(self, command):
         print(f"Received command: {command}")
         self.shell.sendline(command)
         self.shell.expect(r'[$#] ')
@@ -142,6 +142,63 @@ class RuntimeClient():
 
     def close(self):
         self.shell.close()
+    
+    ############################################################################ 
+    # Initialization work inside sandbox image
+    ############################################################################ 
+
+    # init_runtime_tools do in EventStreamRuntime
+
+    def init_sandbox_plugins(self, requirements: list[PluginRequirement]) -> None:
+        # TODO:: test after settle donw the way to move code into sandbox
+        for requirement in requirements:
+            self._source_bashrc()
+
+            shutil.copytree(requirement.host_src, requirement.sandbox_dest)
+
+            # Execute the bash script
+            abs_path_to_bash_script = os.path.join(
+                requirement.sandbox_dest, requirement.bash_script_path
+            )
+
+            print(
+                    f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
+                )
+            exit_code, output = self.execute(abs_path_to_bash_script)
+            if output:
+                total_output = ''
+                for line in output:
+                    # Removes any trailing whitespace, including \n and \r\n
+                    line = line.rstrip()
+                    # logger.debug(line)
+                    # Avoid text from lines running into each other
+                    total_output += line + ' '
+                _exit_code = output.exit_code()
+                if _exit_code != 0:
+                    raise RuntimeError(
+                        f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
+                    )
+                print(f'Plugin {requirement.name} initialized successfully')
+            else:
+                if exit_code != 0:
+                    raise RuntimeError(
+                        f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
+                    )
+                print(f'Plugin {requirement.name} initialized successfully.')
+        if len(requirements) > 0:
+            self._source_bashrc()
+    
+    def _source_bashrc(self):
+        exit_code, output = self.execute(
+            'source /opendevin/bash.bashrc && source ~/.bashrc'
+        )
+        print(exit_code, output)
+        if exit_code != 0:
+            raise RuntimeError(
+                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+            )
+        print('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
+
 
 def test_run_commond():
     client = RuntimeClient()
@@ -161,6 +218,8 @@ def test_shell(message):
 
 if __name__ == "__main__":
     # print(test_shell("ls -l"))
-    RuntimeClient()
+    client = RuntimeClient()
     # test_run_commond()
+    # client.init_sandbox_plugins([AgentSkillsRequirement,JupyterRequirement])
+
     
