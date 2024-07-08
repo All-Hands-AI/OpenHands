@@ -208,7 +208,28 @@ class LLM:
             # log the prompt
             debug_message = ''
             for message in messages:
-                debug_message += message_separator + message['content']
+                content = message['content']
+
+                if isinstance(content, list):
+                    for element in content:
+                        if isinstance(element, dict):
+                            if 'text' in element:
+                                content_str = element['text']
+                            elif (
+                                'image_url' in element and 'url' in element['image_url']
+                            ):
+                                content_str = element['image_url']['url']
+                            else:
+                                content_str = str(element)
+                        else:
+                            content_str = str(element)
+
+                        debug_message += message_separator + content_str
+                else:
+                    content_str = str(content)
+
+                debug_message += message_separator + content_str
+
             llm_prompt_logger.debug(debug_message)
 
             # call the completion function

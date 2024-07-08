@@ -82,9 +82,9 @@ function ChatInterface() {
     onFeedbackModalOpen();
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (content: string, image_urls: string[]) => {
     dispatch(addUserMessage(content));
-    sendChatMessage(content);
+    sendChatMessage(content, image_urls);
   };
 
   const handleEmailChange = (key: string) => {
@@ -97,7 +97,7 @@ function ChatInterface() {
 
   const { t } = useTranslation();
   const handleSendContinueMsg = () => {
-    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
+    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE), []);
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);

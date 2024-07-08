@@ -11,11 +11,11 @@ from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
-    AgentFinishAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
+from opendevin.events.action.agent import AgentFinishAction
 from opendevin.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
@@ -45,27 +45,52 @@ def action_to_str(action: Action) -> str:
     return ''
 
 
-def get_action_message(action: Action) -> dict[str, str] | None:
+# ImageAndTextContent = dict[str, str | dict[str, str]]
+Content = list[dict[str, str | dict[str, str]]]
+
+# ActionMessage = dict[str, Content]
+
+
+def get_action_message(action: Action) -> dict[str, str | Content] | None:
     if (
         isinstance(action, AgentDelegateAction)
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
-        or isinstance(action, MessageAction)
+        or (isinstance(action, MessageAction) and not action.images_base64)
     ):
         return {
             'role': 'user' if action.source == 'user' else 'assistant',
-            'content': action_to_str(action),
+            'content': [{'type': 'text', 'text': action_to_str(action)}],
         }
+    if isinstance(action, MessageAction) and action.images_base64:
+        contents: Content = []
+
+        contents = [
+            {
+                'type': 'text',
+                'text': action.content,
+            },
+        ]
+        # reveal_type(message_dict['content'])
+        for image_url in action.images_base64:
+            contents.append({'type': 'image_url', 'image_url': {'url': image_url}})
+        # message_dict['content'] = contents
+        # reveal_type(contents)
+        message_dict: dict[str, str | Content] = {
+            'role': 'user' if action.source == 'user' else 'assistant',
+            'content': contents,
+        }
+        return message_dict
     return None
 
 
-def get_observation_message(obs) -> dict[str, str] | None:
+def get_observation_message(obs) -> dict[str, str | Content] | None:
     if isinstance(obs, CmdOutputObservation):
         content = 'OBSERVATION:\n' + truncate_content(obs.content)
         content += (
             f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
-        return {'role': 'user', 'content': content}
+        return {'role': 'user', 'content': [{'type': 'text', 'text': content}]}
     elif isinstance(obs, IPythonRunCellObservation):
         content = 'OBSERVATION:\n' + obs.content
         # replace base64 images with a placeholder
@@ -77,10 +102,10 @@ def get_observation_message(obs) -> dict[str, str] | None:
                 )
         content = '\n'.join(splitted)
         content = truncate_content(content)
-        return {'role': 'user', 'content': content}
+        return {'role': 'user', 'content': [{'type': 'text', 'text': content}]}
     elif isinstance(obs, AgentDelegateObservation):
         content = 'OBSERVATION:\n' + truncate_content(str(obs.outputs))
-        return {'role': 'user', 'content': content}
+        return {'role': 'user', 'content': [{'type': 'text', 'text': content}]}
     return None
 
 
@@ -189,7 +214,7 @@ class CodeActAgent(Agent):
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
-        messages: list[dict[str, str]] = self._get_messages(state)
+        messages: list[dict[str, str | Content]] = self._get_messages(state)
 
         response = self.llm.completion(
             messages=messages,
@@ -205,10 +230,16 @@ class CodeActAgent(Agent):
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
-    def _get_messages(self, state: State) -> list[dict[str, str]]:
-        messages = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
+    def _get_messages(self, state: State) -> list[dict[str, str | Content]]:
+        messages: list[dict[str, str | Content]] = [
+            {
+                'role': 'system',
+                'content': [{'type': 'text', 'text': self.system_message}],
+            },
+            {
+                'role': 'user',
+                'content': [{'type': 'text', 'text': self.in_context_example}],
+            },
         ]
 
         for event in state.history.get_events():
@@ -230,9 +261,15 @@ class CodeActAgent(Agent):
         )
 
         # add a reminder to the prompt
-        if latest_user_message:
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>'
-            )
+        if (
+            latest_user_message
+            and latest_user_message['content']
+            and not isinstance(latest_user_message['content'], str)
+        ):
+            text_content = latest_user_message['content'][0]['text']
+            if isinstance(text_content, str):
+                latest_user_message['content'][0]['text'] = (
+                    f'{text_content}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+                )
 
         return messages
