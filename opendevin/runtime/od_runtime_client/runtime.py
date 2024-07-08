@@ -43,8 +43,8 @@ class EventStreamRuntime(Runtime):
 
     def __init__(self, event_stream: EventStream, sid: str = 'default',container_image: str | None = None):
         # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
-        # self._init_event_stream(event_stream)
-        # self._init_websocket()
+        self._init_event_stream(event_stream)
+        self._init_websocket()
         self._init_docker(sid,container_image)
 
     def _init_docker(self,sid,container_image):
