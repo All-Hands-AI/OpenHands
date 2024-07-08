@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from opendevin.runtime.docker.image_agnostic_util import (
+from opendevin.runtime.utils.image_agnostic import (
     _get_new_image_name,
     generate_dockerfile_content,
     get_od_sandbox_image,
