@@ -102,7 +102,7 @@ Chance is, the test could be fixed after step 2.
 
 ## Regenerate Integration Tests without testing first
 
-If you want to regenerate all tests without running the existing tests first, you can run:
+If you want to regenerate all prompts and/or responses without running the existing tests first, you can run:
 
 ```bash
 FORCE_REGENERATE=true ./tests/integration/regenerate.sh
