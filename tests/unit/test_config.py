@@ -350,6 +350,7 @@ def test_defaults_dict_after_updates(default_config):
     )
     assert defaults_after_updates == initial_defaults
 
+
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     # Invalid TOML format doesn't break the configuration
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')
