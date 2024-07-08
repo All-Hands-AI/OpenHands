@@ -208,14 +208,17 @@ start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
-# Common setup for running the app (non-callable)
-_run_setup:
+# check for Windows (non-callable)
+_run_check:
 	@if [ "$(OS)" = "Windows_NT" ]; then \
 		echo "$(RED) Windows is not supported, use WSL instead!$(RESET)"; \
 		exit 1; \
 	fi
 	@mkdir -p logs
-	@echo "$(YELLOW)Starting backend server...$(RESET)"
+
+# Common setup for running the app (non-callable)
+_run_backend:
+	@$(MAKE) -s _run_check
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
@@ -224,14 +227,23 @@ _run_setup:
 # Run the app (standard mode)
 run:
 	@echo "$(YELLOW)Running the app...$(RESET)"
-	@$(MAKE) -s _run_setup
+	@$(MAKE) -s _run_check
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
+	@echo "$(YELLOW)Waiting for the app to start...$(RESET)"
+	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
+	@echo "$(GREEN)Application started successfully.$(RESET)"
+
+# Run the app (development mode)
+run-dev:
+	@echo "$(YELLOW)Running the app in dev mode...$(RESET)"
+	@$(MAKE) -s _run_backend
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
 
-# Run the app (WSL mode)
-run-wsl:
-	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
-	@$(MAKE) -s _run_setup
+# Run the app (development mode in WSL)
+run-dev-wsl:
+	@echo "$(YELLOW)Running the app in dev mode in WSL...$(RESET)"
+	@$(MAKE) -s _run_backend
 	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
 
@@ -319,4 +331,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-dev run-dev-wsl setup-config setup-config-prompts help
