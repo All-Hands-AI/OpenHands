@@ -20,7 +20,6 @@ ignore = [
     "B010",
     "B904",
     "B018",
-    "F401",  # Add this line to ignore unused imports
 ]
 
 [lint.flake8-quotes]
