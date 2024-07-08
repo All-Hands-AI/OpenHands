@@ -10,7 +10,7 @@ def test_help_message(capsys):
     captured = capsys.readouterr()
     expected_help_message = """
 usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
-              [-m MODEL_NAME] [-i MAX_ITERATIONS] [-b MAX_BUDGET_PER_TASK]
+              [-i MAX_ITERATIONS] [-b MAX_BUDGET_PER_TASK]
               [--eval-output-dir EVAL_OUTPUT_DIR]
               [--eval-n-limit EVAL_N_LIMIT]
               [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
@@ -27,8 +27,6 @@ options:
                         both are provided.
   -c AGENT_CLS, --agent-cls AGENT_CLS
                         Name of the default agent to use
-  -m MODEL_NAME, --model-name MODEL_NAME
-                        The (litellm) model name to use
   -i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS
                         The maximum number of iterations to run the agent
   -b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK

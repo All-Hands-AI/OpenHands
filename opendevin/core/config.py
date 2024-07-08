@@ -639,13 +639,6 @@ def get_parser() -> argparse.ArgumentParser:
         help='Name of the default agent to use',
     )
     parser.add_argument(
-        '-m',
-        '--model-name',
-        default=config.get_llm_config().model,
-        type=str,
-        help='The (litellm) model name to use',
-    )
-    parser.add_argument(
         '-i',
         '--max-iterations',
         default=config.max_iterations,
