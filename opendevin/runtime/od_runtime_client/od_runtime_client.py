@@ -164,39 +164,24 @@ class RuntimeClient():
             print(
                     f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
                 )
-            exit_code, output = self.execute(abs_path_to_bash_script)
-            if output:
-                total_output = ''
-                for line in output:
-                    # Removes any trailing whitespace, including \n and \r\n
-                    line = line.rstrip()
-                    # logger.debug(line)
-                    # Avoid text from lines running into each other
-                    total_output += line + ' '
-                _exit_code = output.exit_code()
-                if _exit_code != 0:
-                    raise RuntimeError(
-                        f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
-                    )
-                print(f'Plugin {requirement.name} initialized successfully')
-            else:
-                if exit_code != 0:
-                    raise RuntimeError(
-                        f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
-                    )
-                print(f'Plugin {requirement.name} initialized successfully.')
+            output, exit_code = self.execute(abs_path_to_bash_script)
+            if exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
+                )
+            print(f'Plugin {requirement.name} initialized successfully.')
         if len(requirements) > 0:
             self._source_bashrc()
     
     def _source_bashrc(self):
-        exit_code, output = self.execute(
+        output, exit_code = self.execute(
             'source /opendevin/bash.bashrc && source ~/.bashrc'
         )
-        print(exit_code, output)
-        if exit_code != 0:
-            raise RuntimeError(
-                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
-            )
+        print("Yufan:",exit_code, output)
+        # if exit_code != 0:
+        #     raise RuntimeError(
+        #         f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+        #     )
         print('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
 
 
