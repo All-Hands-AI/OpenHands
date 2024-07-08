@@ -5,7 +5,6 @@ from typing import Any, List, Optional, Set
 from pydantic import BaseModel, Field, root_validator, validator
 from typing_extensions import deprecated
 
-from ..utils.colors import Colors
 from .parser.comment import get_comment_symbol
 
 BlockPath = List[str]
@@ -537,117 +536,6 @@ class CodeBlock(BaseModel):
                 path_tree.show = True
 
         return path_tree
-
-    def to_tree(
-        self,
-        indent: int = 0,
-        current_span: Optional[BlockSpan] = None,
-        highlight_spans: Optional[Set[str]] = None,
-        only_identifiers: bool = False,
-        show_full_path: bool = True,
-        show_tokens: bool = False,
-        show_spans: bool = False,
-        debug: bool = False,
-        exclude_not_highlighted: bool = False,
-        include_line_numbers: bool = False,
-        include_types: Optional[List[CodeBlockType]] = None,
-        include_parameters: bool = False,
-        include_block_delimiters: bool = False,
-        include_references: bool = False,
-        include_merge_history: bool = False,
-    ):
-        if not include_merge_history and self.type == CodeBlockType.BLOCK_DELIMITER:
-            return ''
-
-        indent_str = ' ' * indent
-
-        highlighted = False
-
-        child_tree = ''
-        for i, child in enumerate(self.children):
-            if child.belongs_to_span and (
-                not current_span
-                or current_span.span_id != child.belongs_to_span.span_id
-            ):
-                current_span = child.belongs_to_span
-
-                highlighted = highlight_spans is None or (
-                    current_span is not None and current_span.span_id in highlight_spans
-                )
-
-                if show_spans:
-                    color = Colors.WHITE if highlighted else Colors.GRAY
-                    child_tree += f'{indent_str} {indent} {color}Span: {current_span}{Colors.RESET}\n'
-
-            if (
-                exclude_not_highlighted
-                and not highlighted
-                and not child.has_any_span(highlight_spans or set())
-            ):
-                continue
-
-            child_tree += child.to_tree(
-                indent=indent + 1,
-                current_span=current_span,
-                highlight_spans=highlight_spans,
-                exclude_not_highlighted=exclude_not_highlighted,
-                only_identifiers=only_identifiers,
-                show_full_path=show_full_path,
-                show_tokens=show_tokens,
-                debug=debug,
-                show_spans=show_spans,
-                include_line_numbers=include_line_numbers,
-                include_types=include_types,
-                include_parameters=include_parameters,
-                include_block_delimiters=include_block_delimiters,
-                include_references=include_references,
-                include_merge_history=include_merge_history,
-            )
-
-        is_visible = not highlight_spans or self.belongs_to_any_span(highlight_spans)
-        extra = ''
-        if show_tokens:
-            extra += f' ({self.tokens} tokens)'
-
-        if include_references and self.relationships:
-            extra += ' references: ' + ', '.join(
-                [str(ref) for ref in self.relationships]
-            )
-
-        content = (
-            Colors.YELLOW
-            if is_visible
-            else Colors.GRAY
-            + (self.content.strip().replace('\n', '\\n') or '')
-            + Colors.RESET
-        )
-
-        if self.identifier:
-            if only_identifiers:
-                content = ''
-            content += Colors.GREEN if is_visible else Colors.GRAY
-            if include_parameters and self.parameters:
-                content += f"{self.identifier}({', '.join([param.identifier for param in self.parameters])})"
-            elif show_full_path:
-                content += f' ({self.path_string()})'
-            else:
-                content += f' ({self.identifier})'
-
-            content += Colors.RESET
-
-        if include_line_numbers:
-            extra += f' {self.start_line}-{self.end_line}'
-
-        if debug and self.properties:
-            extra += f' properties: {self.properties}'
-
-        if include_merge_history and self.merge_history:
-            extra += ' merge_history: ' + ', '.join(
-                [str(action) for action in self.merge_history]
-            )
-
-        type_color = Colors.BLUE if is_visible else Colors.GRAY
-        return f'{indent_str} {indent} {type_color}{self.type.value}{Colors.RESET} `{content}`{extra}{Colors.RESET}\n{child_tree}'
 
     def _to_prompt_string(
         self,
