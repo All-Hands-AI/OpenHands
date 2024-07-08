@@ -5,6 +5,7 @@ import boto3
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 
+# TODO: this assumes AWS-specific configs are under default 'llm' group
 AWS_ACCESS_KEY_ID = config.get_llm_config().aws_access_key_id
 AWS_SECRET_ACCESS_KEY = config.get_llm_config().aws_secret_access_key
 AWS_REGION_NAME = config.get_llm_config().aws_region_name
