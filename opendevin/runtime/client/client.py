@@ -1,14 +1,13 @@
+import argparse
 import asyncio
-import os
-import websockets
-import pexpect
 import json
+import os
 import shutil
-from typing import Any
+
+import pexpect
+import websockets
 from websockets.exceptions import ConnectionClosed
-from opendevin.events.serialization import event_to_dict, event_from_dict
-from opendevin.events.observation import Observation
-from opendevin.runtime.plugins import PluginRequirement
+
 from opendevin.events.action import (
     Action,
     CmdRunAction,
@@ -17,29 +16,29 @@ from opendevin.events.action import (
 from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    IPythonRunCellObservation,
     Observation,
-    IPythonRunCellObservation
 )
+from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.runtime.plugins import (
-    AgentSkillsRequirement,
-    JupyterRequirement,
     PluginRequirement,
 )
 
-class RuntimeClient():
+
+class RuntimeClient:
     # This runtime will listen to the websocket
     # When receive an event, it will run the action and send the observation back to the websocket
 
-    def __init__(self) -> None:
+    def __init__(self, port: int = 8080) -> None:
         self.init_shell()
-        self.init_websocket()
+        self.init_websocket(port)
 
-    def init_websocket(self) -> None:
-        server = websockets.serve(self.listen, "0.0.0.0", 8080)
+    def init_websocket(self, port: int) -> None:
+        server = websockets.serve(self.listen, '0.0.0.0', port)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(server)
         loop.run_forever()
-    
+
     def init_shell(self) -> None:
         # TODO: we need to figure a way to support different users. Maybe the runtime cli should be run as root
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8')
@@ -54,8 +53,8 @@ class RuntimeClient():
                     observation = self.run_action(event)
                     await websocket.send(json.dumps(event_to_dict(observation)))
         except ConnectionClosed:
-            print("Connection closed")
-    
+            print('Connection closed')
+
     def run_action(self, action) -> Observation:
         # Should only receive Action CmdRunAction and IPythonRunCellAction
         action_type = action.action  # type: ignore[attr-defined]
@@ -63,10 +62,10 @@ class RuntimeClient():
         # TODO: see comments in https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
-    
+
     def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command)
-    
+
     def _run_command(self, command: str) -> Observation:
         try:
             output, exit_code = self.execute(command)
@@ -75,9 +74,9 @@ class RuntimeClient():
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
-           
+
     def execute(self, command):
-        print(f"Received command: {command}")
+        print(f'Received command: {command}')
         self.shell.sendline(command)
         self.shell.expect(r'[$#] ')
         output = self.shell.before.strip().split('\r\n', 1)[1].strip()
@@ -144,10 +143,10 @@ class RuntimeClient():
 
     def close(self):
         self.shell.close()
-    
-    ############################################################################ 
+
+    ############################################################################
     # Initialization work inside sandbox image
-    ############################################################################ 
+    ############################################################################
 
     # init_runtime_tools do in EventStreamRuntime
 
@@ -164,8 +163,8 @@ class RuntimeClient():
             )
 
             print(
-                    f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
-                )
+                f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
+            )
             output, exit_code = self.execute(abs_path_to_bash_script)
             if exit_code != 0:
                 raise RuntimeError(
@@ -174,12 +173,12 @@ class RuntimeClient():
             print(f'Plugin {requirement.name} initialized successfully.')
         if len(requirements) > 0:
             self._source_bashrc()
-    
+
     def _source_bashrc(self):
         output, exit_code = self.execute(
             'source /opendevin/bash.bashrc && source ~/.bashrc'
         )
-        print("Yufan:",exit_code, output)
+        print('Yufan:', exit_code, output)
         # if exit_code != 0:
         #     raise RuntimeError(
         #         f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
@@ -189,7 +188,7 @@ class RuntimeClient():
 
 def test_run_commond():
     client = RuntimeClient()
-    command = CmdRunAction(command="ls -l")
+    command = CmdRunAction(command='ls -l')
     obs = client.run_action(command)
     print(obs)
 
@@ -197,16 +196,16 @@ def test_run_commond():
 def test_shell(message):
     shell = pexpect.spawn('/bin/bash', encoding='utf-8')
     shell.expect(r'[$#] ')
-    print(f"Received command: {message}")
+    print(f'Received command: {message}')
     shell.sendline(message)
     shell.expect(r'[$#] ')
     output = shell.before.strip().split('\r\n', 1)[1].strip()
+    print(f'Output: {output}')
     shell.close()
 
-if __name__ == "__main__":
-    # print(test_shell("ls -l"))
-    client = RuntimeClient()
-    # test_run_commond()
-    # client.init_sandbox_plugins([AgentSkillsRequirement,JupyterRequirement])
 
-    
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('port', type=int, help='Port to listen to')
+    args = parser.parse_args()
+    client = RuntimeClient(port=args.port)
