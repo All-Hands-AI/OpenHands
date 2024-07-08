@@ -1,4 +1,5 @@
 import asyncio
+import os
 import traceback
 from typing import Optional, Type
 
@@ -143,7 +144,7 @@ class AgentController:
                     'There was an unexpected error while running the agent', exception=e
                 )
                 await self.set_agent_state_to(AgentState.ERROR)
-                exit(1)
+                os._exit(1)
 
             await asyncio.sleep(0.1)
 
