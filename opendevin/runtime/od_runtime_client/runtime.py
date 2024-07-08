@@ -2,6 +2,8 @@ from typing import Any
 import asyncio
 import json
 import websockets
+import docker
+import uuid
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.events.action.action import Action
 from opendevin.events.event import Event
@@ -36,14 +38,37 @@ class EventStreamRuntime(Runtime):
     
     # websocket uri
     uri = 'ws://localhost:8080'
+    container_name_prefix = 'opendevin-sandbox-'
+    docker_client: docker.DockerClient
 
-    def __init__(self, event_stream: EventStream, sid: str = 'default'):
+    def __init__(self, event_stream: EventStream, sid: str = 'default',container_image: str | None = None):
         # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
-        self.event_stream = event_stream
-        self._init_event_stream()
-        self._init_websocket()
+        # self._init_event_stream(event_stream)
+        # self._init_websocket()
+        self._init_docker(sid,container_image)
+
+    def _init_docker(self,sid,container_image):
+        self.container_image = container_image
+        # (
+        #     config.sandbox_container_image
+        #     if container_image is None
+        #     else container_image
+        # )
+        self.instance_id = (
+            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        )
+        self.container_name = self.container_name_prefix + self.instance_id
+        try:
+            self.docker_client = docker.from_env()
+            self._init_sandbox()
+        except Exception as ex:
+            print(
+                "Launch docker client failed. Please make sure you have installed docker and started the docker daemon."
+            )
+            raise ex
     
-    def _init_event_stream(self):
+    def _init_event_stream(self,event_stream: EventStream):
+        self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
 
     def _init_websocket(self):
@@ -55,8 +80,38 @@ class EventStreamRuntime(Runtime):
     async def _init_websocket_connect(self):
         self.websocket = await websockets.connect(self.uri)
     
+    def _init_sandbox(self):
+        try:
+            # start the container
+            mount_dir = config.workspace_mount_path
+            self.container = self.docker_client.containers.run(
+                self.container_image,
+                command='tail -f /dev/null',
+                # TODO: test it in mac and linux
+                # network_mode='host',
+                working_dir=self.sandbox_workspace_dir,
+                name=self.container_name,
+                detach=True,
+                volumes={mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'}},
+            )
+            print('Container started')
+        except Exception as e:
+            print('Failed to start container')
+            raise e
+
+    @property
+    def sandbox_workspace_dir(self):
+        return config.workspace_mount_path_in_sandbox
+
     def close(self):
-        pass
+        containers = self.docker_client.containers.list(all=True)
+        for container in containers:
+            try:
+                if container.name.startswith(self.container_name_prefix):
+                    container.remove(force=True)
+            except docker.errors.NotFound:
+                pass
+        self.docker_client.close()
     
     async def on_event(self, event: Event) -> None:
         print("EventStreamRuntime: on_event triggered")
@@ -188,6 +243,13 @@ async def test_event_stream():
     # Test recall
     action_recall = AgentRecallAction(query='who am I?')
     print(await runtime.run_action(action_recall))
+
+def test_docker_launch():
+    sid = "test"
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
+    runtime = EventStreamRuntime(event_stream,sid,"ghcr.io/opendevin/sandbox:main")
+    runtime.close()
 
 if __name__ == "__main__":
     asyncio.run(test_event_stream())
