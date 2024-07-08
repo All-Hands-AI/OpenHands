@@ -41,6 +41,7 @@ class RuntimeClient():
         loop.run_forever()
     
     def init_shell(self) -> None:
+        # TODO: we need to figure a way to support different users. Maybe the runtime cli should be run as root
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8')
         self.shell.expect(r'[$#] ')
 
@@ -59,6 +60,7 @@ class RuntimeClient():
         # Should only receive Action CmdRunAction and IPythonRunCellAction
         action_type = action.action  # type: ignore[attr-defined]
         observation = getattr(self, action_type)(action)
+        # TODO: see comments in https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     

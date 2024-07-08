@@ -11,6 +11,7 @@ class EventStreamRuntime:
 
     def _init_websocket(self):
         self.websocket = None
+        # TODO: need to initialization globally only once
         # self.loop = asyncio.new_event_loop()
         # asyncio.set_event_loop(self.loop)
         # self.loop.run_until_complete(self._init_websocket_connect())

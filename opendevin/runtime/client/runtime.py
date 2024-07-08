@@ -73,6 +73,7 @@ class EventStreamRuntime(Runtime):
 
     def _init_websocket(self):
         self.websocket = None
+        # TODO: need to initialization globally only once
         # self.loop = asyncio.new_event_loop()
         # asyncio.set_event_loop(self.loop)
         # self.loop.run_until_complete(self._init_websocket_connect())
@@ -139,7 +140,7 @@ class EventStreamRuntime(Runtime):
                 f'Action {action_type} is not supported in the current runtime.'
             )
         observation = await getattr(self, action_type)(action)
-        # TODO: fix ID problem
+        # TODO: fix ID problem, see comments https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
     
