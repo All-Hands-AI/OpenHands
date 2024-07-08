@@ -1,11 +1,10 @@
 import json
+
 import pytest
 
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import NullAction
 from opendevin.events.observation import NullObservation
-
-pytestmark = pytest.mark.order
 
 
 def clear_all_sessions():
@@ -21,12 +20,20 @@ def clear_sessions_before_each_test():
     EventStream.clear_all_sessions()
 
 
+@pytest.fixture
+def event_stream():
+    event_stream = EventStream('abc')
+    yield event_stream
+
+    # clear after each test
+    event_stream.clear()
+
+
 def collect_events(stream):
     events = list(stream.get_events())
     return events
 
 
-@pytest.mark.order(1)
 @pytest.mark.asyncio
 async def test_basic_flow():
     clear_all_sessions()  # Ensure a clean state before the test
@@ -45,7 +52,6 @@ async def test_basic_flow():
     ), f'Expected 1 event, but found {len(events_after_add)}'
 
 
-@pytest.mark.order(2)
 @pytest.mark.asyncio
 async def test_stream_storage():
     sid = 'def'
@@ -67,32 +73,21 @@ async def test_stream_storage():
     }
 
 
-@pytest.mark.order(3)
 @pytest.mark.asyncio
-async def test_rehydration():
+async def test_rehydration(event_stream: EventStream):
     # Clear all sessions before starting the test
     clear_all_sessions()
 
-    # Create and populate stream1
-    stream1 = EventStream('es1', reinitialize=False)
-    await stream1.add_event(NullObservation('obs1'), EventSource.AGENT)
-    await stream1.add_event(NullObservation('obs2'), EventSource.AGENT)
-    assert len(collect_events(stream1)) == 2
+    await event_stream.add_event(NullObservation('obs1'), EventSource.AGENT)
+    await event_stream.add_event(NullObservation('obs2'), EventSource.AGENT)
+    assert len(collect_events(event_stream)) == 2
 
     # Create and check stream2
-    stream2 = EventStream('es2', reinitialize=False)
+    stream2 = EventStream('es2')
     assert len(collect_events(stream2)) == 0
 
-    # Reset stream1
-    stream1.reset()
-    assert len(collect_events(stream1)) == 0
-
-    # Rehydrate stream1
-    stream1rehydrated = EventStream('es1', reinitialize=True)
+    stream1rehydrated = EventStream('abc')
     events = collect_events(stream1rehydrated)
-    assert len(events) == 0
-
-    # Add events to rehydrated stream and check
-    await stream1rehydrated.add_event(NullObservation('obs3'), EventSource.AGENT)
-    events_after_add = collect_events(stream1rehydrated)
-    assert len(events_after_add) == 1
+    assert len(events) == 2
+    assert events[0].content == 'obs1'
+    assert events[1].content == 'obs2'

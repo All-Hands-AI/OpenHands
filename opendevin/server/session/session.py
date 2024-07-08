@@ -7,7 +7,7 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
-from opendevin.events.action import ChangeAgentStateAction, NullAction
+from opendevin.events.action import Action, ChangeAgentStateAction, NullAction
 from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import (
     AgentStateChangedObservation,
@@ -107,7 +107,11 @@ class Session:
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
-        await self.agent_session.event_stream.add_event(event, EventSource.USER)
+        self.agent_session.event_stream.add_event(event, EventSource.USER)
+        if isinstance(event, Action):
+            logger.info(
+                event, extra={'msg_type': 'ACTION', 'event_source': EventSource.USER}
+            )
 
     async def send(self, data: dict[str, object]) -> bool:
         try:

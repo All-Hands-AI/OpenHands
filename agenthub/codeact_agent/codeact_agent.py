@@ -175,8 +175,8 @@ class CodeActAgent(AsyncAgent):
         Parameters:
         - state (State): used to get updated info and background commands
         """
-        messages = self._prepare_messages(state)
-        if self._check_exit_command(messages):
+        messages, is_exit = self._prepare_messages(state)
+        if is_exit:
             return AgentFinishAction()
         return self._common_step_logic_sync(state, self.llm.completion, messages)
 
@@ -188,8 +188,8 @@ class CodeActAgent(AsyncAgent):
         Parameters:
         - state (State): used to get updated info and background commands
         """
-        messages = self._prepare_messages(state)
-        if self._check_exit_command(messages):
+        messages, is_exit = self._prepare_messages(state)
+        if is_exit:
             return AgentFinishAction()
         return await self._common_step_logic_async(
             state, self.llm.async_completion, messages
@@ -239,38 +239,20 @@ class CodeActAgent(AsyncAgent):
         )
         return self.action_parser.parse(response)
 
-    def _prepare_messages(self, state: State) -> list[dict[str, str]]:
+    def _prepare_messages(self, state: State) -> tuple[list[dict[str, str]], bool]:
         """
-        Prepare the messages for the LLM completion.
+        Prepare the messages for the LLM completion and check for exit command.
 
         Returns:
-        - CmdRunAction(command) - bash command to run
-        - IPythonRunCellAction(code) - IPython code to run
-        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
-        - MessageAction(content) - Message action to run (e.g. ask for clarification)
-        - AgentFinishAction() - end the interaction
+        - A tuple containing the prepared messages and a boolean indicating if it's an exit command
         """
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
-        ]
+        # Prepare messages as before
+        messages: list[dict[str, str]] = self._get_messages(state)
 
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
+        # Check for exit command
+        is_exit = self._check_exit_command(messages)
 
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
-
-        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
-        if latest_user_message:
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-            )
-
-        return messages
+        return messages, is_exit
 
     def _check_exit_command(self, messages: list[dict[str, str]]) -> bool:
         """
@@ -284,3 +266,35 @@ class CodeActAgent(AsyncAgent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def _get_messages(self, state: State) -> list[dict[str, str]]:
+        messages = [
+            {'role': 'system', 'content': self.system_message},
+            {'role': 'user', 'content': self.in_context_example},
+        ]
+
+        for event in state.history.get_events():
+            # create a regular message from an event
+            message = (
+                get_action_message(event)
+                if isinstance(event, Action)
+                else get_observation_message(event)
+            )
+
+            # add regular message
+            if message:
+                messages.append(message)
+
+        # the latest user message is important:
+        # we want to remind the agent of the environment constraints
+        latest_user_message = next(
+            (m for m in reversed(messages) if m['role'] == 'user'), None
+        )
+
+        # add a reminder to the prompt
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>'
+            )
+
+        return messages

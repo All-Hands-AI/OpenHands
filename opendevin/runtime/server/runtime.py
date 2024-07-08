@@ -1,3 +1,5 @@
+import asyncio
+
 from opendevin.core.config import config
 from opendevin.events.action import (
     AgentRecallAction,
@@ -32,9 +34,14 @@ class ServerRuntime(Runtime):
         sandbox: Sandbox | None = None,
     ):
         super().__init__(event_stream, sid, sandbox)
-        # if self.sandbox is None:
-        #     raise ValueError("Sandbox must be provided for ServerRuntime")
         self.file_store = LocalFileStore(config.workspace_base)
+        self._initialization_complete = asyncio.Event()
+
+    async def initialize(self):
+        self._initialization_complete.set()
+
+    async def wait_for_initialization(self):
+        await self._initialization_complete.wait()
 
     async def run(self, action: CmdRunAction) -> Observation:
         return await self._run_command(action.command)
@@ -42,14 +49,22 @@ class ServerRuntime(Runtime):
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         await self.wait_for_initialization()  # important
 
-        await self._run_command(
+        write_result = await self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
+        if isinstance(write_result, ErrorObservation):
+            return write_result
 
         # run the code
-        obs = await self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
-        output = obs.content
-        if 'pip installx' in action.code:
+        execute_result = await self._run_command(
+            'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+        )
+        if isinstance(execute_result, ErrorObservation):
+            return execute_result
+
+        output = execute_result.content
+
+        if 'pip install' in action.code:
             print(output)
             package_names = action.code.split(' ', 2)[-1]
             is_single_package = ' ' not in package_names
@@ -126,7 +141,10 @@ class ServerRuntime(Runtime):
     async def _run_command(self, command: str) -> Observation:
         assert self.sandbox is not None
         try:
-            exit_code, output = await self.sandbox.execute(command)
+            result = await self.sandbox.execute_async(command)
+            if isinstance(result, tuple) and len(result) == 2:
+                exit_code, output = result
+
             if 'pip install' in command:
                 package_names = command.split(' ', 2)[-1]
                 is_single_package = ' ' not in package_names
@@ -138,8 +156,11 @@ class ServerRuntime(Runtime):
                     and f'Requirement already satisfied: {package_names}' in output
                 ):
                     output = '[Package already installed]'
+
             return CmdOutputObservation(
                 command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
+        except Exception as e:
+            return ErrorObservation(f'Command execution failed: {str(e)}')
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')

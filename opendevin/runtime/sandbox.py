@@ -17,13 +17,15 @@ class Sandbox(ABC, PluginMixin):
         if isinstance(config.sandbox.env, dict):
             self._env = config.sandbox.env.copy()
         for key, value in self._env.items():
-            self.add_to_env(key, value)
+            if key:  # Check if key is valid (non-empty)
+                self.add_to_env(key, value)
 
         try:
             for key, value in os.environ.items():
                 if key.startswith('SANDBOX_ENV_'):
                     sandbox_key = key.removeprefix('SANDBOX_ENV_')
-                    self.add_to_env(sandbox_key, value)
+                    if sandbox_key:  # Check if sandbox_key is valid (non-empty)
+                        self.add_to_env(sandbox_key, value)
         except Exception:
             pass
 

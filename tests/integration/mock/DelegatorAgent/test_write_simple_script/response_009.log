@@ -2,7 +2,9 @@
 {
   "action": "finish",
   "args": {
-    "outputs": {}
+    "outputs": {
+      "completed": true
+    }
   }
 }
 ```

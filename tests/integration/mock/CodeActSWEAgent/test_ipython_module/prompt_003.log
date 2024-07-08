@@ -9,7 +9,7 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
@@ -587,31 +587,37 @@ Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt
 ----------
 
 Let's start by installing the `pymsgbox` package.
-<execute_bash>
-pip install pymsgbox==1.0.9
-</execute_bash>
-
-----------
-
-OBSERVATION:
-[Package installed successfully]
-[Command -1 finished with exit code 0]
-
-----------
-
-Next, let's import `pymsgbox` and print its version to `/workspace/test.txt`.
 <execute_ipython>
-import pymsgbox
-
-version = pymsgbox.__version__
-
-with open("/workspace/test.txt", "w") as file:
-    file.write(f"pymsgbox version: {version}\n")
+%pip install pymsgbox==1.0.9
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-[Code executed successfully with no output]
+[Package installed successfully]
+[Kernel restarted successfully to load the package]
+
+----------
+
+Next, let's import `pymsgbox`, print its version, and save the output to `/workspace/test.txt`.
+<execute_ipython>
+import pymsgbox
+
+# Print the version of pymsgbox and save it to /workspace/test.txt
+version_info = pymsgbox.__version__
+with open("/workspace/test.txt", "w") as file:
+    file.write(f"pymsgbox version: {version_info}\n")
+
+# Verify the content of the file
+with open("/workspace/test.txt", "r") as file:
+    print(file.read())
+</execute_ipython>
+
+----------
+
+OBSERVATION:
+pymsgbox version: 1.0.9
+
+
 
 ENVIRONMENT REMINDER: You have 12 turns left to complete the task.

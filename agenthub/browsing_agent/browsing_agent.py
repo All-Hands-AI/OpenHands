@@ -15,6 +15,7 @@ from opendevin.events.action import (
 )
 from opendevin.events.event import EventSource
 from opendevin.events.observation import BrowserOutputObservation
+from opendevin.events.observation.observation import Observation
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
@@ -146,23 +147,21 @@ class BrowsingAgent(Agent):
         last_obs = None
         last_action = None
 
-        if EVAL_MODE and len(state.history) == 1:
+        if EVAL_MODE and len(state.history.get_events_as_list()) == 1:
             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(browser_actions='noop()')
 
-        for prev_action, obs in state.history:
-            if isinstance(prev_action, BrowseInteractiveAction):
-                prev_actions.append(prev_action.browser_actions)
-                last_obs = obs
-                last_action = prev_action
-            elif (
-                isinstance(prev_action, MessageAction)
-                and prev_action.source == EventSource.AGENT
-            ):
-                # agent has responded, task finish.
-                return AgentFinishAction(outputs={'content': prev_action.content})
+        for event in state.history.get_events():
+            if isinstance(event, BrowseInteractiveAction):
+                prev_actions.append(event.browser_actions)
+                last_action = event
+            elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
+                # agent has responded, task finished.
+                return AgentFinishAction(outputs={'content': event.content})
+            elif isinstance(event, Observation):
+                last_obs = event
 
         if EVAL_MODE:
             prev_actions = prev_actions[1:]  # remove the first noop action
@@ -207,7 +206,7 @@ class BrowsingAgent(Agent):
 
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
         messages.append({'role': 'user', 'content': prompt})
-        logger.info(prompt)
+        logger.debug(prompt)
         response = self.llm.completion(
             messages=messages,
             temperature=0.0,

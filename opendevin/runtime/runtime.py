@@ -6,7 +6,7 @@ from typing import Any, Optional
 from opendevin.core.config import config
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
@@ -128,8 +128,7 @@ class Runtime:
         if isinstance(event, Action):
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
-            source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
+            await self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
         """

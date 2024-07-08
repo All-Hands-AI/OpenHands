@@ -23,36 +23,38 @@ def temp_dir(monkeypatch):
 @pytest.mark.asyncio
 async def test_run_python_backticks(temp_dir):
     # Create a mock event_stream
-    mock_event_stream = MagicMock()
+    mock_event_stream = AsyncMock()
 
     test_code = "print('Hello, `World`!\n')"
+    expected_output = 'Hello, `World`!\n'
 
     # Mock the asynchronous sandbox execute method
-    mock_sandbox_execute = AsyncMock()
-    mock_sandbox_execute.side_effect = [
-        (0, ''),  # mkdir -p /tmp
-        (0, ''),  # git config user.name
-        (0, ''),  # git config user.email
+    mock_sandbox_execute_async = AsyncMock()
+
+    # we are only mocking a single command!
+    mock_sandbox_execute_async.side_effect = [
         (0, ''),  # Write command
-        (0, test_code),  # Execute command
+        (0, expected_output),  # Execute command
     ]
 
     # Create a mock sandbox
     mock_sandbox = AsyncMock()
-    mock_sandbox.execute = mock_sandbox_execute
+    mock_sandbox.execute_async = mock_sandbox_execute_async
     mock_sandbox.get_working_directory = MagicMock(return_value=temp_dir)
 
     # Set up the patches for the runtime and sandbox
-    with patch.object(config, 'workspace_base', new=temp_dir), \
-         patch.object(config, 'workspace_mount_path', new=temp_dir), \
-         patch.object(config, 'run_as_devin', new='true'), \
-         patch.object(config.sandbox, 'box_type', new='ssh'), \
-         patch('opendevin.runtime.docker.ssh_box.DockerSSHBox.execute', new=mock_sandbox_execute), \
-         patch('opendevin.runtime.server.runtime.ServerRuntime._initialize', new=AsyncMock()):
-
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config.sandbox, 'box_type', new='ssh'
+    ), patch(
+        'opendevin.runtime.docker.ssh_box.DockerSSHBox.execute_async',
+        new=mock_sandbox_execute_async,
+    ), patch(
+        'opendevin.runtime.server.runtime.ServerRuntime._initialize', new=AsyncMock()
+    ):
         # Initialize the runtime with the mock event_stream
-        runtime = ServerRuntime(event_stream=mock_event_stream)
-        runtime.sandbox = mock_sandbox  # Set the mock sandbox
+        runtime = ServerRuntime(event_stream=mock_event_stream, sandbox=mock_sandbox)
 
         # Manually set the initialization complete event
         runtime._initialization_complete.set()
@@ -62,7 +64,7 @@ async def test_run_python_backticks(temp_dir):
         observation = await runtime.run_ipython(action)
 
         assert isinstance(observation, IPythonRunCellObservation)
-        assert observation.content == test_code
+        assert observation.content == expected_output
         assert observation.code == test_code
 
         # Assert that the execute method was called with the correct commands
@@ -70,11 +72,8 @@ async def test_run_python_backticks(temp_dir):
             "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
         )
         expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-        mock_sandbox_execute.assert_has_calls(
+        mock_sandbox_execute_async.assert_has_calls(
             [
-                call('mkdir -p /tmp'),
-                call('git config --global user.name "OpenDevin"'),
-                call('git config --global user.email "opendevin@all-hands.dev"'),
                 call(expected_write_command),
                 call(expected_execute_command),
             ]

@@ -570,14 +570,19 @@ class DockerSSHBox(Sandbox):
         return self.execute_async(cmd, stream, timeout)  # type: ignore
 
     async def execute_async(
-        self, cmd: str, stream: bool = False, timeout: int | None = None
-    ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
+        self,
+        cmd: str,
+        stream: bool = False,
+        timeout: int | None = None,
+        # ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
+    ) -> tuple[int, str | CancellableStream]:
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
+
         if len(commands) > 1:
             all_output = ''
             for command in commands:
-                exit_code, output = await self.execute_async(command)  # type: ignore
+                exit_code, output = await self.execute_async(command, stream, timeout)  # type: ignore
                 if all_output:
                     all_output += '\r\n'
                 all_output += str(output)

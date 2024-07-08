@@ -17,12 +17,16 @@ def generate_dockerfile_content(base_image: str) -> str:
         'RUN apt update && apt install -y openssh-server wget sudo\n'
         'RUN mkdir -p -m0755 /var/run/sshd\n'
         'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
-        'RUN { test -d /opendevin/miniforge3 && echo "/opendevin/miniforge3 already in base image"; } || { \\\n'
-        '    wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
-        '    bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
-        '    bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge" && \\\n'
-        '    echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc && \\\n'
-        '    echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> /opendevin/bash.bashrc; }\n'
+        'RUN echo "" > /opendevin/bash.bashrc\n'
+        'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
+        '        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
+        '        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
+        '        chmod -R g+w /opendevin/miniforge3 && \\\n'
+        '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
+        '    fi\n'
+        'RUN /opendevin/miniforge3/bin/pip install --upgrade pip\n'
+        'RUN /opendevin/miniforge3/bin/pip install jupyterlab notebook jupyter_kernel_gateway flake8\n'
+        'RUN /opendevin/miniforge3/bin/pip install python-docx PyPDF2 python-pptx pylatexenc openai\n'
     ).strip()
     return dockerfile_content
 
@@ -44,15 +48,18 @@ def _build_sandbox_image(
             with open(f'{temp_dir}/Dockerfile', 'w') as file:
                 file.write(dockerfile_content)
 
-            image, logs = docker_client.images.build(
-                path=temp_dir, tag=target_image_name
-            )
+            api_client = docker_client.api
+            build_logs = api_client.build(path=temp_dir, tag=target_image_name, rm=True, decode=True)
 
-        for log in logs:
-            if 'stream' in log:
-                print(log['stream'].strip())
+            for log in build_logs:
+                if 'stream' in log:
+                    print(log['stream'].strip())
+                elif 'error' in log:
+                    logger.error(log['error'].strip())
+                else:
+                    logger.info(str(log))
 
-        logger.info(f'Image {image} built successfully')
+        logger.info(f'Image {target_image_name} built successfully')
     except docker.errors.BuildError as e:
         logger.error(f'Sandbox image build failed: {e}')
         raise e
