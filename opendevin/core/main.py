@@ -40,7 +40,7 @@ async def run_agent_controller(
     sandbox: Sandbox | None = None,
     runtime_tools_config: dict | None = None,
     sid: str | None = None,
-) -> State | None:
+) -> State:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
 
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    asyncio.run(
+    final_state = asyncio.run(
         run_agent_controller(
             agent=agent,
             task_str=task_str,
@@ -177,3 +177,5 @@ if __name__ == '__main__':
             max_budget_per_task=args.max_budget_per_task,
         )
     )
+    if final_state.last_error:
+        sys.exit(1)
