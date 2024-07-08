@@ -126,16 +126,15 @@ class AgentConfig(metaclass=Singleton):
 
 
 @dataclass
-class SandboxConfig(metaclass=Singleton):
+class RuntimeConfig(metaclass=Singleton):
     """
-    Configuration for the sandbox.
+    Configuration for the runtime.
 
     Attributes:
-        box_type: The type of sandbox to use. Options are: ssh, e2b, local.
-        container_image: The container image to use for the sandbox.
-        user_id: The user ID for the sandbox.
-        timeout: The timeout for the sandbox.
-
+        box_type: The type of runtime to use. Options are: ssh, e2b, local.
+        container_image: The container image to use for the runtime.
+        user_id: The user ID for the runtime.
+        timeout: The timeout for the runtime.
     """
 
     box_type: str = 'ssh'
@@ -164,7 +163,7 @@ class SandboxConfig(metaclass=Singleton):
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
 
-        return f"SandboxConfig({', '.join(attr_str)})"
+        return f"RuntimeConfig({', '.join(attr_str)})"
 
     def __repr__(self):
         return self.__str__()
@@ -182,13 +181,12 @@ class AppConfig(metaclass=Singleton):
     Attributes:
         llm: The LLM configuration.
         agent: The agent configuration.
-        sandbox: The sandbox configuration.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
         workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
         workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
-        workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
+        workspace_mount_path_in_runtime: The path to mount the workspace in the runtime. Defaults to /workspace.
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
         run_as_devin: Whether to run as devin.
@@ -209,15 +207,14 @@ class AppConfig(metaclass=Singleton):
 
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
-    sandbox: SandboxConfig = field(default_factory=SandboxConfig)
-    runtime: str = 'server'
+    runtime: RuntimeConfig = field(default_factory=RuntimeConfig)
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
     workspace_mount_path: str = (
         UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
     )
-    workspace_mount_path_in_sandbox: str = '/workspace'
+    workspace_mount_path_in_runtime: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
     run_as_devin: bool = True
@@ -420,29 +417,29 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             agent_config = AgentConfig(**toml_config['agent'])
 
         # set sandbox config from the toml file
-        sandbox_config = config.sandbox
+        runtime_config = config.runtime
 
         # migrate old sandbox configs from [core] section to sandbox config
-        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
+        keys_to_migrate = [key for key in core_config if key.startswith('runtime_')]
         for key in keys_to_migrate:
-            new_key = key.replace('sandbox_', '')
+            new_key = key.replace('runtime_', '')
             if new_key == 'type':
                 new_key = 'box_type'
-            if new_key in sandbox_config.__annotations__:
+            if new_key in runtime_config.__annotations__:
                 # read the key in sandbox and remove it from core
-                setattr(sandbox_config, new_key, core_config.pop(key))
+                setattr(runtime_config, new_key, core_config.pop(key))
             else:
                 logger.warning(f'Unknown sandbox config: {key}')
 
         # the new style values override the old style values
-        if 'sandbox' in toml_config:
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
+        if 'runtime' in toml_config:
+            runtime_config = RuntimeConfig(**toml_config['runtime'])
 
         # update the config object with the new values
         AppConfig(
             llm=llm_config,
             agent=agent_config,
-            sandbox=sandbox_config,
+            runtime=runtime_config,
             **core_config,
         )
     except (TypeError, KeyError) as e:
