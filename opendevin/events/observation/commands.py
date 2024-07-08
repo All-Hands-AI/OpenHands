@@ -25,7 +25,7 @@ class CmdOutputObservation(Observation):
         return f'Command `{self.command}` executed with exit code {self.exit_code}.'
 
     def __str__(self) -> str:
-        return f'**CmdOutputObservation (exit code={self.exit_code})**\n{self.content}'
+        return f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code})**\n{self.content}'
 
 
 @dataclass

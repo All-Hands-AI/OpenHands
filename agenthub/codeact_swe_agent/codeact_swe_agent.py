@@ -142,27 +142,14 @@ class CodeActSWEAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
-        ]
 
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
+        # if we're done, go back
+        latest_user_message = state.history.get_last_user_message()
+        if latest_user_message and latest_user_message.strip() == '/exit':
+            return AgentFinishAction()
 
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
-
-        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
-        if latest_user_message:
-            if latest_user_message['content'].strip() == '/exit':
-                return AgentFinishAction()
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
-            )
+        # prepare what we want to send to the LLM
+        messages: list[dict[str, str]] = self._get_messages(state)
 
         response = self.llm.completion(
             messages=messages,
@@ -177,3 +164,35 @@ class CodeActSWEAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def _get_messages(self, state: State) -> list[dict[str, str]]:
+        messages = [
+            {'role': 'system', 'content': self.system_message},
+            {'role': 'user', 'content': self.in_context_example},
+        ]
+
+        for event in state.history.get_events():
+            # create a regular message from an event
+            message = (
+                get_action_message(event)
+                if isinstance(event, Action)
+                else get_observation_message(event)
+            )
+
+            # add regular message
+            if message:
+                messages.append(message)
+
+        # the latest user message is important:
+        # we want to remind the agent of the environment constraints
+        latest_user_message = next(
+            (m for m in reversed(messages) if m['role'] == 'user'), None
+        )
+
+        # add a reminder to the prompt
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+            )
+
+        return messages
