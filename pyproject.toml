@@ -6,6 +6,7 @@ authors = ["OpenDevin"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/OpenDevin/OpenDevin"
+include = ["poetry.lock"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -69,6 +70,7 @@ whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
