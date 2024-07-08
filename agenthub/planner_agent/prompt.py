@@ -6,13 +6,10 @@ from opendevin.events.action import (
     Action,
     NullAction,
 )
-from opendevin.events.observation import (
-    NullObservation,
-)
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 
-HISTORY_SIZE = 10
+HISTORY_SIZE = 20
 
 prompt = """
 # Task
@@ -132,18 +129,28 @@ def get_prompt(state: State) -> str:
     - str: The formatted string prompt with historical values
     """
 
+    # the plan
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
-    sub_history = state.history[-HISTORY_SIZE:]
+
+    # the history
     history_dicts = []
     latest_action: Action = NullAction()
-    for action, observation in sub_history:
-        if not isinstance(action, NullAction):
-            history_dicts.append(event_to_memory(action))
-            latest_action = action
-        if not isinstance(observation, NullObservation):
-            observation_dict = event_to_memory(observation)
-            history_dicts.append(observation_dict)
+
+    # retrieve the latest HISTORY_SIZE events
+    for event_count, event in enumerate(state.history.get_events(reverse=True)):
+        if event_count >= HISTORY_SIZE:
+            break
+        if latest_action == NullAction() and isinstance(event, Action):
+            latest_action = event
+        history_dicts.append(event_to_memory(event))
+
+    # history_dicts is in reverse order, lets fix it
+    history_dicts.reverse()
+
+    # and get it as a JSON string
     history_str = json.dumps(history_dicts, indent=2)
+
+    # the plan status
     current_task = state.root_task.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
@@ -151,9 +158,15 @@ def get_prompt(state: State) -> str:
             plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
+
+    # the hint, based on the last action
     hint = get_hint(event_to_memory(latest_action).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
+
+    # the last relevant user message (the task)
     task = state.get_current_user_intent()
+
+    # finally, fill in the prompt
     return prompt % {
         'task': task,
         'plan': plan_str,

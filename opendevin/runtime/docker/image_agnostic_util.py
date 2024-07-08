@@ -19,8 +19,8 @@ def generate_dockerfile_content(base_image: str) -> str:
         'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
         'RUN echo "" > /opendevin/bash.bashrc\n'
         'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
-        '        wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
-        '        bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
+        '        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
+        '        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
         '        chmod -R g+w /opendevin/miniforge3 && \\\n'
         '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
         '    fi\n'
@@ -48,15 +48,18 @@ def _build_sandbox_image(
             with open(f'{temp_dir}/Dockerfile', 'w') as file:
                 file.write(dockerfile_content)
 
-            image, logs = docker_client.images.build(
-                path=temp_dir, tag=target_image_name
-            )
+            api_client = docker_client.api
+            build_logs = api_client.build(path=temp_dir, tag=target_image_name, rm=True, decode=True)
 
-        for log in logs:
-            if 'stream' in log:
-                print(log['stream'].strip())
+            for log in build_logs:
+                if 'stream' in log:
+                    print(log['stream'].strip())
+                elif 'error' in log:
+                    logger.error(log['error'].strip())
+                else:
+                    logger.info(str(log))
 
-        logger.info(f'Image {image} built successfully')
+        logger.info(f'Image {target_image_name} built successfully')
     except docker.errors.BuildError as e:
         logger.error(f'Sandbox image build failed: {e}')
         raise e
