@@ -1,6 +1,5 @@
 import asyncio
 import atexit
-import json
 import os
 import subprocess
 import sys
@@ -26,13 +25,49 @@ from opendevin.runtime.utils.async_utils import async_to_sync
 #  DO NOT USE THIS SANDBOX IN A PRODUCTION ENVIRONMENT
 # ===============================================================================
 
+
 class LocalBox(Sandbox):
+    _instance = None
+    _initialization_lock = asyncio.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, timeout: int = config.sandbox.timeout):
-        os.makedirs(config.workspace_base, exist_ok=True)
-        self.timeout = timeout
-        self._env = os.environ.copy()
-        atexit.register(self.sync_cleanup)
-        super().__init__()
+        if not hasattr(self, '_initialized'):
+            os.makedirs(config.workspace_base, exist_ok=True)
+            self.timeout = timeout
+            self._env = os.environ.copy()
+            self._initialized = False
+            self._local_init_complete = asyncio.Event()
+            atexit.register(self.sync_cleanup)
+            super().__init__()
+
+    async def initialize(self):
+        await super().initialize()
+        if not self._local_init_complete.is_set():
+            async with self._initialization_lock:
+                if not self._local_init_complete.is_set():
+                    logger.info('Initializing LocalBox')
+                    try:
+                        await self._setup_environment()
+                        # any other init code
+                        self._initialized = True
+                        logger.info('LocalBox initialization complete')
+                    finally:
+                        self._local_init_complete.set()
+        else:
+            await self._local_init_complete.wait()
+
+    async def _setup_environment(self):
+        # Set up any necessary environment variables or configurations
+        for key, value in self._env.items():
+            if key.startswith('SANDBOX_ENV_'):
+                sandbox_key = key.removeprefix('SANDBOX_ENV_')
+                if sandbox_key:
+                    await self.add_to_env_async(sandbox_key, value)
 
     @async_to_sync
     def execute(
@@ -61,20 +96,28 @@ class LocalBox(Sandbox):
             return -1, 'Command timed out'
 
     @async_to_sync
-    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         return self.copy_to_async(host_src, sandbox_dest, recursive)
 
-    async def copy_to_async(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+    async def copy_to_async(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ):
         # mkdir -p sandbox_dest if it doesn't exist
         mkdir_cmd = f'mkdir -p {sandbox_dest}'
         exit_code, _ = await self.execute_async(mkdir_cmd)
         if exit_code != 0:
             raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
 
-        cp_cmd = f'cp -r {host_src} {sandbox_dest}' if recursive else f'cp {host_src} {sandbox_dest}'
+        cp_cmd = (
+            f'cp -r {host_src} {sandbox_dest}'
+            if recursive
+            else f'cp {host_src} {sandbox_dest}'
+        )
         exit_code, _ = await self.execute_async(cp_cmd)
         if exit_code != 0:
-            raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
+            raise RuntimeError(
+                f'Failed to copy {host_src} to {sandbox_dest} in sandbox'
+            )
 
     @async_to_sync
     def add_to_env(self, key: str, value: str):

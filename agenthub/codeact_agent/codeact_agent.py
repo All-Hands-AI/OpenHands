@@ -174,6 +174,13 @@ class CodeActAgent(AsyncAgent):
 
         Parameters:
         - state (State): used to get updated info and background commands
+
+        Returns:
+        - CmdRunAction(command) - bash command to run
+        - IPythonRunCellAction(code) - IPython code to run
+        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
+        - MessageAction(content) - Message action to run (e.g. ask for clarification)
+        - AgentFinishAction() - end the interaction
         """
         messages, is_exit = self._prepare_messages(state)
         if is_exit:
@@ -182,11 +189,7 @@ class CodeActAgent(AsyncAgent):
 
     async def async_step(self, state: State) -> Action:
         """
-        Performs one step asynchronously     using the CodeAct Agent.
-        This includes gathering info on previous steps and prompting the model to make a command to execute.
-
-        Parameters:
-        - state (State): used to get updated info and background commands
+        Asynchronously performs one step using the CodeAct Agent.
         """
         messages, is_exit = self._prepare_messages(state)
         if is_exit:
@@ -248,21 +251,14 @@ class CodeActAgent(AsyncAgent):
         """
         # Prepare messages as before
         messages: list[dict[str, str]] = self._get_messages(state)
+        is_exit = False
 
         # Check for exit command
-        is_exit = self._check_exit_command(messages)
+        latest_user_message = state.history.get_last_user_message()
+        if latest_user_message and latest_user_message.strip() == '/exit':
+            is_exit = True
 
         return messages, is_exit
-
-    def _check_exit_command(self, messages: list[dict[str, str]]) -> bool:
-        """
-        Check if the latest user message contains the exit command.
-
-        :param messages: The list of messages.
-        :return: True if the exit command is found, False otherwise.
-        """
-        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
-        return latest_user_message['content'].strip() == '/exit'
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')

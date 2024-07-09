@@ -107,7 +107,7 @@ class Session:
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
-        self.agent_session.event_stream.add_event(event, EventSource.USER)
+        await self.agent_session.event_stream.add_event(event, EventSource.USER)
         if isinstance(event, Action):
             logger.info(
                 event, extra={'msg_type': 'ACTION', 'event_source': EventSource.USER}

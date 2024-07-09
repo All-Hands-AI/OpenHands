@@ -33,20 +33,22 @@ from opendevin.runtime import (
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
+from opendevin.runtime.utils.async_utils import async_to_sync
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
 async def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
     if box_type == 'local':
-        return LocalBox()
+        sandbox = LocalBox()  # type: ignore
     elif box_type == 'ssh':
-        sandbox = DockerSSHBox(sid=sid)
-        await sandbox.initialize()
-        return sandbox
+        sandbox = DockerSSHBox(sid=sid)  # type: ignore
     elif box_type == 'e2b':
-        return E2BBox()
+        sandbox = E2BBox()  # type: ignore
     else:
         raise ValueError(f'Invalid sandbox type: {box_type}')
+
+    await sandbox.initialize()
+    return sandbox
 
 
 class Runtime:
@@ -57,8 +59,17 @@ class Runtime:
     sid is the session id, which is used to identify the current user session.
     """
 
+    _instance = None
+    _initialization_lock = asyncio.Lock()
+    _initialized = False
+
     sid: str
     file_store: FileStore
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(
         self,
@@ -66,45 +77,60 @@ class Runtime:
         sid: str = 'default',
         sandbox: Optional[Sandbox] = None,
     ):
-        self.sid = sid
-        self.sandbox = sandbox
-        self._is_external_sandbox = sandbox is not None
-        self.browser: Optional[BrowserEnv] = None
-        self.file_store = InMemoryFileStore()
-        self.event_stream = event_stream
-        self._initialization_complete = asyncio.Event()
+        if not hasattr(self, 'initialized'):
+            self.sid = sid
+            self.sandbox = sandbox
+            self._is_external_sandbox = sandbox is not None
+            self.browser: Optional[BrowserEnv] = None
+            self.file_store = InMemoryFileStore()
+            self.event_stream = event_stream
+            self.initialized = False
 
     async def initialize(self):
-        await self._initialize()
-        self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self._initialization_complete.set()
+        if self._initialized is False:
+            logger.info('Runtime initialize...')
+            async with self._initialization_lock:
+                if self._initialized is False:
+                    logger.info('Runtime class initialization')
+                    if self.sandbox is None:
+                        logger.info('Creating sandbox.')
+                        self.sandbox = await create_sandbox(
+                            self.sid, config.sandbox.box_type
+                        )
+                        logger.info('Sandbox created.')
 
-    async def _initialize(self):
+                    await self._setup_sandbox()
+                    self.event_stream.subscribe(
+                        EventStreamSubscriber.RUNTIME, self.on_event
+                    )
+                    logger.info('Runtime class initialization complete.')
+                    self._initialized = True
+
+    async def _setup_sandbox(self):
         if self.sandbox is None:
-            self.sandbox = await create_sandbox(self.sid, config.sandbox.box_type)
-
-        # make sure /tmp always exists
+            raise RuntimeError('Sandbox is not initialized')
+        logger.info('Setting up sandbox')
         await self.sandbox.execute('mkdir -p /tmp')
-        # set git config
         await self.sandbox.execute('git config --global user.name "OpenDevin"')
         await self.sandbox.execute(
             'git config --global user.email "opendevin@all-hands.dev"'
         )
         atexit.register(self.close)
-        self._initialization_complete.set()
+        logger.info('Sandbox setup complete.')
 
-    async def wait_for_initialization(self):
-        await self._initialization_complete.wait()
-
-    def close(self):
+    async def aclose(self):
         if not self._is_external_sandbox and self.sandbox is not None:
-            self.sandbox.close()
+            await self.sandbox.close()
         if self.browser is not None:
             self.browser.close()
 
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+    @async_to_sync
+    def close(self):
+        return self.aclose()
+
+    async def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         if self.sandbox is not None:
-            self.sandbox.init_plugins(plugins)
+            await self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(
         self,

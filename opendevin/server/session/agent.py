@@ -19,6 +19,11 @@ class AgentSession:
     """Represents a session with an agent.
 
     Attributes:
+        sid: The session ID.
+        event_stream: The event stream associated with the session.
+        controller: The AgentController instance for controlling the agent.
+        runtime: The runtime environment for the session.
+        _closed: A flag indicating whether the session is closed.
         controller: The AgentController instance for controlling the agent.
     """
 
@@ -60,16 +65,21 @@ class AgentSession:
     async def _create_runtime(self):
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
-        if config.runtime == 'server':
-            logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, self.sid)
-        elif config.runtime == 'e2b':
-            logger.info('Using E2B runtime')
-            self.runtime = E2BRuntime(self.event_stream, self.sid)
-        else:
-            raise RuntimeError(
-                f'Runtime not defined in config, or is invalid: {config.runtime}'
-            )
+        try:
+            if config.runtime == 'server':
+                logger.info('Using server runtime.')
+                self.runtime = ServerRuntime(self.event_stream, self.sid)
+            elif config.runtime == 'e2b':
+                logger.info('Using E2B runtime')
+                self.runtime = E2BRuntime(self.event_stream, self.sid)
+            else:
+                raise RuntimeError(
+                    f'Runtime not defined in config, or is invalid: {config.runtime}'
+                )
+            await self.runtime.initialize()
+        except Exception as e:
+            logger.error(f'Error initializing runtime: {e}')
+            raise RuntimeError(f'Failed to initialize runtime: {e}') from e
 
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
@@ -80,7 +90,9 @@ class AgentSession:
         if self.controller is not None:
             raise RuntimeError('Controller already created')
         if self.runtime is None:
-            raise RuntimeError('Runtime must be initialized before the agent controller')
+            raise RuntimeError(
+                'Runtime must be initialized before the agent controller'
+            )
         args = {
             key: value
             for key, value in start_event.get('args', {}).items()
@@ -97,11 +109,16 @@ class AgentSession:
         agent = Agent.get_cls(agent_cls)(llm)
         if isinstance(agent, CodeActAgent):
             if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
+                if self.runtime:
+                    logger.warning(f'Runtime: {self.runtime.__class__.__name__}')
+                    logger.warning(
+                        f'Sandbox: {self.runtime.sandbox.__class__.__name__}'
+                    )
                 logger.warning(
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
                     ' LocalBox will not work properly.'
                 )
-        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+        await self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(

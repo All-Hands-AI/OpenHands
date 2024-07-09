@@ -1,6 +1,7 @@
-import asyncio
+from asyncio import Event
 
 from opendevin.core.config import config
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     AgentRecallAction,
     BrowseInteractiveAction,
@@ -35,13 +36,16 @@ class ServerRuntime(Runtime):
     ):
         super().__init__(event_stream, sid, sandbox)
         self.file_store = LocalFileStore(config.workspace_base)
-        self._initialization_complete = asyncio.Event()
+        self._initialization_event = Event()
 
     async def initialize(self):
-        self._initialization_complete.set()
+        await super().initialize()
+        if not self._initialization_event.is_set():
+            self._initialization_event.set()
+            logger.info('ServerRuntime initialization complete.')
 
     async def wait_for_initialization(self):
-        await self._initialization_complete.wait()
+        await self._initialization_event.wait()
 
     async def run(self, action: CmdRunAction) -> Observation:
         return await self._run_command(action.command)

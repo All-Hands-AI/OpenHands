@@ -1,25 +1,12 @@
-from typing import Any
 import asyncio
 import json
-import websockets
-import docker
 import uuid
-from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.events.action.action import Action
-from opendevin.events.event import Event
-from opendevin.events.observation import Observation
-from opendevin.events.stream import EventStream
-from opendevin.events.serialization import event_to_dict, observation_from_dict
-from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.browse import browse
-from opendevin.runtime.server.files import read_file, write_file
-from opendevin.runtime.plugins import PluginRequirement
+
+import docker
+import websockets
+
 from opendevin.core.config import config
-from opendevin.events.observation import (
-    ErrorObservation,
-    NullObservation,
-    Observation,
-)
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     AgentRecallAction,
     BrowseInteractiveAction,
@@ -29,25 +16,42 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-import asyncio
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events.action.action import Action
+from opendevin.events.event import Event
+from opendevin.events.observation import (
+    ErrorObservation,
+    NullObservation,
+    Observation,
+)
+from opendevin.events.serialization import event_to_dict, observation_from_dict
+from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
+from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.server.browse import browse
+from opendevin.runtime.server.files import read_file, write_file
+
 
 class EventStreamRuntime(Runtime):
     # This runtime will subscribe the event stream
     # When receive an event, it will send the event to od-runtime-client which run inside the docker environment
-    
+
     # websocket uri
     uri = 'ws://localhost:8080'
     container_name_prefix = 'opendevin-sandbox-'
     docker_client: docker.DockerClient
 
-    def __init__(self, event_stream: EventStream, sid: str = 'default',container_image: str | None = None):
+    def __init__(
+        self,
+        event_stream: EventStream,
+        sid: str = 'default',
+        container_image: str | None = None,
+    ):
         # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
         self._init_event_stream(event_stream)
         self._init_websocket()
-        self._init_docker(sid,container_image)
+        self._init_docker(sid, container_image)
 
-    def _init_docker(self,sid,container_image):
+    def _init_docker(self, sid, container_image):
         self.container_image = container_image
         # (
         #     config.sandbox_container_image
@@ -63,11 +67,11 @@ class EventStreamRuntime(Runtime):
             self._init_sandbox()
         except Exception as ex:
             print(
-                "Launch docker client failed. Please make sure you have installed docker and started the docker daemon."
+                'Launch docker client failed. Please make sure you have installed docker and started the docker daemon.'
             )
             raise ex
-    
-    def _init_event_stream(self,event_stream: EventStream):
+
+    def _init_event_stream(self, event_stream: EventStream):
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
 
@@ -77,10 +81,10 @@ class EventStreamRuntime(Runtime):
         # self.loop = asyncio.new_event_loop()
         # asyncio.set_event_loop(self.loop)
         # self.loop.run_until_complete(self._init_websocket_connect())
-    
+
     async def _init_websocket_connect(self):
         self.websocket = await websockets.connect(self.uri)
-    
+
     def _init_sandbox(self):
         try:
             # start the container
@@ -88,11 +92,12 @@ class EventStreamRuntime(Runtime):
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
-                # TODO: test it in mac and linux
+                # TODO: test the port mapping in mac and linux
                 # network_mode='host',
                 working_dir=self.sandbox_workspace_dir,
                 name=self.container_name,
                 detach=True,
+                ports={'8080/tcp': 8080},
                 volumes={mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'}},
             )
             print('Container started')
@@ -113,16 +118,16 @@ class EventStreamRuntime(Runtime):
             except docker.errors.NotFound:
                 pass
         self.docker_client.close()
-    
+
     async def on_event(self, event: Event) -> None:
-        print("EventStreamRuntime: on_event triggered")
+        print('EventStreamRuntime: on_event triggered')
         if isinstance(event, Action):
             observation = await self.run_action(event)
-            print("EventStreamRuntime: observation", observation)
+            print('EventStreamRuntime: observation', observation)
             # observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
-    
+
     async def run_action(self, action: Action) -> Observation:
         """
         Run an action and return the resulting observation.
@@ -143,10 +148,10 @@ class EventStreamRuntime(Runtime):
         # TODO: fix ID problem, see comments https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
-    
+
     async def run(self, action: CmdRunAction) -> Observation:
         return await self._run_command(action)
-    
+
     async def _run_command(
         self, action: Action, _stream: bool = False, timeout: int | None = None
     ) -> Observation:
@@ -154,38 +159,38 @@ class EventStreamRuntime(Runtime):
         # TODO: need to initialization globally only once
         self.websocket = await websockets.connect(self.uri)
         if self.websocket is None:
-            raise Exception("WebSocket is not connected.")
+            raise Exception('WebSocket is not connected.')
         try:
             await self.websocket.send(json.dumps(event_to_dict(action)))
             output = await asyncio.wait_for(self.websocket.recv(), timeout=timeout)
             output = json.loads(output)
-            print("Received output: ", output)
+            print('Received output: ', output)
         except asyncio.TimeoutError:
-            print("No response received within the timeout period.")
+            print('No response received within the timeout period.')
         await self.websocket.close()
         return observation_from_dict(output)
-        
+
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         return await self._run_command(action)
 
-    ############################################################################ 
+    ############################################################################
     # Keep the same with other runtimes
-    ############################################################################ 
+    ############################################################################
 
     def get_working_directory(self):
         # TODO: should we get this from od-runtime-client
         return config.workspace_base
-    
+
     async def read(self, action: FileReadAction) -> Observation:
         working_dir = self.get_working_directory()
         return await read_file(action.path, working_dir, action.start, action.end)
-    
+
     async def write(self, action: FileWriteAction) -> Observation:
         working_dir = self.get_working_directory()
         return await write_file(
             action.path, working_dir, action.content, action.start, action.end
         )
-    
+
     async def browse(self, action: BrowseURLAction) -> Observation:
         return await browse(action, self.browser)
 
@@ -195,28 +200,28 @@ class EventStreamRuntime(Runtime):
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
 
-    ############################################################################ 
+    ############################################################################
     # Initialization work inside sandbox image
-    ############################################################################ 
-    
+    ############################################################################
+
     # init_runtime_tools direcctly do as what Runtime do
 
     # Do in the od_runtime_client
     # Overwrite the init_sandbox_plugins
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+    async def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         pass
 
 
-    
 def test_run_command():
-    sid = "test"
+    sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(event_stream)
     asyncio.run(runtime._run_command(CmdRunAction('ls -l')))
 
+
 async def test_event_stream():
-    sid = "test"
+    sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(event_stream)
@@ -245,15 +250,14 @@ async def test_event_stream():
     action_recall = AgentRecallAction(query='who am I?')
     print(await runtime.run_action(action_recall))
 
+
 def test_docker_launch():
-    sid = "test"
+    sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(event_stream,sid,"ghcr.io/opendevin/sandbox:main")
+    runtime = EventStreamRuntime(event_stream, sid, 'ghcr.io/opendevin/sandbox:main')
     runtime.close()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     asyncio.run(test_event_stream())
-
-
-    
