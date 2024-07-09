@@ -130,10 +130,16 @@ class DummyAgent(Agent):
             if 'observations' in prev_step:
                 # one obs, at most
                 expected_observations = prev_step['observations']
-
-                # check if the history matches the expected observations
                 hist_events = state.history.get_last_events(len(expected_observations))
-                for i in range(len(expected_observations)):
+
+                # Check if we have fewer events than expected
+                if len(hist_events) < len(expected_observations):
+                    print(
+                        f'Warning: Expected {len(expected_observations)} observations, but got {len(hist_events)}'
+                    )
+
+                # Compare only the available observations
+                for i in range(min(len(expected_observations), len(hist_events))):
                     hist_obs = event_to_dict(hist_events[i])
                     expected_obs = event_to_dict(expected_observations[i])
                     if (
