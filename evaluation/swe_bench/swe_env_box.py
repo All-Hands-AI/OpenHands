@@ -20,8 +20,8 @@ from opendevin.runtime.plugins import (
 SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
 
 
-def get_image_name_from_instance_id(dockerhub_namespace, instance_id: str) -> str:
-    return dockerhub_namespace + '/sweb.eval.x86_64.' + instance_id.replace('__', '_s_')
+def get_image_name_from_instance_id(instance_id: str) -> str:
+    return 'sweb.eval.x86_64.' + instance_id
 
 
 class SWEBenchSSHBox(DockerSSHBox):
@@ -49,6 +49,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
         sid = f'swe_bench_{swe_instance_id}_' + str(uuid.uuid4())
+        logger.info(f'===Using container image: {container_image}')
         super().__init__(container_image, timeout, sid)
         self.init_plugins(sandbox_plugins)
 
@@ -90,7 +91,11 @@ class SWEBenchSSHBox(DockerSSHBox):
                 temp_file_path = os.path.join(temp_dir, swe_instance_json_name)
                 # Write to the file with the desired name within the temporary directory
                 with open(temp_file_path, 'w') as f:
-                    json.dump([swe_instance.to_dict()], f)
+                    if not isinstance(swe_instance, dict):
+                        json.dump([swe_instance.to_dict()], f)
+                    else:
+                        json.dump([swe_instance], f)
+
                 # Copy the file to the desired location
                 self.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
 
@@ -135,7 +140,6 @@ class SWEBenchSSHBox(DockerSSHBox):
         workspace_mount_path: str | None = None,
         sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
         use_instance_image: bool = False,
-        dockerhub_namespace: str = 'xingyaoww',
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
@@ -154,7 +158,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             config.run_as_devin = False
             if use_instance_image:
                 container_image = get_image_name_from_instance_id(
-                    dockerhub_namespace, instance['instance_id']
+                    instance['instance_id']
                 )
             else:
                 container_image = SWE_BENCH_CONTAINER_IMAGE
@@ -230,7 +234,6 @@ if __name__ == '__main__':
     swe_bench_tests = dataset['test'].to_pandas()
     USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false') == 'true'
     logger.info(f'USE_INSTANCE_IMAGE: {USE_INSTANCE_IMAGE}')
-    DOCKERHUB_NAMESPACE = 'xingyaoww'
 
     # INSTANCE_ID = 'django__django-11099'
     INSTANCE_ID = 'astropy__astropy-12907'
@@ -241,7 +244,6 @@ if __name__ == '__main__':
         instance=EXAMPLE_INSTANCE,
         sandbox_plugins=[AgentSkillsRequirement(), JupyterRequirement()],
         use_instance_image=USE_INSTANCE_IMAGE,
-        dockerhub_namespace=DOCKERHUB_NAMESPACE,
     )
 
     # PRE TEST

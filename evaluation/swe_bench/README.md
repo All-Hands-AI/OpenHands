@@ -111,12 +111,11 @@ default, it is set to 30.
 `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
 default, it is set to 1.
 
-`use_instance_image`, e.g. `true`, is a boolean flag to use the instance-level docker images By
-default, it is set to `false`.
-
-`instance_docker_namespace`, e.g. `xingyaoww`, is the docker image namespace to use for the instance-level docker.
-It's only used when `use_instance_docker` is set to `true`.
-By default, it is set to `xingyaoww`. Please ignore this argument unless you want to experiment with your own instance-level docker images.
+There are also two optional environment variables you can set.
+```
+export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Ignore this if you are not sure.
+export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images
+```
 
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
 then your command would be:

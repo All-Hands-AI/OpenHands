@@ -29,7 +29,6 @@ from opendevin.llm.llm import LLM
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false') == 'true'
-INSTANCE_DOCKER_NAMESPACE = os.environ.get('INSTANCE_DOCKER_NAMESPACE', 'xingyaoww')
 
 
 def cleanup():
@@ -219,7 +218,6 @@ def process_instance(
         workspace_mount_path=workspace_mount_path,
         sandbox_plugins=agenthub.Agent.get_cls(metadata.agent_class).sandbox_plugins,
         use_instance_image=USE_INSTANCE_IMAGE,
-        dockerhub_namespace=INSTANCE_DOCKER_NAMESPACE,
     )
 
     # Prepare instruction
