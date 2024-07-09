@@ -31,7 +31,6 @@ from opendevin.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
-    NullObservation,
     Observation,
 )
 from opendevin.llm.llm import LLM
@@ -129,13 +128,6 @@ class AgentController:
             self.state.last_error += f': {exception}'
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
-    async def add_history(self, action: Action, observation: Observation):
-        if isinstance(action, NullAction) and isinstance(observation, NullObservation):
-            return
-        logger.debug(
-            f'Adding history ({type(action).__name__} with id={action.id}, {type(observation).__name__} with id={observation.id})'
-        )
-
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
         while True:
@@ -161,7 +153,6 @@ class AgentController:
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
-                await self.add_history(event, NullObservation(''))
                 if self.get_agent_state() != AgentState.RUNNING:
                     await self.set_agent_state_to(AgentState.RUNNING)
             elif event.source == EventSource.AGENT and event.wait_for_response:
@@ -180,18 +171,14 @@ class AgentController:
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
-                await self.add_history(self._pending_action, event)
                 self._pending_action = None
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
-                await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
-                await self.add_history(NullAction(), event)
                 self.state.history.on_event(event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, ErrorObservation):
-                await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
@@ -363,9 +350,6 @@ class AgentController:
 
         if not isinstance(action, NullAction):
             self.event_stream.add_event(action, EventSource.AGENT)
-
-        if not action.runnable:
-            await self.add_history(action, NullObservation(''))
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})

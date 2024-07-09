@@ -131,12 +131,8 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
         if state is None:
             raise ValueError('State should not be None.')
 
-        model_answer_raw = ''
-
         # retrieve the last message from the agent
-        for event in state.history.get_events(reverse=True):
-            if isinstance(event, MessageAction) and event.source == 'agent':
-                model_answer_raw = event
+        model_answer_raw = state.history.get_last_agent_message()
 
         # attempt to parse model_answer
         _, _, ast_eval = get_data(metadata['hub'])
