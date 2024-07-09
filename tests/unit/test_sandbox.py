@@ -135,6 +135,7 @@ def test_ssh_box_run_as_devin(patched_config):
     # get a temporary directory
     temp_dir = patched_config
     box = DockerSSHBox()
+    box.initialize()
     # FIXME: permission error on mkdir test for exec box
     exit_code, output = box.execute('ls -l')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -170,6 +171,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         exit_code, output = box.execute('pwd && ls -l')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
         expected_lines = ['/workspace', 'total 0']
@@ -186,6 +188,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         exit_code, output = box.execute('mkdir test')
         assert exit_code == 0, 'The exit code should be 0.'
         assert output.strip() == ''
@@ -210,6 +213,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         exit_code, output = box.execute('non_existing_command')
         assert exit_code != 0, (
             'The exit code should not be 0 for a failed command for '
@@ -223,6 +227,7 @@ def test_single_multiline_command(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         exit_code, output = box.execute('echo \\\n -e "foo"')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
         # FIXME: why is there a `>` in the output? Probably PS2?
@@ -237,6 +242,7 @@ def test_multiline_echo(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         exit_code, output = box.execute('echo -e "hello\nworld"')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
         # FIXME: why is there a `>` in the output?
@@ -252,6 +258,7 @@ def test_sandbox_whitespace(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         exit_code, output = box.execute('echo -e "\\n\\n\\n"')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
         assert output == '\r\n\r\n\r\n', (
@@ -266,6 +273,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
+        box.initialize()
         box.init_plugins([JupyterRequirement])
         exit_code, output = box.execute('echo "print(1)" | execute_cli')
         print(output)
