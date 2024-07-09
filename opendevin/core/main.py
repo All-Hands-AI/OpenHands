@@ -191,7 +191,7 @@ async def run_agent_controller(
         logger.info('Main task cancelled')
     finally:
         await controller.close()
-        runtime.close()
+        await runtime.close()
         logger.info('Successfully shut down the OpenDevin server.')
         if not loop.is_closed():
             loop.stop()
