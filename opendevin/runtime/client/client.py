@@ -41,7 +41,7 @@ class RuntimeClient():
         loop.run_forever()
     
     def init_shell(self) -> None:
-        # TODO: we need to figure a way to support different users. Maybe the runtime cli should be run as root
+        # run as root
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8')
         self.shell.expect(r'[$#] ')
 
@@ -202,11 +202,13 @@ def test_shell(message):
     shell.expect(r'[$#] ')
     output = shell.before.strip().split('\r\n', 1)[1].strip()
     shell.close()
+    print(output)
 
 if __name__ == "__main__":
     # print(test_shell("ls -l"))
     client = RuntimeClient()
     # test_run_commond()
     # client.init_sandbox_plugins([AgentSkillsRequirement,JupyterRequirement])
+    # print(test_shell("whoami"))
 
     
