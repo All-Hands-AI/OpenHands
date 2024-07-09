@@ -78,8 +78,10 @@ docker run -it \
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
-
 OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
+
+Upon opening OpenDevin, you must select the appropriate `Model` and enter the `API Key` within the settings that should pop up automatically. These can be set at any time by selecting
+the `Settings` button (gear icon) in the UI. If the required `Model` does not exist in the list, you can manually enter it in the text box.
 
 For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
 
