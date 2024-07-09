@@ -1,14 +1,18 @@
-# 💿 How to Create a Custom Docker Sandbox
+---
+sidebar_position: 6
+---
+
+# 💿 How to Create and Use a Custom Docker Sandbox
 
 The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https://github.com/OpenDevin/OpenDevin/blob/main/containers/sandbox/Dockerfile). 
 
 Your use case may need additional software installed by default.
 
 There are two ways you can do so:
-1. Use an existing image from docker hub. For instance, if you want to have `nodejs` installed, you can do so by using the `node:20` image.
-2. Creating your own custom docker image.
+1. Use an existing image from docker hub. For instance, if you want to have `nodejs` installed, you can do so by using the `node:20` image
+2. Creating your own custom docker image and using it
 
-If you want to take the first approach, you can skip the next section.
+If you want to take the first approach, you can skip the `Create Your Docker Image` section.
 
 ## Setup
 
@@ -17,7 +21,7 @@ Make sure you are able to run OpenDevin using the [Development.md](https://githu
 ## Create Your Docker Image
 To create a custom docker image, it must be debian/ubuntu based. 
 
-For example, if we want OpenDevin to have access to the "node" binary, we would use the following Dockerfile:
+For example, if we want OpenDevin to have access to the `node` binary, we would use the following Dockerfile:
 
 ```dockerfile
 # Start with latest ubuntu image
@@ -30,9 +34,9 @@ RUN apt-get update && apt-get install -y
 RUN apt-get install -y nodejs
 ```
 
-Next build your docker image with the name of your choice, for example "custom_image". 
+Next build your docker image with the name of your choice, for example `custom_image`. 
 
-To do this you can create a directory and put your file inside it with the name "Dockerfile", and inside the directory run the following command:
+To do this you can create a directory and put your file inside it with the name `Dockerfile`, and inside the directory run the following command:
 
 ```bash
 docker build -t custom_image .
@@ -58,9 +62,9 @@ run_as_devin=true
 sandbox_container_image="custom_image"
 ```
 
-For sandbox_container_image, you can specify either:
-1. The name of your custom image that you built in the previous step (e.g., "custom_image")
-2. A pre-existing image from Docker Hub (e.g., "node:20" if you want a sandbox with Node.js pre-installed)
+For `sandbox_container_image`, you can specify either:
+1. The name of your custom image that you built in the previous step (e.g., `”custom_image”`)
+2. A pre-existing image from Docker Hub (e.g., `”node:20”` if you want a sandbox with Node.js pre-installed)
 
 ## Run
 Run OpenDevin by running ```make run``` in the top level directory.

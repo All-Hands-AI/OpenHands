@@ -49,7 +49,9 @@ def _build_sandbox_image(
                 file.write(dockerfile_content)
 
             api_client = docker_client.api
-            build_logs = api_client.build(path=temp_dir, tag=target_image_name, rm=True, decode=True)
+            build_logs = api_client.build(
+                path=temp_dir, tag=target_image_name, rm=True, decode=True
+            )
 
             for log in build_logs:
                 if 'stream' in log:

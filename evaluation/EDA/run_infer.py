@@ -24,7 +24,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.action import MessageAction
 from opendevin.llm.llm import LLM
 
 game = None
@@ -44,10 +43,7 @@ def codeact_user_response_eda(state: State) -> str:
 
     # retrieve the latest model message from history
     if state.history:
-        for event in state.history.get_events(reverse=True):
-            if isinstance(event, MessageAction) and event.source == 'agent':
-                model_guess = event.content
-                break
+        model_guess = state.history.get_last_agent_message()
 
     assert game is not None, 'Game is not initialized.'
     msg = game.generate_user_response(model_guess)
@@ -150,11 +146,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    final_message = ''
-    for event in state.history.get_events(reverse=True):
-        if isinstance(event, MessageAction) and event.source == 'agent':
-            final_message = event.content
-            break
+    final_message = state.history.get_last_agent_message()
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
