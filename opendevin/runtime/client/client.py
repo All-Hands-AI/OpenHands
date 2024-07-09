@@ -32,6 +32,8 @@ class RuntimeClient():
 
     def __init__(self) -> None:
         self.init_shell()
+        # TODO: code will block at init_websocket, maybe we can open a subprocess to run websocket forever
+        # In case we need to run other code after init_websocket
         self.init_websocket()
 
     def init_websocket(self) -> None:
@@ -179,11 +181,10 @@ class RuntimeClient():
         output, exit_code = self.execute(
             'source /opendevin/bash.bashrc && source ~/.bashrc'
         )
-        print("Yufan:",exit_code, output)
-        # if exit_code != 0:
-        #     raise RuntimeError(
-        #         f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
-        #     )
+        if exit_code != 0:
+            raise RuntimeError(
+                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+            )
         print('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
 
 
