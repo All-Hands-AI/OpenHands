@@ -422,18 +422,6 @@ class CodeBlock(BaseModel):
             )
             updated_block.add_indentation(additional_indentation)
 
-    def replace_by_path(self, path: List[str], new_block: 'CodeBlock'):
-        if not path:
-            return
-
-        for i, child in enumerate(self.children):
-            if child.identifier == path[0]:
-                if len(path) == 1:
-                    self.replace_child(i, new_block)
-                    return
-                else:
-                    child.replace_by_path(path[1:], new_block)
-
     def __str__(self):
         return self.to_string()
 
@@ -451,27 +439,6 @@ class CodeBlock(BaseModel):
             blocks.append(child)
             blocks.extend(child.get_all_child_blocks())
         return blocks
-
-    def get_children(self, exclude_blocks: List[CodeBlockType]) -> List['CodeBlock']:
-        return [child for child in self.children if child.type not in exclude_blocks]
-
-    def show_related_spans(
-        self,
-        span_id: Optional[str] = None,  # TODO: Set max tokens to show
-    ):
-        related_spans = self.find_related_spans(span_id)
-        for span in related_spans:
-            span.visible = True
-
-    def has_visible_children(self):
-        for child in self.children:
-            if child.is_visible:
-                return True
-
-            if child.has_visible_children():
-                return True
-
-        return False
 
     @property
     def is_visible(self):
@@ -496,46 +463,6 @@ class CodeBlock(BaseModel):
             contents += child._to_string()
 
         return contents
-
-    def _build_path_tree(
-        self, block_paths: List[str], include_references: bool = False
-    ):
-        path_tree = PathTree()
-
-        for block_path in block_paths:
-            if block_path:
-                path = block_path.split('.')
-                if include_references:
-                    block = self.find_by_path(path)
-                    if block:
-                        if self.type == CodeBlockType.CLASS:
-                            references = [
-                                self._fix_reference_path(reference)
-                                for reference in self.get_all_relationships(
-                                    exclude_types=[
-                                        CodeBlockType.FUNCTION,
-                                        CodeBlockType.TEST_CASE,
-                                    ]
-                                )
-                                if reference
-                                and reference.scope != ReferenceScope.EXTERNAL
-                            ]  # FIXME skip _fix_reference_path?
-                        else:
-                            references = [
-                                self._fix_reference_path(reference)
-                                for reference in self.get_all_relationships([])
-                                if reference
-                                and reference.scope != ReferenceScope.EXTERNAL
-                            ]  # FIXME skip _fix_reference_path?
-
-                        for ref in references:
-                            path_tree.add_to_tree(ref.path)
-
-                path_tree.add_to_tree(path)
-            elif block_path == '':
-                path_tree.show = True
-
-        return path_tree
 
     def _to_prompt_string(
         self,
@@ -1180,23 +1107,3 @@ class CodeBlock(BaseModel):
 
     def is_within_lines(self, start_line: int, end_line: int):
         return self.start_line >= start_line and self.end_line <= end_line
-
-    def has_content(self, query: str, span_id: Optional[str] = None):
-        if (
-            self.content
-            and query in self.content
-            and (
-                not span_id
-                or (self.belongs_to_span and self.belongs_to_span.span_id == span_id)
-            )
-        ):
-            return True
-
-        if span_id and not self.has_span(span_id):
-            return False
-
-        for child in self.children:
-            if child.has_content(query, span_id):
-                return True
-
-        return False

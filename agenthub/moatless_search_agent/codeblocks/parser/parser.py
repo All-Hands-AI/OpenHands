@@ -20,11 +20,8 @@ from ...codeblocks.codeblocks import (
     SpanType,
 )
 from ...codeblocks.module import Module
-from ...codeblocks.parser.comment import get_comment_symbol
 
 commented_out_keywords = ['rest of the code', 'existing code', 'other code']
-child_block_types = ['ERROR', 'block']
-module_types = ['program', 'module']
 
 logger = logging.getLogger(__name__)
 
@@ -39,32 +36,6 @@ class NodeMatch:
     parameters: List[Tuple[Node, Optional[Node]]] = field(default_factory=list)
     relationships: List[Tuple[Node, str]] = field(default_factory=list)
     query: Optional[str] = None
-
-
-def _find_type(node: Node, type: str):
-    for i, child in enumerate(node.children):
-        if child.type == type:
-            return i, child
-    return None, None
-
-
-def find_type(node: Node, types: List[str]):
-    for child in node.children:
-        if child.type in types:
-            return child
-    return None
-
-
-def find_nested_type(node: Node, type: str, levels: int = -1):
-    if levels == 0:
-        return None
-    if node.type == type:
-        return node
-    for child in node.children:
-        found_node = find_nested_type(child, type, levels - 1)
-        if found_node:
-            return found_node
-    return None
 
 
 class CodeParser:
@@ -389,12 +360,6 @@ class CodeParser:
 
         return code_block, next_node, current_span or BlockSpan()
 
-    def is_commented_out_code(self, node: Node):
-        comment = node.text.decode('utf8').strip()
-        return comment.startswith(f'{get_comment_symbol(self.language)} ...') or any(
-            keyword in comment.lower() for keyword in commented_out_keywords
-        )
-
     def find_in_tree(self, node: Node) -> Optional[NodeMatch]:
         if self.apply_gpt_tweaks:
             match = self.find_match_with_gpt_tweaks(node)
@@ -665,13 +630,6 @@ class CodeParser:
             else:
                 return self.get_parent_next(node.parent, orig_node)
         return None
-
-    def has_error(self, node: Node):
-        if node.type == 'ERROR':
-            return True
-        if node.children:
-            return any(self.has_error(child) for child in node.children)
-        return False
 
     def parse(self, content, file_path: Optional[str] = None) -> Module:
         if isinstance(content, str):
