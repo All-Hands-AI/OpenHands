@@ -392,6 +392,10 @@ class AgentController:
             await self.report_error(str(e))
             return
 
+        # Ensure action is not a coroutine
+        if asyncio.iscoroutine(action):
+            action = await action
+
         if action.runnable:
             self._pending_action = action
 
