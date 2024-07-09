@@ -1,12 +1,12 @@
 import argparse
 import asyncio
-import json
 import os
 import shutil
 
 import pexpect
-import websockets
-from websockets.exceptions import ConnectionClosed
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from uvicorn import run
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -16,7 +16,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.observation import (
     CmdOutputObservation,
-    ErrorObservation,
     IPythonRunCellObservation,
     Observation,
 )
@@ -25,76 +24,65 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
+app = FastAPI()
+
+
+class ActionRequest(BaseModel):
+    action: dict
+
 
 class RuntimeClient:
-    # This runtime will listen to the websocket
-    # When receive an event, it will run the action and send the observation back to the websocket
-
-    def __init__(self, port: int = 8080) -> None:
-        self._port = port
+    def __init__(self) -> None:
         self.init_shell()
-        self.init_websocket()
-
-    def init_websocket(self) -> None:
-        logger.info(f'Initializing websocket on port {self._port}')
-        server = websockets.serve(self.listen, '0.0.0.0', self._port)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(server)
-        loop.run_forever()
+        self.lock = asyncio.Lock()
 
     def init_shell(self) -> None:
-        # TODO: we need to figure a way to support different users. Maybe the runtime cli should be run as root
-        self.shell = pexpect.spawn('/bin/bash', encoding='utf-8')
+        self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
         self.shell.expect(r'[$#] ')
-
-    async def listen(self, websocket):
-        try:
-            async for message in websocket:
-                event_str = json.loads(message)
-                event = event_from_dict(event_str)
-                if isinstance(event, Action):
-                    observation = self.run_action(event)
-                    await websocket.send(json.dumps(event_to_dict(observation)))
-        except ConnectionClosed:
-            print('Connection closed')
 
     def run_action(self, action) -> Observation:
-        # Should only receive Action CmdRunAction and IPythonRunCellAction
-        action_type = action.action  # type: ignore[attr-defined]
+        action_type = action.action
         observation = getattr(self, action_type)(action)
-        # TODO: see comments in https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
-        observation._parent = action.id  # type: ignore[attr-defined]
+        observation._parent = action.id
         return observation
 
-    def run(self, action: CmdRunAction) -> Observation:
-        return self._run_command(action.command)
-
-    def _run_command(self, command: str) -> Observation:
+    def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
-            output, exit_code = self.execute(command)
+            output, exit_code = self._execute_bash(action.command)
             return CmdOutputObservation(
-                command_id=-1, content=str(output), command=command, exit_code=exit_code
+                command_id=-1,
+                content=str(output),
+                command=action.command,
+                exit_code=exit_code,
             )
         except UnicodeDecodeError:
-            return ErrorObservation('Command output could not be decoded as utf-8')
+            raise RuntimeError('Command output could not be decoded as utf-8')
 
-    def execute(self, command):
-        print(f'Received command: {command}')
+    def _execute_bash(self, command):
+        logger.info(f'Received command: {command}')
         self.shell.sendline(command)
         self.shell.expect(r'[$#] ')
-        output = self.shell.before.strip().split('\r\n', 1)[1].strip()
-        exit_code = output[-1].strip()
+        output = self.shell.before + '# '
+
+        self.shell.sendline('echo $?')
+        self.shell.expect(r'[$#] ')
+        exit_code = int(self.shell.before.split('\r\n')[0].strip())
         return output, exit_code
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        obs = self._run_command(
-            ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
+        obs = self.run(
+            CmdRunAction(
+                command="cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
+                f'{action.code}\n'
+                'EOL'
+            ),
         )
         # run the code
-        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        obs = self.run(
+            CmdRunAction(command='cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        )
         output = obs.content
         if 'pip install' in action.code:
-            print(output)
             package_names = action.code.split(' ', 2)[-1]
             is_single_package = ' ' not in package_names
 
@@ -104,15 +92,17 @@ class RuntimeClient:
                     'Note: you may need to restart the kernel to use updated packages.'
                     in output
                 ):
-                    self._run_command(
-                        (
-                            "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
+                    self.run(
+                        CmdRunAction(
+                            command="cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
                             f'{restart_kernel}\n'
                             'EOL'
                         )
                     )
-                    obs = self._run_command(
-                        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+                    obs = self.run(
+                        CmdRunAction(
+                            command='cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+                        )
                     )
                     output = '[Package installed successfully]'
                     if "{'status': 'ok', 'restart': True}" != obs.content.strip():
@@ -127,15 +117,17 @@ class RuntimeClient:
 
                     # re-init the kernel after restart
                     if action.kernel_init_code:
-                        obs = self._run_command(
-                            (
-                                f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
+                        obs = self.run(
+                            CmdRunAction(
+                                command=f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
                                 f'{action.kernel_init_code}\n'
                                 'EOL'
                             ),
                         )
-                        obs = self._run_command(
-                            'cat /tmp/opendevin_jupyter_init.py | execute_cli',
+                        obs = self.run(
+                            CmdRunAction(
+                                command='cat /tmp/opendevin_jupyter_init.py | execute_cli'
+                            ),
                         )
             elif (
                 is_single_package
@@ -168,48 +160,74 @@ class RuntimeClient:
             print(
                 f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
             )
-            output, exit_code = self.execute(abs_path_to_bash_script)
-            if exit_code != 0:
+            res = self.run(CmdRunAction(command=abs_path_to_bash_script))
+            if res.exit_code != 0:
                 raise RuntimeError(
-                    f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
+                    f'Failed to initialize plugin {requirement.name} with exit code {res.exit_code} and output: {res.content}'
                 )
             print(f'Plugin {requirement.name} initialized successfully.')
         if len(requirements) > 0:
             self._source_bashrc()
 
     def _source_bashrc(self):
-        output, exit_code = self.execute(
-            'source /opendevin/bash.bashrc && source ~/.bashrc'
+        res = self.run(
+            CmdRunAction(command='source /opendevin/bash.bashrc && source ~/.bashrc')
         )
-        print('Yufan:', exit_code, output)
-        # if exit_code != 0:
-        #     raise RuntimeError(
-        #         f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
-        #     )
+        if res.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {res.exit_code} and output: {res.content}'
+            )
         print('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
 
 
-def test_run_commond():
-    client = RuntimeClient()
-    command = CmdRunAction(command='ls -l')
-    obs = client.run_action(command)
-    print(obs)
+client = RuntimeClient()
 
 
-def test_shell(message):
-    shell = pexpect.spawn('/bin/bash', encoding='utf-8')
-    shell.expect(r'[$#] ')
-    print(f'Received command: {message}')
-    shell.sendline(message)
-    shell.expect(r'[$#] ')
-    output = shell.before.strip().split('\r\n', 1)[1].strip()
-    print(f'Output: {output}')
-    shell.close()
+@app.middleware('http')
+async def one_request_at_a_time(request: Request, call_next):
+    async with client.lock:
+        response = await call_next(request)
+    return response
 
+
+@app.post('/execute_action')
+async def execute_action(action_request: ActionRequest):
+    try:
+        action = event_from_dict(action_request.action)
+        if not isinstance(action, Action):
+            raise HTTPException(status_code=400, detail='Invalid action type')
+        observation = client.run_action(action)
+        return event_to_dict(observation)
+    except Exception as e:
+        logger.error(f'Error processing command: {str(e)}')
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get('/alive')
+async def alive():
+    return {'status': 'ok'}
+
+
+# def test_run_commond():
+#     client = RuntimeClient()
+#     command = CmdRunAction(command='ls -l')
+#     obs = client.run_action(command)
+#     print(obs)
+
+# def test_shell(message):
+#     shell = pexpect.spawn('/bin/bash', encoding='utf-8')
+#     shell.expect(r'[$#] ')
+#     print(f'Received command: {message}')
+#     shell.sendline(message)
+#     shell.expect(r'[$#] ')
+#     output = shell.before.strip().split('\r\n', 1)[1].strip()
+#     print(f'Output: {output}')
+#     shell.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('port', type=int, help='Port to listen to')
+    parser.add_argument('port', type=int, help='Port to listen on')
     args = parser.parse_args()
-
-    client = RuntimeClient(port=args.port)
+    logger.info(f'Starting action execution API on port {args.port}')
+    print(f'Starting action execution API on port {args.port}')
+    run(app, host='0.0.0.0', port=args.port)
