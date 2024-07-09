@@ -8,6 +8,7 @@ import pexpect
 import websockets
 from websockets.exceptions import ConnectionClosed
 
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     CmdRunAction,
@@ -30,11 +31,13 @@ class RuntimeClient:
     # When receive an event, it will run the action and send the observation back to the websocket
 
     def __init__(self, port: int = 8080) -> None:
+        self._port = port
         self.init_shell()
-        self.init_websocket(port)
+        self.init_websocket()
 
-    def init_websocket(self, port: int) -> None:
-        server = websockets.serve(self.listen, '0.0.0.0', port)
+    def init_websocket(self) -> None:
+        logger.info(f'Initializing websocket on port {self._port}')
+        server = websockets.serve(self.listen, '0.0.0.0', self._port)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(server)
         loop.run_forever()
@@ -208,4 +211,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen to')
     args = parser.parse_args()
+
     client = RuntimeClient(port=args.port)
