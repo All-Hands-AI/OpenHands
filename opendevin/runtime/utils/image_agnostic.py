@@ -21,6 +21,7 @@ def generate_dockerfile_content(base_image: str) -> str:
         'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
         '        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
         '        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
+        '        rm Miniforge3.sh && \\\n'
         '        chmod -R g+w /opendevin/miniforge3 && \\\n'
         '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
         '    fi\n'
@@ -49,7 +50,9 @@ def _build_sandbox_image(
                 file.write(dockerfile_content)
 
             api_client = docker_client.api
-            build_logs = api_client.build(path=temp_dir, tag=target_image_name, rm=True, decode=True)
+            build_logs = api_client.build(
+                path=temp_dir, tag=target_image_name, rm=True, decode=True
+            )
 
             for log in build_logs:
                 if 'stream' in log:

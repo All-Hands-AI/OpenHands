@@ -20,7 +20,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.action import MessageAction
 from opendevin.llm.llm import LLM
 
 from .utils import download_data, download_tools, encode_question, eval_answer, get_data
@@ -95,13 +94,8 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     if state is None:
         raise ValueError('State should not be None.')
 
-    model_answer_raw = ''
-
     # retrieve the last message from the agent
-    for event in state.history.get_events(reverse=True):
-        if isinstance(event, MessageAction) and event.source == 'agent':
-            model_answer_raw = event.content
-            break
+    model_answer_raw = state.history.get_last_agent_message()
 
     # attempt to parse model_answer
     correct = eval_answer(str(model_answer_raw), str(answer))
