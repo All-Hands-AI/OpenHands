@@ -263,7 +263,11 @@ class DockerSSHBox(Sandbox):
             self._cleanup_done = False
             atexit.register(self.sync_cleanup)
 
-    async def initialize(self):
+    @async_to_sync
+    def initialize(self):
+        return self.initialize_async()
+
+    async def initialize_async(self):
         if not self._sshbox_init_complete.is_set():
             async with self._initialization_lock:
                 if not self._sshbox_init_complete.is_set():
@@ -282,6 +286,13 @@ class DockerSSHBox(Sandbox):
                         self._sshbox_init_complete.set()
         else:
             await self._sshbox_init_complete.wait()
+
+    @classmethod
+    async def reset_instance(cls):
+        if cls._instance is not None:
+            await cls._instance.aclose()
+            cls._instance = None
+        cls._initialization_lock = asyncio.Lock()
 
     async def _setup_docker(self):
         # Initialize Docker client
@@ -531,6 +542,7 @@ class DockerSSHBox(Sandbox):
                 encoding='utf-8',
                 codec_errors='replace',
             )
+            await asyncio.sleep(1)
 
             # Keep the login call synchronous
             await asyncio.to_thread(
@@ -584,6 +596,10 @@ class DockerSSHBox(Sandbox):
         timeout: int | None = None,
         # ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
     ) -> tuple[int, str | CancellableStream]:
+        # Ensure initialization is complete
+        if not self.initialized:
+            await self.initialize_async()
+
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
 

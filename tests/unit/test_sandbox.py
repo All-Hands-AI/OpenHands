@@ -19,11 +19,28 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-def test_env_vars():
+@pytest.fixture(autouse=True)
+def reset_docker_ssh_box():
+    DockerSSHBox._instance = None
+    yield
+    if DockerSSHBox._instance:
+        DockerSSHBox._instance.close()
+        DockerSSHBox._instance = None
+
+
+@pytest.fixture
+def patched_config(temp_dir):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'):
+        yield temp_dir
+
+
+def test_env_vars(patched_config):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
     for box_class in [DockerSSHBox, LocalBox]:
         box = box_class()
-
+        box.initialize()
         try:
             assert (
                 'FOOBAR' in box._env
@@ -114,55 +131,44 @@ EOF
     ), 'The split commands should be the same as the input commands.'
 
 
-def test_ssh_box_run_as_devin(temp_dir):
+def test_ssh_box_run_as_devin(patched_config):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
-        for box in [
-            DockerSSHBox()
-        ]:  # FIXME: permission error on mkdir test for exec box
-            exit_code, output = box.execute('ls -l')
-            assert exit_code == 0, (
-                'The exit code should be 0 for ' + box.__class__.__name__
-            )
-            assert output.strip() == 'total 0'
+    temp_dir = patched_config
+    box = DockerSSHBox()
+    # FIXME: permission error on mkdir test for exec box
+    exit_code, output = box.execute('ls -l')
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip() == 'total 0'
 
-            assert config.workspace_base == temp_dir
-            exit_code, output = box.execute('ls -l')
-            assert exit_code == 0, 'The exit code should be 0.'
-            assert output.strip() == 'total 0'
+    assert config.workspace_base == temp_dir
+    exit_code, output = box.execute('ls -l')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert output.strip() == 'total 0'
 
-            exit_code, output = box.execute('mkdir test')
-            assert exit_code == 0, 'The exit code should be 0.'
-            assert output.strip() == ''
+    exit_code, output = box.execute('mkdir test')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert output.strip() == ''
 
-            exit_code, output = box.execute('ls -l')
-            assert exit_code == 0, 'The exit code should be 0.'
-            assert (
-                'opendevin' in output
-            ), "The output should contain username 'opendevin'"
-            assert 'test' in output, 'The output should contain the test directory'
+    exit_code, output = box.execute('ls -l')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert 'opendevin' in output, "The output should contain username 'opendevin'"
+    assert 'test' in output, 'The output should contain the test directory'
 
-            exit_code, output = box.execute('touch test/foo.txt')
-            assert exit_code == 0, 'The exit code should be 0.'
-            assert output.strip() == ''
+    exit_code, output = box.execute('touch test/foo.txt')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert output.strip() == ''
 
-            exit_code, output = box.execute('ls -l test')
-            assert exit_code == 0, 'The exit code should be 0.'
-            assert 'foo.txt' in output, 'The output should contain the foo.txt file'
-            box.close()
+    exit_code, output = box.execute('ls -l test')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert 'foo.txt' in output, 'The output should contain the foo.txt file'
+    box.close()
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         exit_code, output = box.execute('pwd && ls -l')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -178,9 +184,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         exit_code, output = box.execute('mkdir test')
         assert exit_code == 0, 'The exit code should be 0.'
@@ -204,9 +208,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         exit_code, output = box.execute('non_existing_command')
         assert exit_code != 0, (
@@ -219,9 +221,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
 def test_single_multiline_command(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         exit_code, output = box.execute('echo \\\n -e "foo"')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -235,9 +235,7 @@ def test_single_multiline_command(temp_dir):
 def test_multiline_echo(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         exit_code, output = box.execute('echo -e "hello\nworld"')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -252,9 +250,7 @@ def test_sandbox_whitespace(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         exit_code, output = box.execute('echo -e "\\n\\n\\n"')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -268,9 +264,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ):
+    ), patch.object(config, 'run_as_devin', new='true'):
         box = DockerSSHBox()
         box.init_plugins([JupyterRequirement])
         exit_code, output = box.execute('echo "print(1)" | execute_cli')
@@ -367,10 +361,11 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config.sandbox, 'box_type', new='ssh'
-    ), patch.object(config, 'enable_auto_lint', new=True):
+        config, 'enable_auto_lint', new=True
+    ):
         assert config.enable_auto_lint
         box = DockerSSHBox()
+        box.initialize()
         _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
 

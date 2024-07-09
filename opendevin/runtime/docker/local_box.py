@@ -45,7 +45,11 @@ class LocalBox(Sandbox):
             atexit.register(self.sync_cleanup)
             super().__init__()
 
-    async def initialize(self):
+    @async_to_sync
+    def initialize(self):
+        return self.initialize_async()
+
+    async def initialize_async(self):
         await super().initialize()
         if not self._local_init_complete.is_set():
             async with self._initialization_lock:
@@ -63,11 +67,12 @@ class LocalBox(Sandbox):
 
     async def _setup_environment(self):
         # Set up any necessary environment variables or configurations
-        for key, value in self._env.items():
+        for key, value in os.environ.items():
             if key.startswith('SANDBOX_ENV_'):
                 sandbox_key = key.removeprefix('SANDBOX_ENV_')
                 if sandbox_key:
                     await self.add_to_env_async(sandbox_key, value)
+                    self._env[sandbox_key] = value
 
     @async_to_sync
     def execute(

@@ -1,4 +1,3 @@
-import asyncio
 import os
 from typing import Protocol
 
@@ -24,14 +23,20 @@ class SandboxProtocol(Protocol):
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False): ...
 
-    async def copy_to_async(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        ...
+    async def copy_to_async(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ): ...
 
-    async def _source_bashrc_async(self) -> None:
-        ...
+    async def _source_bashrc_async(self) -> None: ...
 
-    async def _init_plugins_async(self, plugins: list[PluginRequirement]) -> None:
-        ...
+    async def _init_plugins_async(self, plugins: list[PluginRequirement]) -> None: ...
+
+    @property
+    def plugin_initialized(self) -> bool: ...
+
+    @plugin_initialized.setter
+    def plugin_initialized(self, value: bool): ...
+
 
 class PluginMixin:
     """Mixin for Sandbox to support plugins."""
@@ -53,16 +58,30 @@ class PluginMixin:
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         return async_to_sync(self._init_plugins_async)(requirements)
 
-    async def _init_plugins_async(self: SandboxProtocol, requirements: list[PluginRequirement]):
+    async def _init_plugins_async(
+        self: SandboxProtocol, requirements: list[PluginRequirement]
+    ):
         """Load plugins into the sandbox."""
         if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
             return
+
+        # Check if the sandbox is initialized
+        if hasattr(self, 'initialized') and not self.initialized:
+            logger.info('Sandbox not initialized. Initializing now...')
+            if hasattr(self, 'initialize'):
+                await self.initialize()
+            else:
+                logger.warning(
+                    'Sandbox has no initialize method. Proceeding without initialization.'
+                )
 
         if self.initialize_plugins:
             logger.info('Initializing plugins in the sandbox')
 
             # clean-up ~/.bashrc and touch ~/.bashrc
-            exit_code, output = await self.execute_async('rm -f ~/.bashrc && touch ~/.bashrc')
+            exit_code, output = await self.execute_async(
+                'rm -f ~/.bashrc && touch ~/.bashrc'
+            )
             if exit_code != 0:
                 logger.warning(
                     f'Failed to clean-up ~/.bashrc with exit code {exit_code} and output: {output}'
@@ -86,7 +105,9 @@ class PluginMixin:
                 logger.info(
                     f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
                 )
-                exit_code, output = await self.execute_async(abs_path_to_bash_script, stream=True)
+                exit_code, output = await self.execute_async(
+                    abs_path_to_bash_script, stream=True
+                )
                 if isinstance(output, CancellableStream):
                     total_output = ''
                     for line in output:

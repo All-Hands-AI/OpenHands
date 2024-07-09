@@ -51,13 +51,13 @@ async def test_run_python_backticks(temp_dir):
         'opendevin.runtime.docker.ssh_box.DockerSSHBox.execute_async',
         new=mock_sandbox_execute_async,
     ), patch(
-        'opendevin.runtime.server.runtime.ServerRuntime._initialize', new=AsyncMock()
+        'opendevin.runtime.server.runtime.ServerRuntime.initialize', new=AsyncMock()
     ):
         # Initialize the runtime with the mock event_stream
         runtime = ServerRuntime(event_stream=mock_event_stream, sandbox=mock_sandbox)
+        await runtime.initialize()
 
-        # Manually set the initialization complete event
-        runtime._initialization_complete.set()
+        runtime._initialization_event.set()
 
         # Define the test action with a simple IPython command
         action = IPythonRunCellAction(code=test_code)
@@ -80,7 +80,8 @@ async def test_run_python_backticks(temp_dir):
         )
 
 
-def test_sandbox_jupyter_plugin_backticks(temp_dir):
+@pytest.mark.asyncio
+async def test_sandbox_jupyter_plugin_backticks(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
@@ -88,14 +89,16 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
         config.sandbox, 'box_type', new='ssh'
     ):
         box = DockerSSHBox()
-        box.init_plugins([JupyterRequirement])
+        await box.initialize()
+        await box._init_plugins_async([JupyterRequirement])
+
         test_code = "print('Hello, `World`!')"
         expected_write_command = (
             "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
         )
         expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-        exit_code, output = box.execute(expected_write_command)
-        exit_code, output = box.execute(expected_execute_command)
+        exit_code, output = await box.execute_async(expected_write_command)
+        exit_code, output = await box.execute_async(expected_execute_command)
         print(output)
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
         assert output.strip() == 'Hello, `World`!', (
