@@ -139,6 +139,7 @@ class JupyterKernel:
             await self._connect()
 
         msg_id = uuid4().hex
+        assert self.ws is not None
         self.ws.write_message(
             json_encode(
                 {
@@ -169,6 +170,7 @@ class JupyterKernel:
         async def wait_for_messages():
             execution_done = False
             while not execution_done:
+                assert self.ws is not None
                 msg = await self.ws.read_message()
                 msg = json_decode(msg)
                 msg_type = msg['msg_type']
