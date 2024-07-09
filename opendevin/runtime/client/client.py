@@ -4,6 +4,7 @@ import websockets
 import pexpect
 import json
 import shutil
+import re
 from typing import Any
 from websockets.exceptions import ConnectionClosed
 from opendevin.events.serialization import event_to_dict, event_from_dict
@@ -32,6 +33,8 @@ class RuntimeClient():
 
     def __init__(self) -> None:
         self.init_shell()
+        # TODO: code will block at init_websocket, maybe we can open a subprocess to run websocket forever
+        # In case we need to run other code after init_websocket
         self.init_websocket()
 
     def init_websocket(self) -> None:
@@ -41,7 +44,7 @@ class RuntimeClient():
         loop.run_forever()
     
     def init_shell(self) -> None:
-        # TODO: we need to figure a way to support different users. Maybe the runtime cli should be run as root
+        # run as root
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8')
         self.shell.expect(r'[$#] ')
 
@@ -75,13 +78,23 @@ class RuntimeClient():
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
-           
+
+    def clean_up(self,input_text):
+        # Remove escape sequences
+        cleaned_text = re.sub(r'\x1b\[[0-9;?]*[a-zA-Z]', '', input_text)
+        # Remove carriage returns and other control characters
+        cleaned_text = re.sub(r'[\r\n\t]', '', cleaned_text)
+        return cleaned_text
+
     def execute(self, command):
         print(f"Received command: {command}")
         self.shell.sendline(command)
         self.shell.expect(r'[$#] ')
         output = self.shell.before.strip().split('\r\n', 1)[1].strip()
-        exit_code = output[-1].strip()
+        # Get the exit code
+        self.shell.sendline('echo $?')
+        self.shell.expect(r'[$#] ')
+        exit_code = self.clean_up(self.shell.before.strip().split('\r\n')[1].strip())
         return output, exit_code
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -179,17 +192,19 @@ class RuntimeClient():
         output, exit_code = self.execute(
             'source /opendevin/bash.bashrc && source ~/.bashrc'
         )
-        print("Yufan:",exit_code, output)
-        # if exit_code != 0:
-        #     raise RuntimeError(
-        #         f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
-        #     )
+        if exit_code != 0:
+            raise RuntimeError(
+                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+            )
         print('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
 
 
 def test_run_commond():
     client = RuntimeClient()
     command = CmdRunAction(command="ls -l")
+    obs = client.run_action(command)
+    print(obs)
+    command = CmdRunAction(command="pwd")
     obs = client.run_action(command)
     print(obs)
 
@@ -202,11 +217,13 @@ def test_shell(message):
     shell.expect(r'[$#] ')
     output = shell.before.strip().split('\r\n', 1)[1].strip()
     shell.close()
+    print(output)
 
 if __name__ == "__main__":
     # print(test_shell("ls -l"))
-    client = RuntimeClient()
-    # test_run_commond()
+    # client = RuntimeClient()
+    test_run_commond()
     # client.init_sandbox_plugins([AgentSkillsRequirement,JupyterRequirement])
+    # print(test_shell("whoami"))
 
     
