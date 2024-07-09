@@ -29,7 +29,7 @@ from opendevin.llm.llm import LLM
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false') == 'true'
-INSTANCE_DOCKER_NAMESPACE = os.environ.get('INSTANCE_DOCKER_NAMESPACE', 'xing')
+INSTANCE_DOCKER_NAMESPACE = os.environ.get('INSTANCE_DOCKER_NAMESPACE', 'xingyaoww')
 
 
 def cleanup():
