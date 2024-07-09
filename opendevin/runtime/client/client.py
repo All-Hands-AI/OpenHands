@@ -32,6 +32,8 @@ class RuntimeClient():
 
     def __init__(self) -> None:
         self.init_shell()
+        # TODO: code will block at init_websocket, maybe we can open a subprocess to run websocket forever
+        # In case we need to run other code after init_websocket
         self.init_websocket()
 
     def init_websocket(self) -> None:
