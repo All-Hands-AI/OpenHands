@@ -86,7 +86,7 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [use_instance_image] [instance_docker_namespace]
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
 # e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview HEAD CodeActAgent 300
 ```
 
