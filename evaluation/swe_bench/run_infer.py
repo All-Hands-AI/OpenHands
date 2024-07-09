@@ -134,37 +134,45 @@ def get_test_result(instance, sandbox, workspace_dir_name):
     else:
         test_result['metadata']['5_reformat_instance_json_success'] = True
 
-    # Get the instance report
-    err_code, output = sandbox.execute(
-        (
-            'cd /swe_util/OD-SWE-bench '
-            '&& export PYTHONPATH=$(pwd):$PYTHONPATH '
-            '&& conda run -n swe-bench-eval python swebench/metrics/get_instance_report.py --swe_bench_task /workspace/instance.json --log_path /workspace/$SWE_INSTANCE_ID.log'
-        )
-    )
-    if err_code != 0:
-        logger.error(f'Error getting instance report: {output}')
+    if USE_INSTANCE_IMAGE:
+        # instance report is not supported in instance image mode
         test_result['metadata']['6_get_instance_report_success'] = False
-        test_result['metadata']['6_get_instance_report_error'] = output
-    else:
-        test_result['metadata']['6_get_instance_report_success'] = True
-        test_result['result_raw'] = output
+        test_result['metadata']['6_get_instance_report_error'] = (
+            'Instance report is not supported in instance image mode.'
+        )
 
-        # try to parse output
-        for line in output.strip().split('\n'):
-            line = line.strip('-')
-            try:
-                key, value = line.split(':')
-            except ValueError:
-                # skip this line
-                print(f'Error parsing result line: {line}')
-                continue
-            value = value.strip()
-            try:
-                value = int(value)
-            except ValueError:
-                pass
-            test_result['result'][key.strip()] = value
+    else:
+        # Get the instance report
+        err_code, output = sandbox.execute(
+            (
+                'cd /swe_util/OD-SWE-bench '
+                '&& export PYTHONPATH=$(pwd):$PYTHONPATH '
+                '&& conda run -n swe-bench-eval python swebench/metrics/get_instance_report.py --swe_bench_task /workspace/instance.json --log_path /workspace/$SWE_INSTANCE_ID.log'
+            )
+        )
+        if err_code != 0:
+            logger.error(f'Error getting instance report: {output}')
+            test_result['metadata']['6_get_instance_report_success'] = False
+            test_result['metadata']['6_get_instance_report_error'] = output
+        else:
+            test_result['metadata']['6_get_instance_report_success'] = True
+            test_result['result_raw'] = output
+
+            # try to parse output
+            for line in output.strip().split('\n'):
+                line = line.strip('-')
+                try:
+                    key, value = line.split(':')
+                except ValueError:
+                    # skip this line
+                    print(f'Error parsing result line: {line}')
+                    continue
+                value = value.strip()
+                try:
+                    value = int(value)
+                except ValueError:
+                    pass
+                test_result['result'][key.strip()] = value
     return test_result
 
 
