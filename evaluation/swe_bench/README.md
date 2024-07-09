@@ -75,6 +75,7 @@ Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench
 docker image. Then run this python script:
 
 ```bash
+# export USE_INSTANCE_IMAGE=true # if you want to test support for instance-level docker images
 poetry run python evaluation/swe_bench/swe_env_box.py
 ```
 
@@ -85,7 +86,7 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [use_instance_image] [instance_docker_namespace]
 # e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview HEAD CodeActAgent 300
 ```
 
@@ -103,6 +104,19 @@ to `CodeActAgent`.
 `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
+
+`max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
+default, it is set to 30.
+
+`num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
+default, it is set to 1.
+
+`use_instance_image`, e.g. `true`, is a boolean flag to use the instance-level docker images By
+default, it is set to `false`.
+
+`instance_docker_namespace`, e.g. `xingyaoww`, is the docker image namespace to use for the instance-level docker.
+It's only used when `use_instance_docker` is set to `true`.
+By default, it is set to `xingyaoww`. Please ignore this argument unless you want to experiment with your own instance-level docker images.
 
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
 then your command would be:

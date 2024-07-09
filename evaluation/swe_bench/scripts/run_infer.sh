@@ -9,6 +9,8 @@ AGENT=$3
 EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
+USE_INSTANCE_IMAGE=$7
+INSTANCE_DOCKER_NAMESPACE=$8
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -25,6 +27,22 @@ if [ -z "$MAX_ITER" ]; then
   echo "MAX_ITER not specified, use default 30"
   MAX_ITER=30
 fi
+
+if [ -z "$USE_INSTANCE_IMAGE" ]; then
+  echo "USE_INSTANCE_IMAGE not specified, use default false"
+  USE_INSTANCE_IMAGE=false
+fi
+
+if [ "$USE_INSTANCE_IMAGE" = true ]; then
+  if [ -z "$INSTANCE_DOCKER_NAMESPACE" ]; then
+    echo "INSTANCE_DOCKER_NAMESPACE not specified, use default xingyaoww"
+    INSTANCE_DOCKER_NAMESPACE="xingyaoww"
+  fi
+fi
+export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
+export INSTANCE_DOCKER_NAMESPACE=$INSTANCE_DOCKER_NAMESPACE
+echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+echo "INSTANCE_DOCKER_NAMESPACE: $INSTANCE_DOCKER_NAMESPACE"
 
 get_agent_version
 
