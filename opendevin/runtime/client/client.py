@@ -179,11 +179,10 @@ class RuntimeClient():
         output, exit_code = self.execute(
             'source /opendevin/bash.bashrc && source ~/.bashrc'
         )
-        print("Yufan:",exit_code, output)
-        # if exit_code != 0:
-        #     raise RuntimeError(
-        #         f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
-        #     )
+        if exit_code != 0:
+            raise RuntimeError(
+                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+            )
         print('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
 
 
