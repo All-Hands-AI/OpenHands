@@ -258,7 +258,10 @@ class LLM:
         Returns:
             int: The number of tokens.
         """
-        return litellm.token_counter(model=self.model_name, messages=messages)
+        if isinstance(messages, list):
+            return litellm.token_counter(model=self.model_name, messages=messages)
+        elif isinstance(messages, str):
+            return litellm.token_counter(model=self.model_name, text=messages)
 
     def is_local(self):
         """

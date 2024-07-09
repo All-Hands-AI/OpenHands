@@ -67,3 +67,17 @@ class LLMNoActionError(Exception):
 class LLMResponseError(Exception):
     def __init__(self, message='Failed to retrieve action from LLM response'):
         super().__init__(message)
+
+
+class TokenLimitExceededError(Exception):
+    """Exception raised when the user-defined max_input_tokens limit is exceeded."""
+
+    def __init__(self, message='User-defined token limit exceeded. Condensing memory.'):
+        super().__init__(message)
+
+
+class SummarizeError(Exception):
+    """Exception raised when message can't be Summarized."""
+
+    def __init__(self, message='Error Summarizing The Memory'):
+        super().__init__(message)
