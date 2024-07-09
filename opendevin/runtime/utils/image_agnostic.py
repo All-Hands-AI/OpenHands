@@ -1,11 +1,14 @@
+import os
 import tempfile
 
 import docker
 
 from opendevin.core.logger import opendevin_logger as logger
 
+from .source import create_project_source_dist
 
-def generate_dockerfile_content(base_image: str) -> str:
+
+def generate_dockerfile(base_image: str) -> str:
     """
     Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
 
@@ -31,12 +34,72 @@ def generate_dockerfile_content(base_image: str) -> str:
     return dockerfile_content
 
 
+def generate_dockerfile_for_eventstream_runtime(
+    base_image: str, temp_dir: str, skip_init: bool = False
+) -> str:
+    """
+    Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
+
+    NOTE: This is only tested on debian yet.
+    """
+    if skip_init:
+        dockerfile_content = f'FROM {base_image}\n'
+    else:
+        dockerfile_content = (
+            f'FROM {base_image}\n'
+            'RUN apt update && apt install -y wget sudo\n'
+            'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
+            'RUN echo "" > /opendevin/bash.bashrc\n'
+            'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
+            '        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
+            '        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
+            '        chmod -R g+w /opendevin/miniforge3 && \\\n'
+            '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
+            '    fi\n'
+            'RUN /opendevin/miniforge3/bin/mamba install python=3.11\n'
+            'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry\n'
+        )
+
+    tarball_path = create_project_source_dist()
+    filename = os.path.basename(tarball_path)
+    filename = filename.removesuffix('.tar.gz')
+
+    # move the tarball to temp_dir
+    os.rename(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
+    logger.info(
+        f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
+    )
+
+    # Copy the project directory to the container
+    dockerfile_content += 'COPY project.tar.gz /opendevin\n'
+    # remove /opendevin/code if it exists
+    dockerfile_content += 'RUN rm -rf /opendevin/code || true\n'
+    # unzip the tarball to /opendevin/code
+    dockerfile_content += f'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz && mv /opendevin/{filename} /opendevin/code\n'
+    # install (or update) the dependencies
+    dockerfile_content += (
+        'RUN cd /opendevin/code && ls -alh /opendevin/code && '
+        '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
+        '/opendevin/miniforge3/bin/mamba run -n base poetry install\n'
+    )
+    return dockerfile_content
+
+
 def _build_sandbox_image(
-    base_image: str, target_image_name: str, docker_client: docker.DockerClient
+    base_image: str,
+    target_image_name: str,
+    docker_client: docker.DockerClient,
+    eventstream_runtime: bool = False,
+    **kwargs,
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            dockerfile_content = generate_dockerfile_content(base_image)
+            if eventstream_runtime:
+                dockerfile_content = generate_dockerfile_for_eventstream_runtime(
+                    base_image, temp_dir, **kwargs
+                )
+            else:
+                dockerfile_content = generate_dockerfile(base_image)
             logger.info(f'Building agnostic sandbox image: {target_image_name}')
             logger.info(
                 (
@@ -70,16 +133,23 @@ def _build_sandbox_image(
         raise e
 
 
-def _get_new_image_name(base_image: str) -> str:
+def _get_new_image_name(base_image: str, is_eventstream_runtime: bool) -> str:
+    prefix = 'od_sandbox'
+    if is_eventstream_runtime:
+        prefix = 'od_eventstream_runtime'
     if ':' not in base_image:
         base_image = base_image + ':latest'
 
     [repo, tag] = base_image.split(':')
     repo = repo.replace('/', '___')
-    return f'od_sandbox:{repo}__{tag}'
+    return f'{prefix}:{repo}__{tag}'
 
 
-def get_od_sandbox_image(base_image: str, docker_client: docker.DockerClient) -> str:
+def get_od_sandbox_image(
+    base_image: str,
+    docker_client: docker.DockerClient,
+    is_eventstream_runtime: bool = False,
+) -> str:
     """Return the sandbox image name based on user-provided base image.
 
     The returned sandbox image is assumed to contains all the required dependencies for OpenDevin.
@@ -89,18 +159,33 @@ def get_od_sandbox_image(base_image: str, docker_client: docker.DockerClient) ->
     if 'ghcr.io/opendevin/sandbox' in base_image:
         return base_image
 
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = _get_new_image_name(base_image, is_eventstream_runtime)
 
     # Detect if the sandbox image is built
+    image_exists = False
     images = docker_client.images.list()
     for image in images:
         if new_image_name in image.tags:
             logger.info('Found existing od_sandbox image, reuse:' + new_image_name)
-            return new_image_name
+            image_exists = True
+            break
 
-    # If the sandbox image is not found, build it
-    logger.info(
-        f'od_sandbox image is not found for {base_image}, will build: {new_image_name}'
+    extra_args = {}
+    if image_exists:
+        if is_eventstream_runtime:
+            extra_args = {'skip_init': True}
+            base_image = new_image_name
+            logger.info(
+                f'Reusing existing od_sandbox image [{new_image_name}] but will update the source code.'
+            )
+        else:
+            return new_image_name
+    else:
+        # If the sandbox image is not found, build it
+        logger.info(
+            f'od_sandbox image is not found for {base_image}, will build: {new_image_name}'
+        )
+    _build_sandbox_image(
+        base_image, new_image_name, docker_client, is_eventstream_runtime, **extra_args
     )
-    _build_sandbox_image(base_image, new_image_name, docker_client)
     return new_image_name
