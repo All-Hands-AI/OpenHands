@@ -23,7 +23,6 @@ def generate_dockerfile_content(base_image: str) -> str:
         '        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
         '        rm Miniforge3.sh && \\\n'
         '        chmod -R g+w /opendevin/miniforge3 && \\\n'
-        '        chmod -R g+w /opendevin/miniforge3 && \\\n'
         '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
         '    fi\n'
         'RUN /opendevin/miniforge3/bin/pip install --upgrade pip\n'
