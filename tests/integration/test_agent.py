@@ -49,7 +49,7 @@ def test_write_simple_script():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
     final_state: State | None = asyncio.run(
         run_agent_controller(agent, task, exit_on_message=True)
@@ -103,7 +103,7 @@ def test_edits():
         shutil.copy(os.path.join(source_dir, file), dest_file)
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
@@ -137,7 +137,7 @@ def test_ipython():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
@@ -171,7 +171,7 @@ def test_simple_task_rejection():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
@@ -195,7 +195,7 @@ def test_ipython_module():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
@@ -235,7 +235,7 @@ def test_browse_internet(http_server):
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(args.model_name))
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
