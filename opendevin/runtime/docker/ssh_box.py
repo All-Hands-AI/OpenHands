@@ -870,13 +870,13 @@ class DockerSSHBox(Sandbox):
                 for container in self.docker_client.containers.list(all=True):
                     if container.name.startswith(self.container_name):
                         if config.persist_sandbox:
-                            await asyncio.to_thread(container.stop)
+                            container.stop()
                         else:
-                            await asyncio.to_thread(container.remove, force=True)
+                            container.remove(force=True)
 
                 # Close the Docker client
                 if hasattr(self.docker_client, 'close'):
-                    await asyncio.to_thread(self.docker_client.close)
+                    self.docker_client.close()
         except Exception as e:
             logger.error(f'Error during cleanup: {e}')
         finally:

@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
@@ -59,7 +60,10 @@ class AgentSession:
             end_state.save_to_session(self.sid)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            if asyncio.iscoroutinefunction(self.runtime.close):
+                await self.runtime.close()
+            else:
+                self.runtime.close()
         self._closed = True
 
     async def _create_runtime(self):
