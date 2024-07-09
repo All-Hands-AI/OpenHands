@@ -273,8 +273,6 @@ IMPORTANT TIPS:
             'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
             'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
-            'The environment is already set up for you to start working. You DO NOT need to install any dependencies or setup the environment again.\n'
-            'If you failed to run test cases due to environment setup, just make sure you made all the edits you wanted to make and then exit the environment by <execute_bash> exit </execute_bash>.\n'
         )
 
     # NOTE: You can actually set slightly different instruction for different agents
