@@ -1,3 +1,5 @@
+import os
+
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -8,6 +10,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -210,6 +213,16 @@ class CodeActAgent(Agent):
             {'role': 'system', 'content': self.system_message},
             {'role': 'user', 'content': self.in_context_example},
         ]
+
+        workspace_contents = ', '.join(os.listdir(config.workspace_base))
+        if not state.history:
+            if workspace_contents:
+                messages.append(
+                    {
+                        'role': 'user',
+                        'content': f'WORKSPACE CONTENTS: {workspace_contents}',
+                    }
+                )
 
         for event in state.history.get_events():
             # create a regular message from an event
