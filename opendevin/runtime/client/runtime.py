@@ -315,7 +315,7 @@ async def test_event_stream():
     print(await runtime.run_action(action_cmd))
 
     # Test run ipython
-    test_code = "print('Hello, `World`!\n')"
+    test_code = "print('Hello, `World`!\\n')"
     action_opython = IPythonRunCellAction(code=test_code)
     print(await runtime.run_action(action_opython))
 
