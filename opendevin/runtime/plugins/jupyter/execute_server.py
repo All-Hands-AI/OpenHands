@@ -64,6 +64,7 @@ class JupyterKernel:
 
         self.heartbeat_interval = 10000  # 10 seconds
         self.heartbeat_callback = None
+        self.initialized = False
 
     async def initialize(self):
         await self.execute(r'%colors nocolor')
@@ -76,6 +77,7 @@ class JupyterKernel:
         for tool in self.tools_to_run:
             # logging.info(f'Tool initialized:\n{tool}')
             await self.execute(tool)
+        self.initialized = True
 
     async def _send_heartbeat(self):
         if not self.ws:

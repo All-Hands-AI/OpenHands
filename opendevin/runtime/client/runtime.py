@@ -28,10 +28,12 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
+    JupyterRequirement,
+    PluginRequirement,
+)
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.browse import browse
-from opendevin.runtime.server.files import read_file, write_file
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
 
@@ -47,6 +49,7 @@ class EventStreamRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         container_image: str | None = None,
+        plugins: list[PluginRequirement] | None = None,
     ):
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
@@ -69,9 +72,11 @@ class EventStreamRuntime(Runtime):
 
         # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
         self._init_event_stream(event_stream)
+        self.plugins = plugins if plugins is not None else []
         self.container = self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=config.workspace_mount_path,
+            plugins=plugins,
         )
 
     @staticmethod
@@ -92,6 +97,7 @@ class EventStreamRuntime(Runtime):
         self,
         sandbox_workspace_dir: str,
         mount_dir: str = config.workspace_mount_path,
+        plugins: list[PluginRequirement] | None = None,
     ):
         """Start a container and return the container object.
 
@@ -105,15 +111,20 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Starting container with image: {self.container_image} and name: {self.container_name}'
             )
+            if plugins is None:
+                plugins = []
+            plugin_names = ' '.join([plugin.name for plugin in plugins])
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
-                    'bash -c "cd /opendevin/code/ && '
-                    f'/opendevin/miniforge3/bin/mamba run -n base poetry run python -u -m opendevin.runtime.client.client {self._port}"'
+                    f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base '
+                    'PYTHONUNBUFFERED=1 poetry run '
+                    f'python -u -m opendevin.runtime.client.client {self._port} --plugins {plugin_names}'
                 ),
                 # TODO: test it in mac and linux
                 network_mode='host',
-                working_dir=sandbox_workspace_dir,
+                # working_dir=sandbox_workspace_dir,
+                working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
                 volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
@@ -137,7 +148,7 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(5),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+        wait=tenacity.wait_exponential(multiplier=2, min=4, max=600),
     )
     async def _wait_until_alive(self):
         async with aiohttp.ClientSession() as session:
@@ -176,7 +187,7 @@ class EventStreamRuntime(Runtime):
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
 
-    async def run_action(self, action: Action) -> Observation:
+    async def run_action(self, action: Action, timeout: int = 600) -> Observation:
         """
         Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
@@ -192,17 +203,8 @@ class EventStreamRuntime(Runtime):
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
-        observation = await getattr(self, action_type)(action)
-        # TODO: fix ID problem, see comments https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
-        observation._parent = action.id  # type: ignore[attr-defined]
-        return observation
 
-    async def run(self, action: CmdRunAction) -> Observation:
-        return await self._run_command(action)
-
-    async def _run_command(
-        self, action: Action, timeout: Optional[int] = 600
-    ) -> Observation:
+        # Run action in od-runtime-client
         session = await self._ensure_session()
         await self._wait_until_alive()
         try:
@@ -213,23 +215,43 @@ class EventStreamRuntime(Runtime):
             ) as response:
                 if response.status == 200:
                     output = await response.json()
-                    print('Received output: ', output)
-                    return observation_from_dict(output)
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
+                    return obs
                 else:
                     error_message = await response.text()
-                    print(f'Error from server: {error_message}')
-                    return ErrorObservation(
-                        f'Command execution failed: {error_message}'
-                    )
+                    logger.error(f'Error from server: {error_message}')
+                    obs = ErrorObservation(f'Command execution failed: {error_message}')
         except asyncio.TimeoutError:
-            print('No response received within the timeout period.')
-            return ErrorObservation('Command execution timed out')
+            logger.error('No response received within the timeout period.')
+            obs = ErrorObservation('Command execution timed out')
         except Exception as e:
-            print(f'Error during command execution: {e}')
-            return ErrorObservation(f'Command execution failed: {str(e)}')
+            logger.error(f'Error during command execution: {e}')
+            obs = ErrorObservation(f'Command execution failed: {str(e)}')
+        # TODO: fix ID problem, see comments https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
+        obs._parent = action.id  # type: ignore[attr-defined]
+        return obs
+
+    async def run(self, action: CmdRunAction) -> Observation:
+        return await self.run_action(action)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        return await self._run_command(action)
+        return await self.run_action(action)
+
+    async def read(self, action: FileReadAction) -> Observation:
+        return await self.run_action(action)
+
+    async def write(self, action: FileWriteAction) -> Observation:
+        return await self.run_action(action)
+
+    async def browse(self, action: BrowseURLAction) -> Observation:
+        return await self.run_action(action)
+
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return await self.run_action(action)
+
+    async def recall(self, action: AgentRecallAction) -> Observation:
+        return await self.run_action(action)
 
     ############################################################################
     # Keep the same with other runtimes
@@ -239,24 +261,24 @@ class EventStreamRuntime(Runtime):
         # TODO: should we get this from od-runtime-client
         return config.workspace_base
 
-    async def read(self, action: FileReadAction) -> Observation:
-        working_dir = self.get_working_directory()
-        return await read_file(action.path, working_dir, action.start, action.end)
+    # async def read(self, action: FileReadAction) -> Observation:
+    #     working_dir = self.get_working_directory()
+    #     return await read_file(action.path, working_dir, action.start, action.end)
 
-    async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.get_working_directory()
-        return await write_file(
-            action.path, working_dir, action.content, action.start, action.end
-        )
+    # async def write(self, action: FileWriteAction) -> Observation:
+    #     working_dir = self.get_working_directory()
+    #     return await write_file(
+    #         action.path, working_dir, action.content, action.start, action.end
+    #     )
 
-    async def browse(self, action: BrowseURLAction) -> Observation:
-        return await browse(action, self.browser)
+    # async def browse(self, action: BrowseURLAction) -> Observation:
+    #     return await browse(action, self.browser)
 
-    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await browse(action, self.browser)
+    # async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+    #     return await browse(action, self.browser)
 
-    async def recall(self, action: AgentRecallAction) -> Observation:
-        return NullObservation('')
+    # async def recall(self, action: AgentRecallAction) -> Observation:
+    #     return NullObservation('')
 
     ############################################################################
     # Initialization work inside sandbox image
@@ -275,14 +297,19 @@ def test_run_command():
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(event_stream)
-    asyncio.run(runtime._run_command(CmdRunAction('ls -l')))
+    asyncio.run(runtime.run_action(CmdRunAction('ls -l')))
 
 
 async def test_event_stream():
     sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(event_stream, sid, 'ubuntu:22.04')
+    runtime = EventStreamRuntime(
+        event_stream,
+        sid,
+        'ubuntu:22.04',
+        plugins=[JupyterRequirement(), AgentSkillsRequirement()],
+    )
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
     print(await runtime.run_action(action_cmd))
