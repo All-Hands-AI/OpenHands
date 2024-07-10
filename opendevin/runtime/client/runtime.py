@@ -88,11 +88,12 @@ class EventStreamRuntime(Runtime):
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
-                # TODO: test it in mac and linux
+                # TODO: test the port mapping in mac and linux
                 # network_mode='host',
                 working_dir=self.sandbox_workspace_dir,
                 name=self.container_name,
                 detach=True,
+                ports={'8080/tcp': 8080},
                 volumes={mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'}},
             )
             print('Container started')
