@@ -78,8 +78,10 @@ class PluginMixin:
         if self.initialize_plugins:
             logger.info('Initializing plugins in the sandbox')
 
-            # clean-up ~/.bashrc and touch ~/.bashrc
-            exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
+            # clean-up ~/.bashrc and touch ~/.bashrc. Do not use "&&"!
+            exit_code, output = await self.execute_async('rm -f ~/.bashrc')
+            if exit_code == 0:
+                exit_code, output = await self.execute_async('touch ~/.bashrc')
             if exit_code != 0:
                 logger.warning(
                     f'Failed to clean-up ~/.bashrc with exit code {exit_code} and output: {output}'
