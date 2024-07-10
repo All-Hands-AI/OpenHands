@@ -91,7 +91,11 @@ def test_agent_reject_action_serialization_deserialization():
 def test_cmd_run_action_serialization_deserialization():
     original_action_dict = {
         'action': 'run',
-        'args': {'command': 'echo "Hello world"', 'thought': '', 'is_confirmed': ActionConfirmationStatus.CONFIRMED},
+        'args': {
+            'command': 'echo "Hello world"',
+            'thought': '',
+            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+        },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
 
