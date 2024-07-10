@@ -312,28 +312,44 @@ async def test_event_stream():
     )
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
-    print(await runtime.run_action(action_cmd))
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    logger.info(await runtime.run_action(action_cmd), extra={'msg_type': 'OBSERVATION'})
 
     # Test run ipython
     test_code = "print('Hello, `World`!\\n')"
-    action_opython = IPythonRunCellAction(code=test_code)
-    print(await runtime.run_action(action_opython))
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    logger.info(
+        await runtime.run_action(action_ipython), extra={'msg_type': 'OBSERVATION'}
+    )
 
     # Test read file
     action_read = FileReadAction(path='hello.sh')
-    print(await runtime.run_action(action_read))
+    logger.info(action_read, extra={'msg_type': 'ACTION'})
+    logger.info(
+        await runtime.run_action(action_read), extra={'msg_type': 'OBSERVATION'}
+    )
 
     # Test write file
     action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
-    print(await runtime.run_action(action_write))
+    logger.info(action_write, extra={'msg_type': 'ACTION'})
+    logger.info(
+        await runtime.run_action(action_write), extra={'msg_type': 'OBSERVATION'}
+    )
 
     # Test browse
     action_browse = BrowseURLAction(url='https://google.com')
-    print(await runtime.run_action(action_browse))
+    logger.info(action_browse, extra={'msg_type': 'ACTION'})
+    logger.info(
+        await runtime.run_action(action_browse), extra={'msg_type': 'OBSERVATION'}
+    )
 
     # Test recall
     action_recall = AgentRecallAction(query='who am I?')
-    print(await runtime.run_action(action_recall))
+    logger.info(action_recall, extra={'msg_type': 'ACTION'})
+    logger.info(
+        await runtime.run_action(action_recall), extra={'msg_type': 'OBSERVATION'}
+    )
 
 
 if __name__ == '__main__':
