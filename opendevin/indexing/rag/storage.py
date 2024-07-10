@@ -22,8 +22,9 @@ def get_vector_store(settings: IndexSettings) -> BasePydanticVectorStore:
                 settings.embedding_dimensions, settings.existing_index_name
             )
         case VectorEngine.FAISS:
-            # TODO: add FaissVectorStore
-            pass
+            return get_faiss_vector_store(
+                settings.embedding_dimensions, settings.existing_index_name
+            )
         case VectorEngine.CHROMADB:
             # TODO: add ChromaDBVectorStore
             pass
@@ -32,7 +33,7 @@ def get_vector_store(settings: IndexSettings) -> BasePydanticVectorStore:
 
 
 def get_pinecone_vector_store(
-    embedding_dimentions: int, index_name: Optional[str] = None
+    embedding_dimensions: int, index_name: Optional[str] = None
 ) -> BasePydanticVectorStore:
     from llama_index.vector_stores.pinecone import PineconeVectorStore
     from pinecone import Pinecone, ServerlessSpec
@@ -44,10 +45,20 @@ def get_pinecone_vector_store(
         index_name = 'mon-nouvel-indice'
         db.create_index(
             name=index_name,
-            dimension=embedding_dimentions,
+            dimension=embedding_dimensions,
             spec=ServerlessSpec(cloud='aws', region='us-east-1'),
         )
 
     pc_index = db.Index(index_name)
 
     return PineconeVectorStore(pinecone_index=pc_index)
+
+
+def get_faiss_vector_store(
+    embedding_dimensions: int, index_name: Optional[str]
+) -> BasePydanticVectorStore:
+    import faiss
+    from llama_index.vector_stores.faiss import FaissVectorStore
+
+    faiss_index = faiss.IndexFlatL2(embedding_dimensions)
+    return FaissVectorStore(faiss_index=faiss_index)

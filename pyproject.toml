@@ -57,6 +57,7 @@ pinecone-client = "*"
 llama-index-vector-stores-pinecone = "*"
 streamlit = "*"
 llama-index-readers-github = "*"
+llama-index-vector-stores-faiss = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.5.1"

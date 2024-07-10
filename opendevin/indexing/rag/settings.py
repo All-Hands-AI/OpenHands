@@ -23,7 +23,7 @@ class IndexSettings(BaseModel):
 
     def persist(self, persist_dir: str) -> None:
         with open(os.path.join(persist_dir, 'settings.json'), 'w') as f:
-            json.dump(self.to_dict(), f)
+            json.dump(self.model_dump(), f)
 
     @classmethod
     def from_persist_dir(cls, persist_dir: str):

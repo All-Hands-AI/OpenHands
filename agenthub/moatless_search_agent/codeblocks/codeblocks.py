@@ -1107,3 +1107,23 @@ class CodeBlock(BaseModel):
 
     def is_within_lines(self, start_line: int, end_line: int):
         return self.start_line >= start_line and self.end_line <= end_line
+
+    def has_content(self, query: str, span_id: Optional[str] = None):
+        if (
+            self.content
+            and query in self.content
+            and (
+                not span_id
+                or (self.belongs_to_span and self.belongs_to_span.span_id == span_id)
+            )
+        ):
+            return True
+
+        if span_id and not self.has_span(span_id):
+            return False
+
+        for child in self.children:
+            if child.has_content(query, span_id):
+                return True
+
+        return False
