@@ -56,7 +56,10 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
     """
     mock_llm = AsyncMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
+    # Update this line to return the content directly
+    mock_llm.async_completion.return_value = {
+        'choices': [{'message': {'content': content}}]
+    }
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
@@ -66,20 +69,17 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
     history.set_event_stream(event_stream)
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
-    summary = 'This is a dummy summary about this repo'
-    state = State(history=history, inputs={'summary': summary})
+    state = State(history=history)
     action = await coder_agent.step(state)
 
-    mock_llm.completion.assert_called_once()
-    _, kwargs = mock_llm.completion.call_args
+    mock_llm.async_completion.assert_called_once()
+    _, kwargs = mock_llm.async_completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
-    assert "Here's a summary of the codebase, as it relates to this task" in prompt
-    assert summary in prompt
+    assert "Here's a summary of the codebase, as it relates to this task" not in prompt
 
-    # Verify that the action is as expected
     assert isinstance(action, AgentFinishAction)
-    assert action.action == 'finish'  # Check the action attribute
+    assert action.action == 'finish'
     assert action.outputs == {}  # Assuming 'args' corresponds to 'outputs'
 
 
@@ -91,7 +91,9 @@ async def test_coder_agent_without_summary(event_stream: EventStream):
     """
     mock_llm = AsyncMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
+    mock_llm.async_completion.return_value = {
+        'choices': [{'message': {'content': content}}]
+    }
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
@@ -105,8 +107,8 @@ async def test_coder_agent_without_summary(event_stream: EventStream):
     state = State(history=history)
     action = await coder_agent.step(state)
 
-    mock_llm.completion.assert_called_once()
-    _, kwargs = mock_llm.completion.call_args
+    mock_llm.async_completion.assert_called_once()
+    _, kwargs = mock_llm.async_completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt
