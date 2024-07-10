@@ -17,9 +17,9 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isComposing, setIsComposing] = React.useState(false);
 
-  const handleSendChatMessage = async() => {
+  const handleSendChatMessage = async () => {
     if (message.trim()) {
-      const base64images = await Promise.all(files.map(file=>convertImageToBase64(file)));
+      const base64images = await Promise.all(files.map(file => convertImageToBase64(file)));
       onSendMessage(message, base64images);
       setMessage("");
       setFiles([]);
@@ -106,7 +106,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
           "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-16 bottom-[19px] transition active:bg-white active:text-black",
           disabled
             ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500 "
+            : "hover:bg-neutral-500"
         )}
         aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE)}
       >
@@ -120,13 +120,13 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
           "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
           disabled
             ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500 "
+            : "hover:bg-neutral-500"
         )}
         aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE)}
       >
         <VscArrowUp />
       </button>
-      {files.length>0?<div className="absolute bottom-16 right-5 flex space-x-2 p-4 border-1 border-neutral-500 bg-neutral-800 rounded-lg">
+      {files.length > 0 ? <div className="absolute bottom-16 right-5 flex space-x-2 p-4 border-1 border-neutral-500 bg-neutral-800 rounded-lg">
         {files.map((file, index) => (
           <div key={index} className="relative">
             <img
@@ -143,7 +143,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
             </button>
           </div>
         ))}
-      </div>:null}
+      </div> : null}
     </div>
   );
 }
