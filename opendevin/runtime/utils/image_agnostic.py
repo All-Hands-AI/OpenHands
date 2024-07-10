@@ -92,39 +92,50 @@ def _build_sandbox_image(
     target_image_name: str,
     docker_client: docker.DockerClient,
     eventstream_runtime: bool = False,
-    **kwargs,
+    skip_init: bool = False,
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             if eventstream_runtime:
                 dockerfile_content = generate_dockerfile_for_eventstream_runtime(
-                    base_image, temp_dir, **kwargs
+                    base_image, temp_dir, skip_init=skip_init
                 )
             else:
                 dockerfile_content = generate_dockerfile(base_image)
-            logger.info(f'Building agnostic sandbox image: {target_image_name}')
-            logger.info(
-                (
-                    f'===== Dockerfile content =====\n'
-                    f'{dockerfile_content}\n'
-                    f'==============================='
+
+            if skip_init:
+                logger.info(
+                    f'Reusing existing od_sandbox image [{target_image_name}] but will update the source code in it.'
                 )
-            )
-            with open(f'{temp_dir}/Dockerfile', 'w') as file:
-                file.write(dockerfile_content)
+            else:
+                logger.info(f'Building agnostic sandbox image: {target_image_name}')
+                logger.info(
+                    (
+                        f'===== Dockerfile content =====\n'
+                        f'{dockerfile_content}\n'
+                        f'==============================='
+                    )
+                )
+                with open(f'{temp_dir}/Dockerfile', 'w') as file:
+                    file.write(dockerfile_content)
 
             api_client = docker_client.api
             build_logs = api_client.build(
                 path=temp_dir, tag=target_image_name, rm=True, decode=True
             )
 
-            for log in build_logs:
-                if 'stream' in log:
-                    print(log['stream'].strip())
-                elif 'error' in log:
-                    logger.error(log['error'].strip())
-                else:
-                    logger.info(str(log))
+            if skip_init:
+                logger.info(
+                    f'Rebuilding existing od_sandbox image [{target_image_name}] to update the source code.'
+                )
+            else:
+                for log in build_logs:
+                    if 'stream' in log:
+                        print(log['stream'].strip())
+                    elif 'error' in log:
+                        logger.error(log['error'].strip())
+                    else:
+                        logger.info(str(log))
 
         logger.info(f'Image {target_image_name} built successfully')
     except docker.errors.BuildError as e:
@@ -172,10 +183,10 @@ def get_od_sandbox_image(
             image_exists = True
             break
 
-    extra_args = {}
+    skip_init = False
     if image_exists:
         if is_eventstream_runtime:
-            extra_args = {'skip_init': True}
+            skip_init = True
             base_image = new_image_name
             logger.info(
                 f'Reusing existing od_sandbox image [{new_image_name}] but will update the source code.'
@@ -188,6 +199,10 @@ def get_od_sandbox_image(
             f'od_sandbox image is not found for {base_image}, will build: {new_image_name}'
         )
     _build_sandbox_image(
-        base_image, new_image_name, docker_client, is_eventstream_runtime, **extra_args
+        base_image,
+        new_image_name,
+        docker_client,
+        is_eventstream_runtime,
+        skip_init=skip_init,
     )
     return new_image_name
