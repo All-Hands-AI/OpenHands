@@ -18,8 +18,6 @@ cache_dir = "/path/to/cache"
 workspace_base = "/path/to/workspace"
 workspace_mount_path = "/path/to/workspace"
 
-sandbox_type = "ssh"
-sandbox_timeout = 120
 ssh_hostname = "localhost"
 
 use_host_network = false
@@ -27,12 +25,16 @@ use_host_network = false
 run_as_devin = true
 enable_auto_lint = true
 
-[eval_gpt35_turbo]
+[sandbox]
+box_type = "ssh"
+timeout = 120
+
+[llm.eval_gpt35_turbo]
 model = "gpt-3.5-turbo"
 api_key = "sk-123"
 temperature = 0.0
 
-[eval_gpt4o]
+[llm.eval_gpt4o]
 model = "gpt-4o"
 api_key = "sk-123"
 temperature = 0.0

@@ -57,7 +57,7 @@ class ResponseParser(ABC):
 
 class ActionParser(ABC):
     """
-    This abstract base class is an general interface for an action parser dedicated to
+    This abstract base class is a general interface for an action parser dedicated to
     parsing the action from the action str from the LLM.
     """
 

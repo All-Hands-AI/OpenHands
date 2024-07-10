@@ -28,14 +28,13 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"source": "agent", "action": "run", "args": {"command": "git status", "background": false, "thought": ""}}, {"source": "agent", "observation": "run", "content": "fatal: not a git repository (or any parent up to mount point /)\r\nStopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).", "extras": {"command_id": -1, "command": "git status", "exit_code": 128}}], [{"action": "null", "args": {}}, {"source": "agent", "observation": "error", "content": "action={'action': 'reject', 'args': {'reason': 'Not a valid git repository.'}} has the wrong arguments", "extras": {}}], [{"action": "null", "args": {}}, {"source": "agent", "observation": "error", "content": "action={'action': 'reject', 'args': {'reason': 'Not a valid git repository.'}} has the wrong arguments", "extras": {}}]]
+[{"source": "agent", "action": "run", "args": {"command": "git status", "thought": ""}}, {"source": "agent", "observation": "run", "content": "fatal: not a git repository (or any parent up to mount point /)\r\nStopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).", "extras": {"command_id": -1, "command": "git status", "exit_code": 128}}, {"source": "agent", "observation": "error", "content": "action={'action': 'reject', 'args': {'reason': 'Not a valid git repository.'}} has the wrong arguments", "extras": {}}, {"source": "agent", "observation": "error", "content": "action={'action': 'reject', 'args': {'reason': 'Not a valid git repository.'}} has the wrong arguments", "extras": {}}]
 
 If the last item in the history is an error, you should try to fix it.
 
 ## Available Actions
 * `run` - runs a command on the command line in a Linux shell. Arguments:
   * `command` - the command to run
-  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 
 * `reject` - reject the task. Arguments:
   * `outputs` - a dictionary with only a `reason` attribute

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
@@ -25,7 +26,7 @@ class EventStream:
     # when there are agent delegates
     _subscribers: dict[str, list[Callable]]
     _cur_id: int
-    _lock: asyncio.Lock
+    _lock: threading.Lock
     _file_store: FileStore
 
     def __init__(self, sid: str):
@@ -33,15 +34,18 @@ class EventStream:
         self._file_store = get_file_store()
         self._subscribers = {}
         self._cur_id = 0
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
         self._reinitialize_from_file_store()
 
     def _reinitialize_from_file_store(self):
         try:
             events = self._file_store.list(f'sessions/{self.sid}/events')
         except FileNotFoundError:
-            logger.warning(f'No events found for session {self.sid}')
+            logger.debug(f'No events found for session {self.sid}')
+            self._cur_id = 0
             return
+
+        # if we have events, we need to find the highest id to prepare for new events
         for event_str in events:
             id = self._get_id_from_filename(event_str)
             if id >= self._cur_id:
@@ -58,23 +62,53 @@ class EventStream:
             logger.warning(f'get id from filename ({filename}) failed.')
             return -1
 
-    def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
-        event_id = start_id
-        while True:
-            if end_id is not None and event_id > end_id:
-                break
-            try:
-                event = self.get_event(event_id)
-            except FileNotFoundError:
-                break
-            yield event
-            event_id += 1
+    def get_events(
+        self,
+        start_id=0,
+        end_id=None,
+        reverse=False,
+        filter_out_type: tuple[type[Event], ...] | None = None,
+    ) -> Iterable[Event]:
+        if reverse:
+            if end_id is None:
+                end_id = self._cur_id - 1
+            event_id = end_id
+            while event_id >= start_id:
+                try:
+                    event = self.get_event(event_id)
+                    if filter_out_type is None or not isinstance(
+                        event, filter_out_type
+                    ):
+                        yield event
+                except FileNotFoundError:
+                    logger.debug(f'No event found for ID {event_id}')
+                event_id -= 1
+        else:
+            event_id = start_id
+            while True:
+                if end_id is not None and event_id > end_id:
+                    break
+                try:
+                    event = self.get_event(event_id)
+                    if filter_out_type is None or not isinstance(
+                        event, filter_out_type
+                    ):
+                        yield event
+                except FileNotFoundError:
+                    break
+                event_id += 1
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id)
         content = self._file_store.read(filename)
         data = json.loads(content)
         return event_from_dict(data)
+
+    def get_latest_event(self) -> Event:
+        return self.get_event(self._cur_id - 1)
+
+    def get_latest_event_id(self) -> int:
+        return self._cur_id - 1
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable, append=False):
         if id in self._subscribers:
@@ -93,12 +127,11 @@ class EventStream:
             if len(self._subscribers[id]) == 0:
                 del self._subscribers[id]
 
-    # TODO: make this not async
-    async def add_event(self, event: Event, source: EventSource):
-        logger.debug(f'Adding event {event} from {source}')
-        async with self._lock:
+    def add_event(self, event: Event, source: EventSource):
+        with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
+        logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
@@ -108,5 +141,15 @@ class EventStream:
             )
         for stack in self._subscribers.values():
             callback = stack[-1]
-            logger.debug(f'Notifying subscriber {callback} of event {event}')
-            await callback(event)
+            asyncio.create_task(callback(event))
+
+    def filtered_events_by_source(self, source: EventSource):
+        for event in self.get_events():
+            if event.source == source:
+                yield event
+
+    def clear(self):
+        self._file_store.delete(f'sessions/{self.sid}')
+        self._cur_id = 0
+        # self._subscribers = {}
+        self._reinitialize_from_file_store()

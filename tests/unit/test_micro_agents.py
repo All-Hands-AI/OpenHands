@@ -2,6 +2,7 @@ import json
 import os
 from unittest.mock import MagicMock
 
+import pytest
 import yaml
 
 from agenthub.micro.registry import all_microagents
@@ -9,7 +10,17 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events import EventSource
 from opendevin.events.action import MessageAction
-from opendevin.events.observation import NullObservation
+from opendevin.events.stream import EventStream
+from opendevin.memory.history import ShortTermHistory
+
+
+@pytest.fixture
+def event_stream():
+    event_stream = EventStream('asdf')
+    yield event_stream
+
+    # clear after each test
+    event_stream.clear()
 
 
 def test_all_agents_are_loaded():
@@ -29,7 +40,7 @@ def test_all_agents_are_loaded():
     assert agent_names == set(all_microagents.keys())
 
 
-def test_coder_agent_with_summary():
+def test_coder_agent_with_summary(event_stream: EventStream):
     """
     Coder agent should render code summary as part of prompt
     """
@@ -41,8 +52,10 @@ def test_coder_agent_with_summary():
     assert coder_agent is not None
 
     task = 'This is a dummy task'
-    history = [(MessageAction(content=task), NullObservation(''))]
-    history[0][0]._source = EventSource.USER
+    history = ShortTermHistory()
+    history.set_event_stream(event_stream)
+    event_stream.add_event(MessageAction(content=task), EventSource.USER)
+
     summary = 'This is a dummy summary about this repo'
     state = State(history=history, inputs={'summary': summary})
     coder_agent.step(state)
@@ -55,7 +68,7 @@ def test_coder_agent_with_summary():
     assert summary in prompt
 
 
-def test_coder_agent_without_summary():
+def test_coder_agent_without_summary(event_stream: EventStream):
     """
     When there's no codebase_summary available, there shouldn't be any prompt
     about 'code summary'
@@ -68,8 +81,11 @@ def test_coder_agent_without_summary():
     assert coder_agent is not None
 
     task = 'This is a dummy task'
-    history = [(MessageAction(content=task), NullObservation(''))]
-    history[0][0]._source = EventSource.USER
+    history = ShortTermHistory()
+    history.set_event_stream(event_stream)
+    event_stream.add_event(MessageAction(content=task), EventSource.USER)
+
+    # set state without codebase summary
     state = State(history=history)
     coder_agent.step(state)
 
