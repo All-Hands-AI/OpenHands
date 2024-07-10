@@ -1,8 +1,9 @@
 import uuid
 from dataclasses import asdict
-from typing import Optional
+from typing import Optional, List
 
 import docker
+import re
 
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
@@ -10,7 +11,7 @@ from opendevin.events.action.action import (
     Action,
     ActionSecurityRisk,
 )
-from opendevin.events.event import Event
+from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import Observation
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.stream import EventStream
@@ -112,6 +113,20 @@ class InvariantAnalyzer(SecurityAnalyzer):
             logger.info('Invariant skipping element: event')
         self.print_trace()
 
+    def get_risk(self, results: List[str]) -> ActionSecurityRisk:
+        mapping = {"high": ActionSecurityRisk.HIGH, "medium": ActionSecurityRisk.MEDIUM, "low": ActionSecurityRisk.LOW}
+        regex = r'(?<=risk=)\w+'
+        risks = []
+        for result in results:
+            m = re.search(regex, result)
+            if m and m.group() in mapping:
+                risks.append(mapping[m.group()])
+
+        if risks:
+            return max(risks)
+
+        return ActionSecurityRisk.LOW
+
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
@@ -125,15 +140,15 @@ class InvariantAnalyzer(SecurityAnalyzer):
             logger.warning(f'Error checking policy: {err}')
             return risk
 
-        # send event to confirm action
-        if len(result) > 0:
-            risk = ActionSecurityRisk.MEDIUM
-        else:
-            risk = ActionSecurityRisk.LOW
+        risk = self.get_risk(result)
 
-        if risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and event.is_confirmed == "awaiting_confirmation":
+        # auto-confirm issues based on severity and user setting
+        if risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation":
             logger.info(f'Should handle this event automatically {event}')
             new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"action_confirmed"}})
-            await self.event_stream.add_event(new_event, event.source)
+            if event.source:
+                await self.event_stream.add_event(new_event, event.source)
+            else:
+                await self.event_stream.add_event(new_event, EventSource.AGENT)
 
         return risk

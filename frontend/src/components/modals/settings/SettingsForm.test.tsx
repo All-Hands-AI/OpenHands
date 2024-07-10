@@ -53,6 +53,7 @@ describe("SettingsForm", () => {
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
+    expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
     expect(securityInvariantInput).toHaveAttribute("data-selected", "true");
   });
 

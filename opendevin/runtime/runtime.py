@@ -134,7 +134,10 @@ class Runtime:
         """
         if not action.runnable:
             return NullObservation('')
-        if action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+        if (
+            hasattr(action, 'is_confirmed')
+            and action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION
+        ):
             return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
         if action_type not in ACTION_TYPE_TO_CLASS:
@@ -143,7 +146,10 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
-        if action.is_confirmed == ActionConfirmationStatus.REJECTED:
+        if (
+            hasattr(action, 'is_confirmed')
+            and action.is_confirmed == ActionConfirmationStatus.REJECTED
+        ):
             return RejectObservation(
                 'Action has been rejected by the user! Waiting for further user input.'
             )

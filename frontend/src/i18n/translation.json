@@ -676,16 +676,24 @@
     "zh-CN": "回到底部"
   },
   "SECURITY_INVARIANT$UNKNOWN_RISK": {
-    "en": "Unknown Risk"
+    "en": "Unknown Risk",
+    "de": "Unbekanntes Risiko",
+    "zh-CN": "未知风险"
   },
   "SECURITY_INVARIANT$LOW_RISK": {
-    "en": "Low Risk"
+    "en": "Low Risk",
+    "de": "Niedriges Risiko",
+    "zh-CN": "低风险"
   },
   "SECURITY_INVARIANT$MEDIUM_RISK": {
-    "en": "Medium Risk"
+    "en": "Medium Risk",
+    "de": "Mittleres Risiko",
+    "zh-CN": "中等风险"
   },
   "SECURITY_INVARIANT$HIGH_RISK": {
-    "en": "High Risk"
+    "en": "High Risk",
+    "de": "Hohes Risiko",
+    "zh-CN": "高风险"
   },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar
 
@@ -21,6 +21,3 @@ class ActionSecurityRisk(int, Enum):
 @dataclass
 class Action(Event):
     runnable: ClassVar[bool] = False
-    is_confirmed: ActionConfirmationStatus = field(
-        default=ActionConfirmationStatus.CONFIRMED, kw_only=True
-    )

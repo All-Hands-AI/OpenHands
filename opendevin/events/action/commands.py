@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
-from .action import Action, ActionSecurityRisk
+from .action import Action, ActionConfirmationStatus, ActionSecurityRisk
 
 
 @dataclass
@@ -13,6 +13,7 @@ class CmdRunAction(Action):
     thought: str = ''
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
+    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
@@ -33,6 +34,7 @@ class CmdKillAction(Action):
     thought: str = ''
     action: str = ActionType.KILL
     runnable: ClassVar[bool] = True
+    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
@@ -49,6 +51,7 @@ class IPythonRunCellAction(Action):
     thought: str = ''
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
+    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
     security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 

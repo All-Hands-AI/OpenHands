@@ -59,7 +59,9 @@ function AgentStatusBar() {
       indicator: IndicatorColor.RED,
     },
     [AgentState.AWAITING_USER_CONFIRMATION]: {
-      message: t(I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE),
+      message: t(
+        I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE,
+      ),
       indicator: IndicatorColor.ORANGE,
     },
     [AgentState.ACTION_CONFIRMED]: {

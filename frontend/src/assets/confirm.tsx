@@ -10,11 +10,7 @@ function ConfirmIcon(): JSX.Element {
       stroke="currentColor"
       className="w-5 h-5"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M5 13l4 4L19 7"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
 }

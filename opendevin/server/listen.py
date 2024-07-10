@@ -332,38 +332,42 @@ async def get_agents():
     agents = sorted(Agent.list_agents())
     return agents
 
+
 @app.get('/api/security/export-trace')
 def export_trace(request: Request):
     if not request.state.session.agent_session.security_analyzer:
         return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-    
+
     trace = request.state.session.agent_session.security_analyzer.input
     return trace
+
 
 @app.get('/api/security/policy')
 async def get_policy(request: Request):
     if not request.state.session.agent_session.security_analyzer:
         return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-    
+
     security_analyzer = request.state.session.agent_session.security_analyzer
-    return {"policy": security_analyzer.monitor.policy}
+    return {'policy': security_analyzer.monitor.policy}
+
 
 @app.post('/api/security/policy')
 async def update_policy(request: Request):
     if not request.state.session.agent_session.security_analyzer:
         return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-    
+
     data = await request.json()
     policy = data.get('policy')
     security_analyzer = request.state.session.agent_session.security_analyzer
     security_analyzer.monitor = security_analyzer.client.Monitor.from_string(policy)
-    return {"policy": policy}
+    return {'policy': policy}
+
 
 @app.post('/api/security/settings')
 async def update_settings(request: Request):
     if not request.state.session.agent_session.security_analyzer:
         return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-    
+
     settings = await request.json()
     security_analyzer = request.state.session.agent_session.security_analyzer
 
@@ -371,13 +375,15 @@ async def update_settings(request: Request):
 
     return security_analyzer.settings
 
+
 @app.get('/api/security/settings')
 async def get_settings(request: Request):
     if not request.state.session.agent_session.security_analyzer:
         return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-    
+
     security_analyzer = request.state.session.agent_session.security_analyzer
     return security_analyzer.settings
+
 
 @app.get('/api/list-files')
 def list_files(request: Request, path: str = '/'):

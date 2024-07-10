@@ -169,7 +169,10 @@ function ChatInterface() {
       </div>
 
       <ChatInput
-        disabled={curAgentState === AgentState.LOADING || curAgentState == AgentState.AWAITING_USER_CONFIRMATION}
+        disabled={
+          curAgentState === AgentState.LOADING ||
+          curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+        }
         onSendMessage={handleSendMessage}
       />
       <FeedbackModal
