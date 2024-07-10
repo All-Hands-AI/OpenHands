@@ -20,8 +20,10 @@ class Singleton(type):
     def reset(cls):
         # used by pytest to reset the state of the singleton instances
         for instance_type, instance in cls._instances.items():
-            for field in dataclasses.fields(instance_type):
-                if dataclasses.is_dataclass(field.type):
-                    setattr(instance, field.name, field.type())
+            for field_info in dataclasses.fields(instance_type):
+                if dataclasses.is_dataclass(field_info.type):
+                    setattr(instance, field_info.name, field_info.type())
+                elif field_info.default_factory is not dataclasses.MISSING:
+                    setattr(instance, field_info.name, field_info.default_factory())
                 else:
-                    setattr(instance, field.name, field.default)
+                    setattr(instance, field_info.name, field_info.default)

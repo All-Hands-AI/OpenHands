@@ -83,7 +83,7 @@ async def run_agent_controller(
 
     # Logging
     logger.info(
-        f'Running agent {type(agent)}, model {agent.llm.model_name}, with task: "{task_str}"'
+        f'Running agent {agent.name}, model {agent.llm.model_name}, with task: "{task_str}"'
     )
 
     loop = asyncio.get_running_loop()
@@ -219,7 +219,7 @@ if __name__ == '__main__':
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         llm = LLM(llm_config=llm_config)
     else:
-        llm = LLM(model=args.model_name)
+        llm = LLM(llm_config=config.get_llm_config_from_agent(args.agent_cls))
 
     # Create the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
