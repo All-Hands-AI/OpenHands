@@ -258,8 +258,13 @@ class EventStreamRuntime(Runtime):
     ############################################################################
 
     def get_working_directory(self):
-        # TODO: should we get this from od-runtime-client
-        return config.workspace_base
+        # FIXME: this is not needed for the agent - we keep this
+        # method to be consistent with the other runtimes
+        # but eventually we will remove this method across all runtimes
+        # when we use EventStreamRuntime to replace the other sandbox-based runtime
+        raise NotImplementedError(
+            'This method is not implemented in the runtime client.'
+        )
 
     # async def read(self, action: FileReadAction) -> Observation:
     #     working_dir = self.get_working_directory()
