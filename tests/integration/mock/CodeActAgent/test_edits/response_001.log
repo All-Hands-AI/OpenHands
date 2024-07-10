@@ -1,4 +1,4 @@
 Sure! Let's start by locating the `bad.txt` file and examining its contents.
 
 <execute_bash>
-find . -name "bad.txt"
+find_file('bad.txt')
