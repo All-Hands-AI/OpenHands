@@ -3,6 +3,7 @@ import atexit
 import json
 import os
 import re
+import socket
 import sys
 import tarfile
 import tempfile
@@ -13,7 +14,7 @@ from typing import Tuple, Union  # type: ignore[unused-import]
 
 import docker
 from pexpect import exceptions, pxssh
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -493,17 +494,57 @@ class DockerSSHBox(Sandbox):
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
+
+        # Add a check to ensure the user was created successfully
+        exit_code, logs = await self.container_exec_run(
+            ['/bin/bash', '-c', 'id opendevin'],
+            workdir=self.sandbox_workspace_dir,
+            environment=self._env,
+        )
+        if exit_code != 0:
+            raise RuntimeError(f'Failed to create or verify opendevin user: {logs}')
+
         logger.info('User setup in sandbox completed')
 
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
-    @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
+    @retry(
+        stop=stop_after_attempt(2),
+        wait=wait_fixed(5),
+        retry=retry_if_exception_type(pxssh.ExceptionPxssh),
+    )
     async def _setup_ssh(self):
         try:
+            await self.wait_for_ssh_ready()
             await self.start_ssh_session()
-        except Exception as e:
-            logger.info(f'SSH session failed, closing container.\nError: {e}')
-            await self.aclose()
+        except pxssh.ExceptionPxssh as e:
+            logger.error(
+                f'SSH session failed, attempting to restart container.\nError: {e}'
+            )
+            if not config.persist_sandbox:
+                await self.restart_container()
             raise e
+
+    async def wait_for_ssh_ready(self):
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            try:
+                exit_code, output = await self.container_exec_run(
+                    ['sh', '-c', "service ssh status | grep 'is running'"]
+                )
+                if exit_code == 0:
+                    logger.info('SSH service is running')
+                    # Add a small delay after confirming SSH is running
+                    await asyncio.sleep(2)
+                    return
+            except Exception as e:
+                logger.warning(f'Error checking SSH status: {e}')
+
+            logger.info(
+                f'Waiting for SSH service to start (attempt {attempt + 1}/{max_attempts})'
+            )
+            await asyncio.sleep(2)
+
+        raise RuntimeError('SSH service failed to start in time')
 
     async def start_ssh_session(self):
         logger.info('Starting SSH session')
@@ -516,6 +557,17 @@ class DockerSSHBox(Sandbox):
         # cd to workspace
         self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
+
+    async def restart_container(self):
+        logger.info('Restarting container...')
+        await self.aclose()
+        await self._setup_docker()
+        await self._setup_container()
+        await asyncio.sleep(2)
+        await self._setup_user()
+        await self._setup_ssh()
+        await asyncio.sleep(3)
+        logger.info('Container restarted successfully.')
 
     async def __ssh_login(self):
         try:
@@ -544,17 +596,18 @@ class DockerSSHBox(Sandbox):
             )
             await asyncio.sleep(1)
 
-            # Keep the login call synchronous
-            await asyncio.to_thread(
-                self.ssh.login,
+            # Do NOT await the login! Highly problematic!
+            self.ssh.login(
                 self.ssh_hostname,
                 'opendevin' if self.run_as_devin else 'root',
                 self._ssh_password,
                 port=self._ssh_port,
+                login_timeout=5,
             )
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(f'Failed to login to SSH session: {e}')
+            logger.debug(f'SSH debug output: {self.ssh.before}')
             raise e
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
@@ -712,20 +765,15 @@ class DockerSSHBox(Sandbox):
                 data = f.read()
             self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
-    def start_docker_container(self):
+    async def start_docker_container(self):
         try:
-            container = self.docker_client.containers.get(self.container_name)
-            logger.info('Container status: %s', container.status)
+            container = await asyncio.to_thread(
+                self.docker_client.containers.get, self.container_name
+            )
             if container.status != 'running':
-                container.start()
+                await asyncio.to_thread(container.start)
                 logger.info('Container started')
-            elapsed = 0
-            while container.status != 'running':
-                time.sleep(1)
-                elapsed += 1
-                if elapsed > self.timeout:
-                    break
-                container = self.docker_client.containers.get(self.container_name)
+            await self.wait_for_container_ready()
         except Exception:
             logger.exception('Failed to start container')
 
@@ -796,6 +844,16 @@ class DockerSSHBox(Sandbox):
             },
         }
 
+    def find_free_port(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('', 0))
+            return s.getsockname()[1]
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_exception_type(docker.errors.APIError),
+    )
     async def restart_docker_container(self):
         try:
             await asyncio.to_thread(self.remove_docker_container)
@@ -808,15 +866,22 @@ class DockerSSHBox(Sandbox):
             if self.use_host_network:
                 network_kwargs['network_mode'] = 'host'
             else:
-                # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
-                # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
+                # Use dynamic port allocation
+                self._ssh_port = self.find_free_port()
                 network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
-                    (
-                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
-                        'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
-                    )
+                    'Using port forwarding with dynamic port allocation. '
+                    f'SSH port: {self._ssh_port}'
                 )
+                # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
+                # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
+                # network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
+                # logger.warning(
+                #     (
+                #         'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
+                #         'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
+                #     )
+                # )
 
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
@@ -831,30 +896,46 @@ class DockerSSHBox(Sandbox):
                 volumes=self.volumes,
             )
             logger.info('Container started')
+        except docker.errors.APIError as ex:
+            if 'Ports are not available' in str(ex):
+                logger.warning(
+                    f'Port {self._ssh_port} is not available. Retrying with a new port.'
+                )
+                raise ex  # This will trigger a retry
+            else:
+                logger.exception(
+                    'Failed to start container: ' + str(ex), exc_info=False
+                )
+                raise ex
         except Exception as ex:
             logger.exception('Failed to start container: ' + str(ex), exc_info=False)
             raise ex
 
         # wait for container to be ready
-        elapsed = 0
-        while True:
-            container_info = self.docker_client.containers.get(self.container_name)
-            if container_info.status == 'running':
-                break
-            if container_info.status == 'exited':
-                logger.info('container logs:')
-                logs = container_info.logs()
-                logger.info(logs.decode('utf-8'))
-                break
-            time.sleep(1)
-            elapsed += 1
+        await self.wait_for_container_ready()
+
+    async def wait_for_container_ready(self):
+        max_attempts = 30
+        for attempt in range(max_attempts):
+            try:
+                container_info = self.docker_client.containers.get(self.container_name)
+                if container_info.status == 'running':
+                    logger.info('Container is running')
+                    return
+                if container_info.status == 'exited':
+                    logger.error('Container exited unexpectedly')
+                    logs = container_info.logs()
+                    logger.error(f'Container logs: {logs.decode("utf-8")}')
+                    raise RuntimeError('Container exited unexpectedly')
+            except docker.errors.NotFound:
+                logger.warning('Container not found, waiting...')
+
+            await asyncio.sleep(1)
             logger.info(
-                f'waiting for container to start: {elapsed}, container status: {container_info.status}'
+                f'Waiting for container to start (attempt {attempt + 1}/{max_attempts})'
             )
-            if elapsed > self.timeout:
-                break
-        if container_info.status != 'running':
-            raise RuntimeError('Failed to start container')
+
+        raise RuntimeError('Failed to start container within the timeout period')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     @async_to_sync

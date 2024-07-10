@@ -1,6 +1,8 @@
 import os
 import pathlib
+import shutil
 import tempfile
+import time
 from unittest.mock import patch
 
 import pytest
@@ -26,17 +28,10 @@ def reset_docker_ssh_box():
     if DockerSSHBox._instance:
         DockerSSHBox._instance.close()
         DockerSSHBox._instance = None
+        time.sleep(1)
 
 
-@pytest.fixture
-def patched_config(temp_dir):
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'):
-        yield temp_dir
-
-
-def test_env_vars(patched_config):
+def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
     for box_class in [DockerSSHBox, LocalBox]:
         box = box_class()
@@ -131,38 +126,64 @@ EOF
     ), 'The split commands should be the same as the input commands.'
 
 
-def test_ssh_box_run_as_devin(patched_config):
+def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
-    temp_dir = patched_config
-    box = DockerSSHBox()
-    box.initialize()
-    # FIXME: permission error on mkdir test for exec box
-    exit_code, output = box.execute('ls -l')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output.strip() == 'total 0'
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'):
+        for box_class in [DockerSSHBox, LocalBox]:
+            # Clean up the test directory before each iteration
+            test_dir = os.path.join(temp_dir, 'test')
+            if os.path.exists(test_dir):
+                shutil.rmtree(test_dir)
 
-    assert config.workspace_base == temp_dir
-    exit_code, output = box.execute('ls -l')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert output.strip() == 'total 0'
+            box = box_class()
+            box.initialize()
+            try:
+                # Ensure we're in the correct directory for both box types
+                if isinstance(box, LocalBox):
+                    os.chdir(config.workspace_base)
+                    box._env['PWD'] = config.workspace_base
 
-    exit_code, output = box.execute('mkdir test')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert output.strip() == ''
+                err_suffix = f'The exit code should be 0 for {box.__class__.__name__}'
+                exit_code, output = box.execute('ls -l')
+                assert exit_code == 0, err_suffix
+                assert (
+                    output.strip() == 'total 0'
+                ), f'The output should be "total 0" for {box.__class__.__name__}'
 
-    exit_code, output = box.execute('ls -l')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert 'opendevin' in output, "The output should contain username 'opendevin'"
-    assert 'test' in output, 'The output should contain the test directory'
+                assert config.workspace_base == temp_dir
+                exit_code, output = box.execute('ls -l')
+                print(output)
+                assert exit_code == 0, err_suffix
 
-    exit_code, output = box.execute('touch test/foo.txt')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert output.strip() == ''
+                exit_code, output = box.execute('mkdir test')
+                assert exit_code == 0, err_suffix
+                assert output.strip() == ''
 
-    exit_code, output = box.execute('ls -l test')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert 'foo.txt' in output, 'The output should contain the foo.txt file'
-    box.close()
+                exit_code, output = box.execute('ls -l')
+                assert exit_code == 0, err_suffix
+                if isinstance(box, DockerSSHBox):
+                    assert (
+                        'opendevin' in output
+                    ), f"The output should contain username 'opendevin' for {box.__class__.__name__}"
+                assert (
+                    'test' in output
+                ), f'The output should contain the test directory for {box.__class__.__name__}'
+
+                exit_code, output = box.execute('touch test/foo.txt')
+                assert exit_code == 0, err_suffix
+                assert (
+                    output.strip() == ''
+                ), f'The output should be empty for {box.__class__.__name__}'
+
+                exit_code, output = box.execute('ls -l test')
+                assert exit_code == 0, err_suffix
+                assert (
+                    'foo.txt' in output
+                ), f'The output should contain the foo.txt file for {box.__class__.__name__}'
+            finally:
+                box.close()
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
@@ -284,10 +305,6 @@ def test_sandbox_jupyter_plugin(temp_dir):
         box.close()
 
 
-@pytest.mark.skipif(
-    os.getenv('TEST_IN_CI') != 'true',
-    reason='This test seems out of sync with agentskills. Only run on CI',
-)
 def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = box.execute('mkdir test')
@@ -364,6 +381,10 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     box.close()
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_IN_CI') != 'true',
+    reason='This test seems out of sync with agentskills. Only run on CI',
+)
 def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(

@@ -74,6 +74,10 @@ class LocalBox(Sandbox):
                     await self.add_to_env_async(sandbox_key, value)
                     self._env[sandbox_key] = value
 
+        # Change to the workspace directory
+        os.chdir(config.workspace_base)
+        self._env['PWD'] = config.workspace_base
+
     @async_to_sync
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
