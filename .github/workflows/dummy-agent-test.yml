@@ -31,7 +31,7 @@ jobs:
       - name: Run tests
         run: |
           set -e
-          poetry run python opendevin/core/main.py -t "do a flip" -m ollama/not-a-model -d ./workspace/ -c DummyAgent
+          poetry run python opendevin/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
       - name: Check exit code
         run: |
           if [ $? -ne 0 ]; then

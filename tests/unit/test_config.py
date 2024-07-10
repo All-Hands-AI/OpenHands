@@ -8,6 +8,7 @@ from opendevin.core.config import (
     LLMConfig,
     UndefinedString,
     finalize_config,
+    get_llm_config_arg,
     load_from_env,
     load_from_toml,
 )
@@ -50,7 +51,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
-    monkeypatch.setenv('AGENT', 'CodeActAgent')
+    monkeypatch.setenv('DEFAULT_AGENT', 'CodeActAgent')
     monkeypatch.setenv('SANDBOX_TYPE', 'local')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '10')
 
@@ -58,14 +59,14 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     load_from_env(config, os.environ)
 
     assert config.workspace_base == '/repos/opendevin/workspace'
-    assert isinstance(config.llm, LLMConfig)
-    assert config.llm.api_key == 'sk-proj-rgMV0...'
-    assert config.llm.model == 'gpt-4o'
-    assert isinstance(config.agent, AgentConfig)
-    assert isinstance(config.agent.memory_max_threads, int)
-    assert config.agent.memory_max_threads == 4
-    assert config.agent.memory_enabled is True
-    assert config.agent.name == 'CodeActAgent'
+    assert isinstance(config.get_llm_config(), LLMConfig)
+    assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
+    assert config.get_llm_config().model == 'gpt-4o'
+    assert isinstance(config.get_agent_config(), AgentConfig)
+    assert isinstance(config.get_agent_config().memory_max_threads, int)
+    assert config.get_agent_config().memory_max_threads == 4
+    assert config.get_agent_config().memory_enabled is True
+    assert config.default_agent == 'CodeActAgent'
     assert config.sandbox.box_type == 'local'
     assert config.sandbox.timeout == 10
 
@@ -74,15 +75,15 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     # Test loading configuration from old-style environment variables using monkeypatch
     monkeypatch.setenv('LLM_API_KEY', 'test-api-key')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
-    monkeypatch.setenv('AGENT_NAME', 'PlannerAgent')
+    monkeypatch.setenv('DEFAULT_AGENT', 'PlannerAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
     monkeypatch.setenv('SANDBOX_CONTAINER_IMAGE', 'custom_image')
 
     load_from_env(default_config, os.environ)
 
-    assert default_config.llm.api_key == 'test-api-key'
-    assert default_config.agent.memory_enabled is True
-    assert default_config.agent.name == 'PlannerAgent'
+    assert default_config.get_llm_config().api_key == 'test-api-key'
+    assert default_config.get_agent_config().memory_enabled is True
+    assert default_config.default_agent == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
     assert (
         default_config.workspace_mount_path is UndefinedString.UNDEFINED
@@ -102,25 +103,52 @@ def test_load_from_new_style_toml(default_config, temp_toml_file):
 model = "test-model"
 api_key = "toml-api-key"
 
+[llm.cheap]
+model = "some-cheap-model"
+api_key = "cheap-model-api-key"
+
 [agent]
-name = "TestAgent"
 memory_enabled = true
+
+[agent.BrowsingAgent]
+llm_config = "cheap"
+memory_enabled = false
 
 [sandbox]
 timeout = 1
 
 [core]
 workspace_base = "/opt/files2/workspace"
+default_agent = "TestAgent"
 sandbox_type = "local"
 """
         )
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.llm.model == 'test-model'
-    assert default_config.llm.api_key == 'toml-api-key'
-    assert default_config.agent.name == 'TestAgent'
-    assert default_config.agent.memory_enabled is True
+    # default llm & agent configs
+    assert default_config.default_agent == 'TestAgent'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config().api_key == 'toml-api-key'
+    assert default_config.get_agent_config().memory_enabled is True
+
+    # undefined agent config inherits default ones
+    assert (
+        default_config.get_llm_config_from_agent('CodeActAgent')
+        == default_config.get_llm_config()
+    )
+    assert default_config.get_agent_config('CodeActAgent').memory_enabled is True
+
+    # defined agent config overrides default ones
+    assert default_config.get_llm_config_from_agent(
+        'BrowsingAgent'
+    ) == default_config.get_llm_config('cheap')
+    assert (
+        default_config.get_llm_config_from_agent('BrowsingAgent').model
+        == 'some-cheap-model'
+    )
+    assert default_config.get_agent_config('BrowsingAgent').memory_enabled is False
+
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1
@@ -152,7 +180,6 @@ def test_compat_load_sandbox_from_toml(default_config, temp_toml_file):
 model = "test-model"
 
 [agent]
-name = "TestAgent"
 memory_enabled = true
 
 [core]
@@ -161,14 +188,16 @@ sandbox_type = "local"
 sandbox_timeout = 500
 sandbox_container_image = "node:14"
 sandbox_user_id = 1001
+default_agent = "TestAgent"
 """
         )
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.llm.model == 'test-model'
-    assert default_config.agent.name == 'TestAgent'
-    assert default_config.agent.memory_enabled is True
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config_from_agent().model == 'test-model'
+    assert default_config.default_agent == 'TestAgent'
+    assert default_config.get_agent_config().memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 500
@@ -220,8 +249,10 @@ sandbox_user_id = 1001
     load_from_env(default_config, os.environ)
 
     assert os.environ.get('LLM_MODEL') is None
-    assert default_config.llm.model == 'test-model'
-    assert default_config.llm.api_key == 'env-api-key'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config('llm').model == 'test-model'
+    assert default_config.get_llm_config_from_agent().model == 'test-model'
+    assert default_config.get_llm_config().api_key == 'env-api-key'
 
     # after we set workspace_base to 'UNDEFINED' in the environment,
     # workspace_base should be set to that
@@ -271,7 +302,7 @@ user_id = 1001
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
 
     # before load_from_env, values are set to the values from the toml file
-    assert default_config.llm.api_key == 'toml-api-key'
+    assert default_config.get_llm_config().api_key == 'toml-api-key'
     assert default_config.sandbox.box_type == 'e2b'
     assert default_config.sandbox.timeout == 500
     assert default_config.sandbox.user_id == 1001
@@ -280,8 +311,8 @@ user_id = 1001
 
     # values from env override values from toml
     assert os.environ.get('LLM_MODEL') is None
-    assert default_config.llm.model == 'test-model'
-    assert default_config.llm.api_key == 'env-api-key'
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_llm_config().api_key == 'env-api-key'
 
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1000
@@ -315,7 +346,7 @@ user_id = 1001
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
 
-    assert default_config.llm.model == 'test-model'
+    assert default_config.get_llm_config().model == 'test-model'
     assert default_config.sandbox.box_type == 'local'
     assert default_config.sandbox.timeout == 1
     assert default_config.sandbox.container_image == 'custom_image'
@@ -328,16 +359,19 @@ def test_defaults_dict_after_updates(default_config):
     assert (
         initial_defaults['workspace_mount_path']['default'] is UndefinedString.UNDEFINED
     )
-    assert initial_defaults['llm']['api_key']['default'] is None
-    assert initial_defaults['agent']['name']['default'] == 'CodeActAgent'
+    assert initial_defaults['default_agent']['default'] == 'CodeActAgent'
 
     updated_config = AppConfig()
-    updated_config.llm.api_key = 'updated-api-key'
-    updated_config.agent.name = 'MonologueAgent'
+    updated_config.get_llm_config().api_key = 'updated-api-key'
+    updated_config.get_llm_config('llm').api_key = 'updated-api-key'
+    updated_config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
+    updated_config.get_llm_config_from_agent(
+        'MonologueAgent'
+    ).api_key = 'updated-api-key'
+    updated_config.default_agent = 'MonologueAgent'
 
     defaults_after_updates = updated_config.defaults_dict
-    assert defaults_after_updates['llm']['api_key']['default'] is None
-    assert defaults_after_updates['agent']['name']['default'] == 'CodeActAgent'
+    assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
     assert (
         defaults_after_updates['workspace_mount_path']['default']
         is UndefinedString.UNDEFINED
@@ -363,10 +397,10 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     load_from_env(default_config, os.environ)
     default_config.ssh_password = None  # prevent leak
     default_config.jwt_secret = None  # prevent leak
-    assert default_config.llm.model == 'gpt-5-turbo-1106'
-    assert default_config.llm.custom_llm_provider is None
-    if default_config.llm.api_key is not None:  # prevent leak
-        pytest.fail('LLM API key should be empty.')
+    for llm in default_config.llms.values():
+        llm.api_key = None  # prevent leak
+    assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
+    assert default_config.get_llm_config().custom_llm_provider is None
     assert default_config.workspace_mount_path == '/home/user/project'
 
 
@@ -413,9 +447,12 @@ def test_workspace_mount_rewrite(default_config, monkeypatch):
 
 
 def test_embedding_base_url_default(default_config):
-    default_config.llm.base_url = 'https://api.exampleapi.com'
+    default_config.get_llm_config().base_url = 'https://api.exampleapi.com'
     finalize_config(default_config)
-    assert default_config.llm.embedding_base_url == 'https://api.exampleapi.com'
+    assert (
+        default_config.get_llm_config().embedding_base_url
+        == 'https://api.exampleapi.com'
+    )
 
 
 def test_cache_dir_creation(default_config, tmpdir):
@@ -461,9 +498,7 @@ def test_api_keys_repr_str():
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
-    agent_config = AgentConfig(
-        name='my_agent', memory_enabled=True, memory_max_threads=4
-    )
+    agent_config = AgentConfig(memory_enabled=True, memory_max_threads=4)
     for attr_name in dir(AgentConfig):
         if not attr_name.startswith('__'):
             assert (
@@ -475,8 +510,8 @@ def test_api_keys_repr_str():
 
     # Test AppConfig
     app_config = AppConfig(
-        llm=llm_config,
-        agent=agent_config,
+        llms={'llm': llm_config},
+        agents={'agent': agent_config},
         e2b_api_key='my_e2b_api_key',
         jwt_secret='my_jwt_secret',
         ssh_password='my_ssh_password',
@@ -519,3 +554,28 @@ max_budget_per_task = 4.0
 
     assert config.max_iterations == 100
     assert config.max_budget_per_task == 4.0
+
+
+def test_get_llm_config_arg(temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 100
+max_budget_per_task = 4.0
+
+[llm.gpt3]
+model="gpt-3.5-turbo"
+api_key="redacted"
+embedding_model="openai"
+
+[llm.gpt4o]
+model="gpt-4o"
+api_key="redacted"
+embedding_model="openai"
+"""
+
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    llm_config = get_llm_config_arg('gpt3', temp_toml_file)
+    assert llm_config.model == 'gpt-3.5-turbo'
+    assert llm_config.embedding_model == 'openai'
