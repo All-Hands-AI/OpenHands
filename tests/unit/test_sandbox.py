@@ -294,7 +294,11 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
             """
 [Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
 ERRORS:
-/workspace/test/hello.py:1:3: E999 IndentationError: unexpected indent
+Traceback (most recent call last):
+  File "hello.py", line 1
+    print("hello world")
+IndentationError: unexpected indent
+
 [This is how your edit would have looked if applied]
 -------------------------------------------------
 1|  print("hello world")
