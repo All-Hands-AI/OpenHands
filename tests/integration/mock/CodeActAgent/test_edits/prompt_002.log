@@ -403,15 +403,17 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's start by locating the `bad.txt` file and examining its contents.
-<execute_bash>
+Sure! Let's start by opening the `bad.txt` file to identify the typos.
+<execute_ipython>
 find_file('bad.txt')
-</execute_bash>
+</execute_ipython>
 
 ----------
 
 OBSERVATION:
--bash: syntax error near unexpected token `'bad.txt''
-[Command -1 finished with exit code 2]
+[Found 1 matches for "bad.txt" in ./]
+./bad.txt
+[End of matches for "bad.txt" in ./]
+
 
 ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>
