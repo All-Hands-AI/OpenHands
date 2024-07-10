@@ -8,6 +8,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    ContentPolicyViolationError,
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
@@ -190,6 +191,7 @@ class LLM:
                     APIConnectionError,
                     ServiceUnavailableError,
                     InternalServerError,
+                    ContentPolicyViolationError,
                 )
             ),
             after=attempt_on_error,
