@@ -1,4 +1,5 @@
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.core.utils import json
@@ -128,6 +129,9 @@ def get_prompt(state: State) -> str:
     Returns:
     - str: The formatted string prompt with historical values
     """
+    max_message_chars = config.get_llm_config_from_agent(
+        'PlannerAgent'
+    ).max_message_chars
 
     # the plan
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
@@ -142,7 +146,7 @@ def get_prompt(state: State) -> str:
             break
         if latest_action == NullAction() and isinstance(event, Action):
             latest_action = event
-        history_dicts.append(event_to_memory(event))
+        history_dicts.append(event_to_memory(event, max_message_chars))
 
     # history_dicts is in reverse order, lets fix it
     history_dicts.reverse()
@@ -160,7 +164,7 @@ def get_prompt(state: State) -> str:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
 
     # the hint, based on the last action
-    hint = get_hint(event_to_memory(latest_action).get('action', ''))
+    hint = get_hint(event_to_memory(latest_action, max_message_chars).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
     # the last relevant user message (the task)
