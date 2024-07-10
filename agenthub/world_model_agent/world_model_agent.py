@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
+from openai import OpenAI
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -45,6 +46,9 @@ MAX_TOKENS = 8192  # added
 OUTPUT_BUFFER = 1100  # added
 # DEFAULT_BROWSER = 'https://www.google.com'  # added
 DEFAULT_BROWSER = None
+
+
+client = OpenAI()
 
 
 class ParseError(Exception):
@@ -179,20 +183,33 @@ class WorldModelAgent(Agent):
         log=True,
         min_retry_wait_time=60,
         rate_limit_max_wait_time=60 * 30,
+        override_llm=False,
     ):
         tries = 0
         rate_limit_total_delay = 0
         while tries < n_retry and rate_limit_total_delay < rate_limit_max_wait_time:
-            truncated_messages = self.truncate_messages(
-                messages, MAX_TOKENS - OUTPUT_BUFFER
-            )  # added
-            response = self.llm.completion(
-                # messages=messages,
-                messages=truncated_messages,  # added
-                temperature=self.temperature,
-                stop=None,
-            )
-            answer = response['choices'][0]['message']['content'].strip()
+            if not override_llm:
+                truncated_messages = self.truncate_messages(
+                    messages, MAX_TOKENS - OUTPUT_BUFFER
+                )  # added
+                response = self.llm.completion(
+                    # messages=messages,
+                    messages=truncated_messages,  # added
+                    temperature=self.temperature,
+                    stop=None,
+                )
+                answer = response['choices'][0]['message']['content'].strip()
+            else:
+                tmp_llm = 'gpt-4o'
+                logger.info('Overriding LLM with ' + tmp_llm)
+                response = client.chat.completions.create(
+                    model=tmp_llm,
+                    messages=messages,
+                    temperature=self.temperature,
+                    stop=None,
+                )
+
+                answer = response.choices[0].message.content.strip()
 
             # with open("/home/demo/jinyu/prompts/last_answer.txt", "w") as f:
             #     f.write(answer)
@@ -212,16 +229,48 @@ class WorldModelAgent(Agent):
 
         raise ValueError(f'Could not parse a valid value after {n_retry} retries.')
 
-    def get_llm_output(self, prompt, parse_func, output_keys):
+    def get_llm_output(self, prompt, parse_func, output_keys, override_llm=False):
+        #         system_msg = f"""\
+        # # Instructions
+        # Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+        # # Goal:
+        # {self.goal}
+        # Stop and ask the user when contact or personal information is required to proceed
+        # with the task.
+
+        # # Action Space
+        # {self.action_space.describe(with_long_description=False, with_examples=True)}
+
+        # # Note 1
+        # You should not attempt to visit the following domains as they will block your entry:
+        # - Reddit: www.reddit.com
+        # - Zillow: www.zillow.com
+        # - StreetEasy: www.streeteasy.com
+
+        # # Note 2
+        # You should not attempt to enter personal information unless the user tells you to.
+        # If you encounter a situation where you need to enter personal information, stop and
+        # ask the user to supply it.
+        # """
+        addition = """Stop and ask the user when their own contact information is required to proceed
+with the task. Do not stop if the information is what you need to search for.
+"""
         system_msg = f"""\
 # Instructions
 Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
 {self.goal}
-
+{addition if not override_llm else ''}
 # Action Space
 {self.action_space.describe(with_long_description=False, with_examples=True)}
+
+# Note 1
+You should not attempt to visit the following domains as they will block your entry:
+- Reddit: www.reddit.com
+- Zillow: www.zillow.com
+- StreetEasy: www.streeteasy.com
 """
         messages = []
         messages.append({'role': 'system', 'content': system_msg})
@@ -243,6 +292,7 @@ Review the current state of the page and all other information to find the best 
                 self.truncate_messages(messages, MAX_TOKENS - OUTPUT_BUFFER),
                 parser,
                 n_retry=self.max_retry,
+                override_llm=override_llm,
             )  # added
             ans_dict['n_retry'] = (len(messages) - 3) / 2
         except ValueError as e:
@@ -309,7 +359,7 @@ Review the current state of the page and all other information to find the best 
     def effectuator(self, main_prompt):
         prompt = main_prompt.get_effectuator_prompt()
         ans_dict = self.get_llm_output(
-            prompt, main_prompt._parse_effectuator_answer, ['action']
+            prompt, main_prompt._parse_effectuator_answer, ['action'], override_llm=True
         )
 
         return ans_dict['action']
@@ -406,7 +456,7 @@ Review the current state of the page and all other information to find the best 
 
         if error_prefix:
             self.error_accumulator += 1
-            if self.error_accumulator > 5:
+            if self.error_accumulator > 20:
                 return MessageAction('Too many errors encountered. Task failed.')
 
         ### Above is record keeping by world model
@@ -438,7 +488,9 @@ Review the current state of the page and all other information to find the best 
         self.full_output += f'*Replan Status*: {status}\n'
 
         # replan = True
-        logger.info('*Force Replan*')
+        if len(actions) > 1 and actions[-1] == actions[-2]:
+            logger.info('*Action Repeat, Force Replan*')
+            replan = True
         if replan or self.active_strategy is None:
             strategy = self.planning_search(state)
             self.strategies.append(strategy)

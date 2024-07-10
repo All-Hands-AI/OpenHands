@@ -778,6 +778,7 @@ if __name__ == '__main__':
                 clear,
                 plot,
             ],
+            concurrency_limit=20,
         )
         (
             pause_resume.click(

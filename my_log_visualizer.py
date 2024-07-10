@@ -191,6 +191,17 @@ def load_history(log_selection):
     return [chat_history] + tabs + urls + screenshots + plots
 
 
+def refresh_log_selection():
+    log_list = list(reversed(sorted(glob('./frontend_logs/*.json'))))
+    return gr.Dropdown(
+        log_list,
+        value=None,
+        interactive=True,
+        label='Log',
+        info='Choose the log to visualize',
+    )
+
+
 if __name__ == '__main__':
     log_list = list(reversed(sorted(glob('./frontend_logs/*.json'))))
 
@@ -207,6 +218,7 @@ if __name__ == '__main__':
                         info='Choose the log to visualize',
                     )
                     chatbot = gr.Chatbot()
+                refresh = gr.Button('Refresh Log List')
 
             with gr.Column(scale=2):
                 start_url = 'about:blank'
@@ -238,6 +250,7 @@ if __name__ == '__main__':
         log_selection.select(
             load_history, log_selection, [chatbot] + tabs + urls + screenshots + plots
         )
+        refresh.click(refresh_log_selection, None, log_selection)
 
     demo.queue()
     demo.launch(share=False)
