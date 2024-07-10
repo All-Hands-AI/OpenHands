@@ -37,8 +37,6 @@ tenacity = "^8.5.0"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
-tree-sitter = "0.21.3"
-grep-ast = "0.3.2"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
