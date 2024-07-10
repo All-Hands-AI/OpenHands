@@ -80,7 +80,7 @@ def generate_dockerfile_for_eventstream_runtime(
     dockerfile_content += f'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz && mv /opendevin/{filename} /opendevin/code\n'
     # install (or update) the dependencies
     dockerfile_content += (
-        'RUN cd /opendevin/code && ls -alh /opendevin/code && '
+        'RUN cd /opendevin/code && '
         '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
         '/opendevin/miniforge3/bin/mamba run -n base poetry install\n'
     )
