@@ -72,4 +72,4 @@ body:
     id: additional-context
     attributes:
       label: Logs, Errors, Screenshots, and Additional Context
-      description: LLM logs will be stored in the `logs/llm/default` folder. Please add any additional context about the problem here.
+      description: If you want to share the chat history you can click the thumbs-down (👎) button above the input field and you will get a shareable link (you can also click thumbs up when things are going well of course!). LLM logs will be stored in the `logs/llm/default` folder. Please add any additional context about the problem here.

@@ -3,7 +3,7 @@
   "action": "finish",
   "args": {
     "outputs": {
-      "file": "bad.txt",
+      "file": "./bad.txt",
       "typos_fixed": [
         {
           "original": "typoo",
