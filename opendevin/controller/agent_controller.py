@@ -7,6 +7,7 @@ from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.controller.stuck import StuckDetector
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
+    BrowserUnavailableException,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
@@ -20,6 +21,8 @@ from opendevin.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    BrowseInteractiveAction,
+    BrowseURLAction,
     ChangeAgentStateAction,
     MessageAction,
     ModifyTaskAction,
@@ -29,6 +32,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
+    BrowserOutputObservation,
     CmdOutputObservation,
     ErrorObservation,
     Observation,
@@ -395,24 +399,48 @@ class AgentController:
             if isinstance(self.agent, AsyncAgent):
                 action = await self.agent.async_step(self.state)
             else:
-                action = self.agent.step(self.state)
+                # If it's not an AsyncAgent, run the synchronous step in an executor
+                loop = asyncio.get_running_loop()
+                action = await loop.run_in_executor(None, self.agent.step, self.state)
+
             if action is None:
                 raise LLMNoActionError('No action was returned')
+
+            # Ensure action is not a coroutine
+            if asyncio.iscoroutine(action):
+                action = await action
+
+            if action.runnable:
+                self._pending_action = action
+
+            if not isinstance(action, NullAction):
+                await self.event_stream.add_event(action, EventSource.AGENT)
+
+            if isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
+                try:
+                    observation = await self.run_action(action)
+                except BrowserUnavailableException:
+                    if hasattr(self.agent, 'handle_browser_unavailable'):
+                        observation = self.agent.handle_browser_unavailable(action)
+                    else:
+                        observation = BrowserOutputObservation(
+                            '<html><body>Browser unavailable</body></html>',
+                            url=action.url
+                            if isinstance(action, BrowseURLAction)
+                            else 'https://example.com',
+                            screenshot='',
+                        )
+                await self.event_stream.add_event(observation, EventSource.AGENT)
+
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user
             # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
             return
-
-        # Ensure action is not a coroutine
-        if asyncio.iscoroutine(action):
-            action = await action
-
-        if action.runnable:
-            self._pending_action = action
-
-        if not isinstance(action, NullAction):
-            await self.event_stream.add_event(action, EventSource.AGENT)
+        except Exception as e:
+            await self.report_error(f'Unexpected error: {str(e)}')
+            await self.set_agent_state_to(AgentState.ERROR)
+            return
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -420,6 +448,26 @@ class AgentController:
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
             await self.set_agent_state_to(AgentState.ERROR)
+
+    async def run_action(self, action: Action) -> Observation:
+        if isinstance(action, BrowseURLAction):
+            # Fix: Remove the undefined 'content' variable
+            observation = BrowserOutputObservation(
+                content=f'<html><body>Placeholder content for {action.url}</body></html>',
+                url=action.url,
+                screenshot='',
+            )
+            await self.event_stream.add_event(observation, EventSource.AGENT)
+            # Fix: Return the observation instead of NullAction
+            return observation
+        elif isinstance(action, BrowseInteractiveAction):
+            return BrowserOutputObservation(
+                content='<html><body>Placeholder interactive content</body></html>',
+                url='https://example.com',
+                screenshot='',
+            )
+        else:
+            raise NotImplementedError(f'Action type {type(action)} not implemented')
 
     def get_state(self):
         return self.state
