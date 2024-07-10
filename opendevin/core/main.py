@@ -166,6 +166,7 @@ async def run_agent_controller(
 
     try:
         while not _is_shutting_down:
+            current_state = controller.get_agent_state()
             if controller.get_agent_state() in [
                 AgentState.FINISHED,
                 AgentState.REJECTED,
@@ -173,13 +174,19 @@ async def run_agent_controller(
                 AgentState.PAUSED,
                 AgentState.STOPPED,
             ]:
+                logger.info(f'Agent reached final state: {current_state}. Terminating.')
+                break
+            # TODO: check int. tests which expect STOPPED here!
+            if current_state == AgentState.AWAITING_USER_INPUT and exit_on_message:
+                logger.info(
+                    'Agent is awaiting user input and exit_on_message is True. Terminating.'
+                )
                 break
 
             try:
                 await asyncio.wait_for(shutdown_event.wait(), timeout=1)
                 break  # Exit the loop if shutdown_event is set
             except asyncio.TimeoutError:
-                # Timeout occurred, continue the loop
                 pass
 
         # save session when we're about to close
@@ -193,8 +200,6 @@ async def run_agent_controller(
         await controller.close()
         await runtime.close()
         logger.info('Successfully shut down the OpenDevin server.')
-        if not loop.is_closed():
-            loop.stop()
 
     return controller.get_state()
 

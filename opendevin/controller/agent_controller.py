@@ -120,6 +120,13 @@ class AgentController:
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         self._close_event.set()
 
+    async def close_event_loop(self):
+        """Gracefully close the event loop."""
+        await self.close()
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(loop.shutdown_default_executor())
+        loop.close()
+
     def update_state_before_step(self):
         self.state.iteration += 1
 

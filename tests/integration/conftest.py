@@ -31,8 +31,7 @@ def pytest_exception_interact(node, call, report):
 
 
 def filter_out_symbols(input):
-    input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
-    return input
+    return re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
 
 
 def get_log_id(prompt_log_name):

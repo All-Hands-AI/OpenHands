@@ -1,3 +1,5 @@
+import logging
+
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -9,6 +11,7 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import AsyncAgent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
+from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -32,6 +35,8 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
+# Initialize logger
+logger = logging.getLogger(__name__)
 
 
 def action_to_str(action: Action) -> str:
@@ -199,10 +204,33 @@ class CodeActAgent(AsyncAgent):
         """
         messages, is_exit = self._prepare_messages(state)
         if is_exit:
+            logger.info('Agent is exiting.')
             return AgentFinishAction()
-        return await self._common_step_logic_async(
+
+        # Ensure the agent does not switch back to AWAITING_USER_INPUT after reaching a final state
+        if state.agent_state in [
+            AgentState.FINISHED,
+            AgentState.STOPPED,
+            AgentState.ERROR,
+        ]:
+            logger.info(f'Agent already in final state: {state.agent_state}')
+            return AgentFinishAction()
+
+        action = await self._common_step_logic_async(
             state, self.llm.async_completion, messages
         )
+
+        logger.info(f'Action taken: {action}')
+
+        # Check if the action is a finishing action or if we've reached the maximum iterations
+        if (
+            isinstance(action, AgentFinishAction)
+            or state.iteration >= state.max_iterations
+        ):
+            logger.info('Task complete or max iterations reached. Finishing.')
+            return AgentFinishAction()
+
+        return action
 
     def _common_step_logic_sync(
         self, state: State, completion_func, messages: list[dict[str, str]]

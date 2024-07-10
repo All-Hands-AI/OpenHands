@@ -323,6 +323,15 @@ class LLM:
 
                 return resp
 
+            except (
+                RateLimitError,
+                APIConnectionError,
+                ServiceUnavailableError,
+                InternalServerError,
+            ) as e:
+                logger.error(f'Completion Error occurred:\n{e}')
+                raise
+
             finally:
                 for task in pending:
                     task.cancel()
