@@ -77,7 +77,10 @@ def generate_dockerfile_for_eventstream_runtime(
     # remove /opendevin/code if it exists
     dockerfile_content += 'RUN rm -rf /opendevin/code || true\n'
     # unzip the tarball to /opendevin/code
-    dockerfile_content += f'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz && mv /opendevin/{filename} /opendevin/code\n'
+    dockerfile_content += (
+        'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
+    )
+    dockerfile_content += f'RUN mv /opendevin/{filename} /opendevin/code\n'
     # install (or update) the dependencies
     dockerfile_content += (
         'RUN cd /opendevin/code && '
@@ -107,6 +110,13 @@ def _build_sandbox_image(
                 logger.info(
                     f'Reusing existing od_sandbox image [{target_image_name}] but will update the source code in it.'
                 )
+                logger.info(
+                    (
+                        f'===== Dockerfile content =====\n'
+                        f'{dockerfile_content}\n'
+                        f'==============================='
+                    )
+                )
             else:
                 logger.info(f'Building agnostic sandbox image: {target_image_name}')
                 logger.info(
@@ -116,12 +126,17 @@ def _build_sandbox_image(
                         f'==============================='
                     )
                 )
-                with open(f'{temp_dir}/Dockerfile', 'w') as file:
-                    file.write(dockerfile_content)
+            with open(f'{temp_dir}/Dockerfile', 'w') as file:
+                file.write(dockerfile_content)
 
             api_client = docker_client.api
             build_logs = api_client.build(
-                path=temp_dir, tag=target_image_name, rm=True, decode=True
+                path=temp_dir,
+                tag=target_image_name,
+                rm=True,
+                decode=True,
+                # do not use cache when skip_init is True (i.e., when we want to update the source code in the existing image)
+                nocache=skip_init,
             )
 
             if skip_init:
