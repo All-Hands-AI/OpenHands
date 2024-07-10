@@ -1,7 +1,6 @@
 {
   "action": "run",
   "args": {
-    "command": "bash hello.sh",
-    "background": false
+    "command": "chmod +x hello.sh"
   }
 }

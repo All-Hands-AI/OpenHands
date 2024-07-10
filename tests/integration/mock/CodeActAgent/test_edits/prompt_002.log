@@ -414,4 +414,4 @@ OBSERVATION:
 -bash: syntax error near unexpected token `'bad.txt''
 [Command -1 finished with exit code 2]
 
-ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>
