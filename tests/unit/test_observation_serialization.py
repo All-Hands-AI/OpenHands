@@ -1,3 +1,4 @@
+from opendevin.core.config import config
 from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
@@ -18,7 +19,9 @@ def serialization_deserialization(original_observation_dict, cls):
         observation_instance, cls
     ), 'The observation instance should be an instance of CmdOutputObservation.'
     serialized_observation_dict = event_to_dict(observation_instance)
-    serialized_observation_memory = event_to_memory(observation_instance)
+    serialized_observation_memory = event_to_memory(
+        observation_instance, config.get_llm_config().max_message_chars
+    )
     assert (
         serialized_observation_dict == original_observation_dict
     ), 'The serialized observation should match the original observation dict.'

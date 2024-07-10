@@ -79,8 +79,12 @@ persist_sandbox = false
 # Use host network
 #use_host_network = false
 
+# Name of the default agent
+#default_agent = "CodeActAgent"
+
 #################################### LLM #####################################
-# Configuration for the LLM model
+# Configuration for LLM models (group name starts with 'llm')
+# use 'llm' for the default LLM config
 ##############################################################################
 [llm]
 # AWS access key ID
@@ -149,8 +153,18 @@ model = "gpt-4o"
 # Top p for the API
 #top_p = 0.5
 
+[llm.gpt3]
+# API key to use
+api_key = "your-api-key"
+
+# Model to use
+model = "gpt-3.5"
+
 #################################### Agent ###################################
-# Configuration for the agent
+# Configuration for agents (group name starts with 'agent')
+# Use 'agent' for the default agent config
+# otherwise, group name must be `agent.<agent_name>` (case-sensitive), e.g.
+# agent.CodeActAgent
 ##############################################################################
 [agent]
 # Memory enabled
@@ -159,8 +173,13 @@ model = "gpt-4o"
 # Memory maximum threads
 #memory_max_threads = 2
 
-# Name of the agent
-#name = "CodeActAgent"
+# LLM config group to use
+#llm_config = 'llm'
+
+[agent.RepoExplorerAgent]
+# Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
+# useful when an agent doesn't demand high quality but uses a lot of tokens
+llm_config = 'gpt3'
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox

@@ -29,7 +29,7 @@ from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.runtime.tools import RuntimeTool
 
-if config.agent.memory_enabled:
+if config.get_agent_config('MonologueAgent').memory_enabled:
     from opendevin.memory.memory import LongTermMemory
 
 
@@ -78,7 +78,7 @@ class MonologueAgent(Agent):
             raise AgentNoInstructionError()
 
         self.initial_thoughts = []
-        if config.agent.memory_enabled:
+        if config.get_agent_config('MonologueAgent').memory_enabled:
             self.memory = LongTermMemory()
         else:
             self.memory = None
@@ -89,6 +89,9 @@ class MonologueAgent(Agent):
         self._initialized = True
 
     def _add_initial_thoughts(self, task):
+        max_message_chars = config.get_llm_config_from_agent(
+            'MonologueAgent'
+        ).max_message_chars
         previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
@@ -106,7 +109,9 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self.initial_thoughts.append(event_to_memory(observation))
+                self.initial_thoughts.append(
+                    event_to_memory(observation, max_message_chars)
+                )
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -133,7 +138,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self.initial_thoughts.append(event_to_memory(action))
+                self.initial_thoughts.append(event_to_memory(action, max_message_chars))
 
     def step(self, state: State) -> Action:
         """
@@ -145,7 +150,9 @@ class MonologueAgent(Agent):
         Returns:
         - Action: The next action to take based on LLM response
         """
-
+        max_message_chars = config.get_llm_config_from_agent(
+            'MonologueAgent'
+        ).max_message_chars
         goal = state.get_current_user_intent()
         self._initialize(goal)
 
@@ -153,7 +160,7 @@ class MonologueAgent(Agent):
 
         # add the events from state.history
         for event in state.history.get_events():
-            recent_events.append(event_to_memory(event))
+            recent_events.append(event_to_memory(event, max_message_chars))
 
         # add the last messages to long term memory
         if self.memory is not None:
@@ -163,9 +170,11 @@ class MonologueAgent(Agent):
             # this should still work
             # we will need to do this differently: find out if there really is an action or an observation in this step
             if last_action:
-                self.memory.add_event(event_to_memory(last_action))
+                self.memory.add_event(event_to_memory(last_action, max_message_chars))
             if last_observation:
-                self.memory.add_event(event_to_memory(last_observation))
+                self.memory.add_event(
+                    event_to_memory(last_observation, max_message_chars)
+                )
 
         # the action prompt with initial thoughts and recent events
         prompt = prompts.get_request_action_prompt(
