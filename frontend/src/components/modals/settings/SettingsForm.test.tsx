@@ -9,6 +9,7 @@ const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
+const onConfirmationModeChangeMock = vi.fn();
 
 const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
@@ -20,6 +21,7 @@ const renderSettingsForm = (settings?: Settings) => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          CONFIRMATION_MODE: true,
         }
       }
       models={["model1", "model2", "model3"]}
@@ -28,6 +30,7 @@ const renderSettingsForm = (settings?: Settings) => {
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
+      onConfirmationModeChange={onConfirmationModeChangeMock}
     />,
   );
 };
@@ -40,11 +43,13 @@ describe("SettingsForm", () => {
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
+    const confirmationModeInput = screen.getByTestId("confirmationmode");
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
+    expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
   });
 
   it("should display the existing values if it they are present", () => {
@@ -53,6 +58,7 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      CONFIRMATION_MODE: true,
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -72,6 +78,7 @@ describe("SettingsForm", () => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          CONFIRMATION_MODE: true,
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
@@ -80,15 +87,18 @@ describe("SettingsForm", () => {
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
+        onConfirmationModeChange={onConfirmationModeChangeMock}
       />,
     );
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
+    const confirmationModeInput = screen.getByTestId("confirmationmode");
 
     expect(modelInput).toBeDisabled();
     expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
+    expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
   });
 
   describe("onChange handlers", () => {

@@ -8,6 +8,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    ContentPolicyViolationError,
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
@@ -63,6 +64,8 @@ class LLM:
         llm_config=None,
         metrics=None,
         cost_metric_supported=True,
+        input_cost_per_token=None,
+        output_cost_per_token=None,
     ):
         """
         Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -84,9 +87,11 @@ class LLM:
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
             metrics (Metrics, optional): The metrics object to use. Defaults to None.
             cost_metric_supported (bool, optional): Whether the cost metric is supported. Defaults to True.
+            input_cost_per_token (float, optional): The cost per input token.
+            output_cost_per_token (float, optional): The cost per output token.
         """
         if llm_config is None:
-            llm_config = config.llm
+            llm_config = config.get_llm_config()
         model = model if model is not None else llm_config.model
         api_key = api_key if api_key is not None else llm_config.api_key
         base_url = base_url if base_url is not None else llm_config.base_url
@@ -118,6 +123,16 @@ class LLM:
             if max_output_tokens is not None
             else llm_config.max_output_tokens
         )
+        input_cost_per_token = (
+            input_cost_per_token
+            if input_cost_per_token is not None
+            else llm_config.input_cost_per_token
+        )
+        output_cost_per_token = (
+            output_cost_per_token
+            if output_cost_per_token is not None
+            else llm_config.output_cost_per_token
+        )
         metrics = metrics if metrics is not None else Metrics()
 
         logger.info(f'Initializing LLM with model: {model}')
@@ -127,6 +142,8 @@ class LLM:
         self.api_version = api_version
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
+        self.input_cost_per_token = input_cost_per_token
+        self.output_cost_per_token = output_cost_per_token
         self.llm_timeout = llm_timeout
         self.custom_llm_provider = custom_llm_provider
         self.metrics = metrics
@@ -190,6 +207,7 @@ class LLM:
                     APIConnectionError,
                     ServiceUnavailableError,
                     InternalServerError,
+                    ContentPolicyViolationError,
                 )
             ),
             after=attempt_on_error,
@@ -292,12 +310,12 @@ class LLM:
 
         extra_kwargs = {}
         if (
-            config.llm.input_cost_per_token is not None
-            and config.llm.output_cost_per_token is not None
+            self.input_cost_per_token is not None
+            and self.output_cost_per_token is not None
         ):
             cost_per_token = CostPerToken(
-                input_cost_per_token=config.llm.input_cost_per_token,
-                output_cost_per_token=config.llm.output_cost_per_token,
+                input_cost_per_token=self.input_cost_per_token,
+                output_cost_per_token=self.output_cost_per_token,
             )
             logger.info(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
