@@ -22,8 +22,6 @@ docker run -it \
 -e SANDBOX_USER_ID=$(id -u) \
 -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
 -e LLM_BASE_URL="x.openai.azure.com" \
--e LLM_API_KEY="x" \
--e LLM_MODEL="azure/gpt-4o" \
 -e LLM_API_VERSION="2024-02-15-preview" \
 -v $WORKSPACE_BASE:/opt/workspace_base \
 -v /var/run/docker.sock:/var/run/docker.sock \
@@ -32,6 +30,8 @@ docker run -it \
 --name opendevin-app-$(date +%Y%m%d%H%M%S) \
 ghcr.io/opendevin/opendevin
 ```
+
+You can set the LLM_MODEL and LLM_API_KEY in the OpenDevin UI itself.
 
 :::note
 You can find your ChatGPT deployment name on the deployments page in Azure. It could be the same with the chat model name (e.g. 'GPT4-1106-preview'), by default or initially set, but it doesn't have to be the same. Run opendevin, and when you load it in the browser, go to Settings and set model as above: "azure/&lt;your-actual-gpt-deployment-name&gt;". If it's not in the list, enter your own text and save it.
