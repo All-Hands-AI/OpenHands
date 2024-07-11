@@ -39,6 +39,7 @@ class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     max_iterations: int = 100
+    confirmation_mode: bool = False
     history: ShortTermHistory = field(default_factory=ShortTermHistory)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
