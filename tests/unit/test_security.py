@@ -11,13 +11,13 @@ from opendevin.security.invariant import DEFAULT_INVARIANT_POLICY, InvariantAnal
 
 async def add_events(event_stream: EventStream, data: list[tuple[Event, EventSource]]):
     for event, source in data:
-        await event_stream.add_event(event, source)
+        event_stream.add_event(event, source)
 
 
 def test_msg():
     event_stream = EventStream('main')
     policy = """
-    raise "Disallow ABC" if:
+    raise "Disallow ABC [risk=medium]" if:
         (msg: Message)
         "ABC" in msg.content
     """
@@ -41,7 +41,7 @@ def test_msg():
 def test_cmd(cmd, expected_risk):
     event_stream = EventStream('main')
     policy = """
-    raise "Disallow rm -rf" if:
+    raise "Disallow rm -rf [risk=medium]" if:
         (call: ToolCall)
         call is tool:cmd_run
         match("rm -rf", call.function.arguments.command)
@@ -68,7 +68,7 @@ def test_leak_secrets(code, expected_risk):
     policy = """
     from invariant.detectors import secrets
 
-    raise "Disallow writing secrets" if:
+    raise "Disallow writing secrets [risk=medium]" if:
         (call: ToolCall)
         call is tool:ipython_run_cell
         any(secrets(call.function.arguments.code))

@@ -28,6 +28,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
     CONFIRMATION_MODE: true,
+    SECURITY_INVARIANT: true,
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
@@ -35,6 +36,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LANGUAGE: "en",
     LLM_API_KEY: "",
     CONFIRMATION_MODE: false,
+    SECURITY_INVARIANT: true,
   }),
   settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),
@@ -110,6 +112,7 @@ describe("SettingsModal", () => {
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
+      SECURITY_INVARIANT: true,
     };
 
     it("should save the settings", async () => {
@@ -199,7 +202,7 @@ describe("SettingsModal", () => {
         await userEvent.click(saveButton);
       });
 
-      expect(toastSpy).toHaveBeenCalledTimes(3);
+      expect(toastSpy).toHaveBeenCalledTimes(4);
     });
 
     it("should change the language", async () => {

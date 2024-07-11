@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional
 
 from opendevin.core.schema import ActionType
 from opendevin.events.action.action import ActionSecurityRisk
@@ -11,7 +12,6 @@ class MessageAction(Action):
     content: str
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
-    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:

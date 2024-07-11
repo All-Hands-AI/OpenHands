@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   SECURITY_INVARIANT: false,
 };
 
-const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof SettingsInput)[];
+const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
 
 export const getCurrentSettingsVersion = () => {
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
@@ -78,7 +78,7 @@ export const getSettings = (): Settings => {
  */
 export const saveSettings = (settings: Partial<Settings>) => {
   Object.keys(settings).forEach((key) => {
-    const isValid = validKeys.includes(key as keyof SettingsInput);
+    const isValid = validKeys.includes(key as keyof Settings);
     const value = settings[key as keyof Settings];
 
     if (isValid && (value || typeof value === "boolean"))

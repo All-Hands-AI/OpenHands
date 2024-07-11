@@ -22,6 +22,7 @@ const renderSettingsForm = (settings?: Settings) => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
+          SECURITY_INVARIANT: true,
         }
       }
       models={["model1", "model2", "model3"]}
@@ -59,6 +60,7 @@ describe("SettingsForm", () => {
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
+      SECURITY_INVARIANT: true,
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -79,6 +81,7 @@ describe("SettingsForm", () => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
+          SECURITY_INVARIANT: true,
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
