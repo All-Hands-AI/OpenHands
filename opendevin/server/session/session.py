@@ -8,6 +8,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
 from opendevin.events.action import Action, ChangeAgentStateAction, NullAction
+from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import (
     AgentStateChangedObservation,
@@ -102,6 +103,13 @@ class Session:
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
+        if isinstance(event, MessageAction) and event.images_base64:
+            controller = self.agent_session.controller
+            if controller and controller.agent.llm.supports_vision():
+                await self.send_error(
+                    'Model does not support image upload, change to a different model or try without an image.'
+                )
+                return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
         if isinstance(event, Action):
             logger.info(

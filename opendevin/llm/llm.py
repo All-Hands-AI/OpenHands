@@ -270,6 +270,9 @@ class LLM:
         """
         return self._completion
 
+    def supports_vision(self):
+        return litellm.supports_vision(self.model_name)
+
     def _post_completion(self, response: str) -> None:
         """
         Post-process the completion response.
