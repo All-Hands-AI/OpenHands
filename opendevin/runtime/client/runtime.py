@@ -329,7 +329,7 @@ async def test_event_stream():
         await runtime.run_action(action_ipython), extra={'msg_type': 'OBSERVATION'}
     )
 
-    # Test read file
+    # Test read file (file should not exist)
     action_read = FileReadAction(path='hello.sh')
     logger.info(action_read, extra={'msg_type': 'ACTION'})
     logger.info(
@@ -341,6 +341,13 @@ async def test_event_stream():
     logger.info(action_write, extra={'msg_type': 'ACTION'})
     logger.info(
         await runtime.run_action(action_write), extra={'msg_type': 'OBSERVATION'}
+    )
+
+    # Test read file (file should exist)
+    action_read = FileReadAction(path='hello.sh')
+    logger.info(action_read, extra={'msg_type': 'ACTION'})
+    logger.info(
+        await runtime.run_action(action_read), extra={'msg_type': 'OBSERVATION'}
     )
 
     # Test browse
