@@ -239,13 +239,13 @@ def open_file(
 ) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
-    It only shows the first 300 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
+    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
 
     Args:
         path: str: The path to the file to open, preferred absolute path.
         line_number: int | None = 1: The line number to move to. Defaults to 1.
-        context_lines: int | None = 300: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 300.
+        context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
