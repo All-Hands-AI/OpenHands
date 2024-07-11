@@ -16,7 +16,7 @@ from opendevin.events.action import (
 from opendevin.events.event import EventSource
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.events.observation.observation import Observation
-from opendevin.llm.llm import LLM
+from opendevin.llm.llm import LLM, Content
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
@@ -140,7 +140,7 @@ class BrowsingAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages = []
+        messages: list[dict[str, str | Content]] = []
         prev_actions = []
         cur_axtree_txt = ''
         error_prefix = ''
@@ -195,12 +195,22 @@ class BrowsingAgent(Agent):
                 )
                 return MessageAction('Error encountered when browsing.')
 
-        if (goal := state.get_current_user_intent()) is None:
+        (goal, goal_image_urls) = state.get_current_user_intent()
+
+        if goal is None:
             goal = state.inputs['task']
+
         system_msg = get_system_message(
             goal,
             self.action_space.describe(with_long_description=False, with_examples=True),
         )
+
+        # Unable to pass images to a system prompt, but goal is present only inside the system_msg
+
+        # content = [{'type': 'text', 'text': system_msg}]
+        # if goal_image_urls:
+        #     for image_url in goal_image_urls:
+        #         content.append({'type': 'image_url', 'image_url': {'url': image_url}})
 
         messages.append({'role': 'system', 'content': system_msg})
 

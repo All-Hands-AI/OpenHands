@@ -363,3 +363,6 @@ class LLM:
 
     def __repr__(self):
         return str(self)
+
+
+Content = list[dict[str, str | dict[str, str]]]

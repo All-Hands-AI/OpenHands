@@ -66,15 +66,21 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
+        last_user_message, last_user_message_images = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
             history_to_json=history_to_json,
             delegates=self.delegates,
-            latest_user_message=state.get_current_user_intent(),
+            latest_user_message=last_user_message,
         )
-        messages = [{'content': prompt, 'role': 'user'}]
+        content = [{'type': 'text', 'text': prompt}]
+        if last_user_message_images:
+            for image_url in last_user_message_images:
+                content.append({'type': 'image_url', 'image_url': {'url': image_url}})
+
+        messages = [{'content': content, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)

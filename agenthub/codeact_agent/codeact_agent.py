@@ -23,7 +23,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
 )
 from opendevin.events.serialization.event import truncate_content
-from opendevin.llm.llm import LLM
+from opendevin.llm.llm import LLM, Content
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -44,12 +44,6 @@ def action_to_str(action: Action) -> str:
     elif isinstance(action, MessageAction):
         return action.content
     return ''
-
-
-# ImageAndTextContent = dict[str, str | dict[str, str]]
-Content = list[dict[str, str | dict[str, str]]]
-
-# ActionMessage = dict[str, Content]
 
 
 def get_action_message(action: Action) -> dict[str, str | Content] | None:

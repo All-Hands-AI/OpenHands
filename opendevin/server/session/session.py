@@ -106,7 +106,7 @@ class Session:
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.images_base64:
             controller = self.agent_session.controller
-            if controller and controller.agent.llm.supports_vision():
+            if controller and not controller.agent.llm.supports_vision():
                 await self.send_error(
                     'Model does not support image upload, change to a different model or try without an image.'
                 )

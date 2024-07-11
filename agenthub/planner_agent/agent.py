@@ -2,10 +2,10 @@ from agenthub.monologue_agent.response_parser import MonologueResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentFinishAction
-from opendevin.llm.llm import LLM
+from opendevin.llm.llm import LLM, Content
 from opendevin.runtime.tools import RuntimeTool
 
-from .prompt import get_prompt
+from .prompt import get_prompt_and_images
 
 
 class PlannerAgent(Agent):
@@ -45,8 +45,13 @@ class PlannerAgent(Agent):
             'abandoned',
         ]:
             return AgentFinishAction()
-        prompt = get_prompt(state)
-        messages = [{'content': prompt, 'role': 'user'}]
+        prompt, image_urls = get_prompt_and_images(state)
+        content: Content = [{'type': 'text', 'text': prompt}]
+        if image_urls:
+            for image_url in image_urls:
+                content.append({'type': 'image_url', 'image_url': {'url': image_url}})
+
+        messages = [{'content': content, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         return self.response_parser.parse(resp)
 

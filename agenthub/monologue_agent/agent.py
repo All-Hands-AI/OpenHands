@@ -25,7 +25,7 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.events.serialization.event import event_to_memory
-from opendevin.llm.llm import LLM
+from opendevin.llm.llm import LLM, Content
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.runtime.tools import RuntimeTool
 
@@ -153,7 +153,7 @@ class MonologueAgent(Agent):
         max_message_chars = config.get_llm_config_from_agent(
             'MonologueAgent'
         ).max_message_chars
-        goal = state.get_current_user_intent()
+        goal, image_urls = state.get_current_user_intent()
         self._initialize(goal)
 
         recent_events: list[dict[str, str]] = []
@@ -181,8 +181,13 @@ class MonologueAgent(Agent):
             goal, self.initial_thoughts, recent_events
         )
 
-        messages: list[dict[str, str]] = [
-            {'role': 'user', 'content': prompt},
+        content = [{'type': 'text', 'text': prompt}]
+        if image_urls:
+            for image_url in image_urls:
+                content.append({'type': 'image_url', 'image_url': {'url': image_url}})
+
+        messages: list[dict[str, str | Content]] = [
+            {'role': 'user', 'content': content},
         ]
 
         # format all as a single message, a monologue
