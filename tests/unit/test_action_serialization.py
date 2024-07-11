@@ -13,6 +13,7 @@ from opendevin.events.action import (
     MessageAction,
     ModifyTaskAction,
 )
+from opendevin.events.action.action import ActionConfirmationStatus
 from opendevin.events.serialization import (
     event_from_dict,
     event_to_dict,
@@ -90,7 +91,11 @@ def test_agent_reject_action_serialization_deserialization():
 def test_cmd_run_action_serialization_deserialization():
     original_action_dict = {
         'action': 'run',
-        'args': {'command': 'echo "Hello world"', 'thought': ''},
+        'args': {
+            'command': 'echo "Hello world"',
+            'thought': '',
+            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+        },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
 
