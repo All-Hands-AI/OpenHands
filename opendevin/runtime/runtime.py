@@ -8,7 +8,6 @@ from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     ActionConfirmationStatus,
-    AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -162,8 +161,4 @@ class Runtime:
 
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        pass
-
-    @abstractmethod
-    async def recall(self, action: AgentRecallAction) -> Observation:
         pass

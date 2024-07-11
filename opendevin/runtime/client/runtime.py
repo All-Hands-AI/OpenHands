@@ -11,7 +11,6 @@ from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
-    AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -251,9 +250,6 @@ class EventStreamRuntime(Runtime):
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
 
-    async def recall(self, action: AgentRecallAction) -> Observation:
-        return await self.run_action(action)
-
     ############################################################################
     # Keep the same with other runtimes
     ############################################################################
@@ -266,25 +262,6 @@ class EventStreamRuntime(Runtime):
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
-
-    # async def read(self, action: FileReadAction) -> Observation:
-    #     working_dir = self.get_working_directory()
-    #     return await read_file(action.path, working_dir, action.start, action.end)
-
-    # async def write(self, action: FileWriteAction) -> Observation:
-    #     working_dir = self.get_working_directory()
-    #     return await write_file(
-    #         action.path, working_dir, action.content, action.start, action.end
-    #     )
-
-    # async def browse(self, action: BrowseURLAction) -> Observation:
-    #     return await browse(action, self.browser)
-
-    # async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-    #     return await browse(action, self.browser)
-
-    # async def recall(self, action: AgentRecallAction) -> Observation:
-    #     return NullObservation('')
 
     ############################################################################
     # Initialization work inside sandbox image
@@ -355,13 +332,6 @@ async def test_event_stream():
     logger.info(action_browse, extra={'msg_type': 'ACTION'})
     logger.info(
         await runtime.run_action(action_browse), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test recall
-    action_recall = AgentRecallAction(query='who am I?')
-    logger.info(action_recall, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_recall), extra={'msg_type': 'OBSERVATION'}
     )
 
 

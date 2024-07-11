@@ -72,7 +72,6 @@ Short term memory is stored as a Monologue object and the model can condense it 
 `CmdRunAction`,
 `FileWriteAction`,
 `FileReadAction`,
-`AgentRecallAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `AgentThinkAction`
@@ -83,7 +82,6 @@ Short term memory is stored as a Monologue object and the model can condense it 
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Methods
@@ -111,7 +109,6 @@ The agent is given its previous action-observation pairs, current task, and hint
 `GithubPushAction`,
 `FileReadAction`,
 `FileWriteAction`,
-`AgentRecallAction`,
 `AgentThinkAction`,
 `AgentFinishAction`,
 `AgentSummarizeAction`,
@@ -124,7 +121,6 @@ The agent is given its previous action-observation pairs, current task, and hint
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Methods

@@ -7,7 +7,6 @@ from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -18,7 +17,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
-    AgentRecallObservation,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -89,12 +87,6 @@ class DummyAgent(Agent):
                     CmdOutputObservation(
                         'Hello, World!', command_id=-1, command='bash hello.sh'
                     )
-                ],
-            },
-            {
-                'action': AgentRecallAction(query='who am I?'),
-                'observations': [
-                    AgentRecallObservation('', memories=['I am a computer.']),
                 ],
             },
             {
