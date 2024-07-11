@@ -165,10 +165,14 @@ def _build_sandbox_image(
         raise e
 
 
-def _get_new_image_name(base_image: str, is_eventstream_runtime: bool) -> str:
+def _get_new_image_name(
+    base_image: str, is_eventstream_runtime: bool, dev_mode: bool = False
+) -> str:
     prefix = 'od_sandbox'
     if is_eventstream_runtime:
         prefix = 'od_eventstream_runtime'
+    if dev_mode:
+        prefix += '_dev'
     if ':' not in base_image:
         base_image = base_image + ':latest'
 
@@ -205,10 +209,25 @@ def get_od_sandbox_image(
     skip_init = False
     if image_exists:
         if is_eventstream_runtime:
-            skip_init = True
+            # An eventstream runtime image is already built for the base image (with poetry and dev dependencies)
+            # but it might not contain the latest version of the source code and dependencies.
+            # So we need to build a new (dev) image with the latest source code and dependencies.
+            # FIXME: In production, we should just build once (since the source code will not change)
             base_image = new_image_name
+            new_image_name = _get_new_image_name(
+                base_image, is_eventstream_runtime, dev_mode=True
+            )
+
+            # Delete the existing image named `new_image_name` if any
+            images = docker_client.images.list()
+            for image in images:
+                if new_image_name in image.tags:
+                    docker_client.images.remove(image.id, force=True)
+
+            # We will reuse the existing image but will update the source code in it.
+            skip_init = True
             logger.info(
-                f'Reusing existing od_sandbox image [{new_image_name}] but will update the source code.'
+                f'Reusing existing od_sandbox image [{base_image}] but will update the source code into [{new_image_name}]'
             )
         else:
             return new_image_name
