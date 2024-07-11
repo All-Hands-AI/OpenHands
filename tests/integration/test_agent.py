@@ -57,9 +57,7 @@ def test_write_simple_script():
     final_state: State | None = asyncio.run(  # noqa: F821
         run_agent_controller(agent, task, exit_on_message=True)
     )
-    # TODO: fix this in AgentController to return stopped
-    # assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.agent_state == AgentState.RUNNING
+    assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
 
     # Verify the script file exists
@@ -113,26 +111,16 @@ async def test_edits():
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    try:
-        final_state: State | None = await asyncio.wait_for(  # noqa: F821
-            run_agent_controller(agent, task, exit_on_message=True),
-            timeout=60,  # Adjust the timeout as needed
-        )
-    except asyncio.TimeoutError:
-        pytest.fail('Test timed out')
-    except Exception as e:
-        logger.error(f'An error occurred during test execution: {str(e)}')
-        raise
+    final_state: State | None = await asyncio.wait_for(  # noqa: F821
+        run_agent_controller(agent, task, exit_on_message=True),
+        timeout=60,  # Adjust the timeout as needed
+    )
 
     assert final_state is not None, 'Final state is None'
 
     # Check if the agent has finished its task
-    # TODO: fix this in AgentController to return stopped
-    # assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.agent_state in [
-        AgentState.RUNNING,
-        AgentState.AWAITING_USER_INPUT,
-    ], f'Unexpected agent state: {final_state.agent_state}'
+    assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
+    assert final_state.last_error is None
 
     if final_state.agent_state == AgentState.ERROR:
         assert (
@@ -173,16 +161,8 @@ def test_ipython():
     final_state: State | None = asyncio.run(  # noqa: F821
         run_agent_controller(agent, task, exit_on_message=True)
     )
-    # assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.agent_state in [
-        AgentState.RUNNING,
-        AgentState.AWAITING_USER_INPUT,
-    ], f'Unexpected agent state: {final_state.agent_state}'
-
-    if final_state.agent_state == AgentState.ERROR:
-        assert (
-            final_state.last_error is None
-        ), f'Unexpected error: {final_state.last_error}'
+    assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
+    assert final_state.last_error is None
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -214,16 +194,8 @@ def test_simple_task_rejection():
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(run_agent_controller(agent, task))  # noqa: F821
-    # assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.agent_state in [
-        AgentState.RUNNING,
-        AgentState.AWAITING_USER_INPUT,
-    ], f'Unexpected agent state: {final_state.agent_state}'
-
-    if final_state.agent_state == AgentState.ERROR:
-        assert (
-            final_state.last_error is None
-        ), f'Unexpected error: {final_state.last_error}'
+    assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
+    assert final_state.last_error is None
 
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
@@ -248,16 +220,8 @@ def test_ipython_module():
     final_state: State | None = asyncio.run(  # noqa: F821
         run_agent_controller(agent, task, exit_on_message=True)
     )
-    # assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.agent_state in [
-        AgentState.RUNNING,
-        AgentState.AWAITING_USER_INPUT,
-    ], f'Unexpected agent state: {final_state.agent_state}'
-
-    if final_state.agent_state == AgentState.ERROR:
-        assert (
-            final_state.last_error is None
-        ), f'Unexpected error: {final_state.last_error}'
+    assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
+    assert final_state.last_error is None
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -300,16 +264,8 @@ def test_browse_internet(http_server):
     final_state: State | None = asyncio.run(  # noqa: F821
         run_agent_controller(agent, task, exit_on_message=True)
     )
-    # assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.agent_state in [
-        AgentState.RUNNING,
-        AgentState.AWAITING_USER_INPUT,
-    ], f'Unexpected agent state: {final_state.agent_state}'
-
-    if final_state.agent_state == AgentState.ERROR:
-        assert (
-            final_state.last_error is None
-        ), f'Unexpected error: {final_state.last_error}'
+    assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
+    assert final_state.last_error is None
 
     # last action
     last_action = final_state.history.get_last_action()

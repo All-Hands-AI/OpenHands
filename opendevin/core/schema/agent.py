@@ -37,3 +37,7 @@ class AgentState(str, Enum):
     ERROR = 'error'
     """An error occurred during the task.
     """
+
+    CANCELLED = 'cancelled'
+    """The agent operation was cancelled.
+    """

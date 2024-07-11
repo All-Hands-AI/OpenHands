@@ -1,8 +1,7 @@
-import os
 import json
+import os
 import tarfile
 from glob import glob
-from typing import List
 
 from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
@@ -39,7 +38,9 @@ class E2BBox(Sandbox):
 
     @classmethod
     @async_to_sync
-    async def create(cls, template: str = 'open-devin', timeout: int = config.sandbox.timeout):
+    async def create(
+        cls, template: str = 'open-devin', timeout: int = config.sandbox.timeout
+    ):
         instance = cls(template, timeout)
         # Perform any asynchronous initialization here if needed
         return instance
@@ -102,7 +103,9 @@ class E2BBox(Sandbox):
         """Copies a local file or directory to the sandbox."""
         return self.copy_to_async(host_src, sandbox_dest, recursive)
 
-    async def copy_to_async(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+    async def copy_to_async(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ):
         tar_filename = self._archive(host_src, recursive)
 
         # Prepend the sandbox destination with our sandbox cwd
@@ -113,7 +116,9 @@ class E2BBox(Sandbox):
             uploaded_path = await self.sandbox.upload_file(tar_file)
 
             # Check if sandbox_dest exists. If not, create it.
-            process = await self.sandbox.process.start_and_wait(f'test -d {sandbox_dest}')
+            process = await self.sandbox.process.start_and_wait(
+                f'test -d {sandbox_dest}'
+            )
             if process.exit_code != 0:
                 self.sandbox.filesystem.make_dir(sandbox_dest)
 
@@ -138,7 +143,7 @@ class E2BBox(Sandbox):
         if exit_code == 0:
             self._env[key] = value
         else:
-            raise RuntimeError(f"Failed to set environment variable {key}")
+            raise RuntimeError(f'Failed to set environment variable {key}')
 
     @async_to_sync
     def close(self):
@@ -147,5 +152,5 @@ class E2BBox(Sandbox):
     async def aclose(self):
         await self.sandbox.close()
 
-    def get_working_directory(self):
+    async def get_working_directory(self) -> str:
         return self.sandbox.cwd

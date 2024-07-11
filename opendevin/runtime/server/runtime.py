@@ -122,13 +122,13 @@ class ServerRuntime(Runtime):
     async def read(self, action: FileReadAction) -> Observation:
         # TODO: use self.file_store
         assert self.sandbox is not None
-        working_dir = self.sandbox.get_working_directory()
+        working_dir = await self.sandbox.get_working_directory()
         return await read_file(action.path, working_dir, action.start, action.end)
 
     async def write(self, action: FileWriteAction) -> Observation:
         # TODO: use self.file_store
         assert self.sandbox is not None
-        working_dir = self.sandbox.get_working_directory()
+        working_dir = await self.sandbox.get_working_directory()
         return await write_file(
             action.path, working_dir, action.content, action.start, action.end
         )

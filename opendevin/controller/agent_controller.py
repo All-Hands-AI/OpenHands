@@ -7,7 +7,6 @@ from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.controller.stuck import StuckDetector
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
-    BrowserUnavailableException,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
@@ -20,6 +19,7 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -186,7 +186,8 @@ class AgentController:
                 logger.error(f'Invalid agent state received: {event.agent_state}')
                 return  # Exit early if the state is invalid
 
-        if self.get_agent_state() == AgentState.STOPPED:
+        # Cancelled is coming from the UI's Stop button
+        if self.get_agent_state() == AgentState.CANCELLED:
             if isinstance(event, Observation) and not isinstance(
                 event, AgentStateChangedObservation
             ):
@@ -223,14 +224,24 @@ class AgentController:
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 self._pending_action = None
+            elif isinstance(
+                event,
+                (
+                    CmdOutputObservation,
+                    ErrorObservation,
+                ),
+            ):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, CmdOutputObservation):
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, AgentDelegateObservation):
+            elif isinstance(
+                event,
+                (
+                    AgentDelegateObservation,
+                    AgentRecallAction,
+                ),
+            ):
                 self.state.history.on_event(event)
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, ErrorObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
@@ -254,16 +265,12 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.PAUSED
 
         self.state.agent_state = new_state
-        if new_state == AgentState.STOPPED:
+        if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self.reset_task()
-            # Reset to AWAITING_USER_INPUT after STOPPED
-            new_state = AgentState.AWAITING_USER_INPUT
-            self.state.agent_state = new_state
-            logger.info(
-                f'[Agent Controller] Setting agent({type(self.agent).__name__}) to {new_state}'
-            )
-        elif new_state == AgentState.ERROR:
-            self.reset_task()
+
+        # For when the "Stop" button was pressed
+        if new_state == AgentState.CANCELLED:
+            await self.set_agent_state_to(AgentState.PAUSED)
 
         await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
@@ -410,40 +417,29 @@ class AgentController:
             if asyncio.iscoroutine(action):
                 action = await action
 
-            if action.runnable:
+            # Log the action first
+            logger.info(action, extra={'msg_type': 'ACTION'})
+
+            if isinstance(action, AgentFinishAction):
+                await self.set_agent_state_to(AgentState.FINISHED)
+                return  # Exit the step loop when finished
+
+            if hasattr(action, 'runnable') and action.runnable:
                 self._pending_action = action
 
             if not isinstance(action, NullAction):
                 await self.event_stream.add_event(action, EventSource.AGENT)
 
-            if isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
-                try:
-                    observation = await self.run_action(action)
-                except BrowserUnavailableException:
-                    if hasattr(self.agent, 'handle_browser_unavailable'):
-                        observation = self.agent.handle_browser_unavailable(action)
-                    else:
-                        observation = BrowserOutputObservation(
-                            '<html><body>Browser unavailable</body></html>',
-                            url=action.url
-                            if isinstance(action, BrowseURLAction)
-                            else 'https://example.com',
-                            screenshot='',
-                        )
-                await self.event_stream.add_event(observation, EventSource.AGENT)
-
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
-            # report to the user
-            # and send the underlying exception to the LLM for self-correction
-            await self.report_error(str(e))
+            # report to the user and send the underlying exception to the LLM for self-correction
+            await self.report_error(f'{e}')
             return
         except Exception as e:
-            await self.report_error(f'Unexpected error: {str(e)}')
+            await self.report_error(f'Unexpected error: {e}')
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
         await self.update_state_after_step()
-        logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
@@ -521,7 +517,17 @@ class AgentController:
         await self._close_event.wait()
 
     async def stop(self) -> None:
-        await self.set_agent_state_to(AgentState.STOPPED)
+        if self.state.agent_state not in (
+            AgentState.FINISHED,
+            # AgentState.REJECTED,
+            AgentState.ERROR,
+        ):
+            await self.set_agent_state_to(AgentState.STOPPED)
+        else:
+            # If already in a terminal state, just ensure we're not running
+            self._is_closing = True
+            if self.agent_task:
+                self.agent_task.cancel()
 
     def _parse_agent_state(self, state_str: str) -> Tuple[bool, AgentState | None]:
         """

@@ -19,6 +19,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.CANCELLED,
   ],
   [AgentState.RUNNING]: [
     AgentState.INIT,
@@ -27,6 +28,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.CANCELLED,
   ],
   [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
 };
@@ -146,7 +148,7 @@ function AgentControlBar() {
       <ActionButton
         isDisabled={isLoading || curAgentState !== AgentState.RUNNING}
         content="Cancel current task"
-        action={AgentState.STOPPED}
+        action={AgentState.CANCELLED}
         handleAction={handleCancelAction}
       >
         <StopIcon />

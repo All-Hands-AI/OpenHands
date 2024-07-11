@@ -83,5 +83,5 @@ class Sandbox(ABC, PluginMixin):
         pass
 
     @abstractmethod
-    def get_working_directory(self):
+    async def get_working_directory(self) -> str:
         pass

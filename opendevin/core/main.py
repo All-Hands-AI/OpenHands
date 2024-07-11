@@ -152,6 +152,14 @@ async def run_agent_controller(
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
                     message = '/exit'
+                elif (
+                    isinstance(agent, Agent)
+                    and hasattr(agent, 'steps')
+                    and agent.steps
+                    and isinstance(agent.steps[-1].get('action'), MessageAction)
+                    and agent.steps[-1]['action'].content == '/exit'
+                ):
+                    message = '/exit'
                 elif fake_user_response_fn is None:
                     message = input('Request user input >> ')
                 else:
@@ -163,6 +171,9 @@ async def run_agent_controller(
 
     # Use an event to keep the main coroutine running
     shutdown_event = asyncio.Event()
+
+    # Set initial state to RUNNING
+    await controller.set_agent_state_to(AgentState.RUNNING)
 
     try:
         while not _is_shutting_down:
@@ -176,12 +187,13 @@ async def run_agent_controller(
             ]:
                 logger.info(f'Agent reached final state: {current_state}. Terminating.')
                 break
-            # TODO: check int. tests which expect STOPPED here!
-            if current_state == AgentState.AWAITING_USER_INPUT and exit_on_message:
-                logger.info(
-                    'Agent is awaiting user input and exit_on_message is True. Terminating.'
-                )
-                break
+
+            if current_state == AgentState.AWAITING_USER_INPUT:
+                if exit_on_message:
+                    logger.info(
+                        'Agent is awaiting user input and exit_on_message is True. Terminating.'
+                    )
+                    break
 
             try:
                 await asyncio.wait_for(shutdown_event.wait(), timeout=1)
@@ -197,6 +209,7 @@ async def run_agent_controller(
     except asyncio.CancelledError:
         logger.info('Main task cancelled')
     finally:
+        await controller.stop()
         await controller.close()
         await runtime.close()
         logger.info('Successfully shut down the OpenDevin server.')

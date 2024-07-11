@@ -69,15 +69,17 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
     history.set_event_stream(event_stream)
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
-    state = State(history=history)
+    summary = 'This is a dummy summary about this repo'
+    state = State(history=history, inputs={'summary': summary})
     action = await coder_agent.step(state)
 
     mock_llm.async_completion.assert_called_once()
     _, kwargs = mock_llm.async_completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
-    assert "Here's a summary of the codebase, as it relates to this task" not in prompt
+    assert "Here's a summary of the codebase, as it relates to this task" in prompt
 
+    # Verify that the action is as expected
     assert isinstance(action, AgentFinishAction)
     assert action.action == 'finish'
     assert action.outputs == {}  # Assuming 'args' corresponds to 'outputs'

@@ -177,7 +177,7 @@ class EventStreamRuntime(Runtime):
     # Keep the same with other runtimes
     ############################################################################
 
-    def get_working_directory(self):
+    async def get_working_directory(self) -> str:
         # TODO: should we get this from od-runtime-client
         return config.workspace_base
 

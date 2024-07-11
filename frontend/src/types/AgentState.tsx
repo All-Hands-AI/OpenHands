@@ -8,6 +8,7 @@ enum AgentState {
   FINISHED = "finished",
   REJECTED = "rejected",
   ERROR = "error",
+  CANCELLED = "cancelled",
 }
 
 export default AgentState;

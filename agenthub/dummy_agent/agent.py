@@ -4,6 +4,7 @@ from typing import TypedDict, Union
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -20,7 +21,7 @@ from opendevin.events.action import (
 )
 from opendevin.events.observation import (
     AgentRecallObservation,
-    BrowserOutputObservation,
+    AgentStateChangedObservation,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -59,15 +60,15 @@ class DummyAgent(Agent):
             },
             {
                 'action': AddTaskAction(parent='0', goal='run ls'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': ModifyTaskAction(task_id='0', state='in_progress'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': MessageAction('Time to get started!'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': CmdRunAction(command='echo "foo"'),
@@ -79,21 +80,28 @@ class DummyAgent(Agent):
             },
             {
                 'action': FileWriteAction(
-                    content='echo "Hello, World!"', path='hello.sh'
+                    content='echo "Hello, World!"', path='workspace/hello.sh'
                 ),
-                'observations': [FileWriteObservation('', path='hello.sh')],
+                'observations': [
+                    FileWriteObservation(content='', path='workspace/hello.sh')
+                ],
             },
             {
-                'action': FileReadAction(path='hello.sh'),
+                'action': FileReadAction(path='workspace/hello.sh'),
                 'observations': [
-                    FileReadObservation('echo "Hello, World!"\n', path='hello.sh')
+                    FileReadObservation(
+                        'echo "Hello, World!"\n', path='workspace/hello.sh'
+                    )
                 ],
             },
             {
                 'action': CmdRunAction(command='bash hello.sh'),
                 'observations': [
                     CmdOutputObservation(
-                        'Hello, World!', command_id=-1, command='bash hello.sh'
+                        'bash: hello.sh: No such file or directory',
+                        command_id=-1,
+                        command='bash hello.sh',
+                        exit_code=127,
                     )
                 ],
             },
@@ -106,11 +114,7 @@ class DummyAgent(Agent):
             {
                 'action': BrowseURLAction(url='https://google.com'),
                 'observations': [
-                    BrowserOutputObservation(
-                        '<html><body>Simulated Google page</body></html>',
-                        url='https://google.com',
-                        screenshot='',
-                    ),
+                    # BrowserOutputObservation('<html><body>Simulated Google page</body></html>',url='https://google.com',screenshot=''),
                 ],
             },
             {
@@ -118,20 +122,18 @@ class DummyAgent(Agent):
                     browser_actions='goto("https://google.com")'
                 ),
                 'observations': [
-                    BrowserOutputObservation(
-                        '<html><body>Simulated Google page after interaction</body></html>',
-                        url='https://google.com',
-                        screenshot='',
-                    ),
+                    # BrowserOutputObservation('<html><body>Simulated Google page after interaction</body></html>',url='https://google.com',screenshot=''),
                 ],
             },
             {
-                'action': AgentFinishAction(),
-                'observations': [],
+                'action': AgentRejectAction(),
+                'observations': [NullObservation('')],
             },
             {
-                'action': AgentRejectAction(),
-                'observations': [],
+                'action': AgentFinishAction(
+                    outputs={}, thought='Task completed', action='finish'
+                ),
+                'observations': [AgentStateChangedObservation('', AgentState.FINISHED)],
             },
         ]
 
@@ -162,12 +164,18 @@ class DummyAgent(Agent):
             # Ensure the task_id doesn't start with a dot
             if action.task_id.startswith('.'):
                 action.task_id = action.task_id[1:]
+        elif isinstance(action, AgentRecallAction):
+            return self.handle_agent_recall(action)
         elif isinstance(action, (FileWriteAction, FileReadAction)):
-            # Await the working directory before creating the FileWriteAction or FileReadAction
             working_directory = await self.get_working_directory(state)
-            action.path = str(Path(working_directory) / action.path)
+            action.path = str(Path(working_directory) / Path(action.path).name)
         elif isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
-            return self.simulate_browser_action(action)
+            try:
+                return self.simulate_browser_action(action)
+            except (
+                Exception
+            ):  # This could be a specific exception for browser unavailability
+                return self.handle_browser_unavailable(action)
 
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
@@ -199,33 +207,37 @@ class DummyAgent(Agent):
                             f'Warning: Observation mismatch. Expected {expected_obs}, got {hist_obs}'
                         )
 
-        # Handle FileWriteAction
-        if isinstance(action, FileWriteAction):
-            action.path = str(action.path)
-
-        # Handle BrowseURLAction and BrowseInteractiveAction
-        if isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
-            return self.simulate_browser_action(action)
-
         return action
+
+    def handle_agent_recall(self, action: AgentRecallAction) -> Action:
+        memories = self.search_memory(action.query)
+        message = f"Recall query: '{action.query}'. Memories: {', '.join(memories)}"
+        return MessageAction(content=message)
 
     def simulate_browser_action(
         self, action: Union[BrowseURLAction, BrowseInteractiveAction]
-    ) -> Action:  # Change return type to Action
+    ) -> Action:
+        # Instead of simulating, we'll reject the browser action
+        return self.handle_browser_unavailable(action)
+
+    def handle_browser_unavailable(
+        self, action: Union[BrowseURLAction, BrowseInteractiveAction]
+    ) -> Action:
+        # Create a message action to inform that browsing is not available
+        message = 'Browser actions are not available in the DummyAgent environment.'
         if isinstance(action, BrowseURLAction):
-            return BrowseURLAction(url=action.url)  # Return the original action
+            message += f' Unable to browse URL: {action.url}'
         elif isinstance(action, BrowseInteractiveAction):
-            return BrowseInteractiveAction(
-                browser_actions=action.browser_actions
-            )  # Return the original action
-        else:
-            raise ValueError('Unexpected action type for browser simulation')
+            message += (
+                f' Unable to perform interactive browsing: {action.browser_actions}'
+            )
+        return MessageAction(content=message)
 
     async def get_working_directory(self, state: State) -> str:
         # Implement this method to return the current working directory
         # This might involve accessing state information or making an async call
         # For now, we'll return a placeholder value
-        return '/workspace'
+        return './workspace'
 
     def search_memory(self, query: str) -> list[str]:
         return ['I am a computer.']

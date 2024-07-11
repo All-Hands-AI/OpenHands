@@ -217,7 +217,7 @@ class Session {
     const changeStateEvent: Message = {
       action: ActionType.CHANGE_AGENT_STATE,
       args: {
-        agent_state: AgentState.STOPPED,
+        agent_state: AgentState.CANCELLED,
         thought: "User requested cancellation",
         status_message: userMessage,
       },

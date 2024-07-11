@@ -136,7 +136,7 @@ class LocalBox(Sandbox):
         self._env[key] = value
         os.environ[key] = value
 
-    def get_working_directory(self):
+    async def get_working_directory(self):
         return config.workspace_base
 
     @async_to_sync
