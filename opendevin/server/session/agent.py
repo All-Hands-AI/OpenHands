@@ -9,10 +9,8 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
-from opendevin.runtime import DockerSSHBox
-from opendevin.runtime.e2b.runtime import E2BRuntime
+from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
 
 
 class AgentSession:
@@ -60,16 +58,10 @@ class AgentSession:
     async def _create_runtime(self):
         if self.runtime is not None:
             raise Exception('Runtime already created')
-        if config.runtime == 'server':
-            logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, self.sid)
-        elif config.runtime == 'e2b':
-            logger.info('Using E2B runtime')
-            self.runtime = E2BRuntime(self.event_stream, self.sid)
-        else:
-            raise Exception(
-                f'Runtime not defined in config, or is invalid: {config.runtime}'
-            )
+
+        logger.info(f'Using runtime: {config.runtime}')
+        runtime_cls = get_runtime_cls(config.runtime)
+        self.runtime = runtime_cls(self.event_stream, self.sid)
 
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
