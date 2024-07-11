@@ -94,6 +94,14 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     setSettings((prev) => ({ ...prev, CONFIRMATION_MODE: confirmationMode }));
   };
 
+  const handleSecurityInvariantChange = (securityInvariant: boolean) => {
+    setSettings((prev) => ({
+      ...prev,
+      CONFIRMATION_MODE: true,
+      SECURITY_INVARIANT: securityInvariant,
+    }));
+  };
+
   const handleResetSettings = () => {
     setSettings(getDefaultSettings);
   };
@@ -176,6 +184,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
           onConfirmationModeChange={handleConfirmationModeChange}
+          onSecurityInvariantChange={handleSecurityInvariantChange}
         />
       )}
     </BaseModal>

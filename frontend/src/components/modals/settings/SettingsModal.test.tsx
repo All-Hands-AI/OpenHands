@@ -36,7 +36,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LANGUAGE: "en",
     LLM_API_KEY: "",
     CONFIRMATION_MODE: false,
-    SECURITY_INVARIANT: true,
+    SECURITY_INVARIANT: false,
   }),
   settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),

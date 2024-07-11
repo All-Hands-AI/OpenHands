@@ -145,10 +145,10 @@ class InvariantAnalyzer(SecurityAnalyzer):
         # auto-confirm issues based on severity and user setting
         if risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation":
             logger.info(f'Should handle this event automatically {event}')
-            new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"action_confirmed"}})
+            new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"user_confirmed"}})
             if event.source:
-                await self.event_stream.add_event(new_event, event.source)
+                self.event_stream.add_event(new_event, event.source)
             else:
-                await self.event_stream.add_event(new_event, EventSource.AGENT)
+                self.event_stream.add_event(new_event, EventSource.AGENT)
 
         return risk

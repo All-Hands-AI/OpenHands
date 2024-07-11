@@ -18,6 +18,7 @@ interface SettingsFormProps {
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
   onConfirmationModeChange: (confirmationMode: boolean) => void;
+  onSecurityInvariantChange: (securityInvariant: boolean) => void;
 }
 
 function SettingsForm({
@@ -30,6 +31,7 @@ function SettingsForm({
   onAgentChange,
   onLanguageChange,
   onConfirmationModeChange,
+  onSecurityInvariantChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
@@ -91,9 +93,12 @@ function SettingsForm({
       <Switch
         aria-label="confirmationmode"
         data-testid="confirmationmode"
-        defaultSelected={settings.CONFIRMATION_MODE}
+        defaultSelected={
+          settings.CONFIRMATION_MODE || settings.SECURITY_INVARIANT
+        }
         onValueChange={onConfirmationModeChange}
-        isDisabled={disabled}
+        isDisabled={disabled || settings.SECURITY_INVARIANT}
+        isSelected={settings.CONFIRMATION_MODE}
       >
         <Tooltip
           content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
@@ -102,6 +107,16 @@ function SettingsForm({
         >
           {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
         </Tooltip>
+      </Switch>
+      <Switch
+        aria-label="invariant"
+        data-testid="invariant"
+        defaultSelected={settings.SECURITY_INVARIANT}
+        onValueChange={onSecurityInvariantChange}
+        isDisabled={disabled}
+        isSelected={settings.SECURITY_INVARIANT}
+      >
+        {t(I18nKey.SETTINGS$SECURITY_INVARIANT)}
       </Switch>
     </>
   );
