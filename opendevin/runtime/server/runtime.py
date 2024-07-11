@@ -20,7 +20,7 @@ from opendevin.runtime import Sandbox
 from opendevin.runtime.runtime import Runtime
 from opendevin.storage.local import LocalFileStore
 
-from .browse import browse
+from ..browser import browse
 from .files import read_file, write_file
 
 

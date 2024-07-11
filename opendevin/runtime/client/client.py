@@ -11,6 +11,8 @@ from uvicorn import run
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
+    BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -24,6 +26,8 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.events.serialization import event_from_dict, event_to_dict
+from opendevin.runtime.browser import browse
+from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import (
     ALL_PLUGINS,
     JupyterPlugin,
@@ -47,6 +51,7 @@ class RuntimeClient:
         self._init_bash_shell(work_dir)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
+        self.browser = BrowserEnv()
 
         for plugin in plugins_to_load:
             plugin.initialize()
@@ -174,8 +179,15 @@ class RuntimeClient:
             return ErrorObservation(f'Malformed paths not permitted: {filepath}')
         return FileWriteObservation(content='', path=filepath)
 
+    async def browse(self, action: BrowseURLAction) -> Observation:
+        return await browse(action, self.browser)
+
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return await browse(action, self.browser)
+
     def close(self):
         self.shell.close()
+        self.browser.close()
 
 
 # def test_run_commond():
