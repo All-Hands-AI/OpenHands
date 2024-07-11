@@ -17,17 +17,18 @@ def test_generate_dockerfile():
     )
 
 
-def test_get_new_image_name():
+def test_get_new_image_name_legacy():
+    # test non-eventstream runtime (sandbox-based)
     base_image = 'debian:11'
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = _get_new_image_name(base_image, is_eventstream_runtime=False)
     assert new_image_name == 'od_sandbox:debian__11'
 
     base_image = 'ubuntu:22.04'
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = _get_new_image_name(base_image, is_eventstream_runtime=False)
     assert new_image_name == 'od_sandbox:ubuntu__22.04'
 
     base_image = 'ubuntu'
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = _get_new_image_name(base_image, is_eventstream_runtime=False)
     assert new_image_name == 'od_sandbox:ubuntu__latest'
 
 
