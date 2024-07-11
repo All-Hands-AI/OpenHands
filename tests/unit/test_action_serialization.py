@@ -1,3 +1,4 @@
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -28,7 +29,9 @@ def serialization_deserialization(original_action_dict, cls):
         action_instance, cls
     ), f'The action instance should be an instance of {cls.__name__}.'
     serialized_action_dict = event_to_dict(action_instance)
-    serialized_action_memory = event_to_memory(action_instance)
+    serialized_action_memory = event_to_memory(
+        action_instance, config.get_llm_config().max_message_chars
+    )
     serialized_action_dict.pop('message')
     assert (
         serialized_action_dict == original_action_dict
