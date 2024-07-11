@@ -46,9 +46,9 @@ class PluginMixin:
         return self._source_bashrc_async()
 
     async def _source_bashrc_async(self: SandboxProtocol):
-        exit_code, output = await self.execute_async(
-            'source /opendevin/bash.bashrc && source ~/.bashrc'
-        )
+        exit_code, output = await self.execute_async('source /opendevin/bash.bashrc')
+        if exit_code == 0:
+            exit_code, output = await self.execute_async('source ~/.bashrc')
         if exit_code != 0:
             raise RuntimeError(
                 f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
