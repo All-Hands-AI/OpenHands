@@ -9,7 +9,6 @@ from .action import Action
 @dataclass
 class CmdRunAction(Action):
     command: str
-    background: bool = False
     thought: str = ''
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
@@ -19,26 +18,11 @@ class CmdRunAction(Action):
         return f'Running command: {self.command}'
 
     def __str__(self) -> str:
-        ret = '**CmdRunAction**\n'
+        ret = f'**CmdRunAction (source={self.source})**\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'COMMAND:\n{self.command}'
         return ret
-
-
-@dataclass
-class CmdKillAction(Action):
-    command_id: int
-    thought: str = ''
-    action: str = ActionType.KILL
-    runnable: ClassVar[bool] = True
-
-    @property
-    def message(self) -> str:
-        return f'Killing command: {self.command_id}'
-
-    def __str__(self) -> str:
-        return f'**CmdKillAction**\n{self.command_id}'
 
 
 @dataclass

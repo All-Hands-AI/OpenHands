@@ -18,11 +18,10 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, get_parser
+from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -182,6 +181,7 @@ def process_instance(
             run_agent_controller(
                 agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),
@@ -198,12 +198,12 @@ def process_instance(
 
         final_message = ''
         messages = []
-        for action, obs in reversed(state.history):
-            # if isinstance(act, MessageAction):
-            messages.append(obs.content)
-            # print("obs.content:", obs.content)
-            if str(obs.content) in ["'A'", "'B'", "'C'"]:
-                final_message = obs.content
+        for event in state.history.get_events(reverse=True):
+            # will this be a MessageAction?
+            # TODO we can filter for types of events if we know what to expect
+            messages.append(event.content)
+            if str(event.content) in ["'A'", "'B'", "'C'"]:
+                final_message = event.content
                 break
 
         final_message = final_message.strip("'")
@@ -216,16 +216,18 @@ def process_instance(
         )
         metrics = state.metrics.get() if state.metrics else None
 
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_pairs()
+
         # Save the output
         output = {
             'id': instance['id'],
             'instance': instance,
             'instruction': instruction,
-            # 'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            # 'metadata': metadata.model_dump(),
+            'history': histories,
             'metrics': metrics,
             'final_message': final_message,
             'messages': messages,
@@ -271,7 +273,9 @@ if __name__ == '__main__':
     logic_reasoning_tests = dataset[data_split]
 
     id_column = 'id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
         llm_config,
         args.dataset_name,
@@ -282,7 +286,6 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     run_evaluation(
         instances,
         metadata,

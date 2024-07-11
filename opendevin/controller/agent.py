@@ -70,6 +70,7 @@ class Agent(ABC):
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
+        # TODO clear history
         self._complete = False
 
     @property

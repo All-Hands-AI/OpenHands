@@ -32,11 +32,10 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, get_parser
+from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
@@ -68,9 +67,8 @@ ID2CONDA = {
 }
 
 
-def process_instance(
-    agent: Agent, instance: Any, metadata: EvalMetadata, reset_logger: bool = True
-):
+def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
@@ -154,6 +152,7 @@ def process_instance(
             run_agent_controller(
                 agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),
@@ -195,16 +194,18 @@ def process_instance(
             logger.info(f'Output: {eval_output}')
             metrics['success'] = 1
 
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_pairs()
+
         # Save the output
         output = {
             'instance_id': instance['id'],
             'repo': repo_url,
             'instruction': instruction,
-            'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            'metadata': metadata.model_dump(),
+            'history': histories,
             'eval_script': eval_script_content,
             'eval_exit_code': exit_code,
             'eval_output': eval_output,
@@ -242,7 +243,9 @@ if __name__ == '__main__':
     ml_bench = load_dataset('super-dainiu/ml-bench', split=data_split).to_pandas()
 
     id_column = 'instance_id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
         llm_config,
         args.dataset_name,
@@ -253,9 +256,8 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(ml_bench, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
+
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

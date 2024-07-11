@@ -21,12 +21,11 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_parser
+from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
@@ -121,6 +120,7 @@ def process_instance(
             run_agent_controller(
                 agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     agent.__class__.__name__
                 ],
@@ -135,13 +135,13 @@ def process_instance(
             raise ValueError('State should not be None.')
 
         model_answer_raw = ''
-        for act, _ in reversed(state.history):
-            if isinstance(act, CmdRunAction) and act.source == 'agent':
-                model_answer_raw = act.thought
-                break
-            elif isinstance(act, MessageAction) and act.source == 'agent':
-                model_answer_raw = act.content
-                break
+
+        # get the last message or thought from the agent
+        for event in state.history.get_events(reverse=True):
+            if isinstance(event, CmdRunAction) and event.source == 'agent':
+                model_answer_raw = event.thought
+            elif isinstance(event, MessageAction) and event.source == 'agent':
+                model_answer_raw = event.content
 
         # attempt to parse model_answer
         model_answer = re.findall(r'<solution>(.*?)</solution>', model_answer_raw)
@@ -165,16 +165,18 @@ def process_instance(
         }
         metrics = state.metrics.get() if state.metrics else None
 
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_pairs()
+
         # Save the output
         output = {
             'instance_id': instance['task_id'],
             'instance': instance,
             'instruction': instance['Question'],
-            'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            'metadata': metadata.model_dump(),
+            'history': histories,
             'metrics': metrics,
             'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
@@ -199,8 +201,11 @@ if __name__ == '__main__':
         config.workspace_base = os.path.abspath(args.directory)
         logger.info(f'Setting workspace base to {config.workspace_base}')
 
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
-        llm_config=config.llm,
+        llm_config=llm_config,
         dataset_name='gaia',
         agent_class=args.agent_cls,
         max_iterations=args.max_iterations,

@@ -14,14 +14,12 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
-from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
-from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
+from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -202,9 +200,6 @@ class DockerSSHBox(Sandbox):
     _ssh_password: str
     _ssh_port: int
     ssh: pxssh.pxssh
-
-    cur_background_id = 0
-    background_commands: dict[int, Process] = {}
 
     def __init__(
         self,
@@ -452,12 +447,6 @@ class DockerSSHBox(Sandbox):
         else:
             return ['/bin/bash', '-c', cmd]
 
-    def read_logs(self, id) -> str:
-        if id not in self.background_commands:
-            raise SandboxInvalidBackgroundCommandError()
-        bg_cmd = self.background_commands[id]
-        return bg_cmd.read_logs()
-
     def _send_interrupt(
         self,
         cmd: str,
@@ -579,46 +568,6 @@ class DockerSSHBox(Sandbox):
                 data = f.read()
             self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
-    def execute_in_background(self, cmd: str) -> Process:
-        result = self.container.exec_run(
-            self.get_exec_cmd(cmd),
-            socket=True,
-            workdir=self.sandbox_workspace_dir,
-            environment=self._env,
-        )
-        result.output._sock.setblocking(0)
-        pid = self.get_pid(cmd)
-        bg_cmd = DockerProcess(self.cur_background_id, cmd, result, pid)
-        self.background_commands[bg_cmd.pid] = bg_cmd
-        self.cur_background_id += 1
-        return bg_cmd
-
-    def get_pid(self, cmd):
-        exec_result = self.container.exec_run('ps aux', environment=self._env)
-        processes = exec_result.output.decode('utf-8').splitlines()
-        cmd = ' '.join(self.get_exec_cmd(cmd))
-
-        for process in processes:
-            if cmd in process:
-                pid = process.split()[1]  # second column is the pid
-                return pid
-        return None
-
-    def kill_background(self, id: int) -> Process:
-        if id not in self.background_commands:
-            raise SandboxInvalidBackgroundCommandError()
-        bg_cmd = self.background_commands[id]
-        if bg_cmd.pid is not None:
-            self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}',
-                workdir=self.sandbox_workspace_dir,
-                environment=self._env,
-            )
-        assert isinstance(bg_cmd, DockerProcess)
-        bg_cmd.result.output.close()
-        self.background_commands.pop(id)
-        return bg_cmd
-
     def start_docker_container(self):
         try:
             container = self.docker_client.containers.get(self.container_name)
@@ -692,7 +641,6 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         mount_dir = config.workspace_mount_path
-        logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
@@ -801,10 +749,6 @@ if __name__ == '__main__':
         '---'
     )
 
-    bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo -n '.' && sleep 10; done"
-    )
-
     sys.stdout.flush()
     try:
         while True:
@@ -816,16 +760,9 @@ if __name__ == '__main__':
             if user_input.lower() == 'exit':
                 logger.info('Exiting...')
                 break
-            if user_input.lower() == 'kill':
-                ssh_box.kill_background(bg_cmd.pid)
-                logger.info('Background process killed')
-                continue
             exit_code, output = ssh_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.pid in ssh_box.background_commands:
-                logs = ssh_box.read_logs(bg_cmd.pid)
-                logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')

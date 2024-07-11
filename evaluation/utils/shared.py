@@ -12,12 +12,10 @@ import pandas as pd
 from pydantic import BaseModel
 from tqdm import tqdm
 
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import LLMConfig
 from opendevin.events.action import Action
 from opendevin.events.action.message import MessageAction
-from opendevin.llm.llm import LLM
 
 
 class EvalMetadata(BaseModel):
@@ -51,16 +49,20 @@ def codeact_user_response(
         f'{encaps_str}'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
+
     if state.history:
+        # check if the last action has an answer, if so, early exit
         if try_parse is not None:
-            last_action, _ = state.history[-1]
+            last_action = state.history.get_last_action()
             ans = try_parse(last_action)
             if ans is not None:
                 return '/exit'
+
+        # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
@@ -166,10 +168,9 @@ def run_evaluation(
     process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
     id_column: str,
 ):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
     logger.info(
-        f'Evaluation started with Agent {agent.__class__.name}, '
-        f'model {agent.llm.model_name}, max iterations {metadata.max_iterations}.'
+        f'Evaluation started with Agent {metadata.agent_class}, '
+        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.'
     )
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')

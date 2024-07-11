@@ -22,12 +22,11 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
@@ -116,6 +115,7 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=FAKE_RESPONSES[agent.__class__.__name__],
             sandbox=sandbox,
             sid=inst_id,
@@ -144,13 +144,15 @@ def process_instance(
     else:
         logger.info('Retrieving agent answer from history.')
         raw_ans = ''
-        for act, _ in reversed(state.history):
-            if isinstance(act, MessageAction) and act.source == 'agent':
-                raw_ans = act.content
-                break
-            if isinstance(act, CmdRunAction) and act.source == 'agent':
-                raw_ans = act.thought
-                break
+
+        # retrieve the last agent message or thought
+        for event in state.history.get_events(reverse=True):
+            if isinstance(event, MessageAction) and event.source == 'agent':
+                raw_ans = event.content
+            elif isinstance(event, CmdRunAction) and event.source == 'agent':
+                raw_ans = event.thought
+
+        # parse the answer for a solution tag
         agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)
         if len(agent_answer) == 0:
             logger.warning(f'Failed to parse model answer: {raw_ans}')
@@ -178,9 +180,11 @@ def process_instance(
     )
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
-    histories = [
-        (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-    ]
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
+
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
@@ -188,7 +192,7 @@ def process_instance(
         'instance_id': inst_id,
         'instance': instance.to_dict(),
         'instruction': instruction,
-        'metadata': metadata,
+        'metadata': metadata.model_dump(),
         'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
@@ -216,7 +220,10 @@ if __name__ == '__main__':
     args = parse_arguments()
     dataset = load_dataset('iFurySt/AgentBench')
     agent_bench_tests = dataset['osbench'].to_pandas()
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
         llm_config,
         args.dataset_name,
@@ -227,7 +234,7 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
+
     run_evaluation(
         instances,
         metadata,

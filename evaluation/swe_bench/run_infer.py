@@ -21,11 +21,10 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
@@ -283,6 +282,7 @@ IMPORTANT TIPS:
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -309,16 +309,19 @@ IMPORTANT TIPS:
 
     metrics = state.metrics.get() if state.metrics else None
 
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
+
     # Save the output
     output = {
         'instance_id': instance.instance_id,
         'swe_instance': instance.to_dict(),  # SWE Bench specific
         'instruction': instruction,
         'git_patch': git_patch,  # SWE Bench specific
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'metadata': metadata.model_dump(),
+        'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
         'test_result': test_result,
@@ -354,7 +357,10 @@ if __name__ == '__main__':
     swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 
     id_column = 'instance_id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    if args.llm_config and llm_config is None:
+        raise ValueError(f'Could not find LLM config {args.llm_config}')
+    logger.info(f'Config for evaluation: {config}')
 
     details = {}
     _agent_cls = agenthub.Agent.get_cls(args.agent_cls)

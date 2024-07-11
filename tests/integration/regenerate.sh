@@ -28,9 +28,17 @@ mkdir -p $WORKSPACE_BASE
 SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
 # TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
 PERSIST_SANDBOX=false
-MAX_ITERATIONS=10
+MAX_ITERATIONS=15
 
-agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
+agents=(
+  "DelegatorAgent"
+  "ManagerAgent"
+  "BrowsingAgent"
+  "MonologueAgent"
+  "CodeActAgent"
+  "PlannerAgent"
+  "CodeActSWEAgent"
+)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -70,7 +78,7 @@ run_test() {
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
-    AGENT=$agent \
+    DEFAULT_AGENT=$agent \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -140,7 +148,7 @@ regenerate_without_llm() {
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     FORCE_APPLY_PROMPTS=true \
-    AGENT=$agent \
+    DEFAULT_AGENT=$agent \
     poetry run pytest -s ./tests/integration/test_agent.py::$test_name
   set +x
 }
@@ -150,8 +158,7 @@ regenerate_with_llm() {
     launch_http_server
   fi
 
-  rm -rf $WORKSPACE_BASE
-  mkdir -p $WORKSPACE_BASE
+  rm -rf $WORKSPACE_BASE/*
   if [ -d "tests/integration/workspace/$test_name" ]; then
     cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
   fi
@@ -189,7 +196,7 @@ if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
 fi
 
 rm -rf logs
-rm -rf $WORKSPACE_BASE
+rm -rf $WORKSPACE_BASE/*
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
@@ -208,8 +215,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     echo -e "\n\n\n\n========STEP 1: Running $test_name for $agent========\n\n\n\n"
-    rm -rf $WORKSPACE_BASE
-    mkdir $WORKSPACE_BASE
+    rm -rf $WORKSPACE_BASE/*
     if [ -d "tests/integration/workspace/$test_name" ]; then
       cp -r "tests/integration/workspace/$test_name"/* $WORKSPACE_BASE
     fi

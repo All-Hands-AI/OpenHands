@@ -24,8 +24,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 game = None
@@ -42,11 +40,11 @@ def cleanup():
 def codeact_user_response_eda(state: State) -> str:
     global game
     model_guess = ''
+
+    # retrieve the latest model message from history
     if state.history:
-        for act, _ in reversed(state.history):
-            if isinstance(act, MessageAction) and act.source == 'agent':
-                model_guess = act.content
-                break
+        model_guess = state.history.get_last_agent_message()
+
     assert game is not None, 'Game is not initialized.'
     msg = game.generate_user_response(model_guess)
     game.curr_turn += 1
@@ -134,6 +132,7 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -147,25 +146,24 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    final_message = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            final_message = act.content
-            break
+    final_message = state.history.get_last_agent_message()
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
     metrics = state.metrics.get() if state.metrics else None
+
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
     output = {
         'instance_id': instance['text'].strip(),
         'instance': instance,
         'instruction': instruction,
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'metadata': metadata.model_dump(),
+        'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
         'test_result': {
@@ -201,17 +199,15 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
 
     eda_dataset = load_dataset(
         'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
     )
 
     metadata = make_metadata(
-        config.llm,
+        llm_config,
         f'eda-{args.dataset}',
         args.agent_cls,
         args.max_iterations,

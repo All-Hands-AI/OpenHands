@@ -17,11 +17,10 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, config, get_llm_config_arg, get_parser
+from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 from .datatypes import TaskState
@@ -39,7 +38,7 @@ def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, 
         task=task,
         task_config=task_config,
     )
-    last_action, _ = state.history[-1]
+    last_action = state.history.get_last_action()
     result_state: TaskState = env.step(last_action.message or '')
 
     state.task_state = result_state
@@ -65,11 +64,11 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(
-    agent: Agent,
     instance: Any,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
@@ -145,6 +144,7 @@ def process_instance(
         run_agent_controller(
             agent,
             instruction,
+            max_iterations=metadata.max_iterations,
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
             sid=sid,
@@ -161,15 +161,18 @@ def process_instance(
 
     metrics = state.metrics.get() if state.metrics else None
 
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
+
     # Save the output
     output = {
         'id': instance.task_id,
         'instance': instance.to_dict(),
         'instruction': instruction,
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'metadata': metadata.model_dump(),
+        'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
         'test_result': task_state.success if task_state else False,
@@ -209,7 +212,9 @@ if __name__ == '__main__':
     mint_tests = mint_dataset.to_pandas()
 
     id_column = 'id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else LLMConfig()
+    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    logger.info(f'Config for evaluation: {config}')
+
     metadata = make_metadata(
         llm_config,
         args.dataset_name,
@@ -221,9 +226,7 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(mint_dataset, output_file, args.eval_n_limit, id_column)
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config))
     run_evaluation(
-        agent,
         instances,
         metadata,
         output_file,

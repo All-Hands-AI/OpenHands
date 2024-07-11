@@ -17,7 +17,6 @@ The codebase appears to be empty. Engineers should start everything from scratch
 ## Available Actions
 * `run` - runs a command on the command line in a Linux shell. Arguments:
   * `command` - the command to run
-  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 
 * `write` - writes the content to a file. Arguments:
   * `path` - the path of the file to write
@@ -42,7 +41,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"source": "agent", "action": "write", "args": {"path": "hello.sh", "content": "#!/bin/bash\necho 'hello'", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "write", "content": "", "extras": {"path": "hello.sh"}}], [{"source": "agent", "action": "run", "args": {"command": "bash hello.sh", "background": false, "thought": ""}}, {"source": "agent", "observation": "run", "content": "hello", "extras": {"command_id": -1, "command": "bash hello.sh", "exit_code": 0}}]]
+[{"source": "agent", "action": "write", "args": {"path": "hello.sh", "content": "#!/bin/bash\n\n# Print hello\necho 'hello'", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "write", "content": "", "extras": {"path": "hello.sh"}}, {"source": "agent", "action": "run", "args": {"command": "chmod +x hello.sh", "thought": ""}}, {"source": "agent", "observation": "run", "content": "", "extras": {"command_id": -1, "command": "chmod +x hello.sh", "exit_code": 0}}]
 
 ## Format
 Your response MUST be in JSON format. It must be an object, and it must contain two fields:
