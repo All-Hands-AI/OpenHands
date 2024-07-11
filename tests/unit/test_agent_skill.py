@@ -1,5 +1,6 @@
 import contextlib
 import io
+import os
 import sys
 
 import docx
@@ -7,9 +8,11 @@ import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
+    WINDOW,
     _print_window,
+    append_file,
     create_file,
-    edit_file,
+    edit_file_by_replace,
     find_file,
     goto_line,
     insert_content_at_line,
@@ -43,6 +46,18 @@ def _generate_test_file_with_lines(temp_path, num_lines) -> str:
     return file_path
 
 
+def _calculate_window_bounds(current_line, total_lines, window_size):
+    """Calculate the bounds of the window around the current line."""
+    half_window = window_size // 2
+    if current_line - half_window < 0:
+        start = 1
+        end = window_size
+    else:
+        start = current_line - half_window
+        end = current_line + half_window
+    return start, end
+
+
 def test_open_file_unexist_path():
     with pytest.raises(FileNotFoundError):
         open_file('/unexist/path/a.txt')
@@ -60,11 +75,13 @@ def test_open_file(tmp_path):
     assert result is not None
     expected = (
         f'[File: {temp_file_path} (5 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|Line 1\n'
         '2|Line 2\n'
         '3|Line 3\n'
         '4|Line 4\n'
         '5|Line 5\n'
+        '(this is the end of the file)\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -80,11 +97,13 @@ def test_open_file_with_indentation(tmp_path):
     assert result is not None
     expected = (
         f'[File: {temp_file_path} (5 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|Line 1\n'
         '2|    Line 2\n'
         '3|Line 3\n'
         '4|Line 4\n'
         '5|Line 5\n'
+        '(this is the end of the file)\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -100,6 +119,7 @@ def test_open_file_long(tmp_path):
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, 51):
         expected += f'{i}|Line {i}\n'
     expected += '(950 more lines below)\n'
@@ -111,16 +131,27 @@ def test_open_file_long_with_lineno(tmp_path):
     content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
     temp_file_path.write_text(content)
 
+    cur_line = 100
+
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            open_file(str(temp_file_path), 100)
+            open_file(str(temp_file_path), cur_line)
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(49 more lines above)\n'
-    for i in range(50, 151):
+    # since 100 is < WINDOW and 100 - WINDOW//2 < 0, so it should show all lines from 1 to WINDOW
+
+    start, end = _calculate_window_bounds(cur_line, 1000, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(850 more lines below)\n'
+    if end == 1000:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({1000 - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -138,7 +169,9 @@ def test_create_file(tmp_path):
 
     expected = (
         f'[File: {temp_file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         f'[File {temp_file_path} created.]\n'
     )
     assert result.split('\n') == expected.split('\n')
@@ -146,7 +179,8 @@ def test_create_file(tmp_path):
 
 def test_goto_line(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    total_lines = 1000
+    content = '\n'.join([f'Line {i}' for i in range(1, total_lines + 1)])
     temp_file_path.write_text(content)
 
     with io.StringIO() as buf:
@@ -155,23 +189,32 @@ def test_goto_line(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 101):
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
+    for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(900 more lines below)\n'
+    expected += f'({total_lines - WINDOW} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            goto_line(100)
+            goto_line(500)
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(49 more lines above)\n'
-    for i in range(50, 151):
+    cur_line = 500
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(850 more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -201,7 +244,8 @@ def test_goto_line_out_of_bound(tmp_path):
 
 def test_scroll_down(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    total_lines = 1000
+    content = '\n'.join([f'Line {i}' for i in range(1, total_lines + 1)])
     temp_file_path.write_text(content)
 
     with io.StringIO() as buf:
@@ -210,10 +254,18 @@ def test_scroll_down(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 101):
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(1, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(900 more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -222,30 +274,46 @@ def test_scroll_down(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(50 more lines above)\n'
-    for i in range(51, 152):
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(WINDOW + 1, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(849 more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
 def test_scroll_up(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    total_lines = 1000
+    content = '\n'.join([f'Line {i}' for i in range(1, total_lines + 1)])
     temp_file_path.write_text(content)
 
+    cur_line = 300
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            open_file(str(temp_file_path), 300)
+            open_file(str(temp_file_path), cur_line)
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(249 more lines above)\n'
-    for i in range(250, 351):
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(650 more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -254,11 +322,20 @@ def test_scroll_up(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(149 more lines above)\n'
-    for i in range(150, 251):
+    cur_line = cur_line - WINDOW
+
+    expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
+    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    if start == 1:
+        expected += '(this is the beginning of the file)\n'
+    else:
+        expected += f'({start - 1} more lines above)\n'
+    for i in range(start, end + 1):
         expected += f'{i}|Line {i}\n'
-    expected += '(750 more lines below)\n'
+    if end == total_lines:
+        expected += '(this is the end of the file)\n'
+    else:
+        expected += f'({total_lines - end} more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -274,8 +351,10 @@ def test_scroll_down_edge(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (9 lines total)]\n'
+    expected += '(this is the beginning of the file)\n'
     for i in range(1, 10):
         expected += f'{i}|Line {i}\n'
+    expected += '(this is the end of the file)\n'
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
@@ -314,7 +393,90 @@ def test_print_window_internal(tmp_path):
         assert result == expected
 
 
-def test_edit_file_window(tmp_path, monkeypatch):
+def test_open_file_large_line_number(tmp_path):
+    test_file_path = tmp_path / 'a.txt'
+    create_file(str(test_file_path))
+    open_file(str(test_file_path))
+    with open(test_file_path, 'w') as file:
+        for i in range(1, 1000):
+            file.write(f'Line `{i}`\n')
+
+    # Define the parameters for the test
+    current_line = 800
+    window = 100
+
+    # Test _print_window especially with backticks
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            # _print_window(str(test_file_path), current_line, window, return_str=False)
+            open_file(str(test_file_path), current_line, window)
+        result = buf.getvalue()
+        expected = f'[File: {test_file_path} (999 lines total)]\n'
+        expected += '(749 more lines above)\n'
+        for i in range(750, 850 + 1):
+            expected += f'{i}|Line `{i}`\n'
+        expected += '(149 more lines below)\n'
+        assert result == expected
+
+
+def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
+    test_file_path = tmp_path / 'a.txt'
+    create_file(str(test_file_path))
+    open_file(str(test_file_path))
+    total_lines = 1000
+    with open(test_file_path, 'w') as file:
+        for i in range(1, total_lines + 1):
+            file.write(f'Line `{i}`\n')
+
+    # Define the parameters for the test
+    current_line = 800
+    cur_window = 300
+
+    # Test _print_window especially with backticks
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            # _print_window(str(test_file_path), current_line, window, return_str=False)
+            open_file(str(test_file_path), current_line, cur_window)
+        result = buf.getvalue()
+        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
+        start, end = _calculate_window_bounds(current_line, total_lines, cur_window)
+        if start == 1:
+            expected += '(this is the beginning of the file)\n'
+        else:
+            expected += f'({start - 1} more lines above)\n'
+        for i in range(
+            current_line - cur_window // 2, current_line + cur_window // 2 + 1
+        ):
+            expected += f'{i}|Line `{i}`\n'
+        if end == total_lines:
+            expected += '(this is the end of the file)\n'
+        else:
+            expected += f'({total_lines - end} more lines below)\n'
+        assert result == expected
+
+    # open_file **SHOULD NOT** Change the "window size" to 300
+    # the window size should still be WINDOW
+    current_line = current_line - WINDOW
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            scroll_up()
+        result = buf.getvalue()
+        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
+        start, end = _calculate_window_bounds(current_line, total_lines, WINDOW)
+        if start == 1:
+            expected += '(this is the beginning of the file)\n'
+        else:
+            expected += f'({start - 1} more lines above)\n'
+        for i in range(start, end + 1):
+            expected += f'{i}|Line `{i}`\n'
+        if end == total_lines:
+            expected += '(this is the end of the file)\n'
+        else:
+            expected += f'({total_lines - end} more lines below)\n'
+        assert result == expected
+
+
+def test_edit_file_by_replace_window(tmp_path, monkeypatch):
     # Set environment variable via monkeypatch does NOT work!
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
@@ -361,7 +523,7 @@ check(any_int)"""
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 str(temp_file_path),
                 to_replace='    assert any_int(1.0, 2, 3) == False',
                 new_content='        assert any_int(1.0, 2, 3) == False',
@@ -375,7 +537,10 @@ check(any_int)"""
             + 'E999 IndentationError: unexpected indent\n'
             '[This is how your edit would have looked if applied]\n'
             '-------------------------------------------------\n'
-            '(3 more lines above)\n'
+            '(this is the beginning of the file)\n'
+            '1|def any_int(a, b, c):\n'
+            '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
+            '3|\n'
             '4|def test_any_int():\n'
             '5|    assert any_int(1, 2, 3) == True\n'
             '6|    assert any_int(1.5, 2, 3) == False\n'
@@ -387,12 +552,22 @@ check(any_int)"""
             '12|    assert any_int(0, 0, 0) == True\n'
             '13|    assert any_int(-1, -2, -3) == True\n'
             '14|    assert any_int(1, -2, 3) == True\n'
-            '(19 more lines below)\n'
+            '15|    assert any_int(1.5, -2, 3) == False\n'
+            '16|    assert any_int(1, -2.5, 3) == False\n'
+            '17|\n'
+            '18|def check(any_int):\n'
+            '19|    # Check some simple cases\n'
+            '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
+            '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
+            '(12 more lines below)\n'
             '-------------------------------------------------\n'
             '\n'
             '[This is the original code before your edit]\n'
             '-------------------------------------------------\n'
-            '(3 more lines above)\n'
+            '(this is the beginning of the file)\n'
+            '1|def any_int(a, b, c):\n'
+            '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
+            '3|\n'
             '4|def test_any_int():\n'
             '5|    assert any_int(1, 2, 3) == True\n'
             '6|    assert any_int(1.5, 2, 3) == False\n'
@@ -404,7 +579,14 @@ check(any_int)"""
             '12|    assert any_int(0, 0, 0) == True\n'
             '13|    assert any_int(-1, -2, -3) == True\n'
             '14|    assert any_int(1, -2, 3) == True\n'
-            '(19 more lines below)\n'
+            '15|    assert any_int(1.5, -2, 3) == False\n'
+            '16|    assert any_int(1, -2.5, 3) == False\n'
+            '17|\n'
+            '18|def check(any_int):\n'
+            '19|    # Check some simple cases\n'
+            '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
+            '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
+            '(12 more lines below)\n'
             '-------------------------------------------------\n'
             'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -413,7 +595,10 @@ check(any_int)"""
         assert result == expected
 
 
-def test_edit_file(tmp_path):
+# ================================
+
+
+def test_edit_file_by_replace(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
     temp_file_path.write_text(content)
@@ -422,7 +607,7 @@ def test_edit_file(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 file_name=str(temp_file_path),
                 to_replace='Line 1\nLine 2\nLine 3',
                 new_content='REPLACE TEXT',
@@ -430,9 +615,13 @@ def test_edit_file(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT\n'
             '2|Line 4\n'
-            '3|Line 5\n' + MSG_FILE_UPDATED + '\n'
+            '3|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -444,7 +633,7 @@ def test_edit_file(tmp_path):
     assert lines[2].rstrip() == 'Line 5'
 
 
-def test_edit_file_sameline(tmp_path):
+def test_edit_file_by_replace_sameline(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
     temp_file_path.write_text(content)
@@ -453,7 +642,7 @@ def test_edit_file_sameline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 file_name=str(temp_file_path),
                 to_replace='Line 2\nLine 2',
                 new_content='Line 2\nREPLACE TEXT',
@@ -461,11 +650,15 @@ def test_edit_file_sameline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Line 2\n'
             '3|REPLACE TEXT\n'
             '4|Line 4\n'
-            '5|Line 5\n' + MSG_FILE_UPDATED + '\n'
+            '5|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -479,7 +672,7 @@ def test_edit_file_sameline(tmp_path):
     assert lines[4].rstrip() == 'Line 5'
 
 
-def test_edit_file_multiline(tmp_path):
+def test_edit_file_by_replace_multiline(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
     temp_file_path.write_text(content)
@@ -488,7 +681,7 @@ def test_edit_file_multiline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 file_name=str(temp_file_path),
                 to_replace='Line 2',
                 new_content='REPLACE TEXT',
@@ -496,11 +689,15 @@ def test_edit_file_multiline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|REPLACE TEXT\n'
             '3|Line 2\n'
             '4|Line 4\n'
-            '5|Line 5\n' + MSG_FILE_UPDATED + '\n'
+            '5|Line 5\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -514,9 +711,9 @@ def test_edit_file_multiline(tmp_path):
     assert lines[4].rstrip() == 'Line 5'
 
 
-def test_edit_file_toreplace_empty():
+def test_edit_file_by_replace_toreplace_empty():
     with pytest.raises(ValueError):
-        edit_file(
+        edit_file_by_replace(
             str('unknown file'),
             '',
             'REPLACE TEXT',
@@ -539,10 +736,14 @@ def test_insert_content_at_line(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Inserted Line\n'
             '3|Line 2\n'
-            '4|Line 3\n' + MSG_FILE_UPDATED + '\n'
+            '4|Line 3\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -569,17 +770,19 @@ def test_insert_content_at_line_from_scratch(tmp_path):
             )
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (2 lines total after edit)]\n'
+            f'[File: {temp_file_path} (1 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT\n'
-            '2|\n' + MSG_FILE_UPDATED + '\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 2
+    assert len(lines) == 1
     assert lines[0].rstrip() == 'REPLACE TEXT'
-    assert lines[1].rstrip() == ''
 
 
 def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
@@ -598,7 +801,11 @@ def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1|REPLACE TEXT\n' + MSG_FILE_UPDATED + '\n'
+            '(this is the beginning of the file)\n'
+            '1|REPLACE TEXT\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -624,9 +831,13 @@ def test_insert_content_at_line_emptyline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|Line 1\n'
             '2|Inserted Line\n'
-            '3|\n' + MSG_FILE_UPDATED + '\n'
+            '3|\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
@@ -635,7 +846,6 @@ def test_insert_content_at_line_emptyline(tmp_path):
     assert len(lines) == 3
     assert lines[0].rstrip() == 'Line 1'
     assert lines[1].rstrip() == 'Inserted Line'
-    assert lines[2].rstrip() == ''
 
 
 def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second_edit(
@@ -654,52 +864,56 @@ def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second
             )
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|`REPLACE TEXT1`\n'
             '2|`REPLACE TEXT2`\n'
             '3|`REPLACE TEXT3`\n'
-            '4|\n' + MSG_FILE_UPDATED + '\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 4
+    assert len(lines) == 3
     assert lines[0].rstrip() == '`REPLACE TEXT1`'
     assert lines[1].rstrip() == '`REPLACE TEXT2`'
     assert lines[2].rstrip() == '`REPLACE TEXT3`'
-    assert lines[3].rstrip() == ''
 
-    # Check that no backticks are escaped in the edit_file call
+    # Check that no backticks are escaped in the edit_file_by_replace call
     assert '\\`' not in result
 
     # Perform a second edit
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(
+            edit_file_by_replace(
                 str(temp_file_path),
                 '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
                 '`REPLACED TEXT1`\n`REPLACED TEXT2`\n`REPLACED TEXT3`',
             )
         second_result = buf.getvalue()
         second_expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|`REPLACED TEXT1`\n'
             '2|`REPLACED TEXT2`\n'
             '3|`REPLACED TEXT3`\n'
-            '4|\n' + MSG_FILE_UPDATED + '\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert second_result.split('\n') == second_expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 4
+    assert len(lines) == 3
     assert lines[0].rstrip() == '`REPLACED TEXT1`'
     assert lines[1].rstrip() == '`REPLACED TEXT2`'
     assert lines[2].rstrip() == '`REPLACED TEXT3`'
-    assert lines[3].rstrip() == ''
 
-    # Check that no backticks are escaped in the second edit_file call
+    # Check that no backticks are escaped in the second edit_file_by_replace call
     assert '\\`' not in second_result
 
 
@@ -717,21 +931,23 @@ def test_insert_content_at_line_from_scratch_multiline(tmp_path):
             )
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
             '1|REPLACE TEXT1\n'
             '2|REPLACE TEXT2\n'
             '3|REPLACE TEXT3\n'
-            '4|\n' + MSG_FILE_UPDATED + '\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
         )
         assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
-    assert len(lines) == 4
+    assert len(lines) == 3
     assert lines[0].rstrip() == 'REPLACE TEXT1'
     assert lines[1].rstrip() == 'REPLACE TEXT2'
     assert lines[2].rstrip() == 'REPLACE TEXT3'
-    assert lines[3].rstrip() == ''
 
 
 def test_insert_content_at_line_not_opened():
@@ -741,6 +957,103 @@ def test_insert_content_at_line_not_opened():
             1,
             'REPLACE TEXT',
         )
+
+
+def test_append_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            append_file(str(temp_file_path), content='APPENDED TEXT')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
+            '1|Line 1\n'
+            '2|Line 2\n'
+            '3|APPENDED TEXT\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'Line 1'
+    assert lines[1].rstrip() == 'Line 2'
+    assert lines[2].rstrip() == 'APPENDED TEXT'
+
+
+def test_append_file_from_scratch(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    try:
+        open_file(str(temp_file_path))
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                append_file(str(temp_file_path), content='APPENDED TEXT')
+            result = buf.getvalue()
+            expected = (
+                f'[File: {temp_file_path} (1 lines total after edit)]\n'
+                '(this is the beginning of the file)\n'
+                '1|APPENDED TEXT\n'
+                '(this is the end of the file)\n'
+                + MSG_FILE_UPDATED.format(line_number=1)
+                + '\n'
+            )
+            assert result.split('\n') == expected.split('\n')
+
+        with open(temp_file_path, 'r') as file:
+            lines = file.readlines()
+        assert len(lines) == 1
+        assert lines[0].rstrip() == 'APPENDED TEXT'
+    finally:
+        os.remove(temp_file_path)
+
+
+def test_append_file_from_scratch_multiline(tmp_path):
+    temp_file_path = tmp_path / 'a3.txt'
+    create_file(str(temp_file_path))
+    try:
+        open_file(temp_file_path)
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                append_file(
+                    str(temp_file_path),
+                    content='APPENDED TEXT1\nAPPENDED TEXT2\nAPPENDED TEXT3',
+                )
+            result = buf.getvalue()
+            expected = (
+                f'[File: {temp_file_path} (3 lines total after edit)]\n'
+                '(this is the beginning of the file)\n'
+                '1|APPENDED TEXT1\n'
+                '2|APPENDED TEXT2\n'
+                '3|APPENDED TEXT3\n'
+                '(this is the end of the file)\n'
+                + MSG_FILE_UPDATED.format(line_number=1)
+                + '\n'
+            )
+            assert result.split('\n') == expected.split('\n')
+
+        with open(temp_file_path, 'r') as file:
+            lines = file.readlines()
+        assert len(lines) == 3
+        assert lines[0].rstrip() == 'APPENDED TEXT1'
+        assert lines[1].rstrip() == 'APPENDED TEXT2'
+        assert lines[2].rstrip() == 'APPENDED TEXT3'
+    finally:
+        os.remove(temp_file_path)
+
+
+def test_append_file_not_opened():
+    with pytest.raises(FileNotFoundError):
+        append_file(str('unknown file'), content='APPEND TEXT')
 
 
 def test_search_dir(tmp_path):
@@ -928,10 +1241,15 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
     assert result is not None
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
+        '(this is the end of the file)\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        '(this is the beginning of the file)\n'
         "1|print('hello')\n"
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        '(this is the end of the file)\n'
+        + MSG_FILE_UPDATED.format(line_number=1)
+        + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -954,18 +1272,23 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
 
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
         'ERRORS:\n'
         f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
         '1|undefined_name()\n'
-        '2|\n'
+        '(this is the end of the file)\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
+        '(this is the end of the file)\n'
         '-------------------------------------------------\n'
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
         'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -982,7 +1305,6 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
 
     num_lines = 1000
     error_line = 500
-    window = 100
 
     file_path = _generate_test_file_with_lines(tmp_path, num_lines)
 
@@ -994,26 +1316,27 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
     result = capsys.readouterr().out
     assert result is not None
 
-    open_lines = '\n'.join([f'{i}|' for i in range(1, window + 1)])
+    open_lines = '\n'.join([f'{i}|' for i in range(1, WINDOW + 1)])
     expected = (
         f'[File: {file_path} ({num_lines} lines total)]\n'
+        '(this is the beginning of the file)\n'
         f'{open_lines}\n'
-        '(900 more lines below)\n'
+        f'({num_lines - WINDOW} more lines below)\n'
         '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
         f'ERRORS:\n{error_message}\n'
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
-        '(494 more lines above)\n'
-        + _numbered_test_lines(error_line - 5, error_line - 1)
+        '(489 more lines above)\n'
+        + _numbered_test_lines(error_line - 10, error_line - 1)
         + '500|undefined_name()\n'
-        + _numbered_test_lines(error_line + 1, error_line + 5)
-        + '(496 more lines below)\n'
+        + _numbered_test_lines(error_line + 1, error_line + 10)
+        + '(491 more lines below)\n'
         + '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
-        '(494 more lines above)\n'
-        + _numbered_test_lines(error_line - 5, error_line + 5)
-        + '(495 more lines below)\n'
+        '(489 more lines above)\n'
+        + _numbered_test_lines(error_line - 10, error_line + 10)
+        + '(490 more lines below)\n'
         + '-------------------------------------------------\n'
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
         'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -1037,10 +1360,15 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     assert result is not None
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
+        '(this is the end of the file)\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        '(this is the beginning of the file)\n'
         '1|undefined_name()\n'
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        '(this is the end of the file)\n'
+        + MSG_FILE_UPDATED.format(line_number=1)
+        + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
