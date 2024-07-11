@@ -42,11 +42,11 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
     Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file` will only replace the *first* matching occurrences.
+    `edit_file_by_replace` will only replace the *first* matching occurrences.
     For example, given a file "/workspace/example.txt" with the following content:
     ```
     line 1
@@ -55,7 +55,7 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
     EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
-    edit_file(
+    edit_file_by_replace(
     '/workspace/example.txt',
     to_replace='line 2
     line 3',
@@ -71,7 +71,7 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
     REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
-    edit_file(
+    edit_file_by_replace(
     '/workspace/example.txt',
     to_replace='line 2
     line 3',
@@ -98,6 +98,14 @@ insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     line 2
     line 3
     ```
+    Args:
+    file_name: str: The name of the file to edit.
+    line_number: int: The line number (starting from 1) to insert the content after.
+    content: str: The content to insert.
+
+append_file(file_name: str, content: str) -> None:
+    Append content to the given file.
+    It appends text `content` to the end of the specified file.
     Args:
     file_name: str: The name of the file to edit.
     line_number: int: The line number (starting from 1) to insert the content after.
