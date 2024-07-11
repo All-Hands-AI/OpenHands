@@ -16,8 +16,8 @@ from opendevin.events.action import MessageAction
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
+from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.sandbox import Sandbox
-from opendevin.runtime.server.runtime import ServerRuntime
 
 _is_shutting_down = False
 
@@ -115,7 +115,8 @@ async def run_agent_controller(
     )
 
     # runtime and tools
-    runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
+    runtime_cls = get_runtime_cls(config.runtime)
+    runtime = runtime_cls(event_stream=event_stream, sandbox=sandbox)
     await runtime.initialize()
     await runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(

@@ -9,6 +9,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
+    ActionConfirmationStatus,
     AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -22,6 +23,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    RejectObservation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime import (
@@ -164,6 +166,11 @@ class Runtime:
         """
         if not action.runnable:
             return NullObservation('')
+        if (
+            hasattr(action, 'is_confirmed')
+            and action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION
+        ):
+            return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
         if action_type not in ACTION_TYPE_TO_CLASS:
             return ErrorObservation(f'Action {action_type} does not exist.')
@@ -171,7 +178,13 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
-
+        if (
+            hasattr(action, 'is_confirmed')
+            and action.is_confirmed == ActionConfirmationStatus.REJECTED
+        ):
+            return RejectObservation(
+                'Action has been rejected by the user! Waiting for further user input.'
+            )
         observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation

@@ -41,3 +41,15 @@ class AgentState(str, Enum):
     CANCELLED = 'cancelled'
     """The agent operation was cancelled.
     """
+
+    AWAITING_USER_CONFIRMATION = 'awaiting_user_confirmation'
+    """The agent is awaiting user confirmation.
+    """
+
+    USER_CONFIRMED = 'user_confirmed'
+    """The user confirmed the agent's action.
+    """
+
+    USER_REJECTED = 'user_rejected'
+    """The user rejected the agent's action.
+    """

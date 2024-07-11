@@ -38,9 +38,9 @@ But when running `docker run`, you'll need to add a few more arguments:
 -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
 ```
 
-LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI. 
+LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI.
 
-For example:
+Example:
 
 ```bash
 # The directory you want OpenDevin to modify. MUST be an absolute path!

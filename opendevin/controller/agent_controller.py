@@ -16,6 +16,7 @@ from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
+    ActionConfirmationStatus,
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
@@ -24,6 +25,8 @@ from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     ChangeAgentStateAction,
+    CmdRunAction,
+    IPythonRunCellAction,
     MessageAction,
     ModifyTaskAction,
     NullAction,
@@ -53,6 +56,7 @@ class AgentController:
     max_iterations: int
     event_stream: EventStream
     state: State
+    confirmation_mode: bool
     agent_task: Optional[asyncio.Task] = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
@@ -64,6 +68,7 @@ class AgentController:
         event_stream: EventStream,
         sid: str = 'default',
         max_iterations: int | None = MAX_ITERATIONS,
+        confirmation_mode: bool = False,
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -98,6 +103,7 @@ class AgentController:
         self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
+            confirmation_mode=confirmation_mode,
         )
 
         self.max_budget_per_task = max_budget_per_task
@@ -223,9 +229,20 @@ class AgentController:
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
+            if (
+                self._pending_action
+                and hasattr(self._pending_action, 'is_confirmed')
+                and self._pending_action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return
             if self._pending_action and self._pending_action.id == event.cause:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 self._pending_action = None
+                if self.state.agent_state == AgentState.USER_CONFIRMED:
+                    await self.set_agent_state_to(AgentState.RUNNING)
+                if self.state.agent_state == AgentState.USER_REJECTED:
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             elif isinstance(
                 event,
                 (
@@ -268,11 +285,23 @@ class AgentController:
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self.reset_task()
 
-        # For when the "Stop" button was pressed
-        if new_state == AgentState.CANCELLED:
-            await self.set_agent_state_to(AgentState.PAUSED)
+        if self._pending_action is not None and new_state in (
+            AgentState.CANCELLED,
+            AgentState.USER_CONFIRMED,
+            AgentState.USER_REJECTED,
+        ):
+            if hasattr(self._pending_action, 'thought'):
+                self._pending_action.thought = ''  # type: ignore[union-attr]
+            if new_state == AgentState.CANCELLED:
+                # await self.set_agent_state_to(AgentState.PAUSED)
+                pass
+            elif new_state == AgentState.USER_CONFIRMED:
+                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
+            else:
+                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
+            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
-        await self.event_stream.add_event(
+        self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
@@ -439,6 +468,22 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
+        if action.runnable:
+            if self.state.confirmation_mode and (
+                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+            ):
+                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
+            self._pending_action = action
+
+        if not isinstance(action, NullAction):
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+            self.event_stream.add_event(action, EventSource.AGENT)
+
         await self.update_state_after_step()
 
         if self._is_stuck():
@@ -469,12 +514,19 @@ class AgentController:
         return self.state
 
     def set_initial_state(
-        self, state: State | None, max_iterations: int = MAX_ITERATIONS
+        self,
+        state: State | None,
+        max_iterations: int = MAX_ITERATIONS,
+        confirmation_mode: bool = False,
     ):
         # state from the previous session, state from a parent agent, or a new state
         # note that this is called twice when restoring a previous session, first with state=None
         if state is None:
-            self.state = State(inputs={}, max_iterations=max_iterations)
+            self.state = State(
+                inputs={},
+                max_iterations=max_iterations,
+                confirmation_mode=confirmation_mode,
+            )
         else:
             self.state = state
 
