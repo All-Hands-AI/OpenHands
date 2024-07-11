@@ -49,7 +49,9 @@ def generate_dockerfile_for_eventstream_runtime(
     else:
         dockerfile_content = (
             f'FROM {base_image}\n'
+            # FIXME: make this more generic / cross-platform
             'RUN apt update && apt install -y wget sudo\n'
+            'RUN apt-get update && apt-get install -y libgl1-mesa-glx\n'  # Extra dependency for OpenCV
             'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
             'RUN echo "" > /opendevin/bash.bashrc\n'
             'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
@@ -59,8 +61,8 @@ def generate_dockerfile_for_eventstream_runtime(
             '        chmod -R g+w /opendevin/miniforge3 && \\\n'
             '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
             '    fi\n'
-            'RUN /opendevin/miniforge3/bin/mamba install python=3.11\n'
-            'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry\n'
+            'RUN /opendevin/miniforge3/bin/mamba install python=3.11 -y\n'
+            'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y\n'
         )
 
     tarball_path = create_project_source_dist()
@@ -91,6 +93,8 @@ def generate_dockerfile_for_eventstream_runtime(
         'RUN cd /opendevin/code && '
         '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
         '/opendevin/miniforge3/bin/mamba run -n base poetry install\n'
+        # for browser (update if needed)
+        'RUN apt-get update && cd /opendevin/code && /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium\n'
     )
     return dockerfile_content
 
