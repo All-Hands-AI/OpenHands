@@ -195,7 +195,8 @@ ten actions--more happened before that.
     "action": "run",
     "args": {
       "command": "bash hello.sh",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
