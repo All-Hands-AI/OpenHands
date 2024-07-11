@@ -1,20 +1,30 @@
 import base64
 import pickle
 from dataclasses import dataclass, field
+from enum import Enum
 
 from opendevin.controller.state.task import RootTask
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
-    Action,
     MessageAction,
 )
-from opendevin.events.observation import (
-    CmdOutputObservation,
-    Observation,
-)
+from opendevin.events.action.agent import AgentFinishAction
+from opendevin.memory.history import ShortTermHistory
 from opendevin.storage import get_file_store
+
+
+class TrafficControlState(str, Enum):
+    # default state, no rate limiting
+    NORMAL = 'normal'
+
+    # task paused due to traffic control
+    THROTTLING = 'throttling'
+
+    # traffic control is temporarily paused
+    PAUSED = 'paused'
+
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -29,23 +39,25 @@ class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     max_iterations: int = 100
-    # number of characters we have sent to and received from LLM so far for current task
-    num_of_chars: int = 0
-    background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
-    history: list[tuple[Action, Observation]] = field(default_factory=list)
-    updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
+    history: ShortTermHistory = field(default_factory=ShortTermHistory)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
-    error: str | None = None
+    last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
+    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
+    # start_id and end_id track the range of events in history
+    start_id: int = -1
+    end_id: int = -1
+    almost_stuck: int = 0
 
     def save_to_session(self, sid: str):
         fs = get_file_store()
         pickled = pickle.dumps(self)
+        logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
             fs.write(f'sessions/{sid}/agent_state.pkl', encoded)
@@ -70,10 +82,42 @@ class State:
         state.agent_state = AgentState.LOADING
         return state
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+
+        # save the relevant data from recent history
+        # so that we can restore it when the state is restored
+        if 'history' in state:
+            state['start_id'] = state['history'].start_id
+            state['end_id'] = state['history'].end_id
+
+        # don't save history object itself
+        state.pop('history', None)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+        # recreate the history object
+        if not hasattr(self, 'history'):
+            self.history = ShortTermHistory()
+
+        # restore the relevant data in history from the state
+        self.history.start_id = self.start_id
+        self.history.end_id = self.end_id
+
+        # remove the restored data from the state if any
+
     def get_current_user_intent(self):
-        # TODO: this is used to understand the user's main goal, but it's possible
-        # the latest message is an interruption. We should look for a space where
-        # the agent goes to FINISHED, and then look for the next user message.
-        for action, obs in reversed(self.history):
-            if isinstance(action, MessageAction) and action.source == 'user':
-                return action.content
+        """
+        Returns the latest user message that appears after a FinishAction, or the first (the task) if nothing was finished yet.
+        """
+        last_user_message = None
+        for event in self.history.get_events(reverse=True):
+            if isinstance(event, MessageAction) and event.source == 'user':
+                last_user_message = event.content
+            elif isinstance(event, AgentFinishAction):
+                if last_user_message is not None:
+                    return last_user_message
+
+        return last_user_message

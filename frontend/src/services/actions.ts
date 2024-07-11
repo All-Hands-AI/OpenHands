@@ -1,4 +1,3 @@
-import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
@@ -13,18 +12,14 @@ import { getRootTask } from "./taskService";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
-    const { url, screenshotSrc } = message.args;
-    store.dispatch(setUrl(url));
-    store.dispatch(setScreenshotSrc(screenshotSrc));
     store.dispatch(addAssistantMessage(message.message));
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
     }
-    const { url, screenshotSrc } = message.args;
-    store.dispatch(setUrl(url));
-    store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
@@ -39,6 +34,12 @@ const messageActions = {
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.message));
+  },
+  [ActionType.REJECT]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.message));
+  },
+  [ActionType.DELEGATE]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.message));
   },
   [ActionType.RUN]: (message: ActionMessage) => {

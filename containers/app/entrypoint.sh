@@ -50,6 +50,7 @@ else
     groupadd -g $DOCKER_SOCKET_GID docker
   fi
 
+  mkdir -p /home/enduser/.cache/huggingface/hub/
   mkdir -p /home/enduser/.cache/ms-playwright/
   mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
 

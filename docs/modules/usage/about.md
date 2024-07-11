@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 8
 ---
 
 # 📚 Misc
@@ -15,7 +15,7 @@ Achieving full replication of production-grade applications with LLMs is a compl
 
 ## 🚧 Default Agent
 
-- Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./agents).
+- Our default Agent is currently the CodeActAgent, which is capable of generating code and handling files. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./agents).
 
 ## 🤝 How to Contribute
 
@@ -29,9 +29,9 @@ For details, please check [this document](https://github.com/OpenDevin/OpenDevin
 
 ## 🤖 Join Our Community
 
-Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
+We have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
 
-- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw)
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA)
 - [Discord server](https://discord.gg/ESHStjSjD4)
 
 If you would love to contribute, feel free to join our community. Let's simplify software engineering together!

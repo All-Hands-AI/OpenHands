@@ -58,7 +58,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         setModels(await fetchModels());
         setAgents(await fetchAgents());
       } catch (error) {
-        console.error(error);
+        toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));
       } finally {
         setLoading(false);
       }
@@ -66,12 +66,9 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   }, []);
 
   const handleModelChange = (model: string) => {
-    // Needs to also reset the API key.
-    const key = localStorage.getItem(`API_KEY_${model}`);
     setSettings((prev) => ({
       ...prev,
       LLM_MODEL: model,
-      LLM_API_KEY: key || "",
     }));
   };
 

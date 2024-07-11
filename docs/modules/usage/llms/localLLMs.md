@@ -3,7 +3,7 @@
 Ensure that you have the Ollama server up and running.
 For detailed startup instructions, refer to [here](https://github.com/ollama/ollama)
 
-This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified. Please note that if you're running WSL the default ollama configuration blocks requests from docker containers. See [here](#configuring-the-ollama-service-wsl).
+This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified. Please note that if you're running WSL the default ollama configuration blocks requests from docker containers. See [here](#configuring-ollama-service-wsl-en).
 
 ## Pull Models
 
@@ -35,7 +35,10 @@ But when running `docker run`, you'll need to add a few more arguments:
 --add-host host.docker.internal:host-gateway \
 -e LLM_API_KEY="ollama" \
 -e LLM_BASE_URL="http://host.docker.internal:11434" \
+-e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
 ```
+
+LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI. 
 
 For example:
 
@@ -85,7 +88,7 @@ If it doesn’t show up in a dropdown, that’s fine, just type it in. Click Sav
 
 And now you're ready to go!
 
-## Configuring the ollama service (WSL)
+## Configuring the ollama service (WSL) {#configuring-ollama-service-wsl-en}
 
 The default configuration for ollama in WSL only serves localhost. This means you can't reach it from a docker container. eg. it wont work with OpenDevin. First let's test that ollama is running correctly.
 

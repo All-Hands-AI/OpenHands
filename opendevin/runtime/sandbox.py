@@ -4,13 +4,12 @@ from abc import ABC, abstractmethod
 
 from opendevin.core.config import config
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import Process
 from opendevin.runtime.plugins.mixin import PluginMixin
 
 
 class Sandbox(ABC, PluginMixin):
-    background_commands: dict[int, Process] = {}
     _env: dict[str, str] = {}
+    is_initial_session: bool = True
 
     def __init__(self, **kwargs):
         for key in os.environ:
@@ -19,6 +18,7 @@ class Sandbox(ABC, PluginMixin):
                 self.add_to_env(sandbox_key, os.environ[key])
         if config.enable_auto_lint:
             self.add_to_env('ENABLE_AUTO_LINT', 'true')
+        self.initialize_plugins: bool = config.initialize_plugins
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value
@@ -29,18 +29,6 @@ class Sandbox(ABC, PluginMixin):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        pass
-
-    @abstractmethod
-    def execute_in_background(self, cmd: str) -> Process:
-        pass
-
-    @abstractmethod
-    def kill_background(self, id: int) -> Process:
-        pass
-
-    @abstractmethod
-    def read_logs(self, id: int) -> str:
         pass
 
     @abstractmethod

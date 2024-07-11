@@ -2,14 +2,15 @@ SHELL=/bin/bash
 # Makefile for OpenDevin project
 
 # Variables
-DOCKER_IMAGE = ghcr.io/opendevin/sandbox
+DOCKER_IMAGE = ghcr.io/opendevin/sandbox:main
 BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
-DEFAULT_MODEL = "gpt-3.5-turbo"
+DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
-PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
+PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
+PYTHON_VERSION = 3.11
 
 # ANSI color codes
 GREEN=$(shell tput -Txterm setaf 2)
@@ -27,7 +28,7 @@ ifeq ($(INSTALL_DOCKER),)
 endif
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
-	@$(MAKE) -s install-precommit-hooks
+	@$(MAKE) -s install-pre-commit-hooks
 	@$(MAKE) -s build-frontend
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
@@ -62,10 +63,10 @@ check-system:
 
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3.11 > /dev/null; then \
-		echo "$(BLUE)$(shell python3.11 --version) is already installed.$(RESET)"; \
+	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
+		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Python 3.11 is not installed. Please install Python 3.11 to continue.$(RESET)"; \
+		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -112,13 +113,13 @@ check-poetry:
 			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 		else \
 			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-			echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+			echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
 			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
 		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(RED) curl -sSL https://install.python-poetry.org | python3.11 -$(RESET)"; \
+		echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi
@@ -130,7 +131,11 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
-	poetry env use python3.11
+	@if [ -z "${TZ}" ]; then \
+		echo "Defaulting TZ (timezone) to UTC"; \
+		export TZ="UTC"; \
+	fi
+	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
@@ -142,7 +147,14 @@ install-python-dependencies:
 		poetry run pip install playwright; \
 		poetry run playwright install chromium; \
 	else \
-		poetry run playwright install --with-deps chromium; \
+		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			echo "Running playwright install --with-deps chromium..."; \
+			poetry run playwright install --with-deps chromium; \
+			mkdir -p cache; \
+			touch cache/playwright_chromium_is_installed.txt; \
+		else \
+			echo "Setup already done. Skipping playwright installation."; \
+		fi \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -157,15 +169,15 @@ install-frontend-dependencies:
 		npm run make-i18n
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
-install-precommit-hooks:
+install-pre-commit-hooks:
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
-	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files $$(git diff --name-only $$(git merge-base main $$(git branch --show-current)) $$(git branch --show-current) | tr '\n' ' ') --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -196,11 +208,10 @@ start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
-# Run the app
-run:
-	@echo "$(YELLOW)Running the app...$(RESET)"
+# Common setup for running the app (non-callable)
+_run_setup:
 	@if [ "$(OS)" = "Windows_NT" ]; then \
-		echo "$(RED)`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately.$(RESET)"; \
+		echo "$(RED) Windows is not supported, use WSL instead!$(RESET)"; \
 		exit 1; \
 	fi
 	@mkdir -p logs
@@ -209,8 +220,20 @@ run:
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
+
+# Run the app (standard mode)
+run:
+	@echo "$(YELLOW)Running the app...$(RESET)"
+	@$(MAKE) -s _run_setup
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
+
+# Run the app (WSL mode)
+run-wsl:
+	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
+	@$(MAKE) -s _run_setup
+	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
+	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
 
 # Setup config.toml
 setup-config:
@@ -222,9 +245,19 @@ setup-config:
 setup-config-prompts:
 	@echo "[core]" > $(CONFIG_FILE).tmp
 
-	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
+	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
+	@read -p "Do you want to persist the sandbox container? [true/false] [default: false]: " persist_sandbox; \
+	 persist_sandbox=$${persist_sandbox:-false}; \
+	 if [ "$$persist_sandbox" = "true" ]; then \
+		 read -p "Enter a password for the sandbox container: " ssh_password; \
+		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
+		 echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
+	 else \
+		echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
+	 fi
 
 	@echo "" >> $(CONFIG_FILE).tmp
 
@@ -286,4 +319,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help

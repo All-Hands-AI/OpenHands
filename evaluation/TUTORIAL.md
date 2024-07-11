@@ -31,9 +31,6 @@ workspace_base = "/path/to/your/workspace"
 workspace_mount_path = "/path/to/your/workspace"
 # ==========================
 
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-sandbox_type = "ssh"
-sandbox_timeout = 120
 ssh_hostname = "localhost"
 
 # SWEBench eval specific - but you can tweak it to your needs
@@ -41,6 +38,10 @@ use_host_network = false
 run_as_devin = false
 # linting python after editing helps LLM fix indentations
 enable_auto_lint = true
+
+[sandbox]
+box_type = "ssh"
+timeout = 120
 
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
@@ -52,14 +53,14 @@ api_key = "sk-XXX"
 
 In this section, for the purpose of building an evaluation task, we don't use the standard OpenDevin web-based GUI, but rather run OpenDevin backend from CLI.
 
-For example, you can run the following, which performs the specified task `-t`, with a particular model `-m` and agent `-c`, for a maximum number of iterations `-i`:
+For example, you can run the following, which performs the specified task `-t`, with a particular model config `-l` and agent `-c`, for a maximum number of iterations `-i`:
 
 ```bash
 poetry run python ./opendevin/core/main.py \
         -i 10 \
         -t "Write me a bash script that print hello world." \
         -c CodeActAgent \
-        -m gpt-4o-2024-05-13
+        -l llm
 ```
 
 After running the script, you will observe the following:
@@ -99,13 +100,14 @@ def codeact_user_response(state: State) -> str:
         'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
+    # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
     if state.history:
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'agent'
+            event
+            for event in state.history.get_events()
+            if isinstance(action, MessageAction) and action.source == 'user'
         ]
-        if len(user_msgs) >= 2:
+        if len(user_msgs) > 2:
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg

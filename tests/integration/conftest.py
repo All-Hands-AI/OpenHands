@@ -1,7 +1,8 @@
 import io
 import os
 import re
-import sys
+import subprocess
+import tempfile
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread
@@ -15,8 +16,23 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 workspace_path = os.getenv('WORKSPACE_BASE')
 
 
+class SecretExit(Exception):
+    pass
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_exception_interact(node, call, report):
+    if isinstance(call.excinfo.value, SecretExit):
+        report.outcome = 'failed'
+        report.longrepr = (
+            'SecretExit: Exiting due to an error without revealing secrets.'
+        )
+        call.excinfo = None
+
+
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalnum()])
+    input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
+    return input
 
 
 def get_log_id(prompt_log_name):
@@ -33,7 +49,9 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
     Note: this function blindly replaces existing prompt file with the given
     input without checking the contents.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     try:
@@ -54,7 +72,7 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     folders under mock folder. If prompt_{id}.log matches,
     then the mock response we're looking for is at response_{id}.log.
 
-    Note: we filter out all non alpha-numerical characters, otherwise we would
+    Note: we filter out all non-alphanumerical characters, otherwise we would
     see surprising mismatches caused by linters and minor discrepancies between
     different platforms.
 
@@ -65,9 +83,10 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     we start from the end of the file, but again, that is unnecessary and only
     makes test code harder to understand.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
     prompt = filter_out_symbols(messages)
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     # Open the prompt file and compare its contents
@@ -81,14 +100,30 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
             # print the mismatched lines
             print('Mismatched Prompt File path', prompt_file_path)
             print('---' * 10)
-            print(messages)
+            # Create a temporary file to store messages
+            with tempfile.NamedTemporaryFile(
+                delete=False, mode='w', encoding='utf-8'
+            ) as tmp_file:
+                tmp_file_path = tmp_file.name
+                tmp_file.write(messages)
+
+            try:
+                # Use diff command to compare files and capture the output
+                result = subprocess.run(
+                    ['diff', '-u', prompt_file_path, tmp_file_path],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    print('Diff:')
+                    print(result.stdout)
+                else:
+                    print('No differences found.')
+            finally:
+                # Clean up the temporary file
+                os.remove(tmp_file_path)
+
             print('---' * 10)
-            for i, (c1, c2) in enumerate(zip(file_content, prompt)):
-                if c1 != c2:
-                    print(
-                        f'Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
-                    )
-                    break
 
 
 def mock_user_response(*args, test_name, **kwargs):
@@ -99,7 +134,11 @@ def mock_user_response(*args, test_name, **kwargs):
     STDIN input for the agent to read.
     """
     user_response_file = os.path.join(
-        script_dir, 'mock', os.environ.get('AGENT'), test_name, 'user_responses.log'
+        script_dir,
+        'mock',
+        os.environ.get('DEFAULT_AGENT'),
+        test_name,
+        'user_responses.log',
     )
     if not os.path.exists(user_response_file):
         return ''
@@ -124,9 +163,7 @@ def mock_completion(*args, test_name, **kwargs):
     else:
         mock_response = get_mock_response(test_name, message_str, cur_id)
     if mock_response is None:
-        print('Mock response for prompt is not found\n\n')
-        print('Exiting...')
-        sys.exit(1)
+        raise SecretExit('Mock response for prompt is not found')
     response = completion(**kwargs, mock_response=mock_response)
     return response
 

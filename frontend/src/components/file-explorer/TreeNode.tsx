@@ -20,9 +20,11 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
       onClick={onClick}
       className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-white hover:text-white"
     >
-      {type === "folder" && <FolderIcon isOpen={isOpen} />}
-      {type === "file" && <FileIcon filename={name} />}
-      {name}
+      <div className="flex-shrink-0">
+        {type === "folder" && <FolderIcon isOpen={isOpen} />}
+        {type === "file" && <FileIcon filename={name} />}
+      </div>
+      <div className="flex-grow">{name}</div>
     </div>
   );
 }
@@ -56,7 +58,9 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   };
 
   React.useEffect(() => {
-    refreshChildren();
+    (async () => {
+      await refreshChildren();
+    })();
   }, [refreshID, isOpen]);
 
   const handleClick = async () => {

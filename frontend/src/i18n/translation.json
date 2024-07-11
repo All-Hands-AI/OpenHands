@@ -26,6 +26,136 @@
     "fr": "Terminal",
     "tr": "Terminal"
   },
+  "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
+    "en": "File saved successfully",
+    "zh-CN": "文件保存成功",
+    "de": "Datei erfolgreich gespeichert",
+    "ko-KR": "파일이 성공적으로 저장되었습니다",
+    "no": "Fil lagret vellykket",
+    "zh-TW": "檔案儲存成功",
+    "it": "File salvato con successo",
+    "pt": "Arquivo salvo com sucesso",
+    "es": "Archivo guardado exitosamente",
+    "ar": "تم حفظ الملف بنجاح",
+    "fr": "Fichier enregistré avec succès",
+    "tr": "Dosya başarıyla kaydedildi"
+  },
+  "CODE_EDITOR$SAVING_LABEL": {
+    "en": "Saving...",
+    "zh-CN": "保存中...",
+    "de": "Speichern...",
+    "ko-KR": "저장 중...",
+    "no": "Lagrer...",
+    "zh-TW": "保存中...",
+    "it": "Salvataggio in corso...",
+    "pt": "Salvando...",
+    "es": "Guardando...",
+    "ar": "حفظ مؤقت",
+    "fr": "Enregistrement en cours...",
+    "tr": "Kayıt yapılıyor..."
+  },
+  "CODE_EDITOR$SAVE_LABEL": {
+    "en": "Save",
+    "zh-CN": "保存",
+    "de": "Speichern",
+    "ko-KR": "저장",
+    "no": "Lagrer",
+    "zh-TW": "保存",
+    "it": "Salva",
+    "pt": "Salvar",
+    "es": "Guardar",
+    "ar": "حفظ",
+    "fr": "Enregistrer",
+    "tr": "Kayıt"
+  },
+  "CODE_EDITOR$OPTIONS": {
+    "en": "Options",
+    "zh-CN": "选项",
+    "zh-TW": "選項",
+    "de": "Optionen"
+  },
+  "CODE_EDITOR$FILE_SAVE_ERROR": {
+    "en": "An unknown error occurred while saving the file",
+    "zh-CN": "文件保存时发生未知错误",
+    "zh-TW": "文件保存時發生未知錯誤",
+    "de": "Beim Speichern der Datei ist ein unbekannter Fehler aufgetreten"
+  },
+  "CODE_EDITOR$EMPTY_MESSAGE": {
+    "en": "No file selected.",
+    "zh-CN": "文件未选中",
+    "zh-TW": "未選取任何文件。",
+    "de": "Keine Datei ausgewählt."
+  },
+  "FILE_SERVICE$SELECT_FILE_ERROR": {
+    "en": "Error selecting file. Please try again.",
+    "zh-CN": "选择文件时出错。请重试。",
+    "de": "Fehler beim Auswählen der Datei. Bitte versuchen Sie es erneut.",
+    "ko-KR": "파일 선택 중 오류가 발생했습니다. 다시 시도해 주세요.",
+    "no": "Feil ved valg av fil. Vennligst prøv igjen.",
+    "zh-TW": "選擇文件時出錯。請重試。",
+    "it": "Errore durante la selezione del file. Riprova.",
+    "pt": "Erro ao selecionar o arquivo. Por favor, tente novamente.",
+    "es": "Error al seleccionar el archivo. Por favor, inténtelo de nuevo.",
+    "ar": "خطأ في اختيار الملف. يرجى المحاولة مرة أخرى.",
+    "fr": "Erreur lors de la sélection du fichier. Veuillez réessayer.",
+    "tr": "Dosya seçiminde hata oluştu. Lütfen tekrar deneyin."
+  },
+  "FILE_SERVICE$UPLOAD_FILES_ERROR": {
+    "en": "Error uploading files. Please try again.",
+    "zh-CN": "上传文件时出错。请重试。",
+    "de": "Fehler beim Hochladen der Dateien. Bitte versuchen Sie es erneut.",
+    "ko-KR": "파일 업로드 중 오류가 발생했습니다. 다시 시도해 주세요.",
+    "no": "Feil ved opplasting av filer. Vennligst prøv igjen.",
+    "zh-TW": "上傳文件時出錯。請重試。",
+    "it": "Errore durante il caricamento dei file. Riprova.",
+    "pt": "Erro ao fazer upload dos arquivos. Por favor, tente novamente.",
+    "es": "Error al subir los archivos. Por favor, inténtelo de nuevo.",
+    "ar": "خطأ في تحميل الملفات. يرجى المحاولة مرة أخرى.",
+    "fr": "Erreur lors du téléchargement des fichiers. Veuillez réessayer.",
+    "tr": "Dosyalar yüklenirken hata oluştu. Lütfen tekrar deneyin."
+  },
+  "FILE_SERVICE$LIST_FILES_ERROR": {
+    "en": "Error listing files. Please try again.",
+    "zh-CN": "列出文件时出错。请重试。",
+    "de": "Fehler beim Auflisten der Dateien. Bitte versuchen Sie es erneut.",
+    "ko-KR": "파일 목록을 가져오는 중 오류가 발생했습니다. 다시 시도해 주세요.",
+    "no": "Feil ved listing av filer. Vennligst prøv igjen.",
+    "zh-TW": "列出文件時出錯。請重試。",
+    "it": "Errore durante l'elenco dei file. Riprova.",
+    "pt": "Erro ao listar arquivos. Por favor, tente novamente.",
+    "es": "Error al listar los archivos. Por favor, inténtelo de nuevo.",
+    "ar": "خطأ في سرد الملفات. يرجى المحاولة مرة أخرى.",
+    "fr": "Erreur lors de la liste des fichiers. Veuillez réessayer.",
+    "tr": "Dosyalar listelenirken hata oluştu. Lütfen tekrar deneyin."
+  },
+  "FILE_SERVICE$SAVE_FILE_ERROR": {
+    "en": "Error saving file. Please try again.",
+    "zh-CN": "保存文件时出错。请重试。",
+    "de": "Fehler beim Speichern der Datei. Bitte versuchen Sie es erneut.",
+    "ko-KR": "파일 저장 중 오류가 발생했습니다. 다시 시도해 주세요.",
+    "no": "Feil ved lagring av fil. Vennligst prøv igjen.",
+    "zh-TW": "保存文件時出錯。請重試。",
+    "it": "Errore durante il salvataggio del file. Riprova.",
+    "pt": "Erro ao salvar o arquivo. Por favor, tente novamente.",
+    "es": "Error al guardar el archivo. Por favor, inténtelo de nuevo.",
+    "ar": "خطأ في حفظ الملف. يرجى المحاولة مرة أخرى.",
+    "fr": "Erreur lors de l'enregistrement du fichier. Veuillez réessayer.",
+    "tr": "Dosya kaydedilirken hata oluştu. Lütfen tekrar deneyin."
+  },
+  "FILE_SERVICE$INVALID_FILE_PATH": {
+    "en": "Invalid file path. Please check the file name and try again.",
+    "zh-CN": "文件路径无效。请检查文件名并重试。",
+    "de": "Ungültiger Dateipfad. Bitte überprüfen Sie den Dateinamen und versuchen Sie es erneut.",
+    "ko-KR": "잘못된 파일 경로입니다. 파일 이름을 확인하고 다시 시도해 주세요.",
+    "no": "Ugyldig filbane. Vennligst sjekk filnavnet og prøv igjen.",
+    "zh-TW": "文件路徑無效。請檢查文件名並重試。",
+    "it": "Percorso del file non valido. Controlla il nome del file e riprova.",
+    "pt": "Caminho de arquivo inválido. Por favor, verifique o nome do arquivo e tente novamente.",
+    "es": "Ruta de archivo inválida. Por favor, verifique el nombre del archivo e inténtelo de nuevo.",
+    "ar": "مسار الملف غير صالح. يرجى التحقق من اسم الملف والمحاولة مرة أخرى.",
+    "fr": "Chemin de fichier invalide. Veuillez vérifier le nom du fichier et réessayer.",
+    "tr": "Geçersiz dosya yolu. Lütfen dosya adını kontrol edin ve tekrar deneyin."
+  },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
     "zh-CN": "规划器",
@@ -82,7 +212,7 @@
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",
-    "de": "OpenDevin Arbeitsbereichsverzeichnis",
+    "de": "OpenDevin Arbeitsverzeichnis",
     "ko-KR": "OpenDevin 워크스페이스 폴더",
     "no": "OpenDevin arbeidsmappe",
     "zh-TW": "OpenDevin 工作區目錄",
@@ -243,7 +373,7 @@
     "es": "Guardar"
   },
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
-    "en": "Reset to Defaults",
+    "en": "Reset to defaults",
     "zh-CN": "重置为默认值",
     "de": "Auf Standardwerte zurücksetzen",
     "ko-KR": "기본값으로 재설정",
@@ -257,33 +387,131 @@
     "tr": "Varsayılanlara Sıfırla"
   },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
-    "en": "We've changed some settings in the latest update. Take a minute to review."
+    "en": "We've changed some settings in the latest update. Take a minute to review.",
+    "de": "Mit dem letzten Update haben wir ein paar Einstellungen geändert. Bitte kontrollieren Ihre Einstellungen."
   },
   "CONFIGURATION$AGENT_LOADING": {
-    "en": "Please wait while the agent loads. This may take a few seconds..."
+    "en": "Please wait while the agent loads. This may take a few seconds...",
+    "de": "Bitte warten Sie, während der Agent lädt. Das kann ein paar Sekunden dauern..."
   },
   "CONFIGURATION$AGENT_RUNNING": {
-    "en": "Please stop the agent before editing these settings."
+    "en": "Please stop the agent before editing these settings.",
+    "de": "Bitte beenden Sie den Agenten vor der Bearbeitung der Einstellungen."
+  },
+  "CONFIGURATION$ERROR_FETCH_MODELS": {
+    "en": "Failed to fetch models and agents",
+    "zh-CN": "获取模型和智能体失败",
+    "de": "Fehler beim Abrufen der Modelle und Agenten"
+  },
+  "SESSION$SERVER_CONNECTED_MESSAGE": {
+    "en": "Connected to server",
+    "zh-CN": "已连接到服务器",
+    "de": "Verbindung zum Server hergestellt"
+  },
+  "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
+    "en": "Error handling message",
+    "zh-CN": "处理消息时发生错误",
+    "de": "Fehler beim Verarbeiten der Nachricht"
+  },
+  "SESSION$SESSION_CONNECTION_ERROR_MESSAGE": {
+    "en": "Error connecting to session",
+    "zh-CN": "连接到会话时发生错误",
+    "de": "Verbindung zur Sitzung fehlgeschlagen"
+  },
+  "SESSION$SOCKET_NOT_INITIALIZED_ERROR_MESSAGE": {
+    "en": "Socket not initialized",
+    "zh-CN": "Socket 未初始化",
+    "de": "Socket nicht initialisiert"
+  },
+  "EXPLORER$UPLOAD_ERROR_MESSAGE": {
+    "en": "Error uploading file",
+    "zh-CN": "上传文件时发生错误",
+    "de": "Fehler beim Hochladen der Datei"
+  },
+  "EXPLORER$LABEL_DROP_FILES": {
+    "en": "Drop files here",
+    "zh-CN": "将文件拖到这里",
+    "de": "Dateien hier ablegen"
+  },
+  "EXPLORER$LABEL_WORKSPACE": {
+    "en": "Workspace",
+    "zh-CN": "工作区",
+    "de": "Arbeitsbereich"
+  },
+  "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
+    "en": "No files in workspace",
+    "zh-CN": "工作区没有文件",
+    "de": "Keine Dateien im Arbeitsbereich"
+  },
+  "EXPLORER$REFRESH_ERROR_MESSAGE": {
+    "en": "Error refreshing workspace",
+    "zh-CN": "工作区刷新错误",
+    "de": "Fehler beim Aktualisieren des Arbeitsbereichs"
+  },
+  "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
+    "en": "Successfully uploaded {{count}} file(s)",
+    "zh-CN": "成功上传 {{count}} 个文件",
+    "de": "Erfolgreich {{count}} Datei(en) hochgeladen"
+  },
+  "EXPLORER$NO_FILES_UPLOADED_MESSAGE": {
+    "en": "No files were uploaded",
+    "zh-CN": "没有文件上传",
+    "de": "Keine Dateien wurden hochgeladen"
+  },
+  "EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE": {
+    "en": "{{count}} file(s) were skipped during upload",
+    "zh-CN": "{{count}} 个文件在上传过程中被跳过",
+    "de": "{{count}} Datei(en) wurden während des Hochladens übersprungen"
+  },
+  "EXPLORER$UPLOAD_UNEXPECTED_RESPONSE_MESSAGE": {
+    "en": "Unexpected response structure from server",
+    "zh-CN": "服务器响应结构不符合预期",
+    "de": "Unerwartetes Antwortformat vom Server"
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
+    "de": "Zurück zu vorhandener Sitzung?",
     "zh-CN": "是否继续未完成的会话?",
     "zh-TW": "是否繼續未完成的會話?"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
     "en": "You seem to have an ongoing session. Would you like to pick up where you left off, or start fresh?",
+    "de": "Sie haben eine aktive Sitzung. Möchten Sie die Arbeit an der vorherigen Stelle fortsetzen oder von vorne anfangen?",
     "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
     "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
   },
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
     "en": "Resume Session",
+    "de": "Sitzung fortsetzen",
     "zh-CN": "恢复会话",
     "zh-TW": "恢復會話"
   },
   "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
     "en": "Start New Session",
+    "de": "Neue Sitzung starten",
     "zh-CN": "开始新会话",
     "zh-TW": "開始新會話"
+  },
+  "FEEDBACK$MODAL_TITLE": {
+    "en": "Share feedback"
+  },
+  "FEEDBACK$MODAL_CONTENT": {
+    "en": "To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data."
+  },
+  "FEEDBACK$EMAIL_LABEL": {
+    "en": "Your email"
+  },
+  "FEEDBACK$CONTRIBUTE_LABEL": {
+    "en": "Contribute to public dataset"
+  },
+  "FEEDBACK$SHARE_LABEL": {
+    "en": "Share"
+  },
+  "FEEDBACK$CANCEL_LABEL": {
+    "en": "Cancel"
+  },
+  "FEEDBACK$EMAIL_PLACEHOLDER": {
+    "en": "Enter your email address."
   },
   "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
@@ -301,30 +529,42 @@
   },
   "CHAT_INTERFACE$AGENT_INIT_MESSAGE": {
     "en": "Agent is initialized, waiting for task...",
+    "de": "Agent ist initialisiert und wartet auf Aufgabe...",
     "zh-CN": "智能体已初始化，等待任务中..."
   },
   "CHAT_INTERFACE$AGENT_RUNNING_MESSAGE": {
     "en": "Agent is running task",
+    "de": "Agent führt Aufgabe aus",
     "zh-CN": "智能体正在执行任务..."
   },
   "CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE": {
     "en": "Agent is awaiting user input...",
+    "de": "Agent wartet auf Benutzereingabe...",
     "zh-CN": "智能体正在等待用户输入..."
   },
   "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
     "en": "Agent has paused.",
+    "de": "Agent pausiert.",
     "zh-CN": "智能体已暂停"
   },
   "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
     "en": "Agent has stopped.",
+    "de": "Agent hat angehalten.",
     "zh-CN": "智能体已停止"
   },
   "CHAT_INTERFACE$AGENT_FINISHED_MESSAGE": {
     "en": "Agent has finished the task.",
+    "de": "Agent hat die Aufgabe erledigt.",
     "zh-CN": "智能体已完成任务"
+  },
+  "CHAT_INTERFACE$AGENT_REJECTED_MESSAGE": {
+    "en": "Agent has rejected the task.",
+    "de": "Agent hat die Aufgabe abgelehnt.",
+    "zh-CN": "智能体拒绝任务"
   },
   "CHAT_INTERFACE$AGENT_ERROR_MESSAGE": {
     "en": "Agent encountered an error.",
+    "de": "Agent ist auf einen Fehler gelaufen.",
     "zh-CN": "智能体遇到错误"
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
@@ -343,7 +583,8 @@
   },
   "CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE": {
     "en": "Continue",
-    "zh-CN": "继续"
+    "zh-CN": "继续",
+    "de": "Fortfahren"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -358,10 +599,30 @@
     "ar": "إرسال",
     "fr": "Envoyer"
   },
+  "CHAT_INTERFACE$CHAT_MESSAGE_COPIED": {
+    "en": "Message copied to clipboard",
+    "zh-CN": "消息已复制到剪贴板",
+    "de": "Nachricht in die Zwischenablage kopiert"
+  },
+  "CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED": {
+    "en": "Failed to copy message to clipboard",
+    "zh-CN": "复制消息到剪贴板失败",
+    "de": "Nachricht konnte nicht in die Zwischenablage kopiert werden"
+  },
+  "CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE": {
+    "en": "Copy message",
+    "zh-CN": "复制消息",
+    "de": "Nachricht kopieren"
+  },
+  "CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE": {
+    "en": "Send message",
+    "zh-CN": "发送消息",
+    "de": "Nachricht senden"
+  },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-CN": "你好！我是 OpenDevin，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
-    "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "de": "Hi! Ich bin OpenDevin, ein KI-Softwareingenieur. Was möchten Sie heute mit mir erstellen?",
     "ko-KR": "안녕하세요! 저는 오픈데빈(OpenDevin), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-TW": "嗨！我是 OpenDevin，一位人工智慧軟體工程師。你今天想和我一起建造什麼？",
@@ -375,7 +636,7 @@
     "en": "Assistant",
     "zh-CN": "助理",
     "ko-KR": "어시스턴트",
-    "de": "Assistant",
+    "de": "Assistent",
     "no": "Assistant",
     "zh-TW": "助理",
     "it": "Assistant",
@@ -387,43 +648,38 @@
   },
   "CHAT_INTERFACE$TO_BOTTOM": {
     "en": "To Bottom",
+    "de": "Nach unten",
     "zh-CN": "回到底部"
   },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
     "zh-CN": "选择要使用的语言模型",
     "zh-TW": "選擇要使用的語言模型。",
-    "de": "Wähle das zu verwendende Model."
+    "de": "Wähle das zu verwendende Modell."
   },
   "SETTINGS$AGENT_TOOLTIP": {
     "en": "Select the agent to use.",
     "zh-CN": "选择要使用的智能体",
     "zh-TW": "選擇要使用的智能體。",
-    "de": "Wähle den zu verwendenden Agent."
+    "de": "Wähle den zu verwendenden Agenten."
   },
   "SETTINGS$LANGUAGE_TOOLTIP": {
     "en": "Select the language for the UI.",
     "zh-CN": "选择界面语言",
     "zh-TW": "選擇 UI 的語言。",
-    "de": "Wähle die Sprache für das Interface."
+    "de": "Wähle die Sprache für die Oberfläche."
   },
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
     "zh-CN": "在智能体运行时无法更改",
     "zh-TW": "智能體正在執行時無法更改。",
-    "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
+    "de": "Kann bei laufender Aufgabe nicht geändert werden."
   },
   "SETTINGS$API_KEY_PLACEHOLDER": {
     "en": "Enter your API key.",
     "zh-CN": "输入您的 API key",
     "zh-TW": "輸入您的 API 金鑰。",
-    "de": "Model API key."
-  },
-  "CODE_EDITOR$EMPTY_MESSAGE": {
-    "en": "No file selected.",
-    "zh-CN": "文件未选中",
-    "zh-TW": "未選取任何文件。",
-    "de": "Keine Datei ausgewählt."
+    "de": "Modell API Schlüssel."
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",

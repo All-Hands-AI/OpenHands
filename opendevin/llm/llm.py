@@ -8,6 +8,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -62,6 +63,9 @@ class LLM:
         max_output_tokens=None,
         llm_config=None,
         metrics=None,
+        cost_metric_supported=True,
+        input_cost_per_token=None,
+        output_cost_per_token=None,
     ):
         """
         Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -82,9 +86,12 @@ class LLM:
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
             metrics (Metrics, optional): The metrics object to use. Defaults to None.
+            cost_metric_supported (bool, optional): Whether the cost metric is supported. Defaults to True.
+            input_cost_per_token (float, optional): The cost per input token.
+            output_cost_per_token (float, optional): The cost per output token.
         """
         if llm_config is None:
-            llm_config = config.llm
+            llm_config = config.get_llm_config()
         model = model if model is not None else llm_config.model
         api_key = api_key if api_key is not None else llm_config.api_key
         base_url = base_url if base_url is not None else llm_config.base_url
@@ -116,6 +123,16 @@ class LLM:
             if max_output_tokens is not None
             else llm_config.max_output_tokens
         )
+        input_cost_per_token = (
+            input_cost_per_token
+            if input_cost_per_token is not None
+            else llm_config.input_cost_per_token
+        )
+        output_cost_per_token = (
+            output_cost_per_token
+            if output_cost_per_token is not None
+            else llm_config.output_cost_per_token
+        )
         metrics = metrics if metrics is not None else Metrics()
 
         logger.info(f'Initializing LLM with model: {model}')
@@ -125,14 +142,20 @@ class LLM:
         self.api_version = api_version
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
+        self.input_cost_per_token = input_cost_per_token
+        self.output_cost_per_token = output_cost_per_token
         self.llm_timeout = llm_timeout
         self.custom_llm_provider = custom_llm_provider
         self.metrics = metrics
+        self.cost_metric_supported = cost_metric_supported
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
-            self.model_info = litellm.get_model_info(self.model_name.split(':')[0])
+            if not self.model_name.startswith('openrouter'):
+                self.model_info = litellm.get_model_info(self.model_name.split(':')[0])
+            else:
+                self.model_info = litellm.get_model_info(self.model_name)
         # noinspection PyBroadException
         except Exception:
             logger.warning(f'Could not get model info for {self.model_name}')
@@ -172,29 +195,48 @@ class LLM:
                 f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
                 exc_info=False,
             )
-            return True
+            return None
 
         @retry(
             reraise=True,
             stop=stop_after_attempt(num_retries),
             wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
             retry=retry_if_exception_type(
-                (RateLimitError, APIConnectionError, ServiceUnavailableError)
+                (
+                    RateLimitError,
+                    APIConnectionError,
+                    ServiceUnavailableError,
+                    InternalServerError,
+                )
             ),
             after=attempt_on_error,
         )
         def wrapper(*args, **kwargs):
+            """
+            Wrapper for the litellm completion function. Logs the input and output of the completion function.
+            """
+
+            # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
                 messages = args[1]
+
+            # log the prompt
             debug_message = ''
             for message in messages:
                 debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
+
+            # call the completion function
             resp = completion_unwrapped(*args, **kwargs)
+
+            # log the response
             message_back = resp['choices'][0]['message']['content']
             llm_response_logger.debug(message_back)
+
+            # post-process to log costs
+            self._post_completion(resp)
             return resp
 
         self._completion = wrapper  # type: ignore
@@ -203,20 +245,12 @@ class LLM:
     def completion(self):
         """
         Decorator for the litellm completion function.
-        """
-        return self._completion
-
-    def do_completion(self, *args, **kwargs):
-        """
-        Wrapper for the litellm completion function.
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
-        resp = self._completion(*args, **kwargs)
-        self.post_completion(resp)
-        return resp
+        return self._completion
 
-    def post_completion(self, response: str) -> None:
+    def _post_completion(self, response: str) -> None:
         """
         Post-process the completion response.
         """
@@ -224,11 +258,12 @@ class LLM:
             cur_cost = self.completion_cost(response)
         except Exception:
             cur_cost = 0
-        logger.info(
-            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
-            cur_cost,
-            self.metrics.accumulated_cost,
-        )
+        if self.cost_metric_supported:
+            logger.info(
+                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+                cur_cost,
+                self.metrics.accumulated_cost,
+            )
 
     def get_token_count(self, messages):
         """
@@ -264,19 +299,22 @@ class LLM:
         Add the current cost into total cost in metrics.
 
         Args:
-            response (list): A response from a model invocation.
+            response: A response from a model invocation.
 
         Returns:
             number: The cost of the response.
         """
+        if not self.cost_metric_supported:
+            return 0.0
+
         extra_kwargs = {}
         if (
-            config.llm.input_cost_per_token is not None
-            and config.llm.output_cost_per_token is not None
+            self.input_cost_per_token is not None
+            and self.output_cost_per_token is not None
         ):
             cost_per_token = CostPerToken(
-                input_cost_per_token=config.llm.input_cost_per_token,
-                output_cost_per_token=config.llm.output_cost_per_token,
+                input_cost_per_token=self.input_cost_per_token,
+                output_cost_per_token=self.output_cost_per_token,
             )
             logger.info(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
@@ -289,6 +327,7 @@ class LLM:
                 self.metrics.add_cost(cost)
                 return cost
             except Exception:
+                self.cost_metric_supported = False
                 logger.warning('Cost calculation not supported for this model.')
         return 0.0
 

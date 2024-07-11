@@ -75,7 +75,7 @@ class AgentSession:
         """Creates an AgentController instance.
 
         Args:
-            start_event: The start event data (optional).
+            start_event: The start event data.
         """
         if self.controller is not None:
             raise Exception('Controller already created')
@@ -86,12 +86,12 @@ class AgentSession:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = args.get(ConfigType.AGENT, config.agent.name)
-        model = args.get(ConfigType.LLM_MODEL, config.llm.model)
-        api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
-        api_base = config.llm.base_url
+        agent_cls = args.get(ConfigType.AGENT, config.default_agent)
+        llm_config = config.get_llm_config_from_agent(agent_cls)
+        model = args.get(ConfigType.LLM_MODEL, llm_config.model)
+        api_key = args.get(ConfigType.LLM_API_KEY, llm_config.api_key)
+        api_base = llm_config.base_url
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
-        max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
@@ -99,19 +99,21 @@ class AgentSession:
         if isinstance(agent, CodeActAgent):
             if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
                 logger.warning(
-                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
+                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
+                    ' LocalBox will not work properly.'
                 )
         self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+        self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(
             sid=self.sid,
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
-            max_chars=int(max_chars),
         )
         try:
             agent_state = State.restore_from_session(self.sid)
-            self.controller.set_state(agent_state)
+            self.controller.set_initial_state(agent_state)
+            logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             print('Error restoring state', e)

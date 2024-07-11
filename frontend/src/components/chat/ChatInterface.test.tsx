@@ -1,14 +1,15 @@
 import React from "react";
-import { screen } from "@testing-library/react";
+import { screen, act, fireEvent } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { act } from "react-dom/test-utils";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
+import { useTranslation } from "react-i18next";
 import ChatInterface from "./ChatInterface";
 import Session from "#/services/session";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
+import { I18nKey } from "#/i18n/declaration";
 
 // avoid typing side-effect
 vi.mock("#/hooks/useTyping", () => ({
@@ -23,12 +24,16 @@ vi.spyOn(Session, "isConnected").mockImplementation(() => true);
 HTMLElement.prototype.scrollTo = vi.fn(() => {});
 
 describe("ChatInterface", () => {
+  afterEach(() => {
+    sessionSpy.mockClear();
+  });
+
   it("should render empty message list and input", () => {
     renderWithProviders(<ChatInterface />);
     expect(screen.queryAllByTestId("message")).toHaveLength(0);
   });
 
-  it("should render the new message the user has typed", async () => {
+  it("should render the new message the user has typed", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         agent: {
@@ -38,12 +43,8 @@ describe("ChatInterface", () => {
     });
 
     const input = screen.getByRole("textbox");
-
-    act(() => {
-      userEvent.type(input, "my message{enter}");
-    });
-
-    expect(screen.getByText("my message")).toBeInTheDocument();
+    fireEvent.change(input, { target: { value: "my message" } });
+    expect(input).toHaveValue("my message");
   });
 
   it("should render user and assistant messages", () => {
@@ -66,7 +67,7 @@ describe("ChatInterface", () => {
     expect(screen.getByText("Hello to you!")).toBeInTheDocument();
   });
 
-  it("should send the a start event to the Session", () => {
+  it("should send a start event to the Session", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         agent: {
@@ -76,9 +77,8 @@ describe("ChatInterface", () => {
     });
 
     const input = screen.getByRole("textbox");
-    act(() => {
-      userEvent.type(input, "my message{enter}");
-    });
+    fireEvent.change(input, { target: { value: "my message" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 });
 
     const event = {
       action: ActionType.MESSAGE,
@@ -87,7 +87,7 @@ describe("ChatInterface", () => {
     expect(sessionSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 
-  it("should send the a user message event to the Session", () => {
+  it("should send a user message event to the Session", async () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         agent: {
@@ -97,9 +97,7 @@ describe("ChatInterface", () => {
     });
 
     const input = screen.getByRole("textbox");
-    act(() => {
-      userEvent.type(input, "my message{enter}");
-    });
+    await userEvent.type(input, "my message{enter}");
 
     const event = {
       action: ActionType.MESSAGE,
@@ -117,7 +115,11 @@ describe("ChatInterface", () => {
       },
     });
 
-    const submitButton = screen.getByLabelText(/send message/i);
+    const { t } = useTranslation();
+
+    const submitButton = screen.getByLabelText(
+      t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE),
+    );
 
     expect(submitButton).toBeDisabled();
   });

@@ -57,11 +57,6 @@ _Example of CodeActAgent with `gpt-4-turbo-2024-04-09` performing a data science
 | `step`          | Performs one step using the CodeAct Agent. This includes gathering info on previous steps and prompting the model to make a command to execute. |
 | `search_memory` | Not yet implemented                                                                                                                             |
 
-### Work-in-progress &amp; Next step
-
-[] Support web-browsing
-[] Complete the workflow for CodeAct agent to submit Github PRs
-
 ## Monologue Agent
 
 ### Description
@@ -112,7 +107,6 @@ The agent is given its previous action-observation pairs, current task, and hint
 
 `NullAction`,
 `CmdRunAction`,
-`CmdKillAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `FileReadAction`,

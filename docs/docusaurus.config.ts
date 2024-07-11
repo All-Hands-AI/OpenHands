@@ -8,8 +8,8 @@ const config: Config = {
   favicon: "img/logo.png",
 
   // Set the production url of your site here
-  url: "https://OpenDevin.github.io",
-  baseUrl: "/OpenDevin/",
+  url: "https://docs.all-hands.dev",
+  baseUrl: "/",
 
   // GitHub pages deployment config.
   organizationName: "OpenDevin",
@@ -23,8 +23,13 @@ const config: Config = {
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: "en",
-    locales: ["en"],
+    defaultLocale: 'en',
+    locales: ['en', 'fr', 'zh-Hans'],
+    localeConfigs: {
+      en: {
+        htmlLang: 'en-GB',
+      },
+    },
   },
 
   presets: [
@@ -51,7 +56,6 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
-
   themeConfig: {
     image: "img/docusaurus.png",
     navbar: {
@@ -79,44 +83,11 @@ const config: Config = {
           label: "GitHub",
           position: "right",
         },
-      ],
-    },
-    footer: {
-      style: "dark",
-      links: [
         {
-          title: "OpenDevin",
-          items: [
-            {
-              label: "Docs",
-              to: "/modules/usage/intro",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Slack",
-              href: "https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw"
-            },
-            {
-              label: "Discord",
-              href: "https://discord.gg/ESHStjSjD4",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "GitHub",
-              href: "https://github.com/OpenDevin/OpenDevin",
-            },
-          ],
+          type: 'localeDropdown',
+          position: 'left',
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} OpenDevin`,
     },
     prism: {
       theme: prismThemes.oneLight,

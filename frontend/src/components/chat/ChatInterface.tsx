@@ -1,24 +1,26 @@
+// frontend/src/components/chat/ChatInterface.tsx
 import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
-import { twMerge } from "tailwind-merge";
 import { VscArrowDown } from "react-icons/vsc";
 import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
+import { useDisclosure } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
+import TypingIndicator from "./TypingIndicator";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
+import { Feedback } from "#/services/feedbackService";
+import FeedbackModal from "../modals/feedback/FeedbackModal";
+import { removeApiKey } from "#/utils/utils";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
-import toast from "#/utils/toast";
-import { FeedbackData, sendFeedback } from "#/api";
-import { removeApiKey } from "#/utils/utils";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -53,33 +55,44 @@ function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const [feedbackShared, setFeedbackShared] = React.useState(false);
-  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
+  const feedbackVersion = "1.0";
+  const [feedback, setFeedback] = React.useState<Feedback>({
+    email: "",
+    feedback: "positive",
+    permissions: "private",
+    trajectory: [],
+    token: "",
+    version: feedbackVersion,
+  });
+  const [feedbackShared, setFeedbackShared] = React.useState(0);
 
-  const shareFeedback = async (feedback: "positive" | "negative") => {
-    const data: FeedbackData = {
-      email: "NOT_PROVIDED",
-      token: getToken(),
-      feedback,
+  const {
+    isOpen: feedbackModalIsOpen,
+    onOpen: onFeedbackModalOpen,
+    onOpenChange: onFeedbackModalOpenChange,
+  } = useDisclosure();
+
+  const shareFeedback = async (polarity: "positive" | "negative") => {
+    setFeedback((prev) => ({
+      ...prev,
+      feedback: polarity,
       trajectory: removeApiKey(Session._history),
-    };
-
-    try {
-      setFeedbackLoading(true);
-      await sendFeedback(data);
-      toast.info("Feedback shared successfully.");
-    } catch (e) {
-      console.error(e);
-      toast.error("share-error", "Failed to share, see console for details.");
-    } finally {
-      setFeedbackShared(true);
-      setFeedbackLoading(false);
-    }
+      token: getToken(),
+    }));
+    onFeedbackModalOpen();
   };
 
   const handleSendMessage = (content: string) => {
     dispatch(addUserMessage(content));
     sendChatMessage(content);
+  };
+
+  const handleEmailChange = (key: string) => {
+    setFeedback({ ...feedback, email: key } as Feedback);
+  };
+
+  const handlePermissionsChange = (permissions: "public" | "private") => {
+    setFeedback({ ...feedback, permissions } as Feedback);
   };
 
   const { t } = useTranslation();
@@ -96,7 +109,7 @@ function ChatInterface() {
     if (curAgentState === AgentState.INIT && messages.length === 0) {
       dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
     }
-  }, [curAgentState]);
+  }, [curAgentState, dispatch, messages.length, t]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">
@@ -112,43 +125,41 @@ function ChatInterface() {
         >
           <Chat messages={messages} />
         </div>
-        {/* Fade between messages and input */}
-        <div
-          className={twMerge(
-            "absolute bottom-0 left-0 right-0",
-            curAgentState === AgentState.AWAITING_USER_INPUT ? "h-10" : "h-4",
-            "bg-gradient-to-b from-transparent to-neutral-800",
-          )}
-        />
       </div>
 
       <div className="relative">
         <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
-          {!hitBottom &&
-            ScrollButton({
-              onClick: scrollDomToBottom,
-              icon: <VscArrowDown className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$TO_BOTTOM),
-            })}
-          {curAgentState === AgentState.AWAITING_USER_INPUT &&
-            hitBottom &&
-            ScrollButton({
-              onClick: handleSendContinueMsg,
-              icon: <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE),
-            })}
+          {!hitBottom && (
+            <ScrollButton
+              onClick={scrollDomToBottom}
+              icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
+              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
+            />
+          )}
+          {hitBottom && (
+            <>
+              {curAgentState === AgentState.AWAITING_USER_INPUT && (
+                <ScrollButton
+                  onClick={handleSendContinueMsg}
+                  icon={
+                    <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
+                  }
+                  label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                />
+              )}
+              {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+            </>
+          )}
         </div>
 
-        {!feedbackShared && messages.length > 3 && (
+        {feedbackShared !== messages.length && messages.length > 3 && (
           <div className="flex justify-start gap-2 p-2">
             <ScrollButton
-              disabled={feedbackLoading}
               onClick={() => shareFeedback("positive")}
               icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
               label=""
             />
             <ScrollButton
-              disabled={feedbackLoading}
               onClick={() => shareFeedback("negative")}
               icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
               label=""
@@ -160,6 +171,14 @@ function ChatInterface() {
       <ChatInput
         disabled={curAgentState === AgentState.LOADING}
         onSendMessage={handleSendMessage}
+      />
+      <FeedbackModal
+        feedback={feedback}
+        handleEmailChange={handleEmailChange}
+        handlePermissionsChange={handlePermissionsChange}
+        isOpen={feedbackModalIsOpen}
+        onOpenChange={onFeedbackModalOpenChange}
+        onSendFeedback={() => setFeedbackShared(messages.length)}
       />
     </div>
   );

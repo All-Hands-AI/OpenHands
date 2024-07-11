@@ -1,7 +1,6 @@
 import React from "react";
-import { waitFor, screen } from "@testing-library/react";
+import { waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act } from "react-dom/test-utils";
 import { renderWithProviders } from "test-utils";
 import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
@@ -31,19 +30,25 @@ describe("FileExplorer", () => {
   });
 
   it("should get the workspace directory", async () => {
-    const { getByText } = renderWithProviders(<FileExplorer />);
+    const { getByText } = renderWithProviders(<FileExplorer />, {
+      preloadedState: {
+        agent: {
+          curAgentState: AgentState.RUNNING,
+        },
+      },
+    });
 
     await waitFor(() => {
       expect(getByText("folder1")).toBeInTheDocument();
-      expect(getByText("file2.ts")).toBeInTheDocument();
+      expect(getByText("file1.ts")).toBeInTheDocument();
     });
-    expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder1
+    expect(listFiles).toHaveBeenCalledTimes(1); // once for root
   });
 
   it.todo("should render an empty workspace");
 
-  it.only("should refetch the workspace when clicking the refresh button", async () => {
-    const { getByText } = renderWithProviders(<FileExplorer />, {
+  it("should refetch the workspace when clicking the refresh button", async () => {
+    const { getByText, getByTestId } = renderWithProviders(<FileExplorer />, {
       preloadedState: {
         agent: {
           curAgentState: AgentState.RUNNING,
@@ -52,61 +57,76 @@ describe("FileExplorer", () => {
     });
     await waitFor(() => {
       expect(getByText("folder1")).toBeInTheDocument();
-      expect(getByText("file2.ts")).toBeInTheDocument();
+      expect(getByText("file1.ts")).toBeInTheDocument();
     });
-    expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder 1
+    expect(listFiles).toHaveBeenCalledTimes(1); // once for root
 
-    // The 'await' keyword is required here to avoid a warning during test runs
-    await act(() => {
-      userEvent.click(screen.getByTestId("refresh"));
+    await act(async () => {
+      await userEvent.click(getByTestId("refresh"));
     });
 
-    expect(listFiles).toHaveBeenCalledTimes(4); // 2 from initial render, 2 from refresh button
+    await waitFor(() => {
+      expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for refresh button
+    });
   });
 
   it("should toggle the explorer visibility when clicking the close button", async () => {
     const { getByTestId, getByText, queryByText } = renderWithProviders(
       <FileExplorer />,
+      {
+        preloadedState: {
+          agent: {
+            curAgentState: AgentState.RUNNING,
+          },
+        },
+      },
     );
 
     await waitFor(() => {
       expect(getByText("folder1")).toBeInTheDocument();
     });
 
-    act(() => {
-      userEvent.click(getByTestId("toggle"));
+    await act(async () => {
+      await userEvent.click(getByTestId("toggle"));
     });
 
-    // it should be hidden rather than removed from the DOM
     expect(queryByText("folder1")).toBeInTheDocument();
     expect(queryByText("folder1")).not.toBeVisible();
   });
 
   it("should upload files", async () => {
     // TODO: Improve this test by passing expected argument to `uploadFiles`
-    const { getByTestId } = renderWithProviders(<FileExplorer />);
+    const { findByTestId } = renderWithProviders(<FileExplorer />, {
+      preloadedState: {
+        agent: {
+          curAgentState: AgentState.RUNNING,
+        },
+      },
+    });
+
     const file = new File([""], "file-name");
     const file2 = new File([""], "file-name-2");
 
-    const uploadFileInput = getByTestId("file-input");
+    const uploadFileInput = await findByTestId("file-input");
 
-    // The 'await' keyword is required here to avoid a warning during test runs
-    await act(() => {
-      userEvent.upload(uploadFileInput, file);
+    await act(async () => {
+      await userEvent.upload(uploadFileInput, file);
     });
 
     expect(uploadFiles).toHaveBeenCalledOnce();
     expect(listFiles).toHaveBeenCalled();
 
-    const uploadDirInput = getByTestId("file-input");
+    const uploadDirInput = await findByTestId("file-input");
 
     // The 'await' keyword is required here to avoid a warning during test runs
-    await act(() => {
-      userEvent.upload(uploadDirInput, [file, file2]);
+    await act(async () => {
+      await userEvent.upload(uploadDirInput, [file, file2]);
     });
 
-    expect(uploadFiles).toHaveBeenCalledTimes(2);
-    expect(listFiles).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(uploadFiles).toHaveBeenCalledTimes(2);
+      expect(listFiles).toHaveBeenCalled();
+    });
   });
 
   it.skip("should upload files when dragging them to the explorer", () => {
@@ -125,12 +145,12 @@ describe("FileExplorer", () => {
     const uploadFileInput = getByTestId("file-input");
     const file = new File([""], "test");
 
-    act(() => {
-      userEvent.upload(uploadFileInput, file);
+    await act(async () => {
+      await userEvent.upload(uploadFileInput, file);
     });
 
     expect(uploadFiles).rejects.toThrow();
-    // TODO: figure out why spy isnt called to pass test
+    // TODO: figure out why spy isn't called to pass test
     expect(toastSpy).toHaveBeenCalledWith("ws", "Error uploading file");
   });
 });

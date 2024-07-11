@@ -1,4 +1,4 @@
-The shell script `hello.sh` has been created and made executable. Let's run it to ensure it works correctly.
+Great! The shell script has been created successfully. Let's verify its contents:
 
 <execute_bash>
-./hello.sh
+cat hello.sh
