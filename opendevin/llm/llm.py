@@ -20,7 +20,6 @@ from tenacity import (
     wait_random_exponential,
 )
 
-# litellm.set_verbose=True
 from opendevin.core.config import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
