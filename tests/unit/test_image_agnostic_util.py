@@ -47,5 +47,10 @@ def test_get_od_sandbox_image(mock_docker_client, mock_build_sandbox_image):
     image_name = get_od_sandbox_image(base_image, mock_docker_client)
     assert image_name == 'od_sandbox:debian__11'
     mock_build_sandbox_image.assert_called_once_with(
-        base_image, 'od_sandbox:debian__11', mock_docker_client
+        base_image,
+        'od_sandbox:debian__11',
+        mock_docker_client,
+        # eventstream runtime specific arguments, not used for sandbox-based runtime
+        is_eventstream_runtime=False,
+        skip_init=False,
     )
