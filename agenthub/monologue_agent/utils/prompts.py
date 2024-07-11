@@ -1,13 +1,10 @@
 from opendevin.core.config import config
 from opendevin.core.utils import json
-from opendevin.events.observation import (
-    CmdOutputObservation,
-)
 from opendevin.events.action import (
     Action,
 )
-
 from opendevin.events.serialization.action import action_from_dict
+
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
 %(task)s
@@ -32,9 +29,6 @@ Here are the possible actions:
   * `content` - the content to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
-  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
-* `kill` - kills a background command
-  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `push` - Push a branch from the current repo to github:
@@ -48,9 +42,7 @@ Here are the possible actions:
   * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-%(background_commands)s
-
-You MUST take time to think in between read, write, run, kill, browse, push, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
@@ -153,7 +145,6 @@ def get_request_action_prompt(
     task: str,
     thoughts: list[dict],
     recent_events: list[dict],
-    background_commands_obs: list[CmdOutputObservation] | None = None,
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -161,14 +152,10 @@ def get_request_action_prompt(
     Parameters:
     - task (str): The current task the agent is trying to accomplish
     - thoughts (list[dict]): The agent's current thoughts
-    - background_commands_obs (list[CmdOutputObservation]): list of all observed background commands running
 
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
-
-    if background_commands_obs is None:
-        background_commands_obs = []
 
     hint = ''
     if len(recent_events) > 0:
@@ -187,15 +174,6 @@ def get_request_action_prompt(
     else:
         hint = "You're just getting started! What should you do first?"
 
-    bg_commands_message = ''
-    if len(background_commands_obs) > 0:
-        bg_commands_message = 'The following commands are running in the background:'
-        for command_obs in background_commands_obs:
-            bg_commands_message += (
-                f'\n`{command_obs.command_id}`: {command_obs.command}'
-            )
-        bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
-
     user = 'opendevin' if config.run_as_devin else 'root'
 
     monologue = thoughts + recent_events
@@ -203,10 +181,9 @@ def get_request_action_prompt(
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(monologue, indent=2),
-        'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.sandbox_timeout,
+        'timeout': config.sandbox.timeout,
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 

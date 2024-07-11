@@ -9,8 +9,8 @@ enum AgentState {
   REJECTED = "rejected",
   ERROR = "error",
   AWAITING_USER_CONFIRMATION = "awaiting_user_confirmation",
-  ACTION_CONFIRMED = "action_confirmed",
-  ACTION_REJECTED = "action_rejected",
+  USER_CONFIRMED = "user_confirmed",
+  USER_REJECTED = "user_rejected",
 }
 
 export default AgentState;

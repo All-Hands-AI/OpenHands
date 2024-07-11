@@ -53,7 +53,7 @@ async def run_agent_controller(
 
     # Logging
     logger.info(
-        f'Running agent {type(agent)}, model {agent.llm.model_name}, with task: "{task_str}"'
+        f'Running agent {agent.name}, model {agent.llm.model_name}, with task: "{task_str}"'
     )
 
     # set up the event stream
@@ -100,7 +100,7 @@ async def run_agent_controller(
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
         # we're resuming the previous session
-        await event_stream.add_event(
+        event_stream.add_event(
             MessageAction(
                 content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
             ),
@@ -108,7 +108,7 @@ async def run_agent_controller(
         )
     elif initial_state is None:
         # init with the provided task
-        await event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
+        event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
@@ -120,10 +120,10 @@ async def run_agent_controller(
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
-                await event_stream.add_event(action, EventSource.USER)
+                event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.get_agent_state() not in [
+    while controller.state.agent_state not in [
         AgentState.FINISHED,
         AgentState.REJECTED,
         AgentState.ERROR,
@@ -163,7 +163,7 @@ if __name__ == '__main__':
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         llm = LLM(llm_config=llm_config)
     else:
-        llm = LLM(model=args.model_name)
+        llm = LLM(llm_config=config.get_llm_config_from_agent(args.agent_cls))
 
     # Create the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)

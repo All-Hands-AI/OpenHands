@@ -20,7 +20,7 @@ load_dotenv()
 
 
 @dataclass
-class LLMConfig(metaclass=Singleton):
+class LLMConfig:
     """
     Configuration for the LLM model.
 
@@ -47,6 +47,7 @@ class LLMConfig(metaclass=Singleton):
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
+        ollama_base_url: The base URL for the OLLAMA API.
     """
 
     model: str = 'gpt-4o'
@@ -71,6 +72,7 @@ class LLMConfig(metaclass=Singleton):
     max_output_tokens: int | None = None
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
+    ollama_base_url: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """
@@ -99,19 +101,19 @@ class LLMConfig(metaclass=Singleton):
 
 
 @dataclass
-class AgentConfig(metaclass=Singleton):
+class AgentConfig:
     """
     Configuration for the agent.
 
     Attributes:
-        name: The name of the agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
+        llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
-    name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
+    llm_config: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """
@@ -121,6 +123,51 @@ class AgentConfig(metaclass=Singleton):
         for f in fields(self):
             result[f.name] = get_field_info(f)
         return result
+
+
+@dataclass
+class SandboxConfig(metaclass=Singleton):
+    """
+    Configuration for the sandbox.
+
+    Attributes:
+        box_type: The type of sandbox to use. Options are: ssh, e2b, local.
+        container_image: The container image to use for the sandbox.
+        user_id: The user ID for the sandbox.
+        timeout: The timeout for the sandbox.
+
+    """
+
+    box_type: str = 'ssh'
+    container_image: str = 'ghcr.io/opendevin/sandbox' + (
+        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
+        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
+        else ':main'
+    )
+    user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
+    timeout: int = 120
+
+    def defaults_to_dict(self) -> dict:
+        """
+        Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
+        """
+        dict = {}
+        for f in fields(self):
+            dict[f.name] = get_field_info(f)
+        return dict
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"SandboxConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class UndefinedString(str, Enum):
@@ -133,8 +180,10 @@ class AppConfig(metaclass=Singleton):
     Configuration for the app.
 
     Attributes:
-        llm: The LLM configuration.
-        agent: The agent configuration.
+        llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
+        agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
+        default_agent: The name of the default agent to use.
+        sandbox: The sandbox configuration.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
@@ -143,17 +192,14 @@ class AppConfig(metaclass=Singleton):
         workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
-        sandbox_container_image: The container image to use for the sandbox.
         run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
-        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
-        sandbox_user_id: The user ID for the sandbox.
-        sandbox_timeout: The timeout for the sandbox.
+        initialize_plugins: Whether to initialize plugins.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
         enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
@@ -162,8 +208,10 @@ class AppConfig(metaclass=Singleton):
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
-    llm: LLMConfig = field(default_factory=LLMConfig)
-    agent: AgentConfig = field(default_factory=AgentConfig)
+    llms: dict = field(default_factory=dict)
+    agents: dict = field(default_factory=dict)
+    default_agent: str = 'CodeActAgent'
+    sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
@@ -174,23 +222,15 @@ class AppConfig(metaclass=Singleton):
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-    sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (
-        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
-        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
-        else ':main'
-    )
     run_as_devin: bool = True
     confirmation_mode: bool = False
     security_invariant: bool = False
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
-    sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
-    sandbox_timeout: int = 120
     initialize_plugins: bool = True
     persist_sandbox: bool = False
     ssh_port: int = 63710
@@ -206,6 +246,39 @@ class AppConfig(metaclass=Singleton):
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
 
     defaults_dict: ClassVar[dict] = {}
+
+    def get_llm_config(self, name='llm') -> LLMConfig:
+        """
+        llm is the name for default config (for backward compatibility prior to 0.8)
+        """
+        if name in self.llms:
+            return self.llms[name]
+        if name is not None and name != 'llm':
+            logger.warning(f'llm config group {name} not found, using default config')
+        if 'llm' not in self.llms:
+            self.llms['llm'] = LLMConfig()
+        return self.llms['llm']
+
+    def set_llm_config(self, value: LLMConfig, name='llm'):
+        self.llms[name] = value
+
+    def get_agent_config(self, name='agent') -> AgentConfig:
+        """
+        agent is the name for default config (for backward compability prior to 0.8)
+        """
+        if name in self.agents:
+            return self.agents[name]
+        if 'agent' not in self.agents:
+            self.agents['agent'] = AgentConfig()
+        return self.agents['agent']
+
+    def set_agent_config(self, value: AgentConfig, name='agent'):
+        self.agents[name] = value
+
+    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        llm_config_name = agent_config.llm_config
+        return self.get_llm_config(llm_config_name)
 
     def __post_init__(self):
         """
@@ -287,7 +360,7 @@ def get_field_info(f):
 
 def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
+    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
 
     Args:
         cfg: The AppConfig object to set attributes on.
@@ -310,11 +383,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             if is_dataclass(field_type):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
-
-                # the agent field: the env var for agent.name is just 'AGENT'
-                if field_name == 'agent' and 'AGENT' in env_or_toml_dict:
-                    setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
-
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
@@ -335,8 +403,18 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
+    if 'SANDBOX_TYPE' in env_or_toml_dict:
+        logger.error('SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.')
+        env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
+
+    # load default LLM config from env
+    default_llm_config = config.get_llm_config()
+    set_attr_from_env(default_llm_config, 'LLM_')
+    # load default agent config from env
+    default_agent_config = config.get_agent_config()
+    set_attr_from_env(default_agent_config, 'AGENT_')
 
 
 def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
@@ -369,19 +447,66 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     core_config = toml_config['core']
 
-    try:
-        # set llm config from the toml file
-        llm_config = cfg.llm
-        if 'llm' in toml_config:
-            llm_config = LLMConfig(**toml_config['llm'])
+    # load llm configs and agent configs
+    for key, value in toml_config.items():
+        if isinstance(value, dict):
+            try:
+                if key is not None and key.lower() == 'agent':
+                    logger.info('Attempt to load default agent config from config toml')
+                    non_dict_fields = {
+                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    }
+                    agent_config = AgentConfig(**non_dict_fields)
+                    cfg.set_agent_config(agent_config, 'agent')
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            logger.info(
+                                f'Attempt to load group {nested_key} from config toml as agent config'
+                            )
+                            agent_config = AgentConfig(**nested_value)
+                            cfg.set_agent_config(agent_config, nested_key)
+                if key is not None and key.lower() == 'llm':
+                    logger.info('Attempt to load default LLM config from config toml')
+                    non_dict_fields = {
+                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    }
+                    llm_config = LLMConfig(**non_dict_fields)
+                    cfg.set_llm_config(llm_config, 'llm')
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            logger.info(
+                                f'Attempt to load group {nested_key} from config toml as llm config'
+                            )
+                            llm_config = LLMConfig(**nested_value)
+                            cfg.set_llm_config(llm_config, nested_key)
+            except (TypeError, KeyError) as e:
+                logger.warning(
+                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
+                    exc_info=False,
+                )
 
-        # set agent config from the toml file
-        agent_config = cfg.agent
-        if 'agent' in toml_config:
-            agent_config = AgentConfig(**toml_config['agent'])
+    try:
+        # set sandbox config from the toml file
+        sandbox_config = config.sandbox
+
+        # migrate old sandbox configs from [core] section to sandbox config
+        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
+        for key in keys_to_migrate:
+            new_key = key.replace('sandbox_', '')
+            if new_key == 'type':
+                new_key = 'box_type'
+            if new_key in sandbox_config.__annotations__:
+                # read the key in sandbox and remove it from core
+                setattr(sandbox_config, new_key, core_config.pop(key))
+            else:
+                logger.warning(f'Unknown sandbox config: {key}')
+
+        # the new style values override the old style values
+        if 'sandbox' in toml_config:
+            sandbox_config = SandboxConfig(**toml_config['sandbox'])
 
         # update the config object with the new values
-        AppConfig(llm=llm_config, agent=agent_config, **core_config)
+        AppConfig(sandbox=sandbox_config, **core_config)
     except (TypeError, KeyError) as e:
         logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
@@ -400,7 +525,7 @@ def finalize_config(cfg: AppConfig):
     cfg.workspace_base = os.path.abspath(cfg.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if cfg.sandbox_type == 'local':
+    if cfg.sandbox.box_type == 'local':
         cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
@@ -409,8 +534,9 @@ def finalize_config(cfg: AppConfig):
         parts = cfg.workspace_mount_rewrite.split(':')
         cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    if cfg.llm.embedding_base_url is None:
-        cfg.llm.embedding_base_url = cfg.llm.base_url
+    for llm in cfg.llms.values():
+        if llm.embedding_base_url is None:
+            llm.embedding_base_url = llm.base_url
 
     if cfg.use_host_network and platform.system() == 'Darwin':
         logger.warning(
@@ -430,14 +556,16 @@ finalize_config(config)
 
 
 # Utility function for command line --group argument
-def get_llm_config_arg(llm_config_arg: str):
+def get_llm_config_arg(
+    llm_config_arg: str, toml_file: str = 'config.toml'
+) -> LLMConfig | None:
     """
     Get a group of llm settings from the config file.
 
     A group in config.toml can look like this:
 
     ```
-    [gpt-3.5-for-eval]
+    [llm.gpt-3.5-for-eval]
     model = 'gpt-3.5-turbo'
     api_key = '...'
     temperature = 0.5
@@ -448,6 +576,8 @@ def get_llm_config_arg(llm_config_arg: str):
     The user-defined group name, like "gpt-3.5-for-eval", is the argument to this function. The function will load the LLMConfig object
     with the settings of this group, from the config file, and set it as the LLMConfig object for the app.
 
+    Note that the group must be under "llm" group, or in other words, the group name must start with "llm.".
+
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
 
@@ -457,12 +587,17 @@ def get_llm_config_arg(llm_config_arg: str):
 
     # keep only the name, just in case
     llm_config_arg = llm_config_arg.strip('[]')
+
+    # truncate the prefix, just in case
+    if llm_config_arg.startswith('llm.'):
+        llm_config_arg = llm_config_arg[4:]
+
     logger.info(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
-        with open('config.toml', 'r', encoding='utf-8') as toml_file:
-            toml_config = toml.load(toml_file)
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
+            toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
         logger.error(f'Config file not found: {e}')
         return None
@@ -471,8 +606,8 @@ def get_llm_config_arg(llm_config_arg: str):
         return None
 
     # update the llm config with the specified section
-    if llm_config_arg in toml_config:
-        return LLMConfig(**toml_config[llm_config_arg])
+    if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
+        return LLMConfig(**toml_config['llm'][llm_config_arg])
     logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
@@ -501,16 +636,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.agent.name,
+        default=config.default_agent,
         type=str,
-        help='The agent class to use',
-    )
-    parser.add_argument(
-        '-m',
-        '--model-name',
-        default=config.llm.model,
-        type=str,
-        help='The (litellm) model name to use',
+        help='Name of the default agent to use',
     )
     parser.add_argument(
         '-i',
@@ -556,7 +684,7 @@ def get_parser() -> argparse.ArgumentParser:
         '--llm-config',
         default=None,
         type=str,
-        help='The group of llm settings, e.g. a [llama3] section in the toml file. Overrides model if both are provided.',
+        help='The group of llm settings, e.g. "llama3" for [llm.llama3] section in the toml file. Overrides model if both are provided.',
     )
     return parser
 

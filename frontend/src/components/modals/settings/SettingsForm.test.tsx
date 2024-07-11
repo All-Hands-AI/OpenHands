@@ -10,7 +10,6 @@ const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
 const onConfirmationModeChangeMock = vi.fn();
-const onSecurityInvariantChangeMock = vi.fn();
 
 const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
@@ -23,7 +22,6 @@ const renderSettingsForm = (settings?: Settings) => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
-          SECURITY_INVARIANT: true,
         }
       }
       models={["model1", "model2", "model3"]}
@@ -33,7 +31,6 @@ const renderSettingsForm = (settings?: Settings) => {
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
       onConfirmationModeChange={onConfirmationModeChangeMock}
-      onSecurityInvariantChange={onSecurityInvariantChangeMock}
     />,
   );
 };
@@ -47,14 +44,12 @@ describe("SettingsForm", () => {
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
     const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityInvariantInput = screen.getByTestId("invariant");
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
     expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
-    expect(securityInvariantInput).toHaveAttribute("data-selected", "true");
   });
 
   it("should display the existing values if it they are present", () => {
@@ -64,7 +59,6 @@ describe("SettingsForm", () => {
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
-      SECURITY_INVARIANT: true,
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -85,7 +79,6 @@ describe("SettingsForm", () => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
-          SECURITY_INVARIANT: true,
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
@@ -95,20 +88,17 @@ describe("SettingsForm", () => {
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
         onConfirmationModeChange={onConfirmationModeChangeMock}
-        onSecurityInvariantChange={onSecurityInvariantChangeMock}
       />,
     );
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityInvariantInput = screen.getByTestId("invariant");
 
     expect(modelInput).toBeDisabled();
     expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
     expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
-    expect(securityInvariantInput).toHaveAttribute("data-disabled", "true");
   });
 
   describe("onChange handlers", () => {

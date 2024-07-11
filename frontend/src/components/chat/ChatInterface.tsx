@@ -123,7 +123,7 @@ function ChatInterface() {
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
-          <Chat messages={messages} />
+          <Chat messages={messages} curAgentState={curAgentState} />
         </div>
       </div>
 

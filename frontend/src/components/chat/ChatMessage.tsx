@@ -15,13 +15,13 @@ import { changeAgentState } from "#/services/agentStateService";
 interface MessageProps {
   message: Message;
   isLastMessage?: boolean;
-  awaitsUserConfirmation?: boolean;
+  awaitingUserConfirmation?: boolean;
 }
 
 function ChatMessage({
   message,
   isLastMessage,
-  awaitsUserConfirmation,
+  awaitingUserConfirmation,
 }: MessageProps) {
   const [isCopy, setIsCopy] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -71,12 +71,12 @@ function ChatMessage({
       <Markdown components={{ code }}>{message.content}</Markdown>
       {isLastMessage &&
         message.sender === "assistant" &&
-        awaitsUserConfirmation && (
+        awaitingUserConfirmation && (
           <div className="flex justify-between items-center pt-4">
-            <p>Do you want to continue with this action?</p>
+            <p>{t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}</p>
             <div className="flex items-center gap-3">
               <Tooltip
-                content={t(I18nKey.CHAT_INTERFACE$CONFIRM_ACTION)}
+                content={t(I18nKey.CHAT_INTERFACE$USER_CONFIRMED)}
                 closeDelay={100}
               >
                 <button
@@ -84,14 +84,14 @@ function ChatMessage({
                   aria-label="Confirm action"
                   className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
                   onClick={() => {
-                    changeAgentState(AgentState.ACTION_CONFIRMED);
+                    changeAgentState(AgentState.USER_CONFIRMED);
                   }}
                 >
                   <ConfirmIcon />
                 </button>
               </Tooltip>
               <Tooltip
-                content={t(I18nKey.CHAT_INTERFACE$REJECT_ACTION)}
+                content={t(I18nKey.CHAT_INTERFACE$USER_REJECTED)}
                 closeDelay={100}
               >
                 <button
@@ -99,7 +99,7 @@ function ChatMessage({
                   aria-label="Reject action"
                   className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
                   onClick={() => {
-                    changeAgentState(AgentState.ACTION_REJECTED);
+                    changeAgentState(AgentState.USER_REJECTED);
                   }}
                 >
                   <RejectIcon />

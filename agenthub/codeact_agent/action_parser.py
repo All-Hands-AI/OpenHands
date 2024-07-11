@@ -21,10 +21,9 @@ class CodeActResponseParser(ResponseParser):
         - AgentFinishAction() - end the interaction
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         # Need pay attention to the item order in self.action_parsers
+        super().__init__()
         self.action_parsers = [
             CodeActActionParserFinish(),
             CodeActActionParserCmdRun(),
@@ -33,7 +32,7 @@ class CodeActResponseParser(ResponseParser):
         ]
         self.default_parser = CodeActActionParserMessage()
 
-    def parse(self, response: str) -> Action:
+    def parse(self, response) -> Action:
         action_str = self.parse_response(response)
         return self.parse_action(action_str)
 

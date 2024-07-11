@@ -11,7 +11,6 @@ from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     ChangeAgentStateAction,
-    CmdKillAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
@@ -75,13 +74,7 @@ def parse_action(trace: list, action: Action) -> list[TraceElement]:
     elif type(action) == CmdRunAction:
         function = Function(
             name='cmd_run',
-            arguments={'command': action.command, 'background': action.background},
-        )
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-    elif type(action) == CmdKillAction:
-        function = Function(
-            name='cmd_kill', arguments={'command_id': action.command_id}
+            arguments={'command': action.command, 'is_confirmed': action.is_confirmed},
         )
         inv_trace.append(Message(role='assistant', content=action.thought))
         inv_trace.append(ToolCall(id=next_id, type='function', function=function))

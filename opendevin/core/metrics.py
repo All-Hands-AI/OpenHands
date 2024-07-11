@@ -1,7 +1,7 @@
 class Metrics:
     """
     Metrics class can record various metrics during running and evaluation.
-    Currently we define the following metrics:
+    Currently, we define the following metrics:
         accumulated_cost: the total cost (USD $) of the current LLM.
     """
 

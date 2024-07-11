@@ -9,9 +9,7 @@ export type Settings = {
   SECURITY_INVARIANT: boolean;
 };
 
-export type SettingsInput = {
-  [K in keyof Settings]: Settings[K];
-}[keyof Settings];
+type SettingsInput = Settings[keyof Settings];
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-4o",
@@ -106,12 +104,14 @@ export const getSettingsDifference = (settings: Partial<Settings>) => {
   const updatedSettings: Partial<Settings> = {};
 
   Object.keys(settings).forEach((key) => {
-    const typedKey = key as keyof SettingsInput;
+    const typedKey = key as keyof Settings;
     if (
       validKeys.includes(typedKey) &&
       settings[typedKey] !== currentSettings[typedKey]
     ) {
-      updatedSettings[typedKey] = settings[typedKey];
+      (updatedSettings[typedKey] as SettingsInput) = settings[
+        typedKey
+      ] as SettingsInput;
     }
   });
 

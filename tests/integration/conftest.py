@@ -49,7 +49,9 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
     Note: this function blindly replaces existing prompt file with the given
     input without checking the contents.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     try:
@@ -70,7 +72,7 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     folders under mock folder. If prompt_{id}.log matches,
     then the mock response we're looking for is at response_{id}.log.
 
-    Note: we filter out all non alpha-numerical characters, otherwise we would
+    Note: we filter out all non-alphanumerical characters, otherwise we would
     see surprising mismatches caused by linters and minor discrepancies between
     different platforms.
 
@@ -81,9 +83,10 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     we start from the end of the file, but again, that is unnecessary and only
     makes test code harder to understand.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
     prompt = filter_out_symbols(messages)
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     # Open the prompt file and compare its contents
@@ -131,7 +134,11 @@ def mock_user_response(*args, test_name, **kwargs):
     STDIN input for the agent to read.
     """
     user_response_file = os.path.join(
-        script_dir, 'mock', os.environ.get('AGENT'), test_name, 'user_responses.log'
+        script_dir,
+        'mock',
+        os.environ.get('DEFAULT_AGENT'),
+        test_name,
+        'user_responses.log',
     )
     if not os.path.exists(user_response_file):
         return ''

@@ -11,7 +11,7 @@ class RejectObservation(Observation):
     This data class represents the result of a successful action.
     """
 
-    observation: str = ObservationType.ACTION_REJECTED
+    observation: str = ObservationType.USER_REJECTED
 
     @property
     def message(self) -> str:

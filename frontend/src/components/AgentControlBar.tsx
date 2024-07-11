@@ -29,8 +29,8 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
-  [AgentState.ACTION_CONFIRMED]: [AgentState.RUNNING],
-  [AgentState.ACTION_REJECTED]: [AgentState.RUNNING],
+  [AgentState.USER_CONFIRMED]: [AgentState.RUNNING],
+  [AgentState.USER_REJECTED]: [AgentState.RUNNING],
   [AgentState.AWAITING_USER_CONFIRMATION]: [],
 };
 

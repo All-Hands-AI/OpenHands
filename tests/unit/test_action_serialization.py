@@ -1,3 +1,4 @@
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -6,7 +7,6 @@ from opendevin.events.action import (
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
-    CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -30,7 +30,9 @@ def serialization_deserialization(original_action_dict, cls):
         action_instance, cls
     ), f'The action instance should be an instance of {cls.__name__}.'
     serialized_action_dict = event_to_dict(action_instance)
-    serialized_action_memory = event_to_memory(action_instance)
+    serialized_action_memory = event_to_memory(
+        action_instance, config.get_llm_config().max_message_chars
+    )
     serialized_action_dict.pop('message')
     assert (
         serialized_action_dict == original_action_dict
@@ -86,18 +88,14 @@ def test_agent_reject_action_serialization_deserialization():
     serialization_deserialization(original_action_dict, AgentRejectAction)
 
 
-def test_cmd_kill_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'kill',
-        'args': {'command_id': '1337', 'thought': '', 'is_confirmed': ActionConfirmationStatus.REJECTED},
-    }
-    serialization_deserialization(original_action_dict, CmdKillAction)
-
-
 def test_cmd_run_action_serialization_deserialization():
     original_action_dict = {
         'action': 'run',
-        'args': {'command': 'echo "Hello world"', 'background': True, 'thought': '', 'is_confirmed': ActionConfirmationStatus.CONFIRMED},
+        'args': {
+            'command': 'echo "Hello world"',
+            'thought': '',
+            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+        },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
 
