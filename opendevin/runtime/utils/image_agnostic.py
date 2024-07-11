@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 
 import docker
@@ -67,7 +68,9 @@ def generate_dockerfile_for_eventstream_runtime(
     filename = filename.removesuffix('.tar.gz')
 
     # move the tarball to temp_dir
-    os.rename(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
+    _res = shutil.copy(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
+    if _res:
+        os.remove(tarball_path)
     logger.info(
         f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
     )
