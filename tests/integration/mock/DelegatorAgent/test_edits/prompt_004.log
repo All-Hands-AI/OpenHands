@@ -11,14 +11,14 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 Here's a summary of the codebase, as it relates to this task:
 
-The codebase contains a single file named 'bad.txt' which has some typos. The content of 'bad.txt' is:
+The codebase contains a single file named 'bad.txt' which has some typos. The content of the file is:
 
 This is a stupid typoo.
 Really?
 No mor typos!
 Enjoy!
 
-The engineering team needs to correct the typos in this file.
+Engineers need to correct the typos in this file.
 
 
 ## Available Actions
