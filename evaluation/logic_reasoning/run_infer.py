@@ -22,7 +22,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -199,12 +198,12 @@ def process_instance(
 
         final_message = ''
         messages = []
-        for action, obs in reversed(state.history):
-            # if isinstance(act, MessageAction):
-            messages.append(obs.content)
-            # print("obs.content:", obs.content)
-            if str(obs.content) in ["'A'", "'B'", "'C'"]:
-                final_message = obs.content
+        for event in state.history.get_events(reverse=True):
+            # will this be a MessageAction?
+            # TODO we can filter for types of events if we know what to expect
+            messages.append(event.content)
+            if str(event.content) in ["'A'", "'B'", "'C'"]:
+                final_message = event.content
                 break
 
         final_message = final_message.strip("'")
@@ -217,16 +216,18 @@ def process_instance(
         )
         metrics = state.metrics.get() if state.metrics else None
 
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_pairs()
+
         # Save the output
         output = {
             'id': instance['id'],
             'instance': instance,
             'instruction': instruction,
-            # 'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            # 'metadata': metadata.model_dump(),
+            'history': histories,
             'metrics': metrics,
             'final_message': final_message,
             'messages': messages,

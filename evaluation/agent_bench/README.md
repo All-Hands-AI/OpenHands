@@ -29,12 +29,12 @@ enable_auto_lint = true
 box_type = "ssh"
 timeout = 120
 
-[eval_gpt35_turbo]
+[llm.eval_gpt35_turbo]
 model = "gpt-3.5-turbo"
 api_key = "sk-123"
 temperature = 0.0
 
-[eval_gpt4o]
+[llm.eval_gpt4o]
 model = "gpt-4o"
 api_key = "sk-123"
 temperature = 0.0

@@ -16,12 +16,12 @@ ssh_hostname = "localhost"
 enable_auto_lint = true
 
 # TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
+[llm.eval_gpt4_1106_preview_llm]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
 temperature = 0.0
 
-[eval_some_openai_compatible_model]
+[llm.eval_some_openai_compatible_model_llm]
 model = "openai/MODEL_NAME"
 base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
@@ -29,9 +29,9 @@ temperature = 0.0
 ```
 
 ## Run Inference on logic_reasoning
-The following code will run inference on the first example of the ProntoQA dataset with model gpt-4o,
+The following code will run inference on the first example of the ProntoQA dataset,
 using OpenDevin 0.6.2 version.
 
 ```bash
-./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA gpt-4o 0.6.2 1
+./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA eval_gpt4_1106_preview_llm 0.6.2 1
 ```
