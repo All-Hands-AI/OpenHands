@@ -12,6 +12,12 @@ import ConfirmIcon from "#/assets/confirm";
 import RejectIcon from "#/assets/reject";
 import { changeAgentState } from "#/services/agentStateService";
 
+interface Message {
+  sender: "user" | "assistant";
+  content: string;
+  imageUrls: string[];
+}
+
 interface MessageProps {
   message: Message;
   isLastMessage?: boolean;
@@ -29,7 +35,7 @@ function ChatMessage({
   const className = twMerge(
     "markdown-body",
     "p-3 text-white max-w-[90%] overflow-y-auto rounded-lg relative",
-    message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
+    message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500"
   );
 
   const { t } = useTranslation();
@@ -46,7 +52,7 @@ function ChatMessage({
       .catch(() => {
         toast.error(
           "copy-error",
-          t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED),
+          t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED)
         );
       });
   };
@@ -69,6 +75,18 @@ function ChatMessage({
         </button>
       )}
       <Markdown components={{ code }}>{message.content}</Markdown>
+      {message.imageUrls.length > 0 && (
+        <div className="flex space-x-2 mt-2">
+          {message.imageUrls.map((url, index) => (
+            <img
+              key={index}
+              src={url}
+              alt={`upload preview ${index}`}
+              className="w-24 h-24 object-contain rounded bg-white"
+            />
+          ))}
+        </div>
+      )}
       {isLastMessage &&
         message.sender === "assistant" &&
         awaitingUserConfirmation && (

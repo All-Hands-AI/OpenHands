@@ -83,9 +83,9 @@ function ChatInterface() {
     onFeedbackModalOpen();
   };
 
-  const handleSendMessage = (content: string, image_urls: string[]) => {
-    dispatch(addUserMessage(content));
-    sendChatMessage(content, image_urls);
+  const handleSendMessage = (content: string, imageUrls: string[]) => {
+    dispatch(addUserMessage({'content': content, 'imageUrls': imageUrls}));
+    sendChatMessage(content, imageUrls);
     // toast.error("image-upload-error", "Model doesn't have support for upload!");
   };
 
