@@ -51,6 +51,7 @@ def test_get_od_sandbox_image(mock_docker_client, mock_build_sandbox_image):
         'od_sandbox:debian__11',
         mock_docker_client,
         # eventstream runtime specific arguments, not used for sandbox-based runtime
-        is_eventstream_runtime=False,
+        # is_eventstream_runtime=
+        False,
         skip_init=False,
     )
