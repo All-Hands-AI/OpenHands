@@ -57,12 +57,12 @@ enable_auto_lint = true
 max_budget_per_task = 4 # 4 USD
 
 # TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
+[llm.eval_gpt4_1106_preview_llm]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
 temperature = 0.0
 
-[eval_some_openai_compatible_model]
+[llm.eval_some_openai_compatible_model_llm]
 model = "openai/MODEL_NAME"
 base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
@@ -86,7 +86,7 @@ If you see an error, please make sure your `config.toml` contains all
 
 ```bash
 ./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview HEAD CodeActAgent 300
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
@@ -104,11 +104,11 @@ to `CodeActAgent`.
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
 
-Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview_llm` and CodeActAgent,
 then your command would be:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview HEAD CodeActAgent 10
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 10
 ```
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
