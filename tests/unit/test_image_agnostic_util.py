@@ -2,14 +2,14 @@ from unittest.mock import MagicMock, patch
 
 from opendevin.runtime.utils.image_agnostic import (
     _get_new_image_name,
-    generate_dockerfile_content,
+    generate_dockerfile,
     get_od_sandbox_image,
 )
 
 
-def test_generate_dockerfile_content():
+def test_generate_dockerfile():
     base_image = 'debian:11'
-    dockerfile_content = generate_dockerfile_content(base_image)
+    dockerfile_content = generate_dockerfile(base_image)
     assert base_image in dockerfile_content
     assert (
         'RUN apt update && apt install -y openssh-server wget sudo'
