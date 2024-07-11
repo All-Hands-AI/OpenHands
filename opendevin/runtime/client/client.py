@@ -43,8 +43,8 @@ class RuntimeClient:
     It is responsible for executing actions received from OpenDevin backend and producing observations.
     """
 
-    def __init__(self, plugins_to_load: list[Plugin]) -> None:
-        self._init_bash_shell()
+    def __init__(self, plugins_to_load: list[Plugin], work_dir: str) -> None:
+        self._init_bash_shell(work_dir)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
 
@@ -53,15 +53,20 @@ class RuntimeClient:
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
 
-    def _init_bash_shell(self) -> None:
+    def _init_bash_shell(self, work_dir: str) -> None:
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
-        self.shell.expect(r'[$#] ')
+        self.__bash_expect = r'\[PEXPECT\][\$\#] '
+        self.__bash_PS1 = r'\u@\h:\w [PEXPECT]\$ '
+        self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
+        self.shell.expect(self.__bash_expect)
+        self.shell.sendline(f'cd {work_dir}')
+        self.shell.expect(self.__bash_expect)
 
     def _execute_bash(self, command, keep_prompt: bool = True):
         logger.info(f'Received command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(r'[$#] ')
-        output = self.shell.before + '# '
+        self.shell.expect(self.__bash_expect)
+        output = self.shell.before + '$ '
         if not keep_prompt:
             # remove the last line of the output (the prompt)
             # e.g., user@host:~$
@@ -192,8 +197,9 @@ class RuntimeClient:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
+    parser.add_argument('--working-dir', type=str, help='Working directory')
     parser.add_argument('--plugins', type=str, help='Plugins to initialize', nargs='+')
-    # example: python client.py 8000 --plugins JupyterRequirement
+    # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
     plugins_to_load: list[Plugin] = []
@@ -203,7 +209,7 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client = RuntimeClient(plugins_to_load)
+    client = RuntimeClient(plugins_to_load, work_dir=args.working_dir)
 
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):

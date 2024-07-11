@@ -119,11 +119,12 @@ class EventStreamRuntime(Runtime):
                 command=(
                     f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base '
                     'PYTHONUNBUFFERED=1 poetry run '
-                    f'python -u -m opendevin.runtime.client.client {self._port} --plugins {plugin_names}'
+                    f'python -u -m opendevin.runtime.client.client {self._port} '
+                    f'--working-dir {sandbox_workspace_dir} '
+                    f'--plugins {plugin_names} '
                 ),
                 # TODO: test it in mac and linux
                 network_mode='host',
-                # working_dir=sandbox_workspace_dir,
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,

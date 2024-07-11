@@ -75,7 +75,9 @@ def generate_dockerfile_for_eventstream_runtime(
     # Copy the project directory to the container
     dockerfile_content += 'COPY project.tar.gz /opendevin\n'
     # remove /opendevin/code if it exists
-    dockerfile_content += 'RUN rm -rf /opendevin/code || true\n'
+    dockerfile_content += (
+        'RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi\n'
+    )
     # unzip the tarball to /opendevin/code
     dockerfile_content += (
         'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
@@ -143,14 +145,13 @@ def _build_sandbox_image(
                 logger.info(
                     f'Rebuilding existing od_sandbox image [{target_image_name}] to update the source code.'
                 )
-            else:
-                for log in build_logs:
-                    if 'stream' in log:
-                        print(log['stream'].strip())
-                    elif 'error' in log:
-                        logger.error(log['error'].strip())
-                    else:
-                        logger.info(str(log))
+            for log in build_logs:
+                if 'stream' in log:
+                    print(log['stream'].strip())
+                elif 'error' in log:
+                    logger.error(log['error'].strip())
+                else:
+                    logger.info(str(log))
 
         logger.info(f'Image {target_image_name} built successfully')
     except docker.errors.BuildError as e:
