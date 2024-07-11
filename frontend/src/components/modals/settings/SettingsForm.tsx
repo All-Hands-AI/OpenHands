@@ -1,4 +1,4 @@
-import { Input, useDisclosure } from "@nextui-org/react";
+import { Input, Switch, Tooltip, useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -17,6 +17,7 @@ interface SettingsFormProps {
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
+  onConfirmationModeChange: (confirmationMode: boolean) => void;
 }
 
 function SettingsForm({
@@ -28,6 +29,7 @@ function SettingsForm({
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
+  onConfirmationModeChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
@@ -86,6 +88,21 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
+      <Switch
+        aria-label="confirmationmode"
+        data-testid="confirmationmode"
+        defaultSelected={settings.CONFIRMATION_MODE}
+        onValueChange={onConfirmationModeChange}
+        isDisabled={disabled}
+      >
+        <Tooltip
+          content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+          closeDelay={100}
+          delay={500}
+        >
+          {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+        </Tooltip>
+      </Switch>
     </>
   );
 }
