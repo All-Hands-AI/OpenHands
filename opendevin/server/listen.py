@@ -7,6 +7,7 @@ import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from opendevin.security.options import SecurityAnalyzers
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 
 with warnings.catch_warnings():
@@ -343,6 +344,22 @@ async def get_agents():
     """
     agents = sorted(Agent.list_agents())
     return agents
+
+
+@app.get('/api/options/security-analyzers')
+async def get_security_analyzers():
+    """
+    Get all security analyzers supported by the agent.
+
+    To get the security analyzers:
+    ```sh
+    curl http://localhost:3000/api/security-analyzers
+    ```
+
+    Returns:
+        list: A sorted list of security analyzer names.
+    """
+    return sorted(SecurityAnalyzers.keys())
 
 
 @app.get('/api/list-files')
