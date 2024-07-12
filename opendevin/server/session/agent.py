@@ -9,10 +9,8 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
-from opendevin.runtime import DockerSSHBox
-from opendevin.runtime.e2b.runtime import E2BRuntime
+from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
 
 
 class AgentSession:
@@ -60,16 +58,10 @@ class AgentSession:
     async def _create_runtime(self):
         if self.runtime is not None:
             raise Exception('Runtime already created')
-        if config.runtime == 'server':
-            logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, self.sid)
-        elif config.runtime == 'e2b':
-            logger.info('Using E2B runtime')
-            self.runtime = E2BRuntime(self.event_stream, self.sid)
-        else:
-            raise Exception(
-                f'Runtime not defined in config, or is invalid: {config.runtime}'
-            )
+
+        logger.info(f'Using runtime: {config.runtime}')
+        runtime_cls = get_runtime_cls(config.runtime)
+        self.runtime = runtime_cls(self.event_stream, self.sid)
 
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
@@ -86,10 +78,14 @@ class AgentSession:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = args.get(ConfigType.AGENT, config.agent.name)
-        model = args.get(ConfigType.LLM_MODEL, config.llm.model)
-        api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
-        api_base = config.llm.base_url
+        agent_cls = args.get(ConfigType.AGENT, config.default_agent)
+        llm_config = config.get_llm_config_from_agent(agent_cls)
+        model = args.get(ConfigType.LLM_MODEL, llm_config.model)
+        api_key = args.get(ConfigType.LLM_API_KEY, llm_config.api_key)
+        api_base = llm_config.base_url
+        confirmation_mode = args.get(
+            ConfigType.CONFIRMATION_MODE, config.confirmation_mode
+        )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
@@ -109,6 +105,7 @@ class AgentSession:
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
+            confirmation_mode=confirmation_mode,
         )
         try:
             agent_state = State.restore_from_session(self.sid)

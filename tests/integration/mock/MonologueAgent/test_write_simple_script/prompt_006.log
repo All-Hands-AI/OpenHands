@@ -135,7 +135,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "echo \"hello world\"",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -182,7 +183,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "node test.js",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -330,7 +332,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "pwd",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -348,7 +351,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "ls",
-      "thought": "I need to see the contents of the current directory to ensure there are no conflicts and to understand the environment better."
+      "thought": "I need to see the contents of the current directory to ensure there are no conflicts and to understand the environment better.",
+      "is_confirmed": "confirmed"
     }
   },
   {

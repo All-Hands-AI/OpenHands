@@ -1,4 +1,4 @@
-from .action import Action
+from .action import Action, ActionConfirmationStatus
 from .agent import (
     AgentDelegateAction,
     AgentFinishAction,
@@ -32,4 +32,5 @@ __all__ = [
     'ChangeAgentStateAction',
     'IPythonRunCellAction',
     'MessageAction',
+    'ActionConfirmationStatus',
 ]
