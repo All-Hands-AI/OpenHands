@@ -32,6 +32,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 from opendevin.runtime.tools import RuntimeTool
+from opendevin.runtime.utils import list_files
 
 ENABLE_GITHUB = True
 
@@ -214,7 +215,9 @@ class CodeActAgent(Agent):
             {'role': 'user', 'content': self.in_context_example},
         ]
 
-        workspace_contents = ', '.join(os.listdir(config.workspace_base))
+        workspace_contents = ', '.join(
+            list_files(config.workspace_base)
+        )
         if not state.history:
             if workspace_contents:
                 messages.append(
