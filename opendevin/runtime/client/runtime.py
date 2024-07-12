@@ -71,7 +71,7 @@ class EventStreamRuntime(Runtime):
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
-    async def initialize(self):
+    async def ainit(self):
         self.container_image = get_od_sandbox_image(
             self.container_image, self.docker_client, is_eventstream_runtime=True
         )
@@ -257,7 +257,7 @@ async def test_run_command():
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(event_stream)
-    await runtime.initialize()
+    await runtime.ainit()
     await runtime.run_action(CmdRunAction('ls -l'))
 
 
@@ -271,7 +271,7 @@ async def test_event_stream():
         'ubuntu:22.04',
         plugins=[JupyterRequirement(), AgentSkillsRequirement()],
     )
-    await runtime.initialize()
+    await runtime.ainit()
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')

@@ -63,7 +63,7 @@ class AgentSession:
         logger.info(f'Using runtime: {config.runtime}')
         runtime_cls = get_runtime_cls(config.runtime)
         self.runtime = runtime_cls(self.event_stream, self.sid)
-        await self.runtime.initialize()
+        await self.runtime.ainit()
 
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.

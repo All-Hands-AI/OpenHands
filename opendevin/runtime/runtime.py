@@ -44,7 +44,7 @@ class Runtime:
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         atexit.register(self.close_sync)
 
-    async def initialize(self) -> None:
+    async def ainit(self) -> None:
         """
         Initialize the runtime (asynchronously).
         This method should be called after the runtime's constructor.

@@ -62,7 +62,7 @@ class ServerRuntime(Runtime):
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
 
-    async def initialize(self) -> None:
+    async def ainit(self) -> None:
         pass
 
     async def close(self):
