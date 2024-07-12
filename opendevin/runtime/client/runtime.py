@@ -1,5 +1,4 @@
 import asyncio
-import atexit
 import uuid
 from typing import Optional
 
@@ -9,7 +8,7 @@ import tenacity
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -38,8 +37,9 @@ from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
 
 
 class EventStreamRuntime(Runtime):
-    # This runtime will subscribe the event stream
-    # When receive an event, it will send the event to od-runtime-client which run inside the docker environment
+    """This runtime will subscribe the event stream.
+    When receive an event, it will send the event to od-runtime-client which run inside the docker environment.
+    """
 
     container_name_prefix = 'opendevin-sandbox-'
 
@@ -50,6 +50,7 @@ class EventStreamRuntime(Runtime):
         container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
+        super().__init__(event_stream, sid)  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -57,25 +58,27 @@ class EventStreamRuntime(Runtime):
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
+        # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.container_image = (
             config.sandbox.container_image
             if container_image is None
             else container_image
         )
+        self.container_name = self.container_name_prefix + self.instance_id
+
+        self.plugins = plugins if plugins is not None else []
+        self.container = None
+        self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+
+    async def initialize(self):
         self.container_image = get_od_sandbox_image(
             self.container_image, self.docker_client, is_eventstream_runtime=True
         )
-        self.container_name = self.container_name_prefix + self.instance_id
-        atexit.register(self.close)
-
-        # We don't need sandbox in this runtime, because it's equal to a websocket sandbox
-        self._init_event_stream(event_stream)
-        self.plugins = plugins if plugins is not None else []
-        self.container = self._init_container(
+        self.container = await self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=config.workspace_mount_path,
-            plugins=plugins,
+            plugins=self.plugins,
         )
 
     @staticmethod
@@ -92,21 +95,13 @@ class EventStreamRuntime(Runtime):
         stop=tenacity.stop_after_attempt(5),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
     )
-    def _init_container(
+    async def _init_container(
         self,
         sandbox_workspace_dir: str,
         mount_dir: str = config.workspace_mount_path,
         plugins: list[PluginRequirement] | None = None,
     ):
-        """Start a container and return the container object.
-
-        Args:
-            mount_dir: str: The directory (on host machine) to mount to the container
-            sandbox_workspace_dir: str: working directory in the container, also the target directory for the mount
-        """
-
         try:
-            # start the container
             logger.info(
                 f'Starting container with image: {self.container_image} and name: {self.container_name}'
             )
@@ -120,9 +115,8 @@ class EventStreamRuntime(Runtime):
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
-                    f'--plugins {plugin_names} '
+                    f'--plugins {plugin_names}'
                 ),
-                # TODO: test it in mac and linux
                 network_mode='host',
                 working_dir='/opendevin/code/',
                 name=self.container_name,
@@ -134,12 +128,8 @@ class EventStreamRuntime(Runtime):
         except Exception as e:
             logger.error('Failed to start container')
             logger.exception(e)
-            self.close(close_client=False)
+            await self.close(close_client=False)
             raise e
-
-    def _init_event_stream(self, event_stream: EventStream):
-        self.event_stream = event_stream
-        self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
 
     async def _ensure_session(self):
         if self.session is None or self.session.closed:
@@ -167,14 +157,16 @@ class EventStreamRuntime(Runtime):
     def sandbox_workspace_dir(self):
         return config.workspace_mount_path_in_sandbox
 
-    def close(self, close_client: bool = True):
+    async def close(self, close_client: bool = True):
+        if self.session is not None and not self.session.closed:
+            await self.session.close()
+
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
                 if container.name.startswith(self.container_name_prefix):
-                    # tail the logs before removing the container
                     logs = container.logs(tail=1000).decode('utf-8')
-                    logger.info(
+                    logger.debug(
                         f'==== Container logs ====\n{logs}\n==== End of container logs ===='
                     )
                     container.remove(force=True)
@@ -188,55 +180,50 @@ class EventStreamRuntime(Runtime):
         if isinstance(event, Action):
             logger.info(event, extra={'msg_type': 'ACTION'})
             observation = await self.run_action(event)
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
             # observation._cause = event.id  # type: ignore[attr-defined]
+            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action, timeout: int = 600) -> Observation:
-        """
-        Run an action and return the resulting observation.
-        If the action is not runnable in any runtime, a NullObservation is returned.
-        If the action is not supported by the current runtime, an ErrorObservation is returned.
-        We will filter some action and execute in runtime. Pass others into od-runtime-client
-        """
-        if not action.runnable:
-            return NullObservation('')
-        action_type = action.action  # type: ignore[attr-defined]
-        if action_type not in ACTION_TYPE_TO_CLASS:
-            return ErrorObservation(f'Action {action_type} does not exist.')
-        if not hasattr(self, action_type):
-            return ErrorObservation(
-                f'Action {action_type} is not supported in the current runtime.'
-            )
+        async with self.action_semaphore:
+            if not action.runnable:
+                return NullObservation('')
+            action_type = action.action  # type: ignore[attr-defined]
+            if action_type not in ACTION_TYPE_TO_CLASS:
+                return ErrorObservation(f'Action {action_type} does not exist.')
+            if not hasattr(self, action_type):
+                return ErrorObservation(
+                    f'Action {action_type} is not supported in the current runtime.'
+                )
 
-        # Run action in od-runtime-client
-        session = await self._ensure_session()
-        await self._wait_until_alive()
-        try:
-            async with session.post(
-                f'{self.api_url}/execute_action',
-                json={'action': event_to_dict(action)},
-                timeout=timeout,
-            ) as response:
-                if response.status == 200:
-                    output = await response.json()
-                    obs = observation_from_dict(output)
-                    obs._cause = action.id  # type: ignore[attr-defined]
-                    return obs
-                else:
-                    error_message = await response.text()
-                    logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Command execution failed: {error_message}')
-        except asyncio.TimeoutError:
-            logger.error('No response received within the timeout period.')
-            obs = ErrorObservation('Command execution timed out')
-        except Exception as e:
-            logger.error(f'Error during command execution: {e}')
-            obs = ErrorObservation(f'Command execution failed: {str(e)}')
-        # TODO: fix ID problem, see comments https://github.com/OpenDevin/OpenDevin/pull/2603#discussion_r1668994137
-        obs._parent = action.id  # type: ignore[attr-defined]
-        return obs
+            session = await self._ensure_session()
+            await self._wait_until_alive()
+            try:
+                async with session.post(
+                    f'{self.api_url}/execute_action',
+                    json={'action': event_to_dict(action)},
+                    timeout=timeout,
+                ) as response:
+                    if response.status == 200:
+                        output = await response.json()
+                        obs = observation_from_dict(output)
+                        obs._cause = action.id  # type: ignore[attr-defined]
+                        return obs
+                    else:
+                        error_message = await response.text()
+                        logger.error(f'Error from server: {error_message}')
+                        obs = ErrorObservation(
+                            f'Command execution failed: {error_message}'
+                        )
+            except asyncio.TimeoutError:
+                logger.error('No response received within the timeout period.')
+                obs = ErrorObservation('Command execution timed out')
+            except Exception as e:
+                logger.error(f'Error during command execution: {e}')
+                obs = ErrorObservation(f'Command execution failed: {str(e)}')
+            obs._parent = action.id  # type: ignore[attr-defined]
+            return obs
 
     async def run(self, action: CmdRunAction) -> Observation:
         return await self.run_action(action)
@@ -256,37 +243,22 @@ class EventStreamRuntime(Runtime):
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
 
-    ############################################################################
-    # Keep the same with other runtimes
-    ############################################################################
-
     def get_working_directory(self):
-        # FIXME: this is not needed for the agent - we keep this
-        # method to be consistent with the other runtimes
-        # but eventually we will remove this method across all runtimes
-        # when we use EventStreamRuntime to replace the other sandbox-based runtime
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
 
-    ############################################################################
-    # Initialization work inside sandbox image
-    ############################################################################
-
-    # init_runtime_tools direcctly do as what Runtime do
-
-    # Do in the od_runtime_client
-    # Overwrite the init_sandbox_plugins
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         pass
 
 
-def test_run_command():
+async def test_run_command():
     sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(event_stream)
-    asyncio.run(runtime.run_action(CmdRunAction('ls -l')))
+    await runtime.initialize()
+    await runtime.run_action(CmdRunAction('ls -l'))
 
 
 async def test_event_stream():
@@ -299,6 +271,8 @@ async def test_event_stream():
         'ubuntu:22.04',
         plugins=[JupyterRequirement(), AgentSkillsRequirement()],
     )
+    await runtime.initialize()
+
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
@@ -339,6 +313,8 @@ async def test_event_stream():
     logger.info(
         await runtime.run_action(action_browse), extra={'msg_type': 'OBSERVATION'}
     )
+
+    await runtime.close()
 
 
 if __name__ == '__main__':
