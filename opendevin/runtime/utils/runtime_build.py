@@ -1,17 +1,58 @@
 import argparse
 import os
 import shutil
+import subprocess
 import tempfile
+from importlib.metadata import version
 
 import docker
 
+import opendevin
 from opendevin.core.logger import opendevin_logger as logger
 
-from .source import create_project_source_dist
+
+def _create_project_source_dist():
+    """Create a source distribution of the project. Return the path to the tarball."""
+
+    # Copy the project directory to the container
+    # get the location of "opendevin" package
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
+    logger.info(f'Using project root: {project_root}')
+
+    # run "python -m build -s" on project_root
+    result = subprocess.run(['python', '-m', 'build', '-s', project_root])
+    if result.returncode != 0:
+        logger.error(f'Build failed: {result}')
+        raise Exception(f'Build failed: {result}')
+
+    tarball_path = os.path.join(
+        project_root, 'dist', f'opendevin-{version("opendevin")}.tar.gz'
+    )
+    if not os.path.exists(tarball_path):
+        logger.error(f'Source distribution not found at {tarball_path}')
+        raise Exception(f'Source distribution not found at {tarball_path}')
+    logger.info(f'Source distribution created at {tarball_path}')
+
+    return tarball_path
+
+
+def _put_source_code_to_dir(temp_dir: str) -> str:
+    tarball_path = _create_project_source_dist()
+    filename = os.path.basename(tarball_path)
+    filename = filename.removesuffix('.tar.gz')
+
+    # move the tarball to temp_dir
+    _res = shutil.copy(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
+    if _res:
+        os.remove(tarball_path)
+    logger.info(
+        f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
+    )
+    return filename
 
 
 def _generate_dockerfile(
-    base_image: str, temp_dir: str, skip_init: bool = False
+    base_image: str, source_code_dirname: str, skip_init: bool = False
 ) -> str:
     """
     Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
@@ -39,18 +80,6 @@ def _generate_dockerfile(
             'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y\n'
         )
 
-    tarball_path = create_project_source_dist()
-    filename = os.path.basename(tarball_path)
-    filename = filename.removesuffix('.tar.gz')
-
-    # move the tarball to temp_dir
-    _res = shutil.copy(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
-    if _res:
-        os.remove(tarball_path)
-    logger.info(
-        f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
-    )
-
     # Copy the project directory to the container
     dockerfile_content += 'COPY project.tar.gz /opendevin\n'
     # remove /opendevin/code if it exists
@@ -61,7 +90,7 @@ def _generate_dockerfile(
     dockerfile_content += (
         'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
     )
-    dockerfile_content += f'RUN mv /opendevin/{filename} /opendevin/code\n'
+    dockerfile_content += f'RUN mv /opendevin/{source_code_dirname} /opendevin/code\n'
     # install (or update) the dependencies
     dockerfile_content += (
         'RUN cd /opendevin/code && '
@@ -81,8 +110,9 @@ def _build_sandbox_image(
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
+            source_code_dirname = _put_source_code_to_dir(temp_dir)
             dockerfile_content = _generate_dockerfile(
-                base_image, temp_dir, skip_init=skip_init
+                base_image, source_code_dirname, skip_init=skip_init
             )
             if skip_init:
                 logger.info(
@@ -140,22 +170,25 @@ def _build_sandbox_image(
 
 def _get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
     if dev_mode:
-        prefix = 'od_runtime_dev'
+        if 'od_runtime' not in base_image:
+            raise ValueError(
+                f'Base image {base_image} must be a valid od_runtime image to be used for dev mode.'
+            )
+        # remove the 'od_runtime' prefix from the base_image
+        return base_image.replace('od_runtime', 'od_runtime_dev')
     else:
         prefix = 'od_runtime'
+        if ':' not in base_image:
+            base_image = base_image + ':latest'
+        [repo, tag] = base_image.split(':')
+        repo = repo.replace('/', '___')
+        return f'{prefix}:{repo}_tag_{tag}'
 
-    if ':' not in base_image:
-        base_image = base_image + ':latest'
-    [repo, tag] = base_image.split(':')
-    repo = repo.replace('/', '___')
-    return f'{prefix}:{repo}_tag_{tag}'
 
-
-def _check_image_exists(base_image: str, docker_client: docker.DockerClient) -> bool:
-    new_image_name = _get_new_image_name(base_image)
+def _check_image_exists(image_name: str, docker_client: docker.DockerClient) -> bool:
     images = docker_client.images.list()
     for image in images:
-        if new_image_name in image.tags:
+        if image_name in image.tags:
             return True
     return False
 
@@ -178,7 +211,7 @@ def build_runtime_image(
         logger.info(f'Image {new_image_name} not found, building it from scratch')
 
     # Detect if the sandbox image is built
-    image_exists = _check_image_exists(base_image, docker_client)
+    image_exists = _check_image_exists(new_image_name, docker_client)
 
     skip_init = False
     if image_exists and not update_source_code:
