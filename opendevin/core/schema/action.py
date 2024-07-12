@@ -40,10 +40,6 @@ class ActionTypeSchema(BaseModel):
     """Interact with the browser instance.
     """
 
-    RECALL: str = Field(default='recall')
-    """Searches long-term memory
-    """
-
     DELEGATE: str = Field(default='delegate')
     """Delegates a task to another agent.
     """

@@ -213,6 +213,3 @@ class BrowsingAgent(Agent):
             stop=[')```', ')\n```'],
         )
         return self.response_parser.parse(response)
-
-    def search_memory(self, query: str) -> list[str]:
-        raise NotImplementedError('Implement this abstract method')
