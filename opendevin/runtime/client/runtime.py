@@ -172,6 +172,11 @@ class EventStreamRuntime(Runtime):
         for container in containers:
             try:
                 if container.name.startswith(self.container_name_prefix):
+                    # tail the logs before removing the container
+                    logs = container.logs(tail=1000).decode('utf-8')
+                    logger.info(
+                        f'==== Container logs ====\n{logs}\n==== End of container logs ===='
+                    )
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
@@ -179,10 +184,11 @@ class EventStreamRuntime(Runtime):
             self.docker_client.close()
 
     async def on_event(self, event: Event) -> None:
-        print('EventStreamRuntime: on_event triggered')
+        logger.info(f'EventStreamRuntime: on_event triggered: {event}')
         if isinstance(event, Action):
+            logger.info(event, extra={'msg_type': 'ACTION'})
             observation = await self.run_action(event)
-            print('EventStreamRuntime: observation', observation)
+            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
             # observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
