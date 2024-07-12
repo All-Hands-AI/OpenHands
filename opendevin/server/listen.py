@@ -1,3 +1,4 @@
+import os
 import uuid
 import warnings
 
@@ -205,6 +206,32 @@ async def get_agents():
     """
     agents = Agent.list_agents()
     return agents
+
+
+@app.get('/api/options/list-workspace-subdirs')
+def list_workspaces_subdirs(request: Request):
+    """
+    List subdirectories in the workspace.
+
+    To list subdirectories:
+    ```sh
+    curl http://localhost:3000/api/list-workspace-subdirs
+    ```
+    """
+    try:
+        subdirs: list[str] = [
+            d
+            for d in os.listdir(config.workspace_base)
+            if os.path.isdir(os.path.join(config.workspace_base, d))
+        ]
+        return subdirs
+    except Exception as e:
+        logger.error(f'Error refreshing subdirectories: {e}', exc_info=False)
+        error_msg = f'Error refreshing subdirectories: {e}'
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
 
 
 @app.get('/api/list-files')

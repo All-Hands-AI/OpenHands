@@ -25,3 +25,8 @@ export async function listFiles(
   );
   return data as string[];
 }
+
+export async function listWorkspaceSubdirs(): Promise<string[]> {
+  const data = await request("/api/options/list-workspace-subdirs");
+  return data as string[];
+}
