@@ -603,7 +603,7 @@ class DockerSSHBox(Sandbox):
             )
 
             # Use self.timeout for login_timeout if it's set, otherwise use a default value
-            login_timeout = self.timeout if hasattr(self, 'timeout') else 30
+            login_timeout = self.timeout if hasattr(self, 'timeout') else 60
 
             self.ssh = pxssh.pxssh(
                 echo=False,
@@ -620,10 +620,6 @@ class DockerSSHBox(Sandbox):
                 login_timeout=login_timeout,
             )
 
-            # Verify the connection
-            if not await self.__verify_ssh_connection():
-                raise exceptions.EOF('Failed to verify SSH connection')
-
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(f'Failed to login to SSH session: {e}')
@@ -631,16 +627,6 @@ class DockerSSHBox(Sandbox):
             if 'connection refused' in str(e).lower():
                 logger.error('SSH connection refused')
             raise
-
-    async def __verify_ssh_connection(self):
-        try:
-            exit_code, output = await self.execute_async(
-                "echo 'SSH connection test'", timeout=5
-            )
-            return exit_code == 0 and 'SSH connection test' in output
-        except Exception as e:
-            logger.error(f'Failed to verify SSH connection: {e}')
-            return False
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
         if self.run_as_devin:
