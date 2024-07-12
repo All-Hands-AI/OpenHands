@@ -1,5 +1,5 @@
 import time
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, List, Dict
 
 import requests
 from requests.exceptions import ConnectionError, HTTPError, Timeout
@@ -54,7 +54,7 @@ class InvariantClient:
             self.server = invariant.server
             self.session_id = invariant.session_id
 
-        def _create_policy(self, rule) -> Tuple[Optional[str], Optional[Exception]]:
+        def _create_policy(self, rule: str) -> Tuple[Optional[str], Optional[Exception]]:
             try:
                 response = requests.post(
                     f'{self.server}/policy/new?session_id={self.session_id}',
@@ -66,14 +66,14 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def from_string(self, rule):
+        def from_string(self, rule: str):
             policy_id, err = self._create_policy(rule)
             if err:
                 return err
             self.policy_id = policy_id
             return self
 
-        def analyze(self, trace) -> Union[Any, Exception]:
+        def analyze(self, trace: List[Dict]) -> Union[Any, Exception]:
             try:
                 response = requests.post(
                     f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
@@ -91,7 +91,7 @@ class InvariantClient:
             self.session_id = invariant.session_id
             self.policy = ''
 
-        def _create_monitor(self, rule) -> Tuple[Optional[str], Optional[Exception]]:
+        def _create_monitor(self, rule: str) -> Tuple[Optional[str], Optional[Exception]]:
             try:
                 response = requests.post(
                     f'{self.server}/monitor/new?session_id={self.session_id}',
@@ -103,7 +103,7 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def from_string(self, rule):
+        def from_string(self, rule: str):
             monitor_id, err = self._create_monitor(rule)
             if err:
                 return err
@@ -111,11 +111,11 @@ class InvariantClient:
             self.policy = rule
             return self
 
-        def check(self, trace) -> Union[Any, Exception]:
+        def check(self, past_events: List[Dict], pending_events: List[Dict]) -> Union[Any, Exception]:
             try:
                 response = requests.post(
                     f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
-                    json={'trace': trace},
+                    json={"past_events": past_events, "pending_events": pending_events},
                     timeout=30,
                 )
                 response.raise_for_status()

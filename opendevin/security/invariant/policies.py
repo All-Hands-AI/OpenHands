@@ -1,9 +1,4 @@
-DEFAULT_INVARIANT_POLICY = """from invariant.detectors import semgrep, secrets, CodeIssue
-
-raise "Disallow secrets in bash commands [risk=medium]" if:
-    (call: ToolCall)
-    call is tool:cmd_run
-    any(secrets(call.function.arguments.command))
+DEFAULT_INVARIANT_POLICY = """from invariant.detectors import semgrep, CodeIssue
 
 raise "Vulnerability in python code [risk=medium]" if:
     (call: ToolCall)

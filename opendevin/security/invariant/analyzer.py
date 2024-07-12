@@ -1,9 +1,12 @@
 import uuid
 from dataclasses import asdict
-from typing import Optional, List
+from typing import Any, Optional, List
 
 import docker
 import re
+
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
 
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
@@ -127,14 +130,28 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
         return ActionSecurityRisk.LOW
 
+    async def act(self, event: Event) -> None:
+        if await self.should_confirm(event):
+            await self.confirm(event)
+
+    async def should_confirm(self, event: Event) -> bool:
+        risk = event.security_risk
+        return risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation"
+
+    async def confirm(self, event: Event) -> None:
+        new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"user_confirmed"}})
+        if event.source:
+            self.event_stream.add_event(new_event, event.source)
+        else:
+            self.event_stream.add_event(new_event, EventSource.AGENT)
+
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         input = [asdict(e) for e in new_elements]  # type: ignore [call-overload]
         self.trace.extend(new_elements)
+        result, err = self.monitor.check(self.input, input)
         self.input.extend(input)
-        logger.info(f'before policy: {input}')
-        result, err = self.monitor.check(input)
         risk = ActionSecurityRisk.UNKNOWN
         if err:
             logger.warning(f'Error checking policy: {err}')
@@ -142,13 +159,43 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
         risk = self.get_risk(result)
 
-        # auto-confirm issues based on severity and user setting
-        if risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation":
-            logger.info(f'Should handle this event automatically {event}')
-            new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"user_confirmed"}})
-            if event.source:
-                self.event_stream.add_event(new_event, event.source)
-            else:
-                self.event_stream.add_event(new_event, EventSource.AGENT)
-
         return risk
+
+    ### Handle API requests
+    async def handle_api_request(self, request: Request) -> Any:
+        path_parts = request.url.path.strip('/').split('/')
+        endpoint = path_parts[-1]  # Get the last part of the path
+
+        if request.method == 'GET':
+            if endpoint == 'export-trace':
+                return await self.export_trace(request)
+            elif endpoint == 'policy':
+                return await self.get_policy(request)
+            elif endpoint == 'settings':
+                return await self.get_settings(request)
+        elif request.method == 'POST':
+            if endpoint == 'policy':
+                return await self.update_policy(request)
+            elif endpoint == 'settings':
+                return await self.update_settings(request)
+        raise HTTPException(status_code=405, detail="Method Not Allowed")
+
+    async def export_trace(self, request: Request) -> Any:
+        return JSONResponse(content=self.input)
+
+    async def get_policy(self, request: Request) -> Any:
+        return JSONResponse(content={'policy': self.monitor.policy})
+
+    async def update_policy(self, request: Request) -> Any:
+        data = await request.json()
+        policy = data.get('policy')
+        self.monitor = self.client.Monitor.from_string(policy)
+        return JSONResponse(content={'policy': policy})
+
+    async def get_settings(self, request: Request) -> Any:
+        return JSONResponse(content=self.settings)
+
+    async def update_settings(self, request: Request) -> Any:
+        settings = await request.json()
+        self.settings = settings
+        return JSONResponse(content=self.settings)

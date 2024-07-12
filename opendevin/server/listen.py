@@ -26,6 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from starlette.routing import Route
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
@@ -343,58 +344,6 @@ async def get_agents():
     """
     agents = sorted(Agent.list_agents())
     return agents
-
-
-@app.get('/api/security/export-trace')
-def export_trace(request: Request):
-    if not request.state.session.agent_session.security_analyzer:
-        return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-
-    trace = request.state.session.agent_session.security_analyzer.input
-    return trace
-
-
-@app.get('/api/security/policy')
-async def get_policy(request: Request):
-    if not request.state.session.agent_session.security_analyzer:
-        return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-
-    security_analyzer = request.state.session.agent_session.security_analyzer
-    return {'policy': security_analyzer.monitor.policy}
-
-
-@app.post('/api/security/policy')
-async def update_policy(request: Request):
-    if not request.state.session.agent_session.security_analyzer:
-        return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-
-    data = await request.json()
-    policy = data.get('policy')
-    security_analyzer = request.state.session.agent_session.security_analyzer
-    security_analyzer.monitor = security_analyzer.client.Monitor.from_string(policy)
-    return {'policy': policy}
-
-
-@app.post('/api/security/settings')
-async def update_settings(request: Request):
-    if not request.state.session.agent_session.security_analyzer:
-        return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-
-    settings = await request.json()
-    security_analyzer = request.state.session.agent_session.security_analyzer
-
-    security_analyzer.settings = settings
-
-    return security_analyzer.settings
-
-
-@app.get('/api/security/settings')
-async def get_settings(request: Request):
-    if not request.state.session.agent_session.security_analyzer:
-        return JSONResponse(404, {'error': 'Security analyzer not initialized'})
-
-    security_analyzer = request.state.session.agent_session.security_analyzer
-    return security_analyzer.settings
 
 
 @app.get('/api/list-files')
@@ -772,6 +721,28 @@ async def save_file(request: Request):
         # Log the error and return a 500 response
         logger.error(f'Error saving file: {e}', exc_info=True)
         raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
+
+
+@app.route('/api/security{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+async def security_api(request: Request):
+    """
+    Catch-all route for security analyzer API requests.
+
+    Each request is handled directly to the security analyzer. 
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        Any: The response from the security analyzer.
+
+    Raises:
+        HTTPException: If the security analyzer is not initialized.
+    """
+    if not request.state.session.agent_session.security_analyzer:
+        raise HTTPException(status_code=404, detail='Security analyzer not initialized')
+
+    return await request.state.session.agent_session.security_analyzer.handle_api_request(request)
 
 
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

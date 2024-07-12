@@ -1,7 +1,10 @@
+from typing import Any
+
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action, ActionSecurityRisk
 from opendevin.events.event import Event
 from opendevin.events.stream import EventStream, EventStreamSubscriber
+from fastapi import Request
 
 
 class SecurityAnalyzer:
@@ -25,10 +28,21 @@ class SecurityAnalyzer:
             await self.log_event(event)
             return
         event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
+        await self.act(event)
         await self.log_event(event)
+
+    async def handle_api_request(self, request: Request) -> Any:
+        """Handles the incoming API request."""
+        raise NotImplementedError(
+            'Need to implement handle_api_request method in SecurityAnalyzer subclass'
+        )
 
     async def log_event(self, event: Event) -> None:
         """Logs the incoming event."""
+        pass
+
+    async def act(self, event: Event) -> None:
+        """Performs an action based on the analyzed event."""
         pass
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
