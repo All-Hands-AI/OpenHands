@@ -602,15 +602,15 @@ class DockerSSHBox(Sandbox):
                 f"Attempting SSH login to {self.ssh_hostname}:{self._ssh_port} as {'opendevin' if self.run_as_devin else 'root'}"
             )
 
+            # Use self.timeout for login_timeout if it's set, otherwise use a default value
+            login_timeout = self.timeout if hasattr(self, 'timeout') else 30
+
             self.ssh = pxssh.pxssh(
                 echo=False,
-                timeout=self.timeout,
+                timeout=login_timeout,
                 encoding='utf-8',
                 codec_errors='replace',
             )
-
-            # Use self.timeout for login_timeout if it's set, otherwise use a default value
-            login_timeout = self.timeout if hasattr(self, 'timeout') else 30
 
             self.ssh.login(
                 self.ssh_hostname,
@@ -711,7 +711,7 @@ class DockerSSHBox(Sandbox):
         if stream:
             return 0, SSHExecCancellableStream(self.ssh, full_cmd, self.timeout)
 
-        success = await asyncio.to_thread(self.ssh.prompt, timeout=timeout)
+        success = await asyncio.to_thread(self.ssh.prompt, timeout=600)
         if not success:
             return self._send_interrupt(full_cmd)  # type: ignore
         command_output = self.ssh.before
@@ -719,7 +719,9 @@ class DockerSSHBox(Sandbox):
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             self.send_line('\n')
-            timeout_not_reached = await asyncio.to_thread(self.ssh.prompt, timeout=1)
+            timeout_not_reached = await asyncio.to_thread(
+                self.ssh.prompt, timeout=timeout
+            )
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
                 break
@@ -735,7 +737,7 @@ class DockerSSHBox(Sandbox):
         exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
         while not exit_code_str:
-            await asyncio.to_thread(self.ssh.prompt, timeout=1)
+            await asyncio.to_thread(self.ssh.prompt, timeout=timeout)
             exit_code_str = self.ssh.before.strip()
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(  # type: ignore
