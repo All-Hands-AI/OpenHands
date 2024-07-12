@@ -77,7 +77,6 @@ La mémoire à court terme est stockée en tant qu'objet Monologue et le modèle
 `CmdRunAction`,
 `FileWriteAction`,
 `FileReadAction`,
-`AgentRecallAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `AgentThinkAction`
@@ -88,7 +87,6 @@ La mémoire à court terme est stockée en tant qu'objet Monologue et le modèle
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Méthodes
@@ -116,7 +114,6 @@ L'agent reçoit ses paires action-observation précédentes, la tâche actuelle,
 `GithubPushAction`,
 `FileReadAction`,
 `FileWriteAction`,
-`AgentRecallAction`,
 `AgentThinkAction`,
 `AgentFinishAction`,
 `AgentSummarizeAction`,
@@ -129,7 +126,6 @@ L'agent reçoit ses paires action-observation précédentes, la tâche actuelle,
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Méthodes

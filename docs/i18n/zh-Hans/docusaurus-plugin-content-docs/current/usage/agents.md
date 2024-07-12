@@ -77,7 +77,6 @@ Monologue Agent利用长短期记忆来完成任务。
 `CmdRunAction`,
 `FileWriteAction`,
 `FileReadAction`,
-`AgentRecallAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `AgentThinkAction`
@@ -88,7 +87,6 @@ Monologue Agent利用长短期记忆来完成任务。
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### 方法
@@ -116,7 +114,6 @@ Planner agent利用特殊的提示策略为解决问题创建长期计划。
 `GithubPushAction`,
 `FileReadAction`,
 `FileWriteAction`,
-`AgentRecallAction`,
 `AgentThinkAction`,
 `AgentFinishAction`,
 `AgentSummarizeAction`,
@@ -129,7 +126,6 @@ Planner agent利用特殊的提示策略为解决问题创建长期计划。
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### 方法

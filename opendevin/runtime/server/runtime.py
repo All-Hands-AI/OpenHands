@@ -1,6 +1,5 @@
 from opendevin.core.config import config
 from opendevin.events.action import (
-    AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -12,7 +11,6 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     IPythonRunCellObservation,
-    NullObservation,
     Observation,
 )
 from opendevin.events.stream import EventStream
@@ -113,9 +111,6 @@ class ServerRuntime(Runtime):
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await browse(action, self.browser)
-
-    async def recall(self, action: AgentRecallAction) -> Observation:
-        return NullObservation('')
 
     def _run_command(self, command: str) -> Observation:
         try:
