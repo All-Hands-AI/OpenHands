@@ -14,7 +14,13 @@ from typing import Tuple, Union  # type: ignore[unused-import]
 
 import docker
 from pexpect import exceptions, pxssh
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+    wait_fixed,
+)
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -573,6 +579,14 @@ class DockerSSHBox(Sandbox):
         await asyncio.sleep(3)
         logger.info('Container restarted successfully.')
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type(
+            (exceptions.TIMEOUT, exceptions.EOF, pxssh.ExceptionPxssh)
+        ),
+        reraise=True,
+    )
     async def __ssh_login(self):
         try:
             if not hasattr(self, '_ssh_debug_logged'):
@@ -600,19 +614,37 @@ class DockerSSHBox(Sandbox):
             )
             await asyncio.sleep(1)
 
-            # Do NOT await the login! Highly problematic!
-            self.ssh.login(
+            # Wrap the blocking login call in asyncio.to_thread
+            await asyncio.to_thread(
+                self.ssh.login,
                 self.ssh_hostname,
                 'opendevin' if self.run_as_devin else 'root',
                 self._ssh_password,
                 port=self._ssh_port,
-                login_timeout=5,
+                login_timeout=20,
             )
+
+            # Verify the connection
+            if not await self.__verify_ssh_connection():
+                raise exceptions.EOF('Failed to verify SSH connection')
+
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(f'Failed to login to SSH session: {e}')
             logger.debug(f'SSH debug output: {self.ssh.before}')
-            raise e
+            if 'connection refused' in str(e).lower():
+                logger.error('SSH connection refused')
+            raise
+
+    async def __verify_ssh_connection(self):
+        try:
+            exit_code, output = await self.execute_async(
+                "echo 'SSH connection test'", timeout=5
+            )
+            return exit_code == 0 and 'SSH connection test' in output
+        except Exception as e:
+            logger.error(f'Failed to verify SSH connection: {e}')
+            return False
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
         if self.run_as_devin:
