@@ -144,6 +144,3 @@ class DummyAgent(Agent):
                         hist_obs == expected_obs
                     ), f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
-
-    def search_memory(self, query: str) -> list[str]:
-        return ['I am a computer.']
