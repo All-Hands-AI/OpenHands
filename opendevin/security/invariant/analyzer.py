@@ -136,7 +136,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     async def should_confirm(self, event: Event) -> bool:
         risk = event.security_risk  # type: ignore [attr-defined]
-        return risk and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation"
+        return risk is not None and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation"
 
     async def confirm(self, event: Event) -> None:
         new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"user_confirmed"}})

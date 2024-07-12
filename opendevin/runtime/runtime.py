@@ -106,13 +106,11 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
-            if hasattr(event, 'security_risk'):
+            if hasattr(event, 'security_risk') and event.security_risk is not None:
                 logger.info(
                     'Action about to be run has security risk level: '
                     + str(event.security_risk)
                 )
-                if event.security_risk >= ActionSecurityRisk.MEDIUM:
-                    logger.info('Security risk too high!')
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
