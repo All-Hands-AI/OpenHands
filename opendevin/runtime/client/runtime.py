@@ -243,11 +243,23 @@ class EventStreamRuntime(Runtime):
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
 
+    ############################################################################
+    # Keep the same with other runtimes
+    ############################################################################
+
     def get_working_directory(self):
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
 
+    ############################################################################
+    # Initialization work inside sandbox image
+    ############################################################################
+
+    # init_runtime_tools direcctly do as what Runtime do
+
+    # Do in the od_runtime_client
+    # Overwrite the init_sandbox_plugins
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         pass
 
