@@ -4,7 +4,8 @@ from typing import List, Optional
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
-def list_files(full_path:str, entries: Optional[List[str]] = None) -> List[str]:
+
+def list_files(full_path: str, entries: Optional[List[str]] = None) -> List[str]:
     # Check if .gitignore exists
     gitignore_path = os.path.join(full_path, '.gitignore')
     if os.path.exists(gitignore_path):

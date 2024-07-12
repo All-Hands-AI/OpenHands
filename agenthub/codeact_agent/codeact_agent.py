@@ -1,5 +1,3 @@
-import os
-
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -215,9 +213,7 @@ class CodeActAgent(Agent):
             {'role': 'user', 'content': self.in_context_example},
         ]
 
-        workspace_contents = ', '.join(
-            list_files(config.workspace_base)
-        )
+        workspace_contents = ', '.join(list_files(config.workspace_base))
         if not state.history:
             if workspace_contents:
                 messages.append(

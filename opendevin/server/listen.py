@@ -5,9 +5,9 @@ import warnings
 
 import requests
 
-
+from opendevin.runtime.utils import list_files as list_files_utils
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
-from opendevin.runtime.utils import list_files
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
@@ -380,8 +380,7 @@ def list_files(request: Request, path: str = '/'):
             return []
 
         entries = request.state.session.agent_session.runtime.file_store.list(path)
-        return list_files(full_path, entries)
-        
+        return list_files_utils(full_path, entries)
 
     except Exception as e:
         logger.error(f'Error listing files: {e}', exc_info=True)
