@@ -149,25 +149,6 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-parse_audio(file_path: str, model: str = 'whisper-1') -> None:
-    Parses the content of an audio file and prints it.
-    Args:
-    file_path: str: The path to the audio file to transcribe.
-    model: Optional[str]: The audio model to use for transcription. Defaults to 'whisper-1'.
-
-parse_video(file_path: str, task: str = 'Describe this image as detail as possible.', frame_interval: int = 30) -> None:
-    Parses the content of an image file and prints the description.
-    Args:
-    file_path: str: The path to the video file to open.
-    task: Optional[str]: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
-    frame_interval: Optional[int]: The interval between frames to analyze. Defaults to 30.
-
-parse_image(file_path: str, task: str = 'Describe this image as detail as possible.') -> None:
-    Parses the content of an image file and prints the description.
-    Args:
-    file_path: str: The path to the file to open.
-    task: Optional[str]: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
-
 Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise.
