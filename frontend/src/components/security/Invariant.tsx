@@ -6,7 +6,10 @@ import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Button, Select, SelectItem } from "@nextui-org/react";
 import { RootState } from "#/store";
-import { ActionSecurityRisk, Invariant } from "#/state/invariantSlice";
+import {
+  ActionSecurityRisk,
+  SecurityAnalyzerLog,
+} from "#/state/securityAnalyzerSlice";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { I18nKey } from "#/i18n/declaration";
 import { request } from "#/services/api";
@@ -16,7 +19,7 @@ type SectionType = "logs" | "policy" | "settings";
 
 function SecurityInvariant(): JSX.Element {
   const { t } = useTranslation();
-  const { logs } = useSelector((state: RootState) => state.invariant);
+  const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
   const [activeSection, setActiveSection] = useState("logs");
 
   const logsRef = useRef<HTMLDivElement>(null);
@@ -61,14 +64,14 @@ function SecurityInvariant(): JSX.Element {
     (risk: ActionSecurityRisk) => {
       switch (risk) {
         case ActionSecurityRisk.LOW:
-          return t(I18nKey.SECURITY_INVARIANT$LOW_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$LOW_RISK);
         case ActionSecurityRisk.MEDIUM:
-          return t(I18nKey.SECURITY_INVARIANT$MEDIUM_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$MEDIUM_RISK);
         case ActionSecurityRisk.HIGH:
-          return t(I18nKey.SECURITY_INVARIANT$HIGH_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$HIGH_RISK);
         case ActionSecurityRisk.UNKNOWN:
         default:
-          return t(I18nKey.SECURITY_INVARIANT$UNKNOWN_RISK);
+          return t(I18nKey.SECURITY_ANALYZER$UNKNOWN_RISK);
       }
     },
     [t],
@@ -164,7 +167,7 @@ function SecurityInvariant(): JSX.Element {
           </Button>
         </div>
         <div className="flex-1 p-4 max-h-screen overflow-y-auto" ref={logsRef}>
-          {logs.map((log: Invariant, index: number) => (
+          {logs.map((log: SecurityAnalyzerLog, index: number) => (
             <div
               key={index}
               className={`mb-2 p-2 rounded-lg ${log.confirmed_changed && log.is_confirmed === "confirmed" ? "border-green-800" : "border-red-800"}`}

@@ -32,7 +32,7 @@ describe("getSettings", () => {
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
       CONFIRMATION_MODE: true,
-      SECURITY_INVARIANT: true,
+      SECURITY_ANALYZER: true,
     });
   });
 
@@ -51,7 +51,7 @@ describe("getSettings", () => {
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
       LLM_API_KEY: "",
       CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-      SECURITY_INVARIANT: DEFAULT_SETTINGS.SECURITY_INVARIANT,
+      SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
     });
   });
 });
@@ -64,7 +64,7 @@ describe("saveSettings", () => {
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
       CONFIRMATION_MODE: true,
-      SECURITY_INVARIANT: true,
+      SECURITY_ANALYZER: true,
     };
 
     saveSettings(settings);

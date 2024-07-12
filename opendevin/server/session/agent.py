@@ -70,7 +70,7 @@ class AgentSession:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        if args.get(ConfigType.SECURITY_INVARIANT, config.security_invariant):
+        if args.get(ConfigType.SECURITY_ANALYZER, config.security_analyzer):
             self.security_analyzer = InvariantAnalyzer(self.event_stream)
 
     async def _create_runtime(self):

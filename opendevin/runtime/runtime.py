@@ -16,7 +16,6 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.action.action import ActionSecurityRisk
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     ErrorObservation,

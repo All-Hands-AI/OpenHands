@@ -7,7 +7,7 @@ export enum ActionSecurityRisk {
   HIGH = 2,
 }
 
-export type Invariant = {
+export type SecurityAnalyzerLog = {
   id: number;
   content: string;
   security_risk: ActionSecurityRisk;
@@ -15,15 +15,15 @@ export type Invariant = {
   confirmed_changed: boolean;
 };
 
-const initialLogs: Invariant[] = [];
+const initialLogs: SecurityAnalyzerLog[] = [];
 
-export const invariantSlice = createSlice({
-  name: "invariant",
+export const securityAnalyzerSlice = createSlice({
+  name: "securityAnalyzer",
   initialState: {
     logs: initialLogs,
   },
   reducers: {
-    appendInvariantInput: (state, action) => {
+    appendSecurityAnalyzerInput: (state, action) => {
       const log = {
         id: action.payload.id,
         content:
@@ -54,6 +54,6 @@ export const invariantSlice = createSlice({
   },
 });
 
-export const { appendInvariantInput } = invariantSlice.actions;
+export const { appendSecurityAnalyzerInput } = securityAnalyzerSlice.actions;
 
-export default invariantSlice.reducer;
+export default securityAnalyzerSlice.reducer;

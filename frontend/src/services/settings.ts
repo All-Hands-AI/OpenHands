@@ -6,7 +6,7 @@ export type Settings = {
   LANGUAGE: string;
   LLM_API_KEY: string;
   CONFIRMATION_MODE: boolean;
-  SECURITY_INVARIANT: boolean;
+  SECURITY_ANALYZER: boolean;
 };
 
 type SettingsInput = Settings[keyof Settings];
@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LANGUAGE: "en",
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
-  SECURITY_INVARIANT: false,
+  SECURITY_ANALYZER: false,
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -58,8 +58,7 @@ export const getSettings = (): Settings => {
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
-  const securityInvariant =
-    localStorage.getItem("SECURITY_INVARIANT") === "true";
+  const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER") === "true";
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
@@ -67,8 +66,7 @@ export const getSettings = (): Settings => {
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
-    SECURITY_INVARIANT:
-      securityInvariant || DEFAULT_SETTINGS.SECURITY_INVARIANT,
+    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
   };
 };
 

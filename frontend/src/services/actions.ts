@@ -4,8 +4,8 @@ import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
   ActionSecurityRisk,
-  appendInvariantInput,
-} from "#/state/invariantSlice";
+  appendSecurityAnalyzerInput,
+} from "#/state/securityAnalyzerSlice";
 import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
@@ -96,7 +96,7 @@ function getRiskText(risk: ActionSecurityRisk) {
 
 export function handleActionMessage(message: ActionMessage) {
   if ("args" in message && "security_risk" in message.args) {
-    store.dispatch(appendInvariantInput(message));
+    store.dispatch(appendSecurityAnalyzerInput(message));
   }
 
   if (
