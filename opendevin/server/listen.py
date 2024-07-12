@@ -217,7 +217,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": ""}}
+        {"action": "run", "args": {"command": "ls -l", "thought": "", "is_confirmed": "confirmed"}}
         ```
     - Run an IPython command:
         ```json
