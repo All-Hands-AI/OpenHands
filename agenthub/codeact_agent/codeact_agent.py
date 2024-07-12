@@ -218,8 +218,8 @@ class CodeActAgent(Agent):
             {'role': 'user', 'content': self.in_context_example},
         ]
 
-        workspace_contents = ', '.join(list_files(config.workspace_base))
-        if not state.history:
+        if len(state.history.get_events_as_list()) == 1:
+            workspace_contents = ', '.join(list_files(config.workspace_base))
             if workspace_contents:
                 messages.append(
                     {
@@ -227,7 +227,6 @@ class CodeActAgent(Agent):
                         'content': f'WORKSPACE CONTENTS: {workspace_contents}',
                     }
                 )
-
         for event in state.history.get_events():
             # create a regular message from an event
             message = (

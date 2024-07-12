@@ -399,10 +399,6 @@ NOW, LET'S START!
 
 ----------
 
-WORKSPACE CONTENTS: hello.sh
-
-----------
-
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 ----------
