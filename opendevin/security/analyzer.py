@@ -1,10 +1,11 @@
 from typing import Any
 
+from fastapi import Request
+
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action, ActionSecurityRisk
 from opendevin.events.event import Event
 from opendevin.events.stream import EventStream, EventStreamSubscriber
-from fastapi import Request
 
 
 class SecurityAnalyzer:

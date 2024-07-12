@@ -26,7 +26,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from starlette.routing import Route
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
@@ -728,7 +727,7 @@ async def security_api(request: Request):
     """
     Catch-all route for security analyzer API requests.
 
-    Each request is handled directly to the security analyzer. 
+    Each request is handled directly to the security analyzer.
 
     Args:
         request (Request): The incoming FastAPI request object.
@@ -742,7 +741,11 @@ async def security_api(request: Request):
     if not request.state.session.agent_session.security_analyzer:
         raise HTTPException(status_code=404, detail='Security analyzer not initialized')
 
-    return await request.state.session.agent_session.security_analyzer.handle_api_request(request)
+    return (
+        await request.state.session.agent_session.security_analyzer.handle_api_request(
+            request
+        )
+    )
 
 
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

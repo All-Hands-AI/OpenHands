@@ -29,7 +29,7 @@ For customization and decoupling from the OpenDevin core logic, the security ana
 
 ### Invariant
 
-It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with OpenDevin's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions. 
+It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with OpenDevin's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
 
 This allows the agent to run autonomously without fear that it will inadvertently compromise security or perform unintended actions that could be harmful.
 
