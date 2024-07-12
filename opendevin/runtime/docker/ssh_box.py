@@ -546,16 +546,20 @@ class DockerSSHBox(Sandbox):
 
         raise RuntimeError('SSH service failed to start in time')
 
+    def send_line(self, cmd: str):
+        if self.ssh is not None:
+            self.ssh.sendline(cmd)
+
     async def start_ssh_session(self):
         logger.info('Starting SSH session')
         await self.__ssh_login()
         await asyncio.sleep(1)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
-        self.ssh.sendline("bind 'set enable-bracketed-paste off'")
+        self.send_line("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
         # cd to workspace
-        self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
+        self.send_line(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
 
     async def restart_container(self):
@@ -671,9 +675,11 @@ class DockerSSHBox(Sandbox):
         env_exports = ' '.join(
             [f'export {key}={json.dumps(value)}' for key, value in self._env.items()]
         )
-        full_cmd = f'{env_exports} && {cmd}'
-
-        self.ssh.sendline(full_cmd)
+        if env_exports:
+            full_cmd = f'({env_exports}) && {cmd}'
+        else:
+            full_cmd = f'{cmd}'
+        self.send_line(full_cmd)
         if stream:
             return 0, SSHExecCancellableStream(self.ssh, full_cmd, self.timeout)
 
@@ -684,7 +690,7 @@ class DockerSSHBox(Sandbox):
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
-            self.ssh.sendline('\n')
+            self.send_line('\n')
             timeout_not_reached = await asyncio.to_thread(self.ssh.prompt, timeout=1)
             if not timeout_not_reached:
                 logger.debug('TIMEOUT REACHED')
@@ -696,7 +702,7 @@ class DockerSSHBox(Sandbox):
         command_output = command_output.removesuffix('\r\n')
 
         # get the exit code
-        self.ssh.sendline('echo $?')
+        self.send_line('echo $?')
         await asyncio.to_thread(self.ssh.prompt)
         exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
