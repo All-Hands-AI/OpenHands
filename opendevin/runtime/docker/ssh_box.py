@@ -615,13 +615,12 @@ class DockerSSHBox(Sandbox):
             await asyncio.sleep(1)
 
             # Wrap the blocking login call in asyncio.to_thread
-            await asyncio.to_thread(
-                self.ssh.login,
+            self.ssh.login(
                 self.ssh_hostname,
                 'opendevin' if self.run_as_devin else 'root',
                 self._ssh_password,
                 port=self._ssh_port,
-                login_timeout=20,
+                login_timeout=25,
             )
 
             # Verify the connection
