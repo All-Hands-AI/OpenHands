@@ -10,7 +10,8 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
-from opendevin.runtime import DockerSSHBox, Runtime, get_runtime_cls
+from opendevin.runtime import DockerSSHBox, get_runtime_cls
+from opendevin.runtime.runtime import Runtime
 
 
 class AgentSession:
