@@ -60,7 +60,7 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
             response = resp_file.read()
         # apply prompt
         with open(prompt_file_path, 'w') as prompt_file:
-            prompt_file.write(messages)
+            prompt_file.write(messages + '\n')
         return response
     except FileNotFoundError:
         return None
@@ -105,7 +105,7 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
                 delete=False, mode='w', encoding='utf-8'
             ) as tmp_file:
                 tmp_file_path = tmp_file.name
-                tmp_file.write(messages)
+                tmp_file.write(messages + '\n')
 
             try:
                 # Use diff command to compare files and capture the output
