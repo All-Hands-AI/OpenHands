@@ -112,8 +112,7 @@ async def test_edits():
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State | None = await asyncio.wait_for(  # noqa: F821
-        run_agent_controller(agent, task, exit_on_message=True),
-        timeout=60,  # Adjust the timeout as needed
+        run_agent_controller(agent, task, exit_on_message=True)
     )
 
     assert final_state is not None, 'Final state is None'

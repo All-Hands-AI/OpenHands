@@ -18,7 +18,6 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_exponential,
     wait_fixed,
 )
 
@@ -580,12 +579,9 @@ class DockerSSHBox(Sandbox):
         logger.info('Container restarted successfully.')
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type(
-            (exceptions.TIMEOUT, exceptions.EOF, pxssh.ExceptionPxssh)
-        ),
-        reraise=True,
+        stop=stop_after_attempt(2),
+        wait=wait_fixed(15),
+        retry=retry_if_exception_type(pxssh.ExceptionPxssh),
     )
     async def __ssh_login(self):
         try:
@@ -602,7 +598,7 @@ class DockerSSHBox(Sandbox):
                 )
                 self._ssh_debug_logged = True
 
-            logger.debug(
+            logger.info(
                 f"Attempting SSH login to {self.ssh_hostname}:{self._ssh_port} as {'opendevin' if self.run_as_devin else 'root'}"
             )
 
@@ -612,15 +608,16 @@ class DockerSSHBox(Sandbox):
                 encoding='utf-8',
                 codec_errors='replace',
             )
-            await asyncio.sleep(1)
 
-            # Wrap the blocking login call in asyncio.to_thread
+            # Use self.timeout for login_timeout if it's set, otherwise use a default value
+            login_timeout = self.timeout if hasattr(self, 'timeout') else 30
+
             self.ssh.login(
                 self.ssh_hostname,
                 'opendevin' if self.run_as_devin else 'root',
                 self._ssh_password,
                 port=self._ssh_port,
-                login_timeout=25,
+                login_timeout=login_timeout,
             )
 
             # Verify the connection
