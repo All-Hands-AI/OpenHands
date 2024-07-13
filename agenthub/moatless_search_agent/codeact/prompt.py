@@ -27,9 +27,61 @@ BROWSING_PREFIX = """The assistant can browse the Internet with <execute_browse>
 For example, <execute_browse> Tell me the usa's president using google search </execute_browse>.
 Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 """
+
+SEARCH_PREFIX = """The assistant can find the relevant code spans in an existing codebase with <execute_search> and </execute_search> tags. Note that when using those tags, the assistant MUST wrap all the user query and description inside the tags, and should not adjust the user's query in any way it thinks is better.
+For example:
+
+USER:
+I want to implement a new service that fetches data from the database and returns it as a JSON response. The service should be named "DataService" and should be placed in the services directory
+ASSISTANT:
+<execute_search> Implement a new service that fetches data from the database and returns it as a JSON response. The service should be named "DataService" and should be placed in the services directory. </execute_search>
+
+USER:
+The file uploader intermittently fails with "TypeError: cannot unpack non-iterable NoneType object". This issue appears sporadically during high load conditions. How to fix it?
+ASSISTANT:
+<execute_search> The file uploader intermittently fails with "TypeError: cannot unpack non-iterable NoneType object". This issue appears sporadically during high load conditions.. </execute_search>
+
+USER:
+There's a bug in the PaymentProcessor class where transactions sometimes fail to log correctly, resulting in missing transaction records. Please help me fix it!
+ASSISTANT:
+<execute_search> There's a bug in the PaymentProcessor class where transactions sometimes fail to log correctly, resulting in missing transaction records. </execute_search>
+
+USER:
+The generate_report function sometimes produces incomplete reports under certain conditions. This function is part of the reporting module. Locate the generate_report function in the reports directory to debug and fix the issue.
+ASSISTANT:
+<execute_search> The generate_report function sometimes produces incomplete reports under certain conditions. This function is part of the reporting module. Locate the generate_report function in the reports directory to debug and fix the issue. </execute_search>
+
+USER:
+The extract_data function in HTMLParser throws an "AttributeError: 'NoneType' object has no attribute 'find'" error when parsing certain HTML pages. What could be causing this issue?
+ASSISTANT:
+<execute_search> The extract_data function in HTMLParser throws an "AttributeError: 'NoneType' object has no attribute 'find'" error when parsing certain HTML pages. </execute_search>
+
+USER:
+The database connection setup is missing SSL configuration, causing insecure connections.
+
+Here’s the stack trace of the error:
+
+File "/opt/app/db_config/database.py", line 45, in setup_connection
+    engine = create_engine(DATABASE_URL)
+File "/opt/app/db_config/database.py", line 50, in <module>
+    connection = setup_connection()
+ASSISTANT:
+<execute_search>
+The database connection setup is missing SSL configuration, causing insecure connections.
+
+Here’s the stack trace of the error:
+
+File "/opt/app/db_config/database.py", line 45, in setup_connection
+    engine = create_engine(DATABASE_URL)
+File "/opt/app/db_config/database.py", line 50, in <module>
+    connection = setup_connection()
+</execute_search>
+"""
 PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
 
-SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
+SYSTEM_PREFIX = (
+    MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + SEARCH_PREFIX + PIP_INSTALL_PREFIX
+)
 
 GITHUB_MESSAGE = """To interact with GitHub, use the $GITHUB_TOKEN environment variable.
 For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:

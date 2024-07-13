@@ -38,7 +38,7 @@ class CodeActResponseParser(ResponseParser):
 
     def parse_response(self, response) -> str:
         action = response.choices[0].message.content
-        for lang in ['bash', 'ipython', 'browse']:
+        for lang in ['bash', 'ipython', 'browse', 'search']:
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
         return action
@@ -144,21 +144,35 @@ class CodeActActionParserAgentDelegate(ActionParser):
         self,
     ):
         self.agent_delegate = None
+        self.agent = ''
 
     def check_condition(self, action_str: str) -> bool:
-        self.agent_delegate = re.search(
-            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
-        )
-        return self.agent_delegate is not None
+        res = re.search(r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL)
+        if res:
+            self.agent_delegate = res
+            self.agent = 'BrowsingAgent'
+            return True
+
+        res = re.search(r'<execute_search>(.*)</execute_search>', action_str, re.DOTALL)
+        if res:
+            self.agent_delegate = res
+            self.agent = 'MoatlessSearchAgent'
+            return True
+
+        return False
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.agent_delegate is not None
         ), 'self.agent_delegate should not be None when parse is called'
         thought = action_str.replace(self.agent_delegate.group(0), '').strip()
-        browse_actions = self.agent_delegate.group(1).strip()
-        task = f'{thought}. I should start with: {browse_actions}'
-        return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
+        if self.agent == 'BrowsingAgent':
+            browse_actions = self.agent_delegate.group(1).strip()
+            task = f'{thought}. I should start with: {browse_actions}'
+            return AgentDelegateAction(agent=self.agent, inputs={'task': task})
+
+        # task = self.agent_delegate.group(1).strip()
+        return AgentDelegateAction(agent=self.agent, inputs={'task': thought})
 
 
 class CodeActActionParserMessage(ActionParser):

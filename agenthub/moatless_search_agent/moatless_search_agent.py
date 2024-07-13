@@ -89,27 +89,22 @@ class MoatlessSearchAgent(Agent):
         code_index.persist(persist_dir=persist_dir)
         self._workspace = Workspace(file_repo=file_repo, code_index=code_index)
         self._identified_or_rejected = False
+        self._finish_content = ''
 
     def step(self, state: State) -> Action:
         """
         Perform one search step using the agent.
         """
         if self._identified_or_rejected:
-            return AgentFinishAction()
+            return AgentFinishAction(outputs={'content': self._finish_content})
 
         messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
         ]
 
-        for event in state.history.get_events():
-            task_message = (
-                get_action_message(event) if isinstance(event, Action) else None
-            )
-
-            # add regular message
-            if task_message:
-                messages.append(task_message)
-                break  # only add the last message
+        if (task_message := state.get_current_user_intent()) is None:
+            task_message = state.inputs['task']
+        messages.append({'role': 'user', 'content': task_message})
 
         for tool_call in self._tool_calls:
             arguments_json = (
@@ -189,15 +184,15 @@ class MoatlessSearchAgent(Agent):
                     response, file_context = self._identify(tool_call.id, arguments)
                     if response:
                         self._identified_or_rejected = True
-                        return MessageAction(
-                            content=response.message
-                            + '\n'
-                            + file_context.create_prompt()
+                        self._finish_content = (
+                            response.message + '\n' + file_context.create_prompt()
                         )
+                        return MessageAction(content=self._finish_content)
                 elif function_name == Reject.name():
                     reject_request = RejectRequest.model_validate(arguments)
                     self._identified_or_rejected = True
-                    return MessageAction(content=reject_request.reason)
+                    self._finish_content = reject_request.reason
+                    return MessageAction(content=self._finish_content)
                 elif function_name == SearchCodeAction.name():
                     ranked_spans = []
                     try:
