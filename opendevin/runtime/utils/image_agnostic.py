@@ -12,8 +12,7 @@ from opendevin.core.logger import opendevin_logger as logger
 
 
 def generate_dockerfile(base_image: str) -> str:
-    """
-    Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
+    """Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """
