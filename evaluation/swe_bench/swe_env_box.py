@@ -1,3 +1,4 @@
+import os
 import sys
 import uuid
 
@@ -89,6 +90,10 @@ class SWEBenchSSHBox(DockerSSHBox):
         try:
             config.workspace_base = workspace_mount_path
             config.workspace_mount_path = workspace_mount_path
+            if workspace_mount_path is not None:
+                config.moatless_workspace = os.path.join(
+                    workspace_mount_path, workspace_dir_name
+                )
 
             # linting python after editing helps LLM fix indentations
             config.enable_auto_lint = True

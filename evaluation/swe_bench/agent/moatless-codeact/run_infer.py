@@ -209,16 +209,17 @@ def process_instance(
     sandbox = SWEBenchSSHBox.get_box_for_instance(
         instance,
         workspace_dir_name,
+        skip_workspace_mount=False,
         workspace_mount_path=workspace_mount_path,
-        sandbox_plugins=agenthub.Agent.get_cls(metadata.agent_class).sandbox_plugins,
+        sandbox_plugins=agenthub.Agent.get_cls('CodeActAgent').sandbox_plugins,
     )
 
     # Prepare instruction
     # Testing general agents
     instruction = (
-        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
-        'The first step MUST be to execute search with the whole issue description to find the relevant code snippet, using <execute_search> ... </execute_search>.\n\n'
-        'After that, you must edit ONLY those found code snippets to fix the issue.\n\n'
+        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name} in 2 stages:\n'
+        '- The first stage MUST be to execute search ONCE with the WHOLE issue description to find the relevant code snippet, using <execute_search> ... </execute_search>. Execute this ONCE is enough and that will help you find all the code snippets that cause the issue.\n'
+        '- In the second stage, you must edit ONLY those code snippets found in the previous stage to fix the issue.\n\n'
         'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
         '# Problem Statement\n'
         f'{instance.problem_statement}\n\n'
@@ -229,6 +230,7 @@ def process_instance(
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
         'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
         'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        "Let's start by executing <execute_search> <full user problem statement above> </execute_search> to find the relevant code snippets.\n"
     )
 
     # NOTE: You can actually set slightly different instruction for different agents

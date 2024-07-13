@@ -74,7 +74,11 @@ class MoatlessSearchAgent(Agent):
         Settings.agent_model = 'gpt-4o-2024-05-13'
         index_settings = MoatlessIndexSettings()
 
-        repo_dir = config.workspace_base
+        repo_dir = (
+            config.moatless_workspace  # type: ignore
+            if config.moatless_workspace  # type: ignore
+            else config.workspace_base
+        )
         file_repo = FileRepository(repo_dir)
         persist_dir = '.vector_store' + repo_dir
 
