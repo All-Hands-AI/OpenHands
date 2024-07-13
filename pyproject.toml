@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.7.1"
+version = "0.8.0"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"

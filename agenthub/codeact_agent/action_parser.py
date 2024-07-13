@@ -37,11 +37,12 @@ class CodeActResponseParser(ResponseParser):
         return self.parse_action(action_str)
 
     def parse_response(self, response) -> str:
-        action = response.choices[0].message.content or ''
-        if action:
-            for lang in ['bash', 'ipython', 'browse']:
-                if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
-                    action += f'</execute_{lang}>'
+        action = response.choices[0].message.content
+        if action is None:
+            return ''
+        for lang in ['bash', 'ipython', 'browse']:
+            if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
+                action += f'</execute_{lang}>'
         return action
 
     def parse_action(self, action_str: str) -> Action:
