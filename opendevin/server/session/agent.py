@@ -11,6 +11,7 @@ from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.server.runtime import ServerRuntime
 
 
 class AgentSession:
@@ -52,7 +53,7 @@ class AgentSession:
             end_state.save_to_session(self.sid)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            await self.runtime.close()
         self._closed = True
 
     async def _create_runtime(self):
@@ -62,6 +63,7 @@ class AgentSession:
         logger.info(f'Using runtime: {config.runtime}')
         runtime_cls = get_runtime_cls(config.runtime)
         self.runtime = runtime_cls(self.event_stream, self.sid)
+        await self.runtime.ainit()
 
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
@@ -92,7 +94,10 @@ class AgentSession:
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         agent = Agent.get_cls(agent_cls)(llm)
         if isinstance(agent, CodeActAgent):
-            if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
+            if not self.runtime or not (
+                isinstance(self.runtime, ServerRuntime)
+                and isinstance(self.runtime.sandbox, DockerSSHBox)
+            ):
                 logger.warning(
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
                     ' LocalBox will not work properly.'
