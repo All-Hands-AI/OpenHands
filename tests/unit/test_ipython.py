@@ -50,12 +50,10 @@ async def test_run_python_backticks(temp_dir):
     ), patch(
         'opendevin.runtime.docker.ssh_box.DockerSSHBox.execute_async',
         new=mock_sandbox_execute_async,
-    ), patch(
-        'opendevin.runtime.server.runtime.ServerRuntime.initialize', new=AsyncMock()
-    ):
+    ), patch('opendevin.runtime.server.runtime.ServerRuntime.ainit', new=AsyncMock()):
         # Initialize the runtime with the mock event_stream
         runtime = ServerRuntime(event_stream=mock_event_stream, sandbox=mock_sandbox)
-        await runtime.initialize()
+        await runtime.ainit()
 
         runtime._initialization_event.set()
 
