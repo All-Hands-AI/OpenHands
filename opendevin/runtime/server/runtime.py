@@ -75,12 +75,12 @@ class ServerRuntime(Runtime):
 
     async def close(self):
         if not self._is_external_sandbox:
-            self.sandbox.close()
+            await self.sandbox.close()
         if self.browser is not None:
-            self.browser.close()
+            await self.browser.close()
 
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        self.sandbox.init_plugins(plugins)
+    async def init_sandbox_plugins(self, plugins: list[PluginRequirement]):
+        await self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(
         self,

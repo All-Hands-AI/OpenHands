@@ -123,7 +123,7 @@ class AgentSession:
                     'CodeActAgent requires DockerSSHBox as sandbox! Using a different sandbox that are'
                     ' not stateful, like LocalBox, will not work properly.'
                 )
-        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+        await self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(

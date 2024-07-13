@@ -88,7 +88,7 @@ class Runtime:
     # Methods we plan to deprecate when we move to new EventStreamRuntime
     # ====================================================================
 
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+    def init_sandbox_plugins(self, plugins: list[PluginRequirement]):
         # TODO: deprecate this method when we move to the new EventStreamRuntime
         raise NotImplementedError('This method is not implemented in the base class.')
 

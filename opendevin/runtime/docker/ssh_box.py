@@ -12,8 +12,8 @@ import uuid
 from glob import glob
 from typing import Tuple, Union  # type: ignore[unused-import]
 
-from aiodocker import Docker, Exec
-from aiodocker.containers import DockerContainer
+import aiodocker
+from aiodocker.containers import Exec
 from aiodocker.exceptions import DockerError
 from pexpect import exceptions, pxssh
 from tenacity import (
@@ -209,8 +209,8 @@ class DockerSSHBox(Sandbox):
     container_image: str
     container_name_prefix = 'opendevin-sandbox-'
     container_name: str
-    container: DockerContainer
-    docker_client: Docker
+    container: aiodocker.containers.DockerContainer
+    docker_client: aiodocker.Docker
 
     _ssh_password: str
     _ssh_port: int
@@ -306,7 +306,7 @@ class DockerSSHBox(Sandbox):
 
     async def _setup_docker_client(self):
         try:
-            self.docker_client = Docker()
+            self.docker_client = aiodocker.Docker()
         except RuntimeError as ex:
             logger.exception(
                 f'Error creating aiodocker client. Please check that Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
@@ -927,7 +927,8 @@ class DockerSSHBox(Sandbox):
     async def start_docker_container(self):
         try:
             container = await self.docker_client.containers.get(self.container_name)
-            if container['State']['Status'] != 'running':
+            # if container['State']['Status'] != 'running':
+            if container._container['State']['Status'] != 'running':
                 await container.start()
                 logger.info('Container started')
             await self.wait_for_container_ready()
@@ -939,9 +940,17 @@ class DockerSSHBox(Sandbox):
             container = await self.docker_client.containers.get(self.container_name)
             if not container:
                 return
-            await container.stop()
-            logger.info('Container stopped')
-            await container.delete()
+            if await self.is_container_running():
+                await container.stop()
+                logger.info('Container stopped')
+            try:
+                await container.delete()
+            except DockerError as e:
+                if e.status_code == 404:
+                    # logger.warning(f"Container '{self.container_name}' not found")
+                    pass
+                else:
+                    raise
 
             # Wait for the container to be fully removed
             elapsed = 0
@@ -992,7 +1001,7 @@ class DockerSSHBox(Sandbox):
     async def is_container_running(self):
         try:
             container = await self.docker_client.containers.get(self.container_name)
-            if container.status == 'running':
+            if container._container['State']['Status'] == 'running':
                 self.container = container
                 return True
             return False
