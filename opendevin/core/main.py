@@ -117,8 +117,8 @@ async def run_agent_controller(
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
     runtime = runtime_cls(event_stream=event_stream, sandbox=sandbox)
-    await runtime.initialize()
-    await runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
+    await runtime.ainit()
+    runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
         controller.agent.runtime_tools,
         is_async=False,

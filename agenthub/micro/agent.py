@@ -110,6 +110,3 @@ class MicroAgent(Agent):
 
         action = parse_response(action_resp)
         return action
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

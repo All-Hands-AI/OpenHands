@@ -14,15 +14,6 @@ class opendevin.observation.AgentMessageObservation {
   role: str
   observation: str
 }
-class opendevin.action.agent.AgentRecallAction {
-  query: str
-  action: str
-}
-class opendevin.observation.AgentRecallObservation {
-  memories: List[str]
-  role: str
-  observation: str
-}
 class opendevin.action.agent.AgentSummarizeAction {
   summary: str
   action: str
@@ -173,8 +164,6 @@ class opendevin.server.session.Session {
 opendevin.action.base.ExecutableAction <|-- opendevin.action.agent.AgentEchoAction
 opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentFinishAction
 opendevin.observation.Observation <|-- opendevin.observation.AgentMessageObservation
-opendevin.action.base.ExecutableAction <|-- opendevin.action.agent.AgentRecallAction
-opendevin.observation.Observation <|-- opendevin.observation.AgentRecallObservation
 opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentSummarizeAction
 opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentThinkAction
 opendevin.action.base.Action <|-- opendevin.action.base.ExecutableAction

@@ -12,6 +12,7 @@ from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.server.runtime import ServerRuntime
 
 
 class AgentSession:
@@ -33,7 +34,7 @@ class AgentSession:
     _closed: bool = False
 
     def __init__(self, sid):
-        """Initializes a new instance of the Session class."""
+        """Initializes a new instance of the AgentSession class."""
         self.sid = sid
         self.event_stream = EventStream(sid)
 
@@ -70,7 +71,7 @@ class AgentSession:
         try:
             runtime_cls = get_runtime_cls(config.runtime)
             self.runtime = runtime_cls(self.event_stream, self.sid)
-            await self.runtime.initialize()
+            await self.runtime.ainit()
         except Exception as e:
             logger.error(f'Error initializing runtime: {e}')
             raise RuntimeError(f'Failed to initialize runtime: {e}') from e
@@ -107,17 +108,15 @@ class AgentSession:
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         agent = Agent.get_cls(agent_cls)(llm)
         if isinstance(agent, CodeActAgent):
-            if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
-                if self.runtime:
-                    logger.warning(f'Runtime: {self.runtime.__class__.__name__}')
-                    logger.warning(
-                        f'Sandbox: {self.runtime.sandbox.__class__.__name__}'
-                    )
+            if not self.runtime or not (
+                isinstance(self.runtime, ServerRuntime)
+                and isinstance(self.runtime.sandbox, DockerSSHBox)
+            ):
                 logger.warning(
-                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
-                    ' LocalBox will not work properly.'
+                    'CodeActAgent requires DockerSSHBox as sandbox! Using a different sandbox that are'
+                    ' not stateful, like LocalBox, will not work properly.'
                 )
-        await self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(

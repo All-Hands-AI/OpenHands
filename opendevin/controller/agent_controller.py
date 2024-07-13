@@ -20,7 +20,6 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -253,10 +252,7 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(
                 event,
-                (
-                    AgentDelegateObservation,
-                    AgentRecallAction,
-                ),
+                (AgentDelegateObservation,),
             ):
                 self.state.history.on_event(event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})

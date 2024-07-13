@@ -3,14 +3,10 @@ import atexit
 from abc import abstractmethod
 from typing import Any, Optional
 
-from opendevin.core.config import config
-from opendevin.core.exceptions import BrowserInitException
-from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     ActionConfirmationStatus,
-    AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -26,31 +22,10 @@ from opendevin.events.observation import (
     RejectObservation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime import (
-    DockerSSHBox,
-    E2BBox,
-    LocalBox,
-    Sandbox,
-)
-from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
 from opendevin.runtime.utils.async_utils import async_to_sync
-from opendevin.storage import FileStore, InMemoryFileStore
-
-
-async def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
-    if box_type == 'local':
-        sandbox = LocalBox()  # type: ignore
-    elif box_type == 'ssh':
-        sandbox = DockerSSHBox(sid=sid)  # type: ignore
-    elif box_type == 'e2b':
-        sandbox = E2BBox()  # type: ignore
-    else:
-        raise ValueError(f'Invalid sandbox type: {box_type}')
-
-    await sandbox.initialize()
-    return sandbox
+from opendevin.storage import FileStore
 
 
 class Runtime:
@@ -77,62 +52,45 @@ class Runtime:
         self,
         event_stream: EventStream,
         sid: str = 'default',
-        sandbox: Optional[Sandbox] = None,
     ):
         if not hasattr(self, 'initialized'):
             self.sid = sid
-            self.sandbox = sandbox
-            self._is_external_sandbox = sandbox is not None
-            self.browser: Optional[BrowserEnv] = None
-            self.file_store = InMemoryFileStore()
             self.event_stream = event_stream
+            self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+            atexit.register(self.close_sync)
             self.initialized = False
 
-    async def initialize(self):
-        if self._initialized is False:
-            logger.info('Runtime initialize...')
-            async with self._initialization_lock:
-                if self._initialized is False:
-                    logger.info('Runtime class initialization')
-                    if self.sandbox is None:
-                        logger.info('Creating sandbox.')
-                        self.sandbox = await create_sandbox(
-                            self.sid, config.sandbox.box_type
-                        )
-                        logger.info('Sandbox created.')
-
-                    await self._setup_sandbox()
-                    self.event_stream.subscribe(
-                        EventStreamSubscriber.RUNTIME, self.on_event
-                    )
-                    logger.info('Runtime class initialization complete.')
-                    self._initialized = True
-
-    async def _setup_sandbox(self):
-        if self.sandbox is None:
-            raise RuntimeError('Sandbox is not initialized')
-        logger.info('Setting up sandbox')
-        await self.sandbox.execute('mkdir -p /tmp')
-        await self.sandbox.execute('git config --global user.name "OpenDevin"')
-        await self.sandbox.execute(
-            'git config --global user.email "opendevin@all-hands.dev"'
-        )
-        atexit.register(self.close)
-        logger.info('Sandbox setup complete.')
-
-    async def aclose(self):
-        if not self._is_external_sandbox and self.sandbox is not None:
-            await self.sandbox.close()
-        if self.browser is not None:
-            self.browser.close()
+    async def ainit(self):
+        """
+        Initialize the runtime (asynchronously).
+        This method should be called after the runtime's constructor.
+        """
+        pass
 
     @async_to_sync
     def close(self):
-        return self.aclose()
+        pass
 
-    async def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        if self.sandbox is not None:
-            await self.sandbox.init_plugins(plugins)
+    def close_sync(self) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running event loop, use asyncio.run()
+            asyncio.run(self.close())
+        else:
+            # There is a running event loop, create a task
+            if loop.is_running():
+                loop.create_task(self.close())
+            else:
+                loop.run_until_complete(self.close())
+
+    # ====================================================================
+    # Methods we plan to deprecate when we move to new EventStreamRuntime
+    # ====================================================================
+
+    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+        # TODO: deprecate this method when we move to the new EventStreamRuntime
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     def init_runtime_tools(
         self,
@@ -140,17 +98,10 @@ class Runtime:
         runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
         is_async: bool = True,
     ) -> None:
-        # if browser in runtime_tools, init it
-        if RuntimeTool.BROWSER in runtime_tools:
-            if runtime_tools_config is None:
-                runtime_tools_config = {}
-            browser_env_config = runtime_tools_config.get(RuntimeTool.BROWSER, {})
-            try:
-                self.browser = BrowserEnv(is_async=is_async, **browser_env_config)
-            except BrowserInitException:
-                logger.warn(
-                    'Failed to start browser environment, web browsing functionality will not work'
-                )
+        # TODO: deprecate this method when we move to the new EventStreamRuntime
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    # ====================================================================
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
@@ -189,6 +140,10 @@ class Runtime:
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
+    # ====================================================================
+    # Implement these methods in the subclass
+    # ====================================================================
+
     @abstractmethod
     async def run(self, action: CmdRunAction) -> Observation:
         pass
@@ -211,8 +166,4 @@ class Runtime:
 
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        pass
-
-    @abstractmethod
-    async def recall(self, action: AgentRecallAction) -> Observation:
         pass

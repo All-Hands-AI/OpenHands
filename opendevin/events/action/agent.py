@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
@@ -25,18 +24,6 @@ class ChangeAgentStateAction(Action):
 
 
 @dataclass
-class AgentRecallAction(Action):
-    query: str
-    thought: str = ''
-    action: str = ActionType.RECALL
-    runnable: ClassVar[bool] = True
-
-    @property
-    def message(self) -> str:
-        return f"Let me dive into my memories to find what you're looking for! Searching for: '{self.query}'. This might take a moment."
-
-
-@dataclass
 class AgentSummarizeAction(Action):
     summary: str
     action: str = ActionType.SUMMARIZE
@@ -59,7 +46,7 @@ class AgentFinishAction(Action):
 
     @property
     def message(self) -> str:
-        if self.thought != "":
+        if self.thought != '':
             return self.thought
         return "All done! What's next on the agenda?"
 

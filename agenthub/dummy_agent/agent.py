@@ -9,7 +9,6 @@ from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -20,7 +19,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
-    AgentRecallObservation,
     AgentStateChangedObservation,
     CmdOutputObservation,
     FileReadObservation,
@@ -106,12 +104,6 @@ class DummyAgent(Agent):
                 ],
             },
             {
-                'action': AgentRecallAction(query='who am I?'),
-                'observations': [
-                    AgentRecallObservation('', memories=['I am a computer.']),
-                ],
-            },
-            {
                 'action': BrowseURLAction(url='https://google.com'),
                 'observations': [
                     # BrowserOutputObservation('<html><body>Simulated Google page</body></html>',url='https://google.com',screenshot=''),
@@ -164,8 +156,6 @@ class DummyAgent(Agent):
             # Ensure the task_id doesn't start with a dot
             if action.task_id.startswith('.'):
                 action.task_id = action.task_id[1:]
-        elif isinstance(action, AgentRecallAction):
-            return self.handle_agent_recall(action)
         elif isinstance(action, (FileWriteAction, FileReadAction)):
             working_directory = await self.get_working_directory(state)
             action.path = str(Path(working_directory) / Path(action.path).name)
@@ -209,11 +199,6 @@ class DummyAgent(Agent):
 
         return action
 
-    def handle_agent_recall(self, action: AgentRecallAction) -> Action:
-        memories = self.search_memory(action.query)
-        message = f"Recall query: '{action.query}'. Memories: {', '.join(memories)}"
-        return MessageAction(content=message)
-
     def simulate_browser_action(
         self, action: Union[BrowseURLAction, BrowseInteractiveAction]
     ) -> Action:
@@ -238,6 +223,3 @@ class DummyAgent(Agent):
         # This might involve accessing state information or making an async call
         # For now, we'll return a placeholder value
         return './workspace'
-
-    def search_memory(self, query: str) -> list[str]:
-        return ['I am a computer.']
