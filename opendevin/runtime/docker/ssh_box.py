@@ -3,7 +3,7 @@ import atexit
 import json
 import os
 import re
-import socket
+import shlex
 import sys
 import tarfile
 import tempfile
@@ -281,24 +281,17 @@ class DockerSSHBox(Sandbox):
                         'SSHBox is running as opendevin user with USER_ID=1000 in the sandbox'
                     )
                     try:
-                        # await super().initialize()
                         await self._setup_docker()
                         await self._setup_container()
                         await self._setup_user()
                         await self._setup_ssh()
+
                         self.initialized = True
                         logger.info('SSHBox initialization complete')
                     finally:
                         self._sshbox_init_complete.set()
         else:
             await self._sshbox_init_complete.wait()
-
-    @classmethod
-    async def reset_instance(cls):
-        if cls._instance is not None:
-            await cls._instance.aclose()
-            cls._instance = None
-        cls._initialization_lock = asyncio.Lock()
 
     async def _setup_docker(self):
         # Initialize Docker client
@@ -356,39 +349,76 @@ class DockerSSHBox(Sandbox):
         logger.info('Using existing Docker container')
         await self.start_docker_container()
 
-    async def _setup_environment(self):
-        try:
-            await self.execute_async('mkdir -p /tmp')
-            await self.execute_async('git config --global user.name "OpenDevin"')
-            await self.execute_async(
-                'git config --global user.email "opendevin@all-hands.dev"'
-            )
-        except Exception as e:
-            logger.exception(f'Error during initialization: {e}')
-            raise
+    def format_env_value(self, value):
+        if isinstance(value, str):
+            # Use shlex.quote for strings to handle all special characters
+            return shlex.quote(value)
+        elif isinstance(value, (int, float, bool)):
+            # Convert to string directly
+            return str(value).lower()
+        # Use JSON for complex types, then quote the result
+        return shlex.quote(json.dumps(value))
 
     @async_to_sync
     def add_to_env(self, key: str, value: str):
         return self.add_to_env_async(key, value)
 
     async def add_to_env_async(self, key: str, value: str):
-        exit_code, _ = await self.execute_async(f'export {key}={json.dumps(value)}')
-        if exit_code == 0:
-            self._env[key] = value
-        else:
-            raise RuntimeError(f'Failed to set environment variable {key}')
+        formatted_value = self.format_env_value(value)
 
-    async def container_exec_run(self, *args, **kwargs):
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None, lambda: self.container.exec_run(*args, **kwargs)
+        # Set the environment variable in the SSH session
+        self.ssh.sendline(f'export {key}={formatted_value}')
+        self.ssh.prompt()
+
+        # Verify that the environment variable was set
+        self.ssh.sendline(f'echo ${key}')
+        self.ssh.prompt()
+        output = self.ssh.before.strip()
+
+        if output == value:
+            self._env[key] = value
+            os.environ[key] = value
+        else:
+            raise RuntimeError(f'Failed to set environment variable {key}: {output}')
+
+    def run_command(self, command: str, use_os: Union[bool, None] = False):
+        return self.container_exec_run(
+            ['/bin/bash', '-c', command],
+            workdir=self.sandbox_workspace_dir,
+            environment=(os.environ if use_os and os.environ.items() else self._env),
         )
-        return result  # Returns a tuple (exit_code, output)
+
+    def container_exec_run(self, *args, **kwargs):
+        return self.container.exec_run(*args, **kwargs)
+
+    async def _setup_environment(self):
+        try:
+            logger.info('Setting up sandbox vars')
+            for key, value in self._env.items():
+                if key.startswith('SANDBOX_ENV_'):
+                    sandbox_key = key.removeprefix('SANDBOX_ENV_')
+                    await self.add_to_env_async(sandbox_key, value)
+                else:
+                    await self.add_to_env_async(key, value)
+
+            logger.info('Setting up tmp folder')
+            await self.execute_async('mkdir -p /tmp')
+            logger.info('Setting up git user')
+            await self.execute_async('git config --global user.name "OpenDevin"')
+            logger.info('Setting up git email')
+            await self.execute_async(
+                'git config --global user.email "opendevin@all-hands.dev"'
+            )
+        except Exception as e:
+            logger.exception(f'Error during initialization: {e}')
+            raise e
+        logger.info('Environment setup complete')
 
     async def _setup_user(self):
+        logger.info('Setting up user')
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
-        result = await self.container_exec_run(
+        result = self.container_exec_run(
             ['/bin/bash', '-c', r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
@@ -400,24 +430,26 @@ class DockerSSHBox(Sandbox):
             )
 
         # Check if the opendevin user exists
-        exit_code, logs = await self.container_exec_run(
+        exit_code, logs = self.container_exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
         if exit_code == 0:
             # User exists, delete it
-            exit_code, logs = await self.container_exec_run(
+            exit_code, logs = self.container_exec_run(
                 ['/bin/bash', '-c', 'userdel -r opendevin'],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
+                raise RuntimeError(
+                    f'Failed to remove opendevin user in sandbox: {logs}'
+                )
 
         if self.run_as_devin:
             # Create the opendevin user
-            exit_code, logs = await self.container_exec_run(
+            exit_code, logs = self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -427,8 +459,10 @@ class DockerSSHBox(Sandbox):
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(f'Failed to create opendevin user in sandbox: {logs}')
-            exit_code, logs = await self.container_exec_run(
+                raise RuntimeError(
+                    f'Failed to create opendevin user in sandbox: {logs}'
+                )
+            exit_code, logs = self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -438,10 +472,10 @@ class DockerSSHBox(Sandbox):
                 environment=self._env,
             )
             if exit_code != 0:
-                raise Exception(f'Failed to set password in sandbox: {logs}')
+                raise RuntimeError(f'Failed to set password in sandbox: {logs}')
 
             # chown the home directory
-            exit_code, logs = await self.container_exec_run(
+            exit_code, logs = self.container_exec_run(
                 ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
@@ -451,7 +485,7 @@ class DockerSSHBox(Sandbox):
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
                 )
             # check the miniforge3 directory exist
-            exit_code, logs = await self.container_exec_run(
+            exit_code, logs = self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -469,7 +503,7 @@ class DockerSSHBox(Sandbox):
                     raise RuntimeError(
                         f'An error occurred while checking if miniforge3 directory exists: {logs}'
                     )
-            exit_code, logs = await self.container_exec_run(
+            exit_code, logs = self.container_exec_run(
                 [
                     '/bin/bash',
                     '-c',
@@ -484,7 +518,7 @@ class DockerSSHBox(Sandbox):
                     f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {self.sandbox_workspace_dir=} is mounted by the app docker container.'
                 )
         else:
-            exit_code, logs = await self.container_exec_run(
+            exit_code, logs = self.container_exec_run(
                 # change password for root
                 ['/bin/bash', '-c', f"echo 'root:{self._ssh_password}' | chpasswd"],
                 workdir=self.sandbox_workspace_dir,
@@ -494,14 +528,14 @@ class DockerSSHBox(Sandbox):
                 raise RuntimeError(
                     f'Failed to set password for root in sandbox: {logs}'
                 )
-        exit_code, logs = await self.container_exec_run(
+        exit_code, logs = self.container_exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
         )
 
         # Add a check to ensure the user was created successfully
-        exit_code, logs = await self.container_exec_run(
+        exit_code, logs = self.container_exec_run(
             ['/bin/bash', '-c', 'id opendevin'],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
@@ -513,7 +547,7 @@ class DockerSSHBox(Sandbox):
 
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
     @retry(
-        stop=stop_after_attempt(2),
+        stop=stop_after_attempt(3),
         wait=wait_fixed(5),
         retry=retry_if_exception_type(pxssh.ExceptionPxssh),
     )
@@ -521,6 +555,7 @@ class DockerSSHBox(Sandbox):
         try:
             await self.wait_for_ssh_ready()
             await self.start_ssh_session()
+            await self._setup_environment()
         except pxssh.ExceptionPxssh as e:
             logger.error(
                 f'SSH session failed, attempting to restart container.\nError: {e}'
@@ -533,7 +568,7 @@ class DockerSSHBox(Sandbox):
         max_attempts = 10
         for attempt in range(max_attempts):
             try:
-                exit_code, output = await self.container_exec_run(
+                exit_code, output = self.container_exec_run(
                     ['sh', '-c', "service ssh status | grep 'is running'"]
                 )
                 if exit_code == 0:
@@ -566,6 +601,7 @@ class DockerSSHBox(Sandbox):
         # cd to workspace
         self.send_line(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
+        logger.info('SSH session started')
 
     async def restart_container(self):
         logger.info('Restarting container...')
@@ -578,11 +614,6 @@ class DockerSSHBox(Sandbox):
         await asyncio.sleep(3)
         logger.info('Container restarted successfully.')
 
-    @retry(
-        stop=stop_after_attempt(2),
-        wait=wait_fixed(15),
-        retry=retry_if_exception_type(pxssh.ExceptionPxssh),
-    )
     async def __ssh_login(self):
         try:
             if not hasattr(self, '_ssh_debug_logged'):
@@ -612,6 +643,7 @@ class DockerSSHBox(Sandbox):
                 codec_errors='replace',
             )
 
+            # Keep the login call synchronous
             self.ssh.login(
                 self.ssh_hostname,
                 'opendevin' if self.run_as_devin else 'root',
@@ -623,10 +655,9 @@ class DockerSSHBox(Sandbox):
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(f'Failed to login to SSH session: {e}')
-            logger.debug(f'SSH debug output: {self.ssh.before}')
             if 'connection refused' in str(e).lower():
                 logger.error('SSH connection refused')
-            raise
+            raise e
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
         if self.run_as_devin:
@@ -667,11 +698,9 @@ class DockerSSHBox(Sandbox):
         timeout: int | None = None,
         # ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
     ) -> tuple[int, str | CancellableStream]:
-        # Ensure initialization is complete
-        if not self.initialized:
-            await self.initialize_async()
-
         timeout = timeout or self.timeout
+        timeout = 60 if timeout is None or int(timeout) < 60 else int(timeout)
+
         commands = split_bash_commands(cmd)
 
         if len(commands) > 1:
@@ -687,9 +716,10 @@ class DockerSSHBox(Sandbox):
 
         # Prepare environment variables
         env_exports = ' '.join(
-            [f'export {key}={json.dumps(value)}' for key, value in self._env.items()]
+            f'export {key}={self.format_env_value(value)}'
+            for key, value in self._env.items()
         )
-        if env_exports:
+        if env_exports.strip():
             full_cmd = f'({env_exports}) && {cmd}'
         else:
             full_cmd = f'{cmd}'
@@ -697,7 +727,7 @@ class DockerSSHBox(Sandbox):
         if stream:
             return 0, SSHExecCancellableStream(self.ssh, full_cmd, self.timeout)
 
-        success = await asyncio.to_thread(self.ssh.prompt, timeout=600)
+        success = self.ssh.prompt(timeout=600)
         if not success:
             return self._send_interrupt(full_cmd)  # type: ignore
         command_output = self.ssh.before
@@ -705,12 +735,7 @@ class DockerSSHBox(Sandbox):
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             self.send_line('\n')
-            timeout_not_reached = await asyncio.to_thread(
-                self.ssh.prompt, timeout=timeout
-            )
-            if not timeout_not_reached:
-                logger.debug('TIMEOUT REACHED')
-                break
+            self.ssh.prompt(timeout=timeout)
             output = self.ssh.before
             if isinstance(output, str) and output.strip() == '':
                 break
@@ -719,11 +744,11 @@ class DockerSSHBox(Sandbox):
 
         # get the exit code
         self.send_line('echo $?')
-        await asyncio.to_thread(self.ssh.prompt)
+        self.ssh.prompt()
         exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
         while not exit_code_str:
-            await asyncio.to_thread(self.ssh.prompt, timeout=timeout)
+            self.ssh.prompt(timeout=timeout)
             exit_code_str = self.ssh.before.strip()
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(  # type: ignore
@@ -748,7 +773,7 @@ class DockerSSHBox(Sandbox):
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ):
         # mkdir -p sandbox_dest if it doesn't exist
-        exit_code, logs = await self.container_exec_run(  # type: ignore
+        exit_code, logs = self.container_exec_run(  # type: ignore
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
             workdir=self.sandbox_workspace_dir,
             environment=self._env,
@@ -866,11 +891,6 @@ class DockerSSHBox(Sandbox):
             },
         }
 
-    def find_free_port(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', 0))
-            return s.getsockname()[1]
-
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
@@ -884,26 +904,22 @@ class DockerSSHBox(Sandbox):
             raise ex
 
         try:
+            logger.info('Finding available port')
+            self._ssh_port = find_available_tcp_port()
+            logger.info(f'Using port {self._ssh_port}')
             network_kwargs: dict[str, str | dict[str, int]] = {}
             if self.use_host_network:
                 network_kwargs['network_mode'] = 'host'
             else:
-                # Use dynamic port allocation
-                self._ssh_port = self.find_free_port()
-                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
-                logger.warning(
-                    'Using port forwarding with dynamic port allocation. '
-                    f'SSH port: {self._ssh_port}'
-                )
                 # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
                 # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
-                # network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
-                # logger.warning(
-                #     (
-                #         'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
-                #         'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
-                #     )
-                # )
+                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
+                logger.warning(
+                    (
+                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
+                        'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
+                    )
+                )
 
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')

@@ -12,6 +12,7 @@ from litellm.exceptions import (
     APIConnectionError,
     ContentPolicyViolationError,
     InternalServerError,
+    OpenAIError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -324,7 +325,8 @@ class LLM:
                 self._post_completion(resp)
 
                 return resp
-
+            except OpenAIError as e:
+                logger.error(f'OpenAIError occurred:\n{e}')
             except (
                 RateLimitError,
                 APIConnectionError,

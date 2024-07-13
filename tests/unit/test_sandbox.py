@@ -32,29 +32,31 @@ def reset_docker_ssh_box():
 
 
 def test_env_vars(temp_dir):
-    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
+    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'  # outside sandbox!
     for box_class in [DockerSSHBox, LocalBox]:
         box = box_class()
         box.initialize()
         try:
+            assert 'FOOBAR' in os.environ, 'FOOBAR not found in os.environ'
+            assert (
+                os.environ['FOOBAR'] == 'BAZ'
+            ), f'FOOBAR in os.environ has wrong value for {box_class.__name__}'
+
             assert (
                 'FOOBAR' in box._env
-            ), f'FOOBAR not found in environment for {box_class.__name__}'
+            ), f'FOOBAR not found in _env for {box_class.__name__}'
             assert (
                 box._env['FOOBAR'] == 'BAZ'
-            ), f'FOOBAR not set correctly for {box_class.__name__}'
+            ), f'FOOBAR in _env has wrong value for {box_class.__name__}'
 
             box.add_to_env('QUUX', 'abc"def')
 
             assert (
-                'FOOBAR' in box._env
-            ), f'FOOBAR not found in environment for {box_class.__name__}'
-            assert (
-                box._env['FOOBAR'] == 'BAZ'
-            ), f'FOOBAR not set correctly for {box_class.__name__}'
+                'QUUX' in box._env
+            ), f'QUUX not found in _env for {box_class.__name__}'
             assert (
                 box._env['QUUX'] == 'abc"def'
-            ), f'QUUX not set correctly for {box_class.__name__}'
+            ), f'QUUX not set correctly in _env for {box_class.__name__}'
 
             exit_code, output = box.execute('echo $FOOBAR $QUUX')
             assert (

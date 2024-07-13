@@ -72,7 +72,6 @@ class LocalBox(Sandbox):
                 sandbox_key = key.removeprefix('SANDBOX_ENV_')
                 if sandbox_key:
                     await self.add_to_env_async(sandbox_key, value)
-                    self._env[sandbox_key] = value
 
         # Change to the workspace directory
         os.chdir(config.workspace_base)

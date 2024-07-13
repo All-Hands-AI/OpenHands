@@ -464,7 +464,7 @@ class AgentController:
             await self.report_error(f'{e}')
             return
         except Exception as e:
-            await self.report_error(f'Unexpected error: {e}')
+            await self.report_error(f'Error in controller step: {e}')
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
