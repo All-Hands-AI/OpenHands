@@ -424,4 +424,5 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         ), patch.object(config, 'enable_auto_lint', new=False):
             assert not config.enable_auto_lint
             box = DockerSSHBox()
+            box.initialize()
             _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
