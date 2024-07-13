@@ -38,6 +38,8 @@ class CodeActResponseParser(ResponseParser):
 
     def parse_response(self, response) -> str:
         action = response.choices[0].message.content
+        if action is None:
+            return ''
         for lang in ['bash', 'ipython', 'browse']:
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'

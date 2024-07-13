@@ -6,7 +6,6 @@ from .empty import NullObservation
 from .error import ErrorObservation
 from .files import FileReadObservation, FileWriteObservation
 from .observation import Observation
-from .recall import AgentRecallObservation
 from .reject import RejectObservation
 from .success import SuccessObservation
 
@@ -18,7 +17,6 @@ __all__ = [
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',
-    'AgentRecallObservation',
     'ErrorObservation',
     'AgentStateChangedObservation',
     'AgentDelegateObservation',

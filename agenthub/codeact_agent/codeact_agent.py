@@ -208,9 +208,6 @@ class CodeActAgent(Agent):
         )
         return self.action_parser.parse(response)
 
-    def search_memory(self, query: str) -> list[str]:
-        raise NotImplementedError('Implement this abstract method')
-
     def _get_messages(self, state: State) -> list[dict[str, str]]:
         messages = [
             {'role': 'system', 'content': self.system_message},
