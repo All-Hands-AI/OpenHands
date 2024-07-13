@@ -10,8 +10,7 @@ from .source import create_project_source_dist
 
 
 def generate_dockerfile(base_image: str) -> str:
-    """
-    Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
+    """Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """
@@ -39,8 +38,7 @@ def generate_dockerfile(base_image: str) -> str:
 def generate_dockerfile_for_eventstream_runtime(
     base_image: str, temp_dir: str, skip_init: bool = False
 ) -> str:
-    """
-    Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
+    """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """

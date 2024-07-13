@@ -8,7 +8,6 @@ from opendevin.core.logger import opendevin_logger as logger
 
 def create_project_source_dist():
     """Create a source distribution of the project. Return the path to the tarball."""
-
     # Copy the project directory to the container
     # get the location of "opendevin" package
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
