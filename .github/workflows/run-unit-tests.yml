@@ -51,8 +51,6 @@ jobs:
   test-on-macos:
     name: Test on macOS
     runs-on: macos-12
-    env:
-      INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -72,14 +70,6 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install
 
-      - name: Start Docker Desktop
-        if: env.INSTALL_DOCKER == '1'
-        run: |
-          # Start Docker Desktop
-          open -a Docker
-          # Wait until Docker daemon is running
-          while ! docker system info > /dev/null 2>&1; do sleep 1; done
-
       - name: Build Environment
         run: make build
 
@@ -90,7 +80,6 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
   test-on-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
