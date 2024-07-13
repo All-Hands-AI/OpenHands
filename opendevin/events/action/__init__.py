@@ -2,7 +2,6 @@ from .action import Action, ActionConfirmationStatus
 from .agent import (
     AgentDelegateAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     AgentSummarizeAction,
     ChangeAgentStateAction,
@@ -22,7 +21,6 @@ __all__ = [
     'BrowseInteractiveAction',
     'FileReadAction',
     'FileWriteAction',
-    'AgentRecallAction',
     'AgentFinishAction',
     'AgentRejectAction',
     'AgentDelegateAction',

@@ -51,19 +51,6 @@ class Agent(ABC):
         """
         pass
 
-    @abstractmethod
-    def search_memory(self, query: str) -> list[str]:
-        """
-        Searches the agent's memory for information relevant to the given query.
-
-        Parameters:
-        - query (str): The query to search for in the agent's memory.
-
-        Returns:
-        - response (str): The response to the query.
-        """
-        pass
-
     def reset(self) -> None:
         """
         Resets the agent's execution status and clears the history. This method can be used
