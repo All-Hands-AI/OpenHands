@@ -533,7 +533,7 @@ class FileContext:
     def create_prompt(
         self,
         show_span_ids=False,
-        show_line_numbers=False,
+        show_line_numbers=True,
         exclude_comments=False,
         show_outcommented_code=False,
         outcomment_code_comment: str = '...',

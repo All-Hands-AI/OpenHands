@@ -82,7 +82,8 @@ class MoatlessSearchAgent(Agent):
             code_index = CodeIndex.from_persist_dir(
                 persist_dir=persist_dir, file_repo=file_repo
             )
-        code_index = CodeIndex(file_repo=file_repo, settings=index_settings)
+        else:
+            code_index = CodeIndex(file_repo=file_repo, settings=index_settings)
         nodes, tokens = code_index.run_ingestion()
         logger.info(f'🤓 Indexed {nodes} nodes and {tokens} tokens')
         code_index.persist(persist_dir=persist_dir)

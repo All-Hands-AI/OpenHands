@@ -36,6 +36,7 @@ from ..index.types import (
 from ..repository import FileRepository
 from ..types import FileWithSpans
 from ..utils.tokenizer import count_tokens
+from .settings import MoatlessIndexSettings
 
 
 def default_vector_store(settings: IndexSettings):
@@ -59,9 +60,9 @@ class CodeIndex:
         embed_model: Optional[BaseEmbedding] = None,
         blocks_by_class_name: Optional[dict] = None,
         blocks_by_function_name: Optional[dict] = None,
-        settings: Optional[IndexSettings] = None,
+        settings: Optional[MoatlessIndexSettings] = None,
     ):
-        self._settings = settings or IndexSettings()
+        self._settings = settings or MoatlessIndexSettings()
         self._file_repo = file_repo
 
         self._blocks_by_class_name = blocks_by_class_name or {}
@@ -78,7 +79,7 @@ class CodeIndex:
         vector_store = SimpleFaissVectorStore.from_persist_dir(persist_dir)
         docstore = SimpleDocumentStore.from_persist_dir(persist_dir)
 
-        settings = IndexSettings.from_persist_dir(persist_dir)
+        settings = MoatlessIndexSettings.from_persist_dir(persist_dir)
 
         if os.path.exists(os.path.join(persist_dir, 'blocks_by_class_name.json')):
             with open(os.path.join(persist_dir, 'blocks_by_class_name.json'), 'r') as f:

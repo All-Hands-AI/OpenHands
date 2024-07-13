@@ -494,7 +494,7 @@ class CodeBlock(BaseModel):
         def print_line(line_number):
             if not show_line_numbers:
                 return ''
-            return str(line_number).ljust(6)
+            return str(line_number) + '|'
 
         # Just to write out the first line number when there are no pre_lines on first block
         if (
