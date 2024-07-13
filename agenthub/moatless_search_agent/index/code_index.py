@@ -22,9 +22,9 @@ from llama_index.core.vector_stores.types import (
 from rapidfuzz import fuzz
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.indexing.rag.embedding import get_embedding_model
 
 from ..codeblocks import CodeBlock, CodeBlockType
-from ..index.embed_model import get_embed_model
 from ..index.epic_split import EpicSplitter
 from ..index.settings import IndexSettings
 from ..index.simple_faiss import SimpleFaissVectorStore
@@ -68,9 +68,11 @@ class CodeIndex:
         self._blocks_by_class_name = blocks_by_class_name or {}
         self._blocks_by_function_name = blocks_by_function_name or {}
 
-        self._embed_model = embed_model or get_embed_model(
-            self._settings.embedding_model_name
+        self._embed_model = embed_model or get_embedding_model(
+            self._settings.embedding_model_provider,
+            self._settings.embedding_model_name,
         )
+        print(self._embed_model)
         self._vector_store = vector_store or default_vector_store(self._settings)
         self._docstore = docstore or SimpleDocumentStore()
 

@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import Action, AgentFinishAction, MessageAction
 from opendevin.llm.llm import LLM
@@ -73,11 +74,10 @@ class MoatlessSearchAgent(Agent):
         Settings.agent_model = 'gpt-4o-2024-05-13'
         index_settings = MoatlessIndexSettings()
 
-        repo_dir = '/Users/ryan/Developer/OpenDevin'
+        repo_dir = config.workspace_base
         file_repo = FileRepository(repo_dir)
-        logger.info(f'📂 Loaded files from {repo_dir}')
         persist_dir = '.vector_store' + repo_dir
-        # check if persist_dir exists
+
         if os.path.exists(persist_dir):
             code_index = CodeIndex.from_persist_dir(
                 persist_dir=persist_dir, file_repo=file_repo
@@ -85,7 +85,7 @@ class MoatlessSearchAgent(Agent):
         else:
             code_index = CodeIndex(file_repo=file_repo, settings=index_settings)
         nodes, tokens = code_index.run_ingestion()
-        logger.info(f'🤓 Indexed {nodes} nodes and {tokens} tokens')
+        logger.info(f'Indexed {nodes} nodes and {tokens} tokens')
         code_index.persist(persist_dir=persist_dir)
         self._workspace = Workspace(file_repo=file_repo, code_index=code_index)
         self._identified_or_rejected = False
