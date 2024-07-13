@@ -37,6 +37,7 @@ tenacity = "^8.5.0"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
+aiodocker = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -62,7 +63,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

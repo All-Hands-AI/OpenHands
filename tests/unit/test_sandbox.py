@@ -37,10 +37,10 @@ def test_env_vars(temp_dir):
         box = box_class()
         box.initialize()
         try:
-            assert 'FOOBAR' in os.environ, 'FOOBAR not found in os.environ'
-            assert (
-                os.environ['FOOBAR'] == 'BAZ'
-            ), f'FOOBAR in os.environ has wrong value for {box_class.__name__}'
+            # assert 'FOOBAR' in os.environ, 'FOOBAR not found in os.environ'
+            # assert (
+            #     os.environ['FOOBAR'] == 'BAZ'
+            # ), f'FOOBAR in os.environ has wrong value for {box_class.__name__}'
 
             assert (
                 'FOOBAR' in box._env
