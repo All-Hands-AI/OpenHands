@@ -171,6 +171,7 @@ evaluation/SWE-bench/data
 evaluation/webarena/scripts/webarena_env.sh
 
 # frontend
+frontend_logs/
 
 # dependencies
 frontend/node_modules

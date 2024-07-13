@@ -11,7 +11,7 @@ import websocket
 from PIL import Image, UnidentifiedImageError
 
 api_key = os.environ.get('OPENAI_API_KEY')
-LINE_LEN = 18
+LINE_LEN = 100
 
 
 class Node:
@@ -206,14 +206,23 @@ class OpenDevinSession:
 
 
 def process_string(string, line_len):
-    word_list = string.split(' ')
-    if len(word_list) <= line_len:
-        return string
-    else:
-        lines = []
-        for i in range(0, len(word_list), line_len):
-            lines.append(' '.join(word_list[i : i + line_len]))
-        return '<br>'.join(lines)
+    preformat = string.split('\n')
+    final = []
+    for sentence in preformat:
+        formatted = []
+        for i in range(0, len(sentence), line_len):
+            splitted = sentence[i : i + line_len]
+            if (
+                i + line_len < len(sentence)
+                and sentence[i + line_len].isalnum()
+                and splitted[-1].isalnum()
+            ):
+                formatted.append(splitted + '-')
+            else:
+                formatted.append(splitted)
+        final.append('<br>'.join(formatted))
+
+    return '\n'.join(final)
 
 
 def update_Q(node):
@@ -240,11 +249,8 @@ def parse_log(log_file):
     in_state = False
     state_info = ''
 
-    # with open(log_file) as f:
     log_string = log_file
     lines = log_string.strip().split('\n')
-    # graphs = []
-    # nodes_list = []
 
     for line in lines:
         if line.startswith('*State*'):
@@ -307,16 +313,7 @@ def parse_log(log_file):
             in_next_state = False
             next_state = ''
 
-        # if line.startswith("BROWSER_ACTIONS: "):
-        #     update_Q(root)
-        #     graphs.append(root)
-        #     nodes_list.append(nodes)
-        #     count = 0
-        #     nodes = {}
-        #     root = None
-        #     current_node = None
     update_Q(root)
-    # return graphs, nodes_list
     return root, nodes
 
 
@@ -382,8 +379,8 @@ def visualize_tree_plotly(root, nodes):
             f'<b>State {node}</b><br>'
             f'<b>Reward:</b> {nodes[node].reward}<br>'
             f'<b>Q:</b> {nodes[node].Q}<br>'
-            f'<b>In Action:</b> {nodes[node].in_action}<br>'
-            f'<b>State Info:</b> {nodes[node].state_info}<br>'
+            f'<b>In Action:</b> {"<br>" + nodes[node].in_action if nodes[node].in_action != "null" else nodes[node].in_action}<br>'
+            f'<b>State Info:</b> {"<br>" + nodes[node].state_info if nodes[node].state_info != "null" else nodes[node].state_info}<br>'
             f'<b>Status:</b> {nodes[node].status}'
         )
         hover_texts.append(hover_text)
@@ -452,6 +449,8 @@ def visualize_tree_plotly(root, nodes):
             annotations=[dict(text='', showarrow=False, xref='paper', yref='paper')],
             xaxis=dict(showgrid=False, zeroline=False, visible=False),
             yaxis=dict(showgrid=False, zeroline=False, visible=False),
+            width=945,
+            height=540,
         ),
     )
 
@@ -679,7 +678,7 @@ def pause_resume_task(is_paused, session, status):
 
 
 if __name__ == '__main__':
-    default_port = 3000
+    default_port = 5000
     with open('Makefile') as f:
         while True:
             line = f.readline()

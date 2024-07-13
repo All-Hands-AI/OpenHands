@@ -11,7 +11,7 @@ from PIL import Image, UnidentifiedImageError
 from my_frontend import Node, parse_and_visualize, process_string, visualize_tree_plotly
 
 api_key = os.environ.get('OPENAI_API_KEY')
-LINE_LEN = 12
+LINE_LEN = 100
 
 
 def parse_log_onestep(log_file):

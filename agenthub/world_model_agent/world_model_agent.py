@@ -271,6 +271,7 @@ You should not attempt to visit the following domains as they will block your en
 - Reddit: www.reddit.com
 - Zillow: www.zillow.com
 - StreetEasy: www.streeteasy.com
+- ApartmentFinder: www.apartmentfinder.com
 """
         messages = []
         messages.append({'role': 'system', 'content': system_msg})
