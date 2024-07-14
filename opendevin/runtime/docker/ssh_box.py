@@ -735,6 +735,25 @@ class DockerSSHBox(Sandbox):
             )
             assert self.ssh is not None
 
+            # Add this block before creating the container
+            try:
+                await self.docker_client.images.get(self.container_image)
+            except DockerError as img_error:
+                if img_error.status == 404:
+                    logger.warning(
+                        f'Image {self.container_image} not found. Attempting to pull...'
+                    )
+                    try:
+                        await self.docker_client.images.pull(self.container_image)
+                        logger.info(f'Successfully pulled image {self.container_image}')
+                    except DockerError as pull_error:
+                        logger.error(
+                            f'Failed to pull image {self.container_image}: {pull_error}'
+                        )
+                        raise
+                else:
+                    raise
+
             # Keep the login call synchronous
             logger.info(f' -> Logging in to {self.ssh_hostname}...')
             self.ssh.login(
