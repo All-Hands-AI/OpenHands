@@ -155,48 +155,57 @@ class AgentController:
             await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
-        if isinstance(event, ChangeAgentStateAction):
-            await self.set_agent_state_to(event.agent_state)  # type: ignore
-        elif isinstance(event, MessageAction):
-            if event.source == EventSource.USER:
-                if self.get_agent_state() != AgentState.RUNNING:
-                    await self.set_agent_state_to(AgentState.RUNNING)
-            elif event.source == EventSource.AGENT and event.wait_for_response:
-                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-        elif isinstance(event, AgentDelegateAction):
-            await self.start_delegate(event)
-        elif isinstance(event, AddTaskAction):
-            self.state.root_task.add_subtask(event.parent, event.goal, event.subtasks)
-        elif isinstance(event, ModifyTaskAction):
-            self.state.root_task.set_subtask_state(event.task_id, event.state)
-        elif isinstance(event, AgentFinishAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
-            await self.set_agent_state_to(AgentState.FINISHED)
-        elif isinstance(event, AgentRejectAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
-            await self.set_agent_state_to(AgentState.REJECTED)
-        elif isinstance(event, Observation):
-            if (
-                self._pending_action
-                and hasattr(self._pending_action, 'is_confirmed')
-                and self._pending_action.is_confirmed
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ):
-                return
-            if self._pending_action and self._pending_action.id == event.cause:
-                self._pending_action = None
-                if self.state.agent_state == AgentState.USER_CONFIRMED:
-                    await self.set_agent_state_to(AgentState.RUNNING)
-                if self.state.agent_state == AgentState.USER_REJECTED:
-                    await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, CmdOutputObservation):
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, AgentDelegateObservation):
-                self.state.history.on_event(event)
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(event, ErrorObservation):
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
+        match event:
+            case ChangeAgentStateAction():
+                await self.set_agent_state_to(event.agent_state)  # type: ignore
+            case MessageAction():
+                match event.source:
+                    case EventSource.AGENT:
+                        if self.get_agent_state() != AgentState.RUNNING:
+                            await self.set_agent_state_to(AgentState.RUNNING)
+                    case EventSource.USER:
+                        if event.wait_for_response:
+                            await self.set_agent_state_to(
+                                AgentState.AWAITING_USER_INPUT
+                            )
+            case AgentDelegateAction():
+                await self.start_delegate(event)
+            case AddTaskAction():
+                self.state.root_task.add_subtask(
+                    event.parent, event.goal, event.subtasks
+                )
+            case ModifyTaskAction():
+                self.state.root_task.set_subtask_state(event.task_id, event.state)
+            case AgentFinishAction():
+                self.state.outputs = event.outputs  # type: ignore[attr-defined]
+                await self.set_agent_state_to(AgentState.FINISHED)
+            case AgentRejectAction():
+                self.state.outputs = event.outputs  # type: ignore[attr-defined]
+                await self.set_agent_state_to(AgentState.REJECTED)
+            case Observation():
+                if (
+                    self._pending_action
+                    and hasattr(self._pending_action, 'is_confirmed')
+                    and self._pending_action.is_confirmed
+                    == ActionConfirmationStatus.AWAITING_CONFIRMATION
+                ):
+                    return
+                if self._pending_action and self._pending_action.id == event.cause:
+                    self._pending_action = None
+                    if self.state.agent_state == AgentState.USER_CONFIRMED:
+                        await self.set_agent_state_to(AgentState.RUNNING)
+                    if self.state.agent_state == AgentState.USER_REJECTED:
+                        await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+                    logger.info(event, extra={'msg_type': 'OBSERVATION'})
+                else:
+                    match event:
+                        case CmdOutputObservation():
+                            logger.info(event, extra={'msg_type': 'OBSERVATION'})
+                        case AgentDelegateObservation():
+                            self.state.history.on_event(event)
+                            logger.info(event, extra={'msg_type': 'OBSERVATION'})
+                        case ErrorObservation():
+                            logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
         self.almost_stuck = 0

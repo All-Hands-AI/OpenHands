@@ -8,12 +8,13 @@ from opendevin.events.action import CmdRunAction, MessageAction
 
 def try_parse_answer(act) -> str | None:
     raw_ans = ''
-    if isinstance(act, MessageAction) and act.source == 'agent':
-        raw_ans = act.content
-    elif isinstance(act, CmdRunAction) and act.source == 'agent':
-        raw_ans = act.thought
-    else:
-        return None
+    match act:
+        case MessageAction(content=raw_ans) if act.source == 'agent':
+            raw_ans = act.content
+        case CmdRunAction(source='agent') if act.source == 'agent':
+            raw_ans = act.thought
+        case _:
+            return None
     agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)
     if not agent_answer:
         return None

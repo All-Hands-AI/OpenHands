@@ -131,14 +131,13 @@ class MultipleChoiceTask(Task):
 
 
 def compare_two_numbers(p, gt):
-    if isinstance(p, int) or isinstance(p, float):
-        pass
-    elif isinstance(p, list) or isinstance(p, bool) or isinstance(p, str):
-        return False
-    elif isinstance(p, tuple) or isinstance(p, complex) or isinstance(p, dict):
-        return False
-    else:
-        raise ValueError(p)
+    match p:
+        case int() | float():
+            pass
+        case list() | bool() | str() | tuple() | complex() | dict():
+            return False
+        case _:
+            raise ValueError(p)
 
     if isinstance(gt, float):
         return within_eps(pred=p, gt=gt)
@@ -317,20 +316,25 @@ class TheoremqaTask(Task):
             return None  # failed to convert the answer
 
         # Performing common type conversion
-        if isinstance(prediction, (set, tuple)):
-            prediction = list(prediction)
-            if isinstance(prediction[0], complex):
-                prediction = [tmp.real for tmp in prediction]
-            elif isinstance(prediction[0], Rational):
-                prediction = [float(tmp) for tmp in prediction]
-        elif isinstance(prediction, np.ndarray):
-            prediction = prediction.tolist()
-        else:
-            if isinstance(prediction, complex):
+        match prediction:
+            case set() | tuple():
+                prediction = list(prediction)
+                match prediction[0]:
+                    case complex():
+                        prediction = [tmp.real for tmp in prediction]
+                        return prediction
+                    case Rational():
+                        prediction = [float(tmp) for tmp in prediction]
+                        return prediction
+            case np.ndarray():
+                prediction = prediction.tolist()
+                return prediction
+            case complex():
                 prediction = prediction.real
-            elif isinstance(prediction, Rational):
+                return prediction
+            case Rational():
                 prediction = float(prediction)
-
+                return prediction
         return prediction
 
     def success(self, solution: str) -> bool:

@@ -154,14 +154,15 @@ class BrowsingAgent(Agent):
             return BrowseInteractiveAction(browser_actions='noop()')
 
         for event in state.history.get_events():
-            if isinstance(event, BrowseInteractiveAction):
-                prev_actions.append(event.browser_actions)
-                last_action = event
-            elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
-            elif isinstance(event, Observation):
-                last_obs = event
+            match event:
+                case BrowseInteractiveAction():
+                    prev_actions.append(event.browser_actions)
+                    last_action = event
+                case MessageAction() if event.source == EventSource.AGENT:
+                    # agent has responded, task finished.
+                    return AgentFinishAction(outputs={'content': event.content})
+                case Observation():
+                    last_obs = event
 
         if EVAL_MODE:
             prev_actions = prev_actions[1:]  # remove the first noop action

@@ -147,10 +147,12 @@ def process_instance(
 
         # retrieve the last agent message or thought
         for event in state.history.get_events(reverse=True):
-            if isinstance(event, MessageAction) and event.source == 'agent':
-                raw_ans = event.content
-            elif isinstance(event, CmdRunAction) and event.source == 'agent':
-                raw_ans = event.thought
+            if event.source == 'agent':
+                match event:
+                    case MessageAction():
+                        raw_ans = event.content
+                    case CmdRunAction():
+                        raw_ans = event.thought
 
         # parse the answer for a solution tag
         agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)

@@ -30,12 +30,15 @@ from opendevin.runtime.tools import RuntimeTool
 
 
 def action_to_str(action: Action) -> str:
-    if isinstance(action, CmdRunAction):
-        return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
-    elif isinstance(action, IPythonRunCellAction):
-        return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, MessageAction):
-        return action.content
+    match action:
+        case CmdRunAction():
+            return (
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+            )
+        case IPythonRunCellAction():
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
+        case MessageAction():
+            return action.content
     return ''
 
 
@@ -56,24 +59,27 @@ def get_observation_message(obs) -> dict[str, str] | None:
     max_message_chars = config.get_llm_config_from_agent(
         'CodeActSWEAgent'
     ).max_message_chars
-    if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
-        content += (
-            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
-        )
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, IPythonRunCellObservation):
-        content = 'OBSERVATION:\n' + obs.content
-        # replace base64 images with a placeholder
-        splitted = content.split('\n')
-        for i, line in enumerate(splitted):
-            if '![image](data:image/png;base64,' in line:
-                splitted[i] = (
-                    '![image](data:image/png;base64, ...) already displayed to user'
-                )
-        content = '\n'.join(splitted)
-        content = truncate_content(content, max_message_chars)
-        return {'role': 'user', 'content': content}
+    match obs:
+        case CmdOutputObservation():
+            content = 'OBSERVATION:\n' + truncate_content(
+                obs.content, max_message_chars
+            )
+            content += (
+                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
+            )
+            return {'role': 'user', 'content': content}
+        case IPythonRunCellObservation():
+            content = 'OBSERVATION:\n' + obs.content
+            # replace base64 images with a placeholder
+            splitted = content.split('\n')
+            for i, line in enumerate(splitted):
+                if '![image](data:image/png;base64,' in line:
+                    splitted[i] = (
+                        '![image](data:image/png;base64, ...) already displayed to user'
+                    )
+            content = '\n'.join(splitted)
+            content = truncate_content(content, max_message_chars)
+            return {'role': 'user', 'content': content}
     return None
 
 

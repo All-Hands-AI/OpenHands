@@ -254,7 +254,8 @@ def test_browse_internet(http_server):
     assert isinstance(
         last_observation, (BrowserOutputObservation, AgentDelegateObservation)
     )
-    if isinstance(last_observation, BrowserOutputObservation):
-        assert 'OpenDevin is all you need!' in last_observation.content
-    elif isinstance(last_observation, AgentDelegateObservation):
-        assert 'OpenDevin is all you need!' in last_observation.outputs['content']
+    match last_observation:
+        case BrowserOutputObservation():
+            assert 'OpenDevin is all you need!' in last_observation.content
+        case AgentDelegateObservation():
+            assert 'OpenDevin is all you need!' in last_observation.outputs['content']

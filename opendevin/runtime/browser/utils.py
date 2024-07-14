@@ -13,19 +13,19 @@ async def browse(
     if browser is None:
         raise BrowserUnavailableException()
 
-    if isinstance(action, BrowseURLAction):
-        # legacy BrowseURLAction
-        asked_url = action.url
-        if not asked_url.startswith('http'):
-            asked_url = os.path.abspath(os.curdir) + action.url
-        action_str = f'goto("{asked_url}")'
-
-    elif isinstance(action, BrowseInteractiveAction):
-        # new BrowseInteractiveAction, supports full featured BrowserGym actions
-        # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
-        action_str = action.browser_actions
-    else:
-        raise ValueError(f'Invalid action type: {action.action}')
+    match action:
+        case BrowseURLAction():
+            # legacy BrowseURLAction
+            asked_url = action.url
+            if not asked_url.startswith('http'):
+                asked_url = os.path.abspath(os.curdir) + action.url
+            action_str = f'goto("{asked_url}")'
+        case BrowseInteractiveAction():
+            # new BrowseInteractiveAction, supports full featured BrowserGym actions
+            # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
+            action_str = action.browser_actions
+        case _:
+            raise ValueError(f'Invalid action type: {action.action}')
 
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396

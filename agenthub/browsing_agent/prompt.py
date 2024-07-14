@@ -210,12 +210,15 @@ def fit_tokens(
 
     for _ in range(max_iterations):
         prompt = shrinkable.prompt
-        if isinstance(prompt, str):
-            prompt_str = prompt
-        elif isinstance(prompt, list):
-            prompt_str = '\n'.join([p['text'] for p in prompt if p['type'] == 'text'])
-        else:
-            raise ValueError(f'Unrecognized type for prompt: {type(prompt)}')
+        match prompt:
+            case str():
+                prompt_str = prompt
+            case list():
+                prompt_str = '\n'.join(
+                    [p['text'] for p in prompt if p['type'] == 'text']
+                )
+            case _:
+                raise ValueError(f'Unrecognized type for prompt: {type(prompt)}')
         n_chars = len(prompt_str)
         if n_chars <= max_prompt_chars:
             return prompt

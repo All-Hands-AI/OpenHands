@@ -115,10 +115,11 @@ class State:
         """
         last_user_message = None
         for event in self.history.get_events(reverse=True):
-            if isinstance(event, MessageAction) and event.source == 'user':
-                last_user_message = event.content
-            elif isinstance(event, AgentFinishAction):
-                if last_user_message is not None:
-                    return last_user_message
+            match event:
+                case MessageAction() if event.source == 'user':
+                    last_user_message = event.content
+                case AgentFinishAction():
+                    if last_user_message is not None:
+                        return last_user_message
 
         return last_user_message

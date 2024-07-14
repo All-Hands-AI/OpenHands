@@ -44,10 +44,11 @@ class StuckDetector:
 
         # retrieve the last four actions and observations starting from the end of history, wherever they are
         for event in reversed(filtered_history):
-            if isinstance(event, Action) and len(last_actions) < 4:
-                last_actions.append(event)
-            elif isinstance(event, Observation) and len(last_observations) < 4:
-                last_observations.append(event)
+            match event:
+                case Action() if len(last_actions) < 4:
+                    last_actions.append(event)
+                case Observation() if len(last_observations) < 4:
+                    last_observations.append(event)
 
             if len(last_actions) == 4 and len(last_observations) == 4:
                 break
@@ -193,10 +194,11 @@ class StuckDetector:
 
         # the end of history is most interesting
         for event in reversed(filtered_history):
-            if isinstance(event, Action) and len(last_six_actions) < 6:
-                last_six_actions.append(event)
-            elif isinstance(event, Observation) and len(last_six_observations) < 6:
-                last_six_observations.append(event)
+            match event:
+                case Action() if len(last_six_actions) < 6:
+                    last_six_actions.append(event)
+                case Observation() if len(last_six_observations) < 6:
+                    last_six_observations.append(event)
 
             if len(last_six_actions) == 6 and len(last_six_observations) == 6:
                 break
