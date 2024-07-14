@@ -45,6 +45,7 @@ class SSHExecCancellableStream(CancellableStream):
         self.closed = True
 
     def exit_code(self):
+        assert self.ssh is not None
         marker = f'EXIT_CODE_MARKER_{uuid.uuid4().hex}'
         self.ssh.sendline(f'echo "{marker}$?{marker}"')
 
@@ -287,8 +288,8 @@ class DockerSSHBox(Sandbox):
                         await self._setup_container()
                         await asyncio.sleep(2)
                         await self._setup_user()
-                        await self._setup_ssh()
                         await asyncio.sleep(2)
+                        await self._setup_ssh()
 
                         self.initialized = True
                         logger.info('SSHBox initialization complete')
@@ -318,44 +319,6 @@ class DockerSSHBox(Sandbox):
             get_od_sandbox_image, self.container_image, self.docker_client
         )
 
-    async def _setup_container(self):
-        # Set up the Docker container
-        try:
-            self.container = await self.docker_client.containers.get(
-                self.container_name
-            )
-            self.is_initial_session = False
-        except DockerError:
-            self.is_initial_session = True
-
-        if not config.persist_sandbox or self.is_initial_session:
-            await self._create_new_container()
-        else:
-            await self._use_existing_container()
-
-    async def _create_new_container(self):
-        logger.info('Creating new Docker container')
-        try:
-            await self.restart_docker_container()
-        except DockerError as ex:
-            if ex.status_code == 409 and 'is already in use by container' in str(ex):
-                # Extract the conflicting container ID from the error message
-                conflicting_container_id = ex.explanation.split('"')[1]
-                logger.warning(
-                    f'Removing conflicting container: {conflicting_container_id}'
-                )
-                await self.docker_client.containers.delete(
-                    conflicting_container_id, force=True
-                )
-                await self.restart_docker_container()
-            else:
-                raise
-
-    async def _use_existing_container(self):
-        self.container = await self.docker_client.containers.get(self.container_name)
-        logger.info('Using existing Docker container')
-        await self.start_docker_container()
-
     def format_env_value(self, value):
         if isinstance(value, str):
             # Use shlex.quote for strings to handle all special characters
@@ -374,11 +337,11 @@ class DockerSSHBox(Sandbox):
         formatted_value = self.format_env_value(value)
 
         # Set the environment variable in the SSH session
-        self.ssh.sendline(f'export {key}={formatted_value}')
+        self.send_line(f'export {key}={formatted_value}')
         self.ssh.prompt()
 
         # Verify that the environment variable was set
-        self.ssh.sendline(f'echo ${key}')
+        self.send_line(f'echo ${key}')
         self.ssh.prompt()
         output = self.ssh.before.strip()
 
@@ -445,7 +408,7 @@ class DockerSSHBox(Sandbox):
                 chunk = await stream.read_out()
                 if chunk:
                     output += chunk.data
-                    print(f'Received chunk: {chunk.data!r}')  # Print the raw data
+                    print(f'>>> {chunk.data!r}')  # Print the raw data
                 else:
                     break
 
@@ -462,6 +425,44 @@ class DockerSSHBox(Sandbox):
 
         return exit_code, decoded_output
 
+    async def _setup_container(self):
+        # Set up the Docker container
+        try:
+            self.container = await self.docker_client.containers.get(
+                self.container_name
+            )
+            self.is_initial_session = False
+        except DockerError:
+            self.is_initial_session = True
+
+        if not config.persist_sandbox or self.is_initial_session:
+            await self._create_new_container()
+        else:
+            await self._use_existing_container()
+
+    async def _create_new_container(self):
+        logger.info('Creating new Docker container')
+        try:
+            await self.restart_docker_container()
+        except DockerError as ex:
+            if ex.status == 409 and 'is already in use by container' in str(ex):
+                # Extract the conflicting container ID from the error message
+                conflicting_container_id = ex.explanation.split('"')[1]
+                logger.warning(
+                    f'Removing conflicting container: {conflicting_container_id}'
+                )
+                await self.docker_client.containers.delete(
+                    conflicting_container_id, force=True
+                )
+                await self.restart_docker_container()
+            else:
+                raise
+
+    async def _use_existing_container(self):
+        self.container = await self.docker_client.containers.get(self.container_name)
+        logger.info('Using existing Docker container')
+        await self.start_docker_container()
+
     async def _setup_environment(self):
         try:
             logger.info('Setting up sandbox vars')
@@ -473,26 +474,25 @@ class DockerSSHBox(Sandbox):
                     await self.add_to_env_async(key, value)
 
             logger.info('Setting up tmp folder')
-            await self.execute_async('mkdir -p /tmp')
+            self.send_line('mkdir -p /tmp')
+            self.ssh.prompt()
             logger.info('Setting up git user')
-            await self.execute_async('git config --global user.name "OpenDevin"')
+            self.send_line('git config --global user.name "OpenDevin"')
+            self.ssh.prompt()
             logger.info('Setting up git email')
-            await self.execute_async(
-                'git config --global user.email "opendevin@all-hands.dev"'
-            )
+            self.send_line('git config --global user.email "opendevin@all-hands.dev"')
+            self.ssh.prompt()
         except Exception as e:
             logger.exception(f'Error during initialization: {e}')
             raise e
         logger.info('Environment setup complete')
 
     async def _setup_user(self):
-        logger.info('Setting up user 1')
+        logger.info('Setting up user')
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
         result = await self.container_exec_run(
             ['/bin/bash', '-c', r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
-            workdir=self.sandbox_workspace_dir,
-            environment=self._env,
         )
         exit_code, logs = result
         if exit_code != 0:
@@ -501,36 +501,36 @@ class DockerSSHBox(Sandbox):
             )
 
         # Check if the opendevin user exists
-        logger.info('Setting up user 2')
         exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
-            workdir=self.sandbox_workspace_dir,
-            environment=self._env,
         )
-        if exit_code == 0:
+        if exit_code == 0 and 'no such user' not in logs:
             # User exists, delete it
             logger.info('Deleting existing opendevin user...')
             exit_code, logs = await self.container_exec_run(
                 ['/bin/bash', '-c', 'userdel -r opendevin'],
-                workdir=self.sandbox_workspace_dir,
-                environment=self._env,
             )
             if exit_code != 0:
                 logger.error(f'Failed to remove opendevin user in sandbox: {logs}')
             else:
                 logger.info('Successfully deleted existing opendevin user.')
 
-        logger.info('Setting up user 3')
         if self.run_as_devin:
-            # Ensure the home directory is removed before creating the user
+            # The opendevin home folder is already part of the sandbox.
+            # Just try to clear the logs folder here.
             exit_code, logs = await self.container_exec_run(
-                ['/bin/bash', '-c', 'rm -rf /home/opendevin 2>/dev/null'],
+                ['/bin/bash', '-c', 'test -d /home/opendevin/logs'],
             )
-            if exit_code != 0:
-                # This is not a fatal error, just a warning
-                logger.warning(
-                    f'Failed to remove existing opendevin home directory in sandbox: {logs}'
+            if exit_code == 0:
+                logger.info('Deleting existing logs directory...')
+                exit_code, logs = await self.container_exec_run(
+                    ['/bin/bash', '-c', 'rm -rf /home/opendevin/logs'],  # 2>/dev/null
                 )
+                if exit_code != 0:
+                    # This is not a fatal error, just a warning
+                    logger.warning(
+                        f'Failed to remove existing opendevin logs directory in sandbox: {logs}'
+                    )
 
             # Create the opendevin user
             exit_code, logs = await self.container_exec_run(
@@ -545,7 +545,6 @@ class DockerSSHBox(Sandbox):
                     f'Failed to create opendevin user in sandbox: {logs}'
                 )
 
-            logger.info('Setting up user 4')
             exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
@@ -557,7 +556,6 @@ class DockerSSHBox(Sandbox):
                 raise RuntimeError(f'Failed to set password in sandbox: {logs}')
 
             # chown the home directory
-            logger.info('Setting up user 5')
             exit_code, logs = await self.container_exec_run(
                 ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
             )
@@ -566,7 +564,6 @@ class DockerSSHBox(Sandbox):
                     f'Failed to chown home directory for opendevin in sandbox: {logs}'
                 )
             # check the miniforge3 directory exist
-            logger.info('Setting up user 6')
             exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
@@ -583,7 +580,6 @@ class DockerSSHBox(Sandbox):
                     raise RuntimeError(
                         f'An error occurred while checking if miniforge3 directory exists: {logs}'
                     )
-            logger.info('Setting up user 7')
             exit_code, logs = await self.container_exec_run(
                 [
                     '/bin/bash',
@@ -597,7 +593,6 @@ class DockerSSHBox(Sandbox):
                     f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {self.sandbox_workspace_dir=} is mounted by the app docker container.'
                 )
         else:
-            logger.info('Setting up user 8')
             exit_code, logs = await self.container_exec_run(
                 # change password for root
                 ['/bin/bash', '-c', f"echo 'root:{self._ssh_password}' | chpasswd"],
@@ -606,13 +601,11 @@ class DockerSSHBox(Sandbox):
                 raise RuntimeError(
                     f'Failed to set password for root in sandbox: {logs}'
                 )
-        logger.info('Setting up user 9')
         exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
         )
 
         # Add a check to ensure the user was created successfully
-        logger.info('Setting up user 10')
         exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', 'id opendevin'],
         )
@@ -656,16 +649,18 @@ class DockerSSHBox(Sandbox):
         try:
             await self.wait_for_ssh_ready()
             await self._ssh_login()
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
             await self.start_ssh_session()
+            await asyncio.sleep(1)
             await self._setup_environment()
         except pxssh.ExceptionPxssh as e:
             logger.error(
                 f'SSH session failed, attempting to restart container.\nError: {e}'
             )
             if not config.persist_sandbox:
+                await self.remove_docker_container()
                 await self.restart_container()
-            raise e
+            raise
 
     async def wait_for_ssh_ready(self):
         max_attempts = 10
@@ -689,10 +684,6 @@ class DockerSSHBox(Sandbox):
 
         raise RuntimeError('SSH service failed to start in time')
 
-    def send_line(self, cmd: str):
-        if self.ssh is not None:
-            self.ssh.sendline(cmd)
-
     async def start_ssh_session(self):
         logger.info('Starting SSH session')
         # Fix: https://github.com/pexpect/pexpect/issues/669
@@ -705,13 +696,11 @@ class DockerSSHBox(Sandbox):
 
     async def restart_container(self):
         logger.info('Restarting container...')
-        await self.aclose()
-        await self._setup_docker_client()
+        await asyncio.sleep(1)
         await self._setup_container()
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
         await self._setup_user()
-        await self._setup_ssh()
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
         logger.info('Container restarted successfully.')
 
     async def _ssh_login(self):
@@ -758,7 +747,7 @@ class DockerSSHBox(Sandbox):
             )
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
-            logger.exception(f'Login failed: {e}')
+            logger.exception(f'Login failed: {e}', exc_info=False)
             if 'connection refused' in str(e).lower():
                 logger.error('SSH connection refused')
             raise e
@@ -788,6 +777,10 @@ class DockerSSHBox(Sandbox):
             -1,
             f'Command: "{cmd}" timed out. Sent SIGINT to the process: {command_output}',
         )
+
+    def send_line(self, cmd: str):
+        if self.ssh is not None:
+            self.ssh.sendline(cmd)
 
     @async_to_sync
     def execute(
@@ -827,14 +820,6 @@ class DockerSSHBox(Sandbox):
             full_cmd = f'({env_exports}) && {cmd}'
         else:
             full_cmd = f'{cmd}'
-        # exec_instance = await self.container.exec(
-        #     cmd=['/bin/bash', '-c', full_cmd],
-        #     stdout=True,
-        #     stderr=True,
-        #     stdin=True,
-        #     tty=True,
-        # )
-        # exec_result = await exec_instance.start(detach=False)
         self.send_line(full_cmd)
         if stream:
             return 0, SSHExecCancellableStream(self.ssh, full_cmd, self.timeout)
@@ -946,7 +931,7 @@ class DockerSSHBox(Sandbox):
             try:
                 await container.delete()
             except DockerError as e:
-                if e.status_code == 404:
+                if e.status == 404:
                     # logger.warning(f"Container '{self.container_name}' not found")
                     pass
                 else:
@@ -1028,13 +1013,28 @@ class DockerSSHBox(Sandbox):
         retry=retry_if_exception_type(DockerError),
     )
     async def restart_docker_container(self):
+        # try:
+        #     await self.remove_docker_container()
+        # except DockerError as ex:
+        #     logger.exception('Failed to remove container', exc_info=False)
+        #     raise ex
         try:
-            await self.remove_docker_container()
-        except DockerError as ex:
-            logger.exception('Failed to remove container', exc_info=False)
-            raise ex
+            # Attempt to find an existing container with the same name
+            existing_container = await self.docker_client.containers.get(
+                self.container_name
+            )
+        except DockerError as e:
+            if e.status == 404:
+                # Container not found, proceed with creation
+                existing_container = None
+            else:
+                raise  # Re-raise other Docker errors
 
         try:
+            if existing_container:
+                logger.warning(f'Replacing existing container: {self.container_name}')
+                await existing_container.delete(force=True)
+
             logger.info('Finding available port')
             self._ssh_port = find_available_tcp_port()
             logger.info(f'Using port {self._ssh_port}')
@@ -1054,28 +1054,67 @@ class DockerSSHBox(Sandbox):
 
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
-            self.container = await self.docker_client.containers.create(
-                config={
-                    'Image': self.container_image,
-                    'Cmd': [
-                        '/usr/sbin/sshd',
-                        '-D',
-                        '-p',
-                        str(self._ssh_port),
-                        '-o',
-                        'PermitRootLogin=yes',
+            # self.container = await self.docker_client.containers.create(
+            #     config={
+            #         'Image': self.container_image,
+            #         'Cmd': [
+            #             '/usr/sbin/sshd',
+            #             '-D',
+            #             '-p',
+            #             str(self._ssh_port),
+            #             '-o',
+            #             'PermitRootLogin=yes',
+            #         ],
+            #         'WorkingDir': self.sandbox_workspace_dir,
+            #         'HostConfig': {
+            #             **network_kwargs,
+            #             'Binds': [
+            #                 f"{host}:{container['bind']}:rw"
+            #                 for host, container in self.volumes.items()
+            #             ],
+            #         },
+            #     },
+            #     name=self.container_name,
+            # )
+
+            # Prepare container configuration
+            container_config = {
+                'Image': self.container_image,
+                'Cmd': [
+                    '/usr/sbin/sshd',
+                    '-D',
+                    '-p',
+                    str(self._ssh_port),
+                    '-o',
+                    'PermitRootLogin=yes',
+                ],
+                'WorkingDir': self.sandbox_workspace_dir,
+                'HostConfig': {
+                    'NetworkMode': network_kwargs.get('network_mode'),
+                    'PortBindings': {
+                        str(self._ssh_port) + '/tcp': [
+                            {'HostPort': str(self._ssh_port)}
+                        ]
+                    }
+                    if 'ports' in network_kwargs
+                    else {},
+                    'Binds': [
+                        f"{host}:{container['bind']}:rw"
+                        for host, container in self.volumes.items()
                     ],
-                    'WorkingDir': self.sandbox_workspace_dir,
-                    'HostConfig': {
-                        **network_kwargs,
-                        'Binds': [
-                            f"{host}:{container['bind']}:rw"
-                            for host, container in self.volumes.items()
-                        ],
-                    },
                 },
+            }
+
+            # Use create_or_replace for idempotent container management
+            logger.info('Waiting for container...')
+            self.container = await self.docker_client.containers.create_or_replace(
+                config=container_config,
                 name=self.container_name,
             )
+            assert self.container is not None
+            self.container_id = self.container.id
+
+            await asyncio.sleep(2)
             await self.container.start()
             logger.info('Container started')
         except DockerError as ex:
@@ -1093,9 +1132,6 @@ class DockerSSHBox(Sandbox):
             logger.exception('Failed to start container: ' + str(ex), exc_info=False)
             raise ex
 
-        # wait for container to be ready
-        await self.wait_for_container_ready()
-
     async def wait_for_container_ready(self):
         max_attempts = 30
         for attempt in range(max_attempts):
@@ -1103,6 +1139,9 @@ class DockerSSHBox(Sandbox):
                 container_info = await self.docker_client.containers.get(
                     self.container_name
                 )
+                logger.info(
+                    f"Container info: {container_info['State']}"
+                )  # New debug line
                 if container_info['State']['Status'] == 'running':
                     logger.info('Container is running')
                     return
@@ -1111,8 +1150,8 @@ class DockerSSHBox(Sandbox):
                     logs = await container_info.log(stdout=True, stderr=True)
                     logger.error(f'Container logs: {logs}')
                     raise RuntimeError('Container exited unexpectedly')
-            except DockerError:
-                logger.warning('Container not found, waiting...')
+            except DockerError as e:
+                logger.warning(f'Container not found, waiting...: {e}')
 
             await asyncio.sleep(1)
             logger.info(
