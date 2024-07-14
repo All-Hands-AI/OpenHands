@@ -88,3 +88,8 @@ class SummarizeError(Exception):
 
     def __init__(self, message='Error Summarizing The Memory'):
         super().__init__(message)
+
+
+class InvalidSummaryResponseError(Exception):
+    def __init__(self, message='Invalid summary response'):
+        super().__init__(message)

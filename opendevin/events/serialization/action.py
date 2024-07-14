@@ -5,6 +5,7 @@ from opendevin.events.action.agent import (
     AgentFinishAction,
     AgentRecallAction,
     AgentRejectAction,
+    AgentSummarizeAction,
     ChangeAgentStateAction,
 )
 from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -33,6 +34,7 @@ actions = (
     ModifyTaskAction,
     ChangeAgentStateAction,
     MessageAction,
+    AgentSummarizeAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

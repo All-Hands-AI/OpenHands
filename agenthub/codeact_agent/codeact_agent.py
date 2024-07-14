@@ -33,6 +33,7 @@ from opendevin.events.observation import (
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import summarize_messages
+from opendevin.memory.history import ShortTermHistory
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -233,7 +234,7 @@ class CodeActAgent(Agent):
                     ],
                     temperature=0.0,
                 )
-                print('Response: ', response)
+                # print('Response: ', response)
             except (ContextWindowExceededError, TokenLimitExceededError):
                 # Handle the specific exception
                 print('An error occurred: ')
@@ -241,8 +242,8 @@ class CodeActAgent(Agent):
                 # If we got a context alert, try trimming the messages length, then try again
                 if self.llm.is_over_token_limit(messages):
                     # A separate API call to run a summarizer
-                    messages = self.summarize_messages_inplace(messages)
-
+                    self.condense(state=state)
+                    messages = self._get_messages(state=state)
                     # Try step again
                     # return self.step(user_message, first_message=first_message, return_dicts=return_dicts)
                 else:
@@ -254,9 +255,10 @@ class CodeActAgent(Agent):
 
         return self.action_parser.parse(response)
 
-    def summarize_messages_inplace(
+    def condense(
         self,
-        messages: list[dict],
+        state: State,
+        # history: ShortTermHistory,
         #    cutoff=None,
         #    preserve_last_N_messages=True,
         #    disallow_tool_as_first=True
@@ -266,17 +268,31 @@ class CodeActAgent(Agent):
         # Start at index 1 (past the system message),
         # and collect messages for summarization until we reach the desired truncation token fraction (eg 50%)
         # Do not allow truncation of the last N messages, since these are needed for in-context examples of function calling
-
-        # TODO: Check the functioning of this get_token_count function.
+        history: ShortTermHistory = state.history
+        messages = self._get_messages(state=state)
         token_counts = [self.llm.get_token_count([message]) for message in messages]
-        print(token_counts)
         message_buffer_token_count = sum(token_counts[2:])  # no system message
         MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC = 0.75
         desired_token_count_to_summarize = int(
             message_buffer_token_count * MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC
         )
-        candidate_messages_to_summarize = messages[2:]
-        token_counts = token_counts[2:]
+        candidate_messages_to_summarize = []
+        # token_counts = token_counts[2:]
+
+        last_summarized_event_id = None
+        tokens_so_far = 0
+        for event in history.get_events():
+            message = (
+                get_action_message(event)
+                if isinstance(event, Action)
+                else get_observation_message(event)
+            )
+            if message:
+                candidate_messages_to_summarize.append(message)
+                tokens_so_far += self.llm.get_token_count([message])
+            if tokens_so_far > desired_token_count_to_summarize:
+                last_summarized_event_id = event.id
+                break
 
         # TODO: Add functionality for preserving last N messages
         MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST = 3
@@ -298,26 +314,16 @@ class CodeActAgent(Agent):
                 f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(messages)}, preserve_N={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}]"
             )
 
-        tokens_so_far = 0
-        cutoff = 0
-        for i, msg in enumerate(candidate_messages_to_summarize):
-            cutoff = i
-            tokens_so_far += token_counts[i]
-            if tokens_so_far > desired_token_count_to_summarize:
-                break
-        # Account for system message
-        cutoff += 1
-
-        # Try to make an assistant message come after the cutoff
-        try:
-            print(f"Selected cutoff {cutoff} was a 'user', shifting one...")
-            if messages[cutoff]['role'] == 'user':
-                new_cutoff = cutoff + 1
-                if messages[new_cutoff]['role'] == 'user':
-                    print(f"Shifted cutoff {new_cutoff} is still a 'user', ignoring...")
-                cutoff = new_cutoff
-        except IndexError:
-            pass
+        # TODO: Try to make an assistant message come after the cutoff
+        # try:
+        #     print(f"Selected cutoff {cutoff} was a 'user', shifting one...")
+        #     if messages[cutoff]['role'] == 'user':
+        #         new_cutoff = cutoff + 1
+        #         if messages[new_cutoff]['role'] == 'user':
+        #             print(f"Shifted cutoff {new_cutoff} is still a 'user', ignoring...")
+        #         cutoff = new_cutoff
+        # except IndexError:
+        #     pass
 
         # TODO: Customize this function to be used by OpenDevin.
         # # Make sure the cutoff isn't on a 'tool' or 'function'
@@ -326,9 +332,8 @@ class CodeActAgent(Agent):
         #         printd(f"Selected cutoff {cutoff} was a 'tool', shifting one...")
         #         cutoff += 1
 
-        message_sequence_to_summarize = messages[
-            2:cutoff
-        ]  # do NOT get rid of the system message
+        message_sequence_to_summarize = candidate_messages_to_summarize
+
         if len(message_sequence_to_summarize) <= 1:
             # This prevents a potential infinite loop of summarizing the same message over and over
             raise SummarizeError(
@@ -336,7 +341,7 @@ class CodeActAgent(Agent):
             )
         else:
             print(
-                f'Attempting to summarize {len(message_sequence_to_summarize)} messages [2:{cutoff}] of {len(messages)}'
+                f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
             )
 
         # TODO: (Check) I don't think this is needed because max_tokens is already define in opendevin.
@@ -349,10 +354,13 @@ class CodeActAgent(Agent):
         #         LLM_MAX_TOKENS[self.model] if (self.model is not None and self.model in LLM_MAX_TOKENS) else LLM_MAX_TOKENS["DEFAULT"]
         #     )
 
-        summary = summarize_messages(
+        summary_action = summarize_messages(
             message_sequence_to_summarize=message_sequence_to_summarize, llm=self.llm
         )
-        print(f'Got summary: {summary}')
+        summary_action.last_summarized_event_id = last_summarized_event_id
+        print(f'Got summary: {summary_action}')
+        history.add_summary(summary_action)
+        print('Added to history')
 
         # TODO: Look into this
         # # Metadata that's useful for the agent to see
@@ -382,14 +390,13 @@ class CodeActAgent(Agent):
 
         # print(f"Ran summarizer, messages length {prior_len} -> {len(self.messages)}")
 
-        print('Old No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
-        new_messages = (
-            messages[:2]
-            + [{'role': 'assistant', 'content': summary}]
-            + messages[cutoff:]
-        )
-        print('New No of tokens, ' + str(self.llm.get_token_count(new_messages)) + '\n')
-        return new_messages
+        # print('Old No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
+        # new_messages = (
+        #     messages[:2]
+        #     + [{'role': 'assistant', 'content': summary}]
+        #     + messages[cutoff:]
+        # )
+        # print('New No of tokens, ' + str(self.llm.get_token_count(new_messages)) + '\n')
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
@@ -407,6 +414,8 @@ class CodeActAgent(Agent):
                 if isinstance(event, Action)
                 else get_observation_message(event)
             )
+
+            # print (event.id , " : ", message)
 
             # add regular message
             if message:

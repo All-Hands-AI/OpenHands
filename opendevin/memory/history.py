@@ -4,6 +4,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import (
     AgentDelegateAction,
+    AgentSummarizeAction,
     ChangeAgentStateAction,
 )
 from opendevin.events.action.empty import NullAction
@@ -41,6 +42,12 @@ class ShortTermHistory(list[Event]):
         self.start_id = -1
         self.end_id = -1
         self.delegates = {}
+        self.summary = None
+        self.last_summarized_event_id = None
+
+    def add_summary(self, summary_action: AgentSummarizeAction):
+        self.summary = summary_action
+        self.last_summarized_event_id = summary_action.last_summarized_event_id
 
     def set_event_stream(self, event_stream: EventStream):
         self._event_stream = event_stream
@@ -76,7 +83,14 @@ class ShortTermHistory(list[Event]):
             # and filter out events that were included in a summary
 
             # filter out the events from a delegate of the current agent
-            if not any(
+            if (
+                self.last_summarized_event_id is not None
+                and self.summary is not None
+                and event.id <= self.last_summarized_event_id
+            ):
+                summary_action = self.summary
+                yield summary_action
+            elif not any(
                 # except for the delegate action and observation themselves, currently
                 # AgentDelegateAction has id = delegate_start
                 # AgentDelegateObservation has id = delegate_end
