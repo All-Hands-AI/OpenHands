@@ -1048,6 +1048,22 @@ class DockerSSHBox(Sandbox):
             else:
                 raise  # Re-raise other Docker errors
 
+        logger.info(f'Checking for Docker image: {self.container_image}')
+        try:
+            await self.docker_client.images.get(self.container_image)
+            logger.info(f'Image {self.container_image} found locally')
+        except DockerError as img_error:
+            if img_error.status == 404:
+                logger.warning(f'Image {self.container_image} not found. Pulling...')
+                try:
+                    await self.docker_client.images.pull(self.container_image)
+                    logger.info(f'Successfully pulled image {self.container_image}')
+                except DockerError as pull_error:
+                    logger.error(
+                        f'Failed to pull image {self.container_image}: {pull_error}'
+                    )
+                    raise
+
         try:
             if existing_container:
                 logger.warning(f'Replacing existing container: {self.container_name}')
