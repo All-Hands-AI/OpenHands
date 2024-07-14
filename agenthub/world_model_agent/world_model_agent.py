@@ -360,7 +360,10 @@ You should not attempt to visit the following domains as they will block your en
     def effectuator(self, main_prompt):
         prompt = main_prompt.get_effectuator_prompt()
         ans_dict = self.get_llm_output(
-            prompt, main_prompt._parse_effectuator_answer, ['action'], override_llm=True
+            prompt,
+            main_prompt._parse_effectuator_answer,
+            ['action'],
+            override_llm=False,
         )
 
         return ans_dict['action']

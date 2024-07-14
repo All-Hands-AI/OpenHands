@@ -609,7 +609,7 @@ class MyMainPrompt(PromptElement):
 
 Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
 <action>
-Based on the current observation, state and active strategy, select one single action to be executed. You can only use one action at a time.
+Based on the current observation, state, active strategy, and action history, select one single action to be executed. You can only use one action at a time. Your response will be executed with Python as a function call so make sure to follow the format and argument data type specifications as the functions in the action space.
 </action>
 """
 
