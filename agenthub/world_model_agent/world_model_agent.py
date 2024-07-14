@@ -151,6 +151,7 @@ class WorldModelAgent(Agent):
         self.error_accumulator = 0
 
         self.actions: List[str] = []
+        self.explanations: List[str] = []
         self.obs_history: List[Dict[str, Any]] = []
         self.states: List[str] = []
         self.evaluations: List[str] = []
@@ -362,11 +363,11 @@ You should not attempt to visit the following domains as they will block your en
         ans_dict = self.get_llm_output(
             prompt,
             main_prompt._parse_effectuator_answer,
-            ['action'],
+            ['action', 'explanation'],
             override_llm=False,
         )
 
-        return ans_dict['action']
+        return ans_dict['action'], ans_dict['explanation']
 
     def step(self, env_state: State) -> Action:
         """
@@ -476,7 +477,8 @@ You should not attempt to visit the following domains as they will block your en
             obs_history=self.obs_history,
             states=self.states,
             strategies=self.strategies,
-            actions=actions,
+            # actions=actions,
+            actions=self.explanations,
             active_strategy=self.active_strategy,
         )
 
@@ -509,18 +511,21 @@ You should not attempt to visit the following domains as they will block your en
             obs_history=self.obs_history,
             states=self.states,
             strategies=self.strategies,
-            actions=actions,
+            # actions=actions,
+            actions=self.explanations,
             active_strategy=self.active_strategy,
             action_space=self.action_space,
         )
 
-        action = self.effectuator(main_prompt)
+        action, explanation = self.effectuator(main_prompt)
         logger.info(f'*Action*: {action}')
-        self.full_output += f'*Action*: {action}\n'
+        # self.full_output += f'*Action*: {action}\n'
+        self.full_output += f'*Action*: {explanation}\n'
 
         llm_output_logger.info(self.full_output)
 
         self.actions.append(action)
+        self.explanations.append(explanation)
         return self.parse_response(action, self.full_output)
 
     def planning_search(self, state):
@@ -562,7 +567,7 @@ You should not attempt to visit the following domains as they will block your en
         def _expand(node, path):
             new_states = [n.state for n in path[:] if n.state is not None]
             new_actions = [n.action for n in path[:] if n.action is not None]
-            actions = self.actions
+            # actions = self.actions
             # if DEFAULT_BROWSER is not None:
             #     actions = actions[1:]
             if node.state is None:
@@ -572,7 +577,8 @@ You should not attempt to visit the following domains as they will block your en
                     obs_history=self.obs_history,
                     states=self.states + new_states,
                     strategies=self.strategies + new_actions,
-                    actions=actions,
+                    # actions=actions,
+                    actions=self.explanations,
                 )
                 node.state, node.state_status, node.is_terminal = self.dynamics(
                     main_prompt
@@ -609,7 +615,8 @@ You should not attempt to visit the following domains as they will block your en
                         obs_history=self.obs_history,
                         states=self.states + new_states,
                         strategies=self.strategies + new_actions,
-                        actions=actions,
+                        # actions=actions,
+                        actions=self.explanations,
                     )
                     strategy = self.policy(main_prompt)
                     # action, action_dict = self.policy(main_prompt)
@@ -624,7 +631,8 @@ You should not attempt to visit the following domains as they will block your en
                         obs_history=self.obs_history,
                         states=self.states + new_states,
                         strategies=self.strategies + new_actions + [action],
-                        actions=actions,
+                        # actions=actions,
+                        actions=self.explanations,
                     )
                     fast_reward, think = self.action_reward(main_prompt)
                     logger.info(f'*Strategy Candidate*: {action}')

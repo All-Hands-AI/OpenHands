@@ -608,6 +608,10 @@ class MyMainPrompt(PromptElement):
 # Abstract Example
 
 Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
+<explanation>
+Describe what the action to be taken is trying to do using a single concise sentence. Try to break down the active strategy into individual, manageable actions. Focus on the single action. Use first person perspective like "I am doing something". If you got trouble with using the search button, try hitting enter on the search box instead.
+</explanation>
+
 <action>
 Based on the current observation, state, active strategy, and action history, select one single action to be executed. You can only use one action at a time. Your response will be executed with Python as a function call so make sure to follow the format and argument data type specifications as the functions in the action space.
 </action>
@@ -617,6 +621,10 @@ Based on the current observation, state, active strategy, and action history, se
 # Concrete Example
 
 Here is a concrete example of how to format your answer. Make sure to follow the template by wrapping with proper html starting and closing tags:
+<explanation>
+I am filling out the textbox for Date with 'example with "quotes"'
+</explanation>
+
 <action>
 fill('32-12', 'example with "quotes"')
 </action>
@@ -790,7 +798,9 @@ away-from-the-goal
     def _parse_effectuator_answer(self, text_answer):
         ans_dict = {}
         ans_dict.update(
-            parse_html_tags_raise(text_answer, keys=['action'], merge_multiple=True)
+            parse_html_tags_raise(
+                text_answer, keys=['action', 'explanation'], merge_multiple=True
+            )
         )
 
         try:
