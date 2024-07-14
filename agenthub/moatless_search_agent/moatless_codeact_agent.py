@@ -100,7 +100,7 @@ def get_in_context_example() -> str:
 
 
 class MoatlessCodeActAgent(Agent):
-    VERSION = '1.0'
+    VERSION = '0.0.1'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.

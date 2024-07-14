@@ -58,7 +58,7 @@ def get_action_message(action: Action) -> dict[str, str] | None:
 
 
 class MoatlessSearchAgent(Agent):
-    VERSION = '2024-06-14'
+    VERSION = '0.0.1'
     TOOLS: List[Type[ActionSpec]] = [SearchCodeAction, IdentifyCode, Reject]
 
     system_message: str = get_system_message()

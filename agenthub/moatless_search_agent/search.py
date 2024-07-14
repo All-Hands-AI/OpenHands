@@ -39,19 +39,21 @@ class SearchCodeRequest(ActionRequest):
         default=None,
         description='A glob pattern to filter search results to specific file types or directories. ',
     )
+    code_snippet: Optional[str] = Field(
+        default=None,
+        description='Specific code snippet to that should be exactly matched. Preferred when having a code snippet over `query`.',
+    )
+    class_name: Optional[str] = Field(
+        default=None,
+        description='Specific class name to include in the search. Preferred when having a class name over `query`.',
+    )
+    function_name: Optional[str] = Field(
+        default=None,
+        description='Specific function name to include in the search. Preferred when having a function name over `query`.',
+    )
     query: Optional[str] = Field(
         default=None,
         description='A semantic similarity search query. Use natural language to describe what you are looking for.',
-    )
-    code_snippet: Optional[str] = Field(
-        default=None,
-        description='Specific code snippet to that should be exactly matched.',
-    )
-    class_name: Optional[str] = Field(
-        default=None, description='Specific class name to include in the search.'
-    )
-    function_name: Optional[str] = Field(
-        default=None, description='Specific function name to include in the search.'
     )
 
     @model_validator(mode='after')

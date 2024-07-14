@@ -22,6 +22,7 @@ FIND_AGENT_TEST_IGNORE = (
 
 SEARCH_FUNCTIONS_FEW_SHOT = """Examples:
 
+--- START OF EXAMPLE 1 ---
 User:
 The file uploader intermittently fails with "TypeError: cannot unpack non-iterable NoneType object". This issue appears sporadically during high load conditions..
 
@@ -31,6 +32,10 @@ search(
     file_pattern="**/uploader/**/*.py"
 )
 
+...
+--- END OF EXAMPLE 1 ---
+
+--- START OF EXAMPLE 2 ---
 User:
 There's a bug in the PaymentProcessor class where transactions sometimes fail to log correctly, resulting in missing transaction records.
 
@@ -39,6 +44,10 @@ search(
     class_name="PaymentProcessor"
 )
 
+...
+--- END OF EXAMPLE 2 ---
+
+--- START OF EXAMPLE 3 ---
 User:
 The generate_report function sometimes produces incomplete reports under certain conditions. This function is part of the reporting module. Locate the generate_report function in the reports directory to debug and fix the issue.
 
@@ -48,6 +57,10 @@ search(
     file_pattern="**/reports/**/*.py"
 )
 
+...
+--- END OF EXAMPLE 3 ---
+
+--- START OF EXAMPLE 4 ---
 User:
 The extract_data function in HTMLParser throws an "AttributeError: 'NoneType' object has no attribute 'find'" error when parsing certain HTML pages.
 
@@ -57,6 +70,10 @@ search(
     function_name="extract_data"
 )
 
+...
+--- END OF EXAMPLE 4 ---
+
+--- START OF EXAMPLE 5 ---
 User:
 The database connection setup is missing SSL configuration, causing insecure connections.
 
@@ -72,4 +89,7 @@ search(
     code_snippet="engine = create_engine(DATABASE_URL)",
     file_pattern="db_config/database.py"
 )
+
+...
+--- END OF EXAMPLE 5 ---
 """

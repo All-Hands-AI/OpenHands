@@ -207,6 +207,7 @@ logs
 /_test_workspace
 /debug
 cache
+.vector_store
 
 # configuration
 config.toml
