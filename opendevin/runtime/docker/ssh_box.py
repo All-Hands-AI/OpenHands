@@ -10,7 +10,7 @@ import tempfile
 import time
 import uuid
 from glob import glob
-from typing import Tuple, Union  # type: ignore[unused-import]
+from typing import Any, Dict, Tuple, Union  # type: ignore[unused-import]
 
 import aiodocker
 import docker
@@ -322,9 +322,12 @@ class DockerSSHBox(Sandbox):
     async def _setup_docker_client(self):
         try:
             self.docker_client = aiodocker.Docker()
+            # Check if Docker daemon is accessible
+            info = await self.docker_client.system.info()
+            logger.info(f"Connected to Docker daemon. Version: {info['ServerVersion']}")
         except Exception as ex:
             logger.exception(
-                f'Error creating aiodocker client. Please check that Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
+                f'Error creating aiodocker client or connecting to Docker daemon. Please check that Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
                 exc_info=False,
             )
             raise ex
@@ -1010,6 +1013,23 @@ class DockerSSHBox(Sandbox):
         except DockerError:
             pass
 
+    def _create_host_config(self, use_host_network: bool) -> Dict[str, Any]:
+        host_config: Dict[str, Any] = {
+            'Binds': [
+                f'{host_path}:{container_path}:rw'
+                for host_path, container_path in self.volumes.items()
+            ],
+        }
+
+        if use_host_network:
+            host_config['NetworkMode'] = 'host'
+        else:
+            host_config['PortBindings'] = {
+                f'{self._ssh_port}/tcp': [{'HostPort': str(self._ssh_port)}]
+            }
+
+        return host_config
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
@@ -1036,16 +1056,17 @@ class DockerSSHBox(Sandbox):
             self._ssh_port = find_available_tcp_port()
             logger.info(f'Using port {self._ssh_port}')
 
-            # Default to using host network mode if config is not available
-            use_host_network = getattr(self, 'use_host_network', True)
+            use_host_network = self.use_host_network
+            is_github_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
+            if is_github_actions:
+                use_host_network = True
+                logger.info(
+                    'Detected GitHub Actions environment, enabling host network mode.'
+                )
 
-            network_kwargs: dict[str, str | dict[str, int]] = {}
-            if use_host_network:
-                network_kwargs['network_mode'] = 'host'
-            else:
+            if not use_host_network:
                 # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
                 # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
-                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
                     (
                         'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
@@ -1053,8 +1074,9 @@ class DockerSSHBox(Sandbox):
                     )
                 )
 
-            # await self.print_image_info()
+            await self.print_image_info()
 
+            host_config = self._create_host_config(use_host_network)
             container_config = {
                 'Image': self.container_image,
                 'Cmd': [
@@ -1066,24 +1088,9 @@ class DockerSSHBox(Sandbox):
                     'PermitRootLogin=yes',
                 ],
                 'WorkingDir': self.sandbox_workspace_dir,
-                'HostConfig': {
-                    'NetworkMode': network_kwargs.get('network_mode', 'host'),
-                    'PortBindings': {
-                        f'{self._ssh_port}/tcp': [{'HostPort': str(self._ssh_port)}]
-                    }
-                    if not use_host_network
-                    else None,
-                    'Binds': [
-                        f'{host_path}:{container_path}:rw'
-                        for host_path, container_path in self.volumes.items()
-                    ],
-                },
+                'HostConfig': host_config,
             }
 
-            # Remove None values from HostConfig
-            container_config['HostConfig'] = {
-                k: v for k, v in container_config['HostConfig'].items() if v is not None
-            }
             print(f'container_config: {container_config}')
 
             # Use create_or_replace for idempotent container management
@@ -1099,30 +1106,25 @@ class DockerSSHBox(Sandbox):
 
             logger.info('Container created, starting now...')
             await self.container.start()
-            await asyncio.sleep(3)  # Short pause after starting
-            logs = await self.container.log(stdout=True)
-            print(''.join(logs))
-
+            await asyncio.sleep(3)
             await self.wait_for_container_ready()
 
         except DockerError as ex:
             if ex.status == 404:
-                # If not found, it's a hard error?
-                # logger.error(f'{ex}')
-                # sys.exit(1)
-                raise  # trigger retry
+                raise
             elif 'Ports are not available' in str(ex):
                 logger.warning(
                     f'Port {self._ssh_port} is not available. Retrying with a new port.'
                 )
-                raise ex  # This will trigger a retry
+                raise ex
             else:
                 logger.exception(
-                    'Failed to start container: ' + str(ex), exc_info=False
+                    f'Failed to start container. Docker error: {ex.status} - {ex.message}',
+                    exc_info=True,
                 )
                 raise ex
         except Exception as ex:
-            logger.exception('Failed to start container: ' + str(ex), exc_info=False)
+            logger.exception(f'Failed to start container: {str(ex)}', exc_info=True)
             raise ex
 
     async def wait_for_container_ready(self):
@@ -1133,22 +1135,18 @@ class DockerSSHBox(Sandbox):
                 container_info = await container.show()
                 state = container_info['State']
 
-                logger.debug(
-                    f"Container info: {container_info['State']}"
-                )  # New debug line
+                logger.debug(f'Container state: {state}')
 
                 if state['Running'] is True and state['Paused'] is False:
                     logger.info('Container is running')
                     return
-                if state['Running'] is False and state['ExitCode'] != 0:
-                    logger.error('Container exited unexpectedly')
+                if state['Running'] is False:
+                    logger.error(f'Container is not running. State: {state}')
                     logs = await container.log(stdout=True, stderr=True)
                     logger.error(f'Container logs: {logs}')
-                    raise RuntimeError(
-                        f'Container exited unexpectedly with exit code {state["ExitCode"]}'
-                    )
+                    raise RuntimeError(f'Container failed to start. State: {state}')
             except DockerError as e:
-                logger.warning(f'Error getting container info, waiting...: {e}')
+                logger.warning(f'Error getting container info, waiting... Error: {e}')
 
             await asyncio.sleep(1)
             logger.info(
