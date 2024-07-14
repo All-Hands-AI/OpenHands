@@ -202,8 +202,8 @@ class AgentController:
                 # Allow ChangeAgentStateAction to be processed even when stopped
                 pass
             else:
-                # Ignore all other events when stopped
-                logger.debug(f'Ignoring event in STOPPED state: {event}')
+                # Ignore all other events when cancelled
+                logger.debug(f'Ignoring event in CANCELLED state: {event}')
                 return
 
         if isinstance(event, ChangeAgentStateAction):
@@ -236,25 +236,18 @@ class AgentController:
             ):
                 return
             if self._pending_action and self._pending_action.id == event.cause:
-                logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 self._pending_action = None
                 if self.state.agent_state == AgentState.USER_CONFIRMED:
                     await self.set_agent_state_to(AgentState.RUNNING)
                 if self.state.agent_state == AgentState.USER_REJECTED:
                     await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-            elif isinstance(
-                event,
-                (
-                    CmdOutputObservation,
-                    ErrorObservation,
-                ),
-            ):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
-            elif isinstance(
-                event,
-                (AgentDelegateObservation,),
-            ):
+            elif isinstance(event, CmdOutputObservation):
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, AgentDelegateObservation):
                 self.state.history.on_event(event)
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, ErrorObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
