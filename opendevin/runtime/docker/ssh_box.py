@@ -274,9 +274,9 @@ class DockerSSHBox(Sandbox):
 
     @async_to_sync
     def initialize(self):
-        return self.initialize_async()
+        return self.ainit()
 
-    async def initialize_async(self):
+    async def ainit(self):
         if not self._sshbox_init_complete.is_set():
             async with self._initialization_lock:
                 if not self._sshbox_init_complete.is_set():
@@ -795,6 +795,10 @@ class DockerSSHBox(Sandbox):
         timeout: int | None = None,
         # ) -> Union[Tuple[int, str], Tuple[int, CancellableStream]]:
     ) -> tuple[int, str | CancellableStream]:
+        # Ensure initialization is complete
+        if not self.initialized:
+            await self.ainit()
+
         timeout = timeout or self.timeout
         timeout = 60 if timeout is None or int(timeout) < 60 else int(timeout)
 
@@ -932,7 +936,7 @@ class DockerSSHBox(Sandbox):
                 await container.delete()
             except DockerError as e:
                 if e.status == 404:
-                    # logger.warning(f"Container '{self.container_name}' not found")
+                    # If gone we don't care here
                     pass
                 else:
                     raise
@@ -1013,11 +1017,6 @@ class DockerSSHBox(Sandbox):
         retry=retry_if_exception_type(DockerError),
     )
     async def restart_docker_container(self):
-        # try:
-        #     await self.remove_docker_container()
-        # except DockerError as ex:
-        #     logger.exception('Failed to remove container', exc_info=False)
-        #     raise ex
         try:
             # Attempt to find an existing container with the same name
             existing_container = await self.docker_client.containers.get(
@@ -1054,30 +1053,6 @@ class DockerSSHBox(Sandbox):
 
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
-            # self.container = await self.docker_client.containers.create(
-            #     config={
-            #         'Image': self.container_image,
-            #         'Cmd': [
-            #             '/usr/sbin/sshd',
-            #             '-D',
-            #             '-p',
-            #             str(self._ssh_port),
-            #             '-o',
-            #             'PermitRootLogin=yes',
-            #         ],
-            #         'WorkingDir': self.sandbox_workspace_dir,
-            #         'HostConfig': {
-            #             **network_kwargs,
-            #             'Binds': [
-            #                 f"{host}:{container['bind']}:rw"
-            #                 for host, container in self.volumes.items()
-            #             ],
-            #         },
-            #     },
-            #     name=self.container_name,
-            # )
-
-            # Prepare container configuration
             container_config = {
                 'Image': self.container_image,
                 'Cmd': [
@@ -1118,7 +1093,11 @@ class DockerSSHBox(Sandbox):
             await self.container.start()
             logger.info('Container started')
         except DockerError as ex:
-            if 'Ports are not available' in str(ex):
+            if ex.status == 404:
+                # If not found, it's a hard error!
+                logger.error(f'{ex}')
+                sys.exit(1)
+            elif 'Ports are not available' in str(ex):
                 logger.warning(
                     f'Port {self._ssh_port} is not available. Retrying with a new port.'
                 )

@@ -47,9 +47,9 @@ class LocalBox(Sandbox):
 
     @async_to_sync
     def initialize(self):
-        return self.initialize_async()
+        return self.ainit()
 
-    async def initialize_async(self):
+    async def ainit(self):
         await super().initialize()
         if not self._local_init_complete.is_set():
             async with self._initialization_lock:
