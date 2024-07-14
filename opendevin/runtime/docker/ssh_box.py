@@ -997,56 +997,6 @@ class DockerSSHBox(Sandbox):
         except DockerError:
             pass
 
-    async def get_working_directory(self):
-        exit_code, result = await self.execute('pwd')
-        if exit_code != 0:
-            raise RuntimeError('Failed to get working directory')
-        return str(result).strip()
-
-    @property
-    def user_id(self):
-        return config.sandbox.user_id
-
-    @property
-    def run_as_devin(self):
-        return config.run_as_devin
-
-    @property
-    def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
-
-    @property
-    def ssh_hostname(self):
-        return config.ssh_hostname
-
-    @property
-    def use_host_network(self):
-        return config.use_host_network
-
-    async def is_container_running(self):
-        try:
-            container = await self.docker_client.containers.get(self.container_name)
-            if container._container['State']['Status'] == 'running':
-                self.container = container
-                return True
-            return False
-        except DockerError:
-            return False
-
-    @property
-    def volumes(self):
-        mount_dir = config.workspace_mount_path
-        return {
-            mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
-            # mount cache directory to /home/opendevin/.cache for pip cache reuse
-            config.cache_dir: {
-                'bind': (
-                    '/home/opendevin/.cache' if self.run_as_devin else '/root/.cache'
-                ),
-                'mode': 'rw',
-            },
-        }
-
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
@@ -1116,12 +1066,15 @@ class DockerSSHBox(Sandbox):
                 },
             }
 
+            await self.print_image_info()
+
             # Use create_or_replace for idempotent container management
             logger.info('Waiting for container...')
             self.container = await self.docker_client.containers.create_or_replace(
                 config=container_config,
                 name=self.container_name,
             )
+            await asyncio.sleep(2)
             assert self.container is not None
             self.container_id = self.container.id
 
@@ -1130,9 +1083,10 @@ class DockerSSHBox(Sandbox):
             logger.info('Container started')
         except DockerError as ex:
             if ex.status == 404:
-                # If not found, it's a hard error!
-                logger.error(f'{ex}')
-                sys.exit(1)
+                # If not found, it's a hard error?
+                # logger.error(f'{ex}')
+                # sys.exit(1)
+                raise  # trigger retry
             elif 'Ports are not available' in str(ex):
                 logger.warning(
                     f'Port {self._ssh_port} is not available. Retrying with a new port.'
@@ -1174,6 +1128,100 @@ class DockerSSHBox(Sandbox):
             )
 
         raise RuntimeError('Failed to start container within the timeout period')
+
+    async def list_containers(self, **kwargs):
+        """List Docker containers using aiodocker."""
+        try:
+            containers = await self.docker_client.containers.list(**kwargs)
+            return containers
+        except Exception as e:
+            logger.error(f'Error listing containers: {e}')
+            return []
+
+    # Example usage:
+    async def print_container_info(self):
+        containers = await self.list_containers(all=True)
+        for container in containers:
+            logger.info(f'Container ID: {container.id}')
+            logger.info(f'Container Name: {container.name}')
+            logger.info(f"Container Status: {container._container['State']['Status']}")
+            logger.info('---')
+
+    async def list_docker_images(self, **kwargs) -> list:
+        """List Docker images using aiodocker."""
+        try:
+            images = await self.docker_client.images.list(**kwargs)
+            return images
+        except Exception as e:
+            logger.error(f'Error listing Docker images: {e}')
+            return []
+
+    # Example usage within the DockerSSHBox class:
+    async def print_image_info(self):
+        images = await self.list_docker_images()
+        for image in images:
+            repo_tags = image.get('RepoTags', [])
+            if any(tag.startswith('ghcr.io/opendevin/sandbox') for tag in repo_tags):
+                repo_tags = image.get('RepoTags', ['<none>:<none>'])
+                image_id = image['Id']
+                created = image['Created']
+                size = image['Size']
+
+                logger.info(f'Image ID: {image_id}')
+                logger.info(f"Repository Tags: {', '.join(repo_tags)}")
+                logger.info(f'Created: {created}')
+                logger.info(f'Size: {size} bytes')
+                logger.info('---')
+
+    async def get_working_directory(self):
+        exit_code, result = await self.execute('pwd')
+        if exit_code != 0:
+            raise RuntimeError('Failed to get working directory')
+        return str(result).strip()
+
+    @property
+    def user_id(self):
+        return config.sandbox.user_id
+
+    @property
+    def run_as_devin(self):
+        return config.run_as_devin
+
+    @property
+    def sandbox_workspace_dir(self):
+        return config.workspace_mount_path_in_sandbox
+
+    @property
+    def ssh_hostname(self):
+        return config.ssh_hostname
+
+    @property
+    def use_host_network(self):
+        return config.use_host_network
+
+    async def is_container_running(self):
+        try:
+            container = await self.docker_client.containers.get(self.container_name)
+            if container._container['State']['Status'] == 'running':
+                self.container = container
+                return True
+            return False
+        except DockerError:
+            return False
+
+    @property
+    def volumes(self):
+        mount_dir = config.workspace_mount_path
+        return {
+            mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
+            # mount cache directory to /home/opendevin/.cache for pip cache reuse
+            config.cache_dir: {
+                'bind': (
+                    '/home/opendevin/.cache' if self.run_as_devin else '/root/.cache'
+                ),
+                'mode': 'rw',
+            },
+        }
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     @async_to_sync
