@@ -1035,8 +1035,12 @@ class DockerSSHBox(Sandbox):
 
             self._ssh_port = find_available_tcp_port()
             logger.info(f'Using port {self._ssh_port}')
+
+            # Default to using host network mode if config is not available
+            use_host_network = getattr(self, 'use_host_network', True)
+
             network_kwargs: dict[str, str | dict[str, int]] = {}
-            if self.use_host_network:
+            if use_host_network:
                 network_kwargs['network_mode'] = 'host'
             else:
                 # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
@@ -1063,13 +1067,11 @@ class DockerSSHBox(Sandbox):
                 ],
                 'WorkingDir': self.sandbox_workspace_dir,
                 'HostConfig': {
-                    'NetworkMode': network_kwargs.get('network_mode'),
+                    'NetworkMode': network_kwargs.get('network_mode', 'host'),
                     'PortBindings': {
-                        str(self._ssh_port) + '/tcp': [
-                            {'HostPort': str(self._ssh_port)}
-                        ]
+                        f'{self._ssh_port}/tcp': [{'HostPort': str(self._ssh_port)}]
                     }
-                    if 'ports' in network_kwargs
+                    if not use_host_network
                     else None,
                     'Binds': [
                         f'{host_path}:{container_path}:rw'
@@ -1078,6 +1080,12 @@ class DockerSSHBox(Sandbox):
                 },
             }
 
+            # Remove None values from HostConfig
+            container_config['HostConfig'] = {
+                k: v for k, v in container_config['HostConfig'].items() if v is not None
+            }
+            print(f'container_config: {container_config}')
+
             # Use create_or_replace for idempotent container management
             logger.info(f'Mounting volumes: {self.volumes} now...')
             self.container = await self.docker_client.containers.create_or_replace(
@@ -1085,11 +1093,17 @@ class DockerSSHBox(Sandbox):
                 name=self.container_name,
             )
             await asyncio.sleep(3)
+
             assert self.container is not None
             self.container_id = self.container.id
+
+            logger.info('Container created, starting now...')
             await self.container.start()
-            await asyncio.sleep(3)
-            logger.info('Container started!')
+            await asyncio.sleep(3)  # Short pause after starting
+            logs = await self.container.log(stdout=True)
+            print(''.join(logs))
+
+            await self.wait_for_container_ready()
 
         except DockerError as ex:
             if ex.status == 404:
@@ -1112,25 +1126,29 @@ class DockerSSHBox(Sandbox):
             raise ex
 
     async def wait_for_container_ready(self):
-        max_attempts = 30
+        max_attempts = 10
         for attempt in range(max_attempts):
             try:
-                container_info = await self.docker_client.containers.get(
-                    self.container_name
-                )
-                logger.info(
+                container = await self.docker_client.containers.get(self.container_name)
+                container_info = await container.show()
+                state = container_info['State']
+
+                logger.debug(
                     f"Container info: {container_info['State']}"
                 )  # New debug line
-                if container_info['State']['Status'] == 'running':
+
+                if state['Running'] is True and state['Paused'] is False:
                     logger.info('Container is running')
                     return
-                if container_info['State']['Status'] == 'exited':
+                if state['Running'] is False and state['ExitCode'] != 0:
                     logger.error('Container exited unexpectedly')
-                    logs = await container_info.log(stdout=True, stderr=True)
+                    logs = await container.log(stdout=True, stderr=True)
                     logger.error(f'Container logs: {logs}')
-                    raise RuntimeError('Container exited unexpectedly')
+                    raise RuntimeError(
+                        f'Container exited unexpectedly with exit code {state["ExitCode"]}'
+                    )
             except DockerError as e:
-                logger.warning(f'Container not found, waiting...: {e}')
+                logger.warning(f'Error getting container info, waiting...: {e}')
 
             await asyncio.sleep(1)
             logger.info(
