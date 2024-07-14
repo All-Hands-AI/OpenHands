@@ -39,41 +39,6 @@ HUGGINGFACE_TOKEN = os.getenv('HUGGINGFACE_TOKEN') or (
 )
 
 
-def cleanup():
-    logger.info('Cleaning up child processes...')
-    for process in mp.active_children():
-        logger.info(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
-
-def codeact_user_response(state: State) -> str:
-    msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then <execute_bash> exit </execute_bash>.\n'
-        'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
-        'For example: The answer to the question is <solution> 42 </solution>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
-    )
-    if state.history:
-        user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
-    return msg
-
-
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 def gptswarm_user_response(state: State) -> str:
     # NOTE: For the AI assistant, state-based design may introduce more uncertainties.
     # TODO: It is stateless now. Find a way to make it stateful.
@@ -227,7 +192,7 @@ def process_instance(
             instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
 
         # TODO: Need further improve for new V1.1 version and drop if-else.
-        if agent_class == 'GPTSwarmAgent':
+        if agent.__class__.__name__ == 'GPTSwarmAgent':
             if dest_file:
                 inputs = [{'task': instruction, 'files': [dest_file]}]
             else:
@@ -245,20 +210,23 @@ def process_instance(
         else:
             instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
             instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
-            instruction += (
-                'For example: The answer to the question is <solution> 42 </solution>.\n'
-            )
+            instruction += 'For example: The answer to the question is <solution> 42 </solution>.\n'
             # NOTE: You can actually set slightly different instruction for different agents
-            instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-            logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+            instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent.__class__.__name__, '')
+            logger.info(
+                f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'}
+            )
 
             # Here's how you can run the agent (similar to the `main` function) and get the final task state
-            state: State = asyncio.run(
-                main(
+            state: State | None = asyncio.run(
+                run_agent_controller(
+                    agent,
                     instruction,
-                    fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                        agent_class
-                    ),
+                    max_iterations=metadata.max_iterations,
+                    fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                        agent.__class__.__name__
+                    ],
+                    sid=instance['text'].strip(),
                 )
             )
             # ======= Attempt to evaluate the agent's edits =======
@@ -304,10 +272,11 @@ def process_instance(
             'instance': instance,
             'instruction': instance['Question'],
             'metadata': metadata,
-            # 'history': [
+            'history': histories,
+            # [
             #     (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
             # ],
-            #'error': state.error if state and state.error else None,
+            'error': state.error if state and state.error else None,
             'metrics': metrics,
             'test_result': test_result,
         }
@@ -318,7 +287,6 @@ def process_instance(
     finally:
         config.workspace_mount_path = old_workspace_mount_path
     return output
-
 
 
 if __name__ == '__main__':

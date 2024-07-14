@@ -190,7 +190,7 @@ class GenerateQuery(Node):
                 Message(role='user', content=prompt),
             ]
 
-            response = self.llm.do_completion(
+            response = self.llm.completion(
                 messages=[
                     {'role': msg.role, 'content': msg.content} for msg in messages
                 ]
@@ -272,7 +272,7 @@ class FileAnalyse(Node):
                     ),
                     Message(role='user', content=prompt),
                 ]
-                response = llm.do_completion(
+                response = llm.completion(
                     messages=[
                         {'role': msg.role, 'content': msg.content} for msg in messages
                     ]
@@ -316,7 +316,7 @@ class WebSearch(Node):
                 ),
                 Message(role='user', content=prompt),
             ]
-            generated_quires = self.llm.do_completion(
+            generated_quires = self.llm.completion(
                 messages=[
                     {'role': msg.role, 'content': msg.content} for msg in messages
                 ]
@@ -338,7 +338,7 @@ class WebSearch(Node):
                 ),
                 Message(role='user', content=distill_prompt),
             ]
-            response = self.llm.do_completion(
+            response = self.llm.completion(
                 messages=[
                     {'role': msg.role, 'content': msg.content} for msg in messages
                 ]
@@ -433,7 +433,7 @@ class CombineAnswer(Node):
             Message(role='user', content=prompt),
         ]
 
-        response = self.llm.do_completion(
+        response = self.llm.completion(
             messages=[{'role': msg.role, 'content': msg.content} for msg in messages]
         )
 

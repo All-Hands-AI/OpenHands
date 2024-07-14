@@ -105,7 +105,7 @@ class GPTSwarm(Agent):
             Message(role='user', content=prompt),
         ]
 
-        swarm_ans = self.llm.do_completion(
+        swarm_ans = self.llm.completion(
             messages=[{'role': msg.role, 'content': msg.content} for msg in messages]
         )
         swarm_ans = swarm_ans.choices[0].message.content
