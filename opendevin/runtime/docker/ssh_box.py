@@ -1099,7 +1099,7 @@ class DockerSSHBox(Sandbox):
                 config=container_config,
                 name=self.container_name,
             )
-            await asyncio.sleep(3)
+            logger.info(f'Container created with ID: {self.container.id}')
 
             assert self.container is not None
             self.container_id = self.container.id
@@ -1110,6 +1110,7 @@ class DockerSSHBox(Sandbox):
             await self.wait_for_container_ready()
 
         except DockerError as ex:
+            logger.error(f'DockerError occurred: {ex.status} - {ex.message}')
             if ex.status == 404:
                 raise
             elif 'Ports are not available' in str(ex):
