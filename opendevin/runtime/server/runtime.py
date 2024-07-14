@@ -66,6 +66,10 @@ class ServerRuntime(Runtime):
 
     async def ainit(self):
         await super().ainit()
+        if self.sandbox is not None and hasattr(self.sandbox, 'ainit'):
+            logger.info('ServerRuntime: Initializing sandbox...')
+            await self.sandbox.ainit()
+            logger.info('ServerRuntime: Sandbox initialized.')
         if not self._initialization_event.is_set():
             self._initialization_event.set()
             logger.info('ServerRuntime initialization complete.')

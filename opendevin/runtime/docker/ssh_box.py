@@ -287,9 +287,7 @@ class DockerSSHBox(Sandbox):
                         await self._setup_docker_client()
                         await self._setup_container()
                         await asyncio.sleep(2)
-                        await self._setup_user()
-                        await asyncio.sleep(2)
-                        await self._setup_ssh()
+                        await self._setup_user_and_ssh()
 
                         self.initialized = True
                         logger.info('SSHBox initialization complete')
@@ -408,7 +406,7 @@ class DockerSSHBox(Sandbox):
                 chunk = await stream.read_out()
                 if chunk:
                     output += chunk.data
-                    print(f'>>> {chunk.data!r}')  # Print the raw data
+                    logger.debug(f'>>> {chunk.data!r}')  # Print the raw data
                 else:
                     break
 
@@ -648,10 +646,11 @@ class DockerSSHBox(Sandbox):
     async def _setup_ssh(self):
         try:
             await self.wait_for_ssh_ready()
+            await asyncio.sleep(2)
             await self._ssh_login()
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             await self.start_ssh_session()
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             await self._setup_environment()
         except pxssh.ExceptionPxssh as e:
             logger.error(
@@ -661,6 +660,24 @@ class DockerSSHBox(Sandbox):
                 await self.remove_docker_container()
                 await self.restart_container()
             raise
+
+    async def _setup_user_and_ssh(self):
+        await self._setup_user()
+        await self._check_user_setup()
+        retry_count = 0
+        max_retries = 3
+        while retry_count < max_retries:
+            try:
+                await self._setup_ssh()
+                break
+            except pxssh.ExceptionPxssh as e:
+                retry_count += 1
+                logger.warning(
+                    f'SSH setup failed (attempt {retry_count}/{max_retries}): {e}'
+                )
+                if retry_count == max_retries:
+                    raise RuntimeError('Failed to set up SSH after multiple attempts')
+                await asyncio.sleep(5)
 
     async def wait_for_ssh_ready(self):
         max_attempts = 10
@@ -736,25 +753,24 @@ class DockerSSHBox(Sandbox):
             assert self.ssh is not None
 
             # Add this block before creating the container
-            try:
-                await self.docker_client.images.get(self.container_image)
-            except DockerError as img_error:
-                if img_error.status == 404:
-                    logger.warning(
-                        f'Image {self.container_image} not found. Attempting to pull...'
-                    )
-                    try:
-                        await self.docker_client.images.pull(self.container_image)
-                        logger.info(f'Successfully pulled image {self.container_image}')
-                    except DockerError as pull_error:
-                        logger.error(
-                            f'Failed to pull image {self.container_image}: {pull_error}'
-                        )
-                        raise
-                else:
-                    raise
+            # try:
+            #     await self.docker_client.images.get(self.container_image)
+            # except DockerError as img_error:
+            #     if img_error.status == 404:
+            #         logger.warning(
+            #             f'Image {self.container_image} not found. Attempting to pull...'
+            #         )
+            #         try:
+            #             await self.docker_client.images.pull(self.container_image)
+            #             logger.info(f'Successfully pulled image {self.container_image}')
+            #         except DockerError as pull_error:
+            #             logger.error(
+            #                 f'Failed to pull image {self.container_image}: {pull_error}'
+            #             )
+            #             raise
+            #     else:
+            #         raise
 
-            # Keep the login call synchronous
             logger.info(f' -> Logging in to {self.ssh_hostname}...')
             self.ssh.login(
                 self.ssh_hostname,
@@ -764,6 +780,7 @@ class DockerSSHBox(Sandbox):
                 login_timeout=login_timeout,
                 quiet=False,
             )
+
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(f'Login failed: {e}', exc_info=False)
@@ -930,7 +947,7 @@ class DockerSSHBox(Sandbox):
 
             with open(tar_filename, 'rb') as f:
                 data = f.read()
-            self.container.put_archive(os.path.dirname(sandbox_dest), data)
+            await self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
     async def start_docker_container(self):
         try:

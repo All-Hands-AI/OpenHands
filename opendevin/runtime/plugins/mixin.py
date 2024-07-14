@@ -68,8 +68,8 @@ class PluginMixin:
         # Check if the sandbox is initialized
         if hasattr(self, 'initialized') and not self.initialized:
             logger.info('Sandbox not initialized. Initializing now...')
-            if hasattr(self, 'initialize'):
-                await self.initialize()
+            if hasattr(self, 'ainit'):
+                await self.ainit()
             else:
                 logger.warning(
                     'Sandbox has no initialize method. Proceeding without initialization.'
