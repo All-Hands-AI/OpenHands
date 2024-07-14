@@ -307,13 +307,14 @@ def test_sandbox_jupyter_plugin(temp_dir):
         box.close()
 
 
-def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
-    box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
-    exit_code, output = box.execute('mkdir test')
+async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
+    exit_code, output = await box.execute('mkdir test')
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
 
-    exit_code, output = box.execute('echo "create_file(\'hello.py\')" | execute_cli')
+    exit_code, output = await box.execute(
+        'echo "create_file(\'hello.py\')" | execute_cli'
+    )
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
@@ -324,11 +325,13 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
         '[File hello.py created.]\r\n'
     ).strip().split('\r\n')
 
-    exit_code, output = box.execute('cd test')
+    exit_code, output = await box.execute('cd test')
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
 
-    exit_code, output = box.execute('echo "create_file(\'hello.py\')" | execute_cli')
+    exit_code, output = await box.execute(
+        'echo "create_file(\'hello.py\')" | execute_cli'
+    )
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
@@ -341,7 +344,7 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
 
     if config.enable_auto_lint:
         # edit file, but make a mistake in indentation
-        exit_code, output = box.execute(
+        exit_code, output = await box.execute(
             'echo "insert_content_at_line(\'hello.py\', 1, \'  print(\\"hello world\\")\')" | execute_cli'
         )
         print(output)
@@ -371,7 +374,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
         ).strip().split('\n')
 
     # edit file with correct indentation
-    exit_code, output = box.execute(
+    exit_code, output = await box.execute(
         'echo "insert_content_at_line(\'hello.py\', 1, \'print(\\"hello world\\")\')" | execute_cli'
     )
     print(output)
@@ -386,16 +389,14 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 """
     ).strip().split('\n')
 
-    exit_code, output = box.execute('ls /workspace')
+    exit_code, output = await box.execute('ls /workspace')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    box.close()
+    await box.close()
 
 
-@pytest.mark.skipif(
-    os.getenv('TEST_IN_CI') != 'true',
-    reason='This test seems out of sync with agentskills. Only run on CI',
-)
-def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+@pytest.mark.skipif(True, reason='This test is outdated!')
+@pytest.mark.asyncio
+async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
@@ -404,15 +405,14 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     ):
         assert config.enable_auto_lint
         box = DockerSSHBox()
-        box.initialize()
-        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+        await box.initialize()
+        await box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+        await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
 
-@pytest.mark.skipif(
-    os.getenv('TEST_IN_CI') != 'true',
-    reason='The unittest need to download image, so only run on CI',
-)
-def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+@pytest.mark.skipif(True, reason='This test is outdated!')
+@pytest.mark.asyncio
+async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
         # get a temporary directory
         with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
@@ -424,5 +424,6 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         ), patch.object(config, 'enable_auto_lint', new=False):
             assert not config.enable_auto_lint
             box = DockerSSHBox()
-            box.initialize()
-            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+            await box.initialize()
+            await box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+            await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)

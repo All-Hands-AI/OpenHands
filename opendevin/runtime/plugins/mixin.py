@@ -55,8 +55,9 @@ class PluginMixin:
             )
         logger.info('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
 
+    @async_to_sync
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
-        return async_to_sync(self._init_plugins_async)(requirements)
+        return self._init_plugins_async(requirements)
 
     async def _init_plugins_async(
         self: SandboxProtocol, requirements: list[PluginRequirement]

@@ -878,7 +878,7 @@ class DockerSSHBox(Sandbox):
             full_cmd = f'{cmd}'
         self.send_line(full_cmd)
         if stream:
-            return 0, SSHExecCancellableStream(self.ssh, full_cmd, self.timeout)
+            return 0, SSHExecCancellableStream(self.ssh, full_cmd, timeout)
 
         success = self.ssh.prompt(timeout=600)
         if not success:
@@ -897,7 +897,7 @@ class DockerSSHBox(Sandbox):
 
         # get the exit code
         self.send_line('echo $?')
-        self.ssh.prompt()
+        self.ssh.prompt(timeout=timeout)
         exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
         while not exit_code_str:
@@ -1274,9 +1274,23 @@ class DockerSSHBox(Sandbox):
     def sync_cleanup(self):
         if self._cleanup_done:
             return
-        asyncio.run(self._cleanup())
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # If the event loop is closed, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        try:
+            loop.run_until_complete(self._cleanup())
+        finally:
+            # Close the loop if we created a new one
+            if loop != asyncio.get_event_loop():
+                loop.close()
 
     async def _cleanup(self):
+        if self._cleanup_done:
+            return
         try:
             if hasattr(self, 'docker_client'):
                 containers = await self.docker_client.containers.list(all=True)
