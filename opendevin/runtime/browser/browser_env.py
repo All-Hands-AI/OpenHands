@@ -121,6 +121,7 @@ class BrowserEnv:
                     obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
                     obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
+                    # obs['screenshot'] = self.image_to_jpg_base64_url(obs['screenshot'])
                     obs['active_page_index'] = obs['active_page_index'].item()
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
@@ -183,8 +184,16 @@ class BrowserEnv:
             image = Image.fromarray(image)
         if image.mode in ('RGBA', 'LA'):
             image = image.convert('RGB')
+
+        # original_width, original_height = image.size
+        # aspect_ratio = original_width / original_height
+        # new_height = 720
+        # new_width = int(new_height * aspect_ratio)
+
+        # resized_image = image.resize((new_width, new_height), Image.LANCZOS)
         buffered = io.BytesIO()
         image.save(buffered, format='PNG')
+        # resized_image.save(buffered, format='PNG', optimize=True, compress_level=9)
 
         image_base64 = base64.b64encode(buffered.getvalue()).decode()
         return (
@@ -203,8 +212,10 @@ class BrowserEnv:
             image = Image.fromarray(image)
         if image.mode in ('RGBA', 'LA'):
             image = image.convert('RGB')
+        width, height = image.size
+        logger.info(f'Width: {width}, Height: {height}')
         buffered = io.BytesIO()
-        image.save(buffered, format='JPEG')
+        image.save(buffered, format='JPEG', quality=10)
 
         image_base64 = base64.b64encode(buffered.getvalue()).decode()
         return (

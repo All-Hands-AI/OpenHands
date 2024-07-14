@@ -157,6 +157,7 @@ class WorldModelAgent(Agent):
         self.evaluations: List[str] = []
         self.strategies: List[Optional[str]] = []
         self.active_strategy: Optional[str] = None
+        self.active_strategy_turns: int = 0
 
     def parse_response(self, response: str, thought: str) -> Action:
         # thought = ''
@@ -264,6 +265,7 @@ Review the current state of the page and all other information to find the best 
 # Goal:
 {self.goal}
 {addition if not override_llm else ''}
+
 # Action Space
 {self.action_space.describe(with_long_description=False, with_examples=True)}
 
@@ -273,6 +275,8 @@ You should not attempt to visit the following domains as they will block your en
 - Zillow: www.zillow.com
 - StreetEasy: www.streeteasy.com
 - ApartmentFinder: www.apartmentfinder.com
+- Quora: www.quora.com
+If you accidentally enter any of these websites, go back and try other websites.
 """
         messages = []
         messages.append({'role': 'system', 'content': system_msg})
@@ -497,12 +501,14 @@ You should not attempt to visit the following domains as they will block your en
         if len(actions) > 1 and actions[-1] == actions[-2]:
             logger.info('*Action Repeat, Force Replan*')
             replan = True
-        if replan or self.active_strategy is None:
+        if replan or self.active_strategy is None or self.active_strategy_turns >= 3:
             strategy = self.planning_search(state)
             self.strategies.append(strategy)
             self.active_strategy = strategy
+            self.active_strategy_turns = 0
         else:
             self.strategies.append(None)
+            self.active_strategy_turns += 1
         logger.info(f'*Active Strategy*: {self.active_strategy}')
         self.full_output += f'*Active Strategy*: {self.active_strategy}\n'
 

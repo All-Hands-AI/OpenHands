@@ -777,7 +777,7 @@ if __name__ == '__main__':
                 clear,
                 plot,
             ],
-            concurrency_limit=20,
+            concurrency_limit=10,
         )
         (
             pause_resume.click(
@@ -828,5 +828,6 @@ if __name__ == '__main__':
             queue=False,
         )
 
+    # demo.queue(default_concurrency_limit=5)
     demo.queue()
-    demo.launch(share=True)
+    demo.launch(share=False)
