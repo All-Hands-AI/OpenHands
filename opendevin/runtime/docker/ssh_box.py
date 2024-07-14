@@ -13,6 +13,7 @@ from glob import glob
 from typing import Tuple, Union  # type: ignore[unused-import]
 
 import aiodocker
+import docker
 from aiodocker.containers import Exec
 from aiodocker.exceptions import DockerError
 from pexpect import exceptions, pxssh
@@ -285,16 +286,31 @@ class DockerSSHBox(Sandbox):
                     )
                     try:
                         await self._setup_docker_client()
+                        await asyncio.sleep(1)
+
+                        # TODO rewrite once get_od_sandbox_image also uses aiodocker!
+                        # Create a temporary docker.Docker object
+                        temp_docker_client = docker.from_env()
+                        try:
+                            self.container_image = await asyncio.to_thread(
+                                get_od_sandbox_image,
+                                self.container_image,
+                                temp_docker_client,
+                            )
+                        finally:
+                            # Ensure we close the temporary client
+                            temp_docker_client.close()
+
                         await self._setup_container()
-                        await asyncio.sleep(2)
-                        await self._setup_user_and_ssh()
+                        await asyncio.sleep(1)
+                        await self._setup_ssh_and_user()
 
                         self.initialized = True
                         logger.info('SSHBox initialization complete')
                         self._sshbox_init_complete.set()
                     except Exception as e:
                         logger.error(f'SSHBox initialization failed: {e}')
-                        # Optionally, you might want to clean up any partially initialized resources here
+                        # Optionally, clean up any partially initialized resources here
                         await self.aclose()
                         raise
         else:
@@ -306,16 +322,12 @@ class DockerSSHBox(Sandbox):
     async def _setup_docker_client(self):
         try:
             self.docker_client = aiodocker.Docker()
-        except RuntimeError as ex:
+        except Exception as ex:
             logger.exception(
                 f'Error creating aiodocker client. Please check that Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
                 exc_info=False,
             )
             raise ex
-
-        self.container_image = await asyncio.to_thread(
-            get_od_sandbox_image, self.container_image, self.docker_client
-        )
 
     def format_env_value(self, value):
         if isinstance(value, str):
@@ -406,7 +418,7 @@ class DockerSSHBox(Sandbox):
                 chunk = await stream.read_out()
                 if chunk:
                     output += chunk.data
-                    logger.debug(f'>>> {chunk.data!r}')  # Print the raw data
+                    # logger.debug(f'>>> {chunk.data!r}')  # Print the raw data
                 else:
                     break
 
@@ -424,42 +436,44 @@ class DockerSSHBox(Sandbox):
         return exit_code, decoded_output
 
     async def _setup_container(self):
-        # Set up the Docker container
+        assert self.docker_client is not None, 'aiodocker client is not initialized'
+
         try:
-            self.container = await self.docker_client.containers.get(
+            existing_container = await self.docker_client.containers.get(
                 self.container_name
             )
-            self.is_initial_session = False
-        except DockerError:
-            self.is_initial_session = True
-
-        if not config.persist_sandbox or self.is_initial_session:
-            await self._create_new_container()
-        else:
-            await self._use_existing_container()
-
-    async def _create_new_container(self):
-        logger.info('Creating new Docker container')
-        try:
-            await self.restart_docker_container()
-        except DockerError as ex:
-            if ex.status == 409 and 'is already in use by container' in str(ex):
-                # Extract the conflicting container ID from the error message
-                conflicting_container_id = ex.explanation.split('"')[1]
-                logger.warning(
-                    f'Removing conflicting container: {conflicting_container_id}'
-                )
-                await self.docker_client.containers.delete(
-                    conflicting_container_id, force=True
+            if existing_container:
+                if config.persist_sandbox and not self.is_initial_session:
+                    logger.info('Using existing Docker container')
+                    self.container = existing_container
+                    await self.start_docker_container()
+                else:
+                    logger.info('Replacing existing container')
+                    try:
+                        await existing_container.delete(force=True)
+                    except DockerError as delete_error:
+                        logger.error(
+                            f'Failed to delete existing container: {delete_error}'
+                        )
+                        # Decide whether to raise this error or continue with creating a new container
+                    await self.restart_docker_container()
+            else:
+                logger.info(
+                    'No existing container found, creating new Docker container'
                 )
                 await self.restart_docker_container()
+        except DockerError as e:
+            if e.status == 404:
+                logger.info('Creating new Docker container')
+                await self.restart_docker_container()
             else:
+                logger.error(f'Unexpected Docker error: {e}')
                 raise
-
-    async def _use_existing_container(self):
-        self.container = await self.docker_client.containers.get(self.container_name)
-        logger.info('Using existing Docker container')
-        await self.start_docker_container()
+        except Exception as e:
+            logger.error(f'Unexpected error during container setup: {e}')
+            raise
+        else:
+            self.is_initial_session = False
 
     async def _setup_environment(self):
         try:
@@ -611,7 +625,6 @@ class DockerSSHBox(Sandbox):
             raise RuntimeError(f'Failed to create or verify opendevin user: {logs}')
 
         logger.info('User setup in sandbox completed')
-        await self._check_user_setup()
 
     async def _check_user_setup(self):
         """Checks if the user setup was successful by verifying user existence and permissions."""
@@ -661,7 +674,7 @@ class DockerSSHBox(Sandbox):
                 await self.restart_container()
             raise
 
-    async def _setup_user_and_ssh(self):
+    async def _setup_ssh_and_user(self):
         await self._setup_user()
         await self._check_user_setup()
         retry_count = 0
@@ -1020,7 +1033,6 @@ class DockerSSHBox(Sandbox):
                 logger.warning(f'Replacing existing container: {self.container_name}')
                 await existing_container.delete(force=True)
 
-            logger.info('Finding available port')
             self._ssh_port = find_available_tcp_port()
             logger.info(f'Using port {self._ssh_port}')
             network_kwargs: dict[str, str | dict[str, int]] = {}
@@ -1037,8 +1049,8 @@ class DockerSSHBox(Sandbox):
                     )
                 )
 
-            # start the container
-            logger.info(f'Mounting volumes: {self.volumes}')
+            # await self.print_image_info()
+
             container_config = {
                 'Image': self.container_image,
                 'Cmd': [
@@ -1058,29 +1070,27 @@ class DockerSSHBox(Sandbox):
                         ]
                     }
                     if 'ports' in network_kwargs
-                    else {},
+                    else None,
                     'Binds': [
-                        f"{host}:{container['bind']}:rw"
-                        for host, container in self.volumes.items()
+                        f'{host_path}:{container_path}:rw'
+                        for host_path, container_path in self.volumes.items()
                     ],
                 },
             }
 
-            await self.print_image_info()
-
             # Use create_or_replace for idempotent container management
-            logger.info('Waiting for container...')
+            logger.info(f'Mounting volumes: {self.volumes} now...')
             self.container = await self.docker_client.containers.create_or_replace(
                 config=container_config,
                 name=self.container_name,
             )
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
             assert self.container is not None
             self.container_id = self.container.id
-
-            await asyncio.sleep(2)
             await self.container.start()
-            logger.info('Container started')
+            await asyncio.sleep(3)
+            logger.info('Container started!')
+
         except DockerError as ex:
             if ex.status == 404:
                 # If not found, it's a hard error?
@@ -1211,16 +1221,11 @@ class DockerSSHBox(Sandbox):
 
     @property
     def volumes(self):
-        mount_dir = config.workspace_mount_path
         return {
-            mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
-            # mount cache directory to /home/opendevin/.cache for pip cache reuse
-            config.cache_dir: {
-                'bind': (
-                    '/home/opendevin/.cache' if self.run_as_devin else '/root/.cache'
-                ),
-                'mode': 'rw',
-            },
+            config.workspace_mount_path: self.sandbox_workspace_dir,
+            config.cache_dir: (
+                '/home/opendevin/.cache' if self.run_as_devin else '/root/.cache'
+            ),
         }
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
