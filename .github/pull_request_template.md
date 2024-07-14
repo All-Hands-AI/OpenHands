@@ -2,7 +2,7 @@
 
 ---
 
-**Give a succinct summary of what the PR does, explaining any non-trivial design decisions**
+**Give a summary of what the PR does, explaining any non-trivial design decisions**
 
 ---
 **Other references**
