@@ -272,3 +272,13 @@ class ShortTermHistory(list[Event]):
                 tuples.append((NullAction(), observation))
 
         return tuples.copy()
+
+    # def _prepend_to_messages(self, added_messages: List[Message]):
+    #     """Wrapper around self.messages.prepend to allow additional calls to a state/persistence manager"""
+    #     assert all([isinstance(msg, Message) for msg in added_messages])
+
+    #     self.persistence_manager.prepend_to_messages(added_messages)
+
+    #     new_messages = [self._messages[0]] + added_messages + self._messages[1:]  # prepend (no system)
+    #     self._messages = new_messages
+    #     self.messages_total += len(added_messages)  # still should increment the message counter (summaries are additions too)

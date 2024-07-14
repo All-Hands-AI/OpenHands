@@ -76,6 +76,13 @@ class TokenLimitExceededError(Exception):
         super().__init__(message)
 
 
+class ContextWindowLimitExceededError(Exception):
+    def __init__(
+        self, message='Context window limit exceeded. Unable to condense memory.'
+    ):
+        super().__init__(message)
+
+
 class SummarizeError(Exception):
     """Exception raised when message can't be Summarized."""
 

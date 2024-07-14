@@ -1,5 +1,7 @@
 #######
 
+from litellm.exceptions import ContextWindowExceededError
+
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -10,7 +12,11 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.exceptions import SummarizeError
+from opendevin.core.exceptions import (
+    ContextWindowLimitExceededError,
+    SummarizeError,
+    TokenLimitExceededError,
+)
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -26,6 +32,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
+from opendevin.memory.condenser import summarize_messages
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -198,13 +205,14 @@ class CodeActAgent(Agent):
         messages: list[dict[str, str]] = self._get_messages(state)
 
         with open('output.txt', 'a') as file:
-            file.write('Length of messsages' + str(len(messages)) + '\n')
+            file.write('Length of messsages ' + str(len(messages)) + '\n')
             file.write(
                 'No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n'
             )
             for message in messages[max(len(messages) - 3, 0) :]:
                 file.write('Role: ' + message['role'] + '\n')
                 file.write('Content: ' + message['content'] + '\n\n')
+        print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
 
         # TODO: Make function to count no of tokens , and define the exception
 
@@ -214,6 +222,8 @@ class CodeActAgent(Agent):
         attempt = 0
         while not response and attempt < self.attempts_to_condense:
             try:
+                if self.llm.is_over_token_limit(messages):
+                    raise TokenLimitExceededError()
                 response = self.llm.completion(
                     messages=messages,
                     stop=[
@@ -224,20 +234,22 @@ class CodeActAgent(Agent):
                     temperature=0.0,
                 )
                 print('Response: ', response)
-            # except:
-            #     pass
-            except Exception as e:
+            except (ContextWindowExceededError, TokenLimitExceededError):
                 # Handle the specific exception
-                print(f'An error occurred: {e}')
-            #     if is_context_overflow_error(e):
-            #     # A separate API call to run a summarizer
-            #     self.summarize_messages_inplace()
+                print('An error occurred: ')
+                attempt += 1
+                # If we got a context alert, try trimming the messages length, then try again
+                if self.llm.is_over_token_limit(messages):
+                    # A separate API call to run a summarizer
+                    messages = self.summarize_messages_inplace(messages)
 
-            #     # Try step again
-            #     return self.step(user_message, first_message=first_message, return_dicts=return_dicts)
-            # else:
-            #     printd(f"step() failed with an unrecognized exception: '{str(e)}'")
-            #     raise e
+                    # Try step again
+                    # return self.step(user_message, first_message=first_message, return_dicts=return_dicts)
+                else:
+                    # print(f"step() failed with an unrecognized exception: '{str(e)}'")
+                    print('step() failed with an unrecognized exception:')
+                    raise ContextWindowLimitExceededError()
+
             # TODO: Manage the response for exception.
 
         return self.action_parser.parse(response)
@@ -256,15 +268,15 @@ class CodeActAgent(Agent):
         # Do not allow truncation of the last N messages, since these are needed for in-context examples of function calling
 
         # TODO: Check the functioning of this get_token_count function.
-        token_counts = [self.llm.get_token_count(message) for message in messages]
-
-        message_buffer_token_count = sum(token_counts[1:])  # no system message
+        token_counts = [self.llm.get_token_count([message]) for message in messages]
+        print(token_counts)
+        message_buffer_token_count = sum(token_counts[2:])  # no system message
         MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC = 0.75
         desired_token_count_to_summarize = int(
             message_buffer_token_count * MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC
         )
-        candidate_messages_to_summarize = messages[1:]
-        token_counts = token_counts[1:]
+        candidate_messages_to_summarize = messages[2:]
+        token_counts = token_counts[2:]
 
         # TODO: Add functionality for preserving last N messages
         MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST = 3
@@ -315,7 +327,7 @@ class CodeActAgent(Agent):
         #         cutoff += 1
 
         message_sequence_to_summarize = messages[
-            1:cutoff
+            2:cutoff
         ]  # do NOT get rid of the system message
         if len(message_sequence_to_summarize) <= 1:
             # This prevents a potential infinite loop of summarizing the same message over and over
@@ -324,7 +336,7 @@ class CodeActAgent(Agent):
             )
         else:
             print(
-                f'Attempting to summarize {len(message_sequence_to_summarize)} messages [1:{cutoff}] of {len(messages)}'
+                f'Attempting to summarize {len(message_sequence_to_summarize)} messages [2:{cutoff}] of {len(messages)}'
             )
 
         # TODO: (Check) I don't think this is needed because max_tokens is already define in opendevin.
@@ -337,9 +349,10 @@ class CodeActAgent(Agent):
         #         LLM_MAX_TOKENS[self.model] if (self.model is not None and self.model in LLM_MAX_TOKENS) else LLM_MAX_TOKENS["DEFAULT"]
         #     )
 
-        # TODO: Define summarize messages function
-        # summary = summarize_messages(agent_state=self.agent_state, message_sequence_to_summarize=message_sequence_to_summarize)
-        # print(f"Got summary: {summary}")
+        summary = summarize_messages(
+            message_sequence_to_summarize=message_sequence_to_summarize, llm=self.llm
+        )
+        print(f'Got summary: {summary}')
 
         # TODO: Look into this
         # # Metadata that's useful for the agent to see
@@ -369,7 +382,14 @@ class CodeActAgent(Agent):
 
         # print(f"Ran summarizer, messages length {prior_len} -> {len(self.messages)}")
 
-        return messages
+        print('Old No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
+        new_messages = (
+            messages[:2]
+            + [{'role': 'assistant', 'content': summary}]
+            + messages[cutoff:]
+        )
+        print('New No of tokens, ' + str(self.llm.get_token_count(new_messages)) + '\n')
+        return new_messages
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')

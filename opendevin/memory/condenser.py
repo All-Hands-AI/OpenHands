@@ -60,13 +60,13 @@ def summarize_messages(message_sequence_to_summarize: list[dict], llm: LLM):
     # dummy_user_id = uuid.uuid4()
     # dummy_agent_id = uuid.uuid4()
     message_sequence = []
-    message_sequence.append({'role': 'system', 'text': summary_prompt})
+    message_sequence.append({'role': 'system', 'content': summary_prompt})
 
     # TODO: Check if this feature is needed
     # if insert_acknowledgement_assistant_message:
     #     message_sequence.append(Message(user_id=dummy_user_id, agent_id=dummy_agent_id, role="assistant", text=MESSAGE_SUMMARY_REQUEST_ACK))
 
-    message_sequence.append({'role': 'user', 'text': summary_input})
+    message_sequence.append({'role': 'user', 'content': summary_input})
 
     response = llm.completion(
         messages=message_sequence,

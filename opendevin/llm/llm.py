@@ -126,6 +126,9 @@ class LLM:
         self.base_url = base_url
         self.api_version = api_version
         self.max_input_tokens = max_input_tokens
+        ###############
+        # self.max_input_tokens = 6000
+        ###############
         self.max_output_tokens = max_output_tokens
         self.llm_timeout = llm_timeout
         self.custom_llm_provider = custom_llm_provider
@@ -326,3 +329,24 @@ class LLM:
 
     def __repr__(self):
         return str(self)
+
+    def is_over_token_limit(self, messages: list[dict]) -> bool:
+        """
+        Estimates the token count of the given events using litellm tokenizer and returns True if over the max_input_tokens value.
+
+        Parameters:
+        - messages: List of messages to estimate the token count for.
+
+        Returns:
+        - Estimated token count.
+        """
+        # max_input_tokens will always be set in init to some sensible default
+        # 0 in config.llm disables the check
+        MAX_TOKEN_COUNT_PADDING = 512
+        if not self.max_input_tokens:
+            return False
+        token_count = (
+            litellm.token_counter(model=self.model_name, messages=messages)
+            + MAX_TOKEN_COUNT_PADDING
+        )
+        return token_count >= self.max_input_tokens
