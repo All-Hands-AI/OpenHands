@@ -172,9 +172,7 @@ class CodeActActionParserAgentDelegate(ActionParser):
             return AgentDelegateAction(agent=self.agent, inputs={'task': task})
 
         task = self.agent_delegate.group(1).strip()
-        return AgentDelegateAction(
-            agent=self.agent, inputs={'task': thought + '\n' + task}
-        )
+        return AgentDelegateAction(agent=self.agent, inputs={'task': task})
 
 
 class CodeActActionParserMessage(ActionParser):

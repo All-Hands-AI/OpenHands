@@ -80,17 +80,40 @@ class MoatlessSearchAgent(Agent):
             else config.workspace_base
         )
         file_repo = FileRepository(repo_dir)
-        persist_dir = '.vector_store' + repo_dir
+        persist_dir = '.vector_store'
 
-        if os.path.exists(persist_dir):
-            code_index = CodeIndex.from_persist_dir(
-                persist_dir=persist_dir, file_repo=file_repo
-            )
+        if config.moatless_workspace:  # type: ignore
+            # In eval model
+            instance_id = os.path.normpath(repo_dir).split(os.path.sep)[-2]
+            persist_dir = os.path.join(persist_dir, '_eval', instance_id)
+            if os.path.exists(persist_dir):
+                # Reuse the existing index
+                logger.info(f'Loading the existing index from {persist_dir}')
+                code_index = CodeIndex.from_persist_dir(
+                    persist_dir=persist_dir, file_repo=file_repo
+                )
+            else:
+                code_index = CodeIndex(file_repo=file_repo, settings=index_settings)
+                nodes, tokens = code_index.run_ingestion(num_workers=4)
+                logger.info(f'Indexed {nodes} nodes and {tokens} tokens')
+                code_index.persist(persist_dir=persist_dir)
+                logger.info(f'Persisted the index to {persist_dir}')
         else:
-            code_index = CodeIndex(file_repo=file_repo, settings=index_settings)
-        nodes, tokens = code_index.run_ingestion()
-        logger.info(f'Indexed {nodes} nodes and {tokens} tokens')
-        code_index.persist(persist_dir=persist_dir)
+            # In normal mode
+            persist_dir += repo_dir  # FIXME: change to `os.path.join`
+            if os.path.exists(persist_dir):
+                code_index = CodeIndex.from_persist_dir(
+                    persist_dir=persist_dir, file_repo=file_repo
+                )
+            else:
+                code_index = CodeIndex(file_repo=file_repo, settings=index_settings)
+
+            # Always re-ingest in normal mode
+            nodes, tokens = code_index.run_ingestion(num_workers=4)
+            logger.info(f'Indexed {nodes} nodes and {tokens} tokens')
+            code_index.persist(persist_dir=persist_dir)
+            logger.info(f'Persisted the index to {persist_dir}')
+
         self._workspace = Workspace(file_repo=file_repo, code_index=code_index)
         self._identified_or_rejected = False
         self._finish_content = ''
@@ -142,7 +165,7 @@ class MoatlessSearchAgent(Agent):
                     show_outcommented_code=True,
                     outcomment_code_comment='... rest of the code',
                 )
-                logger.info(f'🔍 file context dict: {tool_call.file_context.dict()}')
+                # logger.info(f'🔍 file context dict: {tool_call.file_context.dict()}')
             else:
                 logger.info(
                     f'😥 \n\nNo file context available for this tool call {tool_call.call_id}.'
@@ -158,7 +181,9 @@ class MoatlessSearchAgent(Agent):
             )
 
         messages += self._retry_messages  # FIXME: check if _retry_messages is correct
-        logger.info(f'👀 Messages: {messages}')
+        # logger.info(f'👀 Messages: {messages}')
+
+        logger.info(f'🔍 TOOL SPEC: {str(self._tool_specs())}')
 
         response = self.llm._completion(
             messages=messages,
@@ -198,6 +223,7 @@ class MoatlessSearchAgent(Agent):
                     self._finish_content = reject_request.reason
                     return MessageAction(content=self._finish_content)
                 elif function_name == SearchCodeAction.name():
+                    logger.info(f'Searching for code with arguments: {str(arguments)}')
                     ranked_spans = []
                     try:
                         if self._previous_arguments == arguments:
@@ -222,10 +248,16 @@ class MoatlessSearchAgent(Agent):
                             ):
                                 message = "It's not possible to search for test files."
                             else:
+                                logger.info('Search request: ' + str(search_request))
                                 search_result = search_action.search(search_request)
+                                message = search_result.message or ''
+                                message += '\n'
 
                                 for hit in search_result.hits:
+                                    message += f'File: {hit.file_path}\n'
+                                    message += 'Spans:\n'
                                     for span in hit.spans:
+                                        message += f' - {span.span_id}\n'
                                         ranked_spans.append(
                                             RankedFileSpan(
                                                 file_path=hit.file_path,
@@ -233,7 +265,7 @@ class MoatlessSearchAgent(Agent):
                                                 rank=span.rank,
                                             )
                                         )
-                                message = search_result.message or ''
+                                    message += '\n'
                     except ValidationError as e:
                         logger.warning(f'Failed to validate function call. Error: {e}')
                         message = f'The function call is invalid. Error: {e}'

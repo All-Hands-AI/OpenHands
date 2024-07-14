@@ -1,7 +1,10 @@
 import os
 from enum import Enum
 
+from dotenv import load_dotenv
 from llama_index.core.embeddings import BaseEmbedding
+
+load_dotenv()
 
 
 class EmbeddingProvider(Enum):

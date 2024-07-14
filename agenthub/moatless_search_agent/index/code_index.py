@@ -269,8 +269,8 @@ class CodeIndex:
             )
             message = f'Found {spans_with_exact_query_match} code spans with code that matches the exact query `{query}`.'
         else:
-            logger.info(f'semantic_search() Found {span_count} code spans.')
-            message = f'Found {span_count} code spans.'
+            logger.info(f"semantic_search('{query}') Found {span_count} code spans.")
+            message = f'Found {span_count} code spans for query {query}.'
 
         return SearchCodeResponse(message=message, hits=list(files_with_spans.values()))
 
@@ -534,7 +534,7 @@ class CodeIndex:
         # TODO: Rerank by file pattern if no exact matches on file pattern
 
         logger.info(
-            f'_vector_search() Found {len(search_results)} search results. '
+            f"_vector_search('{query}') Found {len(search_results)} search results. "
             f'Ignored {ignored_removed_snippets} removed search results. '
             f'Filtered out {filtered_out_snippets} search results.'
         )

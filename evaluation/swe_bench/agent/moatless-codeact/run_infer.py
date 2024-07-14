@@ -173,7 +173,9 @@ def process_instance(
 
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
-    workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+    workspace_mount_path = os.path.join(
+        workspace_mount_path, str(os.getpid()), str(instance.instance_id)
+    )
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
