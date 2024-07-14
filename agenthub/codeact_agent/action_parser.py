@@ -129,6 +129,8 @@ class CodeActActionParserIPythonRunCell(ActionParser):
         ), 'self.python_code should not be None when parse is called'
         code_group = self.python_code.group(1).strip()
         thought = action_str.replace(self.python_code.group(0), '').strip()
+        if '%pip install' in code_group:
+            code_group = code_group.split('\n')[0]
         return IPythonRunCellAction(
             code=code_group,
             thought=thought,
