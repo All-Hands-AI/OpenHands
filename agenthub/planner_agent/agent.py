@@ -54,6 +54,3 @@ class PlannerAgent(Agent):
         messages = [{'content': content, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         return self.response_parser.parse(resp)
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

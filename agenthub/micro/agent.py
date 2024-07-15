@@ -85,6 +85,3 @@ class MicroAgent(Agent):
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

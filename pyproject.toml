@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.7.1"
+version = "0.8.0"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
@@ -48,7 +48,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.5.1"
+ruff = "0.5.2"
 mypy = "1.10.1"
 pre-commit = "3.7.1"
 

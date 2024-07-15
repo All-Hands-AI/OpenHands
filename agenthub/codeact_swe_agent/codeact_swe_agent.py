@@ -181,9 +181,6 @@ class CodeActSWEAgent(Agent):
 
         return self.response_parser.parse(response)
 
-    def search_memory(self, query: str) -> list[str]:
-        raise NotImplementedError('Implement this abstract method')
-
     def _get_messages(self, state: State) -> list[dict[str, str | Content]]:
         messages: list[dict[str, str | Content]] = [
             {

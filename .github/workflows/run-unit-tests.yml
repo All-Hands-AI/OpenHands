@@ -86,7 +86,26 @@ jobs:
           brew services start colima
           brew install docker
           colima delete
-          colima start  --network-address --arch x86_64 --cpu=1 --memory=1
+          # Attempt to start Colima
+          ATTEMPT_LIMIT=3
+
+          start_colima() {
+            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+          }
+
+          for i in $(seq 1 $ATTEMPT_LIMIT); do
+            if start_colima; then
+              echo "Colima started successfully."
+              break
+            else
+              echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
+            fi
+          done
+
+          if [ $i -gt $ATTEMPT_LIMIT ]; then
+            echo "Failed to start Colima after $ATTEMPT_LIMIT attempts."
+            exit 1
+          fi
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running

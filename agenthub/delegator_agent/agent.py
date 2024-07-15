@@ -82,6 +82,3 @@ class DelegatorAgent(Agent):
                 )
         else:
             raise Exception('Invalid delegate state')
-
-    def search_memory(self, query: str) -> list[str]:
-        return []
