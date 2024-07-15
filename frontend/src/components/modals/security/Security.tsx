@@ -1,6 +1,8 @@
 import React from "react";
 import SecurityInvariant from "./Invariant";
 import BaseModal from "../base-modal/BaseModal";
+import { getSettings } from "#/services/settings";
+import toast from "#/utils/toast";
 
 interface SecurityProps {
   isOpen: boolean;
@@ -8,6 +10,13 @@ interface SecurityProps {
 }
 
 function Security({ isOpen, onOpenChange }: SecurityProps): JSX.Element {
+  const { SECURITY_ANALYZER } = getSettings();
+
+  if (!SECURITY_ANALYZER) {
+    toast.error("security", "Enable security analyzer from settings.");
+    return <div />;
+  }
+
   return (
     <BaseModal
       isOpen={isOpen}
