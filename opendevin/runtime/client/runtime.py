@@ -33,7 +33,7 @@ from opendevin.runtime.plugins import (
 )
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
-from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
+from opendevin.runtime.utils.runtime_build import build_runtime_image
 
 
 class EventStreamRuntime(Runtime):
@@ -72,8 +72,13 @@ class EventStreamRuntime(Runtime):
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
     async def ainit(self):
-        self.container_image = get_od_sandbox_image(
-            self.container_image, self.docker_client, is_eventstream_runtime=True
+        self.container_image = build_runtime_image(
+            self.container_image,
+            self.docker_client,
+            # NOTE: You can need set DEBUG=true to update the source code
+            # inside the container. This is useful when you want to test/debug the
+            # latest code in the runtime docker container.
+            update_source_code=config.debug,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
