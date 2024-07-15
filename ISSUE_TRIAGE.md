@@ -1,5 +1,5 @@
 # Issue Triage
-This is the procedure and guidelines on how issues are triaged in this repo.
+These are the procedures and guidelines on how issues are triaged in this repo by the maintainers.
 
 ## General
 * Most issues must be tagged with **enhancement** or **bug**
@@ -8,13 +8,13 @@ This is the procedure and guidelines on how issues are triaged in this repo.
 ## Severity
 * **Low**: Minor issues, single user report
 * **Medium**: Affecting multiple users
-* **Critical**: Affecting all users or security issues
+* **Critical**: Affecting all users or potential security issues
 
 ## Effort
 * Issues may be estimated with effort required (**small effort**, **medium effort**, **large effort**)
 
 ## Difficulty
-* Issues with a relatively low difficulty may be tagged with **good first issue**
+* Issues with low implementation difficulty may be tagged with **good first issue**
 
 ## Not Enough Information
 * User is asked to provide more information (logs, how to reproduce, etc.) when the issue is not clear
