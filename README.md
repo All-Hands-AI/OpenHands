@@ -46,9 +46,9 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 
 ## ⚡ Getting Started
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/OpenDevin/OpenDevin)
+The easiest way to run OpenDevin is to [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/OpenDevin/OpenDevin)
 
-The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
+OpenDevin works best with the most recent version of Docker, `26.0.0`.
 You must be using Linux, Mac OS, or WSL on Windows.
 
 To start OpenDevin in a docker container, run the following commands in your terminal:
