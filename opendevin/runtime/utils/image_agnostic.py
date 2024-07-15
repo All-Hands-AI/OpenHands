@@ -1,5 +1,4 @@
-"""
-This module contains functions for building and managing the agnostic sandbox image.
+"""This module contains functions for building and managing the agnostic sandbox image.
 
 This WILL BE DEPRECATED when EventStreamRuntime is fully implemented and adopted.
 """
