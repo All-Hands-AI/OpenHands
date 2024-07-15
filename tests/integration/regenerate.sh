@@ -47,7 +47,6 @@ echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
-debug_echo "Current directory after cd: $(pwd)"
 
 mkdir -p $WORKSPACE_BASE
 
@@ -94,7 +93,6 @@ num_of_agents=${#agents[@]}
 run_test() {
   # Ensure we're in the correct directory
   cd "$PROJECT_ROOT" || exit 1
-  debug_echo "Current directory after cd: $(pwd)"
 
   local pytest_cmd="poetry run pytest --cache-clear -s $SCRIPT_DIR/test_agent.py::$test_name"
   # Check if TEST_IN_CI is defined
