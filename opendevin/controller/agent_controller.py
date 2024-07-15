@@ -249,7 +249,7 @@ class AgentController:
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         llm_config = config.get_llm_config_from_agent(action.agent)
-        llm = LLM(llm_config=llm_config)
+        llm = LLM(config=llm_config)
         delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},

@@ -70,7 +70,7 @@ class MicroAgent(Agent):
             instructions=instructions,
             to_json=to_json,
             history_to_json=partial(
-                history_to_json, max_message_chars=self.llm.max_message_chars
+                history_to_json, max_message_chars=self.llm.config.max_message_chars
             ),
             delegates=self.delegates,
             latest_user_message=state.get_current_user_intent(),

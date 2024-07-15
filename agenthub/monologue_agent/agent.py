@@ -103,7 +103,7 @@ class MonologueAgent(Agent):
                         content=thought, url='', screenshot=''
                     )
                 self.initial_thoughts.append(
-                    event_to_memory(observation, self.llm.max_message_chars)
+                    event_to_memory(observation, self.llm.config.max_message_chars)
                 )
                 previous_action = ''
             else:
@@ -128,7 +128,7 @@ class MonologueAgent(Agent):
                 else:
                     action = MessageAction(thought)
                 self.initial_thoughts.append(
-                    event_to_memory(action, self.llm.max_message_chars)
+                    event_to_memory(action, self.llm.config.max_message_chars)
                 )
 
     def step(self, state: State) -> Action:
@@ -148,7 +148,9 @@ class MonologueAgent(Agent):
 
         # add the events from state.history
         for event in state.history.get_events():
-            recent_events.append(event_to_memory(event, self.llm.max_message_chars))
+            recent_events.append(
+                event_to_memory(event, self.llm.config.max_message_chars)
+            )
 
         # add the last messages to long term memory
         if self.memory is not None:
@@ -159,11 +161,11 @@ class MonologueAgent(Agent):
             # we will need to do this differently: find out if there really is an action or an observation in this step
             if last_action:
                 self.memory.add_event(
-                    event_to_memory(last_action, self.llm.max_message_chars)
+                    event_to_memory(last_action, self.llm.config.max_message_chars)
                 )
             if last_observation:
                 self.memory.add_event(
-                    event_to_memory(last_observation, self.llm.max_message_chars)
+                    event_to_memory(last_observation, self.llm.config.max_message_chars)
                 )
 
         # the action prompt with initial thoughts and recent events

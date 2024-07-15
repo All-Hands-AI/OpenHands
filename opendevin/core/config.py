@@ -208,7 +208,7 @@ class AppConfig(metaclass=Singleton):
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
-    llms: dict = field(default_factory=dict)
+    llms: dict[str, LLMConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
     default_agent: str = 'CodeActAgent'
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)

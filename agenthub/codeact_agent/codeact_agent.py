@@ -218,7 +218,9 @@ class CodeActAgent(Agent):
             if isinstance(event, Action):
                 message = get_action_message(event)
             elif isinstance(event, Observation):
-                message = get_observation_message(event, self.llm.max_message_chars)
+                message = get_observation_message(
+                    event, self.llm.config.max_message_chars
+                )
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
