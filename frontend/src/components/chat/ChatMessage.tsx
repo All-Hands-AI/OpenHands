@@ -35,7 +35,7 @@ function ChatMessage({
   const className = twMerge(
     "markdown-body",
     "p-3 text-white max-w-[90%] overflow-y-auto rounded-lg relative",
-    message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500"
+    message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
   );
 
   const { t } = useTranslation();
@@ -52,7 +52,7 @@ function ChatMessage({
       .catch(() => {
         toast.error(
           "copy-error",
-          t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED)
+          t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED),
         );
       });
   };

@@ -21,7 +21,6 @@ import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { removeApiKey } from "#/utils/utils";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
-import toast from "#/utils/toast";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -84,9 +83,8 @@ function ChatInterface() {
   };
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
-    dispatch(addUserMessage({'content': content, 'imageUrls': imageUrls}));
+    dispatch(addUserMessage({ content, imageUrls }));
     sendChatMessage(content, imageUrls);
-    // toast.error("image-upload-error", "Model doesn't have support for upload!");
   };
 
   const handleEmailChange = (key: string) => {
