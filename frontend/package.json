@@ -18,7 +18,7 @@
     "@xterm/xterm": "^5.4.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "framer-motion": "^11.3.0",
+    "framer-motion": "^11.3.2",
     "i18next": "^23.11.5",
     "i18next-browser-languagedetector": "^8.0.0",
     "i18next-http-backend": "^2.5.2",

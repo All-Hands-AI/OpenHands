@@ -3,7 +3,6 @@ from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -68,14 +67,6 @@ def test_message_action_serialization_deserialization():
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
-
-
-def test_agent_recall_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'recall',
-        'args': {'query': 'Test query.', 'thought': ''},
-    }
-    serialization_deserialization(original_action_dict, AgentRecallAction)
 
 
 def test_agent_finish_action_serialization_deserialization():

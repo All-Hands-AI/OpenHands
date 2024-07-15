@@ -22,10 +22,6 @@ class ObservationTypeSchema(BaseModel):
     """Runs a IPython cell.
     """
 
-    RECALL: str = Field(default='recall')
-    """The result of a search
-    """
-
     CHAT: str = Field(default='chat')
     """A message from the user
     """

@@ -1,3 +1,9 @@
+"""
+This module contains functions for building and managing the agnostic sandbox image.
+
+This WILL BE DEPRECATED when EventStreamRuntime is fully implemented and adopted.
+"""
+
 import tempfile
 
 import docker
@@ -5,7 +11,7 @@ import docker
 from opendevin.core.logger import opendevin_logger as logger
 
 
-def generate_dockerfile_content(base_image: str) -> str:
+def generate_dockerfile(base_image: str) -> str:
     """
     Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
 
@@ -37,7 +43,8 @@ def _build_sandbox_image(
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            dockerfile_content = generate_dockerfile_content(base_image)
+            dockerfile_content = generate_dockerfile(base_image)
+
             logger.info(f'Building agnostic sandbox image: {target_image_name}')
             logger.info(
                 (
@@ -72,12 +79,13 @@ def _build_sandbox_image(
 
 
 def _get_new_image_name(base_image: str) -> str:
+    prefix = 'od_sandbox'
     if ':' not in base_image:
         base_image = base_image + ':latest'
 
     [repo, tag] = base_image.split(':')
     repo = repo.replace('/', '___')
-    return f'od_sandbox:{repo}__{tag}'
+    return f'{prefix}:{repo}__{tag}'
 
 
 def get_od_sandbox_image(base_image: str, docker_client: docker.DockerClient) -> str:

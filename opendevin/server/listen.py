@@ -228,10 +228,6 @@ async def websocket_endpoint(websocket: WebSocket):
         ```json
         {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
         ```
-    - Search long-term memory:
-        ```json
-        {"action": "recall", "args": {"query": "past projects"}}
-        ```
     - Add a task to the root_task:
         ```json
         {"action": "add_task", "args": {"task": "Implement feature X"}}

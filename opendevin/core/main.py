@@ -15,8 +15,8 @@ from opendevin.events.action import MessageAction
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
+from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.sandbox import Sandbox
-from opendevin.runtime.server.runtime import ServerRuntime
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -79,7 +79,9 @@ async def run_agent_controller(
     )
 
     # runtime and tools
-    runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
+    runtime_cls = get_runtime_cls(config.runtime)
+    runtime = runtime_cls(event_stream=event_stream, sandbox=sandbox)
+    await runtime.ainit()
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
         controller.agent.runtime_tools,
@@ -139,7 +141,7 @@ async def run_agent_controller(
 
     # close when done
     await controller.close()
-    runtime.close()
+    await runtime.close()
     return controller.get_state()
 
 

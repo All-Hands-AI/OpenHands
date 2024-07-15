@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.7.1"
+version = "0.8.0"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/OpenDevin/OpenDevin"
+include = ["poetry.lock"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -57,13 +58,6 @@ pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
-flake8 = "*"
-openai = "*"
-python-docx = "*"
-PyPDF2 = "*"
-pylatexenc = "*"
-python-pptx = "*"
-opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
@@ -77,6 +71,18 @@ whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
+
+
+[tool.poetry.group.runtime.dependencies]
+jupyterlab = "*"
+notebook = "*"
+jupyter_kernel_gateway = "*"
+flake8 = "*"
+python-docx = "*"
+PyPDF2 = "*"
+python-pptx = "*"
+pylatexenc = "*"
+opencv-python = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
