@@ -44,9 +44,13 @@ class BrowserEnv:
         # Initialize browser environment process
         multiprocessing.set_start_method('spawn', force=True)
         self.browser_side, self.agent_side = multiprocessing.Pipe()
-        self.process = multiprocessing.Process(
+        self.process: multiprocessing.Process | None = multiprocessing.Process(
             target=self.browser_process,
         )
+        # Give the browser process a higher priority
+        # This is a workaround for a potential issue where the browser process
+        # might not get enough resources and gets stuck
+        self.process.daemon = True  # set the process as a daemon
         if is_async:
             threading.Thread(target=self.init_browser).start()
         else:
@@ -66,7 +70,10 @@ class BrowserEnv:
 
     def init_browser(self):
         logger.info('Starting browser env...')
-        self.process.start()
+        if self.process is not None:
+            self.process.start()
+        else:
+            raise BrowserInitException('Browser process is not initialized.')
         if not self.check_alive():
             self.close()
             raise BrowserInitException('Failed to start browser environment.')
@@ -153,7 +160,7 @@ class BrowserEnv:
             logger.info(f'Browser env is not alive. Response ID: {response_id}')
 
     def close(self):
-        if not self.process.is_alive():
+        if self.process is None or not self.process.is_alive():
             return
         try:
             self.agent_side.send(('SHUTDOWN', None))
@@ -170,7 +177,14 @@ class BrowserEnv:
             self.agent_side.close()
             self.browser_side.close()
         except Exception:
-            logger.error('Encountered an error when closing browser env', exc_info=True)
+            logger.error(
+                'Encountered an error when closing browser env', exc_info=False
+            )
+        finally:
+            # Ensure browser is set to None after closing
+            self.agent_side.close()
+            self.browser_side.close()
+            self.process = None
 
     @staticmethod
     def image_to_png_base64_url(

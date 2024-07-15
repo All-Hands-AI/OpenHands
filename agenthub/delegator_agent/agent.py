@@ -50,11 +50,12 @@ class DelegatorAgent(Agent):
         goal = state.get_current_user_intent()
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
+            summary = last_observation.outputs.get('summary', '')
             return AgentDelegateAction(
                 agent='CoderAgent',
                 inputs={
                     'task': goal,
-                    'summary': last_observation.outputs['summary'],
+                    'summary': summary,
                 },
             )
         elif self.current_delegate == 'coder':
@@ -73,11 +74,12 @@ class DelegatorAgent(Agent):
                 return AgentFinishAction()
             else:
                 self.current_delegate = 'coder'
+                summary = last_observation.outputs.get('summary', '')
                 return AgentDelegateAction(
                     agent='CoderAgent',
                     inputs={
                         'task': goal,
-                        'summary': last_observation.outputs['summary'],
+                        'summary': summary,
                     },
                 )
         else:

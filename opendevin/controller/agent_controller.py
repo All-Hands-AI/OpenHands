@@ -339,7 +339,6 @@ class AgentController:
                 f'[Agent Controller `{self.id}`] waiting for pending action: {self._pending_action}'
             )
             await asyncio.sleep(1)
-            return
 
         if self.delegate is not None:
             logger.debug(
@@ -357,6 +356,7 @@ class AgentController:
                 self.delegateAction = None
                 await self.report_error('Delegator agent encountered an error')
                 return
+
             delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
                 logger.info(
@@ -425,24 +425,29 @@ class AgentController:
         try:
             if isinstance(self.agent, AsyncAgent):
                 action = await self.agent.async_step(self.state)
+            elif asyncio.iscoroutinefunction(self.agent.step):
+                action = await self.agent.step(self.state)
             else:
+                logger.info(action, extra={'msg_type': 'ACTION'})
                 loop = asyncio.get_running_loop()
                 action = await loop.run_in_executor(None, self.agent.step, self.state)
 
+            if not isinstance(action, Action):
+                raise LLMResponseError(f'Unexpected response type: {type(action)}')
+
             if action is None:
                 raise LLMNoActionError('No action was returned')
-
-            logger.info(action, extra={'msg_type': 'ACTION'})
-
-            if asyncio.iscoroutine(action):
-                action = await action
-
-            if isinstance(action, AgentFinishAction):
+            elif isinstance(action, AgentFinishAction):
                 await self.set_agent_state_to(AgentState.FINISHED)
                 return
+            elif isinstance(action, AgentDelegateAction):
+                await self.start_delegate(action)
+                return
+            else:
+                logger.info(action, extra={'msg_type': 'ACTION'})
 
             if not isinstance(action, NullAction):
-                if action.runnable:
+                if hasattr(action, 'runnable'):
                     if self.state.confirmation_mode and (
                         type(action) is CmdRunAction
                         or type(action) is IPythonRunCellAction

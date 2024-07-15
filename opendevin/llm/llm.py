@@ -232,11 +232,17 @@ class LLM:
             # log the prompt
             debug_message = ''
             for message in messages:
-                debug_message += message_separator + message['content']
+                if message['content'].strip():
+                    debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
 
-            # call the completion function
-            resp = completion_unwrapped(*args, **kwargs)
+            # skip if messages is empty (thus debug_message is empty)
+            if debug_message:
+                # logger.info('Prompt: %s', debug_message)
+                resp = completion_unwrapped(*args, **kwargs)
+                logger.info(f'Response: {resp}')
+            else:
+                resp = {'choices': [{'message': {'content': ''}}]}
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
