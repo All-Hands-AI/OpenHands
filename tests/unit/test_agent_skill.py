@@ -1139,6 +1139,19 @@ def test_search_dir_cwd(tmp_path, monkeypatch):
     )
     assert result.split('\n') == expected.split('\n')
 
+def test_search_class(tmp_path, monkeypatch):
+    temp_file_path = tmp_path / 'foo.py'
+    temp_file_path.write_text('class Hello:\n   pass')
+
+    monkeypatch.chdir(tmp_path)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_class('Hello')
+        result = buf.getvalue()
+    assert result is not None
+    expected = 'Found 1 classes with name Hello in the codebase:\n\n- Search result 1:\n```\n<file>./foo.py</file>\n<class>Hello</class>\n<code>\nclass Hello:\n\n</code>\n```\n\n'
+    assert result.split('\n') == expected.split('\n')
+
 
 def test_search_file(tmp_path):
     temp_file_path = tmp_path / 'a.txt'

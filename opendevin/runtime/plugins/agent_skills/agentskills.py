@@ -54,6 +54,10 @@ OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
 
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
+if __package__ is None or __package__ == '':
+    from autorover import SearchManager
+else:
+    from .autorover import SearchManager
 
 # Define the decorator using the functionality of UpdatePwd
 def update_pwd_decorator(func):
@@ -93,7 +97,6 @@ def _is_valid_path(path) -> bool:
         return os.path.exists(os.path.normpath(path))
     except PermissionError:
         return False
-
 
 def _create_paths(file_name) -> bool:
     try:
@@ -789,6 +792,25 @@ def append_file(file_name: str, content: str) -> None:
     )
     print(ret_str)
 
+@update_pwd_decorator
+def search_class(class_name: str) -> tuple[str, str, bool]:
+    """Search for a class in the codebase.
+
+    Only the signature of the class is returned. The class signature
+    includes class name, base classes, and signatures for all of its methods/properties.
+
+    Args:
+        class_name (string): Name of the class to search for.
+
+    Returns:
+        string: the class signature in string if success;
+                an error message if the class cannot be found.
+        string: a message summarizing the method.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    result = search_manager.search_class(class_name)
+    print(result)
 
 @update_pwd_decorator
 def search_dir(search_term: str, dir_path: str = './') -> None:
