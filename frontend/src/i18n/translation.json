@@ -209,9 +209,6 @@
     "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
-  "WORKSPACE$SECURITY_TAB_LABEL": {
-    "en": "Security"
-  },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",
@@ -347,6 +344,16 @@
     "ar": "حدد لغة",
     "fr": "Sélectionner une langue",
     "tr": "Dil Seç"
+  },
+  "CONFIGURATION$SECURITY_SELECT_LABEL": {
+    "en": "Security analyzer",
+    "de": "Sicherheitsanalysator",
+    "zh-CN": "安全分析器"
+  },
+  "CONFIGURATION$SECURITY_SELECT_PLACEHOLDER": {
+    "en": "Select a security analyzer",
+    "de": "Wählen Sie einen Sicherheitsanalysator",
+    "zh-CN": "选择一个安全分析器"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
@@ -745,7 +752,9 @@
     "zh-CN": "在执行代码之前等待用户确认。"
   },
   "SETTINGS$SECURITY_ANALYZER": {
-    "en": "Enable Security Analyzer"
+    "en": "Enable Security Analyzer",
+    "de": "Sicherheitsanalysator aktivieren",
+    "zh-CN": "启用安全分析器"
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",

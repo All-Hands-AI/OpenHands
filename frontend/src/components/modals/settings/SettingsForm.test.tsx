@@ -23,11 +23,12 @@ const renderSettingsForm = (settings?: Settings) => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: true,
+          SECURITY_ANALYZER: "analyzer1",
         }
       }
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
+      securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
@@ -47,14 +48,16 @@ describe("SettingsForm", () => {
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
     const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityAnalyzerInput = screen.getByTestId("securityanalyzer");
+    const securityAnalyzerInput = screen.getByRole("combobox", {
+      name: "securityanalyzer",
+    });
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
     expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
-    expect(securityAnalyzerInput).toHaveAttribute("data-selected", "true");
+    expect(securityAnalyzerInput).toHaveValue("analyzer1");
   });
 
   it("should display the existing values if it they are present", () => {
@@ -64,16 +67,20 @@ describe("SettingsForm", () => {
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: true,
+      SECURITY_ANALYZER: "analyzer2",
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
+    const securityAnalyzerInput = screen.getByRole("combobox", {
+      name: "securityanalyzer",
+    });
 
     expect(modelInput).toHaveValue("model2");
     expect(agentInput).toHaveValue("agent2");
     expect(languageInput).toHaveValue("Español");
+    expect(securityAnalyzerInput).toHaveValue("analyzer2");
   });
 
   it("should disable settings when disabled is true", () => {
@@ -85,10 +92,11 @@ describe("SettingsForm", () => {
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
           CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: true,
+          SECURITY_ANALYZER: "analyzer1",
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
+        securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
@@ -102,13 +110,15 @@ describe("SettingsForm", () => {
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityAnalyzerInput = screen.getByTestId("securityanalyzer");
+    const securityAnalyzerInput = screen.getByRole("combobox", {
+      name: "securityanalyzer",
+    });
 
     expect(modelInput).toBeDisabled();
     expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
     expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
-    expect(securityAnalyzerInput).toHaveAttribute("data-disabled", "true");
+    expect(securityAnalyzerInput).toBeDisabled();
   });
 
   describe("onChange handlers", () => {

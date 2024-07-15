@@ -11,6 +11,7 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   agents: string[];
+  securityAnalyzers: string[];
   disabled: boolean;
 
   onModelChange: (model: string) => void;
@@ -18,13 +19,14 @@ interface SettingsFormProps {
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
   onConfirmationModeChange: (confirmationMode: boolean) => void;
-  onSecurityAnalyzerChange: (securityAnalyzer: boolean) => void;
+  onSecurityAnalyzerChange: (securityAnalyzer: string) => void;
 }
 
 function SettingsForm({
   settings,
   models,
   agents,
+  securityAnalyzers,
   disabled,
   onModelChange,
   onAPIKeyChange,
@@ -90,14 +92,25 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
+      <AutocompleteCombobox
+        ariaLabel="securityanalyzer"
+        items={securityAnalyzers.map((securityAnalyzer) => ({
+          value: securityAnalyzer,
+          label: securityAnalyzer,
+        }))}
+        defaultKey={settings.SECURITY_ANALYZER}
+        onChange={onSecurityAnalyzerChange}
+        tooltip={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+        disabled={disabled}
+      />
       <Switch
         aria-label="confirmationmode"
         data-testid="confirmationmode"
         defaultSelected={
-          settings.CONFIRMATION_MODE || settings.SECURITY_ANALYZER
+          settings.CONFIRMATION_MODE || !!settings.SECURITY_ANALYZER
         }
         onValueChange={onConfirmationModeChange}
-        isDisabled={disabled || settings.SECURITY_ANALYZER}
+        isDisabled={disabled || !!settings.SECURITY_ANALYZER}
         isSelected={settings.CONFIRMATION_MODE}
       >
         <Tooltip
@@ -107,16 +120,6 @@ function SettingsForm({
         >
           {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
         </Tooltip>
-      </Switch>
-      <Switch
-        aria-label="securityanalyzer"
-        data-testid="securityanalyzer"
-        defaultSelected={settings.SECURITY_ANALYZER}
-        onValueChange={onSecurityAnalyzerChange}
-        isDisabled={disabled}
-        isSelected={settings.SECURITY_ANALYZER}
-      >
-        {t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
       </Switch>
     </>
   );

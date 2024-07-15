@@ -22,7 +22,7 @@ describe("getSettings", () => {
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
       .mockReturnValueOnce("true")
-      .mockReturnValueOnce("true");
+      .mockReturnValueOnce("invariant");
 
     const settings = getSettings();
 
@@ -32,12 +32,14 @@ describe("getSettings", () => {
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
       CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: true,
+      SECURITY_ANALYZER: "invariant",
     });
   });
 
   it("should handle return defaults if localStorage key does not exist", () => {
     (localStorage.getItem as Mock)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
@@ -64,7 +66,7 @@ describe("saveSettings", () => {
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
       CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: true,
+      SECURITY_ANALYZER: "invariant",
     };
 
     saveSettings(settings);

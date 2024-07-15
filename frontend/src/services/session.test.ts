@@ -21,7 +21,7 @@ describe("startNewSession", () => {
       LANGUAGE: "language_value",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: true,
+      SECURITY_ANALYZER: "analyzer",
     };
 
     const event = {

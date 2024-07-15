@@ -13,7 +13,7 @@ from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.e2b.runtime import E2BRuntime
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
-from opendevin.security import InvariantAnalyzer
+from opendevin.security import SecurityAnalyzer, options
 
 
 class AgentSession:
@@ -27,7 +27,7 @@ class AgentSession:
     event_stream: EventStream
     controller: Optional[AgentController] = None
     runtime: Optional[Runtime] = None
-    security_analyzer: Optional[InvariantAnalyzer] = None
+    security_analyzer: Optional[SecurityAnalyzer] = None
     _closed: bool = False
 
     def __init__(self, sid):
@@ -70,8 +70,9 @@ class AgentSession:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        if args.get(ConfigType.SECURITY_ANALYZER, config.security_analyzer):
-            self.security_analyzer = InvariantAnalyzer(self.event_stream)
+        security_analyzer = args.get(ConfigType.SECURITY_ANALYZER, config.security_analyzer)
+        if security_analyzer:
+            self.security_analyzer = options.SecurityAnalyzers.get(security_analyzer, SecurityAnalyzer)(self.event_stream)
 
     async def _create_runtime(self):
         if self.runtime is not None:

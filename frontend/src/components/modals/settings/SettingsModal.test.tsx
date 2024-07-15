@@ -28,7 +28,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
     CONFIRMATION_MODE: true,
-    SECURITY_ANALYZER: true,
+    SECURITY_ANALYZER: "invariant",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
@@ -36,7 +36,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LANGUAGE: "en",
     LLM_API_KEY: "",
     CONFIRMATION_MODE: false,
-    SECURITY_ANALYZER: false,
+    SECURITY_ANALYZER: "",
   }),
   settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),
@@ -112,7 +112,7 @@ describe("SettingsModal", () => {
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
       CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: true,
+      SECURITY_ANALYZER: "invariant",
     };
 
     it("should save the settings", async () => {

@@ -126,7 +126,7 @@ function App(): JSX.Element {
       <Controls
         setSettingOpen={onSettingsModalOpen}
         setSecurityOpen={onSecurityModalOpen}
-        showSecurityLock={SECURITY_ANALYZER}
+        showSecurityLock={!!SECURITY_ANALYZER}
       />
       <SettingsModal
         isOpen={settingsModalIsOpen}

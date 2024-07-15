@@ -51,3 +51,7 @@ class SecurityAnalyzer:
         raise NotImplementedError(
             'Need to implement security_risk method in SecurityAnalyzer subclass'
         )
+
+    def close(self) -> None:
+        """Cleanup resources allocated by the SecurityAnalyzer."""
+        pass
