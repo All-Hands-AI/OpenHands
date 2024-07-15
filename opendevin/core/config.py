@@ -146,6 +146,9 @@ class SandboxConfig(metaclass=Singleton):
     )
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
+    enable_auto_lint: bool = (
+        False  # once enabled, OpenDevin would lint files after editing
+    )
 
     def defaults_to_dict(self) -> dict:
         """
@@ -201,7 +204,6 @@ class AppConfig(metaclass=Singleton):
         disable_color: Whether to disable color. For terminals that don't support color.
         initialize_plugins: Whether to initialize plugins.
         debug: Whether to enable debugging.
-        enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
         enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
         file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
         file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
@@ -236,9 +238,6 @@ class AppConfig(metaclass=Singleton):
     ssh_password: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
-    enable_auto_lint: bool = (
-        False  # once enabled, OpenDevin would lint files after editing
-    )
     enable_cli_session: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
