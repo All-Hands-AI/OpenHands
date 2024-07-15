@@ -54,7 +54,7 @@ def async_to_sync(func):
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 logger.debug('In a running event loop, running async')
-                return run_async()
+                return asyncio.run(run_async())
             else:
                 logger.debug('Not in a running event loop, running sync')
                 return run_sync()
