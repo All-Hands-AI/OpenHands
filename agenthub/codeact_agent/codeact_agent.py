@@ -22,6 +22,7 @@ from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentSummarizeAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
@@ -33,7 +34,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
-from opendevin.memory.condenser import summarize_messages
+from opendevin.memory.condenser import MemoryCondenser
 from opendevin.memory.history import ShortTermHistory
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -56,6 +57,8 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
     elif isinstance(action, MessageAction):
         return action.content
+    elif isinstance(action, AgentSummarizeAction):
+        return action.summarized_actions
     return ''
 
 
@@ -65,6 +68,7 @@ def get_action_message(action: Action) -> dict[str, str] | None:
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
+        or isinstance(action, AgentSummarizeAction)
     ):
         return {
             'role': 'user' if action.source == 'user' else 'assistant',
@@ -100,6 +104,8 @@ def get_observation_message(obs) -> dict[str, str] | None:
             str(obs.outputs), max_message_chars
         )
         return {'role': 'user', 'content': content}
+    elif isinstance(obs, AgentSummarizeAction):
+        return {'role': 'user', 'content': obs.summarized_observations}
     return None
 
 
@@ -178,6 +184,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        self.memory_condenser = MemoryCondenser(llm)
         self.attempts_to_condense = 2
         self.reset()
 
@@ -210,19 +217,7 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages: list[dict[str, str]] = self._get_messages(state)
-
-        with open('output.txt', 'a') as file:
-            file.write('Length of messsages ' + str(len(messages)) + '\n')
-            file.write(
-                'No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n'
-            )
-            for message in messages[max(len(messages) - 3, 0) :]:
-                file.write('Role: ' + message['role'] + '\n')
-                file.write('Content: ' + message['content'] + '\n\n')
         print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
-
-        # TODO: Make function to count no of tokens , and define the exception
-
         response = None
         # give it multiple chances to get a response
         # if it fails, we'll try to condense memory
@@ -240,74 +235,76 @@ class CodeActAgent(Agent):
                     ],
                     temperature=0.0,
                 )
-                # print('Response: ', response)
             except (ContextWindowExceededError, TokenLimitExceededError):
                 # Handle the specific exception
                 print('An error occurred: ')
                 attempt += 1
                 # If we got a context alert, try trimming the messages length, then try again
                 if self.llm.is_over_token_limit(messages):
-                    # A separate API call to run a summarizer
+                    # A separate call to run a summarizer
                     self.condense(state=state)
                     messages = self._get_messages(state=state)
                     # Try step again
-                    # return self.step(user_message, first_message=first_message, return_dicts=return_dicts)
                 else:
-                    # print(f"step() failed with an unrecognized exception: '{str(e)}'")
                     print('step() failed with an unrecognized exception:')
                     raise ContextWindowLimitExceededError()
 
             # TODO: Manage the response for exception.
-
         return self.action_parser.parse(response)
 
     def condense(
         self,
         state: State,
-        # history: ShortTermHistory,
-        #    cutoff=None,
-        #    preserve_last_N_messages=True,
-        #    disallow_tool_as_first=True
     ):
-        # assert self.messages[0]["role"] == "system", f"self.messages[0] should be system (instead got {self.messages[0]})"
-
-        # Start at index 1 (past the system message),
+        # Start past the system message, and example messages.,
         # and collect messages for summarization until we reach the desired truncation token fraction (eg 50%)
-        # Do not allow truncation of the last N messages, since these are needed for in-context examples of function calling
+        # Do not allow truncation  for in-context examples of function calling
         history: ShortTermHistory = state.history
         messages = self._get_messages(state=state)
         token_counts = [self.llm.get_token_count([message]) for message in messages]
-        message_buffer_token_count = sum(token_counts[2:])  # no system message
+        message_buffer_token_count = sum(
+            token_counts[2:]
+        )  # no system and example message
         MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC = 0.75
         desired_token_count_to_summarize = int(
             message_buffer_token_count * MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC
         )
-        candidate_messages_to_summarize = []
-        # token_counts = token_counts[2:]
 
-        last_summarized_event_id = None
+        candidate_messages_to_summarize = []
+        last_summarized_event_id = history.last_summarized_event_id
         tokens_so_far = 0
         for event in history.get_events():
-            message = (
-                get_action_message(event)
-                if isinstance(event, Action)
-                else get_observation_message(event)
-            )
-            if message:
-                candidate_messages_to_summarize.append(message)
-                tokens_so_far += self.llm.get_token_count([message])
+            if isinstance(event, AgentSummarizeAction):
+                action_message = get_action_message(event)
+                if action_message:
+                    candidate_messages_to_summarize.append(action_message)
+                    tokens_so_far += self.llm.get_token_count([action_message])
+                observation_message = get_observation_message(event)
+                if observation_message:
+                    candidate_messages_to_summarize.append(observation_message)
+                    tokens_so_far += self.llm.get_token_count([observation_message])
+                continue
+            else:
+                message = (
+                    get_action_message(event)
+                    if isinstance(event, Action)
+                    else get_observation_message(event)
+                )
+                if message:
+                    candidate_messages_to_summarize.append(message)
+                    tokens_so_far += self.llm.get_token_count([message])
             if tokens_so_far > desired_token_count_to_summarize:
                 last_summarized_event_id = event.id
                 break
 
         # TODO: Add functionality for preserving last N messages
-        MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST = 3
+        # MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST = 3
         # if preserve_last_N_messages:
         #     candidate_messages_to_summarize = candidate_messages_to_summarize[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
         #     token_counts = token_counts[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
 
         print(f'MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC={MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC}')
-        print(f'MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}')
+        # print(f'MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}')
         print(f'token_counts={token_counts}')
         print(f'message_buffer_token_count={message_buffer_token_count}')
         print(f'desired_token_count_to_summarize={desired_token_count_to_summarize}')
@@ -317,26 +314,10 @@ class CodeActAgent(Agent):
 
         if len(candidate_messages_to_summarize) == 0:
             raise SummarizeError(
-                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(messages)}, preserve_N={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}]"
+                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(messages)}]"
             )
 
         # TODO: Try to make an assistant message come after the cutoff
-        # try:
-        #     print(f"Selected cutoff {cutoff} was a 'user', shifting one...")
-        #     if messages[cutoff]['role'] == 'user':
-        #         new_cutoff = cutoff + 1
-        #         if messages[new_cutoff]['role'] == 'user':
-        #             print(f"Shifted cutoff {new_cutoff} is still a 'user', ignoring...")
-        #         cutoff = new_cutoff
-        # except IndexError:
-        #     pass
-
-        # TODO: Customize this function to be used by OpenDevin.
-        # # Make sure the cutoff isn't on a 'tool' or 'function'
-        # if disallow_tool_as_first:
-        #     while self.messages[cutoff]["role"] in ["tool", "function"] and cutoff < len(self.messages):
-        #         printd(f"Selected cutoff {cutoff} was a 'tool', shifting one...")
-        #         cutoff += 1
 
         message_sequence_to_summarize = candidate_messages_to_summarize
 
@@ -350,59 +331,13 @@ class CodeActAgent(Agent):
                 f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
             )
 
-        # TODO: (Check) I don't think this is needed because max_tokens is already define in opendevin.
-        # We can't do summarize logic properly if max_input_tokens is undefined
-        # if self.agent_state.llm_config.context_window is None:
-        #     # Fallback if for some reason context_window is missing, just set to the default
-        #     print(f"{CLI_WARNING_PREFIX}could not find context_window in config, setting to default {LLM_MAX_TOKENS['DEFAULT']}")
-        #     print(f"{self.agent_state}")
-        #     self.agent_state.llm_config.context_window = (
-        #         LLM_MAX_TOKENS[self.model] if (self.model is not None and self.model in LLM_MAX_TOKENS) else LLM_MAX_TOKENS["DEFAULT"]
-        #     )
-
-        summary_action = summarize_messages(
-            message_sequence_to_summarize=message_sequence_to_summarize, llm=self.llm
+        summary_action = self.memory_condenser.summarize_messages(
+            message_sequence_to_summarize=message_sequence_to_summarize
         )
         summary_action.last_summarized_event_id = last_summarized_event_id
         print(f'Got summary: {summary_action}')
         history.add_summary(summary_action)
-        print('Added to history')
-
-        # TODO: Look into this
-        # # Metadata that's useful for the agent to see
-        # all_time_message_count = self.messages_total
-        # remaining_message_count = len(self.messages[cutoff:])
-        # hidden_message_count = all_time_message_count - remaining_message_count
-        # summary_message_count = len(message_sequence_to_summarize)
-        # summary_message = package_summarize_message(summary, summary_message_count, hidden_message_count, all_time_message_count)
-        # print(f"Packaged into message: {summary_message}")
-
-        # prior_len = len(self.messages)
-        # self._trim_messages(cutoff)
-        # packed_summary_message = {"role": "user", "content": summary_message}
-        # self._prepend_to_messages(
-        #     [
-        #         Message.dict_to_message(
-        #             agent_id=self.agent_state.id,
-        #             user_id=self.agent_state.user_id,
-        #             model=self.model,
-        #             openai_message_dict=packed_summary_message,
-        #         )
-        #     ]
-        # )
-
-        # # reset alert
-        # self.agent_alerted_about_memory_pressure = False
-
-        # print(f"Ran summarizer, messages length {prior_len} -> {len(self.messages)}")
-
-        # print('Old No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
-        # new_messages = (
-        #     messages[:2]
-        #     + [{'role': 'assistant', 'content': summary}]
-        #     + messages[cutoff:]
-        # )
-        # print('New No of tokens, ' + str(self.llm.get_token_count(new_messages)) + '\n')
+        print('Added summary to history')
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
@@ -414,14 +349,22 @@ class CodeActAgent(Agent):
         ]
 
         for event in state.history.get_events():
+            if isinstance(event, AgentSummarizeAction):
+                action_message = get_action_message(event)
+                print('Got Summary Message')
+                if action_message:
+                    messages.append(action_message)
+                observation_message = get_observation_message(event)
+                if observation_message:
+                    messages.append(observation_message)
+                continue
+
             # create a regular message from an event
             message = (
                 get_action_message(event)
                 if isinstance(event, Action)
                 else get_observation_message(event)
             )
-
-            # print (event.id , " : ", message)
 
             # add regular message
             if message:

@@ -79,9 +79,6 @@ class ShortTermHistory(list[Event]):
             reverse=reverse,
             filter_out_type=self.filter_out,
         ):
-            # TODO add summaries
-            # and filter out events that were included in a summary
-
             # filter out the events from a delegate of the current agent
             if (
                 self.last_summarized_event_id is not None
@@ -96,6 +93,9 @@ class ShortTermHistory(list[Event]):
                 # AgentDelegateObservation has id = delegate_end
                 delegate_start < event.id < delegate_end
                 for delegate_start, delegate_end in self.delegates.keys()
+            ) and (
+                self.last_summarized_event_id is None
+                or event.id > self.last_summarized_event_id
             ):
                 yield event
 

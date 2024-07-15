@@ -81,7 +81,7 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
-        self.memory_condenser = MemoryCondenser()
+        self.memory_condenser = MemoryCondenser(llm=self.llm)
 
         self._add_initial_thoughts(task)
         self._initialized = True
