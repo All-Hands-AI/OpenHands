@@ -198,9 +198,6 @@ class DockerSSHBox(Sandbox):
         atexit.register(self.close)
         super().__init__()
 
-    def add_to_env(self, key: str, value: str):
-        super().add_to_env(key, value)
-
     def setup_user(self):
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image

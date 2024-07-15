@@ -71,7 +71,7 @@ class EventStreamRuntime(Runtime):
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
-    async def ainit(self):
+    async def ainit(self, env_vars: dict[str, str] | None = None):
         self.container_image = build_runtime_image(
             self.container_image,
             self.docker_client,
@@ -85,6 +85,8 @@ class EventStreamRuntime(Runtime):
             mount_dir=config.workspace_mount_path,
             plugins=self.plugins,
         )
+        # Initialize the env vars
+        await super().ainit(env_vars)
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -126,6 +128,7 @@ class EventStreamRuntime(Runtime):
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
+                environment={'DEBUG': 'true'} if config.debug else None,
                 volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
             )
             logger.info(f'Container started. Server url: {self.api_url}')

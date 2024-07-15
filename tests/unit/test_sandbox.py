@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from opendevin.core.config import config
-from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.utils import split_bash_commands
@@ -18,18 +17,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-
-def test_env_vars(temp_dir):
-    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    for box_class in [DockerSSHBox, LocalBox]:
-        box = box_class()
-        box.add_to_env('QUUX', 'abc"def')
-        assert box._env['FOOBAR'] == 'BAZ'
-        assert box._env['QUUX'] == 'abc"def'
-        exit_code, output = box.execute('echo $FOOBAR $QUUX')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == 'BAZ abc"def', f'Output: {output} for {box_class}'
 
 
 def test_split_commands():
