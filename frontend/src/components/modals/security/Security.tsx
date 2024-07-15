@@ -27,8 +27,8 @@ function Security({ isOpen, onOpenChange }: SecurityProps): JSX.Element {
   return (
     <BaseModal
       isOpen={isOpen && !!SECURITY_ANALYZER}
-      contentClassName="max-w-[80%] min-h-[80%]"
-      bodyClassName="px-0 py-0"
+      contentClassName="max-w-[80%] h-[80%]"
+      bodyClassName="px-0 py-0 max-h-[100%]"
       onOpenChange={onOpenChange}
       title=""
     >
