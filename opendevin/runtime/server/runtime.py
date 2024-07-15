@@ -1,6 +1,9 @@
+from typing import Any, Optional
+
 from opendevin.core.config import config
+from opendevin.core.exceptions import BrowserInitException
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
-    AgentRecallAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -12,16 +15,34 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     IPythonRunCellObservation,
-    NullObservation,
     Observation,
 )
 from opendevin.events.stream import EventStream
-from opendevin.runtime import Sandbox
+from opendevin.runtime import (
+    DockerSSHBox,
+    E2BBox,
+    LocalBox,
+    Sandbox,
+)
+from opendevin.runtime.browser.browser_env import BrowserEnv
+from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage.local import LocalFileStore
 
-from .browse import browse
+from ..browser import browse
 from .files import read_file, write_file
+
+
+def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+    if box_type == 'local':
+        return LocalBox()
+    elif box_type == 'ssh':
+        return DockerSSHBox(sid=sid)
+    elif box_type == 'e2b':
+        return E2BBox()
+    else:
+        raise ValueError(f'Invalid sandbox type: {box_type}')
 
 
 class ServerRuntime(Runtime):
@@ -31,8 +52,45 @@ class ServerRuntime(Runtime):
         sid: str = 'default',
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(event_stream, sid, sandbox)
+        super().__init__(event_stream, sid)
         self.file_store = LocalFileStore(config.workspace_base)
+        if sandbox is None:
+            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
+            self._is_external_sandbox = False
+        else:
+            self.sandbox = sandbox
+            self._is_external_sandbox = True
+        self.browser: BrowserEnv | None = None
+
+    async def ainit(self) -> None:
+        pass
+
+    async def close(self):
+        if not self._is_external_sandbox:
+            self.sandbox.close()
+        if self.browser is not None:
+            self.browser.close()
+
+    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
+        self.sandbox.init_plugins(plugins)
+
+    def init_runtime_tools(
+        self,
+        runtime_tools: list[RuntimeTool],
+        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
+        is_async: bool = True,
+    ) -> None:
+        # if browser in runtime_tools, init it
+        if RuntimeTool.BROWSER in runtime_tools:
+            if runtime_tools_config is None:
+                runtime_tools_config = {}
+            browser_env_config = runtime_tools_config.get(RuntimeTool.BROWSER, {})
+            try:
+                self.browser = BrowserEnv(is_async=is_async, **browser_env_config)
+            except BrowserInitException:
+                logger.warn(
+                    'Failed to start browser environment, web browsing functionality will not work'
+                )
 
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command)
@@ -113,9 +171,6 @@ class ServerRuntime(Runtime):
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await browse(action, self.browser)
-
-    async def recall(self, action: AgentRecallAction) -> Observation:
-        return NullObservation('')
 
     def _run_command(self, command: str) -> Observation:
         try:
