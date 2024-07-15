@@ -157,7 +157,6 @@ class CodeActActionParserAgentDelegate(ActionParser):
         assert (
             self.agent_delegate is not None
         ), 'self.agent_delegate should not be None when parse is called'
-        # thought = action_str.replace(self.agent_delegate.group(0), '').strip()
         browse_actions = self.agent_delegate.group(1).strip()
         return AgentDelegateAction(
             agent='BrowsingAgent', inputs={'task': browse_actions}
