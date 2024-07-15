@@ -327,7 +327,8 @@ class DockerSSHBox(Sandbox):
             else:
                 password_msg = f"using the password '{self._ssh_password}'"
             logger.info('Connecting to SSH session...')
-            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
+            hostname_to_log = hostname.replace('host.docker.internal', 'localhost')
+            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname_to_log}`'
             logger.info(
                 f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
             )
