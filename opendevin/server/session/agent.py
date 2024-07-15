@@ -58,7 +58,7 @@ class AgentSession:
         if self.runtime is not None:
             await self.runtime.close()
         if self.security_analyzer is not None:
-            self.security_analyzer.close()
+            await self.security_analyzer.close()
         self._closed = True
 
     # TODO: Make this configurable

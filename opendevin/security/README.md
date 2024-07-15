@@ -20,6 +20,7 @@ The `SecurityAnalyzer` class (analyzer.py) is an abstract base class designed to
 - **log_event(event: Event)**: Logs events.
 - **act(event: Event)**: Defines actions to take based on the analyzed event.
 - **security_risk(event: Action)**: Evaluates the security risk of an action and returns the risk level.
+- **close()**: Cleanups resources used by the security analyzer.
 
 In conclusion, a concrete security analyzer should evaluate the risk of each event and act accordingly (e.g. auto-confirm, send Slack message, etc).
 

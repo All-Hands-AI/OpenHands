@@ -99,7 +99,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self.client = InvariantClient(self.api_server, self.sid)
         self.monitor = self.client.Monitor.from_string(policy)
 
-    def close(self):
+    async def close(self):
         self.container.stop()
 
     def print_trace(self):
