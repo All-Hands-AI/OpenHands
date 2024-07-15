@@ -7,7 +7,6 @@ from agenthub.codeact_swe_agent.prompt import (
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -19,6 +18,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
@@ -52,10 +52,9 @@ def get_action_message(action: Action) -> dict[str, str] | None:
     return None
 
 
-def get_observation_message(obs) -> dict[str, str] | None:
-    max_message_chars = config.get_llm_config_from_agent(
-        'CodeActSWEAgent'
-    ).max_message_chars
+def get_observation_message(
+    obs: Observation, max_message_chars: int
+) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
         content = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
         content += (
@@ -170,11 +169,12 @@ class CodeActSWEAgent(Agent):
 
         for event in state.history.get_events():
             # create a regular message from an event
-            message = (
-                get_action_message(event)
-                if isinstance(event, Action)
-                else get_observation_message(event)
-            )
+            if isinstance(event, Action):
+                message = get_action_message(event)
+            elif isinstance(event, Observation):
+                message = get_observation_message(event, self.llm.max_message_chars)
+            else:
+                raise ValueError(f'Unknown event type: {type(event)}')
 
             # add regular message
             if message:

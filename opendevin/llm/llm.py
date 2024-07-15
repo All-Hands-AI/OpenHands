@@ -61,6 +61,7 @@ class LLM:
         custom_llm_provider=None,
         max_input_tokens=None,
         max_output_tokens=None,
+        max_message_chars=None,
         llm_config=None,
         metrics=None,
         cost_metric_supported=True,
@@ -82,6 +83,7 @@ class LLM:
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
             max_input_tokens (int, optional): The maximum number of tokens to send to the LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
             max_output_tokens (int, optional): The maximum number of tokens to receive from the LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
+            max_message_chars (int, optional): The maximum number of characters to send to the LLM per task. Defaults to LLM_MAX_MESSAGE_CHARS.
             custom_llm_provider (str, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
@@ -123,6 +125,11 @@ class LLM:
             if max_output_tokens is not None
             else llm_config.max_output_tokens
         )
+        max_message_chars = (
+            max_message_chars
+            if max_message_chars is not None
+            else llm_config.max_message_chars
+        )
         input_cost_per_token = (
             input_cost_per_token
             if input_cost_per_token is not None
@@ -142,6 +149,7 @@ class LLM:
         self.api_version = api_version
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
+        self.max_message_chars = max_message_chars
         self.input_cost_per_token = input_cost_per_token
         self.output_cost_per_token = output_cost_per_token
         self.llm_timeout = llm_timeout
