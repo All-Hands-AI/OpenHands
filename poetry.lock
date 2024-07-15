@@ -8657,13 +8657,13 @@ watchdog = ["watchdog (>=2.3)"]
 
 [[package]]
 name = "whatthepatch"
-version = "1.0.5"
+version = "1.0.6"
 description = "A patch parsing and application library."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "whatthepatch-1.0.5-py3-none-any.whl", hash = "sha256:6bc41f9f48a63384be4478d8b2d5b22185aac75be853cdcb150a2dc174ede7e1"},
-    {file = "whatthepatch-1.0.5.tar.gz", hash = "sha256:7f374c172812581bc3763587525d14a143aac7fe4220bc4676ecce0d86cb8f08"},
+    {file = "whatthepatch-1.0.6-py3-none-any.whl", hash = "sha256:c0cee5975e9b5cad8a0d12a52d76f8bb567ccdec319cf08c5fcfb1efab7fa1b2"},
+    {file = "whatthepatch-1.0.6.tar.gz", hash = "sha256:b274b3294784f78b1e759b35b49b7ef2e8473a580aabf39e5b94a9f901e5de61"},
 ]
 
 [[package]]
