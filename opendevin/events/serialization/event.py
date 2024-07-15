@@ -60,6 +60,9 @@ def event_to_dict(event: 'Event') -> dict:
             d['source'] = d['source'].value
         props.pop(key, None)
     if 'action' in d:
+        if 'llm' in props:
+            # pop LLM used in AgentDelegateAction (not serializable and not needed)
+            props.pop('llm')
         d['args'] = props
     elif 'observation' in d:
         d['content'] = props.pop('content', '')

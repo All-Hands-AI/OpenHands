@@ -38,7 +38,9 @@ class DelegatorAgent(Agent):
             self.current_delegate = 'study'
             task = state.get_current_user_intent()
             return AgentDelegateAction(
-                agent='StudyRepoForTaskAgent', inputs={'task': task}
+                agent='StudyRepoForTaskAgent',
+                inputs={'task': task},
+                llm=self.llm,
             )
 
         # last observation in history should be from the delegate
@@ -56,6 +58,7 @@ class DelegatorAgent(Agent):
                     'task': goal,
                     'summary': last_observation.outputs['summary'],
                 },
+                llm=self.llm,
             )
         elif self.current_delegate == 'coder':
             self.current_delegate = 'verifier'
@@ -64,6 +67,7 @@ class DelegatorAgent(Agent):
                 inputs={
                     'task': goal,
                 },
+                llm=self.llm,
             )
         elif self.current_delegate == 'verifier':
             if (
@@ -79,6 +83,7 @@ class DelegatorAgent(Agent):
                         'task': goal,
                         'summary': last_observation.outputs['summary'],
                     },
+                    llm=self.llm,
                 )
         else:
             raise Exception('Invalid delegate state')

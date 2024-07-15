@@ -248,8 +248,16 @@ class AgentController:
 
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
-        llm_config = config.get_llm_config_from_agent(action.agent)
-        llm = LLM(llm_config=llm_config)
+        if action.llm is not None:
+            # share the same llm instance as parent
+            # so the cost is accumulated together
+            llm = action.llm
+        else:
+            llm_config = config.get_llm_config_from_agent(action.agent)
+            logger.warn(
+                f'Using default LLM for agent {action.agent}. You should specify the LLM in the delegate action. Current config: {llm_config}'
+            )
+            llm = LLM(llm_config=llm_config)
         delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
@@ -284,6 +292,42 @@ class AgentController:
             )
             await asyncio.sleep(1)
             return
+
+        logger.info(
+            f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
+            extra={'msg_type': 'STEP'},
+        )
+
+        if self.state.iteration >= self.state.max_iterations:
+            if self.state.traffic_control_state == TrafficControlState.PAUSED:
+                logger.info(
+                    'Hitting traffic control, temporarily resume upon user request'
+                )
+                self.state.traffic_control_state = TrafficControlState.NORMAL
+            else:
+                self.state.traffic_control_state = TrafficControlState.THROTTLING
+                await self.report_error(
+                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                )
+                await self.set_agent_state_to(AgentState.PAUSED)
+                return
+        elif self.max_budget_per_task is not None:
+            current_cost = self.state.metrics.accumulated_cost
+            if current_cost > self.max_budget_per_task:
+                if self.state.traffic_control_state == TrafficControlState.PAUSED:
+                    logger.info(
+                        'Hitting traffic control, temporarily resume upon user request'
+                    )
+                    self.state.traffic_control_state = TrafficControlState.NORMAL
+                else:
+                    self.state.traffic_control_state = TrafficControlState.THROTTLING
+                    await self.report_error(
+                        f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                    )
+                    await self.set_agent_state_to(AgentState.PAUSED)
+                    return
+
+        self.update_state_before_step()
 
         if self.delegate is not None:
             logger.debug(f'[Agent Controller {self.id}] Delegate not none, awaiting...')
@@ -328,41 +372,6 @@ class AgentController:
                 self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
-        logger.info(
-            f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
-            extra={'msg_type': 'STEP'},
-        )
-
-        if self.state.iteration >= self.state.max_iterations:
-            if self.state.traffic_control_state == TrafficControlState.PAUSED:
-                logger.info(
-                    'Hitting traffic control, temporarily resume upon user request'
-                )
-                self.state.traffic_control_state = TrafficControlState.NORMAL
-            else:
-                self.state.traffic_control_state = TrafficControlState.THROTTLING
-                await self.report_error(
-                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                )
-                await self.set_agent_state_to(AgentState.PAUSED)
-                return
-        elif self.max_budget_per_task is not None:
-            current_cost = self.state.metrics.accumulated_cost
-            if current_cost > self.max_budget_per_task:
-                if self.state.traffic_control_state == TrafficControlState.PAUSED:
-                    logger.info(
-                        'Hitting traffic control, temporarily resume upon user request'
-                    )
-                    self.state.traffic_control_state = TrafficControlState.NORMAL
-                else:
-                    self.state.traffic_control_state = TrafficControlState.THROTTLING
-                    await self.report_error(
-                        f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                    )
-                    await self.set_agent_state_to(AgentState.PAUSED)
-                    return
-
-        self.update_state_before_step()
         action: Action = NullAction()
         try:
             action = self.agent.step(self.state)

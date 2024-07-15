@@ -206,7 +206,12 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        return self.action_parser.parse(response)
+
+        action = self.action_parser.parse(response)
+        # post-processing for agent delegation to share the same llm instance
+        if isinstance(action, AgentDelegateAction):
+            action.llm = self.llm
+        return action
 
     def _get_messages(self, state: State) -> list[dict[str, str]]:
         messages = [
