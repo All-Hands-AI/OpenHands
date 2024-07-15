@@ -55,7 +55,6 @@ _Exemple de CodeActAgent avec `gpt-4-turbo-2024-04-09` effectuant une tâche de 
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `__init__`       | Initialise un agent avec `llm` et une liste de messages `list[Mapping[str, str]]`                                                                |
 | `step`           | Effectue une étape en utilisant l'agent CodeAct. Cela inclut la collecte d'informations sur les étapes précédentes et invite le modèle à exécuter une commande. |
-| `search_memory`  | Pas encore implémenté                                                                                                                             |
 
 ### En cours de réalisation & prochaine étape
 
@@ -77,7 +76,6 @@ La mémoire à court terme est stockée en tant qu'objet Monologue et le modèle
 `CmdRunAction`,
 `FileWriteAction`,
 `FileReadAction`,
-`AgentRecallAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `AgentThinkAction`
@@ -88,7 +86,6 @@ La mémoire à court terme est stockée en tant qu'objet Monologue et le modèle
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Méthodes
@@ -99,7 +96,6 @@ La mémoire à court terme est stockée en tant qu'objet Monologue et le modèle
 | `_add_event`    | Ajoute des événements au monologue de l'agent et condense avec un résumé automatiquement si le monologue est trop long                            |
 | `_initialize`   | Utilise la liste `INITIAL_THOUGHTS` pour donner à l'agent un contexte pour ses capacités et comment naviguer dans le `/workspace`                    |
 | `step`          | Modifie l'état actuel en ajoutant les actions et observations les plus récentes, puis invite le modèle à réfléchir à la prochaine action à entreprendre. |
-| `search_memory` | Utilise `VectorIndexRetriever` pour trouver des souvenirs liés à la mémoire à long terme.                                                             |
 
 ## Agent Planificateur
 
@@ -116,7 +112,6 @@ L'agent reçoit ses paires action-observation précédentes, la tâche actuelle,
 `GithubPushAction`,
 `FileReadAction`,
 `FileWriteAction`,
-`AgentRecallAction`,
 `AgentThinkAction`,
 `AgentFinishAction`,
 `AgentSummarizeAction`,
@@ -129,7 +124,6 @@ L'agent reçoit ses paires action-observation précédentes, la tâche actuelle,
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Méthodes
@@ -138,4 +132,3 @@ L'agent reçoit ses paires action-observation précédentes, la tâche actuelle,
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `__init__`       | Initialise un agent avec `llm`                                                                                                                                                           |
 | `step`           | Vérifie si l'étape actuelle est terminée, retourne `AgentFinishAction` si oui. Sinon, crée une incitation de planification et l'envoie au modèle pour inférence, en ajoutant le résultat comme prochaine action. |
-| `search_memory`  | Pas encore implémenté                                                                                                                                                                       |

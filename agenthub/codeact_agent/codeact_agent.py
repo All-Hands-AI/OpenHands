@@ -12,6 +12,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.exceptions import (
     ContextWindowLimitExceededError,
     SummarizeError,
@@ -73,8 +74,11 @@ def get_action_message(action: Action) -> dict[str, str] | None:
 
 
 def get_observation_message(obs) -> dict[str, str] | None:
+    max_message_chars = config.get_llm_config_from_agent(
+        'CodeActAgent'
+    ).max_message_chars
     if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_content(obs.content)
+        content = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
         content += (
             f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
@@ -89,10 +93,12 @@ def get_observation_message(obs) -> dict[str, str] | None:
                     '![image](data:image/png;base64, ...) already displayed to user'
                 )
         content = '\n'.join(splitted)
-        content = truncate_content(content)
+        content = truncate_content(content, max_message_chars)
         return {'role': 'user', 'content': content}
     elif isinstance(obs, AgentDelegateObservation):
-        content = 'OBSERVATION:\n' + truncate_content(str(obs.outputs))
+        content = 'OBSERVATION:\n' + truncate_content(
+            str(obs.outputs), max_message_chars
+        )
         return {'role': 'user', 'content': content}
     return None
 
@@ -110,7 +116,7 @@ def get_in_context_example() -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.7'
+    VERSION = '1.8'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.

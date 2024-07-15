@@ -55,7 +55,6 @@ _CodeActAgent使用`gpt-4-turbo-2024-04-09`执行数据科学任务（线性回�
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `__init__`     | 使用`llm`和一系列信息`list[Mapping[str, str]]`初始化Agent                                                                                  |
 | `step`         | 使用CodeAct Agent执行一步操作，包括收集前一步的信息并提示模型执行命令。                                                                     |
-| `search_memory`| 尚未实现                                                                                                                                    |
 
 ### 进行中的工作 & 下一步
 
@@ -77,7 +76,6 @@ Monologue Agent利用长短期记忆来完成任务。
 `CmdRunAction`,
 `FileWriteAction`,
 `FileReadAction`,
-`AgentRecallAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `AgentThinkAction`
@@ -88,7 +86,6 @@ Monologue Agent利用长短期记忆来完成任务。
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### 方法
@@ -99,7 +96,6 @@ Monologue Agent利用长短期记忆来完成任务。
 | `_add_event`   | 将事件附加到Agent的独白中，如独白过长自动与摘要一起压缩                                                                                    |
 | `_initialize`  | 使用`INITIAL_THOUGHTS`列表为agent提供其能力的上下文以及如何导航`/workspace`                                                                 |
 | `step`         | 通过添加最近的动作和观测修改当前状态，然后提示模型考虑其接下来的动作。                                                                     |
-| `search_memory`| 使用`VectorIndexRetriever`在长期记忆中查找相关记忆。                                                                                         |
 
 ## Planner Agent
 
@@ -116,7 +112,6 @@ Planner agent利用特殊的提示策略为解决问题创建长期计划。
 `GithubPushAction`,
 `FileReadAction`,
 `FileWriteAction`,
-`AgentRecallAction`,
 `AgentThinkAction`,
 `AgentFinishAction`,
 `AgentSummarizeAction`,
@@ -129,7 +124,6 @@ Planner agent利用特殊的提示策略为解决问题创建长期计划。
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### 方法
@@ -138,4 +132,3 @@ Planner agent利用特殊的提示策略为解决问题创建长期计划。
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `__init__`     | 使用`llm`初始化Agent                                                                                                                                                                   |
 | `step`         | 检查当前步骤是否完成，如果是则返回`AgentFinishAction`。否则，创建计划提示并发送给模型进行推理，将结果作为下一步动作。                                                                      |
-| `search_memory`| 尚未实现                                                                                                                                                                               |

@@ -60,7 +60,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"source": "user", "action": "message", "args": {"content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.", "wait_for_response": false}}, {"observation": "null", "content": "", "extras": {}}], [{"source": "agent", "action": "delegate", "args": {"agent": "CoderAgent", "inputs": {"task": "Write a shell script 'hello.sh' that prints 'hello'.", "summary": ""}, "thought": ""}}, {"observation": "null", "content": "", "extras": {}}], [{"action": "null", "args": {}}, {"source": "agent", "observation": "delegate", "content": "", "extras": {"outputs": {}}}]]
+[[{"source": "user", "action": "message", "args": {"content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.", "wait_for_response": false}}, {"observation": "null", "content": "", "extras": {}}], [{"source": "agent", "action": "delegate", "args": {"agent": "CoderAgent", "inputs": {"task": "Write a shell script 'hello.sh' that prints 'hello'.", "summary": ""}, "thought": "", "is_confirmed": "confirmed"}}, {"observation": "null", "content": "", "extras": {}}], [{"action": "null", "args": {}}, {"source": "agent", "observation": "delegate", "content": "", "extras": {"outputs": {}}}]]
 
 ## Available Actions
 * `delegate` - send a task to another agent from the list provided. Arguments:

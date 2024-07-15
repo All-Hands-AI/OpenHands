@@ -17,6 +17,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.RUNNING]: [
     AgentState.INIT,
@@ -25,8 +26,12 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
+  [AgentState.USER_CONFIRMED]: [AgentState.RUNNING],
+  [AgentState.USER_REJECTED]: [AgentState.RUNNING],
+  [AgentState.AWAITING_USER_CONFIRMATION]: [],
 };
 
 interface ButtonProps {
@@ -101,42 +106,44 @@ function AgentControlBar() {
   }, [curAgentState]);
 
   return (
-    <div className="flex items-center gap-3">
-      {curAgentState === AgentState.PAUSED ? (
+    <div className="flex justify-between items-center gap-20">
+      <div className="flex items-center gap-3">
+        {curAgentState === AgentState.PAUSED ? (
+          <ActionButton
+            isDisabled={
+              isLoading ||
+              IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
+            }
+            content="Resume the agent task"
+            action={AgentState.RUNNING}
+            handleAction={handleAction}
+            large
+          >
+            <PlayIcon />
+          </ActionButton>
+        ) : (
+          <ActionButton
+            isDisabled={
+              isLoading ||
+              IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
+            }
+            content="Pause the current task"
+            action={AgentState.PAUSED}
+            handleAction={handleAction}
+            large
+          >
+            <PauseIcon />
+          </ActionButton>
+        )}
         <ActionButton
-          isDisabled={
-            isLoading ||
-            IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
-          }
-          content="Resume the agent task"
-          action={AgentState.RUNNING}
+          isDisabled={isLoading}
+          content="Start a new task"
+          action={AgentState.STOPPED}
           handleAction={handleAction}
-          large
         >
-          <PlayIcon />
+          <ArrowIcon />
         </ActionButton>
-      ) : (
-        <ActionButton
-          isDisabled={
-            isLoading ||
-            IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
-          }
-          content="Pause the current task"
-          action={AgentState.PAUSED}
-          handleAction={handleAction}
-          large
-        >
-          <PauseIcon />
-        </ActionButton>
-      )}
-      <ActionButton
-        isDisabled={isLoading}
-        content="Start a new task"
-        action={AgentState.STOPPED}
-        handleAction={handleAction}
-      >
-        <ArrowIcon />
-      </ActionButton>
+      </div>
     </div>
   );
 }
