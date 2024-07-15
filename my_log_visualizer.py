@@ -191,6 +191,17 @@ def load_history(log_selection):
     return [chat_history] + tabs + urls + screenshots + plots
 
 
+def select_log_dir(log_dir_selection):
+    log_list = list(reversed(sorted(glob(f'./{log_dir_selection}/*.json'))))
+    return gr.Dropdown(
+        log_list,
+        value=None,
+        interactive=True,
+        label='Log',
+        info='Choose the log to visualize',
+    )
+
+
 def refresh_log_selection():
     log_list = list(reversed(sorted(glob('./frontend_logs/*.json'))))
     return gr.Dropdown(
@@ -210,6 +221,10 @@ if __name__ == '__main__':
         with gr.Row(equal_height=True):
             with gr.Column(scale=1):
                 with gr.Group():
+                    log_dir_options = ['frontend_logs', 'my_evaluator_logs']
+                    log_dir_selection = gr.Dropdown(
+                        log_dir_options, value=log_dir_options[0], label='Log Directory'
+                    )
                     log_selection = gr.Dropdown(
                         log_list,
                         value=None,
@@ -247,6 +262,7 @@ if __name__ == '__main__':
                         tabs.append(tab)
                 # print(len(tabs))
 
+        log_dir_selection.select(select_log_dir, log_dir_selection, log_selection)
         log_selection.select(
             load_history, log_selection, [chatbot] + tabs + urls + screenshots + plots
         )
