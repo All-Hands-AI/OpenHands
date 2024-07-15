@@ -739,7 +739,7 @@ async def save_file(request: Request):
         raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
 
 
-@app.route('/api/security{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
 async def security_api(request: Request):
     """
     Catch-all route for security analyzer API requests.

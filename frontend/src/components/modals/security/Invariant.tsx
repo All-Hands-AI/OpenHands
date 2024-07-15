@@ -273,7 +273,7 @@ function SecurityInvariant(): JSX.Element {
   };
 
   return (
-    <div className="flex w-full">
+    <div className="flex flex-1 w-full h-full">
       <div className="w-60 bg-neutral-800 border-r border-r-neutral-600 p-4 flex-shrink-0">
         <b>Invariant Analyzer</b>
         <p style={{ fontSize: "10px" }}>

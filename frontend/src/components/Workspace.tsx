@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoIosGlobe } from "react-icons/io";
 import { VscCode, VscListOrdered } from "react-icons/vsc";
-import { IoLockClosedOutline } from "react-icons/io5";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { initialState as initialBrowserState } from "#/state/browserSlice";
@@ -14,7 +13,6 @@ import Browser from "./Browser";
 import CodeEditor from "./file-explorer/CodeEditor";
 import Planner from "./Planner";
 import Jupyter from "./Jupyter";
-import Security from "./Security";
 import { getSettings } from "#/services/settings";
 
 function Workspace() {
@@ -22,16 +20,13 @@ function Workspace() {
   const task = useSelector((state: RootState) => state.task.task);
   const code = useSelector((state: RootState) => state.code.code);
 
-  const { AGENT, SECURITY_ANALYZER } = getSettings();
+  const { AGENT } = getSettings();
   const baseTabs = [TabOption.CODE, TabOption.BROWSER];
   const extraTabsMap: { [key: string]: TabOption[] } = {
     CodeActAgent: [TabOption.JUPYTER],
     PlannerAgent: [TabOption.PLANNER],
   };
   const extraTabs = extraTabsMap[AGENT] || [];
-  if (SECURITY_ANALYZER) {
-    extraTabs.push(TabOption.SECURITY);
-  }
   const showTabs = [...baseTabs, ...extraTabs];
 
   const screenshotSrc = useSelector(
@@ -44,7 +39,6 @@ function Workspace() {
     [TabOption.CODE]: false,
     [TabOption.BROWSER]: false,
     [TabOption.JUPYTER]: false,
-    [TabOption.SECURITY]: false,
   });
 
   const iconSize = 18;
@@ -69,11 +63,6 @@ function Workspace() {
         name: t(I18nKey.WORKSPACE$JUPYTER_TAB_LABEL),
         icon: <VscCode size={iconSize} />,
         component: <Jupyter key="jupyter" />,
-      },
-      [TabOption.SECURITY]: {
-        name: t(I18nKey.WORKSPACE$SECURITY_TAB_LABEL),
-        icon: <IoLockClosedOutline size={iconSize} />,
-        component: <Security key="security" />,
       },
     }),
     [t],
