@@ -81,7 +81,7 @@ class ServerRuntime(Runtime):
         if not self._is_external_sandbox:
             await self.sandbox.close()
         if self.browser is not None:
-            await self.browser.close()
+            self.browser.close()
 
     async def init_sandbox_plugins(self, plugins: list[PluginRequirement]):
         await self.sandbox.init_plugins(plugins)
@@ -218,7 +218,7 @@ class ServerRuntime(Runtime):
             return CmdOutputObservation(
                 command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
-        except Exception as e:
-            return ErrorObservation(f'Command execution failed: {str(e)}')
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
+        except Exception as e:
+            return ErrorObservation(f'Command execution failed: {str(e)}')

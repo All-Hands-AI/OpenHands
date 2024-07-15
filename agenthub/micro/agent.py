@@ -95,7 +95,7 @@ class MicroAgent(Agent):
         if asyncio.iscoroutinefunction(self.llm.async_completion):
             resp = await self.llm.async_completion(messages=messages)
         else:
-            resp = await self.llm.completion(messages=messages)
+            resp = self.llm.completion(messages=messages)
 
         # Handle both real responses and mock responses in tests
         if isinstance(resp, dict) and 'choices' in resp:

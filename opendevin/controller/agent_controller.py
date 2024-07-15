@@ -120,10 +120,10 @@ class AgentController:
 
         if self.agent_task is not None:
             self.agent_task.cancel()
-            try:
-                await self.agent_task
-            except asyncio.CancelledError:
-                logger.info(f'AgentController task was cancelled for {self.id}')
+            # try:
+            #     await self.agent_task
+            # except asyncio.CancelledError:
+            #     logger.info(f'AgentController task was cancelled for {self.id}')
 
         await self.set_agent_state_to(AgentState.STOPPED)
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
@@ -157,13 +157,13 @@ class AgentController:
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def _start_step_loop(self):
-        logger.info(f'[Agent Controller {self.id}] Starting step loop...')
+        logger.info(f'[Agent Controller {self.id}] Starting `step` loop...')
         try:
             while not self._is_closing:
                 try:
                     await self._step()
                 except asyncio.CancelledError:
-                    logger.info(f'AgentController step was cancelled for {self.id}')
+                    logger.info(f'AgentController step was cancelled for `{self.id}`')
                     break
                 except Exception as e:
                     traceback.print_exc()
@@ -336,16 +336,18 @@ class AgentController:
 
         if self._pending_action:
             logger.debug(
-                f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
+                f'[Agent Controller `{self.id}`] waiting for pending action: {self._pending_action}'
             )
             await asyncio.sleep(1)
             return
 
         if self.delegate is not None:
-            logger.debug(f'[Agent Controller {self.id}] Delegate not none, awaiting...')
+            logger.debug(
+                f'[Agent Controller `{self.id}`] Delegate not none, awaiting...'
+            )
             assert self.delegate != self
             await self.delegate._step()
-            logger.debug(f'[Agent Controller {self.id}] Delegate step done')
+            logger.debug(f'[Agent Controller `{self.id}`] Delegate step done')
             assert self.delegate is not None
             delegate_state = self.delegate.get_agent_state()
             if delegate_state == AgentState.ERROR:
@@ -353,7 +355,7 @@ class AgentController:
                 await self.delegate.close()
                 self.delegate = None
                 self.delegateAction = None
-                await self.report_error('Delegator agent encounters an error')
+                await self.report_error('Delegator agent encountered an error')
                 return
             delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
@@ -424,28 +426,40 @@ class AgentController:
             if isinstance(self.agent, AsyncAgent):
                 action = await self.agent.async_step(self.state)
             else:
-                # If it's not an AsyncAgent, run the synchronous step in an executor
                 loop = asyncio.get_running_loop()
                 action = await loop.run_in_executor(None, self.agent.step, self.state)
 
             if action is None:
                 raise LLMNoActionError('No action was returned')
 
-            # Ensure action is not a coroutine
+            logger.info(action, extra={'msg_type': 'ACTION'})
+
             if asyncio.iscoroutine(action):
                 action = await action
 
-            # Log the action first
-            logger.info(action, extra={'msg_type': 'ACTION'})
-
             if isinstance(action, AgentFinishAction):
                 await self.set_agent_state_to(AgentState.FINISHED)
-                return  # Exit the step loop when finished
-
-            if hasattr(action, 'runnable') and action.runnable:
-                self._pending_action = action
+                return
 
             if not isinstance(action, NullAction):
+                if action.runnable:
+                    if self.state.confirmation_mode and (
+                        type(action) is CmdRunAction
+                        or type(action) is IPythonRunCellAction
+                    ):
+                        action.is_confirmed = (
+                            ActionConfirmationStatus.AWAITING_CONFIRMATION
+                        )
+                    self._pending_action = action
+
+                if (
+                    hasattr(action, 'is_confirmed')
+                    and action.is_confirmed
+                    == ActionConfirmationStatus.AWAITING_CONFIRMATION
+                ):
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+
+                # Add the action to the event stream only once
                 await self.event_stream.add_event(action, EventSource.AGENT)
 
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
@@ -453,25 +467,12 @@ class AgentController:
             await self.report_error(f'{e}')
             return
         except Exception as e:
+            if 'OpenAIError' in str(e):
+                traceback.print_exc()
+                logger.error(traceback.format_exc())
             await self.report_error(f'Error in controller step: {e}')
             await self.set_agent_state_to(AgentState.ERROR)
             return
-
-        if action.runnable:
-            if self.state.confirmation_mode and (
-                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
-            ):
-                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
-            self._pending_action = action
-
-        if not isinstance(action, NullAction):
-            if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ):
-                await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            await self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
 

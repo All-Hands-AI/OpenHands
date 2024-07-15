@@ -1024,6 +1024,7 @@ class DockerSSHBox(Sandbox):
         if use_host_network:
             host_config['NetworkMode'] = 'host'
         else:
+            host_config['NetworkMode'] = 'host'
             host_config['PortBindings'] = {
                 f'{self._ssh_port}/tcp': [{'HostPort': str(self._ssh_port)}]
             }
@@ -1107,7 +1108,7 @@ class DockerSSHBox(Sandbox):
                 'HostConfig': host_config,
             }
 
-            print(f'container_config: {container_config}')
+            logger.info(f'container_config: {container_config}')
 
             # Use create_or_replace for idempotent container management
             logger.info(f'Mounting volumes: {self.volumes} now...')
