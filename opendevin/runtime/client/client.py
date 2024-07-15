@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import os
+import re
 from pathlib import Path
 
 import pexpect
@@ -60,26 +61,52 @@ class RuntimeClient:
 
     def _init_bash_shell(self, work_dir: str) -> None:
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
-        self.__bash_expect = r'\[PEXPECT\][\$\#] '
-        self.__bash_PS1 = r'\u@\h:\w [PEXPECT]\$ '
+        self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
+
+        # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
+        # match unix username, hostname, and working
+        self.__bash_expect_regex = r'\[PEXPECT_BEGIN\] ([a-z_][a-z0-9_-]*)@([a-zA-Z][a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
+
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
-        self.shell.expect(self.__bash_expect)
+        self.shell.expect(self.__bash_expect_regex)
+
         self.shell.sendline(f'cd {work_dir}')
-        self.shell.expect(self.__bash_expect)
+        self.shell.expect(self.__bash_expect_regex)
 
-    def _execute_bash(self, command, keep_prompt: bool = True):
-        logger.info(f'Received command: {command}')
+    def _get_bash_prompt(self):
+        ps1 = self.shell.after
+        # parse the ps1 to get username, hostname, and working directory
+        matched = re.match(self.__bash_expect_regex, ps1)
+        assert (
+            matched is not None
+        ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
+        username, hostname, working_dir = matched.groups()
+
+        # re-assemble the prompt
+        prompt = f'{username}@{hostname}:{working_dir} '
+        if username == 'root':
+            prompt += '#'
+        else:
+            prompt += '$'
+        return prompt + ' '
+
+    def _execute_bash(self, command, keep_prompt: bool = True) -> tuple[str, int]:
+        logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect)
-        output = self.shell.before + '$ '
-        if not keep_prompt:
-            # remove the last line of the output (the prompt)
-            # e.g., user@host:~$
-            output = '\r\n'.join(output.split('\r\n')[:-1])
+        self.shell.expect(self.__bash_expect_regex)
 
+        output = self.shell.before
+        if keep_prompt:
+            output += '\r\n' + self._get_bash_prompt()
+        logger.debug(f'Command output: {output}')
+
+        # Get exit code
         self.shell.sendline('echo $?')
-        self.shell.expect(r'[$#] ')
-        exit_code = int(self.shell.before.split('\r\n')[0].strip())
+        logger.debug(f'Executing command for exit code: {command}')
+        self.shell.expect(self.__bash_expect_regex)
+        _exit_code_output = self.shell.before
+        logger.debug(f'Exit code Output: {_exit_code_output}')
+        exit_code = int(_exit_code_output.strip())
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
