@@ -215,14 +215,14 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
-        # prepare what we want to send to the LLM
-        messages: list[dict[str, str]] = self._get_messages(state)
-        print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
         response = None
         # give it multiple chances to get a response
         # if it fails, we'll try to condense memory
         attempt = 0
         while not response and attempt < self.attempts_to_condense:
+            # prepare what we want to send to the LLM
+            messages: list[dict[str, str]] = self._get_messages(state)
+            print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
             try:
                 if self.llm.is_over_token_limit(messages):
                     raise TokenLimitExceededError()
@@ -243,7 +243,6 @@ class CodeActAgent(Agent):
                 if self.llm.is_over_token_limit(messages):
                     # A separate call to run a summarizer
                     self.condense(state=state)
-                    messages = self._get_messages(state=state)
                     # Try step again
                 else:
                     print('step() failed with an unrecognized exception:')
@@ -351,7 +350,6 @@ class CodeActAgent(Agent):
         for event in state.history.get_events():
             if isinstance(event, AgentSummarizeAction):
                 action_message = get_action_message(event)
-                print('Got Summary Message')
                 if action_message:
                     messages.append(action_message)
                 observation_message = get_observation_message(event)

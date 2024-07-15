@@ -72,7 +72,7 @@ class ShortTermHistory(list[Event]):
             if self.end_id != -1
             else self._event_stream.get_latest_event_id()
         )
-
+        summary_yielded = False
         for event in self._event_stream.get_events(
             start_id=start_id,
             end_id=end_id,
@@ -84,8 +84,10 @@ class ShortTermHistory(list[Event]):
                 self.last_summarized_event_id is not None
                 and self.summary is not None
                 and event.id <= self.last_summarized_event_id
+                and not summary_yielded
             ):
                 summary_action = self.summary
+                summary_yielded = True
                 yield summary_action
             elif not any(
                 # except for the delegate action and observation themselves, currently
