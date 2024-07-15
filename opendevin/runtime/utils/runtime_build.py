@@ -118,22 +118,15 @@ def _build_sandbox_image(
                 logger.info(
                     f'Reusing existing od_sandbox image [{target_image_name}] but will update the source code in it.'
                 )
-                logger.info(
-                    (
-                        f'===== Dockerfile content =====\n'
-                        f'{dockerfile_content}\n'
-                        f'==============================='
-                    )
-                )
             else:
                 logger.info(f'Building agnostic sandbox image: {target_image_name}')
-                logger.info(
-                    (
-                        f'===== Dockerfile content =====\n'
-                        f'{dockerfile_content}\n'
-                        f'==============================='
-                    )
+            logger.info(
+                (
+                    f'===== Dockerfile content =====\n'
+                    f'{dockerfile_content}\n'
+                    f'==============================='
                 )
+            )
             with open(f'{temp_dir}/Dockerfile', 'w') as file:
                 file.write(dockerfile_content)
 
