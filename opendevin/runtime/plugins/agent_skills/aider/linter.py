@@ -92,7 +92,7 @@ class Linter:
         return linkres
 
     def flake_lint(self, rel_fname, code):
-        fatal = 'E9,F821,F823,F831,F406,F407,F701,F702,F704,F706'
+        fatal = 'F821,F822,F831,E112,E113,E999,E902'
         flake8 = f'flake8 --select={fatal} --isolated'
 
         try:
