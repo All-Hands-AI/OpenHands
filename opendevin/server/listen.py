@@ -29,7 +29,7 @@ from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
-from opendevin.core.config import config
+from opendevin.core.config import LLMConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState  # Add this import
 from opendevin.events.action import ChangeAgentStateAction, NullAction
@@ -280,8 +280,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/api/options/models')
-async def get_litellm_models():
-    """Get all models supported by LiteLLM.
+async def get_litellm_models() -> list[str]:
+    """
+    Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
     error-prone Bedrock models.
@@ -298,8 +299,19 @@ async def get_litellm_models():
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
         litellm_model_list
     )
-    bedrock_model_list = bedrock.list_foundation_models()
-    model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    # TODO: for bedrock, this is using the default config
+    llm_config: LLMConfig = config.get_llm_config()
+    if (
+        llm_config.aws_region_name
+        and llm_config.aws_access_key_id
+        and llm_config.aws_secret_access_key
+    ):
+        bedrock_model_list = bedrock.list_foundation_models(
+            llm_config.aws_region_name,
+            llm_config.aws_access_key_id,
+            llm_config.aws_secret_access_key,
+        )
+        model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
         ollama_base_url = llm_config.ollama_base_url
         if llm_config.model.startswith('ollama'):
