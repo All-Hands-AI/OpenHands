@@ -200,7 +200,7 @@ class DockerSSHBox(Sandbox):
 
     _ssh_password: str
     _ssh_port: int
-    ssh: pxssh.pxssh
+    ssh: pxssh.pxssh | None = None
 
     def __init__(
         self,
@@ -216,14 +216,14 @@ class DockerSSHBox(Sandbox):
         ssh_port: int = 22,
         sid: str | None = None,
     ):
-        super().__init__(config)
+        self.config = config
         self.workspace_mount_path = workspace_mount_path
         self.sandbox_workspace_dir = sandbox_workspace_dir
         self.cache_dir = cache_dir
         self.use_host_network = use_host_network
         self.run_as_devin = run_as_devin
         logger.info(
-            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.config.user_id} in the sandbox'
+            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={config.user_id} in the sandbox'
         )
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -298,6 +298,7 @@ class DockerSSHBox(Sandbox):
         self.execute('git config --global user.name "OpenDevin"')
         self.execute('git config --global user.email "opendevin@all-hands.dev"')
         atexit.register(self.close)
+        super().__init__(config)
 
     def setup_user(self):
         # Make users sudoers passwordless
@@ -443,6 +444,7 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         self.__ssh_login()
+        assert self.ssh is not None
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -463,6 +465,7 @@ class DockerSSHBox(Sandbox):
         prev_output: str = '',
         ignore_last_output: bool = False,
     ) -> tuple[int, str]:
+        assert self.ssh is not None
         logger.exception(
             f'Command "{cmd}" timed out, killing process...', exc_info=False
         )
@@ -480,6 +483,7 @@ class DockerSSHBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
+        assert self.ssh is not None
         timeout = timeout or self.config.timeout
         commands = split_bash_commands(cmd)
         if len(commands) > 1:

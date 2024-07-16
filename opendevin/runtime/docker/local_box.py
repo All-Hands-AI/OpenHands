@@ -30,10 +30,11 @@ class LocalBox(Sandbox):
         config: SandboxConfig,
         workspace_base: str,
     ):
-        super().__init__(config)
+        self.config = config
         os.makedirs(workspace_base, exist_ok=True)
         self.workspace_base = workspace_base
         atexit.register(self.cleanup)
+        super().__init__(config)
 
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None

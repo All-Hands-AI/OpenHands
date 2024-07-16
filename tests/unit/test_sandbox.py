@@ -36,8 +36,11 @@ def temp_dir(monkeypatch):
 
 def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    for box in [create_docker_box_from_app_config(config, temp_dir), LocalBox]:
-        box.add_to_env('QUUX', 'abc"def')
+    for box in [
+        create_docker_box_from_app_config(config, temp_dir),
+        LocalBox(config.sandbox, temp_dir),
+    ]:
+        box.add_to_env(key='QUUX', value='abc"def')
         assert box._env['FOOBAR'] == 'BAZ'
         assert box._env['QUUX'] == 'abc"def'
         exit_code, output = box.execute('echo $FOOBAR $QUUX')
@@ -112,7 +115,7 @@ def test_ssh_box_run_as_devin(temp_dir):
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
         assert output.strip() == 'total 0'
 
-        assert config.workspace_base == temp_dir
+        assert box.workspace_mount_path == temp_dir
         exit_code, output = box.execute('ls -l')
         assert exit_code == 0, 'The exit code should be 0.'
         assert output.strip() == 'total 0'
