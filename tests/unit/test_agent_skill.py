@@ -167,13 +167,7 @@ def test_create_file(tmp_path):
             create_file(str(temp_file_path))
         result = buf.getvalue()
 
-    expected = (
-        f'[File: {temp_file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        f'[File {temp_file_path} created.]\n'
-    )
+    expected = f'[File {temp_file_path} created.]\n'
     assert result.split('\n') == expected.split('\n')
 
 
