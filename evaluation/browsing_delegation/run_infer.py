@@ -21,7 +21,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.llm.llm import LLM
 
-# Only CodeActAgent is supported with AgentDelegation
+# Only CodeActAgent can delegate to BrowsingAgent
 SUPPORTED_AGENT_CLS = {'CodeActAgent'}
 
 
