@@ -189,17 +189,6 @@ streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 
 
 Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
 
-
-
-## View Result Summary
-
-If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
-
-```bash
-poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_report_json_file>
-# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/report.json
-```
-
 ## Submit your evaluation results
 
 You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
