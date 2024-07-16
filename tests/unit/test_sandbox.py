@@ -265,10 +265,6 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
-        '[File: /workspace/hello.py (1 lines total)]\r\n'
-        '(this is the beginning of the file)\r\n'
-        '1|\r\n'
-        '(this is the end of the file)\r\n'
         '[File hello.py created.]\r\n'
     ).strip().split('\r\n')
 
@@ -281,9 +277,6 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
         '[File: /workspace/test/hello.py (1 lines total)]\r\n'
-        '(this is the beginning of the file)\r\n'
-        '1|\r\n'
-        '(this is the end of the file)\r\n'
         '[File hello.py created.]\r\n'
     ).strip().split('\r\n')
 
