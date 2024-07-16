@@ -157,8 +157,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
     ) -> None:
-        """
-        Initializes a new instance of the CodeActAgent class.
+        """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -167,14 +166,11 @@ class CodeActAgent(Agent):
         self.reset()
 
     def reset(self) -> None:
-        """
-        Resets the CodeAct Agent.
-        """
+        """Resets the CodeAct Agent."""
         super().reset()
 
     def step(self, state: State) -> Action:
-        """
-        Performs one step using the CodeAct Agent.
+        """Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -187,7 +183,6 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-
         # if we're done, go back
         latest_user_message = state.history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':

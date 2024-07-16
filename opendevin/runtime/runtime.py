@@ -28,8 +28,7 @@ from opendevin.storage import FileStore
 
 
 class Runtime:
-    """
-    The runtime is how the agent interacts with the external environment.
+    """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
     sid is the session id, which is used to identify the current user session.
@@ -45,8 +44,7 @@ class Runtime:
         atexit.register(self.close_sync)
 
     async def ainit(self) -> None:
-        """
-        Initialize the runtime (asynchronously).
+        """Initialize the runtime (asynchronously).
         This method should be called after the runtime's constructor.
         """
         pass
@@ -93,8 +91,7 @@ class Runtime:
             self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
-        """
-        Run an action and return the resulting observation.
+        """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """

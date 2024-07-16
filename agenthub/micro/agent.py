@@ -24,9 +24,7 @@ def parse_response(orig_response: str) -> Action:
 
 
 def to_json(obj, **kwargs):
-    """
-    Serialize an object to str format
-    """
+    """Serialize an object to str format"""
     return json.dumps(obj, **kwargs)
 
 

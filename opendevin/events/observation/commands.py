@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class CmdOutputObservation(Observation):
-    """
-    This data class represents the output of a command.
-    """
+    """This data class represents the output of a command."""
 
     command_id: int
     command: str
@@ -30,9 +28,7 @@ class CmdOutputObservation(Observation):
 
 @dataclass
 class IPythonRunCellObservation(Observation):
-    """
-    This data class represents the output of a IPythonRunCellAction.
-    """
+    """This data class represents the output of a IPythonRunCellAction."""
 
     code: str
     observation: str = ObservationType.RUN_IPYTHON

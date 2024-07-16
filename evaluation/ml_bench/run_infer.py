@@ -1,5 +1,4 @@
-"""
-Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
+"""Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
 Large Language Models (LLMs) in leveraging existing functions in open-source libraries for
 machine learning tasks. The benchmark is introduced in the paper "ML-Bench: Evaluating Large
 Language Models for Code Generation in Repository-Level Machine Learning Tasks"

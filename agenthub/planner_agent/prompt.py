@@ -100,7 +100,6 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 
 def get_hint(latest_action_id: str) -> str:
     """Returns action type hint based on given action_id"""
-
     hints = {
         '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
         ActionType.RUN: 'You should think about the command you just ran, what output it gave, and how that affects your plan.',
@@ -117,8 +116,8 @@ def get_hint(latest_action_id: str) -> str:
 
 
 def get_prompt(state: State, max_message_chars: int) -> str:
-    """
-    Gets the prompt for the planner agent.
+    """Gets the prompt for the planner agent.
+
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
@@ -175,10 +174,10 @@ def get_prompt(state: State, max_message_chars: int) -> str:
 
 
 def parse_response(response: str) -> Action:
-    """
-    Parses the model output to find a valid action to take
+    """Parses the model output to find a valid action to take
     Parameters:
     - response (str): A response from the model that potentially contains an Action.
+
     Returns:
     - Action: A valid next action to perform from model output
     """

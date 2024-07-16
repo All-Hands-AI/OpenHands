@@ -47,8 +47,7 @@ class MonologueAgent(Agent):
     response_parser = MonologueResponseParser()
 
     def __init__(self, llm: LLM):
-        """
-        Initializes the Monologue Agent with an llm.
+        """Initializes the Monologue Agent with an llm.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -56,8 +55,7 @@ class MonologueAgent(Agent):
         super().__init__(llm)
 
     def _initialize(self, task: str):
-        """
-        Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
+        """Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
         and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
         Will execute again when called after reset.
@@ -68,7 +66,6 @@ class MonologueAgent(Agent):
         Raises:
         - AgentNoInstructionError: If task is not provided
         """
-
         if self._initialized:
             return
 
@@ -132,8 +129,7 @@ class MonologueAgent(Agent):
                 )
 
     def step(self, state: State) -> Action:
-        """
-        Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
+        """Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
 
         Parameters:
         - state (State): The current state based on previous steps taken

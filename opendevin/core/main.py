@@ -50,7 +50,6 @@ async def run_agent_controller(
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
         sandbox: An optional sandbox to run the agent in.
     """
-
     # Logging
     logger.info(
         f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
@@ -158,7 +157,7 @@ if __name__ == '__main__':
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    # Figure out the LLM config
+    # Override default LLM configs ([llm] section in config.toml)
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config is None:
