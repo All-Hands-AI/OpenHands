@@ -33,7 +33,7 @@
     "react-router-dom": "^6.24.1",
     "react-syntax-highlighter": "^15.5.0",
     "tailwind-merge": "^2.4.0",
-    "vite": "^5.3.3",
+    "vite": "^5.3.4",
     "web-vitals": "^3.5.2"
   },
   "scripts": {
