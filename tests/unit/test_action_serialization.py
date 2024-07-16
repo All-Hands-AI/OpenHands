@@ -52,6 +52,7 @@ def test_event_props_serialization_deserialization():
         'action': 'message',
         'args': {
             'content': 'This is a test.',
+            'images_base64': None,
             'wait_for_response': False,
         },
     }
@@ -63,6 +64,7 @@ def test_message_action_serialization_deserialization():
         'action': 'message',
         'args': {
             'content': 'This is a test.',
+            'images_base64': None,
             'wait_for_response': False,
         },
     }

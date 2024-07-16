@@ -29,9 +29,12 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
 
   const handleSendChatMessage = async () => {
     if (message.trim()) {
-      const base64images = await Promise.all(
-        files.map((file) => convertImageToBase64(file)),
-      );
+      let base64images: string[] = [];
+      if (files.length > 0) {
+        base64images = await Promise.all(
+          files.map((file) => convertImageToBase64(file)),
+        );
+      }
       onSendMessage(message, base64images);
       setMessage("");
       setFiles([]);
@@ -70,7 +73,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
     });
     if (pastedFiles.length > 0) {
       setFiles([...files, ...pastedFiles]);
-      event.preventDefault(); // Prevent the default paste behavior for images
+      event.preventDefault();
     }
   };
 
@@ -93,14 +96,6 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
         minRows={1}
         variant="bordered"
       />
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden"
-        id="file-input"
-        multiple
-      />
       <label
         htmlFor="file-input"
         className={twMerge(
@@ -109,9 +104,17 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
             ? "cursor-not-allowed border-neutral-400 text-neutral-400"
             : "hover:bg-neutral-500",
         )}
-        aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE)}
+        aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE)}
       >
         <VscFileMedia />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          id="file-input"
+          multiple
+        />
       </label>
       <button
         type="button"

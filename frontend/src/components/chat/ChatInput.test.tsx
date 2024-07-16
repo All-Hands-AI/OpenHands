@@ -58,7 +58,7 @@ describe("ChatInput", () => {
       await userEvent.click(button);
     });
 
-    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
+    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!", []);
 
     // Additionally, check if the callback is called exactly once
     expect(onSendMessage).toHaveBeenCalledTimes(1);
@@ -71,7 +71,7 @@ describe("ChatInput", () => {
     fireEvent.change(textarea, { target: { value: "Hello, world!" } });
     fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
 
-    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
+    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!", []);
   });
 
   it("should NOT send a message when shift + enter is pressed", () => {

@@ -12,7 +12,7 @@ describe("Message", () => {
   it("should render a user message", () => {
     render(
       <ChatMessage
-        message={{ sender: "user", content: "Hello" }}
+        message={{ sender: "user", content: "Hello", imageUrls: [] }}
         isLastMessage={false}
       />,
     );
@@ -24,7 +24,7 @@ describe("Message", () => {
   it("should render an assistant message", () => {
     render(
       <ChatMessage
-        message={{ sender: "assistant", content: "Hi" }}
+        message={{ sender: "assistant", content: "Hi", imageUrls: [] }}
         isLastMessage={false}
       />,
     );
@@ -39,6 +39,7 @@ describe("Message", () => {
         message={{
           sender: "user",
           content: "```js\nconsole.log('Hello')\n```",
+          imageUrls: [],
         }}
         isLastMessage={false}
       />,

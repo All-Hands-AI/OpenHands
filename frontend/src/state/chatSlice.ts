@@ -10,7 +10,10 @@ export const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
-    addUserMessage(state, action: PayloadAction<{ content: string; imageUrls: string[] }>) {
+    addUserMessage(
+      state,
+      action: PayloadAction<{ content: string; imageUrls: string[] }>,
+    ) {
       const message: Message = {
         sender: "user",
         content: action.payload.content,
@@ -33,7 +36,6 @@ export const chatSlice = createSlice({
     },
   },
 });
-
 
 export const { addUserMessage, addAssistantMessage, clearMessages } =
   chatSlice.actions;

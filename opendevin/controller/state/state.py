@@ -123,4 +123,4 @@ class State:
                 if last_user_message is not None:
                     return last_user_message
 
-        return (last_user_message, last_user_message_image_urls)
+        return last_user_message, last_user_message_image_urls
