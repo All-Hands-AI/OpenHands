@@ -390,10 +390,10 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(cfg)
 
     # load default LLM config from env
-    default_llm_config = config.get_llm_config()
+    default_llm_config = cfg.get_llm_config()
     set_attr_from_env(default_llm_config, 'LLM_')
     # load default agent config from env
-    default_agent_config = config.get_agent_config()
+    default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
 
 
