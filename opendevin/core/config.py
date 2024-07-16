@@ -203,7 +203,6 @@ class AppConfig(metaclass=Singleton):
         use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
-        initialize_plugins: Whether to initialize plugins.
         debug: Whether to enable debugging.
         enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
         file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
@@ -233,7 +232,6 @@ class AppConfig(metaclass=Singleton):
     use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    initialize_plugins: bool = True
     persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
