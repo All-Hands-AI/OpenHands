@@ -356,4 +356,4 @@ class LLM:
         return str(self)
 
 
-Content = list[dict[str, str | dict[str, str]]]
+MessageContent = list[dict[str, str | dict[str, str]]]

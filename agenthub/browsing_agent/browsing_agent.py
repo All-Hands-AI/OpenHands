@@ -16,7 +16,7 @@ from opendevin.events.action import (
 from opendevin.events.event import EventSource
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.events.observation.observation import Observation
-from opendevin.llm.llm import LLM, Content
+from opendevin.llm.llm import LLM, MessageContent
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
@@ -136,7 +136,7 @@ class BrowsingAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages: list[dict[str, str | Content]] = []
+        messages: list[dict[str, str | MessageContent]] = []
         prev_actions = []
         cur_axtree_txt = ''
         error_prefix = ''

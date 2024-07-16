@@ -2,7 +2,7 @@ from agenthub.monologue_agent.response_parser import MonologueResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentFinishAction
-from opendevin.llm.llm import LLM, Content
+from opendevin.llm.llm import LLM, MessageContent
 from opendevin.runtime.tools import RuntimeTool
 
 from .prompt import get_prompt_and_images
@@ -43,7 +43,7 @@ class PlannerAgent(Agent):
         ]:
             return AgentFinishAction()
         prompt, image_urls = get_prompt_and_images(state)
-        content: Content = [{'type': 'text', 'text': prompt}]
+        content: MessageContent = [{'type': 'text', 'text': prompt}]
         if image_urls:
             for image_url in image_urls:
                 content.append({'type': 'image_url', 'image_url': {'url': image_url}})

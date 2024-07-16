@@ -23,7 +23,7 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.events.serialization.event import event_to_memory
-from opendevin.llm.llm import LLM, Content
+from opendevin.llm.llm import LLM, MessageContent
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.runtime.tools import RuntimeTool
 
@@ -174,7 +174,7 @@ class MonologueAgent(Agent):
             for image_url in image_urls:
                 content.append({'type': 'image_url', 'image_url': {'url': image_url}})
 
-        messages: list[dict[str, str | Content]] = [
+        messages: list[dict[str, str | MessageContent]] = [
             {'role': 'user', 'content': content},
         ]
 

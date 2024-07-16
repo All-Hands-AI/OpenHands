@@ -20,7 +20,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
 )
 from opendevin.events.serialization.event import truncate_content
-from opendevin.llm.llm import LLM, Content
+from opendevin.llm.llm import LLM, MessageContent
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -39,7 +39,7 @@ def action_to_str(action: Action) -> str:
     return ''
 
 
-def get_action_message(action: Action) -> dict[str, str | Content] | None:
+def get_action_message(action: Action) -> dict[str, str | MessageContent] | None:
     if (
         isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
@@ -50,7 +50,7 @@ def get_action_message(action: Action) -> dict[str, str | Content] | None:
             'content': [{'type': 'text', 'text': action_to_str(action)}],
         }
     if isinstance(action, MessageAction) and action.images_base64:
-        contents: Content = []
+        contents: MessageContent = []
 
         contents = [
             {
@@ -63,7 +63,7 @@ def get_action_message(action: Action) -> dict[str, str | Content] | None:
             contents.append({'type': 'image_url', 'image_url': {'url': image_url}})
         # message_dict['content'] = contents
         # reveal_type(contents)
-        message_dict: dict[str, str | Content] = {
+        message_dict: dict[str, str | MessageContent] = {
             'role': 'user' if action.source == 'user' else 'assistant',
             'content': contents,
         }
@@ -71,7 +71,7 @@ def get_action_message(action: Action) -> dict[str, str | Content] | None:
     return None
 
 
-def get_observation_message(obs) -> dict[str, str | Content] | None:
+def get_observation_message(obs) -> dict[str, str | MessageContent] | None:
     max_message_chars = config.get_llm_config_from_agent(
         'CodeActSWEAgent'
     ).max_message_chars
@@ -163,7 +163,7 @@ class CodeActSWEAgent(Agent):
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
-        messages: list[dict[str, str | Content]] = self._get_messages(state)
+        messages: list[dict[str, str | MessageContent]] = self._get_messages(state)
 
         response = self.llm.completion(
             messages=messages,
@@ -176,8 +176,8 @@ class CodeActSWEAgent(Agent):
 
         return self.response_parser.parse(response)
 
-    def _get_messages(self, state: State) -> list[dict[str, str | Content]]:
-        messages: list[dict[str, str | Content]] = [
+    def _get_messages(self, state: State) -> list[dict[str, str | MessageContent]]:
+        messages: list[dict[str, str | MessageContent]] = [
             {
                 'role': 'system',
                 'content': [{'type': 'text', 'text': self.system_message}],
