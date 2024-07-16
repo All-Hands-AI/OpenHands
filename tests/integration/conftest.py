@@ -48,8 +48,7 @@ def get_log_id(prompt_log_name):
 
 
 def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Apply the mock prompt, and find mock response based on id.
+    """Apply the mock prompt, and find mock response based on id.
     If there is no matching response file, return None.
 
     Note: this function blindly replaces existing prompt file with the given
@@ -73,8 +72,7 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
 
 
 def get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Find mock response based on prompt. Prompts are stored under nested
+    """Find mock response based on prompt. Prompts are stored under nested
     folders under mock folder. If prompt_{id}.log matches,
     then the mock response we're looking for is at response_{id}.log.
 
