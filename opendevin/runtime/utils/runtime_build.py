@@ -200,8 +200,9 @@ def build_runtime_image(
     # Try to pull the new image from the registry
     try:
         docker_client.images.pull(new_image_name)
-    except docker.errors.ImageNotFound:
-        logger.info(f'Image {new_image_name} not found, building it from scratch')
+    except Exception as e:
+        logger.info(f'Error pulling image {new_image_name}, building it from scratch')
+        logger.error(f'Error: {e}')
 
     # Detect if the sandbox image is built
     image_exists = _check_image_exists(new_image_name, docker_client)
