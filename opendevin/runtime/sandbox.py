@@ -1,9 +1,10 @@
 import asyncio
+import copy
 import json
 import os
 from abc import ABC, abstractmethod
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.plugins.mixin import PluginMixin
 from opendevin.runtime.utils.async_utils import async_to_sync
@@ -13,8 +14,15 @@ class Sandbox(ABC, PluginMixin):
     _env: dict[str, str] = {}
     is_initial_session: bool = True
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: SandboxConfig):
         self._env = {}
+        self.config = copy.deepcopy(config)
+        for key in os.environ:
+            if key.startswith('SANDBOX_ENV_'):
+                sandbox_key = key.removeprefix('SANDBOX_ENV_')
+                self.add_to_env(sandbox_key, os.environ[key])
+        if config.enable_auto_lint:
+            self.add_to_env('ENABLE_AUTO_LINT', 'true')
         self.initialize_plugins: bool = config.initialize_plugins
         self._initialization_complete = asyncio.Event()
 

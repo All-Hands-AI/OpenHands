@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.sandbox import Sandbox
@@ -35,15 +35,21 @@ class LocalBox(Sandbox):
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, timeout: int = config.sandbox.timeout):
+    def __init__(
+        self,
+        config: SandboxConfig,
+        workspace_base: str,
+    ):
         if not hasattr(self, '_initialized'):
-            os.makedirs(config.workspace_base, exist_ok=True)
-            self.timeout = timeout
+            self.config = config
+            self.timeout = self.config.timeout
+            self.workspace_base = workspace_base
+            os.makedirs(self.workspace_base, exist_ok=True)
             self._env = os.environ.copy()
             self._initialized = False
             self._local_init_complete = asyncio.Event()
             atexit.register(self.sync_cleanup)
-            super().__init__()
+            super().__init__(config)
 
     @async_to_sync
     def initialize(self):
@@ -95,8 +101,8 @@ class LocalBox(Sandbox):
                 shell=True,
                 text=True,
                 capture_output=True,
-                timeout=timeout,
-                cwd=config.workspace_base,
+                timeout=self.config.timeout,
+                cwd=self.workspace_base,
                 env=self._env,
             )
             return process.returncode, process.stdout.strip()
@@ -111,20 +117,49 @@ class LocalBox(Sandbox):
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ):
         # mkdir -p sandbox_dest if it doesn't exist
-        mkdir_cmd = f'mkdir -p {sandbox_dest}'
-        exit_code, _ = await self.execute_async(mkdir_cmd)
-        if exit_code != 0:
+        #mkdir_cmd = f'mkdir -p {sandbox_dest}'
+        #exit_code, _ = await self.execute_async(mkdir_cmd)
+        #if exit_code != 0:
+            #raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
+
+        #cp_cmd = (
+        #    f'cp -r {host_src} {sandbox_dest}'
+        #    if recursive
+        #    else f'cp {host_src} {sandbox_dest}'
+        #)
+        #exit_code, _ = await self.execute_async(cp_cmd)
+        #if exit_code != 0:
+        #    raise RuntimeError(
+        #        f'Failed to copy {host_src} to {sandbox_dest} in sandbox'
+        res = subprocess.run(
+            f'mkdir -p {sandbox_dest}',
+            shell=True,
+            text=True,
+            cwd=self.workspace_base,
+            env=self._env,
+        )
+        if res.returncode != 0:
             raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
 
-        cp_cmd = (
-            f'cp -r {host_src} {sandbox_dest}'
-            if recursive
-            else f'cp {host_src} {sandbox_dest}'
-        )
-        exit_code, _ = await self.execute_async(cp_cmd)
-        if exit_code != 0:
-            raise RuntimeError(
-                f'Failed to copy {host_src} to {sandbox_dest} in sandbox'
+        if recursive:
+            res = subprocess.run(
+                f'cp -r {host_src} {sandbox_dest}',
+                shell=True,
+                text=True,
+                cwd=self.workspace_base,
+                env=self._env,
+            )
+            if res.returncode != 0:
+                raise RuntimeError(
+                    f'Failed to copy {host_src} to {sandbox_dest} in sandbox'
+                )
+        else:
+            res = subprocess.run(
+                f'cp {host_src} {sandbox_dest}',
+                shell=True,
+                text=True,
+                cwd=self.workspace_base,
+                env=self._env,
             )
 
     @async_to_sync
@@ -156,9 +191,12 @@ class LocalBox(Sandbox):
     def sync_cleanup(self):
         pass
 
+    def get_working_directory(self):
+        return self.workspace_base
+
 
 if __name__ == '__main__':
-    local_box = LocalBox()
+    local_box = LocalBox(SandboxConfig(), '/tmp/opendevin')
     sys.stdout.flush()
 
     async def main():
