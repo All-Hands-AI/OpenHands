@@ -1,5 +1,4 @@
 import argparse
-import logging
 import os
 import pathlib
 import platform
@@ -12,9 +11,8 @@ from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 import toml
 from dotenv import load_dotenv
 
+from opendevin.core import logger
 from opendevin.core.utils import Singleton
-
-logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -239,7 +237,9 @@ class AppConfig(metaclass=Singleton):
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
-            logger.warning(f'llm config group {name} not found, using default config')
+            logger.opendevin_logger.warning(
+                f'llm config group {name} not found, using default config'
+            )
         if 'llm' not in self.llms:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
@@ -377,12 +377,14 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
                 except (ValueError, TypeError):
-                    logger.error(
+                    logger.opendevin_logger.error(
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
     if 'SANDBOX_TYPE' in env_or_toml_dict:
-        logger.error('SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.')
+        logger.opendevin_logger.error(
+            'SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.'
+        )
         env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
@@ -407,10 +409,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.info(f'Config file not found: {e}')
+        logger.opendevin_logger.info(f'Config file not found: {e}')
         return
     except toml.TomlDecodeError as e:
-        logger.warning(
+        logger.opendevin_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
@@ -429,7 +431,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
-                    logger.info('Attempt to load default agent config from config toml')
+                    logger.opendevin_logger.info(
+                        'Attempt to load default agent config from config toml'
+                    )
                     non_dict_fields = {
                         k: v for k, v in value.items() if not isinstance(v, dict)
                     }
@@ -437,13 +441,15 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_agent_config(agent_config, 'agent')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.info(
+                            logger.opendevin_logger.info(
                                 f'Attempt to load group {nested_key} from config toml as agent config'
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 if key is not None and key.lower() == 'llm':
-                    logger.info('Attempt to load default LLM config from config toml')
+                    logger.opendevin_logger.info(
+                        'Attempt to load default LLM config from config toml'
+                    )
                     non_dict_fields = {
                         k: v for k, v in value.items() if not isinstance(v, dict)
                     }
@@ -451,13 +457,13 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.info(
+                            logger.opendevin_logger.info(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
             except (TypeError, KeyError) as e:
-                logger.warning(
+                logger.opendevin_logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
                     exc_info=False,
                 )
@@ -476,7 +482,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.warning(f'Unknown sandbox config: {key}')
+                logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -485,7 +491,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         # update the config object with the new values
         AppConfig(sandbox=sandbox_config, **core_config)
     except (TypeError, KeyError) as e:
-        logger.warning(
+        logger.opendevin_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
@@ -513,7 +519,7 @@ def finalize_config(cfg: AppConfig):
             llm.embedding_base_url = llm.base_url
 
     if cfg.use_host_network and platform.system() == 'Darwin':
-        logger.warning(
+        logger.opendevin_logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
@@ -521,12 +527,6 @@ def finalize_config(cfg: AppConfig):
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
-
-
-config = AppConfig()
-load_from_toml(config)
-load_from_env(config, os.environ)
-finalize_config(config)
 
 
 # Utility function for command line --group argument
@@ -564,23 +564,25 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.info(f'Loading llm config from {llm_config_arg}')
+    logger.opendevin_logger.info(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.error(f'Config file not found: {e}')
+        logger.opendevin_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
-        logger.error(f'Cannot parse llm group from {llm_config_arg}. Exception: {e}')
+        logger.opendevin_logger.error(
+            f'Cannot parse llm group from {llm_config_arg}. Exception: {e}'
+        )
         return None
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
         return LLMConfig(**toml_config['llm'][llm_config_arg])
-    logger.debug(f'Loading from toml failed for {llm_config_arg}')
+    logger.opendevin_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
 
@@ -667,3 +669,22 @@ def parse_arguments() -> argparse.Namespace:
         config.workspace_base = os.path.abspath(parsed_args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
     return parsed_args
+
+
+def load_app_config(set_logging_levels: bool = True) -> AppConfig:
+    """Load the configuration from the config.toml file and environment variables.
+
+    Args:
+        set_logger_levels: Whether to set the global variables for logging levels.
+    """
+    config = AppConfig()
+    load_from_toml(config)
+    load_from_env(config, os.environ)
+    finalize_config(config)
+    if set_logging_levels:
+        logger.DEBUG = config.debug
+        logger.DISABLE_COLOR_PRINTING = config.disable_color
+    return config
+
+
+config = load_app_config()
