@@ -17,21 +17,6 @@ Create a `config.toml` file if it does not exist at the root of the workspace.
 Add the following configurations:
 
 ```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-
-[sandbox]
-box_type = "ssh"
-timeout = 120
-
-# SWEBench eval specific
-use_host_network = false
-run_as_devin = false
-enable_auto_lint = true
-max_budget_per_task = 4 # 4 USD
-
 # TODO: Change these to the model you want to evaluate
 [llm.eval_gpt4_1106_preview_llm]
 model = "gpt-4-1106-preview"
@@ -49,7 +34,7 @@ temperature = 0.0
 
 ```bash
 ./evaluation/browsing_delegation/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
