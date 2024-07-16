@@ -50,7 +50,6 @@ async def run_agent_controller(
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
         sandbox: An optional sandbox to run the agent in.
     """
-
     # Logging
     logger.info(
         f'Running agent {agent.name}, model {agent.llm.model_name}, with task: "{task_str}"'

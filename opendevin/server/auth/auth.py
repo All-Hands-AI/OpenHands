@@ -6,8 +6,7 @@ from opendevin.core.logger import opendevin_logger as logger
 
 
 def get_sid_from_token(token: str) -> str:
-    """
-    Retrieves the session id from a JWT token.
+    """Retrieves the session id from a JWT token.
 
     Parameters:
         token (str): The JWT token from which the session id is to be extracted.
