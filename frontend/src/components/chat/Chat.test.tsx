@@ -10,14 +10,11 @@ const MESSAGES: Message[] = [
   { sender: "assistant", content: "How can I help you today?" },
 ];
 
-HTMLElement.prototype.scrollTo = vi.fn(() => {});
-
 describe("Chat", () => {
   it("should render chat messages", () => {
     renderWithProviders(<Chat messages={MESSAGES} />);
 
     const messages = screen.getAllByTestId("message");
-
     expect(messages).toHaveLength(MESSAGES.length);
   });
 });
