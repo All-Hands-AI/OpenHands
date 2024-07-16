@@ -1,3 +1,4 @@
+import asyncio
 from typing import Union
 
 from jinja2 import BaseLoader, Environment
@@ -98,6 +99,8 @@ class MicroAgent(Agent):
             action_resp = resp
         elif isinstance(resp, ModelResponse):
             action_resp = resp.choices[0].message.content
+        elif asyncio.iscoroutine(resp):
+            action_resp = await resp
         else:
             raise TypeError(f'Unexpected response type: {type(resp)}')
 

@@ -416,7 +416,7 @@ class AgentController:
                 raise LLMNoActionError('No action was returned')
 
             if asyncio.iscoroutine(action):
-                action = await action  # self.agent.step(self.state)
+                action = await action
             logger.info(action, extra={'msg_type': 'ACTION'})
 
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
@@ -445,9 +445,6 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            # if asyncio.iscoroutine(action):
-            #     action = await action  # self.agent.step(self.state)
-            # logger.info(action, extra={'msg_type': 'ACTION'})
             await self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
