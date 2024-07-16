@@ -1,4 +1,3 @@
-import asyncio
 from typing import Union
 
 from jinja2 import BaseLoader, Environment
@@ -87,11 +86,10 @@ class MicroAgent(Agent):
         )
         messages = [{'content': prompt, 'role': 'user'}]
 
-        # If self.llm.completion is async
-        if asyncio.iscoroutinefunction(self.llm.async_completion):
-            resp = await self.llm.async_completion(messages=messages)
-        else:
-            resp = self.llm.completion(messages=messages)
+        # if asyncio.iscoroutinefunction(self.llm.async_completion):
+        #     resp = await self.llm.async_completion(messages=messages)
+        # else:
+        resp = self.llm.completion(messages=messages)
 
         # Handle both real responses
         if isinstance(resp, dict) and 'choices' in resp:
