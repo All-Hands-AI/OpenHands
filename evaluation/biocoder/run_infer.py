@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 from functools import partial
@@ -24,17 +23,7 @@ from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
-
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': partial(
@@ -196,6 +185,11 @@ def process_instance(
         raise ValueError('State should not be None.')
     metrics = state.metrics.get() if state.metrics else None
 
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
+
     # Save the output
     output = {
         'test_case_id': instance.test_case_id,
@@ -203,9 +197,7 @@ def process_instance(
         'instruction': instruction,
         'generated': test_result['metadata']['1_copy_change_code'],
         'metadata': metadata.model_dump(),
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
         'test_result': test_result,

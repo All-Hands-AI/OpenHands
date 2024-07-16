@@ -70,64 +70,7 @@ This is your internal monologue, in JSON format:
   {
     "action": "message",
     "args": {
-      "content": "But no one has perfect short-term memory. My list of thoughts will be summarized and condensed over time, losing information in the process.",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "Fortunately I have long term memory!",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "I can just perform a recall action, followed by the thing I want to remember. And then related thoughts just spill out!",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "Sometimes they're random thoughts that don't really have to do with what I wanted to remember. But usually they're exactly what I need!",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "Let's try it out!",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "recall",
-    "args": {
-      "query": "what it is I want to do",
-      "thought": ""
-    }
-  },
-  {
-    "observation": "recall",
-    "content": "Here's what I want to do: Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
-    "extras": {
-      "memories": [],
-      "role": "assistant"
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "How am I going to get there though?",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "Neat! And it looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
+      "content": "It looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
       "wait_for_response": false
     }
   },
@@ -135,7 +78,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "echo \"hello world\"",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -182,7 +126,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "node test.js",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -330,7 +275,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "pwd",
-      "thought": ""
+      "thought": "",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -348,7 +294,8 @@ This is your internal monologue, in JSON format:
     "action": "run",
     "args": {
       "command": "ls",
-      "thought": "I need to see the contents of the current directory to ensure there are no conflicts and to understand the environment better."
+      "thought": "I need to see the contents of the current directory to ensure there are no conflicts and to understand the environment better.",
+      "is_confirmed": "confirmed"
     }
   },
   {
@@ -391,14 +338,12 @@ Here are the possible actions:
   * `owner` - the owner of the repo to push to
   * `repo` - the name of the repo to push to
   * `branch` - the name of the branch to push
-* `recall` - recalls a past memory. Arguments:
-  * `query` - the query to search for
 * `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
   * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, browse, and push actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 

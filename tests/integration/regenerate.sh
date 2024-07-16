@@ -5,6 +5,12 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
+# unset environmental variables that might disturb testing
+unset OPENAI_API_KEY
+unset SANDBOX_ENV_OPENAI_API_KEY
+unset OPENAI_BASE_URL
+unset OPENAI_MODEL
+
 TMP_FILE="${TMP_FILE:-tmp.log}"
 
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
@@ -78,7 +84,7 @@ run_test() {
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
-    AGENT=$agent \
+    DEFAULT_AGENT=$agent \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -148,7 +154,7 @@ regenerate_without_llm() {
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     FORCE_APPLY_PROMPTS=true \
-    AGENT=$agent \
+    DEFAULT_AGENT=$agent \
     poetry run pytest -s ./tests/integration/test_agent.py::$test_name
   set +x
 }
@@ -158,8 +164,7 @@ regenerate_with_llm() {
     launch_http_server
   fi
 
-  rm -rf $WORKSPACE_BASE
-  mkdir -p $WORKSPACE_BASE
+  rm -rf $WORKSPACE_BASE/*
   if [ -d "tests/integration/workspace/$test_name" ]; then
     cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
   fi
@@ -197,7 +202,7 @@ if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
 fi
 
 rm -rf logs
-rm -rf $WORKSPACE_BASE
+rm -rf $WORKSPACE_BASE/*
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
@@ -216,8 +221,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     echo -e "\n\n\n\n========STEP 1: Running $test_name for $agent========\n\n\n\n"
-    rm -rf $WORKSPACE_BASE
-    mkdir $WORKSPACE_BASE
+    rm -rf $WORKSPACE_BASE/*
     if [ -d "tests/integration/workspace/$test_name" ]; then
       cp -r "tests/integration/workspace/$test_name"/* $WORKSPACE_BASE
     fi
@@ -230,7 +234,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     TEST_STATUS=1
-    if [ -z $SKIP_TEST ]; then
+    if [ -z $FORCE_REGENERATE ]; then
       run_test
       TEST_STATUS=$?
     fi

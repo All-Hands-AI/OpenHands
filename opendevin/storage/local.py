@@ -1,4 +1,7 @@
 import os
+import shutil
+
+from opendevin.core.logger import opendevin_logger as logger
 
 from .files import FileStore
 
@@ -34,5 +37,16 @@ class LocalFileStore(FileStore):
         return files
 
     def delete(self, path: str) -> None:
-        full_path = self.get_full_path(path)
-        os.remove(full_path)
+        try:
+            full_path = self.get_full_path(path)
+            if not os.path.exists(full_path):
+                logger.debug(f'Local path does not exist: {full_path}')
+                return
+            if os.path.isfile(full_path):
+                os.remove(full_path)
+                logger.debug(f'Removed local file: {full_path}')
+            elif os.path.isdir(full_path):
+                shutil.rmtree(full_path)
+                logger.debug(f'Removed local directory: {full_path}')
+        except Exception as e:
+            logger.error(f'Error clearing local file store: {str(e)}')

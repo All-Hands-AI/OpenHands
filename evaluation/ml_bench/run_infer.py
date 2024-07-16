@@ -1,5 +1,4 @@
-"""
-Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
+"""Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
 Large Language Models (LLMs) in leveraging existing functions in open-source libraries for
 machine learning tasks. The benchmark is introduced in the paper "ML-Bench: Evaluating Large
 Language Models for Code Generation in Repository-Level Machine Learning Tasks"
@@ -36,7 +35,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
@@ -195,16 +193,18 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
             logger.info(f'Output: {eval_output}')
             metrics['success'] = 1
 
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_pairs()
+
         # Save the output
         output = {
             'instance_id': instance['id'],
             'repo': repo_url,
             'instruction': instruction,
             'metadata': metadata.model_dump(),
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            'history': histories,
             'eval_script': eval_script_content,
             'eval_exit_code': exit_code,
             'eval_output': eval_output,

@@ -10,6 +10,7 @@ Otherwise, you can clone the OpenDevin project directly.
 * [Python](https://www.python.org/downloads/) = 3.11
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
+* netcat => sudo apt-get install netcat
 
 Make sure you have all these dependencies installed before moving on to `make build`.
 
@@ -83,10 +84,11 @@ make help
  ```
 
 ### 8. Testing
+To run tests, refer to the following:
 #### Unit tests
 
 ```bash
-poetry run pytest ./tests/unit/test_sandbox.py
+poetry run pytest ./tests/unit/test_*.py
 ```
 
 #### Integration tests
