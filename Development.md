@@ -84,10 +84,11 @@ make help
  ```
 
 ### 8. Testing
+To run tests, refer to the following:
 #### Unit tests
 
 ```bash
-poetry run pytest ./tests/unit/test_sandbox.py
+poetry run pytest ./tests/unit/test_*.py
 ```
 
 #### Integration tests
