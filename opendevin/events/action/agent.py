@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 from opendevin.core.schema import ActionType
-from opendevin.llm.llm import LLM
 
 from .action import Action
 
@@ -66,7 +65,6 @@ class AgentDelegateAction(Action):
     agent: str
     inputs: dict
     thought: str = ''
-    llm: LLM | None = None
     action: str = ActionType.DELEGATE
 
     @property
