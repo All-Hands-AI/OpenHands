@@ -1,6 +1,5 @@
 import os
 import pathlib
-import shutil
 import tempfile
 import time
 from unittest.mock import patch
@@ -10,7 +9,7 @@ import pytest
 from opendevin.core.config import AppConfig, config
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
-from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.plugins import JupyterRequirement
 
 
 def create_docker_box_from_app_config(config: AppConfig, path: str) -> DockerSSHBox:
@@ -237,6 +236,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
     )
     box.close()
 
+
 async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     exit_code, output = await box.execute('mkdir test')
     print(output)
@@ -334,7 +334,7 @@ async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         await box.initialize()
         _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
-        
+
 @pytest.mark.skipif(True, reason='This test is outdated!')
 @pytest.mark.asyncio
 async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
