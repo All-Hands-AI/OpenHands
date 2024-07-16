@@ -79,14 +79,12 @@ def check_correctness(
     timeout: float = 10,
     completion_id: Optional[int] = None,
 ) -> Dict:
-    """
-    Evaluates the functional correctness of a completion by running the test
+    """Evaluates the functional correctness of a completion by running the test
     suite provided in the problem.
 
     :param completion_id: an optional completion ID so we can match
         the results later even if execution finishes asynchronously.
     """
-
     manager = multiprocessing.Manager()
     result = manager.list()
 
@@ -181,18 +179,16 @@ def chdir(root):
 
 
 def reliability_guard(maximum_memory_bytes: Optional[int] = None):
-    """
-    This disables various destructive functions and prevents the generated code
+    """This disables various destructive functions and prevents the generated code
     from interfering with the test (e.g. fork bomb, killing other processes,
     removing filesystem files, etc.)
 
-    WARNING
+    Warning:
     This function is NOT a security sandbox. Untrusted code, including, model-
     generated code, should not be blindly executed outside of one. See the
     Codex paper for more information about OpenAI's code sandbox, and proceed
     with caution.
     """
-
     if maximum_memory_bytes is not None:
         import resource
 

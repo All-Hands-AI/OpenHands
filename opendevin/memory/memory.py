@@ -108,14 +108,10 @@ class EmbeddingsLoader:
 
 
 class LongTermMemory:
-    """
-    Handles storing information for the agent to access later, using chromadb.
-    """
+    """Handles storing information for the agent to access later, using chromadb."""
 
     def __init__(self, agent_config_name='agent'):
-        """
-        Initialize the chromadb and set up ChromaVectorStore for later use.
-        """
+        """Initialize the chromadb and set up ChromaVectorStore for later use."""
         db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
@@ -131,8 +127,7 @@ class LongTermMemory:
         self._add_threads = []
 
     def add_event(self, event: dict):
-        """
-        Adds a new event to the long term memory with a unique id.
+        """Adds a new event to the long term memory with a unique id.
 
         Parameters:
         - event (dict): The new event to be added to memory
@@ -165,8 +160,7 @@ class LongTermMemory:
             self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):
-        """
-        Searches through the current memory using VectorIndexRetriever
+        """Searches through the current memory using VectorIndexRetriever
 
         Parameters:
         - query (str): A query to match search results to
