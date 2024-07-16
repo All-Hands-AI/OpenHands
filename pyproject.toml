@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.7.1"
+version = "0.8.0"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/OpenDevin/OpenDevin"
+include = ["poetry.lock"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -47,7 +48,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.5.1"
+ruff = "0.5.2"
 mypy = "1.10.1"
 pre-commit = "3.7.1"
 
@@ -56,13 +57,6 @@ pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
-flake8 = "*"
-openai = "*"
-python-docx = "*"
-PyPDF2 = "*"
-pylatexenc = "*"
-python-pptx = "*"
-opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
@@ -70,12 +64,16 @@ reportlab = "*"
 concurrency = ["gevent"]
 
 
-[tool.poetry.group.evaluation.dependencies]
-streamlit = "*"
-whatthepatch = "*"
-retry = "*"
-evaluate = "*"
-swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
+[tool.poetry.group.runtime.dependencies]
+jupyterlab = "*"
+notebook = "*"
+jupyter_kernel_gateway = "*"
+flake8 = "*"
+python-docx = "*"
+PyPDF2 = "*"
+python-pptx = "*"
+pylatexenc = "*"
+opencv-python = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
@@ -90,3 +88,19 @@ ignore = [ "E501" ]
 [tool.black]
 # prevent black (if installed) from changing single quotes to double quotes
 skip-string-normalization = true
+
+[tool.ruff.lint]
+select = ["D"]
+# ignore warnings for missing docstrings
+ignore = ["D1"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+
+[tool.poetry.group.evaluation.dependencies]
+streamlit = "*"
+whatthepatch = "*"
+retry = "*"
+evaluate = "*"
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }

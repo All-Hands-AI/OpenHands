@@ -16,11 +16,14 @@ from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
+    ActionConfirmationStatus,
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
     ChangeAgentStateAction,
+    CmdRunAction,
+    IPythonRunCellAction,
     MessageAction,
     ModifyTaskAction,
     NullAction,
@@ -33,6 +36,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     Observation,
 )
+from opendevin.llm.llm import LLM
 
 MAX_ITERATIONS = config.max_iterations
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
@@ -48,6 +52,7 @@ class AgentController:
     max_iterations: int
     event_stream: EventStream
     state: State
+    confirmation_mode: bool
     agent_task: Optional[asyncio.Task] = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
@@ -59,6 +64,7 @@ class AgentController:
         event_stream: EventStream,
         sid: str = 'default',
         max_iterations: int | None = MAX_ITERATIONS,
+        confirmation_mode: bool = False,
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -91,6 +97,7 @@ class AgentController:
         self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
+            confirmation_mode=confirmation_mode,
         )
 
         self.max_budget_per_task = max_budget_per_task
@@ -115,8 +122,7 @@ class AgentController:
         self.state.metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
-        """
-        This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+        """This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
 
         This method should be called for a particular type of errors, which have:
         - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
@@ -169,8 +175,19 @@ class AgentController:
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
+            if (
+                self._pending_action
+                and hasattr(self._pending_action, 'is_confirmed')
+                and self._pending_action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return
             if self._pending_action and self._pending_action.id == event.cause:
                 self._pending_action = None
+                if self.state.agent_state == AgentState.USER_CONFIRMED:
+                    await self.set_agent_state_to(AgentState.RUNNING)
+                if self.state.agent_state == AgentState.USER_REJECTED:
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
@@ -204,6 +221,18 @@ class AgentController:
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
 
+        if self._pending_action is not None and (
+            new_state == AgentState.USER_CONFIRMED
+            or new_state == AgentState.USER_REJECTED
+        ):
+            if hasattr(self._pending_action, 'thought'):
+                self._pending_action.thought = ''  # type: ignore[union-attr]
+            if new_state == AgentState.USER_CONFIRMED:
+                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
+            else:
+                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
+            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
+
         self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
@@ -218,7 +247,9 @@ class AgentController:
 
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
-        agent = agent_cls(llm=self.agent.llm)
+        llm_config = config.get_llm_config_from_agent(action.agent)
+        llm = LLM(llm_config=llm_config)
+        delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
             iteration=0,
@@ -227,10 +258,12 @@ class AgentController:
             # metrics should be shared between parent and child
             metrics=self.state.metrics,
         )
-        logger.info(f'[Agent Controller {self.id}]: start delegate')
+        logger.info(
+            f'[Agent Controller {self.id}]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
+        )
         self.delegate = AgentController(
             sid=self.id + '-delegate',
-            agent=agent,
+            agent=delegate_agent,
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
@@ -341,9 +374,19 @@ class AgentController:
             return
 
         if action.runnable:
+            if self.state.confirmation_mode and (
+                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+            ):
+                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
             self._pending_action = action
 
         if not isinstance(action, NullAction):
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
             self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
@@ -357,12 +400,19 @@ class AgentController:
         return self.state
 
     def set_initial_state(
-        self, state: State | None, max_iterations: int = MAX_ITERATIONS
+        self,
+        state: State | None,
+        max_iterations: int = MAX_ITERATIONS,
+        confirmation_mode: bool = False,
     ):
         # state from the previous session, state from a parent agent, or a new state
         # note that this is called twice when restoring a previous session, first with state=None
         if state is None:
-            self.state = State(inputs={}, max_iterations=max_iterations)
+            self.state = State(
+                inputs={},
+                max_iterations=max_iterations,
+                confirmation_mode=confirmation_mode,
+            )
         else:
             self.state = state
 

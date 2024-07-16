@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 import re
@@ -28,14 +27,6 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
 from opendevin.llm.llm import LLM
-
-
-def cleanup():
-    logger.info('Cleaning up child processes...')
-    for process in mp.active_children():
-        logger.info(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
 
 
 def codeact_user_response(state: State) -> str:
@@ -75,9 +66,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def execute_sql(db_path, gen_sql, gold_sql):
-    """
-    Execute the generated SQL and the ground truth SQL and compare the results.
-    """
+    """Execute the generated SQL and the ground truth SQL and compare the results."""
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(gen_sql)
@@ -264,18 +253,14 @@ def process_instance(
 
 
 def load_bird():
-    """
-    Main function to handle the flow of downloading, processing, and loading the bird dataset.
-    """
+    """Main function to handle the flow of downloading, processing, and loading the bird dataset."""
     raw_dataset_path = download_bird()
     bird_dataset = process_bird(raw_dataset_path)
     return bird_dataset
 
 
 def download_bird():
-    """
-    Downloads and extracts the bird dataset from a specified URL into a local directory.
-    """
+    """Downloads and extracts the bird dataset from a specified URL into a local directory."""
     dataset_path = os.path.join(config.workspace_base, 'evaluation_bird')
     devset_path = os.path.join(dataset_path, 'dev')
     if not os.path.exists(dataset_path):
@@ -301,9 +286,7 @@ def download_bird():
 
 
 def process_bird(dataset_path):
-    """
-    Processes the raw bird dataset into a structured format and saves it as JSON.
-    """
+    """Processes the raw bird dataset into a structured format and saves it as JSON."""
     processed_path = os.path.join(dataset_path, 'processed_dev.json')
     if not os.path.exists(processed_path):
         logger.info(f'{processed_path} folder does not exist, starting processing...')
@@ -334,9 +317,7 @@ def process_bird(dataset_path):
 
 
 def extract_create_table_prompt(db_path, limit_value=0):
-    """
-    Generates a SQL prompt with CREATE TABLE statements and sample data from the database.
-    """
+    """Generates a SQL prompt with CREATE TABLE statements and sample data from the database."""
     table_query = "SELECT * FROM sqlite_master WHERE type='table';"
     tables = sqlite3.connect(db_path).cursor().execute(table_query).fetchall()
     prompt = ''
@@ -376,9 +357,7 @@ def extract_create_table_prompt(db_path, limit_value=0):
 
 
 def create_prompt(e, database_path):
-    """
-    Create a prompt for the given example
-    """
+    """Create a prompt for the given example"""
     db_id = e['db_id']
     db_path = pathlib.Path(database_path) / db_id / f'{db_id}.sqlite'
 

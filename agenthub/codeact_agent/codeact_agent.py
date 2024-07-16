@@ -8,6 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -60,8 +61,11 @@ def get_action_message(action: Action) -> dict[str, str] | None:
 
 
 def get_observation_message(obs) -> dict[str, str] | None:
+    max_message_chars = config.get_llm_config_from_agent(
+        'CodeActAgent'
+    ).max_message_chars
     if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_content(obs.content)
+        content = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
         content += (
             f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
@@ -76,10 +80,12 @@ def get_observation_message(obs) -> dict[str, str] | None:
                     '![image](data:image/png;base64, ...) already displayed to user'
                 )
         content = '\n'.join(splitted)
-        content = truncate_content(content)
+        content = truncate_content(content, max_message_chars)
         return {'role': 'user', 'content': content}
     elif isinstance(obs, AgentDelegateObservation):
-        content = 'OBSERVATION:\n' + truncate_content(str(obs.outputs))
+        content = 'OBSERVATION:\n' + truncate_content(
+            str(obs.outputs), max_message_chars
+        )
         return {'role': 'user', 'content': content}
     return None
 
@@ -97,7 +103,7 @@ def get_in_context_example() -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.7'
+    VERSION = '1.8'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -152,8 +158,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
     ) -> None:
-        """
-        Initializes a new instance of the CodeActAgent class.
+        """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -162,14 +167,11 @@ class CodeActAgent(Agent):
         self.reset()
 
     def reset(self) -> None:
-        """
-        Resets the CodeAct Agent.
-        """
+        """Resets the CodeAct Agent."""
         super().reset()
 
     def step(self, state: State) -> Action:
-        """
-        Performs one step using the CodeAct Agent.
+        """Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -182,7 +184,6 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-
         # if we're done, go back
         latest_user_message = state.history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
@@ -201,9 +202,6 @@ class CodeActAgent(Agent):
             temperature=0.0,
         )
         return self.action_parser.parse(response)
-
-    def search_memory(self, query: str) -> list[str]:
-        raise NotImplementedError('Implement this abstract method')
 
     def _get_messages(self, state: State) -> list[dict[str, str]]:
         messages = [

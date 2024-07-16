@@ -13,13 +13,14 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core.config import config
+from opendevin.core.config import LLMConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 
-num_retries = config.llm.num_retries
-retry_min_wait = config.llm.retry_min_wait
-retry_max_wait = config.llm.retry_max_wait
+# TODO: this should depend on specific agent setting
+num_retries = config.get_llm_config().num_retries
+retry_min_wait = config.get_llm_config().retry_min_wait
+retry_max_wait = config.get_llm_config().retry_max_wait
 
 # llama-index includes a retry decorator around openai.get_embeddings() function
 # it is initialized with hard-coded values and errors
@@ -62,7 +63,7 @@ class EmbeddingsLoader:
     """Loader for embedding model initialization."""
 
     @staticmethod
-    def get_embedding_model(strategy: str):
+    def get_embedding_model(strategy: str, llm_config: LLMConfig):
         supported_ollama_embed_models = [
             'llama2',
             'mxbai-embed-large',
@@ -75,7 +76,7 @@ class EmbeddingsLoader:
 
             return OllamaEmbedding(
                 model_name=strategy,
-                base_url=config.llm.embedding_base_url,
+                base_url=llm_config.embedding_base_url,
                 ollama_additional_kwargs={'mirostat': 0},
             )
         elif strategy == 'openai':
@@ -83,17 +84,17 @@ class EmbeddingsLoader:
 
             return OpenAIEmbedding(
                 model='text-embedding-ada-002',
-                api_key=config.llm.api_key,
+                api_key=llm_config.api_key,
             )
         elif strategy == 'azureopenai':
             from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 
             return AzureOpenAIEmbedding(
                 model='text-embedding-ada-002',
-                deployment_name=config.llm.embedding_deployment_name,
-                api_key=config.llm.api_key,
-                azure_endpoint=config.llm.base_url,
-                api_version=config.llm.api_version,
+                deployment_name=llm_config.embedding_deployment_name,
+                api_key=llm_config.api_key,
+                azure_endpoint=llm_config.base_url,
+                api_version=llm_config.api_version,
             )
         elif (strategy is not None) and (strategy.lower() == 'none'):
             # TODO: this works but is not elegant enough. The incentive is when
@@ -106,30 +107,27 @@ class EmbeddingsLoader:
             return HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
 
 
-sema = threading.Semaphore(value=config.agent.memory_max_threads)
-
-
 class LongTermMemory:
-    """
-    Handles storing information for the agent to access later, using chromadb.
-    """
+    """Handles storing information for the agent to access later, using chromadb."""
 
-    def __init__(self):
-        """
-        Initialize the chromadb and set up ChromaVectorStore for later use.
-        """
+    def __init__(self, agent_config_name='agent'):
+        """Initialize the chromadb and set up ChromaVectorStore for later use."""
         db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
-        embedding_strategy = config.llm.embedding_model
-        embed_model = EmbeddingsLoader.get_embedding_model(embedding_strategy)
+        agent_config = config.get_agent_config(agent_config_name)
+        llm_config = config.get_llm_config(agent_config.llm_config)
+        embedding_strategy = llm_config.embedding_model
+        embed_model = EmbeddingsLoader.get_embedding_model(
+            embedding_strategy, llm_config
+        )
         self.index = VectorStoreIndex.from_vector_store(vector_store, embed_model)
+        self.sema = threading.Semaphore(value=agent_config.memory_max_threads)
         self.thought_idx = 0
         self._add_threads = []
 
     def add_event(self, event: dict):
-        """
-        Adds a new event to the long term memory with a unique id.
+        """Adds a new event to the long term memory with a unique id.
 
         Parameters:
         - event (dict): The new event to be added to memory
@@ -158,12 +156,11 @@ class LongTermMemory:
         thread.start()  # We add the doc concurrently so we don't have to wait ~500ms for the insert
 
     def _add_doc(self, doc):
-        with sema:
+        with self.sema:
             self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):
-        """
-        Searches through the current memory using VectorIndexRetriever
+        """Searches through the current memory using VectorIndexRetriever
 
         Parameters:
         - query (str): A query to match search results to

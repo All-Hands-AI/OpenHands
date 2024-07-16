@@ -1,4 +1,5 @@
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.core.utils import json
@@ -88,7 +89,7 @@ It must be an object, and it must contain two fields:
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-You MUST take time to think in between read, write, run, browse, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, and browse actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
@@ -100,7 +101,6 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 
 def get_hint(latest_action_id: str) -> str:
     """Returns action type hint based on given action_id"""
-
     hints = {
         '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
         ActionType.RUN: 'You should think about the command you just ran, what output it gave, and how that affects your plan.',
@@ -108,7 +108,6 @@ def get_hint(latest_action_id: str) -> str:
         ActionType.WRITE: 'You just changed a file. You should think about how it affects your plan.',
         ActionType.BROWSE: 'You should think about the page you just visited, and what you learned from it.',
         ActionType.MESSAGE: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
-        ActionType.RECALL: 'You should think about the information you just recalled, and how it should affect your plan.',
         ActionType.ADD_TASK: 'You should think about the next action to take.',
         ActionType.MODIFY_TASK: 'You should think about the next action to take.',
         ActionType.SUMMARIZE: '',
@@ -118,8 +117,7 @@ def get_hint(latest_action_id: str) -> str:
 
 
 def get_prompt(state: State) -> str:
-    """
-    Gets the prompt for the planner agent.
+    """Gets the prompt for the planner agent.
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
@@ -128,6 +126,9 @@ def get_prompt(state: State) -> str:
     Returns:
     - str: The formatted string prompt with historical values
     """
+    max_message_chars = config.get_llm_config_from_agent(
+        'PlannerAgent'
+    ).max_message_chars
 
     # the plan
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
@@ -142,7 +143,7 @@ def get_prompt(state: State) -> str:
             break
         if latest_action == NullAction() and isinstance(event, Action):
             latest_action = event
-        history_dicts.append(event_to_memory(event))
+        history_dicts.append(event_to_memory(event, max_message_chars))
 
     # history_dicts is in reverse order, lets fix it
     history_dicts.reverse()
@@ -160,7 +161,7 @@ def get_prompt(state: State) -> str:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
 
     # the hint, based on the last action
-    hint = get_hint(event_to_memory(latest_action).get('action', ''))
+    hint = get_hint(event_to_memory(latest_action, max_message_chars).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
     # the last relevant user message (the task)
@@ -177,10 +178,10 @@ def get_prompt(state: State) -> str:
 
 
 def parse_response(response: str) -> Action:
-    """
-    Parses the model output to find a valid action to take
+    """Parses the model output to find a valid action to take
     Parameters:
     - response (str): A response from the model that potentially contains an Action.
+
     Returns:
     - Action: A valid next action to perform from model output
     """

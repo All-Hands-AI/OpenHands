@@ -16,10 +16,10 @@ from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
+from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -419,7 +419,8 @@ class DockerSSHBox(Sandbox):
             else:
                 password_msg = f"using the password '{self._ssh_password}'"
             logger.info('Connecting to SSH session...')
-            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
+            hostname_to_log = hostname.replace('host.docker.internal', 'localhost')
+            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname_to_log}`'
             logger.info(
                 f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
             )

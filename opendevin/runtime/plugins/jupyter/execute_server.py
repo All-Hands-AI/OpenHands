@@ -16,8 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def strip_ansi(o: str) -> str:
-    """
-    Removes ANSI escape sequences from `o`, as defined by ECMA-048 in
+    """Removes ANSI escape sequences from `o`, as defined by ECMA-048 in
     http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
 
     # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
@@ -43,7 +42,6 @@ def strip_ansi(o: str) -> str:
     >>> strip_ansi('\\x1b[1m\\x1b[46m\\x1b[31mLorem dolor sit ipsum\\x1b[0m')
     'Lorem dolor sit ipsum'
     """
-
     # pattern = re.compile(r'/(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]/')
     pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
     stripped = pattern.sub('', o)
@@ -64,6 +62,7 @@ class JupyterKernel:
 
         self.heartbeat_interval = 10000  # 10 seconds
         self.heartbeat_callback = None
+        self.initialized = False
 
     async def initialize(self):
         await self.execute(r'%colors nocolor')
@@ -76,6 +75,7 @@ class JupyterKernel:
         for tool in self.tools_to_run:
             # logging.info(f'Tool initialized:\n{tool}')
             await self.execute(tool)
+        self.initialized = True
 
     async def _send_heartbeat(self):
         if not self.ws:
@@ -139,6 +139,7 @@ class JupyterKernel:
             await self._connect()
 
         msg_id = uuid4().hex
+        assert self.ws is not None
         self.ws.write_message(
             json_encode(
                 {
@@ -169,6 +170,7 @@ class JupyterKernel:
         async def wait_for_messages():
             execution_done = False
             while not execution_done:
+                assert self.ws is not None
                 msg = await self.ws.read_message()
                 msg = json_decode(msg)
                 msg_type = msg['msg_type']

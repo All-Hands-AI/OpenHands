@@ -1,3 +1,8 @@
+"""This module contains functions for building and managing the agnostic sandbox image.
+
+This WILL BE DEPRECATED when EventStreamRuntime is fully implemented and adopted.
+"""
+
 import tempfile
 
 import docker
@@ -5,9 +10,8 @@ import docker
 from opendevin.core.logger import opendevin_logger as logger
 
 
-def generate_dockerfile_content(base_image: str) -> str:
-    """
-    Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
+def generate_dockerfile(base_image: str) -> str:
+    """Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """
@@ -21,6 +25,7 @@ def generate_dockerfile_content(base_image: str) -> str:
         'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
         '        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
         '        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
+        '        rm Miniforge3.sh && \\\n'
         '        chmod -R g+w /opendevin/miniforge3 && \\\n'
         '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
         '    fi\n'
@@ -36,7 +41,8 @@ def _build_sandbox_image(
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            dockerfile_content = generate_dockerfile_content(base_image)
+            dockerfile_content = generate_dockerfile(base_image)
+
             logger.info(f'Building agnostic sandbox image: {target_image_name}')
             logger.info(
                 (
@@ -49,7 +55,9 @@ def _build_sandbox_image(
                 file.write(dockerfile_content)
 
             api_client = docker_client.api
-            build_logs = api_client.build(path=temp_dir, tag=target_image_name, rm=True, decode=True)
+            build_logs = api_client.build(
+                path=temp_dir, tag=target_image_name, rm=True, decode=True
+            )
 
             for log in build_logs:
                 if 'stream' in log:
@@ -69,12 +77,13 @@ def _build_sandbox_image(
 
 
 def _get_new_image_name(base_image: str) -> str:
+    prefix = 'od_sandbox'
     if ':' not in base_image:
         base_image = base_image + ':latest'
 
     [repo, tag] = base_image.split(':')
     repo = repo.replace('/', '___')
-    return f'od_sandbox:{repo}__{tag}'
+    return f'{prefix}:{repo}__{tag}'
 
 
 def get_od_sandbox_image(base_image: str, docker_client: docker.DockerClient) -> str:
