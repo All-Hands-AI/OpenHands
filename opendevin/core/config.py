@@ -656,7 +656,7 @@ def get_parser() -> argparse.ArgumentParser:
         '--llm-config',
         default=None,
         type=str,
-        help='The group of llm settings, e.g. "llama3" for [llm.llama3] section in the toml file. Overrides model if both are provided.',
+        help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
     )
     return parser
 
