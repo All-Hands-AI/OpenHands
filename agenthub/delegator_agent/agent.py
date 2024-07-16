@@ -14,8 +14,7 @@ class DelegatorAgent(Agent):
     current_delegate: str = ''
 
     def __init__(self, llm: LLM):
-        """
-        Initialize the Delegator Agent with an LLM
+        """Initialize the Delegator Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -23,8 +22,7 @@ class DelegatorAgent(Agent):
         super().__init__(llm)
 
     def step(self, state: State) -> Action:
-        """
-        Checks to see if current step is completed, returns AgentFinishAction if True.
+        """Checks to see if current step is completed, returns AgentFinishAction if True.
         Otherwise, delegates the task to the next agent in the pipeline.
 
         Parameters:
@@ -82,6 +80,3 @@ class DelegatorAgent(Agent):
                 )
         else:
             raise Exception('Invalid delegate state')
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

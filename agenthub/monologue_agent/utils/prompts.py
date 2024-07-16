@@ -35,14 +35,12 @@ Here are the possible actions:
   * `owner` - the owner of the repo to push to
   * `repo` - the name of the repo to push to
   * `branch` - the name of the branch to push
-* `recall` - recalls a past memory. Arguments:
-  * `query` - the query to search for
 * `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
   * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, browse, and push actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
@@ -92,15 +90,7 @@ INITIAL_THOUGHTS = [
     'It seems like I have some kind of short term memory.',
     'Each of my thoughts seems to be stored in a JSON array.',
     'It seems whatever I say next will be added as an object to the list.',
-    'But no one has perfect short-term memory. My list of thoughts will be summarized and condensed over time, losing information in the process.',
-    'Fortunately I have long term memory!',
-    'I can just perform a recall action, followed by the thing I want to remember. And then related thoughts just spill out!',
-    "Sometimes they're random thoughts that don't really have to do with what I wanted to remember. But usually they're exactly what I need!",
-    "Let's try it out!",
-    'RECALL what it is I want to do',
-    "Here's what I want to do: $TASK",
-    'How am I going to get there though?',
-    "Neat! And it looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
+    "It looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
     'RUN echo "hello world"',
     'hello world',
     'Cool! I bet I can write files too using the write action.',
@@ -130,8 +120,7 @@ INITIAL_THOUGHTS = [
 
 
 def get_summarize_monologue_prompt(thoughts: list[dict]):
-    """
-    Gets the prompt for summarizing the monologue
+    """Gets the prompt for summarizing the monologue
 
     Returns:
     - str: A formatted string with the current monologue within the prompt
@@ -146,8 +135,7 @@ def get_request_action_prompt(
     thoughts: list[dict],
     recent_events: list[dict],
 ):
-    """
-    Gets the action prompt formatted with appropriate values.
+    """Gets the action prompt formatted with appropriate values.
 
     Parameters:
     - task (str): The current task the agent is trying to accomplish
@@ -156,7 +144,6 @@ def get_request_action_prompt(
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
-
     hint = ''
     if len(recent_events) > 0:
         latest_event = recent_events[-1]
@@ -189,8 +176,7 @@ def get_request_action_prompt(
 
 
 def parse_action_response(orig_response: str) -> Action:
-    """
-    Parses a string to find an action within it
+    """Parses a string to find an action within it
 
     Parameters:
     - response (str): The string to be parsed
@@ -209,8 +195,7 @@ def parse_action_response(orig_response: str) -> Action:
 
 
 def parse_summary_response(response: str) -> list[dict]:
-    """
-    Parses a summary of the monologue
+    """Parses a summary of the monologue
 
     Parameters:
     - response (str): The response string to be parsed

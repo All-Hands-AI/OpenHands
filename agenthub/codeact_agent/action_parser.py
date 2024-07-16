@@ -12,13 +12,12 @@ from opendevin.events.action import (
 
 
 class CodeActResponseParser(ResponseParser):
-    """
-    Parser action:
-        - CmdRunAction(command) - bash command to run
-        - IPythonRunCellAction(code) - IPython code to run
-        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
-        - MessageAction(content) - Message action to run (e.g. ask for clarification)
-        - AgentFinishAction() - end the interaction
+    """Parser action:
+    - CmdRunAction(command) - bash command to run
+    - IPythonRunCellAction(code) - IPython code to run
+    - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
+    - MessageAction(content) - Message action to run (e.g. ask for clarification)
+    - AgentFinishAction() - end the interaction
     """
 
     def __init__(self):
@@ -38,6 +37,8 @@ class CodeActResponseParser(ResponseParser):
 
     def parse_response(self, response) -> str:
         action = response.choices[0].message.content
+        if action is None:
+            return ''
         for lang in ['bash', 'ipython', 'browse']:
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
@@ -51,9 +52,8 @@ class CodeActResponseParser(ResponseParser):
 
 
 class CodeActActionParserFinish(ActionParser):
-    """
-    Parser action:
-        - AgentFinishAction() - end the interaction
+    """Parser action:
+    - AgentFinishAction() - end the interaction
     """
 
     def __init__(
@@ -74,10 +74,9 @@ class CodeActActionParserFinish(ActionParser):
 
 
 class CodeActActionParserCmdRun(ActionParser):
-    """
-    Parser action:
-        - CmdRunAction(command) - bash command to run
-        - AgentFinishAction() - end the interaction
+    """Parser action:
+    - CmdRunAction(command) - bash command to run
+    - AgentFinishAction() - end the interaction
     """
 
     def __init__(
@@ -104,9 +103,8 @@ class CodeActActionParserCmdRun(ActionParser):
 
 
 class CodeActActionParserIPythonRunCell(ActionParser):
-    """
-    Parser action:
-        - IPythonRunCellAction(code) - IPython code to run
+    """Parser action:
+    - IPythonRunCellAction(code) - IPython code to run
     """
 
     def __init__(
@@ -135,9 +133,8 @@ class CodeActActionParserIPythonRunCell(ActionParser):
 
 
 class CodeActActionParserAgentDelegate(ActionParser):
-    """
-    Parser action:
-        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
+    """Parser action:
+    - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
     """
 
     def __init__(
@@ -162,9 +159,8 @@ class CodeActActionParserAgentDelegate(ActionParser):
 
 
 class CodeActActionParserMessage(ActionParser):
-    """
-    Parser action:
-        - MessageAction(content) - Message action to run (e.g. ask for clarification)
+    """Parser action:
+    - MessageAction(content) - Message action to run (e.g. ask for clarification)
     """
 
     def __init__(
