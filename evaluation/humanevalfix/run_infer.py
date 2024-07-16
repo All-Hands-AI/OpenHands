@@ -1,5 +1,4 @@
-"""
-Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in
+"""Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in
 "OctoPack: Instruction Tuning Code Large Language Models" (https://arxiv.org/abs/2308.07124).
 Please see https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py
 for the reference implementation used in the paper.

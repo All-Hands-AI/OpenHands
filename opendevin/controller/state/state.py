@@ -110,9 +110,7 @@ class State:
         # remove the restored data from the state if any
 
     def get_current_user_intent(self):
-        """
-        Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet.
-        """
+        """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
         for event in self.history.get_events(reverse=True):
