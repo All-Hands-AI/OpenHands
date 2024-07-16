@@ -90,7 +90,6 @@ class PluginMixin:
 
             for requirement in requirements:
                 # source bashrc file when plugin loads
-                # await self._source_bashrc_async()
                 await self._source_bashrc_async()
 
                 # copy over the files
@@ -114,7 +113,8 @@ class PluginMixin:
                     total_output = ''
                     for line in output:
                         line = line.rstrip()
-                        logger.info(f'>>> {line}')
+                        if 'Requirement already satisfied: ' not in line:
+                            logger.info(f'>>> {line}')
                         total_output += line + ' '
                     _exit_code = output.exit_code()
                     output.close()

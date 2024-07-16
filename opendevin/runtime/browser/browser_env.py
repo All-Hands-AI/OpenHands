@@ -47,10 +47,16 @@ class BrowserEnv:
         self.process: multiprocessing.Process | None = multiprocessing.Process(
             target=self.browser_process,
         )
-        # Give the browser process a higher priority
-        # This is a workaround for a potential issue where the browser process
-        # might not get enough resources and gets stuck
-        self.process.daemon = True  # set the process as a daemon
+
+        try:
+            self.original_cwd = os.getcwd()
+        except FileNotFoundError:
+            logger.warning(
+                'Current working directory does not exist. Using /tmp as fallback.'
+            )
+            self.original_cwd = '/tmp'
+            os.chdir('/tmp')
+
         if is_async:
             threading.Thread(target=self.init_browser).start()
         else:
@@ -69,7 +75,7 @@ class BrowserEnv:
         return html_text_converter
 
     def init_browser(self):
-        logger.info('Starting browser env...')
+        logger.debug('Starting browser env...')
         if self.process is not None:
             self.process.start()
         else:
@@ -80,7 +86,7 @@ class BrowserEnv:
 
     def browser_process(self):
         if self.eval_mode:
-            logger.info('Creating browser env for evaluation purpose.')
+            logger.debug('Creating browser env for evaluation purpose.')
             env = gym.make(self.browsergym_eval)
         else:
             env = gym.make(
@@ -94,19 +100,19 @@ class BrowserEnv:
         # EVAL only: save the goal into file for evaluation
         if self.eval_mode:
             rewards = []  # store rewards if in eval mode
-            logger.info(obs['goal'])
+            logger.debug(obs['goal'])
             with open(
                 os.path.join(self.eval_dir, 'goal.txt'), 'w', encoding='utf-8'
             ) as f:
                 f.write(obs['goal'])
-        logger.info('Browser env started.')
+        logger.debug('Browser env started.')
         while True:
             try:
                 if self.browser_side.poll(timeout=0.01):
                     unique_request_id, action_data = self.browser_side.recv()
                     # shutdown the browser environment
                     if unique_request_id == 'SHUTDOWN':
-                        logger.info('SHUTDOWN recv, shutting down browser env...')
+                        logger.debug('SHUTDOWN recv, shutting down browser env...')
                         env.close()
                         return
                     elif unique_request_id == 'IS_ALIVE':
@@ -132,7 +138,7 @@ class BrowserEnv:
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
             except KeyboardInterrupt:
-                logger.info('Browser env process interrupted by user.')
+                logger.debug('Browser env process interrupted by user.')
                 try:
                     env.close()
                 except Exception:
@@ -157,7 +163,7 @@ class BrowserEnv:
             response_id, _ = self.agent_side.recv()
             if response_id == 'ALIVE':
                 return True
-            logger.info(f'Browser env is not alive. Response ID: {response_id}')
+            logger.debug(f'Browser env is not alive. Response ID: {response_id}')
 
     def close(self):
         if self.process is None or not self.process.is_alive():

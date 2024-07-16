@@ -1,6 +1,7 @@
 import asyncio
 import atexit
 import json
+import logging
 import os
 import re
 import shlex
@@ -33,6 +34,8 @@ from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.async_utils import async_to_sync
 from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
+
+logger.setLevel(logging.DEBUG)
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -421,7 +424,6 @@ class DockerSSHBox(Sandbox):
                 chunk = await stream.read_out()
                 if chunk:
                     output += chunk.data
-                    # logger.debug(f'>>> {chunk.data!r}')  # Print the raw data
                 else:
                     break
 
@@ -734,7 +736,7 @@ class DockerSSHBox(Sandbox):
         await asyncio.sleep(1)
         await self._setup_user()
         await asyncio.sleep(1)
-        logger.info('Container restarted successfully.')
+        logger.info('Container startup successful.')
 
     async def _ssh_login(self):
         try:

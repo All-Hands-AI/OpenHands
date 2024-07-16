@@ -164,7 +164,8 @@ regenerate_with_llm() {
     launch_http_server
   fi
 
-  rm -rf $WORKSPACE_BASE/*
+  rm -rf $WORKSPACE_BASE
+  mkdir -p $WORKSPACE_BASE
   if [ -d "tests/integration/workspace/$test_name" ]; then
     cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
   fi
@@ -188,7 +189,6 @@ regenerate_with_llm() {
 
   mkdir -p tests/integration/mock/$agent/$test_name/
   mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
-
 }
 
 ##############################################################
@@ -202,7 +202,7 @@ if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
 fi
 
 rm -rf logs
-rm -rf $WORKSPACE_BASE/*
+rm -rf $WORKSPACE_BASE
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
@@ -221,7 +221,8 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     echo -e "\n\n\n\n========STEP 1: Running $test_name for $agent========\n\n\n\n"
-    rm -rf $WORKSPACE_BASE/*
+    rm -rf $WORKSPACE_BASE
+    mkdir -p $WORKSPACE_BASE
     if [ -d "tests/integration/workspace/$test_name" ]; then
       cp -r "tests/integration/workspace/$test_name"/* $WORKSPACE_BASE
     fi

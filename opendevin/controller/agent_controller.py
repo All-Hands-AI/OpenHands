@@ -21,8 +21,6 @@ from opendevin.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
-    BrowseInteractiveAction,
-    BrowseURLAction,
     ChangeAgentStateAction,
     CmdRunAction,
     IPythonRunCellAction,
@@ -34,7 +32,6 @@ from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
-    BrowserOutputObservation,
     CmdOutputObservation,
     ErrorObservation,
     Observation,
@@ -114,27 +111,12 @@ class AgentController:
             self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
-        if self._is_closing:
-            return
         self._is_closing = True
-
         if self.agent_task is not None:
             self.agent_task.cancel()
-            # try:
-            #     await self.agent_task
-            # except asyncio.CancelledError:
-            #     logger.info(f'AgentController task was cancelled for {self.id}')
-
         await self.set_agent_state_to(AgentState.STOPPED)
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         self._close_event.set()
-
-    async def close_event_loop(self):
-        """Gracefully close the event loop."""
-        await self.close()
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(loop.shutdown_default_executor())
-        loop.close()
 
     def update_state_before_step(self):
         self.state.iteration += 1
@@ -157,7 +139,7 @@ class AgentController:
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def _start_step_loop(self):
-        logger.info(f'[Agent Controller {self.id}] Starting `step` loop...')
+        logger.info(f'[Agent Controller `{self.id}`] Starting step loop...')
         try:
             while not self._is_closing:
                 try:
@@ -316,7 +298,7 @@ class AgentController:
             metrics=self.state.metrics,
         )
         logger.info(
-            f'[Agent Controller {self.id}]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
+            f'[Agent Controller `{self.id}`]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
         )
         self.delegate = AgentController(
             sid=self.id + '-delegate',
@@ -339,6 +321,7 @@ class AgentController:
                 f'[Agent Controller `{self.id}`] waiting for pending action: {self._pending_action}'
             )
             await asyncio.sleep(1)
+            return
 
         if self.delegate is not None:
             logger.debug(
@@ -428,45 +411,10 @@ class AgentController:
             elif asyncio.iscoroutinefunction(self.agent.step):
                 action = await self.agent.step(self.state)
             else:
-                logger.info(action, extra={'msg_type': 'ACTION'})
-                loop = asyncio.get_running_loop()
-                action = await loop.run_in_executor(None, self.agent.step, self.state)
-
-            if not isinstance(action, Action):
-                raise LLMResponseError(f'Unexpected response type: {type(action)}')
+                action = self.agent.step(self.state)
 
             if action is None:
                 raise LLMNoActionError('No action was returned')
-            elif isinstance(action, AgentFinishAction):
-                await self.set_agent_state_to(AgentState.FINISHED)
-                return
-            elif isinstance(action, AgentDelegateAction):
-                await self.start_delegate(action)
-                return
-            else:
-                logger.info(action, extra={'msg_type': 'ACTION'})
-
-            if not isinstance(action, NullAction):
-                if hasattr(action, 'runnable'):
-                    if self.state.confirmation_mode and (
-                        type(action) is CmdRunAction
-                        or type(action) is IPythonRunCellAction
-                    ):
-                        action.is_confirmed = (
-                            ActionConfirmationStatus.AWAITING_CONFIRMATION
-                        )
-                    self._pending_action = action
-
-                if (
-                    hasattr(action, 'is_confirmed')
-                    and action.is_confirmed
-                    == ActionConfirmationStatus.AWAITING_CONFIRMATION
-                ):
-                    await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-
-                # Add the action to the event stream only once
-                await self.event_stream.add_event(action, EventSource.AGENT)
-
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user and send the underlying exception to the LLM for self-correction
             await self.report_error(f'{e}')
@@ -479,31 +427,28 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
+        if action.runnable:
+            if self.state.confirmation_mode and (
+                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+            ):
+                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
+            self._pending_action = action
+
+        if not isinstance(action, NullAction):
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            await self.event_stream.add_event(action, EventSource.AGENT)
+
         await self.update_state_after_step()
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
             await self.set_agent_state_to(AgentState.ERROR)
-
-    async def run_action(self, action: Action) -> Observation:
-        if isinstance(action, BrowseURLAction):
-            # Fix: Remove the undefined 'content' variable
-            observation = BrowserOutputObservation(
-                content=f'<html><body>Placeholder content for {action.url}</body></html>',
-                url=action.url,
-                screenshot='',
-            )
-            await self.event_stream.add_event(observation, EventSource.AGENT)
-            # Fix: Return the observation instead of NullAction
-            return observation
-        elif isinstance(action, BrowseInteractiveAction):
-            return BrowserOutputObservation(
-                content='<html><body>Placeholder interactive content</body></html>',
-                url='https://example.com',
-                screenshot='',
-            )
-        else:
-            raise NotImplementedError(f'Action type {type(action)} not implemented')
 
     def get_state(self):
         return self.state
@@ -559,9 +504,6 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
-
-    async def wait_closed(self):
-        await self._close_event.wait()
 
     async def stop(self) -> None:
         if self.state.agent_state not in (

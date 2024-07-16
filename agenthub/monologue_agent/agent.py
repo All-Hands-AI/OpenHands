@@ -182,6 +182,7 @@ class MonologueAgent(Agent):
 
         action = self.response_parser.parse(resp)
         self.latest_action = action
+
         return action
 
     def reset(self) -> None:

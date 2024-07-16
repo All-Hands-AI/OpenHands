@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import shutil
@@ -18,8 +19,8 @@ from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.observation.delegate import AgentDelegateObservation
 from opendevin.llm.llm import LLM
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
@@ -47,16 +48,15 @@ print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
     os.getenv('DEFAULT_AGENT') == 'ManagerAgent',
     reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
-@pytest.mark.asyncio
-async def test_write_simple_script():
+def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     args = parse_arguments()
 
     # Create the agent
     agent = Agent.get_cls(args.agent_cls)(llm=LLM())
 
-    final_state: State | None = await run_agent_controller(
-        agent, task, exit_on_message=True
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
     )
     assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
@@ -95,8 +95,7 @@ async def test_write_simple_script():
     os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
-@pytest.mark.asyncio
-async def test_edits():
+def test_edits():
     args = parse_arguments()
     # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
@@ -112,20 +111,11 @@ async def test_edits():
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    final_state: State | None = await run_agent_controller(
-        agent, task, exit_on_message=True
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
     )
-
-    assert final_state is not None, 'Final state is None'
-
-    # Check if the agent has finished its task
     assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
-
-    if final_state.agent_state == AgentState.ERROR:
-        assert (
-            final_state.last_error is None
-        ), f'Unexpected error: {final_state.last_error}'
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
@@ -150,8 +140,7 @@ Enjoy!
     os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
-@pytest.mark.asyncio
-async def test_ipython():
+def test_ipython():
     args = parse_arguments()
 
     # Create the agent
@@ -159,8 +148,8 @@ async def test_ipython():
 
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
-    final_state: State | None = await run_agent_controller(
-        agent, task, exit_on_message=True
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
     )
     assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
@@ -185,8 +174,7 @@ async def test_ipython():
     os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='FIXME: local sandbox does not capture stderr',
 )
-@pytest.mark.asyncio
-async def test_simple_task_rejection():
+def test_simple_task_rejection():
     args = parse_arguments()
 
     # Create the agent
@@ -195,7 +183,7 @@ async def test_simple_task_rejection():
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_state: State | None = await run_agent_controller(agent, task)
+    final_state: State | None = asyncio.run(run_agent_controller(agent, task))
     assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
 
@@ -211,8 +199,7 @@ async def test_simple_task_rejection():
     os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
-@pytest.mark.asyncio
-async def test_ipython_module():
+def test_ipython_module():
     args = parse_arguments()
 
     # Create the agent
@@ -220,8 +207,8 @@ async def test_ipython_module():
 
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
-    final_state: State | None = await run_agent_controller(
-        agent, task, exit_on_message=True
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
     )
     assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
@@ -256,8 +243,7 @@ async def test_ipython_module():
     and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
-@pytest.mark.asyncio
-async def test_browse_internet(http_server):
+def test_browse_internet(http_server):
     args = parse_arguments()
 
     # Create the agent
@@ -265,8 +251,8 @@ async def test_browse_internet(http_server):
 
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
-    final_state: State | None = await run_agent_controller(
-        agent, task, exit_on_message=True
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, exit_on_message=True)
     )
     assert final_state.agent_state in [AgentState.STOPPED, AgentState.FINISHED]
     assert final_state.last_error is None
