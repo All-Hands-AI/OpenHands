@@ -1,7 +1,6 @@
 from dataclasses import asdict
 from datetime import datetime
 
-from opendevin.core.config import config
 from opendevin.events import Event, EventSource
 from opendevin.events.observation.observation import Observation
 
@@ -70,7 +69,7 @@ def event_to_dict(event: 'Event') -> dict:
     return d
 
 
-def event_to_memory(event: 'Event') -> dict:
+def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d = event_to_dict(event)
     d.pop('id', None)
     d.pop('cause', None)
@@ -79,17 +78,12 @@ def event_to_memory(event: 'Event') -> dict:
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
     if isinstance(event, Observation) and 'content' in d:
-        d['content'] = truncate_content(d['content'])
+        d['content'] = truncate_content(d['content'], max_message_chars)
     return d
 
 
-def truncate_content(content: str, max_chars: int = -1) -> str:
-    """
-    Truncate the middle of the observation content if it is too long.
-    """
-    if max_chars == -1:
-        max_chars = config.llm.max_message_chars
-
+def truncate_content(content: str, max_chars: int) -> str:
+    """Truncate the middle of the observation content if it is too long."""
     if len(content) <= max_chars:
         return content
 

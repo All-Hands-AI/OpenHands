@@ -18,8 +18,7 @@ class PlannerAgent(Agent):
     response_parser = MonologueResponseParser()
 
     def __init__(self, llm: LLM):
-        """
-        Initialize the Planner Agent with an LLM
+        """Initialize the Planner Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -27,8 +26,7 @@ class PlannerAgent(Agent):
         super().__init__(llm)
 
     def step(self, state: State) -> Action:
-        """
-        Checks to see if current step is completed, returns AgentFinishAction if True.
+        """Checks to see if current step is completed, returns AgentFinishAction if True.
         Otherwise, creates a plan prompt and sends to model for inference, returning the result as the next action.
 
         Parameters:
@@ -38,7 +36,6 @@ class PlannerAgent(Agent):
         - AgentFinishAction: If the last state was 'completed', 'verified', or 'abandoned'
         - Action: The next action to take based on llm response
         """
-
         if state.root_task.state in [
             'completed',
             'verified',
@@ -49,6 +46,3 @@ class PlannerAgent(Agent):
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         return self.response_parser.parse(resp)
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

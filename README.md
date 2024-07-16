@@ -45,7 +45,7 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ⚡ Getting Started
-The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
+OpenDevin works best with Docker version 26.0.0+ (Docker Desktop 4.31.0+).
 You must be using Linux, Mac OS, or WSL on Windows.
 
 To start OpenDevin in a docker container, run the following commands in your terminal:
@@ -75,8 +75,10 @@ docker run -it \
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
-
 OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
+
+Upon opening OpenDevin, you must select the appropriate `Model` and enter the `API Key` within the settings that should pop up automatically. These can be set at any time by selecting
+the `Settings` button (gear icon) in the UI. If the required `Model` does not exist in the list, you can manually enter it in the text box.
 
 For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
 

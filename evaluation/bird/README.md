@@ -21,12 +21,12 @@ ssh_hostname = "localhost"
 enable_auto_lint = true
 
 # TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
+[llm.eval_gpt4_1106_preview]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
 temperature = 0.0
 
-[eval_some_openai_compatible_model]
+[llm.eval_some_openai_compatible_model]
 model = "openai/MODEL_NAME"
 base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
@@ -143,7 +143,6 @@ For each problem, OpenDevin is given a set number of iterations to fix the faili
         "action": "run",
         "args": {
           "command": "python3 0.py",
-          "background": false,
           "thought": "The Python code with the SQL query has been written to the file `0.py`. Now, let's run the Python script to execute the SQL query and get the result."
         }
       },

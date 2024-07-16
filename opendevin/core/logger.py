@@ -32,7 +32,9 @@ ColorType = Literal[
 
 LOG_COLORS: Mapping[str, ColorType] = {
     'ACTION': 'green',
+    'USER_ACTION': 'light_red',
     'OBSERVATION': 'yellow',
+    'USER_OBSERVATION': 'light_green',
     'DETAIL': 'cyan',
     'ERROR': 'red',
     'PLAN': 'light_magenta',
@@ -41,7 +43,12 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
-        msg_type = record.__dict__.get('msg_type', None)
+        msg_type = record.__dict__.get('msg_type')
+        event_source = record.__dict__.get('event_source')
+        if event_source:
+            new_msg_type = f'{event_source.upper()}_{msg_type}'
+            if new_msg_type in LOG_COLORS:
+                msg_type = new_msg_type
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])
@@ -50,7 +57,7 @@ class ColoredFormatter(logging.Formatter):
             )
             name_str = colored(record.name, LOG_COLORS[msg_type])
             level_str = colored(record.levelname, LOG_COLORS[msg_type])
-            if msg_type in ['ERROR']:
+            if msg_type in ['ERROR'] or config.debug:
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
@@ -108,9 +115,7 @@ class SensitiveDataFilter(logging.Filter):
 
 
 def get_console_handler():
-    """
-    Returns a console handler for logging.
-    """
+    """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     if config.debug:
@@ -120,9 +125,7 @@ def get_console_handler():
 
 
 def get_file_handler(log_dir=None):
-    """
-    Returns a file handler for logging.
-    """
+    """Returns a file handler for logging."""
     log_dir = os.path.join(os.getcwd(), 'logs') if log_dir is None else log_dir
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
@@ -139,8 +142,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
-    """
-    Logs uncaught exceptions along with the traceback.
+    """Logs uncaught exceptions along with the traceback.
 
     Args:
         ex_cls (type): The type of the exception.
@@ -157,10 +159,9 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
+opendevin_logger.setLevel(logging.INFO)
 if config.debug:
     opendevin_logger.setLevel(logging.DEBUG)
-else:
-    opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
@@ -177,13 +178,10 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 
 
 class LlmFileHandler(logging.FileHandler):
-    """
-    # LLM prompt and response logging
-    """
+    """# LLM prompt and response logging"""
 
     def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
-        """
-        Initializes an instance of LlmFileHandler.
+        """Initializes an instance of LlmFileHandler.
 
         Args:
             filename (str): The name of the log file.
@@ -214,8 +212,7 @@ class LlmFileHandler(logging.FileHandler):
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
-        """
-        Emits a log record.
+        """Emits a log record.
 
         Args:
             record (logging.LogRecord): The log record to emit.

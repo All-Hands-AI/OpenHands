@@ -9,8 +9,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
-from opendevin.runtime import DockerSSHBox
-from opendevin.runtime.e2b.runtime import E2BRuntime
+from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
 
@@ -54,22 +53,17 @@ class AgentSession:
             end_state.save_to_session(self.sid)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            await self.runtime.close()
         self._closed = True
 
     async def _create_runtime(self):
         if self.runtime is not None:
             raise Exception('Runtime already created')
-        if config.runtime == 'server':
-            logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, self.sid)
-        elif config.runtime == 'e2b':
-            logger.info('Using E2B runtime')
-            self.runtime = E2BRuntime(self.event_stream, self.sid)
-        else:
-            raise Exception(
-                f'Runtime not defined in config, or is invalid: {config.runtime}'
-            )
+
+        logger.info(f'Using runtime: {config.runtime}')
+        runtime_cls = get_runtime_cls(config.runtime)
+        self.runtime = runtime_cls(self.event_stream, self.sid)
+        await self.runtime.ainit()
 
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
@@ -86,17 +80,31 @@ class AgentSession:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = args.get(ConfigType.AGENT, config.agent.name)
-        model = args.get(ConfigType.LLM_MODEL, config.llm.model)
-        api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
-        api_base = config.llm.base_url
+        agent_cls = args.get(ConfigType.AGENT, config.default_agent)
+        confirmation_mode = args.get(
+            ConfigType.CONFIRMATION_MODE, config.confirmation_mode
+        )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
 
-        logger.info(f'Creating agent {agent_cls} using LLM {model}')
-        llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        # override default LLM config
+        default_llm_config = config.get_llm_config()
+        default_llm_config.model = args.get(
+            ConfigType.LLM_MODEL, default_llm_config.model
+        )
+        default_llm_config.api_key = args.get(
+            ConfigType.LLM_API_KEY, default_llm_config.api_key
+        )
+
+        # TODO: override other LLM config & agent config groups (#2075)
+
+        llm = LLM(llm_config=config.get_llm_config_from_agent(agent_cls))
         agent = Agent.get_cls(agent_cls)(llm)
+        logger.info(f'Creating agent {agent.name} using LLM {llm}')
         if isinstance(agent, CodeActAgent):
-            if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
+            if not self.runtime or not (
+                isinstance(self.runtime, ServerRuntime)
+                and isinstance(self.runtime.sandbox, DockerSSHBox)
+            ):
                 logger.warning(
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
                     ' LocalBox will not work properly.'
@@ -109,6 +117,7 @@ class AgentSession:
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
+            confirmation_mode=confirmation_mode,
         )
         try:
             agent_state = State.restore_from_session(self.sid)

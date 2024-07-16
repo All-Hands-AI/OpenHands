@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 
@@ -25,19 +24,9 @@ from opendevin.core.config import config, get_llm_config_arg, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
-
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -176,9 +165,7 @@ def process_instance(
     # Create the agent
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
 
-    workspace_mount_path = os.path.join(
-        metadata.config.workspace_mount_path, '_eval_workspace'
-    )
+    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
@@ -312,16 +299,19 @@ IMPORTANT TIPS:
 
     metrics = state.metrics.get() if state.metrics else None
 
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
+
     # Save the output
     output = {
         'instance_id': instance.instance_id,
         'swe_instance': instance.to_dict(),  # SWE Bench specific
         'instruction': instruction,
         'git_patch': git_patch,  # SWE Bench specific
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'metadata': metadata.model_dump(),
+        'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,
         'test_result': test_result,
@@ -358,6 +348,8 @@ if __name__ == '__main__':
 
     id_column = 'instance_id'
     llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
+    if args.llm_config and llm_config is None:
+        raise ValueError(f'Could not find LLM config {args.llm_config}')
     logger.info(f'Config for evaluation: {config}')
 
     details = {}
@@ -371,6 +363,7 @@ if __name__ == '__main__':
         llm_config,
         'swe-bench-lite',
         args.agent_cls,
+        args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
         details=details,

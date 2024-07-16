@@ -11,9 +11,8 @@ from opendevin.events.action import (
 
 
 class CodeActSWEActionParserFinish(ActionParser):
-    """
-    Parser action:
-        - AgentFinishAction() - end the interaction
+    """Parser action:
+    - AgentFinishAction() - end the interaction
     """
 
     def __init__(
@@ -34,10 +33,9 @@ class CodeActSWEActionParserFinish(ActionParser):
 
 
 class CodeActSWEActionParserCmdRun(ActionParser):
-    """
-    Parser action:
-        - CmdRunAction(command) - bash command to run
-        - AgentFinishAction() - end the interaction
+    """Parser action:
+    - CmdRunAction(command) - bash command to run
+    - AgentFinishAction() - end the interaction
     """
 
     def __init__(
@@ -64,9 +62,8 @@ class CodeActSWEActionParserCmdRun(ActionParser):
 
 
 class CodeActSWEActionParserIPythonRunCell(ActionParser):
-    """
-    Parser action:
-        - IPythonRunCellAction(code) - IPython code to run
+    """Parser action:
+    - IPythonRunCellAction(code) - IPython code to run
     """
 
     def __init__(
@@ -95,9 +92,8 @@ class CodeActSWEActionParserIPythonRunCell(ActionParser):
 
 
 class CodeActSWEActionParserMessage(ActionParser):
-    """
-    Parser action:
-        - MessageAction(content) - Message action to run (e.g. ask for clarification)
+    """Parser action:
+    - MessageAction(content) - Message action to run (e.g. ask for clarification)
     """
 
     def __init__(

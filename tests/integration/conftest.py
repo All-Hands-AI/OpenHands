@@ -42,14 +42,15 @@ def get_log_id(prompt_log_name):
 
 
 def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Apply the mock prompt, and find mock response based on id.
+    """Apply the mock prompt, and find mock response based on id.
     If there is no matching response file, return None.
 
     Note: this function blindly replaces existing prompt file with the given
     input without checking the contents.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     try:
@@ -65,8 +66,7 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
 
 
 def get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Find mock response based on prompt. Prompts are stored under nested
+    """Find mock response based on prompt. Prompts are stored under nested
     folders under mock folder. If prompt_{id}.log matches,
     then the mock response we're looking for is at response_{id}.log.
 
@@ -82,7 +82,9 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     makes test code harder to understand.
     """
     prompt = filter_out_symbols(messages)
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     # Open the prompt file and compare its contents
@@ -130,7 +132,11 @@ def mock_user_response(*args, test_name, **kwargs):
     STDIN input for the agent to read.
     """
     user_response_file = os.path.join(
-        script_dir, 'mock', os.environ.get('AGENT'), test_name, 'user_responses.log'
+        script_dir,
+        'mock',
+        os.environ.get('DEFAULT_AGENT'),
+        test_name,
+        'user_responses.log',
     )
     if not os.path.exists(user_response_file):
         return ''
