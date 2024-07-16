@@ -23,16 +23,12 @@ def parse_response(orig_response: str) -> Action:
 
 
 def to_json(obj, **kwargs):
-    """
-    Serialize an object to str format
-    """
+    """Serialize an object to str format"""
     return json.dumps(obj, **kwargs)
 
 
 def history_to_json(history: ShortTermHistory, max_events=20, **kwargs):
-    """
-    Serialize and simplify history to str format
-    """
+    """Serialize and simplify history to str format"""
     # TODO: get agent specific llm config
     llm_config = config.get_llm_config()
     max_message_chars = llm_config.max_message_chars
@@ -79,6 +75,3 @@ class MicroAgent(Agent):
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

@@ -99,8 +99,7 @@ class BrowsingAgent(Agent):
         self,
         llm: LLM,
     ) -> None:
-        """
-        Initializes a new instance of the BrowsingAgent class.
+        """Initializes a new instance of the BrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -120,16 +119,13 @@ class BrowsingAgent(Agent):
         self.reset()
 
     def reset(self) -> None:
-        """
-        Resets the Browsing Agent.
-        """
+        """Resets the Browsing Agent."""
         super().reset()
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
     def step(self, state: State) -> Action:
-        """
-        Performs one step using the Browsing Agent.
+        """Performs one step using the Browsing Agent.
         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
 
         Parameters:
@@ -213,6 +209,3 @@ class BrowsingAgent(Agent):
             stop=[')```', ')\n```'],
         )
         return self.response_parser.parse(response)
-
-    def search_memory(self, query: str) -> list[str]:
-        raise NotImplementedError('Implement this abstract method')
