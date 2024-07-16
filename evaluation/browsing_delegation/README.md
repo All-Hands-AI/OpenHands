@@ -66,12 +66,3 @@ to `CodeActAgent`.
 `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
-
-## View Result Summary
-
-If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
-
-```bash
-poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_report_json_file>
-# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/report.json
-```
