@@ -35,8 +35,7 @@ class Agent(ABC):
 
     @property
     def complete(self) -> bool:
-        """
-        Indicates whether the current instruction execution is complete.
+        """Indicates whether the current instruction execution is complete.
 
         Returns:
         - complete (bool): True if execution is complete; False otherwise.
@@ -45,15 +44,13 @@ class Agent(ABC):
 
     @abstractmethod
     def step(self, state: 'State') -> 'Action':
-        """
-        Starts the execution of the assigned instruction. This method should
+        """Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """
         pass
 
     def reset(self) -> None:
-        """
-        Resets the agent's execution status and clears the history. This method can be used
+        """Resets the agent's execution status and clears the history. This method can be used
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
@@ -66,8 +63,7 @@ class Agent(ABC):
 
     @classmethod
     def register(cls, name: str, agent_cls: Type['Agent']):
-        """
-        Registers an agent class in the registry.
+        """Registers an agent class in the registry.
 
         Parameters:
         - name (str): The name to register the class under.
@@ -82,8 +78,7 @@ class Agent(ABC):
 
     @classmethod
     def get_cls(cls, name: str) -> Type['Agent']:
-        """
-        Retrieves an agent class from the registry.
+        """Retrieves an agent class from the registry.
 
         Parameters:
         - name (str): The name of the class to retrieve
@@ -100,8 +95,7 @@ class Agent(ABC):
 
     @classmethod
     def list_agents(cls) -> list[str]:
-        """
-        Retrieves the list of all agent names from the registry.
+        """Retrieves the list of all agent names from the registry.
 
         Raises:
         - AgentNotRegisteredError: If no agent is registered

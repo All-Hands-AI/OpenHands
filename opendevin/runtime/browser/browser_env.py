@@ -177,7 +177,6 @@ class BrowserEnv:
         image: np.ndarray | Image.Image, add_data_prefix: bool = False
     ):
         """Convert a numpy array to a base64 encoded png image url."""
-
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)
         if image.mode in ('RGBA', 'LA'):
@@ -197,7 +196,6 @@ class BrowserEnv:
         image: np.ndarray | Image.Image, add_data_prefix: bool = False
     ):
         """Convert a numpy array to a base64 encoded jpeg image url."""
-
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)
         if image.mode in ('RGBA', 'LA'):

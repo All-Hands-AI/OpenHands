@@ -110,9 +110,7 @@ class State:
         # remove the restored data from the state if any
 
     def get_current_user_intent(self):
-        """
-        Returns the latest user message that appears after a FinishAction, or the first (the task) if nothing was finished yet.
-        """
+        """Returns the latest user message that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
         for event in self.history.get_events(reverse=True):
             if isinstance(event, MessageAction) and event.source == 'user':

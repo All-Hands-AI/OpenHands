@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class ErrorObservation(Observation):
-    """
-    This data class represents an error encountered by the agent.
-    """
+    """This data class represents an error encountered by the agent."""
 
     observation: str = ObservationType.ERROR
 

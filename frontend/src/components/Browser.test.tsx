@@ -1,10 +1,11 @@
 import React from "react";
+import { screen } from "@testing-library/react";
 import Browser from "./Browser";
 import { renderWithProviders } from "../../test-utils";
 
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
-    const { getByText } = renderWithProviders(<Browser />, {
+    renderWithProviders(<Browser />, {
       preloadedState: {
         browser: {
           url: "https://example.com",
@@ -14,11 +15,11 @@ describe("Browser", () => {
     });
 
     // i18n empty message key
-    expect(getByText(/BROWSER\$EMPTY_MESSAGE/i)).toBeInTheDocument();
+    expect(screen.getByText("BROWSER$EMPTY_MESSAGE")).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {
-    const { getByText, getByAltText } = renderWithProviders(<Browser />, {
+    renderWithProviders(<Browser />, {
       preloadedState: {
         browser: {
           url: "https://example.com",
@@ -28,7 +29,7 @@ describe("Browser", () => {
       },
     });
 
-    expect(getByText("https://example.com")).toBeInTheDocument();
-    expect(getByAltText(/browser screenshot/i)).toBeInTheDocument();
+    expect(screen.getByText("https://example.com")).toBeInTheDocument();
+    expect(screen.getByAltText(/browser screenshot/i)).toBeInTheDocument();
   });
 });
