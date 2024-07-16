@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 from typing import TypedDict, Union
 
 from opendevin.controller.agent import Agent
@@ -28,6 +27,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
+from opendevin.runtime.utils.async_utils import async_to_sync
 
 """
 FIXME: There are a few problems this surfaced
@@ -78,18 +78,18 @@ class DummyAgent(Agent):
             },
             {
                 'action': FileWriteAction(
-                    content='echo "Hello, World!"', path='workspace/hello.sh'
+                    content='echo "Hello, World!"', path='hello.sh'
                 ),
                 'observations': [
-                    FileWriteObservation(content='', path='workspace/hello.sh')
+                    FileWriteObservation(
+                        content='echo "Hello, World!"', path='hello.sh'
+                    )
                 ],
             },
             {
-                'action': FileReadAction(path='workspace/hello.sh'),
+                'action': FileReadAction(path='hello.sh'),
                 'observations': [
-                    FileReadObservation(
-                        'echo "Hello, World!"\n', path='workspace/hello.sh'
-                    )
+                    FileReadObservation('echo "Hello, World!"\n', path='hello.sh')
                 ],
             },
             {
@@ -98,7 +98,7 @@ class DummyAgent(Agent):
                     CmdOutputObservation(
                         'bash: hello.sh: No such file or directory',
                         command_id=-1,
-                        command='bash hello.sh',
+                        command='bash workspace/hello.sh',
                         exit_code=127,
                     )
                 ],
@@ -129,8 +129,9 @@ class DummyAgent(Agent):
             },
         ]
 
-    def step(self, state: State) -> Action:
-        return asyncio.run(self.async_step(state))
+    @async_to_sync
+    def step(self, state: State):
+        return self.async_step(state)
 
     async def async_step(self, state: State) -> Action:
         await asyncio.sleep(0.1)
@@ -156,9 +157,6 @@ class DummyAgent(Agent):
             # Ensure the task_id doesn't start with a dot
             if action.task_id.startswith('.'):
                 action.task_id = action.task_id[1:]
-        elif isinstance(action, (FileWriteAction, FileReadAction)):
-            working_directory = await self.get_working_directory(state)
-            action.path = str(Path(working_directory) / Path(action.path).name)
         elif isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
             try:
                 return self.simulate_browser_action(action)

@@ -414,6 +414,11 @@ class AgentController:
 
             if action is None:
                 raise LLMNoActionError('No action was returned')
+
+            if asyncio.iscoroutine(action):
+                action = await action  # self.agent.step(self.state)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user and send the underlying exception to the LLM for self-correction
             await self.report_error(f'{e}')
@@ -426,7 +431,7 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
-        if action.runnable:
+        if hasattr(action, 'runnable') and action.runnable:
             if self.state.confirmation_mode and (
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
@@ -440,7 +445,9 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            logger.info(action, extra={'msg_type': 'ACTION'})
+            # if asyncio.iscoroutine(action):
+            #     action = await action  # self.agent.step(self.state)
+            # logger.info(action, extra={'msg_type': 'ACTION'})
             await self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()

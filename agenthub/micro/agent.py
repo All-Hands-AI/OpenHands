@@ -1,3 +1,4 @@
+import asyncio
 from typing import Union
 
 from jinja2 import BaseLoader, Environment
@@ -12,6 +13,7 @@ from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.history import ShortTermHistory
+from opendevin.runtime.utils.async_utils import async_to_sync
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -70,7 +72,11 @@ class MicroAgent(Agent):
         self.delegates = all_microagents.copy()
         del self.delegates[self.agent_definition['name']]
 
-    def step(self, state: State) -> Action:
+    @async_to_sync
+    def step(self, state: State):
+        return self.async_step(state)
+
+    async def async_step(self, state: State) -> Action:
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
@@ -82,10 +88,10 @@ class MicroAgent(Agent):
         messages = [{'content': prompt, 'role': 'user'}]
 
         # If self.llm.completion is async
-        # if asyncio.iscoroutinefunction(self.llm.async_completion):
-        #     resp = await self.llm.async_completion(messages=messages)
-        # else:
-        resp = self.llm.completion(messages=messages)
+        if asyncio.iscoroutinefunction(self.llm.async_completion):
+            resp = await self.llm.async_completion(messages=messages)
+        else:
+            resp = self.llm.completion(messages=messages)
 
         # Handle both real responses
         if isinstance(resp, dict) and 'choices' in resp:

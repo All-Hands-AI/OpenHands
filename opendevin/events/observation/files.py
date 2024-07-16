@@ -22,6 +22,7 @@ class FileWriteObservation(Observation):
     """This data class represents a file write operation"""
 
     path: str
+    content: str
     observation: str = ObservationType.WRITE
 
     @property
