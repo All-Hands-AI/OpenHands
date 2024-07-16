@@ -231,7 +231,7 @@ class CodeActAgent(Agent):
         if len(state.history.get_events_as_list()) == 1:
             query = latest_user_message['content']
             relevant_files = ', '.join(
-                find_relevant_files(query, config.workspace_base)
+                find_relevant_files(query, config.workspace_mount_path)
             )
             if relevant_files:
                 messages.append(

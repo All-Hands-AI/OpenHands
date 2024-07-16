@@ -6,6 +6,30 @@ from pathspec.patterns import GitWildMatchPattern
 from scipy.spatial.distance import cosine
 from sentence_transformers import SentenceTransformer
 
+default_exclude = {
+    '.git',
+    '.DS_Store',
+    '.svn',
+    '.hg',
+    '.idea',
+    '.vscode',
+    '.settings',
+    '.pytest_cache',
+    '__pycache__',
+    'node_modules',
+    'vendor',
+    'build',
+    'dist',
+    'bin',
+    'logs',
+    'log',
+    'tmp',
+    'temp',
+    'coverage',
+    'venv',
+    'env',
+}
+
 
 def list_files(full_path: str, entries: Optional[List[str]] = None) -> List[str]:
     # Check if .gitignore exists
@@ -16,29 +40,6 @@ def list_files(full_path: str, entries: Optional[List[str]] = None) -> List[str]
             spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
     else:
         # Fallback to default exclude list if .gitignore doesn't exist
-        default_exclude = [
-            '.git',
-            '.DS_Store',
-            '.svn',
-            '.hg',
-            '.idea',
-            '.vscode',
-            '.settings',
-            '.pytest_cache',
-            '__pycache__',
-            'node_modules',
-            'vendor',
-            'build',
-            'dist',
-            'bin',
-            'logs',
-            'log',
-            'tmp',
-            'temp',
-            'coverage',
-            'venv',
-            'env',
-        ]
         spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
 
     if not entries:
@@ -76,33 +77,41 @@ def list_files(full_path: str, entries: Optional[List[str]] = None) -> List[str]
     return sorted_entries
 
 
-def find_relevant_files(path: str, query: str, top_n: int = 5):
+def find_relevant_files(query: str, path: str, top_n: int = 5):
     if os.listdir(path) == []:
+        print('Empty workspace')
         return []
-
+    cwd = os.getcwd()
+    os.chdir(path)
     model = SentenceTransformer('all-MiniLM-L6-v2')
 
     code_embeddings = {}
-    for root, _, files in os.walk(path):
+    for root, dirs, files in os.walk('.', topdown=True):
+        dirs[:] = [d for d in dirs if d not in default_exclude]
         for file_name in files:
-            if not file_name.endswith('.py'):
-                continue
             full_path = os.path.join(root, file_name)
-            with open(full_path, 'r') as file:
-                code_content = file.read()
-                print(f'Generating embedding for {full_path}')
-                embedding = model.encode(code_content)
-                code_embeddings[full_path] = embedding
+            try:
+                with open(full_path, 'r') as file:
+                    code_content = file.read()
+                    print(f'Generating embedding for {full_path}')
+                    embedding = model.encode(code_content)
+                    code_embeddings[full_path] = embedding
+            except Exception as e:
+                print(f'Error reading {full_path}: {e}')
+    os.chdir(cwd)
     query_embedding = model.encode(query)
     similarities = {}
     for file_name, embedding in code_embeddings.items():
         similarity = 1 - cosine(query_embedding, embedding)
         similarities[file_name] = similarity
-    sorted_files = sorted(similarities.items(), key=lambda item: item[1], reverse=True)
-    return [file for file, score in sorted_files[:top_n] if score > 0.2]
+    sorted_items = sorted(similarities.items(), key=lambda item: item[1], reverse=True)
+    sorted_files = [file for file, score in sorted_items[:top_n] if score > 0.2]
+    if not sorted_files and sorted_items:
+        return [sorted_items[0][0]]
+    return sorted_files
 
 
 if __name__ == '__main__':
     query = 'enhance chromadb'
-    relevant_files = find_relevant_files('opendevin', query)
+    relevant_files = find_relevant_files(query, 'opendevin')
     print(f"Relevant files: {', '.join(relevant_files)}")
