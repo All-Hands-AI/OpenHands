@@ -11,7 +11,7 @@ import tempfile
 import time
 import uuid
 from glob import glob
-from typing import Any, Dict, Tuple, Union  # type: ignore[unused-import]
+from typing import Any, Dict, Optional, Tuple, Union  # type: ignore[unused-import]
 
 import aiodocker
 import docker
@@ -234,7 +234,7 @@ class DockerSSHBox(Sandbox):
         workspace_mount_path: str,
         sandbox_workspace_dir: str,
         cache_dir: str,
-        use_host_network: bool,
+        use_host_network: Optional[bool],
         run_as_devin: bool,
         ssh_hostname: str = 'host.docker.internal',
         ssh_password: str | None = None,
@@ -242,22 +242,26 @@ class DockerSSHBox(Sandbox):
         sid: str | None = None,
     ):
         if not hasattr(self, 'initialized'):
-            super().__init__()
-            self.sid = sid
+            super().__init__(config)
             self.initialized = False
             self.ssh = None
             self._sshbox_init_complete = asyncio.Event()
-            self.initialize_plugins: bool = config.initialize_plugins
 
-            self.config = config
-            self.workspace_mount_path = workspace_mount_path
-            self.sandbox_workspace_dir = sandbox_workspace_dir
             self.cache_dir = cache_dir
-            self.use_host_network = use_host_network
+            self.config = config
+            self.initialize_plugins: bool = config.initialize_plugins
+            self.persist_sandbox = persist_sandbox
             self.run_as_devin = run_as_devin
+            self.sandbox_workspace_dir = sandbox_workspace_dir
+            self.ssh_hostname = ssh_hostname
+            self.ssh_port = ssh_port
+            self.sid = sid
+            self.timeout = config.timeout
+            self.use_host_network = use_host_network
+            self.workspace_mount_path = workspace_mount_path
 
-            self.timeout = timeout
-            if config.persist_sandbox:
+            # set up random user password
+            if self.persist_sandbox:
                 if not self.run_as_devin:
                     raise RuntimeError(
                         'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
@@ -266,28 +270,28 @@ class DockerSSHBox(Sandbox):
             else:
                 self.instance_id = (sid or '') + str(uuid.uuid4())
 
-            if config.persist_sandbox:
-                if not config.ssh_password:
+            if self.persist_sandbox:
+                if not ssh_password:
                     raise RuntimeError(
                         'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                     )
-                self._ssh_password = config.ssh_password
-                self._ssh_port = config.ssh_port
+                self._ssh_password = ssh_password
+                self._ssh_port = ssh_port
             else:
                 self._ssh_password = str(uuid.uuid4())
                 self._ssh_port = find_available_tcp_port()
 
             self.is_initial_session = True
 
-            self.container_image = container_image or config.sandbox.container_image
+            self.container_image = config.container_image
             self.container_name = self.container_name_prefix + self.instance_id
 
             # Initialize _env with SANDBOX_ENV_ prefixed variables
             self._env = {
                 k[12:]: v for k, v in os.environ.items() if k.startswith('SANDBOX_ENV_')
             }
-            if isinstance(config.sandbox.env, dict):
-                self._env.update(config.sandbox.env)
+            if isinstance(config.env, dict):
+                self._env.update(config.env)
 
             self._cleanup_done = False
             atexit.register(self.sync_cleanup)
@@ -366,6 +370,7 @@ class DockerSSHBox(Sandbox):
         return self.add_to_env_async(key, value)
 
     async def add_to_env_async(self, key: str, value: str):
+        assert self.ssh is not None, 'SSH session is not initialized'
         formatted_value = self.format_env_value(value)
 
         # Set the environment variable in the SSH session
@@ -464,7 +469,7 @@ class DockerSSHBox(Sandbox):
                 self.container_name
             )
             if existing_container:
-                if config.persist_sandbox and not self.is_initial_session:
+                if self.persist_sandbox and not self.is_initial_session:
                     logger.info('Using existing Docker container')
                     self.container = existing_container
                     await self.start_docker_container()
@@ -498,6 +503,7 @@ class DockerSSHBox(Sandbox):
 
     async def _setup_environment(self):
         try:
+            assert self.ssh is not None, 'SSH session is not initialized'
             logger.info('Setting up sandbox vars')
             for key, value in self._env.items():
                 if key.startswith('SANDBOX_ENV_'):
@@ -519,7 +525,6 @@ class DockerSSHBox(Sandbox):
             logger.exception(f'Error during initialization: {e}')
             raise e
         logger.info('Environment setup complete')
-
 
     async def _setup_user(self):
         logger.info('Setting up user')
@@ -691,7 +696,7 @@ class DockerSSHBox(Sandbox):
             logger.error(
                 f'SSH session failed, attempting to restart container.\nError: {e}'
             )
-            if not config.persist_sandbox:
+            if not self.persist_sandbox:
                 await self.remove_docker_container()
                 await self.restart_container()
             raise
@@ -738,6 +743,7 @@ class DockerSSHBox(Sandbox):
 
     async def start_ssh_session(self):
         logger.info('Starting SSH session')
+        assert self.ssh is not None, 'SSH session is not initialized'
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.send_line("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
@@ -760,7 +766,7 @@ class DockerSSHBox(Sandbox):
             if not hasattr(self, '_ssh_debug_logged'):
                 hostname = self.ssh_hostname
                 username = 'opendevin' if self.run_as_devin else 'root'
-                if config.persist_sandbox:
+                if self.persist_sandbox:
                     password_msg = 'using your SSH password'
                 else:
                     password_msg = f"using the password '{self._ssh_password}'"
@@ -776,7 +782,9 @@ class DockerSSHBox(Sandbox):
                 f"Attempting SSH login to {self.ssh_hostname}:{self._ssh_port} as {'opendevin' if self.run_as_devin else 'root'}"
             )
 
-            login_timeout = max(self.config.timeout, 20) if hasattr(self, 'config.timeout') else 60
+            login_timeout = (
+                max(self.config.timeout, 20) if hasattr(self, 'config.timeout') else 60
+            )
 
             logger.info(' -> Creating pxssh instance')
             self.ssh = pxssh.pxssh(
@@ -1034,7 +1042,7 @@ class DockerSSHBox(Sandbox):
         except DockerError:
             pass
 
-    def _create_host_config(self, use_host_network: bool) -> Dict[str, Any]:
+    def _create_host_config(self, use_host_network: Optional[bool]) -> Dict[str, Any]:
         host_config: Dict[str, Any] = {
             'Binds': [
                 f'{host_path}:{container_path}:rw'
@@ -1244,26 +1252,6 @@ class DockerSSHBox(Sandbox):
             raise RuntimeError('Failed to get working directory')
         return str(result).strip()
 
-    @property
-    def user_id(self):
-        return config.sandbox.user_id
-
-    @property
-    def run_as_devin(self):
-        return config.run_as_devin
-
-    @property
-    def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
-
-    @property
-    def ssh_hostname(self):
-        return config.ssh_hostname
-
-    @property
-    def use_host_network(self):
-        return config.use_host_network
-
     async def is_container_running(self):
         try:
             container = await self.docker_client.containers.get(self.container_name)
@@ -1277,8 +1265,8 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         return {
-            config.workspace_mount_path: self.sandbox_workspace_dir,
-            config.cache_dir: (
+            self.workspace_mount_path: self.sandbox_workspace_dir,
+            self.cache_dir: (
                 '/home/opendevin/.cache' if self.run_as_devin else '/root/.cache'
             ),
         }
@@ -1319,7 +1307,7 @@ class DockerSSHBox(Sandbox):
                 for container in containers:
                     container_info = await container.show()
                     if container_info['Name'].startswith(f'/{self.container_name}'):
-                        if config.persist_sandbox:
+                        if self.persist_sandbox:
                             await container.stop()
                         else:
                             await container.delete(force=True)

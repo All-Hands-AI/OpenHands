@@ -15,7 +15,6 @@ class Sandbox(ABC, PluginMixin):
     is_initial_session: bool = True
 
     def __init__(self, config: SandboxConfig):
-        self._env = {}
         self.config = copy.deepcopy(config)
         for key in os.environ:
             if key.startswith('SANDBOX_ENV_'):
@@ -35,8 +34,8 @@ class Sandbox(ABC, PluginMixin):
         await self._initialization_complete.wait()
 
     async def _setup_environment(self):
-        if isinstance(config.sandbox.env, dict):
-            self._env = config.sandbox.env.copy()
+        if isinstance(self.config.env, dict):
+            self._env = self.config.env.copy()
         for key, value in self._env.items():
             if key:
                 await self.add_to_env_async(key, value)
@@ -50,7 +49,7 @@ class Sandbox(ABC, PluginMixin):
         except Exception:
             pass
 
-        if config.enable_auto_lint:
+        if self.config.enable_auto_lint:
             await self.add_to_env_async('ENABLE_AUTO_LINT', 'true')
 
     @async_to_sync

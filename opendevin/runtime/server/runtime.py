@@ -45,7 +45,7 @@ def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
             workspace_mount_path=config.workspace_mount_path,
             sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
             cache_dir=config.cache_dir,
-            use_host_network=config.use_host_network,
+            use_host_network=config.use_host_network or None,
             run_as_devin=config.run_as_devin,
             ssh_hostname=config.ssh_hostname,
             ssh_password=config.ssh_password,

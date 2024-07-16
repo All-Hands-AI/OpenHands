@@ -36,15 +36,6 @@ class E2BBox(Sandbox):
         )
         logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
 
-    @classmethod
-    @async_to_sync
-    async def create(
-        cls, template: str = 'open-devin', timeout: int = config.sandbox.timeout
-    ):
-        instance = cls(template, timeout)
-        # Perform any asynchronous initialization here if needed
-        return instance
-
     @property
     def filesystem(self):
         return self.sandbox.filesystem
@@ -81,7 +72,7 @@ class E2BBox(Sandbox):
     async def execute_async(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout if timeout is not None else self.config.timeout
         process = await self.sandbox.process.start(cmd, env_vars=self._env)
         try:
             process_output = await process.wait(timeout=timeout)

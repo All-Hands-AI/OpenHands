@@ -42,10 +42,8 @@ class LocalBox(Sandbox):
     ):
         if not hasattr(self, '_initialized'):
             self.config = config
-            self.timeout = self.config.timeout
+            os.makedirs(workspace_base, exist_ok=True)
             self.workspace_base = workspace_base
-            os.makedirs(self.workspace_base, exist_ok=True)
-            self._env = os.environ.copy()
             self._initialized = False
             self._local_init_complete = asyncio.Event()
             atexit.register(self.sync_cleanup)
@@ -80,8 +78,8 @@ class LocalBox(Sandbox):
                     await self.add_to_env_async(sandbox_key, value)
 
         # Change to the workspace directory
-        os.chdir(config.workspace_base)
-        self._env['PWD'] = config.workspace_base
+        os.chdir(self.workspace_base)
+        self._env['PWD'] = self.workspace_base
 
     @async_to_sync
     def execute(
@@ -92,7 +90,7 @@ class LocalBox(Sandbox):
     async def execute_async(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout if timeout is not None else self.config.timeout
         try:
             # Run the subprocess in a separate thread to avoid blocking the event loop
             process = await asyncio.to_thread(
@@ -117,18 +115,18 @@ class LocalBox(Sandbox):
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ):
         # mkdir -p sandbox_dest if it doesn't exist
-        #mkdir_cmd = f'mkdir -p {sandbox_dest}'
-        #exit_code, _ = await self.execute_async(mkdir_cmd)
-        #if exit_code != 0:
-            #raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
+        # mkdir_cmd = f'mkdir -p {sandbox_dest}'
+        # exit_code, _ = await self.execute_async(mkdir_cmd)
+        # if exit_code != 0:
+        # raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
 
-        #cp_cmd = (
+        # cp_cmd = (
         #    f'cp -r {host_src} {sandbox_dest}'
         #    if recursive
         #    else f'cp {host_src} {sandbox_dest}'
-        #)
-        #exit_code, _ = await self.execute_async(cp_cmd)
-        #if exit_code != 0:
+        # )
+        # exit_code, _ = await self.execute_async(cp_cmd)
+        # if exit_code != 0:
         #    raise RuntimeError(
         #        f'Failed to copy {host_src} to {sandbox_dest} in sandbox'
         res = subprocess.run(
@@ -161,6 +159,10 @@ class LocalBox(Sandbox):
                 cwd=self.workspace_base,
                 env=self._env,
             )
+            if res.returncode != 0:
+                raise RuntimeError(
+                    f'Failed to copy {host_src} to {sandbox_dest} in sandbox'
+                )
 
     @async_to_sync
     def add_to_env(self, key: str, value: str):
@@ -169,9 +171,6 @@ class LocalBox(Sandbox):
     async def add_to_env_async(self, key: str, value: str):
         self._env[key] = value
         os.environ[key] = value
-
-    async def get_working_directory(self):
-        return config.workspace_base
 
     @async_to_sync
     def close(self):
