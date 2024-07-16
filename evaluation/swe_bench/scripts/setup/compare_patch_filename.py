@@ -1,5 +1,4 @@
-"""
-This script compares gold patches with OpenDevin-generated patches and check whether
+"""This script compares gold patches with OpenDevin-generated patches and check whether
 OpenDevin found the right (set of) files to modify.
 """
 

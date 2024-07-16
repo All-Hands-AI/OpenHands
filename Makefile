@@ -162,11 +162,8 @@ install-frontend-dependencies:
 	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
-	@cd frontend && \
-		echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)" && \
-		npm install && \
-		echo "$(BLUE)Running make-i18n with npm...$(RESET)" && \
-		npm run make-i18n
+	echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)"
+	@cd frontend && npm install
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
 install-pre-commit-hooks:

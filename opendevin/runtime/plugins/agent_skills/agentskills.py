@@ -1,5 +1,4 @@
-"""
-agentskills.py
+"""agentskills.py
 
 This module provides various file manipulation skills for the OpenDevin agent.
 
@@ -124,8 +123,7 @@ def _clamp(value, min_value, max_value):
 
 
 def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
-    """
-    Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
+    """Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
     and the line number of the first error, if any.
 
     Returns:
@@ -200,8 +198,7 @@ def _cur_file_header(current_file, total_lines) -> str:
 def open_file(
     path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
-    """
-    Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
+    """Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
     It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
     to view the file if you want to see more.
 
@@ -236,8 +233,7 @@ def open_file(
 
 @update_pwd_decorator
 def goto_line(line_number: int) -> None:
-    """
-    Moves the window to show the specified line number.
+    """Moves the window to show the specified line number.
 
     Args:
         line_number: int: The line number to move to.
@@ -328,7 +324,6 @@ def _append_impl(lines, content):
         content: str: The new content of the file.
         n_added_lines: int: The number of lines added to the file.
     """
-
     content_lines = content.splitlines(keepends=True)
     n_added_lines = len(content_lines)
     if lines and not (len(lines) == 1 and lines[0].strip() == ''):
@@ -737,6 +732,7 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
 def append_file(file_name: str, content: str) -> None:
     """Append content to the given file.
     It appends text `content` to the end of the specified file.
+
     Args:
         file_name: str: The name of the file to edit.
         line_number: int: The line number (starting from 1) to insert the content after.
@@ -873,8 +869,7 @@ def parse_pdf(file_path: str) -> None:
 
 @update_pwd_decorator
 def parse_docx(file_path: str) -> None:
-    """
-    Parses the content of a DOCX file and prints it.
+    """Parses the content of a DOCX file and prints it.
 
     Args:
         file_path: str: The path to the file to open.
@@ -889,8 +884,7 @@ def parse_docx(file_path: str) -> None:
 
 @update_pwd_decorator
 def parse_latex(file_path: str) -> None:
-    """
-    Parses the content of a LaTex file and prints it.
+    """Parses the content of a LaTex file and prints it.
 
     Args:
         file_path: str: The path to the file to open.
@@ -943,8 +937,7 @@ def _prepare_image_messages(task: str, base64_image: str):
 
 @update_pwd_decorator
 def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
-    """
-    Parses the content of an audio file and prints it.
+    """Parses the content of an audio file and prints it.
 
     Args:
         file_path: str: The path to the audio file to transcribe.
@@ -965,8 +958,7 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
 def parse_image(
     file_path: str, task: str = 'Describe this image as detail as possible.'
 ) -> None:
-    """
-    Parses the content of an image file and prints the description.
+    """Parses the content of an image file and prints the description.
 
     Args:
         file_path: str: The path to the file to open.
@@ -994,8 +986,7 @@ def parse_video(
     task: str = 'Describe this image as detail as possible.',
     frame_interval: int = 30,
 ) -> None:
-    """
-    Parses the content of an image file and prints the description.
+    """Parses the content of an image file and prints the description.
 
     Args:
         file_path: str: The path to the video file to open.
@@ -1039,8 +1030,7 @@ def parse_video(
 
 @update_pwd_decorator
 def parse_pptx(file_path: str) -> None:
-    """
-    Parses the content of a pptx file and prints it.
+    """Parses the content of a pptx file and prints it.
 
     Args:
         file_path: str: The path to the file to open.
