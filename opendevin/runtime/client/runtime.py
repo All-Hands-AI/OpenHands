@@ -6,7 +6,7 @@ import aiohttp
 import docker
 import tenacity
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
@@ -45,12 +45,15 @@ class EventStreamRuntime(Runtime):
 
     def __init__(
         self,
+        sandbox_config: SandboxConfig,
         event_stream: EventStream,
         sid: str = 'default',
         container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
-        super().__init__(event_stream, sid)  # will initialize the event stream
+        super().__init__(
+            sandbox_config, event_stream, sid
+        )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -276,7 +279,9 @@ async def test_run_command():
     sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(event_stream)
+    runtime = EventStreamRuntime(
+        sandbox_config=config.sandbox, event_stream=event_stream, sid=sid
+    )
     await runtime.ainit()
     await runtime.run_action(CmdRunAction('ls -l'))
 
@@ -286,9 +291,10 @@ async def test_event_stream():
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(
-        event_stream,
-        sid,
-        'ubuntu:22.04',
+        sandbox_config=config.sandbox,
+        event_stream=event_stream,
+        sid=sid,
+        container_image='ubuntu:22.04',
         plugins=[JupyterRequirement(), AgentSkillsRequirement()],
     )
     await runtime.ainit()

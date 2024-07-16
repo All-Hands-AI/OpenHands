@@ -1,11 +1,12 @@
 import asyncio
 import atexit
+import copy
 import json
 import os
 from abc import abstractmethod
 from typing import Any, Optional
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
@@ -32,7 +33,7 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore
 
 
-def _default_env_vars() -> dict[str, str]:
+def _default_env_vars(config: SandboxConfig) -> dict[str, str]:
     ret = {}
     for key in os.environ:
         if key.startswith('SANDBOX_ENV_'):
@@ -54,11 +55,17 @@ class Runtime:
     file_store: FileStore
     DEFAULT_ENV_VARS: dict[str, str]
 
-    def __init__(self, event_stream: EventStream, sid: str = 'default'):
+    def __init__(
+        self,
+        sandbox_config: SandboxConfig,
+        event_stream: EventStream,
+        sid: str = 'default',
+    ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self.DEFAULT_ENV_VARS = _default_env_vars()
+        self.sandbox_config = copy.deepcopy(sandbox_config)
+        self.DEFAULT_ENV_VARS = _default_env_vars(self.sandbox_config)
         atexit.register(self.close_sync)
 
     async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
