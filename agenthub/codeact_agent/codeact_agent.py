@@ -30,7 +30,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 from opendevin.runtime.tools import RuntimeTool
-from opendevin.runtime.utils import list_files
+from opendevin.runtime.utils import find_relevant_files
 
 ENABLE_GITHUB = True
 
@@ -218,15 +218,6 @@ class CodeActAgent(Agent):
             {'role': 'user', 'content': self.in_context_example},
         ]
 
-        if len(state.history.get_events_as_list()) == 1:
-            workspace_contents = ', '.join(list_files(config.workspace_base))
-            if workspace_contents:
-                messages.append(
-                    {
-                        'role': 'user',
-                        'content': f'WORKSPACE CONTENTS: {workspace_contents}',
-                    }
-                )
         for event in state.history.get_events():
             # create a regular message from an event
             message = (
@@ -242,8 +233,21 @@ class CodeActAgent(Agent):
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
+            (m for m in reversed(messages) if m['role'] == 'user')
         )
+
+        if len(state.history.get_events_as_list()) == 1:
+            query = latest_user_message['content']
+            relevant_files = ', '.join(
+                find_relevant_files(query, config.workspace_base)
+            )
+            if relevant_files:
+                messages.append(
+                    {
+                        'role': 'user',
+                        'content': f'Relevant files: {relevant_files}',
+                    }
+                )
 
         # add a reminder to the prompt
         if latest_user_message:

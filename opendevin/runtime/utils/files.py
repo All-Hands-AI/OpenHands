@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from scipy.spatial.distance import cosine
+from sentence_transformers import SentenceTransformer
 
 
 def list_files(full_path: str, entries: Optional[List[str]] = None) -> List[str]:
@@ -72,3 +74,35 @@ def list_files(full_path: str, entries: Optional[List[str]] = None) -> List[str]
     # Combine sorted directories and files
     sorted_entries = directories + files
     return sorted_entries
+
+
+def find_relevant_files(path: str, query: str, top_n: int = 5):
+    if os.listdir(path) == []:
+        return []
+
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+
+    code_embeddings = {}
+    for root, _, files in os.walk(path):
+        for file_name in files:
+            if not file_name.endswith('.py'):
+                continue
+            full_path = os.path.join(root, file_name)
+            with open(full_path, 'r') as file:
+                code_content = file.read()
+                print(f'Generating embedding for {full_path}')
+                embedding = model.encode(code_content)
+                code_embeddings[full_path] = embedding
+    query_embedding = model.encode(query)
+    similarities = {}
+    for file_name, embedding in code_embeddings.items():
+        similarity = 1 - cosine(query_embedding, embedding)
+        similarities[file_name] = similarity
+    sorted_files = sorted(similarities.items(), key=lambda item: item[1], reverse=True)
+    return [file for file, score in sorted_files[:top_n] if score > 0.2]
+
+
+if __name__ == '__main__':
+    query = 'enhance chromadb'
+    relevant_files = find_relevant_files('opendevin', query)
+    print(f"Relevant files: {', '.join(relevant_files)}")
