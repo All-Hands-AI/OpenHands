@@ -240,9 +240,9 @@ run-dev:
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
 
-# Run the app (development mode in WSL)
+# Run the app (development mode for WSL)
 run-dev-wsl:
-	@echo "$(YELLOW)Running the app in dev mode in WSL...$(RESET)"
+	@echo "$(YELLOW)Running the app in dev mode for WSL...$(RESET)"
 	@$(MAKE) -s _run_backend
 	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
@@ -326,7 +326,9 @@ help:
 	@echo "                        LLM Model name, and workspace directory."
 	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenDevin project."
 	@echo "  $(GREEN)start-frontend$(RESET)      - Start the frontend server for the OpenDevin project."
-	@echo "  $(GREEN)run$(RESET)                 - Run the OpenDevin application, starting both backend and frontend servers."
+	@echo "  $(GREEN)run$(RESET)                 - Run the OpenDevin application"
+	@echo "  $(GREEN)run-dev$(RESET)             - Run the OpenDevin application, starting both backend and frontend servers."
+	@echo "  $(GREEN)run-dev-wsl$(RESET)         - Run the OpenDevin application, starting both backend and frontend servers for WSL users."
 	@echo "                        Backend Log file will be stored in the 'logs' directory."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
