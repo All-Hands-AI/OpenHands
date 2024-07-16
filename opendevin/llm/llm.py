@@ -35,8 +35,7 @@ message_separator = '\n\n----------\n\n'
 
 
 class LLM:
-    """
-    The LLM class represents a Language Model instance.
+    """The LLM class represents a Language Model instance.
 
     Attributes:
         model_name (str): The name of the language model.
@@ -71,8 +70,7 @@ class LLM:
         output_cost_per_token=None,
         stop_requested_callback=None,
     ):
-        """
-        Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
+        """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
         Passing simple parameters always overrides config.
 
@@ -219,10 +217,7 @@ class LLM:
             after=attempt_on_error,
         )
         def wrapper(*args, **kwargs):
-            """
-            Wrapper for the litellm completion function. Logs the input and output of the completion function.
-            """
-
+            """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -350,8 +345,7 @@ class LLM:
 
     @property
     def completion(self):
-        """
-        Decorator for the litellm completion function.
+        """Decorator for the litellm completion function.
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
@@ -366,9 +360,7 @@ class LLM:
         return self._async_completion
 
     def _post_completion(self, response: str) -> None:
-        """
-        Post-process the completion response.
-        """
+        """Post-process the completion response."""
         try:
             cur_cost = self.completion_cost(response)
         except Exception:
@@ -381,8 +373,7 @@ class LLM:
             )
 
     def get_token_count(self, messages):
-        """
-        Get the number of tokens in a list of messages.
+        """Get the number of tokens in a list of messages.
 
         Args:
             messages (list): A list of messages.
@@ -393,8 +384,7 @@ class LLM:
         return litellm.token_counter(model=self.model_name, messages=messages)
 
     def is_local(self):
-        """
-        Determines if the system is using a locally running LLM.
+        """Determines if the system is using a locally running LLM.
 
         Returns:
             boolean: True if executing a local model.
@@ -409,8 +399,7 @@ class LLM:
         return False
 
     def completion_cost(self, response):
-        """
-        Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:

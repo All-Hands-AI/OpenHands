@@ -75,7 +75,8 @@ class PromptElement:
     Prompt elements are used to build the prompt. Use flags to control which
     prompt elements are visible. We use class attributes as a convenient way
     to implement static prompts, but feel free to override them with instance
-    attributes or @property decorator."""
+    attributes or @property decorator.
+    """
 
     _prompt = ''
     _abstract_ex = ''
@@ -200,11 +201,10 @@ def fit_tokens(
     model_name : str, optional
         The name of the model used when tokenizing.
 
-    Returns
+    Returns:
     -------
     str : the prompt after shrinking.
     """
-
     if max_prompt_chars is None:
         return shrinkable.prompt
 
@@ -579,8 +579,8 @@ the form is not visible yet or some fields are disabled. I need to replan.
 def diff(previous, new):
     """Return a string showing the difference between original and new.
 
-    If the difference is above diff_threshold, return the diff string."""
-
+    If the difference is above diff_threshold, return the diff string.
+    """
     if previous == new:
         return 'Identical', []
 

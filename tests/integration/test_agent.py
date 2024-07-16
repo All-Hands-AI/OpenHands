@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import shutil
 import subprocess
@@ -18,9 +17,6 @@ from opendevin.events.action import (
 from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.observation.delegate import AgentDelegateObservation
 from opendevin.llm.llm import LLM
-
-logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')

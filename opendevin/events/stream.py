@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import shutil
 import threading
@@ -8,6 +7,7 @@ from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.utils import json
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.runtime.utils.async_utils import async_to_sync
 from opendevin.storage import (

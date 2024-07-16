@@ -11,7 +11,6 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import AsyncAgent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
-from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -163,8 +162,7 @@ class CodeActAgent(AsyncAgent):
         self,
         llm: LLM,
     ) -> None:
-        """
-        Initializes a new instance of the CodeActAgent class.
+        """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -173,14 +171,11 @@ class CodeActAgent(AsyncAgent):
         self.reset()
 
     def reset(self) -> None:
-        """
-        Resets the CodeAct Agent.
-        """
+        """Resets the CodeAct Agent."""
         super().reset()
 
     def step(self, state: State) -> Action:
-        """
-        Performs one step using the CodeAct Agent.
+        """Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -199,44 +194,18 @@ class CodeActAgent(AsyncAgent):
         return self._common_step_logic_sync(state, self.llm.completion, messages)
 
     async def async_step(self, state: State) -> Action:
-        """
-        Asynchronously performs one step using the CodeAct Agent.
-        """
+        """Asynchronously performs one step using the CodeAct Agent."""
         messages, is_exit = self._prepare_messages(state)
         if is_exit:
-            logger.info('Agent is exiting.')
             return AgentFinishAction()
-
-        # Ensure the agent does not switch back to AWAITING_USER_INPUT after reaching a final state
-        if state.agent_state in [
-            AgentState.FINISHED,
-            AgentState.STOPPED,
-            AgentState.ERROR,
-        ]:
-            logger.info(f'Agent already in final state: {state.agent_state}')
-            return AgentFinishAction()
-
-        action = await self._common_step_logic_async(
+        return await self._common_step_logic_async(
             state, self.llm.async_completion, messages
         )
-
-        logger.info(f'Action taken: {action}')
-
-        # Check if the action is a finishing action or if we've reached the maximum iterations
-        if (
-            isinstance(action, AgentFinishAction)
-            or state.iteration >= state.max_iterations
-        ):
-            logger.info('Task complete or max iterations reached. Finishing.')
-            return AgentFinishAction()
-
-        return action
 
     def _common_step_logic_sync(
         self, state: State, completion_func, messages: list[dict[str, str]]
     ) -> Action:
-        """
-        Common logic for the synchronous step method.
+        """Common logic for the synchronous step method.
 
         :param state: The current state.
         :param completion_func: self.llm.completion
@@ -257,8 +226,7 @@ class CodeActAgent(AsyncAgent):
     async def _common_step_logic_async(
         self, state: State, completion_func, messages: list[dict[str, str]]
     ) -> Action:
-        """
-        Common logic for the asynchronous step method.
+        """Common logic for the asynchronous step method.
 
         :param state: The current state.
         :param completion_func: self.llm.async_completion
@@ -277,8 +245,7 @@ class CodeActAgent(AsyncAgent):
         return self.action_parser.parse(response)
 
     def _prepare_messages(self, state: State) -> tuple[list[dict[str, str]], bool]:
-        """
-        Prepare the messages for the LLM completion and check for exit command.
+        """Prepare the messages for the LLM completion and check for exit command.
 
         Returns:
         - A tuple containing the prepared messages and a boolean indicating if it's an exit command

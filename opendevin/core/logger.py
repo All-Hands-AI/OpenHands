@@ -116,9 +116,7 @@ class SensitiveDataFilter(logging.Filter):
 
 
 def get_console_handler():
-    """
-    Returns a console handler for logging.
-    """
+    """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     if config.debug:
@@ -128,9 +126,7 @@ def get_console_handler():
 
 
 def get_file_handler(log_dir=None):
-    """
-    Returns a file handler for logging.
-    """
+    """Returns a file handler for logging."""
     log_dir = os.path.join(os.getcwd(), 'logs') if log_dir is None else log_dir
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
@@ -147,8 +143,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
-    """
-    Logs uncaught exceptions along with the traceback.
+    """Logs uncaught exceptions along with the traceback.
 
     Args:
         ex_cls (type): The type of the exception.
@@ -184,13 +179,10 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 
 
 class LlmFileHandler(logging.FileHandler):
-    """
-    # LLM prompt and response logging
-    """
+    """# LLM prompt and response logging"""
 
     def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
-        """
-        Initializes an instance of LlmFileHandler.
+        """Initializes an instance of LlmFileHandler.
 
         Args:
             filename (str): The name of the log file.
@@ -221,8 +213,7 @@ class LlmFileHandler(logging.FileHandler):
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
-        """
-        Emits a log record.
+        """Emits a log record.
 
         Args:
             record (logging.LogRecord): The log record to emit.

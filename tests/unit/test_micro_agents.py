@@ -51,9 +51,7 @@ def test_all_agents_are_loaded():
 
 @pytest.mark.asyncio
 async def test_coder_agent_with_summary(event_stream: EventStream):
-    """
-    Coder agent should render code summary as part of prompt
-    """
+    """Coder agent should render code summary as part of prompt"""
     mock_llm = AsyncMock()
     content = json.dumps({'action': 'finish', 'args': {}})
     # Update this line to return the content directly
@@ -87,8 +85,7 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
 
 @pytest.mark.asyncio
 async def test_coder_agent_without_summary(event_stream: EventStream):
-    """
-    When there's no codebase_summary available, there shouldn't be any prompt
+    """When there's no codebase_summary available, there shouldn't be any prompt
     about 'code summary'
     """
     mock_llm = AsyncMock()

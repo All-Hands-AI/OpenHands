@@ -4,8 +4,7 @@ from opendevin.llm.llm import LLM
 
 class MemoryCondenser:
     async def condense(self, summarize_prompt: str, llm: LLM):
-        """
-        Attempts to condense the monologue by using the llm
+        """Attempts to condense the monologue by using the llm
 
         Parameters:
         - llm (LLM): llm to be used for summarization
@@ -13,7 +12,6 @@ class MemoryCondenser:
         Raises:
         - Exception: the same exception as it got from the llm or processing the response
         """
-
         try:
             messages = [{'content': summarize_prompt, 'role': 'user'}]
             resp = await llm.completion(messages=messages)
