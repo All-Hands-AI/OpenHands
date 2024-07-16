@@ -157,14 +157,13 @@ if __name__ == '__main__':
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    # Figure out the LLM config
+    # Override default LLM configs ([llm] section in config.toml)
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
-        llm = LLM(llm_config=llm_config)
-    else:
-        llm = LLM(llm_config=config.get_llm_config_from_agent(args.agent_cls))
+        config.set_llm_config(llm_config)
+    llm = LLM(llm_config=config.get_llm_config_from_agent(args.agent_cls))
 
     # Create the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
