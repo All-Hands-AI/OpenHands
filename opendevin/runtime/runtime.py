@@ -44,8 +44,7 @@ def _default_env_vars() -> dict[str, str]:
 
 
 class Runtime:
-    """
-    The runtime is how the agent interacts with the external environment.
+    """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
     sid is the session id, which is used to identify the current user session.
@@ -65,6 +64,7 @@ class Runtime:
     async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
         """
         Initialize the runtime (asynchronously).
+
         This method should be called after the runtime's constructor.
         """
         logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
@@ -126,8 +126,7 @@ class Runtime:
             self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
-        """
-        Run an action and return the resulting observation.
+        """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
