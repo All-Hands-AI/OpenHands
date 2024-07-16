@@ -17,6 +17,7 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.plugins.requirement import PluginRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
@@ -205,13 +206,11 @@ class DockerSSHBox(Sandbox):
         self,
         config: SandboxConfig,
         persist_sandbox: bool,
-        container_image: str,
         workspace_mount_path: str,
         sandbox_workspace_dir: str,
         cache_dir: str,
         use_host_network: bool,
         run_as_devin: bool,
-        user_id: int,
         ssh_hostname: str = 'host.docker.internal',
         ssh_password: str | None = None,
         ssh_port: int = 22,
@@ -223,9 +222,8 @@ class DockerSSHBox(Sandbox):
         self.cache_dir = cache_dir
         self.use_host_network = use_host_network
         self.run_as_devin = run_as_devin
-        self.user_id = user_id
         logger.info(
-            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
+            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.config.user_id} in the sandbox'
         )
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -246,9 +244,8 @@ class DockerSSHBox(Sandbox):
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
-        self.container_image = container_image
         self.container_image = get_od_sandbox_image(
-            self.container_image, self.docker_client
+            config.container_image, self.docker_client
         )
         self.container_name = self.container_name_prefix + self.instance_id
 
@@ -337,7 +334,7 @@ class DockerSSHBox(Sandbox):
                 [
                     '/bin/bash',
                     '-c',
-                    f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {self.user_id} opendevin',
+                    f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {self.config.user_id} opendevin',
                 ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
@@ -730,8 +727,6 @@ if __name__ == '__main__':
             cache_dir='/path/to/cache',
             sandbox_workspace_dir='/sandbox',
             use_host_network=False,
-            user_id=1000,
-            container_image='docker_image_name',
             persist_sandbox=False,
         )
     except Exception as e:
@@ -743,7 +738,7 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+    plugins: list[PluginRequirement] = [AgentSkillsRequirement(), JupyterRequirement()]
     ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'

@@ -149,6 +149,7 @@ class SandboxConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    initialize_plugins: bool = True
 
     def defaults_to_dict(self) -> dict:
         """

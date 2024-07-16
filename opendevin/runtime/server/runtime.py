@@ -36,27 +36,26 @@ from .files import read_file, write_file
 
 def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
     if box_type == 'local':
-        return LocalBox(
-            config=config.sandbox,
-            workspace_base=config.workspace_base
-        )
+        return LocalBox(config=config.sandbox, workspace_base=config.workspace_base)
     elif box_type == 'ssh':
         return DockerSSHBox(
             config=config.sandbox,
             persist_sandbox=config.persist_sandbox,
-            container_image=config.container_image,
             workspace_mount_path=config.workspace_mount_path,
-            sandbox_workspace_dir=config.sandbox_workspace_dir,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
             cache_dir=config.cache_dir,
             use_host_network=config.use_host_network,
             run_as_devin=config.run_as_devin,
             ssh_hostname=config.ssh_hostname,
             ssh_password=config.ssh_password,
             ssh_port=config.ssh_port,
-            sid=sid
+            sid=sid,
         )
     elif box_type == 'e2b':
-        return E2BBox()
+        return E2BBox(
+            config=config.sandbox,
+            e2b_api_key=config.e2b_api_key,
+        )
     else:
         raise ValueError(f'Invalid sandbox type: {box_type}')
 
