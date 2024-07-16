@@ -48,6 +48,4 @@ like to evaluate. It could also be a release tag like `0.6.2`.
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
-default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
-in order to use `eval_limit`, you must also set `agent`.
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances.
