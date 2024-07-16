@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 
 import nltk
 import pandas as pd
@@ -94,6 +95,12 @@ def process_instance(
         if action['action'] == 'delegate':
             last_delegate_action = action
             instruction_for_delegate = action['args']['inputs']['task']
+            # parse `browse_actions` from `instruction_for_delegate`
+            # task = f'{thought}. I should start with: {browse_actions}'
+            instruction_for_delegate = re.search(
+                r'I should start with: (.*)', instruction_for_delegate
+            ).group(1)
+
             # calculate the edit distance between the instance.instruction and the instruction_for_delegate
             edit_distance = nltk.edit_distance(
                 instance.instruction, instruction_for_delegate
