@@ -38,7 +38,7 @@ scroll_up() -> None:
     None
 
 create_file(filename: str) -> None:
-    Creates and opens a new file with the given name.
+    Creates a file with the given name.
     Args:
     filename: str: The name of the file to create.
 
