@@ -55,9 +55,7 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
     mock_llm = AsyncMock()
     content = json.dumps({'action': 'finish', 'args': {}})
     # Update this line to return the content directly
-    mock_llm.async_completion.return_value = {
-        'choices': [{'message': {'content': content}}]
-    }
+    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
@@ -69,10 +67,10 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
 
     summary = 'This is a dummy summary about this repo'
     state = State(history=history, inputs={'summary': summary})
-    action = await coder_agent.step(state)
+    action = await coder_agent.async_step(state)
 
-    mock_llm.async_completion.assert_called_once()
-    _, kwargs = mock_llm.async_completion.call_args
+    mock_llm.completion.assert_called_once()
+    _, kwargs = mock_llm.completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" in prompt
@@ -90,9 +88,7 @@ async def test_coder_agent_without_summary(event_stream: EventStream):
     """
     mock_llm = AsyncMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.async_completion.return_value = {
-        'choices': [{'message': {'content': content}}]
-    }
+    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
@@ -104,10 +100,10 @@ async def test_coder_agent_without_summary(event_stream: EventStream):
 
     # set state without codebase summary
     state = State(history=history)
-    action = await coder_agent.step(state)
+    action = await coder_agent.async_step(state)
 
-    mock_llm.async_completion.assert_called_once()
-    _, kwargs = mock_llm.async_completion.call_args
+    mock_llm.completion.assert_called_once()
+    _, kwargs = mock_llm.completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt

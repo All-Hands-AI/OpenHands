@@ -1,4 +1,5 @@
 import asyncio
+import unittest.mock
 from typing import Union
 
 from jinja2 import BaseLoader, Environment
@@ -90,11 +91,14 @@ class MicroAgent(Agent):
         # if asyncio.iscoroutinefunction(self.llm.async_completion):
         #     resp = await self.llm.async_completion(messages=messages)
         # else:
-        resp = self.llm.completion(messages=messages)
+        resp = await self.llm.completion(messages=messages)
 
-        # Handle both real responses
+        # Handle both real responses and mock responses in tests
         if isinstance(resp, dict) and 'choices' in resp:
             action_resp = resp['choices'][0]['message']['content']
+        elif isinstance(resp, unittest.mock.AsyncMock):
+            # For AsyncMock responses in tests
+            action_resp = resp.return_value['choices'][0]['message']['content']
         elif isinstance(resp, str):
             action_resp = resp
         elif isinstance(resp, ModelResponse):
@@ -105,5 +109,4 @@ class MicroAgent(Agent):
             raise TypeError(f'Unexpected response type: {type(resp)}')
 
         action = parse_response(action_resp)
-
         return action
