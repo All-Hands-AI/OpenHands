@@ -45,17 +45,6 @@ def temp_ruby_file_errors_parentheses(tmp_path):
 
 
 @pytest.fixture
-def temp_ruby_file_errors_parentheses(tmp_path):
-    # Fixture to create a temporary file
-    temp_name = os.path.join(tmp_path, 'lint-test.rb')
-    with open(temp_name, 'w', encoding='utf-8') as tmp_file:
-        tmp_file.write("""def print_hello_world()\n    puts 'Hello World'\n""")
-    tmp_file.close()
-    yield temp_name
-    os.remove(temp_name)
-
-
-@pytest.fixture
 def temp_ruby_file_correct(tmp_path):
     # Fixture to create a temporary file
     temp_name = os.path.join(tmp_path, 'lint-test.rb')
@@ -152,8 +141,7 @@ def test_basic_lint_fail_returns_text_and_lines(temp_file):
 
 
 def test_lint_python_compile(temp_file):
-    from opendevin.runtime.plugins.agent_skills.aider.linter import \
-        lint_python_compile
+    from opendevin.runtime.plugins.agent_skills.aider.linter import lint_python_compile
 
     result = lint_python_compile(temp_file, "print('Hello, World!')\n")
 
@@ -161,8 +149,7 @@ def test_lint_python_compile(temp_file):
 
 
 def test_lint_python_compile_fail_returns_text_and_lines(temp_file):
-    from opendevin.runtime.plugins.agent_skills.aider.linter import \
-        lint_python_compile
+    from opendevin.runtime.plugins.agent_skills.aider.linter import lint_python_compile
 
     poorly_formatted_code = """
         def foo()
@@ -203,6 +190,7 @@ def test_lint_pass_ruby(linter, temp_ruby_file_correct):
 def test_lint_fail_ruby(linter, temp_ruby_file_errors):
     errors = linter.lint(temp_ruby_file_errors)
     assert errors is not None
+
 
 def test_lint_fail_ruby_no_parentheses(linter, temp_ruby_file_errors_parentheses):
     errors = linter.lint(temp_ruby_file_errors_parentheses)
