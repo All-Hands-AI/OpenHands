@@ -166,7 +166,7 @@ async def attach_session(request: Request, call_next):
     if 'Bearer' in auth_token:
         auth_token = auth_token.split('Bearer')[1].strip()
 
-    request.state.sid = get_sid_from_token(auth_token)
+    request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
     if request.state.sid == '':
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -245,7 +245,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
-        sid = get_sid_from_token(token)
+        sid = get_sid_from_token(token, config.jwt_secret)
 
         if sid == '':
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
@@ -253,7 +253,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return
     else:
         sid = str(uuid.uuid4())
-        token = sign_token({'sid': sid})
+        token = sign_token({'sid': sid}, config.jwt_secret)
 
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
