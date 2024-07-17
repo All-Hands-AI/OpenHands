@@ -46,7 +46,7 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 
 ## ⚡ Getting Started
 
-The easiest way to run OpenDevin is to [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new/OpenDevin/OpenDevin)
+The easiest way to run OpenDevin is to [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new/OpenDevin/OpenDevin) but it is not the recommended usage path yet. For the best experience and optimal setup, please follow the docker method.
 
 OpenDevin works best with Docker version 26.0.0+ (Docker Desktop 4.31.0+).
 You must be using Linux, Mac OS, or WSL on Windows.
