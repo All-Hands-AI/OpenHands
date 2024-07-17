@@ -26,7 +26,7 @@ The OpenDevin runtime uses a layered approach for building Docker images:
 
 #### Production Build (DEBUG=false)
 By default, when DEBUG is set to false, the build process only needs to run once:
-- The Runtime Image (od_runtime:ubuntu__22.04) is created by copying OpenDevin code into the original Ubuntu image and installing all dependencies.
+- The Runtime Image (`od_runtime:ubuntu__22.04`) is created by copying OpenDevin code into the original Ubuntu image and installing all dependencies.
 - This pre-built image is then used for running the OpenDevin environment.
 
 #### Development Build (DEBUG=true)
