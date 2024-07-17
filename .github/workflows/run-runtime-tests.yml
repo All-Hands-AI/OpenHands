@@ -27,18 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install poetry via pipx
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "poetry"
-
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies
-
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -53,6 +41,18 @@ jobs:
           haskell: true
           large-packages: true
           swap-storage: true
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "poetry"
+
+      - name: Install Python dependencies using Poetry
+        run: make install-python-dependencies
 
       - name: Run runtime tests
         run: |
