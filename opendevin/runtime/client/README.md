@@ -87,7 +87,7 @@ The Runtime Client is a crucial component of the OpenDevin system, responsible f
 |                   |     |  +-------------+  |
 |  +-------------+  |     |  |  Runtime    |  |
 |  | EventStream |  |     |  |  Container  |  |
-|  | Runtime     |<--|-----|->|             |  |
+|  | Runtime     |<-|-----|->|             |  |
 |  +-------------+  |     |  |  +-------+  |  |
 |                   |     |  |  |Runtime|  |  |
 |                   |     |  |  |Client |  |  |
