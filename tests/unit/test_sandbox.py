@@ -10,7 +10,6 @@ from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.utils import split_bash_commands
 
 
-
 def create_docker_box_from_app_config(
     path: str, config: AppConfig = None
 ) -> DockerSSHBox:
