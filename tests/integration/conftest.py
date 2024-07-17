@@ -215,14 +215,10 @@ def resource_setup():
     if not os.path.exists(workspace_path):
         os.makedirs(workspace_path)
 
-    # Save the original working directory
-    original_cwd = os.getcwd()
-
-    # Change to the workspace directory
-    os.chdir(workspace_path)
+    # original_cwd = os.getcwd()
+    # os.chdir(workspace_path)
 
     # Yield to test execution
     yield
 
-    # Change back to the original working directory
-    os.chdir(original_cwd)
+    # os.chdir(original_cwd)
