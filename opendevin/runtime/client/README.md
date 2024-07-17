@@ -32,7 +32,7 @@ By default, when DEBUG is set to false, the build process only needs to run once
 #### Development Build (DEBUG=true)
 When developing or modifying code that runs inside the container, you can set DEBUG=true to enable a more dynamic build process:
 - Every time you run the code, the existing image will be updated with the latest changes.
-- The Dev Runtime Image (od_runtime_dev:ubuntu__22.04) is rebuilt from the Runtime Image (od_runtime:ubuntu__22.04).
+- The Dev Runtime Image (`od_runtime_dev:ubuntu__22.04`) is rebuilt from the Runtime Image (`od_runtime:ubuntu__22.04`).
 - Most dependencies are already installed in the Runtime Image, so this process mainly updates the code and any new dependencies.
 - The rebuild process typically takes around 10 seconds, allowing for quick iterations during development.
 
