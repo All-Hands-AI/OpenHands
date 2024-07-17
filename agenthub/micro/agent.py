@@ -1,7 +1,6 @@
 import asyncio
+import json as std_json
 import unittest.mock
-from json import JSONDecodeError as decode_error
-from json import loads
 from typing import Union
 
 from jinja2 import BaseLoader, Environment
@@ -23,24 +22,24 @@ from .registry import all_microagents
 
 
 def parse_response(orig_response: Union[str, dict]) -> Action:
-    if isinstance(orig_response, str):
-        # attempt to load the JSON dict from the response
-        action_dict = loads(orig_response)
-    elif isinstance(orig_response, dict) and 'choices' in orig_response:
+    if isinstance(orig_response, dict) and 'choices' in orig_response:
         # this covers a response like:
         # {'choices': [{'message': {'content': '{"action": "finish", "args": {}}'}}]}
         try:
             content = orig_response['choices'][0]['message']['content']
             # Parse the content string as JSON
-            content_dict = loads(content)
+            content_dict = json.loads(content)
             if 'action' in content_dict and content_dict['action'] == 'finish':
                 return AgentFinishAction(
                     outputs={}, thought='Task completed', action='finish'
                 )
             else:
                 action_dict = content_dict
-        except (KeyError, decode_error) as e:
+        except (KeyError, std_json.JSONDecodeError) as e:
             raise ValueError(f'Invalid format for choices response: {e}')
+    elif isinstance(orig_response, str):
+        # attempt to load the JSON dict from the response
+        action_dict = json.loads(orig_response)
     elif isinstance(orig_response, dict):
         # this approach fails in some cases, thus the "elif" above!
         action_dict = orig_response
