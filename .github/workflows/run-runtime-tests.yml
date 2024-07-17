@@ -39,12 +39,6 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
 
-      - name: Download sandbox Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: sandbox-docker-image-amd64
-          path: /tmp/
-
       - name: Run runtime tests
         run: |
           TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_runtime.py
