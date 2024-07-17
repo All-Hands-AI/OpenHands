@@ -11,7 +11,7 @@ The following sections dive deeper into these topics, providing a comprehensive 
 
 The OpenDevin runtime uses a layered approach for building Docker images:
 
-1. **Original Image**: ubuntu:22.04
+1. **Original Image**: `ubuntu:22.04`
    - This is the base image used for all subsequent layers.
 
 2. **Runtime Image**: od_runtime:ubuntu__22.04
