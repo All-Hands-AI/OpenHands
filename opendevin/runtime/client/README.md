@@ -19,7 +19,7 @@ The OpenDevin runtime uses a layered approach for building Docker images:
    - This is the primary runtime image that users will interact with.
    - Created by copying all OpenDevin code into the original image and installing dependencies using Poetry.
 
-3. **Dev Runtime Image**: od_runtime_dev:ubuntu__22.04
+3. **Dev Runtime Image**:  `od_runtime_dev:ubuntu__22.04`
    - Built from local source code for development purposes.
 
 ### Build Process
