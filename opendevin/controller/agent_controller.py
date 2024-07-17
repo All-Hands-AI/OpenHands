@@ -2,7 +2,7 @@ import asyncio
 import traceback
 from typing import Optional, Tuple, Type
 
-from opendevin.controller.agent import Agent, AsyncAgent
+from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.controller.stuck import StuckDetector
 from opendevin.core.config import config
@@ -403,12 +403,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            if isinstance(self.agent, AsyncAgent):
-                action = await self.agent.async_step(self.state)
-            elif asyncio.iscoroutinefunction(self.agent.step):
-                action = await self.agent.step(self.state)
-            else:
-                action = self.agent.step(self.state)
+            action = self.agent.step(self.state)
 
             if action is None:
                 raise LLMNoActionError('No action was returned')
@@ -420,13 +415,6 @@ class AgentController:
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user and send the underlying exception to the LLM for self-correction
             await self.report_error(f'{e}')
-            return
-        except Exception as e:
-            if 'OpenAIError' in str(e):
-                traceback.print_exc()
-                logger.error(traceback.format_exc())
-            await self.report_error(f'Error in controller step: {e}')
-            await self.set_agent_state_to(AgentState.ERROR)
             return
 
         if hasattr(action, 'runnable') and action.runnable:

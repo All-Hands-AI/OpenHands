@@ -269,7 +269,13 @@ class LLM:
             stop=stop_after_attempt(num_retries),
             wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
             retry=retry_if_exception_type(
-                (RateLimitError, APIConnectionError, ServiceUnavailableError)
+                (
+                    RateLimitError,
+                    APIConnectionError,
+                    ServiceUnavailableError,
+                    InternalServerError,
+                    ContentPolicyViolationError,
+                )
             ),
             after=attempt_on_error,
         )
@@ -309,7 +315,7 @@ class LLM:
                 if stop_check_task in done:
                     litellm_task.cancel()
                     raise asyncio.CancelledError(
-                        'LLM request cancelled due to STOPPED state'
+                        'LLM request cancelled due to CANCELLED state'
                     )
 
                 resp = await litellm_task

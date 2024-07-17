@@ -198,9 +198,7 @@ class CodeActAgent(AsyncAgent):
         messages, is_exit = self._prepare_messages(state)
         if is_exit:
             return AgentFinishAction()
-        return await self._common_step_logic_async(
-            state, self.llm.async_completion, messages
-        )
+        return await self._common_step_logic_async(state, self.llm.completion, messages)
 
     def _common_step_logic_sync(
         self, state: State, completion_func, messages: list[dict[str, str]]

@@ -1122,8 +1122,6 @@ class DockerSSHBox(Sandbox):
                     )
                 )
 
-            await self.print_image_info()
-
             host_config = self._create_host_config(use_host_network)
             container_config = {
                 'Image': self.container_image,
@@ -1138,8 +1136,6 @@ class DockerSSHBox(Sandbox):
                 'WorkingDir': self.sandbox_workspace_dir,
                 'HostConfig': host_config,
             }
-
-            logger.debug(f'container_config: {container_config}')
 
             # Use create_or_replace for idempotent container management
             logger.info(f'Mounting volumes: {self.volumes} now...')
@@ -1183,8 +1179,6 @@ class DockerSSHBox(Sandbox):
                 container = await self.docker_client.containers.get(self.container_name)
                 container_info = await container.show()
                 state = container_info['State']
-
-                logger.debug(f'Container state: {state}')
 
                 if state['Running'] is True and state['Paused'] is False:
                     logger.info('Container is running')
@@ -1230,23 +1224,6 @@ class DockerSSHBox(Sandbox):
         except Exception as e:
             logger.error(f'Error listing Docker images: {e}')
             return []
-
-    # Example usage within the DockerSSHBox class:
-    async def print_image_info(self):
-        images = await self.list_docker_images()
-        for image in images:
-            repo_tags = image.get('RepoTags', [])
-            if any(tag.startswith('ghcr.io/opendevin/sandbox') for tag in repo_tags):
-                repo_tags = image.get('RepoTags', ['<none>:<none>'])
-                image_id = image['Id']
-                created = image['Created']
-                size = image['Size']
-
-                logger.info(f'Image ID: {image_id}')
-                logger.info(f"Repository Tags: {', '.join(repo_tags)}")
-                logger.info(f'Created: {created}')
-                logger.info(f'Size: {size} bytes')
-                logger.info('---')
 
     async def get_working_directory(self):
         exit_code, result = await self.execute('pwd')
