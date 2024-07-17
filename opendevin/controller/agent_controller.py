@@ -286,7 +286,7 @@ class AgentController:
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         llm_config = config.get_llm_config_from_agent(action.agent)
-        llm = LLM(llm_config=llm_config)
+        llm = LLM(config=llm_config)
         delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
@@ -480,7 +480,11 @@ class AgentController:
             self.state.history.end_id = self.state.end_id
 
     def _is_stuck(self):
-        # check if delegate stuck
+        """Checks if the agent is stuck.
+
+        Returns:
+            bool: True if the agent is stuck, False otherwise.
+        """
         if self.delegate and self.delegate._is_stuck():
             return True
 
@@ -508,8 +512,7 @@ class AgentController:
                 self.agent_task.cancel()
 
     def _parse_agent_state(self, state_str: str) -> Tuple[bool, AgentState | None]:
-        """
-        Parse a string into an AgentState enum value.
+        """Parse a string into an AgentState enum value.
 
         Args:
             state_str (str): The string representation of the agent state.
@@ -527,4 +530,9 @@ class AgentController:
             return False, None
 
     def is_stopped(self):
+        """Check if the agent is stopped. Serves as callback for the LLM.
+
+        Returns:
+            bool: True if the agent is stopped, False otherwise.
+        """
         return self.state.agent_state == AgentState.STOPPED.value

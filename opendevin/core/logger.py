@@ -8,9 +8,8 @@ from typing import Literal, Mapping
 
 from termcolor import colored
 
-from opendevin.core.config import config
-
-DISABLE_COLOR_PRINTING = config.disable_color
+DISABLE_COLOR_PRINTING = False
+DEBUG = False
 
 ColorType = Literal[
     'red',
@@ -57,7 +56,7 @@ class ColoredFormatter(logging.Formatter):
             )
             name_str = colored(record.name, LOG_COLORS[msg_type])
             level_str = colored(record.levelname, LOG_COLORS[msg_type])
-            if msg_type in ['ERROR'] or config.debug:
+            if msg_type in ['ERROR'] or DEBUG:
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
@@ -119,7 +118,7 @@ def get_console_handler():
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    if config.debug:
+    if DEBUG:
         console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(console_formatter)
     return console_handler
@@ -132,7 +131,7 @@ def get_file_handler(log_dir=None):
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
-    if config.debug:
+    if DEBUG:
         file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
     return file_handler
@@ -161,7 +160,7 @@ sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
-if config.debug:
+if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
@@ -192,13 +191,13 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        if config.debug:
+        if DEBUG:
             self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
         else:
             self.session = 'default'
         self.log_directory = os.path.join(os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        if not config.debug:
+        if not DEBUG:
             # Clear the log directory if not in debug mode
             for file in os.listdir(self.log_directory):
                 file_path = os.path.join(self.log_directory, file)
