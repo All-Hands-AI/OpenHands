@@ -65,7 +65,7 @@ The Runtime Client is a crucial component of the OpenDevin system, responsible f
    - Observations include command outputs, file contents, error messages, etc.
 
 6. **Asynchronous Operation**:
-   - The Runtime Client uses asyncio for handling concurrent requests efficiently.
+   - The Runtime Client uses asyncio for avoid concurrent requests.
    - It ensures that only one action is executed at a time using a semaphore.
 
 7. **Security**:
