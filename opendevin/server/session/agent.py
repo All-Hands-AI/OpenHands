@@ -4,11 +4,8 @@ from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ConfigType
 from opendevin.events.stream import EventStream
-from opendevin.llm.llm import LLM
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
@@ -32,7 +29,13 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid)
 
-    async def start(self, start_event: dict):
+    async def start(
+        self,
+        runtime_name: str,
+        agent: Agent,
+        confirmation_mode: bool,
+        max_iterations: int,
+    ):
         """Starts the agent session.
 
         Args:
@@ -42,8 +45,8 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_runtime()
-        await self._create_controller(start_event)
+        await self._create_runtime(runtime_name)
+        await self._create_controller(agent, confirmation_mode, max_iterations)
 
     async def close(self):
         if self._closed:
@@ -56,50 +59,26 @@ class AgentSession:
             await self.runtime.close()
         self._closed = True
 
-    async def _create_runtime(self):
+    async def _create_runtime(self, runtime_name: str):
+        """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
 
-        logger.info(f'Using runtime: {config.runtime}')
-        runtime_cls = get_runtime_cls(config.runtime)
+        logger.info(f'Using runtime: {runtime_name}')
+        runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(self.event_stream, self.sid)
         await self.runtime.ainit()
 
-    async def _create_controller(self, start_event: dict):
-        """Creates an AgentController instance.
-
-        Args:
-            start_event: The start event data.
-        """
+    async def _create_controller(
+        self, agent: Agent, confirmation_mode: bool, max_iterations: int
+    ):
+        """Creates an AgentController instance."""
         if self.controller is not None:
             raise Exception('Controller already created')
         if self.runtime is None:
             raise Exception('Runtime must be initialized before the agent controller')
-        args = {
-            key: value
-            for key, value in start_event.get('args', {}).items()
-            if value != ''
-        }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = args.get(ConfigType.AGENT, config.default_agent)
-        confirmation_mode = args.get(
-            ConfigType.CONFIRMATION_MODE, config.confirmation_mode
-        )
-        max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
 
-        # override default LLM config
-        default_llm_config = config.get_llm_config()
-        default_llm_config.model = args.get(
-            ConfigType.LLM_MODEL, default_llm_config.model
-        )
-        default_llm_config.api_key = args.get(
-            ConfigType.LLM_API_KEY, default_llm_config.api_key
-        )
-
-        # TODO: override other LLM config & agent config groups (#2075)
-
-        llm = LLM(config=config.get_llm_config_from_agent(agent_cls))
-        agent = Agent.get_cls(agent_cls)(llm)
-        logger.info(f'Creating agent {agent.name} using LLM {llm}')
+        logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
         if isinstance(agent, CodeActAgent):
             if not self.runtime or not (
                 isinstance(self.runtime, ServerRuntime)
