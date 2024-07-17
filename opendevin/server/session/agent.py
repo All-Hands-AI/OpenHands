@@ -4,6 +4,7 @@ from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.stream import EventStream
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
@@ -32,6 +33,7 @@ class AgentSession:
     async def start(
         self,
         runtime_name: str,
+        sandbox_config: SandboxConfig,
         agent: Agent,
         confirmation_mode: bool,
         max_iterations: int,
@@ -45,7 +47,7 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_runtime(runtime_name)
+        await self._create_runtime(runtime_name, sandbox_config)
         await self._create_controller(agent, confirmation_mode, max_iterations)
 
     async def close(self):
@@ -59,14 +61,16 @@ class AgentSession:
             await self.runtime.close()
         self._closed = True
 
-    async def _create_runtime(self, runtime_name: str):
+    async def _create_runtime(self, runtime_name: str, sandbox_config: SandboxConfig):
         """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
 
         logger.info(f'Using runtime: {runtime_name}')
         runtime_cls = get_runtime_cls(runtime_name)
-        self.runtime = runtime_cls(self.event_stream, self.sid)
+        self.runtime = runtime_cls(
+            sandbox_config=sandbox_config, event_stream=self.event_stream, sid=self.sid
+        )
         await self.runtime.ainit()
 
     async def _create_controller(

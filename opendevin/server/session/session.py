@@ -99,6 +99,7 @@ class Session:
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
+                sandbox_config=self.config.sandbox,
                 agent=agent,
                 confirmation_mode=confirmation_mode,
                 max_iterations=max_iterations,

@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -63,11 +63,12 @@ def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
 class ServerRuntime(Runtime):
     def __init__(
         self,
+        sandbox_config: SandboxConfig,
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(event_stream, sid)
+        super().__init__(sandbox_config, event_stream, sid)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
             self.sandbox = create_sandbox(sid, config.sandbox.box_type)
@@ -76,9 +77,6 @@ class ServerRuntime(Runtime):
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
-
-    async def ainit(self) -> None:
-        pass
 
     async def close(self):
         if not self._is_external_sandbox:
