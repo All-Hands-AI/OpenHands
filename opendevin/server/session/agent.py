@@ -97,7 +97,7 @@ class AgentSession:
 
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(llm_config=config.get_llm_config_from_agent(agent_cls))
+        llm = LLM(config=config.get_llm_config_from_agent(agent_cls))
         agent = Agent.get_cls(agent_cls)(llm)
         logger.info(f'Creating agent {agent.name} using LLM {llm}')
         if isinstance(agent, CodeActAgent):
