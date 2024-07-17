@@ -6,13 +6,22 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import AppConfig, config
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import JupyterRequirement
 
 
-def create_docker_box_from_app_config(config: AppConfig, path: str) -> DockerSSHBox:
+def create_docker_box_from_app_config(
+    path: str, config: AppConfig = None
+) -> DockerSSHBox:
+    if config is None:
+        config = AppConfig(
+            sandbox=SandboxConfig(
+                box_type='ssh',
+                persist_sandbox=False,
+            )
+        )
     return DockerSSHBox(
         config=config.sandbox,
         persist_sandbox=config.persist_sandbox,
@@ -47,9 +56,17 @@ def reset_docker_ssh_box():
 
 def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
+    ssh_box = create_docker_box_from_app_config(temp_dir)
+
+    local_box_config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='local',
+        )
+    )
+    local_box = LocalBox(local_box_config.sandbox, temp_dir)
     for box in [
-        create_docker_box_from_app_config(config, temp_dir),
-        LocalBox(config.sandbox, temp_dir),
+        ssh_box,
+        local_box,
     ]:
         box.initialize()
         box.add_to_env(key='QUUX', value='abc"def')
@@ -121,7 +138,7 @@ EOF
 def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
     for box in [
-        create_docker_box_from_app_config(config, temp_dir)
+        create_docker_box_from_app_config(temp_dir),
     ]:  # FIXME: permission error on mkdir test for exec box
         box.initialize()
         exit_code, output = box.execute('ls -l')
@@ -153,7 +170,7 @@ def test_ssh_box_run_as_devin(temp_dir):
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('pwd && ls -l')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     expected_lines = ['/workspace', 'total 0']
@@ -165,7 +182,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('mkdir test')
     assert exit_code == 0, 'The exit code should be 0.'
     assert output.strip() == ''
@@ -185,7 +202,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('non_existing_command')
     assert exit_code != 0, (
         'The exit code should not be 0 for a failed command for '
@@ -195,7 +212,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
 
 
 def test_single_multiline_command(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo \\\n -e "foo"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output? Probably PS2?
@@ -206,7 +223,7 @@ def test_single_multiline_command(temp_dir):
 
 
 def test_multiline_echo(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo -e "hello\nworld"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output?
@@ -217,7 +234,7 @@ def test_multiline_echo(temp_dir):
 
 
 def test_sandbox_whitespace(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo -e "\\n\\n\\n"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output == '\r\n\r\n\r\n', (
@@ -227,7 +244,7 @@ def test_sandbox_whitespace(temp_dir):
 
 
 def test_sandbox_jupyter_plugin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     box.init_plugins([JupyterRequirement])
     exit_code, output = box.execute('echo "print(1)" | execute_cli')
     print(output)
@@ -238,8 +255,9 @@ def test_sandbox_jupyter_plugin(temp_dir):
     box.close()
 
 
-async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
-    exit_code, output = await box.execute('mkdir test')
+def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
+    box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+    exit_code, output = box.execute('mkdir test')
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
 
@@ -329,22 +347,46 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 @pytest.mark.asyncio
 async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
-    with patch.object(config.sandbox, 'enable_auto_lint', new=True):
-        assert config.sandbox.enable_auto_lint
-        box = create_docker_box_from_app_config(config, temp_dir)
-        await box.initialize()
-        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+            enable_auto_lint=False,
+        )
+    )
+    assert not config.sandbox.enable_auto_lint
+    box = create_docker_box_from_app_config(temp_dir, config)
+    await box.initialize()
+    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+
+
+def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
+    # get a temporary directory
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+            enable_auto_lint=True,
+        )
+    )
+    assert config.sandbox.enable_auto_lint
+    box = create_docker_box_from_app_config(temp_dir, config)
+    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
 @pytest.mark.skipif(True, reason='This test is outdated!')
 @pytest.mark.asyncio
 async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
-        # get a temporary directory
-        with patch.object(
-            config.sandbox, 'container_image', new=base_sandbox_image
-        ), patch.object(config.sandbox, 'enable_auto_lint', new=False):
-            assert not config.sandbox.enable_auto_lint
-            box = create_docker_box_from_app_config(config, temp_dir)
-            await box.initialize()
-            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+        config = AppConfig(
+            sandbox=SandboxConfig(
+                box_type='ssh',
+                container_image=base_sandbox_image,
+                persist_sandbox=False,
+                enable_auto_lint=False,
+            )
+        )
+        assert not config.sandbox.enable_auto_lint
+        box = create_docker_box_from_app_config(temp_dir, config)
+        await box.initialize()
+        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
