@@ -29,53 +29,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 
-def action_to_str(action: Action) -> str:
-    if isinstance(action, CmdRunAction):
-        return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
-    elif isinstance(action, IPythonRunCellAction):
-        return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, MessageAction):
-        return action.content
-    return ''
-
-
-def get_action_message(action: Action) -> dict[str, str] | None:
-    if (
-        isinstance(action, CmdRunAction)
-        or isinstance(action, IPythonRunCellAction)
-        or isinstance(action, MessageAction)
-    ):
-        return {
-            'role': 'user' if action.source == 'user' else 'assistant',
-            'content': action_to_str(action),
-        }
-    return None
-
-
-def get_observation_message(
-    obs: Observation, max_message_chars: int
-) -> dict[str, str] | None:
-    if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
-        content += (
-            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
-        )
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, IPythonRunCellObservation):
-        content = 'OBSERVATION:\n' + obs.content
-        # replace base64 images with a placeholder
-        splitted = content.split('\n')
-        for i, line in enumerate(splitted):
-            if '![image](data:image/png;base64,' in line:
-                splitted[i] = (
-                    '![image](data:image/png;base64, ...) already displayed to user'
-                )
-        content = '\n'.join(splitted)
-        content = truncate_content(content, max_message_chars)
-        return {'role': 'user', 'content': content}
-    return None
-
-
 def get_system_message() -> str:
     return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
 
@@ -119,6 +72,53 @@ class CodeActSWEAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
+
+    def action_to_str(self, action: Action) -> str:
+        if isinstance(action, CmdRunAction):
+            return (
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+            )
+        elif isinstance(action, IPythonRunCellAction):
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
+        elif isinstance(action, MessageAction):
+            return action.content
+        return ''
+
+    def get_action_message(self, action: Action) -> dict[str, str] | None:
+        if (
+            isinstance(action, CmdRunAction)
+            or isinstance(action, IPythonRunCellAction)
+            or isinstance(action, MessageAction)
+        ):
+            return {
+                'role': 'user' if action.source == 'user' else 'assistant',
+                'content': self.action_to_str(action),
+            }
+        return None
+
+    def get_observation_message(self, obs: Observation) -> dict[str, str] | None:
+        max_message_chars = self.llm.config.max_message_chars
+        if isinstance(obs, CmdOutputObservation):
+            content = 'OBSERVATION:\n' + truncate_content(
+                obs.content, max_message_chars
+            )
+            content += (
+                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
+            )
+            return {'role': 'user', 'content': content}
+        elif isinstance(obs, IPythonRunCellObservation):
+            content = 'OBSERVATION:\n' + obs.content
+            # replace base64 images with a placeholder
+            splitted = content.split('\n')
+            for i, line in enumerate(splitted):
+                if '![image](data:image/png;base64,' in line:
+                    splitted[i] = (
+                        '![image](data:image/png;base64, ...) already displayed to user'
+                    )
+            content = '\n'.join(splitted)
+            content = truncate_content(content, max_message_chars)
+            return {'role': 'user', 'content': content}
+        return None
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -165,11 +165,9 @@ class CodeActSWEAgent(Agent):
         for event in state.history.get_events():
             # create a regular message from an event
             if isinstance(event, Action):
-                message = get_action_message(event)
+                message = self.get_action_message(event)
             elif isinstance(event, Observation):
-                message = get_observation_message(
-                    event, self.llm.config.max_message_chars
-                )
+                message = self.get_observation_message(event)
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
