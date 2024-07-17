@@ -45,9 +45,6 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ⚡ Getting Started
-
-The easiest way to run OpenDevin is to [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new/OpenDevin/OpenDevin) but it is not the recommended usage path yet. For the best experience and optimal setup, please follow the docker method.
-
 OpenDevin works best with Docker version 26.0.0+ (Docker Desktop 4.31.0+).
 You must be using Linux, Mac OS, or WSL on Windows.
 
@@ -74,7 +71,7 @@ docker run -it \
 > By default, this command pulls the `latest` tag, which represents the most recent release of OpenDevin. You have other options as well:
 > - For a specific release version, use `ghcr.io/opendevin/opendevin:<OpenDevin_version>` (replace <OpenDevin_version> with the desired version number).
 > - For the most up-to-date development version, use `ghcr.io/opendevin/opendevin:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
->
+> 
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
