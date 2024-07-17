@@ -162,9 +162,8 @@ if __name__ == '__main__':
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
-        llm = LLM(config=llm_config)
-    else:
-        llm = LLM(config=config.get_llm_config_from_agent(args.agent_cls))
+        config.set_llm_config(llm_config)
+    llm = LLM(config=config.get_llm_config_from_agent(args.agent_cls))
 
     # Create the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
