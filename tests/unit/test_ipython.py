@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.events.action import IPythonRunCellAction
 from opendevin.events.observation import IPythonRunCellObservation
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
@@ -43,7 +43,10 @@ async def test_run_python_backticks():
         new=mock_sandbox_execute,
     ):
         # Initialize the runtime with the mock event_stream
-        runtime = ServerRuntime(event_stream=mock_event_stream)
+        runtime = ServerRuntime(
+            sandbox_config=SandboxConfig(box_type='ssh', persist_sandbox=False),
+            event_stream=mock_event_stream,
+        )
 
         # Define the test action with a simple IPython command
         action = IPythonRunCellAction(code=test_code)
