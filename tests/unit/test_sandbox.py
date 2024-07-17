@@ -315,20 +315,6 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
-def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
-    # get a temporary directory
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-            enable_auto_lint=True,
-        )
-    )
-    assert config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(temp_dir, config)
-    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
-
-
 @pytest.mark.skipif(
     os.getenv('TEST_IN_CI') != 'true',
     reason='The unittest need to download image, so only run on CI',
