@@ -1,11 +1,10 @@
 import os
 import pathlib
 import tempfile
-from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import AppConfig, config
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -36,9 +35,23 @@ def temp_dir(monkeypatch):
 
 def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
+    ssh_box_config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
+    ssh_box = create_docker_box_from_app_config(ssh_box_config, temp_dir)
+
+    local_box_config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='local',
+        )
+    )
+    local_box = LocalBox(local_box_config.sandbox, temp_dir)
     for box in [
-        create_docker_box_from_app_config(config, temp_dir),
-        LocalBox(config.sandbox, temp_dir),
+        ssh_box,
+        local_box,
     ]:
         box.add_to_env(key='QUUX', value='abc"def')
         assert box._env['FOOBAR'] == 'BAZ'
@@ -107,6 +120,12 @@ EOF
 
 
 def test_ssh_box_run_as_devin(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     # get a temporary directory
     for box in [
         create_docker_box_from_app_config(config, temp_dir)
@@ -140,6 +159,12 @@ def test_ssh_box_run_as_devin(temp_dir):
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     exit_code, output = box.execute('pwd && ls -l')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -152,6 +177,12 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     exit_code, output = box.execute('mkdir test')
     assert exit_code == 0, 'The exit code should be 0.'
@@ -172,6 +203,12 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     exit_code, output = box.execute('non_existing_command')
     assert exit_code != 0, (
@@ -182,6 +219,12 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
 
 
 def test_single_multiline_command(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     exit_code, output = box.execute('echo \\\n -e "foo"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -193,6 +236,12 @@ def test_single_multiline_command(temp_dir):
 
 
 def test_multiline_echo(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     exit_code, output = box.execute('echo -e "hello\nworld"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -204,6 +253,12 @@ def test_multiline_echo(temp_dir):
 
 
 def test_sandbox_whitespace(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     exit_code, output = box.execute('echo -e "\\n\\n\\n"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -214,6 +269,12 @@ def test_sandbox_whitespace(temp_dir):
 
 
 def test_sandbox_jupyter_plugin(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+        )
+    )
     box = create_docker_box_from_app_config(config, temp_dir)
     box.init_plugins([JupyterRequirement])
     exit_code, output = box.execute('echo "print(1)" | execute_cli')
@@ -225,7 +286,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
     box.close()
 
 
-def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
+def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = box.execute('mkdir test')
     print(output)
@@ -311,10 +372,30 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
 def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
-    with patch.object(config.sandbox, 'enable_auto_lint', new=True):
-        assert config.sandbox.enable_auto_lint
-        box = create_docker_box_from_app_config(config, temp_dir)
-        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+            enable_auto_lint=False,
+        )
+    )
+    assert not config.sandbox.enable_auto_lint
+    box = create_docker_box_from_app_config(config, temp_dir)
+    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+
+
+def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
+    # get a temporary directory
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+            enable_auto_lint=True,
+        )
+    )
+    assert config.sandbox.enable_auto_lint
+    box = create_docker_box_from_app_config(config, temp_dir)
+    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
 @pytest.mark.skipif(
@@ -323,10 +404,14 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
 )
 def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
-        # get a temporary directory
-        with patch.object(
-            config.sandbox, 'container_image', new=base_sandbox_image
-        ), patch.object(config.sandbox, 'enable_auto_lint', new=False):
-            assert not config.sandbox.enable_auto_lint
-            box = create_docker_box_from_app_config(config, temp_dir)
-            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+        config = AppConfig(
+            sandbox=SandboxConfig(
+                box_type='ssh',
+                container_image=base_sandbox_image,
+                persist_sandbox=False,
+                enable_auto_lint=False,
+            )
+        )
+        assert not config.sandbox.enable_auto_lint
+        box = create_docker_box_from_app_config(config, temp_dir)
+        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
