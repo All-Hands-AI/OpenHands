@@ -2,14 +2,13 @@ import os
 import pathlib
 import tempfile
 import time
-from unittest.mock import patch
 
 import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
-from opendevin.runtime.plugins import JupyterRequirement
+from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
 def create_docker_box_from_app_config(
@@ -255,7 +254,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
     box.close()
 
 
-def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
+async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = box.execute('mkdir test')
     print(output)
@@ -343,7 +342,6 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     await box.close()
 
 
-@pytest.mark.skipif(True, reason='This test is outdated!')
 @pytest.mark.asyncio
 async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
@@ -360,7 +358,8 @@ async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
-def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
+@pytest.mark.asyncio
+async def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
     # get a temporary directory
     config = AppConfig(
         sandbox=SandboxConfig(
@@ -371,10 +370,14 @@ def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
     )
     assert config.sandbox.enable_auto_lint
     box = create_docker_box_from_app_config(temp_dir, config)
-    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+    await box.initialize()
+    await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
-@pytest.mark.skipif(True, reason='This test is outdated!')
+@pytest.mark.skipif(
+    os.getenv('TEST_IN_CI') != 'true',
+    reason='The unittest need to download image, so only run on CI',
+)
 @pytest.mark.asyncio
 async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
@@ -389,4 +392,4 @@ async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         assert not config.sandbox.enable_auto_lint
         box = create_docker_box_from_app_config(temp_dir, config)
         await box.initialize()
-        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+        await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
