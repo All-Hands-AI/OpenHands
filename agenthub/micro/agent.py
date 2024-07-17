@@ -1,5 +1,3 @@
-from functools import partial
-
 from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
@@ -28,31 +26,32 @@ def to_json(obj, **kwargs):
     return json.dumps(obj, **kwargs)
 
 
-def history_to_json(
-    history: ShortTermHistory, max_message_chars: int, max_events: int = 20, **kwargs
-):
-    """
-    Serialize and simplify history to str format
-    """
-    processed_history = []
-    event_count = 0
-
-    for event in history.get_events(reverse=True):
-        if event_count >= max_events:
-            break
-        processed_history.append(event_to_memory(event, max_message_chars))
-        event_count += 1
-
-    # history is in reverse order, let's fix it
-    processed_history.reverse()
-
-    return json.dumps(processed_history, **kwargs)
-
-
 class MicroAgent(Agent):
     VERSION = '1.0'
     prompt = ''
     agent_definition: dict = {}
+
+    def history_to_json(
+        self, history: ShortTermHistory, max_events: int = 20, **kwargs
+    ):
+        """
+        Serialize and simplify history to str format
+        """
+        processed_history = []
+        event_count = 0
+
+        for event in history.get_events(reverse=True):
+            if event_count >= max_events:
+                break
+            processed_history.append(
+                event_to_memory(event, self.llm.config.max_message_chars)
+            )
+            event_count += 1
+
+        # history is in reverse order, let's fix it
+        processed_history.reverse()
+
+        return json.dumps(processed_history, **kwargs)
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -67,9 +66,7 @@ class MicroAgent(Agent):
             state=state,
             instructions=instructions,
             to_json=to_json,
-            history_to_json=partial(
-                history_to_json, max_message_chars=self.llm.config.max_message_chars
-            ),
+            history_to_json=self.history_to_json,
             delegates=self.delegates,
             latest_user_message=state.get_current_user_intent(),
         )
