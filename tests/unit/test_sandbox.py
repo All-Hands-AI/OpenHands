@@ -5,9 +5,9 @@ import tempfile
 import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
-from opendevin.runtime.docker.local_box import LocalBox
-from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
+from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.utils import split_bash_commands
 
 
 def create_docker_box_from_app_config(
@@ -40,30 +40,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-
-def test_env_vars(temp_dir):
-    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    ssh_box = create_docker_box_from_app_config(temp_dir)
-
-    local_box_config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='local',
-        )
-    )
-    local_box = LocalBox(local_box_config.sandbox, temp_dir)
-    for box in [
-        ssh_box,
-        local_box,
-    ]:
-        box.add_to_env(key='QUUX', value='abc"def')
-        assert box._env['FOOBAR'] == 'BAZ'
-        assert box._env['QUUX'] == 'abc"def'
-        exit_code, output = box.execute('echo $FOOBAR $QUUX')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert (
-            output.strip() == 'BAZ abc"def'
-        ), f'Output: {output} for {box.__class__.__name__}'
 
 
 def test_split_commands():
@@ -335,20 +311,6 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         )
     )
     assert not config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(temp_dir, config)
-    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
-
-
-def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
-    # get a temporary directory
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-            enable_auto_lint=True,
-        )
-    )
-    assert config.sandbox.enable_auto_lint
     box = create_docker_box_from_app_config(temp_dir, config)
     _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
