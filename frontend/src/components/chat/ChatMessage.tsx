@@ -3,14 +3,10 @@ import Markdown from "react-markdown";
 import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
-import { Tooltip } from "@nextui-org/react";
-import AgentState from "#/types/AgentState";
 import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
-import ConfirmIcon from "#/assets/confirm";
-import RejectIcon from "#/assets/reject";
-import { changeAgentState } from "#/services/agentStateService";
+import ConfirmationButtons from "./ConfirmationButtons";
 
 interface Message {
   sender: "user" | "assistant";
@@ -29,8 +25,24 @@ function ChatMessage({
   isLastMessage,
   awaitingUserConfirmation,
 }: MessageProps) {
+  const { t } = useTranslation();
+
   const [isCopy, setIsCopy] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+
+  React.useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    if (isCopy) {
+      timeout = setTimeout(() => {
+        setIsCopy(false);
+      }, 1500);
+    }
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [isCopy]);
 
   const className = twMerge(
     "markdown-body",
@@ -38,23 +50,18 @@ function ChatMessage({
     message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
   );
 
-  const { t } = useTranslation();
-  const copyToClipboard = () => {
-    navigator.clipboard
-      .writeText(message.content)
-      .then(() => {
-        setIsCopy(true);
-        setTimeout(() => {
-          setIsCopy(false);
-        }, 1500);
-        toast.info(t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPIED));
-      })
-      .catch(() => {
-        toast.error(
-          "copy-error",
-          t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED),
-        );
-      });
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setIsCopy(true);
+
+      toast.info(t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPIED));
+    } catch {
+      toast.error(
+        "copy-error",
+        t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED),
+      );
+    }
   };
 
   return (
@@ -66,6 +73,7 @@ function ChatMessage({
     >
       {isHovering && (
         <button
+          data-testid="copy-button"
           onClick={copyToClipboard}
           className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-700"
           aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)}
@@ -89,43 +97,7 @@ function ChatMessage({
       )}
       {isLastMessage &&
         message.sender === "assistant" &&
-        awaitingUserConfirmation && (
-          <div className="flex justify-between items-center pt-4">
-            <p>{t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}</p>
-            <div className="flex items-center gap-3">
-              <Tooltip
-                content={t(I18nKey.CHAT_INTERFACE$USER_CONFIRMED)}
-                closeDelay={100}
-              >
-                <button
-                  type="button"
-                  aria-label="Confirm action"
-                  className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
-                  onClick={() => {
-                    changeAgentState(AgentState.USER_CONFIRMED);
-                  }}
-                >
-                  <ConfirmIcon />
-                </button>
-              </Tooltip>
-              <Tooltip
-                content={t(I18nKey.CHAT_INTERFACE$USER_REJECTED)}
-                closeDelay={100}
-              >
-                <button
-                  type="button"
-                  aria-label="Reject action"
-                  className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
-                  onClick={() => {
-                    changeAgentState(AgentState.USER_REJECTED);
-                  }}
-                >
-                  <RejectIcon />
-                </button>
-              </Tooltip>
-            </div>
-          </div>
-        )}
+        awaitingUserConfirmation && <ConfirmationButtons />}
     </div>
   );
 }

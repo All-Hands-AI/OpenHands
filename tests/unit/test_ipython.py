@@ -81,7 +81,18 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
         config.sandbox, 'box_type', new='ssh'
     ):
-        box = DockerSSHBox()
+        box = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=config.persist_sandbox,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            use_host_network=config.use_host_network,
+            run_as_devin=config.run_as_devin,
+            ssh_hostname=config.ssh_hostname,
+            ssh_password=config.ssh_password,
+            ssh_port=config.ssh_port,
+        )
         box.init_plugins([JupyterRequirement])
         test_code = "print('Hello, `World`!')"
         expected_write_command = (

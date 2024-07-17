@@ -12,11 +12,12 @@ import docker
 from pexpect import exceptions, pxssh
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.plugins.requirement import PluginRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
@@ -199,16 +200,30 @@ class DockerSSHBox(Sandbox):
 
     _ssh_password: str
     _ssh_port: int
-    ssh: pxssh.pxssh
+    ssh: pxssh.pxssh | None = None
 
     def __init__(
         self,
-        container_image: str | None = None,
-        timeout: int = config.sandbox.timeout,
+        config: SandboxConfig,
+        persist_sandbox: bool,
+        workspace_mount_path: str,
+        sandbox_workspace_dir: str,
+        cache_dir: str,
+        use_host_network: bool,
+        run_as_devin: bool,
+        ssh_hostname: str = 'host.docker.internal',
+        ssh_password: str | None = None,
+        ssh_port: int = 22,
         sid: str | None = None,
     ):
+        self.config = config
+        self.workspace_mount_path = workspace_mount_path
+        self.sandbox_workspace_dir = sandbox_workspace_dir
+        self.cache_dir = cache_dir
+        self.use_host_network = use_host_network
+        self.run_as_devin = run_as_devin
         logger.info(
-            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
+            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={config.user_id} in the sandbox'
         )
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -220,7 +235,7 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        if config.persist_sandbox:
+        if persist_sandbox:
             if not self.run_as_devin:
                 raise Exception(
                     'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
@@ -229,21 +244,19 @@ class DockerSSHBox(Sandbox):
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
-        self.timeout = timeout
-        self.container_image = container_image or config.sandbox.container_image
         self.container_image = get_od_sandbox_image(
-            self.container_image, self.docker_client
+            config.container_image, self.docker_client
         )
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
-        if config.persist_sandbox:
-            if not config.ssh_password:
-                raise Exception(
-                    'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
-                )
-            self._ssh_password = config.ssh_password
-            self._ssh_port = config.ssh_port
+        self.persist_sandbox = persist_sandbox
+        self.ssh_hostname = ssh_hostname
+        if persist_sandbox:
+            if not ssh_password:
+                raise ValueError('ssh_password is required for persistent sandbox')
+            self._ssh_password = ssh_password
+            self._ssh_port = ssh_port
         else:
             self._ssh_password = str(uuid.uuid4())
             self._ssh_port = find_available_tcp_port()
@@ -253,7 +266,7 @@ class DockerSSHBox(Sandbox):
         except docker.errors.NotFound:
             self.is_initial_session = True
             logger.info('Detected initial session.')
-        if not config.persist_sandbox or self.is_initial_session:
+        if not persist_sandbox or self.is_initial_session:
             logger.info('Creating new Docker container')
             n_tries = 5
             while n_tries > 0:
@@ -285,10 +298,7 @@ class DockerSSHBox(Sandbox):
         self.execute('git config --global user.name "OpenDevin"')
         self.execute('git config --global user.email "opendevin@all-hands.dev"')
         atexit.register(self.close)
-        super().__init__()
-
-    def add_to_env(self, key: str, value: str):
-        super().add_to_env(key, value)
+        super().__init__(config)
 
     def setup_user(self):
         # Make users sudoers passwordless
@@ -325,7 +335,7 @@ class DockerSSHBox(Sandbox):
                 [
                     '/bin/bash',
                     '-c',
-                    f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {self.user_id} opendevin',
+                    f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {self.config.user_id} opendevin',
                 ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
@@ -408,13 +418,13 @@ class DockerSSHBox(Sandbox):
         try:
             self.ssh = pxssh.pxssh(
                 echo=False,
-                timeout=self.timeout,
+                timeout=self.config.timeout,
                 encoding='utf-8',
                 codec_errors='replace',
             )
             hostname = self.ssh_hostname
             username = 'opendevin' if self.run_as_devin else 'root'
-            if config.persist_sandbox:
+            if self.persist_sandbox:
                 password_msg = 'using your SSH password'
             else:
                 password_msg = f"using the password '{self._ssh_password}'"
@@ -434,6 +444,7 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         self.__ssh_login()
+        assert self.ssh is not None
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -454,6 +465,7 @@ class DockerSSHBox(Sandbox):
         prev_output: str = '',
         ignore_last_output: bool = False,
     ) -> tuple[int, str]:
+        assert self.ssh is not None
         logger.exception(
             f'Command "{cmd}" timed out, killing process...', exc_info=False
         )
@@ -471,7 +483,8 @@ class DockerSSHBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout or self.timeout
+        assert self.ssh is not None
+        timeout = timeout or self.config.timeout
         commands = split_bash_commands(cmd)
         if len(commands) > 1:
             all_output = ''
@@ -486,7 +499,7 @@ class DockerSSHBox(Sandbox):
 
         self.ssh.sendline(cmd)
         if stream:
-            return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
+            return 0, SSHExecCancellableStream(self.ssh, cmd, self.config.timeout)
         success = self.ssh.prompt(timeout=timeout)
         if not success:
             return self._send_interrupt(cmd)
@@ -580,7 +593,7 @@ class DockerSSHBox(Sandbox):
             while container.status != 'running':
                 time.sleep(1)
                 elapsed += 1
-                if elapsed > self.timeout:
+                if elapsed > self.config.timeout:
                     break
                 container = self.docker_client.containers.get(self.container_name)
         except Exception:
@@ -597,7 +610,7 @@ class DockerSSHBox(Sandbox):
             while container.status != 'exited':
                 time.sleep(1)
                 elapsed += 1
-                if elapsed > self.timeout:
+                if elapsed > self.config.timeout:
                     break
                 container = self.docker_client.containers.get(self.container_name)
         except docker.errors.NotFound:
@@ -608,26 +621,6 @@ class DockerSSHBox(Sandbox):
         if exit_code != 0:
             raise Exception('Failed to get working directory')
         return str(result).strip()
-
-    @property
-    def user_id(self):
-        return config.sandbox.user_id
-
-    @property
-    def run_as_devin(self):
-        return config.run_as_devin
-
-    @property
-    def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
-
-    @property
-    def ssh_hostname(self):
-        return config.ssh_hostname
-
-    @property
-    def use_host_network(self):
-        return config.use_host_network
 
     def is_container_running(self):
         try:
@@ -641,11 +634,11 @@ class DockerSSHBox(Sandbox):
 
     @property
     def volumes(self):
-        mount_dir = config.workspace_mount_path
+        mount_dir = self.workspace_mount_path
         return {
             mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
-            config.cache_dir: {
+            self.cache_dir: {
                 'bind': (
                     '/home/opendevin/.cache' if self.run_as_devin else '/root/.cache'
                 ),
@@ -706,7 +699,7 @@ class DockerSSHBox(Sandbox):
             logger.info(
                 f'waiting for container to start: {elapsed}, container status: {self.container.status}'
             )
-            if elapsed > self.timeout:
+            if elapsed > self.config.timeout:
                 break
         if self.container.status != 'running':
             raise Exception('Failed to start container')
@@ -717,7 +710,7 @@ class DockerSSHBox(Sandbox):
         for container in containers:
             try:
                 if container.name.startswith(self.container_name):
-                    if config.persist_sandbox:
+                    if self.persist_sandbox:
                         container.stop()
                     else:
                         # only remove the container we created
@@ -731,7 +724,15 @@ class DockerSSHBox(Sandbox):
 
 if __name__ == '__main__':
     try:
-        ssh_box = DockerSSHBox()
+        ssh_box = DockerSSHBox(
+            config=SandboxConfig(),
+            run_as_devin=False,
+            workspace_mount_path='/path/to/workspace',
+            cache_dir='/path/to/cache',
+            sandbox_workspace_dir='/sandbox',
+            use_host_network=False,
+            persist_sandbox=False,
+        )
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
@@ -741,7 +742,7 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+    plugins: list[PluginRequirement] = [AgentSkillsRequirement(), JupyterRequirement()]
     ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'

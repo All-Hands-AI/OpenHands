@@ -1,5 +1,4 @@
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.core.utils import json
@@ -116,9 +115,11 @@ def get_hint(latest_action_id: str) -> str:
     return hints.get(latest_action_id, '')
 
 
-def get_prompt_and_images(state: State) -> tuple[str, list[str]]:
-    """
-    Gets the prompt and images for the planner agent.
+def get_prompt_and_images(
+    state: State, max_message_chars: int
+) -> tuple[str, list[str]]:
+    """Gets the prompt for the planner agent.
+
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
@@ -127,10 +128,6 @@ def get_prompt_and_images(state: State) -> tuple[str, list[str]]:
     Returns:
     - str: The formatted string prompt with historical values
     """
-    max_message_chars = config.get_llm_config_from_agent(
-        'PlannerAgent'
-    ).max_message_chars
-
     # the plan
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
 

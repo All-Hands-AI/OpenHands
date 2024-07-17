@@ -42,7 +42,9 @@ class PlannerAgent(Agent):
             'abandoned',
         ]:
             return AgentFinishAction()
-        prompt, image_urls = get_prompt_and_images(state)
+        prompt, image_urls = get_prompt_and_images(
+            state, self.llm.config.max_message_chars
+        )
         content: MessageContent = [{'type': 'text', 'text': prompt}]
         if image_urls:
             for image_url in image_urls:

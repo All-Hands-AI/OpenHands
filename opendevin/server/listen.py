@@ -29,7 +29,7 @@ from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
-from opendevin.core.config import config
+from opendevin.core.config import LLMConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState  # Add this import
 from opendevin.events.action import ChangeAgentStateAction, NullAction
@@ -166,7 +166,7 @@ async def attach_session(request: Request, call_next):
     if 'Bearer' in auth_token:
         auth_token = auth_token.split('Bearer')[1].strip()
 
-    request.state.sid = get_sid_from_token(auth_token)
+    request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
     if request.state.sid == '':
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -245,7 +245,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
-        sid = get_sid_from_token(token)
+        sid = get_sid_from_token(token, config.jwt_secret)
 
         if sid == '':
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
@@ -253,7 +253,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return
     else:
         sid = str(uuid.uuid4())
-        token = sign_token({'sid': sid})
+        token = sign_token({'sid': sid}, config.jwt_secret)
 
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
@@ -280,8 +280,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/api/options/models')
-async def get_litellm_models():
-    """Get all models supported by LiteLLM.
+async def get_litellm_models() -> list[str]:
+    """
+    Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
     error-prone Bedrock models.
@@ -298,7 +299,19 @@ async def get_litellm_models():
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
         litellm_model_list
     )
-    bedrock_model_list = bedrock.list_foundation_models()
+    # TODO: for bedrock, this is using the default config
+    llm_config: LLMConfig = config.get_llm_config()
+    bedrock_model_list = []
+    if (
+        llm_config.aws_region_name
+        and llm_config.aws_access_key_id
+        and llm_config.aws_secret_access_key
+    ):
+        bedrock_model_list = bedrock.list_foundation_models(
+            llm_config.aws_region_name,
+            llm_config.aws_access_key_id,
+            llm_config.aws_secret_access_key,
+        )
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
         ollama_base_url = llm_config.ollama_base_url
