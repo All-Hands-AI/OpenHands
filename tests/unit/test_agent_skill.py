@@ -7,10 +7,25 @@ import docx
 import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
-    MSG_FILE_UPDATED, WINDOW, _print_window, append_file, create_file,
-    edit_file_by_replace, find_file, goto_line, insert_content_at_line,
-    open_file, parse_docx, parse_latex, parse_pdf, parse_pptx, scroll_down,
-    scroll_up, search_dir, search_file)
+    MSG_FILE_UPDATED,
+    WINDOW,
+    _print_window,
+    append_file,
+    create_file,
+    edit_file_by_replace,
+    find_file,
+    goto_line,
+    insert_content_at_line,
+    open_file,
+    parse_docx,
+    parse_latex,
+    parse_pdf,
+    parse_pptx,
+    scroll_down,
+    scroll_up,
+    search_dir,
+    search_file,
+)
 
 
 # CURRENT_FILE must be reset for each test
@@ -47,12 +62,12 @@ def _calculate_window_bounds(current_line, total_lines, window_size):
         start = current_line - half_window
         end = current_line + half_window
     return start, end
-    
+
+
 def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
     file_path = temp_path / 'test_file.rb'
     file_path.write_text('\n' * num_lines)
     return file_path
-
 
 
 def test_open_file_unexist_path():
