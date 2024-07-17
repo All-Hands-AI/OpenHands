@@ -10,7 +10,16 @@ from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
-def create_docker_box_from_app_config(config: AppConfig, path: str) -> DockerSSHBox:
+def create_docker_box_from_app_config(
+    path: str, config: AppConfig = None
+) -> DockerSSHBox:
+    if config is None:
+        config = AppConfig(
+            sandbox=SandboxConfig(
+                box_type='ssh',
+                persist_sandbox=False,
+            )
+        )
     return DockerSSHBox(
         config=config.sandbox,
         persist_sandbox=config.persist_sandbox,
@@ -35,13 +44,7 @@ def temp_dir(monkeypatch):
 
 def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    ssh_box_config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    ssh_box = create_docker_box_from_app_config(ssh_box_config, temp_dir)
+    ssh_box = create_docker_box_from_app_config(temp_dir)
 
     local_box_config = AppConfig(
         sandbox=SandboxConfig(
@@ -120,15 +123,9 @@ EOF
 
 
 def test_ssh_box_run_as_devin(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
     # get a temporary directory
     for box in [
-        create_docker_box_from_app_config(config, temp_dir)
+        create_docker_box_from_app_config(temp_dir),
     ]:  # FIXME: permission error on mkdir test for exec box
         exit_code, output = box.execute('ls -l')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -159,13 +156,7 @@ def test_ssh_box_run_as_devin(temp_dir):
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('pwd && ls -l')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     expected_lines = ['/workspace', 'total 0']
@@ -177,13 +168,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('mkdir test')
     assert exit_code == 0, 'The exit code should be 0.'
     assert output.strip() == ''
@@ -203,13 +188,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('non_existing_command')
     assert exit_code != 0, (
         'The exit code should not be 0 for a failed command for '
@@ -219,13 +198,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
 
 
 def test_single_multiline_command(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo \\\n -e "foo"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output? Probably PS2?
@@ -236,13 +209,7 @@ def test_single_multiline_command(temp_dir):
 
 
 def test_multiline_echo(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo -e "hello\nworld"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output?
@@ -253,13 +220,7 @@ def test_multiline_echo(temp_dir):
 
 
 def test_sandbox_whitespace(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo -e "\\n\\n\\n"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output == '\r\n\r\n\r\n', (
@@ -269,13 +230,7 @@ def test_sandbox_whitespace(temp_dir):
 
 
 def test_sandbox_jupyter_plugin(temp_dir):
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-        )
-    )
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     box.init_plugins([JupyterRequirement])
     exit_code, output = box.execute('echo "print(1)" | execute_cli')
     print(output)
@@ -380,7 +335,7 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         )
     )
     assert not config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir, config)
     _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
@@ -394,7 +349,7 @@ def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
         )
     )
     assert config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir, config)
     _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
@@ -413,5 +368,5 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             )
         )
         assert not config.sandbox.enable_auto_lint
-        box = create_docker_box_from_app_config(config, temp_dir)
+        box = create_docker_box_from_app_config(temp_dir, config)
         _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
