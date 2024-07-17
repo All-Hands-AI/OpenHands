@@ -301,6 +301,7 @@ async def get_litellm_models() -> list[str]:
     )
     # TODO: for bedrock, this is using the default config
     llm_config: LLMConfig = config.get_llm_config()
+    bedrock_model_list = []
     if (
         llm_config.aws_region_name
         and llm_config.aws_access_key_id
@@ -311,7 +312,7 @@ async def get_litellm_models() -> list[str]:
             llm_config.aws_access_key_id,
             llm_config.aws_secret_access_key,
         )
-        model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
         ollama_base_url = llm_config.ollama_base_url
         if llm_config.model.startswith('ollama'):
