@@ -7,7 +7,7 @@ import pytest
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import parse_arguments
+from opendevin.core.config import LLMConfig, parse_arguments
 from opendevin.core.main import run_agent_controller
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
@@ -44,20 +44,22 @@ print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
     os.getenv('DEFAULT_AGENT') == 'ManagerAgent',
     reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
-def test_write_simple_script():
+def test_write_simple_script() -> None:
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     final_state: State | None = asyncio.run(
         run_agent_controller(agent, task, exit_on_message=True)
     )
+    assert final_state is not None
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
 
     # Verify the script file exists
+    assert workspace_base is not None
     script_path = os.path.join(workspace_base, 'hello.sh')
     assert os.path.exists(script_path), 'The file "hello.sh" does not exist'
 
@@ -103,7 +105,7 @@ def test_edits():
         shutil.copy(os.path.join(source_dir, file), dest_file)
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
@@ -137,7 +139,7 @@ def test_ipython():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
@@ -171,7 +173,7 @@ def test_simple_task_rejection():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
@@ -195,7 +197,7 @@ def test_ipython_module():
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
@@ -235,7 +237,7 @@ def test_browse_internet(http_server):
     args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM())
+    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
