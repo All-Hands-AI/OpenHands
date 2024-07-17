@@ -22,7 +22,6 @@ jobs:
   test-for-runtime:
     name: Test for Runtime
     runs-on: ubuntu-latest
-    needs: ghcr_build
     env:
       PERSIST_SANDBOX: "false"
     steps:
