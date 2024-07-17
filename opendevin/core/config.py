@@ -470,7 +470,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     try:
         # set sandbox config from the toml file
-        sandbox_config = config.sandbox
+        sandbox_config = cfg.sandbox
 
         # migrate old sandbox configs from [core] section to sandbox config
         keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
