@@ -44,7 +44,6 @@ The Runtime Client is a crucial component of the OpenDevin system, responsible f
 
 1. **Initialization**:
    - The `EventStreamRuntime` class in `runtime.py` initializes the Docker container and sets up the runtime environment.
-   - It uses a layered approach for building Docker images, as described in the previous section.
 
 2. **Communication**:
    - The Runtime Client uses FastAPI to create a web server inside the Docker container.
