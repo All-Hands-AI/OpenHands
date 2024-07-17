@@ -233,9 +233,7 @@ class LLM:
 
             # skip if messages is empty (thus debug_message is empty)
             if debug_message:
-                # logger.info('Prompt: %s', debug_message)
                 resp = completion_unwrapped(*args, **kwargs)
-                logger.info(f'Response: {resp}')
             else:
                 resp = {'choices': [{'message': {'content': ''}}]}
 
@@ -276,9 +274,7 @@ class LLM:
             after=attempt_on_error,
         )
         async def async_completion_wrapper(*args, **kwargs):
-            """
-            Async wrapper for the litellm acompletion function. Logs the input and output of the completion function.
-            """
+            """Async wrapper for the litellm acompletion function."""
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -353,8 +349,8 @@ class LLM:
 
     @property
     def async_completion(self):
-        """
-        Decorator for the async litellm completion function.
+        """Decorator for the async litellm completion function.
+
         Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
         return self._async_completion

@@ -51,6 +51,7 @@ def test_env_vars(temp_dir):
         create_docker_box_from_app_config(config, temp_dir),
         LocalBox(config.sandbox, temp_dir),
     ]:
+        box.initialize()
         box.add_to_env(key='QUUX', value='abc"def')
         assert box._env['FOOBAR'] == 'BAZ'
         assert box._env['QUUX'] == 'abc"def'

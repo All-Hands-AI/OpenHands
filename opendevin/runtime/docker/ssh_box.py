@@ -10,6 +10,7 @@ import tarfile
 import tempfile
 import time
 import uuid
+from contextlib import suppress
 from glob import glob
 from typing import Any, Dict, Optional, Tuple, Union  # type: ignore[unused-import]
 
@@ -221,6 +222,7 @@ class DockerSSHBox(Sandbox):
     _ssh_password: str
     _ssh_port: int
     ssh: pxssh.pxssh | None = None
+    _cleanup_done: bool = False
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -1137,7 +1139,7 @@ class DockerSSHBox(Sandbox):
                 'HostConfig': host_config,
             }
 
-            logger.info(f'container_config: {container_config}')
+            logger.debug(f'container_config: {container_config}')
 
             # Use create_or_replace for idempotent container management
             logger.info(f'Mounting volumes: {self.volumes} now...')
@@ -1145,7 +1147,7 @@ class DockerSSHBox(Sandbox):
                 config=container_config,
                 name=self.container_name,
             )
-            logger.info(f'Container created with ID: {self.container.id}')
+            logger.debug(f'Container created with ID: {self.container.id}')
 
             assert self.container is not None
             self.container_id = self.container.id
@@ -1281,44 +1283,66 @@ class DockerSSHBox(Sandbox):
             return
         await self._cleanup()
 
-    def sync_cleanup(self):
-        if self._cleanup_done:
-            return
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            # If the event loop is closed, create a new one
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        try:
-            loop.run_until_complete(self._cleanup())
-        finally:
-            # Close the loop if we created a new one
-            if loop != asyncio.get_event_loop():
-                loop.close()
-
     async def _cleanup(self):
         if self._cleanup_done:
             return
         try:
             if hasattr(self, 'docker_client'):
-                containers = await self.docker_client.containers.list(all=True)
-                for container in containers:
-                    container_info = await container.show()
-                    if container_info['Name'].startswith(f'/{self.container_name}'):
-                        if self.persist_sandbox:
-                            await container.stop()
-                        else:
-                            await container.delete(force=True)
+                try:
+                    # Use synchronous Docker client to list containers
+                    sync_client = docker.from_env()
+                    containers = sync_client.containers.list(all=True)
+                    for container in containers:
+                        if container.name.startswith(f'/{self.container_name}'):
+                            if self.persist_sandbox:
+                                with suppress(Exception):
+                                    container.stop()
+                            else:
+                                with suppress(Exception):
+                                    container.remove(force=True)
+                except Exception as e:
+                    logger.error(f'Error cleaning up containers: {e}', exc_info=True)
 
                 # Close the Docker client
-                if hasattr(self.docker_client, 'close'):
-                    await self.docker_client.close()
+                if self.docker_client:
+                    with suppress(Exception):
+                        await self.docker_client.close()
+
+                # Ensure all aiohttp connections are closed
+                if (
+                    hasattr(self.docker_client, 'session')
+                    and self.docker_client.session
+                    and hasattr(self.docker_client.session, 'connector')
+                ):
+                    with suppress(Exception):
+                        await self.docker_client.session.connector.close()
+
         except Exception as e:
-            logger.error(f'Error during cleanup: {e}')
+            logger.error(f'Error during cleanup: {e}', exc_info=True)
         finally:
             self._cleanup_done = True
+            atexit.unregister(self.sync_cleanup)
+
+    def sync_cleanup(self):
+        if self._cleanup_done:
+            return
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        try:
+            loop.run_until_complete(self._cleanup())
+        except Exception as e:
+            logger.error(f'Error during sync cleanup: {e}', exc_info=True)
+        finally:
+            # Close the loop if we created a new one
+            if loop != asyncio.get_event_loop():
+                loop.close()
 
     def __del__(self):
         if hasattr(self, '_cleanup_done') and not self._cleanup_done:

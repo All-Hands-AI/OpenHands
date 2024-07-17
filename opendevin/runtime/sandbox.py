@@ -16,12 +16,6 @@ class Sandbox(ABC, PluginMixin):
 
     def __init__(self, config: SandboxConfig):
         self.config = copy.deepcopy(config)
-        for key in os.environ:
-            if key.startswith('SANDBOX_ENV_'):
-                sandbox_key = key.removeprefix('SANDBOX_ENV_')
-                self.add_to_env(sandbox_key, os.environ[key])
-        if config.enable_auto_lint:
-            self.add_to_env('ENABLE_AUTO_LINT', 'true')
         self.initialize_plugins: bool = config.initialize_plugins
         self._initialization_complete = asyncio.Event()
 
@@ -39,6 +33,8 @@ class Sandbox(ABC, PluginMixin):
         for key, value in self._env.items():
             if key:
                 await self.add_to_env_async(key, value)
+        if self.config.enable_auto_lint:
+            self.add_to_env('ENABLE_AUTO_LINT', 'true')
 
         try:
             for key, value in os.environ.items():

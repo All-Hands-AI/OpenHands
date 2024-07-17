@@ -240,7 +240,7 @@ class AgentController:
             return
 
         logger.debug(
-            f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
+            f'[Agent Controller `{self.id}`] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
         if (
@@ -297,7 +297,7 @@ class AgentController:
             metrics=self.state.metrics,
         )
         logger.info(
-            f'[Agent Controller `{self.id}`]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
+            f'[Agent Controller `{self.id}`]: start delegate, creating agent {delegate_agent.name} using {llm}'
         )
         self.delegate = AgentController(
             sid=self.id + '-delegate',
@@ -335,7 +335,6 @@ class AgentController:
                 # close the delegate upon error
                 await self.delegate.close()
                 self.delegate = None
-                self.delegateAction = None
                 await self.report_error('Delegator agent encountered an error')
                 return
 
@@ -364,7 +363,6 @@ class AgentController:
 
                 # clean up delegate status
                 self.delegate = None
-                self.delegateAction = None
                 await self.event_stream.add_event(obs, EventSource.AGENT)
             return
 
@@ -482,7 +480,7 @@ class AgentController:
         if start_id == -1:
             start_id = self.event_stream.get_latest_event_id() + 1
         else:
-            logger.debug(f'AgentController {self.id} restoring from event {start_id}')
+            logger.debug(f'AgentController `{self.id}` restoring from event {start_id}')
 
         # make sure history is in sync
         self.state.start_id = start_id

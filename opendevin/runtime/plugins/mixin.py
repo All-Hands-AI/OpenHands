@@ -53,7 +53,7 @@ class PluginMixin:
             raise RuntimeError(
                 f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
             )
-        logger.info('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
+        logger.info('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully.')
 
     @async_to_sync
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
@@ -68,16 +68,14 @@ class PluginMixin:
 
         # Check if the sandbox is initialized
         if hasattr(self, 'initialized') and not self.initialized:
-            logger.info('Sandbox not initialized. Initializing now...')
+            logger.info('Sandbox not yet initialized. Initializing now...')
             if hasattr(self, 'ainit'):
                 await self.ainit()
             else:
-                logger.warning(
-                    'Sandbox has no initialize method. Proceeding without initialization.'
-                )
+                logger.warning('Sandbox has no initialize method, skipping.')
 
         if self.initialize_plugins:
-            logger.info('Initializing plugins in the sandbox')
+            logger.info('Initializing plugins in the sandbox.')
 
             # clean-up ~/.bashrc and touch ~/.bashrc. Do not use "&&"!
             exit_code, output = await self.execute_async('rm -f ~/.bashrc')
@@ -114,7 +112,7 @@ class PluginMixin:
                     for line in output:
                         line = line.rstrip()
                         if 'Requirement already satisfied: ' not in line:
-                            logger.info(f'>>> {line}')
+                            logger.info(f'>>> {line.strip()}')
                         total_output += line + ' '
                     _exit_code = output.exit_code()
                     output.close()
@@ -122,15 +120,14 @@ class PluginMixin:
                         raise RuntimeError(
                             f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
                         )
-                    logger.info(f'Plugin {requirement.name} initialized successfully')
                 else:
                     if exit_code != 0:
                         raise RuntimeError(
-                            f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
+                            f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output.strip()}'
                         )
-                    logger.info(f'Plugin {requirement.name} initialized successfully.')
+                logger.info(f'Plugin {requirement.name} initialized successfully.')
         else:
-            logger.info('Skipping plugin initialization in the sandbox')
+            logger.info('Skipping plugin initialization in the sandbox.')
 
         if len(requirements) > 0:
             await self._source_bashrc_async()

@@ -45,7 +45,6 @@ def async_to_sync(func):
             if loop.is_running():
                 return asyncio.run_coroutine_threadsafe(run_async(), loop).result()
             else:
-                logger.debug('Running event loop until complete')
                 return loop.run_until_complete(run_async())
 
         # Check if we're in an event loop
