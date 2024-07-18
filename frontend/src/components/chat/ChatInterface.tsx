@@ -84,7 +84,7 @@ function ChatInterface() {
 
   const handleSendMessage = (content: string) => {
     dispatch(addUserMessage(content));
-    sendChatMessage(content);
+    sendChatMessage(content, "open-D-tutor");  // Updated to include agent type
   };
 
   const handleEmailChange = (key: string) => {

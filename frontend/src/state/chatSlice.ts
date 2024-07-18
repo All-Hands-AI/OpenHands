@@ -28,9 +28,19 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
+    addOpenDTutorMessage(state, action: PayloadAction<string>) {
+      const message: Message = {
+        sender: "open-D-tutor",
+        content: action.payload,
+      };
+
+      state.messages.push(message);
+    },
+
     clearMessages(state) {
       state.messages = [];
     },
+  },
   },
 });
 
