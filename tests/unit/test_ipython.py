@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.events.action import IPythonRunCellAction
 from opendevin.events.observation import IPythonRunCellObservation
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
@@ -43,7 +43,10 @@ async def test_run_python_backticks():
         new=mock_sandbox_execute,
     ):
         # Initialize the runtime with the mock event_stream
-        runtime = ServerRuntime(event_stream=mock_event_stream)
+        runtime = ServerRuntime(
+            sandbox_config=SandboxConfig(box_type='ssh', persist_sandbox=False),
+            event_stream=mock_event_stream,
+        )
 
         # Define the test action with a simple IPython command
         action = IPythonRunCellAction(code=test_code)
@@ -81,7 +84,18 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
         config.sandbox, 'box_type', new='ssh'
     ):
-        box = DockerSSHBox()
+        box = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=config.persist_sandbox,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            use_host_network=config.use_host_network,
+            run_as_devin=config.run_as_devin,
+            ssh_hostname=config.ssh_hostname,
+            ssh_password=config.ssh_password,
+            ssh_port=config.ssh_port,
+        )
         box.init_plugins([JupyterRequirement])
         test_code = "print('Hello, `World`!')"
         expected_write_command = (

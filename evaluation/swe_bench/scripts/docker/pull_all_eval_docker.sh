@@ -43,5 +43,7 @@ echo "Image file: $IMAGE_FILE"
 grep "$PATTERN" "$IMAGE_FILE" | while IFS= read -r image; do
     echo "Pulling $NAMESPACE/$image into $image"
     docker pull $NAMESPACE/$image
-    docker tag $NAMESPACE/$image $image
+    # replace _s_ to __ in the image name
+    renamed_image=$(echo "$image" | sed 's/_s_/__/g')
+    docker tag $NAMESPACE/$image $renamed_image
 done

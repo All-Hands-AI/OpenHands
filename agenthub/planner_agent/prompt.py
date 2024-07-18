@@ -1,5 +1,4 @@
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.core.utils import json
@@ -101,7 +100,6 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 
 def get_hint(latest_action_id: str) -> str:
     """Returns action type hint based on given action_id"""
-
     hints = {
         '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
         ActionType.RUN: 'You should think about the command you just ran, what output it gave, and how that affects your plan.',
@@ -117,9 +115,9 @@ def get_hint(latest_action_id: str) -> str:
     return hints.get(latest_action_id, '')
 
 
-def get_prompt(state: State) -> str:
-    """
-    Gets the prompt for the planner agent.
+def get_prompt(state: State, max_message_chars: int) -> str:
+    """Gets the prompt for the planner agent.
+
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
@@ -128,10 +126,6 @@ def get_prompt(state: State) -> str:
     Returns:
     - str: The formatted string prompt with historical values
     """
-    max_message_chars = config.get_llm_config_from_agent(
-        'PlannerAgent'
-    ).max_message_chars
-
     # the plan
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
 
@@ -180,10 +174,10 @@ def get_prompt(state: State) -> str:
 
 
 def parse_response(response: str) -> Action:
-    """
-    Parses the model output to find a valid action to take
+    """Parses the model output to find a valid action to take
     Parameters:
     - response (str): A response from the model that potentially contains an Action.
+
     Returns:
     - Action: A valid next action to perform from model output
     """

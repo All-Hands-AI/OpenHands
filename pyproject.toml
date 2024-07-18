@@ -32,7 +32,7 @@ python-multipart = "*"
 boto3 = "*"
 minio = "^7.2.7"
 gevent = "^24.2.1"
-pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
+pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
@@ -49,7 +49,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.5.1"
+ruff = "0.5.2"
 mypy = "1.10.1"
 pre-commit = "3.7.1"
 
@@ -63,14 +63,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
-
-[tool.poetry.group.evaluation.dependencies]
-streamlit = "*"
-whatthepatch = "*"
-retry = "*"
-evaluate = "*"
-swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -97,3 +89,19 @@ ignore = [ "E501" ]
 [tool.black]
 # prevent black (if installed) from changing single quotes to double quotes
 skip-string-normalization = true
+
+[tool.ruff.lint]
+select = ["D"]
+# ignore warnings for missing docstrings
+ignore = ["D1"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+
+[tool.poetry.group.evaluation.dependencies]
+streamlit = "*"
+whatthepatch = "*"
+retry = "*"
+evaluate = "*"
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }

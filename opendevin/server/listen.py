@@ -30,7 +30,7 @@ from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
-from opendevin.core.config import config
+from opendevin.core.config import LLMConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState  # Add this import
 from opendevin.events.action import ChangeAgentStateAction, NullAction
@@ -56,8 +56,7 @@ security_scheme = HTTPBearer()
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
-    """
-    Load file upload configuration from the config object.
+    """Load file upload configuration from the config object.
 
     This function retrieves the file upload settings from the global config object.
     It handles the following settings:
@@ -116,8 +115,7 @@ MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_con
 
 
 def is_extension_allowed(filename):
-    """
-    Check if the file extension is allowed based on the current configuration.
+    """Check if the file extension is allowed based on the current configuration.
 
     This function supports wildcards and files without extensions.
     The check is case-insensitive for extensions.
@@ -141,8 +139,7 @@ def is_extension_allowed(filename):
 
 @app.middleware('http')
 async def attach_session(request: Request, call_next):
-    """
-    Middleware to attach session information to the request.
+    """Middleware to attach session information to the request.
 
     This middleware checks for the Authorization header, validates the token,
     and attaches the corresponding session to the request state.
@@ -170,7 +167,7 @@ async def attach_session(request: Request, call_next):
     if 'Bearer' in auth_token:
         auth_token = auth_token.split('Bearer')[1].strip()
 
-    request.state.sid = get_sid_from_token(auth_token)
+    request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
     if request.state.sid == '':
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -190,13 +187,13 @@ async def attach_session(request: Request, call_next):
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
-    """
-    WebSocket endpoint for receiving events from the client (i.e., the browser).
+    """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
     - Initialize the agent:
     session management, and event streaming.
         ```json
         {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
+
     Args:
         ```
         websocket (WebSocket): The WebSocket connection object.
@@ -249,7 +246,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
-        sid = get_sid_from_token(token)
+        sid = get_sid_from_token(token, config.jwt_secret)
 
         if sid == '':
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
@@ -257,7 +254,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return
     else:
         sid = str(uuid.uuid4())
-        token = sign_token({'sid': sid})
+        token = sign_token({'sid': sid}, config.jwt_secret)
 
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
@@ -284,7 +281,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/api/options/models')
-async def get_litellm_models():
+async def get_litellm_models() -> list[str]:
     """
     Get all models supported by LiteLLM.
 
@@ -303,7 +300,19 @@ async def get_litellm_models():
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
         litellm_model_list
     )
-    bedrock_model_list = bedrock.list_foundation_models()
+    # TODO: for bedrock, this is using the default config
+    llm_config: LLMConfig = config.get_llm_config()
+    bedrock_model_list = []
+    if (
+        llm_config.aws_region_name
+        and llm_config.aws_access_key_id
+        and llm_config.aws_secret_access_key
+    ):
+        bedrock_model_list = bedrock.list_foundation_models(
+            llm_config.aws_region_name,
+            llm_config.aws_access_key_id,
+            llm_config.aws_secret_access_key,
+        )
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
         ollama_base_url = llm_config.ollama_base_url
@@ -327,8 +336,7 @@ async def get_litellm_models():
 
 @app.get('/api/options/agents')
 async def get_agents():
-    """
-    Get all agents supported by LiteLLM.
+    """Get all agents supported by LiteLLM.
 
     To get the agents:
     ```sh
@@ -360,8 +368,7 @@ async def get_security_analyzers():
 
 @app.get('/api/list-files')
 def list_files(request: Request, path: str = '/'):
-    """
-    List files in the specified path.
+    """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
     excluding certain system and hidden files/directories.
@@ -470,8 +477,7 @@ def list_files(request: Request, path: str = '/'):
 
 @app.get('/api/select-file')
 def select_file(file: str, request: Request):
-    """
-    Retrieve the content of a specified file.
+    """Retrieve the content of a specified file.
 
     To select a file:
     ```sh
@@ -501,9 +507,7 @@ def select_file(file: str, request: Request):
 
 
 def sanitize_filename(filename):
-    """
-    Sanitize the filename to prevent directory traversal
-    """
+    """Sanitize the filename to prevent directory traversal"""
     # Remove any directory components
     filename = os.path.basename(filename)
     # Remove any non-alphanumeric characters except for .-_
@@ -518,8 +522,7 @@ def sanitize_filename(filename):
 
 @app.post('/api/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
-    """
-    Upload a list of files to the workspace.
+    """Upload a list of files to the workspace.
 
     To upload a files:
     ```sh
@@ -597,8 +600,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request, feedback: FeedbackDataModel):
-    """
-    Submit user feedback.
+    """Submit user feedback.
 
     This function stores the provided feedback data.
 
@@ -631,8 +633,7 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
 
 @app.get('/api/root_task')
 def get_root_task(request: Request):
-    """
-    Retrieve the root task of the current agent session.
+    """Retrieve the root task of the current agent session.
 
     To get the root_task:
     ```sh
@@ -661,8 +662,7 @@ def get_root_task(request: Request):
 
 @app.get('/api/defaults')
 async def appconfig_defaults():
-    """
-    Retrieve the default configuration settings.
+    """Retrieve the default configuration settings.
 
     To get the default configurations:
     ```sh
@@ -677,8 +677,7 @@ async def appconfig_defaults():
 
 @app.post('/api/save-file')
 async def save_file(request: Request):
-    """
-    Save a file to the agent's runtime file store.
+    """Save a file to the agent's runtime file store.
 
     This endpoint allows saving a file when the agent is in a paused, finished,
     or awaiting user input state. It checks the agent's state before proceeding

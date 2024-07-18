@@ -13,7 +13,6 @@ from opendevin.core.logger import opendevin_logger as logger
 
 def _create_project_source_dist():
     """Create a source distribution of the project. Return the path to the tarball."""
-
     # Copy the project directory to the container
     # get the location of "opendevin" package
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
@@ -54,8 +53,7 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
 def _generate_dockerfile(
     base_image: str, source_code_dirname: str, skip_init: bool = False
 ) -> str:
-    """
-    Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
+    """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """
@@ -200,8 +198,9 @@ def build_runtime_image(
     # Try to pull the new image from the registry
     try:
         docker_client.images.pull(new_image_name)
-    except docker.errors.ImageNotFound:
-        logger.info(f'Image {new_image_name} not found, building it from scratch')
+    except Exception as e:
+        logger.info(f'Error pulling image {new_image_name}, building it from scratch')
+        logger.error(f'Error: {e}')
 
     # Detect if the sandbox image is built
     image_exists = _check_image_exists(new_image_name, docker_client)

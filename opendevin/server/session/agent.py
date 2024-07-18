@@ -79,7 +79,9 @@ class AgentSession:
 
         logger.info(f'Using runtime: {config.runtime}')
         runtime_cls = get_runtime_cls(config.runtime)
-        self.runtime = runtime_cls(self.event_stream, self.sid)
+        self.runtime = runtime_cls(
+            sandbox_config=config.sandbox, event_stream=self.event_stream, sid=self.sid
+        )
         await self.runtime.ainit()
 
     async def _create_controller(self, start_event: dict):
@@ -114,7 +116,7 @@ class AgentSession:
 
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(llm_config=config.get_llm_config_from_agent(agent_cls))
+        llm = LLM(config=config.get_llm_config_from_agent(agent_cls))
         agent = Agent.get_cls(agent_cls)(llm)
         logger.info(f'Creating agent {agent.name} using LLM {llm}')
         if isinstance(agent, CodeActAgent):

@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -36,11 +36,26 @@ from .files import read_file, write_file
 
 def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
     if box_type == 'local':
-        return LocalBox()
+        return LocalBox(config=config.sandbox, workspace_base=config.workspace_base)
     elif box_type == 'ssh':
-        return DockerSSHBox(sid=sid)
+        return DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=config.persist_sandbox,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            use_host_network=config.use_host_network,
+            run_as_devin=config.run_as_devin,
+            ssh_hostname=config.ssh_hostname,
+            ssh_password=config.ssh_password,
+            ssh_port=config.ssh_port,
+            sid=sid,
+        )
     elif box_type == 'e2b':
-        return E2BBox()
+        return E2BBox(
+            config=config.sandbox,
+            e2b_api_key=config.e2b_api_key,
+        )
     else:
         raise ValueError(f'Invalid sandbox type: {box_type}')
 
@@ -48,11 +63,12 @@ def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
 class ServerRuntime(Runtime):
     def __init__(
         self,
+        sandbox_config: SandboxConfig,
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(event_stream, sid)
+        super().__init__(sandbox_config, event_stream, sid)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
             self.sandbox = create_sandbox(sid, config.sandbox.box_type)
@@ -62,13 +78,10 @@ class ServerRuntime(Runtime):
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
 
-    async def ainit(self) -> None:
-        pass
-
     async def close(self):
-        if not self._is_external_sandbox:
+        if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
             self.sandbox.close()
-        if self.browser is not None:
+        if hasattr(self, 'browser') and self.browser is not None:
             self.browser.close()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
@@ -96,7 +109,7 @@ class ServerRuntime(Runtime):
         return self._run_command(action.command)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        obs = self._run_command(
+        self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
 
@@ -137,7 +150,7 @@ class ServerRuntime(Runtime):
 
                     # re-init the kernel after restart
                     if action.kernel_init_code:
-                        obs = self._run_command(
+                        self._run_command(
                             (
                                 f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
                                 f'{action.kernel_init_code}\n'

@@ -75,6 +75,7 @@ Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench
 docker image. Then run this python script:
 
 ```bash
+# export USE_INSTANCE_IMAGE=true # if you want to test support for instance-level docker images
 poetry run python evaluation/swe_bench/swe_env_box.py
 ```
 
@@ -85,7 +86,7 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
 # e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
 ```
 
@@ -104,7 +105,20 @@ to `CodeActAgent`.
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
 
+`max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
+default, it is set to 30.
+
+`num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
+default, it is set to 1.
+
+There are also two optional environment variables you can set.
+```
+export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Ignore this if you are not sure.
+export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images
+```
+
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview_llm` and CodeActAgent,
+
 then your command would be:
 
 ```bash
@@ -188,17 +202,6 @@ streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 
 ```
 
 Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
-
-
-
-## View Result Summary
-
-If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
-
-```bash
-poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_report_json_file>
-# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/report.json
-```
 
 ## Submit your evaluation results
 

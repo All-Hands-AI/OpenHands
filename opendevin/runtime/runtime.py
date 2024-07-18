@@ -1,8 +1,13 @@
 import asyncio
 import atexit
+import copy
+import json
+import os
 from abc import abstractmethod
 from typing import Any, Optional
 
+from opendevin.core.config import SandboxConfig
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
@@ -16,6 +21,7 @@ from opendevin.events.action import (
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import (
+    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -27,9 +33,19 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore
 
 
+def _default_env_vars(config: SandboxConfig) -> dict[str, str]:
+    ret = {}
+    for key in os.environ:
+        if key.startswith('SANDBOX_ENV_'):
+            sandbox_key = key.removeprefix('SANDBOX_ENV_')
+            ret[sandbox_key] = os.environ[key]
+    if config.enable_auto_lint:
+        ret['ENABLE_AUTO_LINT'] = 'true'
+    return ret
+
+
 class Runtime:
-    """
-    The runtime is how the agent interacts with the external environment.
+    """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
     sid is the session id, which is used to identify the current user session.
@@ -37,19 +53,32 @@ class Runtime:
 
     sid: str
     file_store: FileStore
+    DEFAULT_ENV_VARS: dict[str, str]
 
-    def __init__(self, event_stream: EventStream, sid: str = 'default'):
+    def __init__(
+        self,
+        sandbox_config: SandboxConfig,
+        event_stream: EventStream,
+        sid: str = 'default',
+    ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self.sandbox_config = copy.deepcopy(sandbox_config)
+        self.DEFAULT_ENV_VARS = _default_env_vars(self.sandbox_config)
         atexit.register(self.close_sync)
 
-    async def ainit(self) -> None:
+    async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
         """
         Initialize the runtime (asynchronously).
+
         This method should be called after the runtime's constructor.
         """
-        pass
+        logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
+        await self.add_env_var(self.DEFAULT_ENV_VARS)
+        if env_vars is not None:
+            logger.debug(f'Adding provided env vars: {env_vars}')
+            await self.add_env_var(env_vars)
 
     async def close(self) -> None:
         pass
@@ -86,6 +115,17 @@ class Runtime:
 
     # ====================================================================
 
+    async def add_env_var(self, vars):
+        cmd = ''
+        for key, value in vars.items():
+            # Note: json.dumps gives us nice escaping for free
+            cmd += f'export {key}={json.dumps(value)}; '
+        cmd = cmd.strip()
+        logger.debug(f'Adding env var: {cmd}')
+        obs: Observation = await self.run(CmdRunAction(cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(f'Failed to add {key} to environment: {obs}')
+
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
             observation = await self.run_action(event)
@@ -93,8 +133,7 @@ class Runtime:
             self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
-        """
-        Run an action and return the resulting observation.
+        """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """

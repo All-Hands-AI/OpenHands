@@ -122,8 +122,7 @@ class AgentController:
         self.state.metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
-        """
-        This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+        """This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
 
         This method should be called for a particular type of errors, which have:
         - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
@@ -249,7 +248,7 @@ class AgentController:
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         llm_config = config.get_llm_config_from_agent(action.agent)
-        llm = LLM(llm_config=llm_config)
+        llm = LLM(config=llm_config)
         delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
