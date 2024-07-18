@@ -43,7 +43,7 @@ class ShortTermHistory(list[Event]):
         self.end_id = -1
         self.delegates = {}
         self.summary = None
-        self.last_summarized_event_id = None
+        self.last_summarized_event_id = -1
 
     def add_summary(self, summary_action: AgentSummarizeAction):
         self.summary = summary_action
@@ -81,8 +81,7 @@ class ShortTermHistory(list[Event]):
         ):
             # filter out the events from a delegate of the current agent
             if (
-                self.last_summarized_event_id is not None
-                and self.summary is not None
+                self.summary is not None
                 and event.id <= self.last_summarized_event_id
                 and not summary_yielded
             ):
@@ -95,10 +94,7 @@ class ShortTermHistory(list[Event]):
                 # AgentDelegateObservation has id = delegate_end
                 delegate_start < event.id < delegate_end
                 for delegate_start, delegate_end in self.delegates.keys()
-            ) and (
-                self.last_summarized_event_id is None
-                or event.id > self.last_summarized_event_id
-            ):
+            ) and (event.id > self.last_summarized_event_id):
                 yield event
 
     def get_last_action(self, end_id: int = -1) -> Action | None:

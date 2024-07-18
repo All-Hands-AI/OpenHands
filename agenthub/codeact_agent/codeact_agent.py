@@ -270,28 +270,28 @@ class CodeActAgent(Agent):
         )
 
         candidate_messages_to_summarize = []
-        last_summarized_event_id = history.last_summarized_event_id
         tokens_so_far = 0
         for event in history.get_events():
-            if isinstance(event, AgentSummarizeAction):
-                action_message = get_action_message(event)
-                if action_message:
-                    candidate_messages_to_summarize.append(action_message)
-                    tokens_so_far += self.llm.get_token_count([action_message])
-                observation_message = get_observation_message(event)
-                if observation_message:
-                    candidate_messages_to_summarize.append(observation_message)
-                    tokens_so_far += self.llm.get_token_count([observation_message])
-                continue
-            else:
-                message = (
-                    get_action_message(event)
-                    if isinstance(event, Action)
-                    else get_observation_message(event)
-                )
-                if message:
-                    candidate_messages_to_summarize.append(message)
-                    tokens_so_far += self.llm.get_token_count([message])
+            if event.id >= history.last_summarized_event_id:
+                if isinstance(event, AgentSummarizeAction):
+                    action_message = get_action_message(event)
+                    if action_message:
+                        candidate_messages_to_summarize.append(action_message)
+                        tokens_so_far += self.llm.get_token_count([action_message])
+                    observation_message = get_observation_message(event)
+                    if observation_message:
+                        candidate_messages_to_summarize.append(observation_message)
+                        tokens_so_far += self.llm.get_token_count([observation_message])
+                    continue
+                else:
+                    message = (
+                        get_action_message(event)
+                        if isinstance(event, Action)
+                        else get_observation_message(event)
+                    )
+                    if message:
+                        candidate_messages_to_summarize.append(message)
+                        tokens_so_far += self.llm.get_token_count([message])
             if tokens_so_far > desired_token_count_to_summarize:
                 last_summarized_event_id = event.id
                 break
@@ -348,25 +348,26 @@ class CodeActAgent(Agent):
         ]
 
         for event in state.history.get_events():
-            if isinstance(event, AgentSummarizeAction):
-                action_message = get_action_message(event)
-                if action_message:
-                    messages.append(action_message)
-                observation_message = get_observation_message(event)
-                if observation_message:
-                    messages.append(observation_message)
-                continue
+            if event.id >= state.history.last_summarized_event_id:
+                if isinstance(event, AgentSummarizeAction):
+                    action_message = get_action_message(event)
+                    if action_message:
+                        messages.append(action_message)
+                    observation_message = get_observation_message(event)
+                    if observation_message:
+                        messages.append(observation_message)
+                    continue
 
-            # create a regular message from an event
-            message = (
-                get_action_message(event)
-                if isinstance(event, Action)
-                else get_observation_message(event)
-            )
+                # create a regular message from an event
+                message = (
+                    get_action_message(event)
+                    if isinstance(event, Action)
+                    else get_observation_message(event)
+                )
 
-            # add regular message
-            if message:
-                messages.append(message)
+                # add regular message
+                if message:
+                    messages.append(message)
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
