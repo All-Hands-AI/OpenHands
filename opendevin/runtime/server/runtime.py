@@ -79,9 +79,9 @@ class ServerRuntime(Runtime):
         self.browser: BrowserEnv | None = None
 
     async def close(self):
-        if not self._is_external_sandbox:
+        if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
             self.sandbox.close()
-        if self.browser is not None:
+        if hasattr(self, 'browser') and self.browser is not None:
             self.browser.close()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
@@ -109,7 +109,7 @@ class ServerRuntime(Runtime):
         return self._run_command(action.command)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        obs = self._run_command(
+        self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
         )
 
@@ -150,7 +150,7 @@ class ServerRuntime(Runtime):
 
                     # re-init the kernel after restart
                     if action.kernel_init_code:
-                        obs = self._run_command(
+                        self._run_command(
                             (
                                 f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
                                 f'{action.kernel_init_code}\n'
