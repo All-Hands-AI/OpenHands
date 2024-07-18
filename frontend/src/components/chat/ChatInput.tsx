@@ -70,10 +70,4 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   );
 }
 
-const handleSendMessage = (content: string) => {
-  const agentType = useSelector((state: RootState) => state.agent.curAgentType);
-  dispatch(addUserMessage(content));
-  sendChatMessage(content, agentType);
-};
-
 export default ChatInput;

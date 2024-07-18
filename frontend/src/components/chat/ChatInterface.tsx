@@ -5,9 +5,6 @@ import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
-import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
-import { OpenDTutorAgent } from "#/types/AgentType";
-import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
 import { useDisclosure } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
@@ -56,12 +53,6 @@ function ChatInterface() {
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-
-  const agentOptions = [
-    { value: "MonologueAgent", label: "Monologue Agent" },
-    { value: "CodeActAgent", label: "Code Act Agent" },
-    { value: "OpenDTutorAgent", label: "Open-D-Tutor Agent" },
-  ];
 
   const feedbackVersion = "1.0";
   const [feedback, setFeedback] = React.useState<Feedback>({
