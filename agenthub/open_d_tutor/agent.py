@@ -43,7 +43,10 @@ class OpenDTutorAgent(Agent):
 
     def _get_messages(self, state: State) -> list[dict[str, str]]:
         messages = [
-            {'role': 'system', 'content': "You are an educational assistant. Explain the code and answer questions."},
+            {
+                'role': 'system',
+                'content': 'You are an educational assistant. Explain the code and answer questions.',
+            },
         ]
 
         for event in state.history.get_events():
