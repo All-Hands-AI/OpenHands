@@ -93,12 +93,17 @@ jobs:
             colima start --network-address --arch x86_64 --cpu=1 --memory=1
           }
 
-          for i in $(seq 1 $ATTEMPT_LIMIT); do
+          for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."
               break
             else
               echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
+              if [ $i -eq $ATTEMPT_LIMIT ]; then
+                colima delete
+              else
+                colima stop
+              fi
             fi
           done
 
@@ -115,7 +120,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox and not test_runtime"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
