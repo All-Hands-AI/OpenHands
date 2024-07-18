@@ -4,9 +4,14 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "../../../i18n/declaration";
 import { Feedback } from "#/services/feedbackService";
 
+const isEmailValid = (email: string) => {
+  // Regular expression to validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 interface FeedbackFormProps {
   feedback: Feedback;
-
   onEmailChange: (email: string) => void;
   onPermissionsChange: (permissions: "public" | "private") => void;
 }
@@ -18,18 +23,12 @@ function FeedbackForm({
 }: FeedbackFormProps) {
   const { t } = useTranslation();
 
-  const isEmailValid = (email: string) => {
-    // Regular expression to validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   return (
     <>
       <Input
         label="Email"
         aria-label="email"
-        data-testid="email"
+        data-testid="email-input"
         placeholder={t(I18nKey.FEEDBACK$EMAIL_PLACEHOLDER)}
         type="text"
         value={feedback.email || ""}
@@ -40,7 +39,7 @@ function FeedbackForm({
       <Select
         label="Sharing settings"
         aria-label="permissions"
-        data-testid="permissions"
+        data-testid="permissions-input"
         value={feedback.permissions}
         onChange={(e) => {
           onPermissionsChange(e.target.value as "public" | "private");
@@ -53,8 +52,10 @@ function FeedbackForm({
           Private
         </SelectItem>
       </Select>
-      {isEmailValid(feedback.email) ? null : (
-        <p className="text-red-500">Invalid email format</p>
+      {!isEmailValid(feedback.email) && (
+        <p data-testid="invalid-email-message" className="text-red-500">
+          Invalid email format
+        </p>
       )}
     </>
   );
