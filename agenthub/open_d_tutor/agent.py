@@ -57,3 +57,4 @@ class OpenDTutorAgent(Agent):
     def reset(self) -> None:
         """Resets the Open-D-Tutor Agent."""
         super().reset()
+        super().reset()

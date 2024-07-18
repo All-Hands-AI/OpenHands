@@ -12,6 +12,7 @@ from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
 from agenthub.open_d_tutor.agent import OpenDTutorAgent
+from opendevin.events.action import Action, MessageAction
 
 
 class Agent(ABC):
