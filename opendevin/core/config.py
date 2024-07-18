@@ -17,6 +17,9 @@ from opendevin.core.utils import Singleton
 load_dotenv()
 
 
+LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
+
+
 @dataclass
 class LLMConfig:
     """Configuration for the LLM model.
@@ -86,7 +89,7 @@ class LLMConfig:
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            if attr_name in ['api_key', 'aws_access_key_id', 'aws_secret_access_key']:
+            if attr_name in LLM_SENSITIVE_FIELDS:
                 attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
@@ -95,6 +98,14 @@ class LLMConfig:
 
     def __repr__(self):
         return self.__str__()
+
+    def to_safe_dict(self):
+        """Return a dict with the sensitive fields replaced with ******."""
+        ret = self.__dict__.copy()
+        for k, v in ret.items():
+            if k in LLM_SENSITIVE_FIELDS:
+                ret[k] = '******' if v else None
+        return ret
 
 
 @dataclass
