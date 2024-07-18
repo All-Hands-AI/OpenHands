@@ -93,7 +93,7 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
-        agent = agent = Agent.get_cls(agent_cls)(llm)
+        agent = Agent.get_cls(agent_cls)(llm)
 
         # Create the agent session
         try:
