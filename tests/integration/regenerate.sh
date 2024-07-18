@@ -47,8 +47,9 @@ echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
-
-mkdir -p $WORKSPACE_BASE
+if [ ! -d "$WORKSPACE_BASE" ]; then
+  mkdir -p $WORKSPACE_BASE
+fi
 
 # use environmental variable if exists, otherwise use "ssh"
 SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
@@ -191,6 +192,7 @@ regenerate_with_llm() {
   fi
 
   rm -rf $WORKSPACE_BASE
+  mkdir -p $WORKSPACE_BASE
   if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
     cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
   fi
@@ -249,6 +251,7 @@ for ((i = 0; i < num_of_tests; i++)); do
 
     echo -e "\n\n\n\n========STEP 1: Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
+    mkdir -p $WORKSPACE_BASE
     if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
       cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
     fi
