@@ -257,7 +257,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
 
 async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
-    exit_code, output = box.execute('mkdir test')
+    exit_code, output = await box.execute('mkdir test')
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
 
