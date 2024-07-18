@@ -342,8 +342,10 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        logic_reasoning_tests = logic_reasoning_tests.select(list(range(eval_n_limit)))
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+        # logic_reasoning_tests = logic_reasoning_tests.select(list(range(eval_n_limit)))
+        logic_reasoning_tests = logic_reasoning_tests[eval_n_limit]
+        logger.info(f'Limiting evaluation to 第{eval_n_limit}个 instances.')
+        # logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     start_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -434,7 +436,12 @@ if __name__ == '__main__':
 
     with open(output_file, 'r') as f:
         test_result = [(json.loads(line))['test_result']['result'] for line in f]
-
+    
+    with open(output_file, 'r') as f:
+        data = [json.loads(line) for line in f]
+    with open(os.path.join(eval_output_dir, 'output.json'), 'w') as f:       
+        json.dump(data, f, indent=4)
+    
     metadata = {
         'Dataset': dataset_name,
         'Data split': data_split,
