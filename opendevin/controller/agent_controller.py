@@ -68,6 +68,7 @@ class AgentController:
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
+        headless_mode: bool = False,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -79,10 +80,12 @@ class AgentController:
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
+            headless_mode: Whether the agent is run in headless mode.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
+        self.headless_mode = headless_mode
 
         # subscribe to the event stream
         self.event_stream = event_stream
@@ -291,7 +294,16 @@ class AgentController:
             logger.debug(f'[Agent Controller {self.id}] Delegate step done')
             assert self.delegate is not None
             delegate_state = self.delegate.get_agent_state()
-            if delegate_state == AgentState.ERROR:
+            logger.debug(
+                f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
+            )
+            if delegate_state == AgentState.ERROR or (
+                self.headless_mode and delegate_state == AgentState.PAUSED
+            ):
+                # consider PAUSED state as an error if running in headless mode
+                # (since user cannot resume on the web interface so agent will hang forever)
+                # otherwise, PAUSED state is fine
+
                 # close the delegate upon error
                 await self.delegate.close()
                 self.delegate = None
