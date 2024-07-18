@@ -6,7 +6,8 @@ import time
 import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
-from opendevin.runtime.docker.ssh_box import DockerSSHBox, LocalBox
+from opendevin.runtime.docker.local_box import LocalBox
+from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.utils import split_bash_commands
 

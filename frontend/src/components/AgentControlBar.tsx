@@ -151,27 +151,6 @@ function AgentControlBar() {
         >
           <ArrowIcon />
         </ActionButton>
-        ) : (
-        <ActionButton
-          isDisabled={
-            isLoading ||
-            IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
-          }
-          content="Pause the current task"
-          action={AgentState.PAUSED}
-          handleAction={handleAction}
-          large
-        >
-          <PauseIcon />
-        </ActionButton>
-        <ActionButton
-          isDisabled={isLoading}
-          content="Start a new task"
-          action={AgentState.STOPPED}
-          handleAction={handleAction}
-        >
-          <ArrowIcon />
-        </ActionButton>
         <ActionButton
           isDisabled={isLoading || curAgentState !== AgentState.RUNNING}
           content="Cancel current task"
@@ -180,7 +159,6 @@ function AgentControlBar() {
         >
           <StopIcon />
         </ActionButton>
-        )
       </div>
     </div>
   );
