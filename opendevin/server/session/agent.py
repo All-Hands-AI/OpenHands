@@ -70,7 +70,11 @@ class AgentSession:
             raise RuntimeError('Runtime already created')
         try:
             runtime_cls = get_runtime_cls(config.runtime)
-            self.runtime = runtime_cls(self.event_stream, self.sid)
+            self.runtime = runtime_cls(
+                sandbox_config=config.sandbox,
+                event_stream=self.event_stream,
+                sid=self.sid,
+            )
             await self.runtime.ainit()
         except Exception as e:
             logger.error(f'Error initializing runtime: {e}')

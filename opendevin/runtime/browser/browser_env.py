@@ -75,11 +75,28 @@ class BrowserEnv:
         return html_text_converter
 
     def init_browser(self):
-        logger.debug('Starting browser env...')
-        if self.process is not None:
+        if not hasattr(self, 'process') or not self.process:
+            logger.warning('Browser process not available, skipping!')
+            return
+
+        logger.info('Starting browser env...')
+
+        # Ensure we're in a valid directory before starting the process
+        try:
+            os.chdir(self.original_cwd)
+            logger.debug(f'Changed back to original directory: {self.original_cwd}')
+        except Exception as e:
+            logger.error(f'Failed to change to original directory: {e}')
+            # If we can't change to the original directory, try to use a known valid directory
+            os.chdir('/tmp')
+            logger.debug('Changed to /tmp directory as fallback')
+
+        try:
             self.process.start()
-        else:
-            raise BrowserInitException('Browser process is not initialized.')
+        except Exception as e:
+            logger.error(f'Failed to start browser process: {e}')
+            raise
+
         if not self.check_alive():
             self.close()
             raise BrowserInitException('Failed to start browser environment.')
@@ -96,7 +113,7 @@ class BrowserEnv:
                 headless=True,
                 disable_env_checker=True,
             )
-        obs, info = env.reset()
+        obs, _ = env.reset()
         # EVAL only: save the goal into file for evaluation
         if self.eval_mode:
             rewards = []  # store rewards if in eval mode

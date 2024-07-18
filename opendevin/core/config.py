@@ -33,6 +33,7 @@ class LLMConfig:
         aws_secret_access_key: The AWS secret access key.
         aws_region_name: The AWS region name.
         num_retries: The number of retries to attempt.
+        retry_multiplier: The multiplier for the exponential backoff.
         retry_min_wait: The minimum time to wait between retries, in seconds. This is exponential backoff minimum. For models with very low limits, this can be set to 15-20.
         retry_max_wait: The maximum time to wait between retries, in seconds. This is exponential backoff maximum.
         timeout: The timeout for the API.
@@ -58,9 +59,10 @@ class LLMConfig:
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
-    num_retries: int = 5
+    num_retries: int = 10
+    retry_multiplier: float = 2
     retry_min_wait: int = 3
-    retry_max_wait: int = 60
+    retry_max_wait: int = 300
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0

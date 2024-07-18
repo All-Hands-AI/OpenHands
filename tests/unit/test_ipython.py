@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.events.action import IPythonRunCellAction
 from opendevin.events.observation import IPythonRunCellObservation
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
@@ -52,7 +52,10 @@ async def test_run_python_backticks(temp_dir):
         new=mock_sandbox_execute_async,
     ), patch('opendevin.runtime.server.runtime.ServerRuntime.ainit', new=AsyncMock()):
         # Initialize the runtime with the mock event_stream
-        runtime = ServerRuntime(event_stream=mock_event_stream, sandbox=mock_sandbox)
+        runtime = ServerRuntime(
+            sandbox_config=SandboxConfig(box_type='ssh', persist_sandbox=False),
+            event_stream=mock_event_stream,
+        )
         await runtime.ainit()
 
         runtime._initialization_event.set()

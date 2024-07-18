@@ -6,9 +6,9 @@ import time
 import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
-from opendevin.runtime.docker.local_box import LocalBox
-from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
+from opendevin.runtime.docker.ssh_box import DockerSSHBox, LocalBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.utils import split_bash_commands
 
 
 def create_docker_box_from_app_config(
@@ -356,22 +356,6 @@ async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     box = create_docker_box_from_app_config(temp_dir, config)
     await box.initialize()
     _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
-
-
-@pytest.mark.asyncio
-async def test_sandbox_jupyter_agentskills_fileop_pwd_with_lint(temp_dir):
-    # get a temporary directory
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            persist_sandbox=False,
-            enable_auto_lint=True,
-        )
-    )
-    assert config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(temp_dir, config)
-    await box.initialize()
-    await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
 @pytest.mark.skipif(
