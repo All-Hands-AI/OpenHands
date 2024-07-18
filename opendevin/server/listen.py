@@ -352,8 +352,7 @@ async def get_agents():
 
 @app.get('/api/options/security-analyzers')
 async def get_security_analyzers():
-    """
-    Get all security analyzers supported by the agent.
+    """Get all security analyzers supported by the agent.
 
     To get the security analyzers:
     ```sh
@@ -736,8 +735,7 @@ async def save_file(request: Request):
 
 @app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
 async def security_api(request: Request):
-    """
-    Catch-all route for security analyzer API requests.
+    """Catch-all route for security analyzer API requests.
 
     Each request is handled directly to the security analyzer.
 

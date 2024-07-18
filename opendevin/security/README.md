@@ -24,7 +24,16 @@ The `SecurityAnalyzer` class (analyzer.py) is an abstract base class designed to
 
 In conclusion, a concrete security analyzer should evaluate the risk of each event and act accordingly (e.g. auto-confirm, send Slack message, etc).
 
-For customization and decoupling from the OpenDevin core logic, the security analyzer can define its own API endpoints that can then be accessed from the frontend. These API endpoints need to be secured (do not allow more capabilities than the core logic provides).
+For customization and decoupling from the OpenDevin core logic, the security analyzer can define its own API endpoints that can then be accessed from the frontend. These API endpoints need to be secured (do not allow more capabilities than the core logic 
+provides).
+
+## How to implement your own Security Analyzer
+
+1. Create a submodule in [security](/opendevin/security/) with your analyzer's desired name
+    * Have your main class inherit from [SecurityAnalyzer](/opendevin/security/analyzer.py)
+    * Optional: define API endpoints for `/api/security/{path:path}` to manage settings, 
+2. Add your analyzer class to the [options](/opendevin/security/options.py) to have it be visible from the frontend combobox
+3. Optional: implement your modal frontend (for when you click on the lock) in [security](/frontend/src/components/modals/security/) and add your component to [Security.tsx](/frontend/src/components/modals/security/Security.tsx)
 
 ## Implemented Security Analyzers
 
