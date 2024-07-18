@@ -256,7 +256,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
 
 
 async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
-    box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+    await box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = await box.execute('mkdir test')
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -340,7 +340,6 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
     exit_code, output = await box.execute('ls /workspace')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    await box.close()
 
 
 @pytest.mark.asyncio
@@ -355,8 +354,11 @@ async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     )
     assert not config.sandbox.enable_auto_lint
     box = create_docker_box_from_app_config(temp_dir, config)
-    await box.initialize()
-    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+    try:
+        await box.initialize()
+        await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+    finally:
+        await box.close()
 
 
 @pytest.mark.skipif(
@@ -376,5 +378,8 @@ async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         )
         assert not config.sandbox.enable_auto_lint
         box = create_docker_box_from_app_config(temp_dir, config)
-        await box.initialize()
-        await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+        try:
+            await box.initialize()
+            await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+        finally:
+            await box.close()
