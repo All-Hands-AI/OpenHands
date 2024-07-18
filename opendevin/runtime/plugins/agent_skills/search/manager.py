@@ -1,36 +1,36 @@
-from collections import defaultdict, namedtuple
-from collections.abc import MutableMapping
+from collections import defaultdict
 
 if __package__ is None or __package__ == '':
+    from search_types import (
+        ClassFuncIndexType,
+        ClassIndexType,
+        FuncIndexType,
+        LineRange,
+    )
     from utils import (
         SearchResult,
         find_python_files,
         get_class_signature,
         get_code_region_containing_code,
         get_code_snippets,
-        parse_python_file,
+        parse_file,
     )
 else:
+    from .search_types import (
+        ClassFuncIndexType,
+        ClassIndexType,
+        FuncIndexType,
+        LineRange,
+    )
     from .utils import (
         SearchResult,
         find_python_files,
         get_class_signature,
         get_code_region_containing_code,
         get_code_snippets,
-        parse_python_file,
+        parse_file,
     )
 
-
-LineRange = namedtuple('LineRange', ['start', 'end'])
-ClassIndexType = MutableMapping[
-    str, list[tuple[str, LineRange]]
-]  # class_name -> [(file_path, line_range)]
-ClassFuncIndexType = MutableMapping[
-    str, MutableMapping[str, list[tuple[str, LineRange]]]
-]  # class_name -> function_name -> [(file_path, line_range)]
-FuncIndexType = MutableMapping[
-    str, list[tuple[str, LineRange]]
-]  # function_name -> [(file_path, line_range)]
 
 RESULT_SHOW_LIMIT = 3
 
@@ -66,7 +66,7 @@ class SearchManager:
         search_res: list[SearchResult] = []
         for fname, _ in self.class_index[class_name]:
             # there are some classes; we return their signatures
-            code = get_class_signature(fname, class_name)
+            code = get_class_signature(fname, class_name, 'python')
             res = SearchResult(fname, class_name, None, code)
             search_res.append(res)
 
@@ -322,7 +322,7 @@ class SearchManager:
         value is a list of tuples.
         This is for fast lookup whenever we receive a query.
         """
-        self._update_indices(*self._build_python_index())
+        self._update_indices(*self._build_index_for('python'))
 
     def _update_indices(
         self,
@@ -336,7 +336,7 @@ class SearchManager:
         self.function_index.update(func_index)
         self.parsed_files.extend(parsed_files)
 
-    def _build_python_index(self):
+    def _build_index_for(self, lang: str):
         class_index: ClassIndexType = defaultdict(list)
         class_func_index: ClassFuncIndexType = defaultdict(lambda: defaultdict(list))
         function_index: FuncIndexType = defaultdict(list)
@@ -345,7 +345,7 @@ class SearchManager:
         # holds the parsable subset of all py files
         parsed_py_files = []
         for py_file in py_files:
-            file_info = parse_python_file(py_file)
+            file_info = parse_file(py_file, lang)
             if file_info is None:
                 # parsing of this file failed
                 continue
@@ -461,15 +461,18 @@ class SearchManager:
 
 
 if __name__ == '__main__':
-    import pprint
-
     sm = SearchManager('.')
-    # pprint.pprint(sm.search_class('SearchResult'))
+    # pprint.pprint(sm.search_class('SearchManager'))
     # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
     # pprint.pprint(sm.search_method('search_class'))
     # pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
     # pprint.pprint(sm.search_method_in_file('search_class', 'manager.py'))
     # pprint.pprint(sm.search_code('for func_name in self.function_index:'))
-    pprint.pprint(
-        sm.search_code_in_file('for func_name in self.function_index:', 'manager.py')
-    )
+    # pprint.pprint(
+    #     sm.search_code_in_file('for func_name in self.function_index:', 'manager.py')
+    # )
+
+    # classes, class_to_funcs, top_level_funcs = parse_file('opendevin/runtime/plugins/agent_skills/search/manager.py', 'python')
+    # print(classes)
+    # print(class_to_funcs)
+    # print(top_level_funcs)

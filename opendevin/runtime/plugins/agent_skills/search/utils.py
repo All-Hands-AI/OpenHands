@@ -1,9 +1,16 @@
-import ast
 import glob
 import re
 from dataclasses import dataclass
 from os.path import join as pjoin
 from pathlib import Path
+
+from tree_sitter import Node
+from tree_sitter_languages import get_language, get_parser
+
+if __package__ is None or __package__ == '':
+    pass
+else:
+    pass
 
 
 def find_python_files(dir_path: str) -> list[str]:
@@ -50,54 +57,101 @@ def find_python_files(dir_path: str) -> list[str]:
     return res
 
 
-def parse_python_file(file_full_path: str):
+def get_captures_for_node(node: Node, lang: str) -> list | None:
+    """Get the captures for a node.
+
+    Args:
+        node (Node): The AST node.
+        lang (str): The language of the AST.
+
+    Returns:
+        list: List of captures.
+    """
+    language = get_language(lang)
+    try:
+        # scm_fname = resources.files(__package__).joinpath(
+        #     "queries", f"{lang}-tags.scm"
+        # )
+        scm_fname = Path(__file__).parent.joinpath('queries', f'{lang}-tags.scm')
+    except KeyError:
+        return None
+    query_scm = scm_fname
+    if not query_scm.exists():
+        return None
+    query_scm_content = query_scm.read_text()
+    query = language.query(query_scm_content)
+    captures = query.captures(node)
+    return list(captures)
+
+
+def parse_file(file_full_path: str, lang: str = 'python'):
     """
     Main method to parse AST and build search index.
     Handles complication where python ast module cannot parse a file.
     """
-    try:
-        file_content = Path(file_full_path).read_text()
-        tree = ast.parse(file_content)
-    except Exception:
-        return None
+    code_content = Path(file_full_path).read_text()
+
+    parser = get_parser(lang)
+    tree = parser.parse(bytes(code_content, 'utf-8'))
+
+    captures = get_captures_for_node(tree.root_node, lang)
 
     # (1) get all classes defined in the file
-    classes = []
+    classes: list = []
     # (2) for each class in the file, get all functions defined in the class.
-    class_to_funcs = {}
+    class_to_funcs: dict = {}
     # (3) get top-level functions in the file (exclues functions defined in classes)
-    top_level_funcs = []
+    top_level_funcs: list = []
+    class_methods: list = []
 
-    function_nodes_in_class = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef):
-            ## class part (1): collect class info
-            class_name = node.name
-            start_lineno = node.lineno
-            end_lineno = node.end_lineno
-            # line numbers are 1-based
-            classes.append((class_name, start_lineno, end_lineno))
+    if not captures:
+        return classes, class_to_funcs, top_level_funcs
 
-            ## class part (2): collect function info inside this class
-            class_funcs = []
-            for n in ast.walk(node):
-                if isinstance(n, ast.FunctionDef):
-                    class_funcs.append((n.name, n.lineno, n.end_lineno))
-                    function_nodes_in_class.append(n)
-            class_to_funcs[class_name] = class_funcs
+    for node, tag in captures:
+        if tag == 'definition.class':
+            # Traverse the next node to get the class name
+            class_name = node.child_by_field_name('name').text.decode('utf-8')
+            # Line numbers are 1-based
+            classes.append((class_name, node.start_point[0] + 1, node.end_point[0] + 1))
+        elif tag == 'definition.function':
+            # Traverse the next node to get the function name
+            func_name = node.child_by_field_name('name').text.decode('utf-8')
+            # Check there are no classes surrounding this function
+            is_class_method = False
+            for c in classes:
+                if c[1] <= node.start_point[0] <= c[2]:
+                    is_class_method = True
+                    break
+            if not is_class_method:
+                # Line numbers are 1-based
+                top_level_funcs.append(
+                    (func_name, node.start_point[0] + 1, node.end_point[0] + 1)
+                )
+        elif tag == 'definition.method':
+            # Traverse the next node to get the method name
+            func_name = node.child_by_field_name('name').text.decode('utf-8')
+            # Get the class name based on line number
+            class_name = None
+            for c in classes:
+                if c[1] <= node.start_point[0] <= c[2]:
+                    class_name = c[0]
+                    break
+            # Line numbers are 1-based
+            if class_name is not None:
+                if class_name not in class_to_funcs:
+                    class_to_funcs[class_name] = []
+                class_to_funcs[class_name].append(
+                    (func_name, node.start_point[0] + 1, node.end_point[0] + 1)
+                )
 
-        # top-level functions, excluding functions defined in classes
-        elif isinstance(node, ast.FunctionDef) and node not in function_nodes_in_class:
-            function_name = node.name
-            start_lineno = node.lineno
-            end_lineno = node.end_lineno
-            # line numbers are 1-based
-            top_level_funcs.append((function_name, start_lineno, end_lineno))
+            class_methods.append(
+                (func_name, node.start_point[0] + 1, node.end_point[0] + 1)
+            )
 
     return classes, class_to_funcs, top_level_funcs
 
 
-def get_class_signature(file_full_path: str, class_name: str) -> str:
+def get_class_signature(file_full_path: str, class_name: str, lang: str) -> str:
     """Get the class signature.
 
     Args:
@@ -105,32 +159,41 @@ def get_class_signature(file_full_path: str, class_name: str) -> str:
         class_name (str): Name of the class.
     """
     with open(file_full_path) as f:
-        file_content = f.read()
+        code_content = f.read()
 
-    tree = ast.parse(file_content)
-    relevant_lines = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef) and node.name == class_name:
-            # we reached the target class
-            relevant_lines = extract_class_sig_from_ast(node)
-            break
-    if not relevant_lines:
+    parser = get_parser(lang)
+    tree = parser.parse(bytes(code_content, 'utf-8'))
+
+    captures = get_captures_for_node(tree.root_node, lang)
+    if not captures:
         return ''
-    else:
-        with open(file_full_path) as f:
-            file_content_lst = f.readlines()
-        result = ''
-        for line in relevant_lines:
-            line_content: str = file_content_lst[line - 1]
-            if line_content.strip().startswith('#'):
-                # this kind of comment could be left until this stage.
-                # reason: # comments are not part of func body if they appear at beginning of func
-                continue
-            result += line_content
-        return result
+
+    class_node = None
+    for node, tag in captures:
+        if tag == 'definition.class':
+            # Traverse the next node to get the class name
+            if class_name == node.child_by_field_name('name').text.decode('utf-8'):
+                class_node = node
+                break
+
+    if not class_node:
+        return ''
+
+    relevant_lines = extract_class_sig_from_node(node, lang)
+    with open(file_full_path) as f:
+        file_content_lst = f.readlines()
+    result = ''
+    for line in relevant_lines:
+        line_content: str = file_content_lst[line - 1]
+        if line_content.strip().startswith('#'):
+            # this kind of comment could be left until this stage.
+            # reason: # comments are not part of func body if they appear at beginning of func
+            continue
+        result += line_content
+    return result
 
 
-def extract_class_sig_from_ast(class_ast: ast.ClassDef) -> list[int]:
+def extract_class_sig_from_node(node: Node, lang: str) -> list[int]:
     """Extract the class signature from the AST.
 
     Args:
@@ -140,35 +203,38 @@ def extract_class_sig_from_ast(class_ast: ast.ClassDef) -> list[int]:
         The source line numbers that contains the class signature.
     """
     # STEP (1): extract the class signature
-    sig_start_line = class_ast.lineno
-    if class_ast.body:
+    sig_start_line = node.start_point[0] + 1
+    # check if the class has a body
+    body_node = None
+    for child in node.children:
+        if child.type == 'block':
+            body_node = child
+            break
+
+    if body_node:
         # has body
-        body_start_line = class_ast.body[0].lineno
+        body_start_line = body_node.start_point[0] + 1
         sig_end_line = body_start_line - 1
     else:
         # no body
-        sig_end_line = class_ast.end_lineno or sig_start_line
+        sig_end_line = node.end_point[0] + 1 or sig_start_line
     assert sig_end_line is not None
     sig_lines = list(range(sig_start_line, sig_end_line + 1))
 
-    # STEP (2): extract the function signatures and assign signatures
-    for stmt in class_ast.body:
-        if isinstance(stmt, ast.FunctionDef):
-            sig_lines.extend(extract_func_sig_from_ast(stmt))
-        elif isinstance(stmt, ast.Assign):
-            # for Assign, skip some useless cases where the assignment is to create docs
-            stmt_str_format = ast.dump(stmt)
-            if '__doc__' in stmt_str_format:
-                continue
-            # otherwise, Assign is easy to handle
-            assert stmt.end_lineno is not None
-            assign_range = list(range(stmt.lineno, stmt.end_lineno + 1))
-            sig_lines.extend(assign_range)
+    # STEP (2): populate the method signatures and assign signatures
+    # Walk through the class node to find all methods
+    captures = get_captures_for_node(node, lang)
+    if not captures:
+        return sig_lines
+
+    for child_node, tag in captures:
+        if tag == 'definition.method':
+            sig_lines.extend(extract_func_sig_from_node(child_node))
 
     return sig_lines
 
 
-def extract_func_sig_from_ast(func_ast: ast.FunctionDef) -> list[int]:
+def extract_func_sig_from_node(node: Node) -> list[int]:
     """Extract the function signature from the AST node.
 
     Includes the decorators, method name, and parameters.
@@ -179,20 +245,22 @@ def extract_func_sig_from_ast(func_ast: ast.FunctionDef) -> list[int]:
     Returns:
         The source line numbers that contains the function signature.
     """
-    func_start_line = func_ast.lineno
-    if func_ast.decorator_list:
-        # has decorators
-        decorator_start_lines = [d.lineno for d in func_ast.decorator_list]
-        decorator_first_line = min(decorator_start_lines)
-        func_start_line = min(decorator_first_line, func_start_line)
+    func_start_line = node.start_point[0] + 1
+    # Ignore decorators for now
+    func_body_node = None
+    for child in node.children:
+        if child.type == 'block':
+            func_body_node = child
+            break
+
     # decide end line from body
-    if func_ast.body:
+    if func_body_node:
         # has body
-        body_start_line = func_ast.body[0].lineno
+        body_start_line = func_body_node.start_point[0] + 1
         end_line = body_start_line - 1
     else:
         # no body
-        end_line = func_ast.end_lineno or func_start_line
+        end_line = node.end_point[0] + 1 or func_start_line
     assert end_line is not None
     return list(range(func_start_line, end_line + 1))
 
