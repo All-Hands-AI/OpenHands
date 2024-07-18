@@ -42,7 +42,7 @@ class PlannerAgent(Agent):
             'abandoned',
         ]:
             return AgentFinishAction()
-        prompt = get_prompt(state)
+        prompt = get_prompt(state, self.llm.config.max_message_chars)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         return self.response_parser.parse(resp)

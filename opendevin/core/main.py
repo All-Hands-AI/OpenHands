@@ -54,7 +54,7 @@ async def run_agent_controller(
     """
     # Logging
     logger.info(
-        f'Running agent {agent.name}, model {agent.llm.model_name}, with task: "{task_str}"'
+        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
     )
 
     # set up the event stream
@@ -82,7 +82,9 @@ async def run_agent_controller(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime = runtime_cls(event_stream=event_stream, sandbox=sandbox)
+    runtime = runtime_cls(
+        sandbox_config=config.sandbox, event_stream=event_stream, sandbox=sandbox
+    )
     await runtime.ainit()
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
@@ -166,7 +168,7 @@ if __name__ == '__main__':
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
-    llm = LLM(llm_config=config.get_llm_config_from_agent(args.agent_cls))
+    llm = LLM(config=config.get_llm_config_from_agent(args.agent_cls))
 
     # Create the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
