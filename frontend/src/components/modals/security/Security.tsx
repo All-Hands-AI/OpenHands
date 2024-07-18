@@ -1,5 +1,5 @@
 import React from "react";
-import SecurityInvariant from "./Invariant";
+import SecurityInvariant from "./invariant/Invariant";
 import BaseModal from "../base-modal/BaseModal";
 import { getSettings } from "#/services/settings";
 

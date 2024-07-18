@@ -14,6 +14,7 @@ import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { I18nKey } from "#/i18n/declaration";
 import { request } from "#/services/api";
 import toast from "#/utils/toast";
+import InvariantLogoIcon from "./assets/logo";
 
 type SectionType = "logs" | "policy" | "settings";
 
@@ -275,7 +276,10 @@ function SecurityInvariant(): JSX.Element {
   return (
     <div className="flex flex-1 w-full h-full">
       <div className="w-60 bg-neutral-800 border-r border-r-neutral-600 p-4 flex-shrink-0">
-        <b>Invariant Analyzer</b>
+        <div className="text-center mb-2">
+          <InvariantLogoIcon className="mx-auto mb-1" />
+          <b>Invariant Analyzer</b>
+        </div>
         <p style={{ fontSize: "10px" }}>
           Invariant Analyzer continuously monitors your OpenDevin agent for
           security issues.{" "}
