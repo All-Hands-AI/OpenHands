@@ -116,6 +116,7 @@ class AgentController:
 
     def update_state_before_step(self):
         self.state.iteration += 1
+        self.state.local_iteration += 1
 
     async def update_state_after_step(self):
         # update metrics especially for cost
@@ -252,7 +253,8 @@ class AgentController:
         delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
-            iteration=0,
+            local_iteration=0,
+            iteration=self.state.iteration,
             max_iterations=self.state.max_iterations,
             delegate_level=self.state.delegate_level + 1,
             # metrics should be shared between parent and child
@@ -306,6 +308,9 @@ class AgentController:
                 # retrieve delegate result
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
 
+                # update iteration that shall be shared across agents
+                self.state.iteration = self.delegate.state.iteration
+
                 # close delegate controller: we must close the delegate controller before adding new events
                 await self.delegate.close()
 
@@ -328,7 +333,7 @@ class AgentController:
             return
 
         logger.info(
-            f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
+            f'{self.agent.name} LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
 
