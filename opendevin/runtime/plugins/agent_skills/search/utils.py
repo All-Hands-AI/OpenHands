@@ -189,7 +189,7 @@ def get_class_signature(file_full_path: str, class_name: str, lang: str) -> str:
             # this kind of comment could be left until this stage.
             # reason: # comments are not part of func body if they appear at beginning of func
             continue
-        result += line_content
+        result += f'{line}|{line_content}'
     return result
 
 
@@ -364,7 +364,7 @@ def to_relative_path(file_path: str, project_root: str) -> str:
 
 
 def get_code_snippets(file_full_path: str, start: int, end: int) -> str:
-    """Get the code snippet in the range in the file, without line numbers.
+    """Get the code snippet in the range in the file, with line numbers.
 
     Args:
         file_path (str): Full path to the file.
@@ -375,10 +375,11 @@ def get_code_snippets(file_full_path: str, start: int, end: int) -> str:
         file_content = f.readlines()
     snippet = ''
     for i in range(start - 1, end):
-        snippet += file_content[i]
+        snippet += f'{i + 1}|{file_content[i]}'
     return snippet
 
 
+# TODO: enable line number in the code context
 def get_code_region_containing_code(
     file_full_path: str, code_str: str
 ) -> list[tuple[int, str]]:

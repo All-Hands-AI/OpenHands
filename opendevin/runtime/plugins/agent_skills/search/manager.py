@@ -461,8 +461,10 @@ class SearchManager:
 
 
 if __name__ == '__main__':
+    import pprint
+
     sm = SearchManager('.')
-    # pprint.pprint(sm.search_class('SearchManager'))
+    pprint.pprint(sm.search_class('SearchManager'))
     # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
     # pprint.pprint(sm.search_method('search_class'))
     # pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
