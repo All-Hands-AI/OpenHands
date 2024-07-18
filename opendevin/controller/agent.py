@@ -11,6 +11,7 @@ from opendevin.core.exceptions import (
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
+from agenthub.open_d_tutor.agent import OpenDTutorAgent
 
 
 class Agent(ABC):
