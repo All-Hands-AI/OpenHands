@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 import aiohttp
 import docker
@@ -118,6 +118,15 @@ class EventStreamRuntime(Runtime):
             if plugins is None:
                 plugins = []
             plugin_names = ' '.join([plugin.name for plugin in plugins])
+            network_kwargs: dict[str, Any] = {}
+            if self.sandbox_config.use_host_network:
+                network_kwargs['network_mode'] = 'host'
+                logger.warn(
+                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
+                )
+            else:
+                network_kwargs['ports'] = {f'{self._port}/tcp': self._port}
+
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -127,7 +136,7 @@ class EventStreamRuntime(Runtime):
                     f'--working-dir {sandbox_workspace_dir} '
                     f'--plugins {plugin_names}'
                 ),
-                network_mode='host',
+                **network_kwargs,
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
@@ -148,7 +157,7 @@ class EventStreamRuntime(Runtime):
         return self.session
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
+        stop=tenacity.stop_after_attempt(10),
         wait=tenacity.wait_exponential(multiplier=2, min=4, max=600),
     )
     async def _wait_until_alive(self):
