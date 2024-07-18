@@ -24,10 +24,10 @@ class InvariantClient:
             try:
                 if session_id:
                     response = requests.get(
-                        f'{self.server}/session/new?session_id={session_id}', timeout=30
+                        f'{self.server}/session/new?session_id={session_id}', timeout=60
                     )
                 else:
-                    response = requests.get(f'{self.server}/session/new', timeout=30)
+                    response = requests.get(f'{self.server}/session/new', timeout=60)
                 response.raise_for_status()
                 return response.json().get('id'), None
             except (ConnectionError, Timeout):
@@ -42,7 +42,7 @@ class InvariantClient:
     def close_session(self) -> Union[None, Exception]:
         try:
             response = requests.delete(
-                f'{self.server}/session/?session_id={self.session_id}', timeout=30
+                f'{self.server}/session/?session_id={self.session_id}', timeout=60
             )
             response.raise_for_status()
         except (ConnectionError, Timeout, HTTPError) as err:
@@ -59,7 +59,7 @@ class InvariantClient:
                 response = requests.post(
                     f'{self.server}/policy/new?session_id={self.session_id}',
                     json={'rule': rule},
-                    timeout=30,
+                    timeout=60,
                 )
                 response.raise_for_status()
                 return response.json().get('policy_id'), None
@@ -78,7 +78,7 @@ class InvariantClient:
                 response = requests.post(
                     f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
                     json={'trace': trace},
-                    timeout=30,
+                    timeout=60,
                 )
                 response.raise_for_status()
                 return response.json(), None
@@ -96,7 +96,7 @@ class InvariantClient:
                 response = requests.post(
                     f'{self.server}/monitor/new?session_id={self.session_id}',
                     json={'rule': rule},
-                    timeout=30,
+                    timeout=60,
                 )
                 response.raise_for_status()
                 return response.json().get('monitor_id'), None
@@ -116,7 +116,7 @@ class InvariantClient:
                 response = requests.post(
                     f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
                     json={"past_events": past_events, "pending_events": pending_events},
-                    timeout=30,
+                    timeout=60,
                 )
                 response.raise_for_status()
                 return response.json(), None
