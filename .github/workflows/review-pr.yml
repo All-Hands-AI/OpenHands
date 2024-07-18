@@ -12,15 +12,15 @@ jobs:
   dogfood:
     if: contains(github.event.pull_request.labels.*.name, 'review-this')
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/opendevin/opendevin
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-
     steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
     - name: install git, github cli
       run: |
-        apt-get install -y git gh
+        sudo apt-get install -y git gh
         git config --global --add safe.directory $PWD
 
     - name: Checkout Repository
@@ -34,7 +34,9 @@ jobs:
 
     - name: Write Task File
       run: |
-        echo "Your coworker wants to apply a pull request to this project. Read and review ${{ github.event.pull_request.number }}.diff file. Create a review-${{ github.event.pull_request.number }}.txt and write your concise comments and suggestions there." > task.txt
+        echo "Your coworker wants to apply a pull request to this project." > task.txt
+        echo "Read and review ${{ github.event.pull_request.number }}.diff file. Create a review-${{ github.event.pull_request.number }}.txt and write your concise comments and suggestions there." >> task.txt
+        echo "Do not ask me for confirmation at any point." >> task.txt
         echo "" >> task.txt
         echo "Title" >> task.txt
         echo "${{ github.event.pull_request.title }}" >> task.txt
@@ -53,15 +55,17 @@ jobs:
 
     - name: Run OpenDevin
       env:
-        LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        LLM_MODEL: ${{ vars.LLM_MODEL }}
         SANDBOX_BOX_TYPE: ssh
       run: |
         # Append path to launch poetry
         export PATH="/github/home/.local/bin:$PATH"
         # Append path to correctly import package, note: must set pwd at first
         export PYTHONPATH=$(pwd):$PYTHONPATH
-        WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE poetry run python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
+        export WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE
+        export WORKSPACE_BASE=$GITHUB_WORKSPACE
+        echo -e "/exit\n" | poetry run python opendevin/core/main.py -i 50 -f task.txt
         rm task.txt
 
     - name: Check if review file is non-empty
