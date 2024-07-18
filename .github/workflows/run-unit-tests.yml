@@ -99,6 +99,11 @@ jobs:
               break
             else
               echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
+              if [ $i -eq $ATTEMPT_LIMIT ]; then
+                colima delete
+              else
+                colima stop
+              fi
             fi
           done
 
