@@ -130,20 +130,20 @@ function SecurityInvariant(): JSX.Element {
   }
 
   async function updatePolicy(): Promise<void> {
-    toast.info("Policy updated");
     await request(`/api/security/policy`, {
       method: "POST",
       body: JSON.stringify({ policy }),
     });
+    toast.info("Policy updated");
   }
 
   async function updateSettings(): Promise<void> {
-    toast.info("Settings updated");
     const payload = { RISK_SEVERITY: selectedRisk };
     await request(`/api/security/settings`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    toast.info("Settings updated");
   }
 
   const handleExportTraces = useCallback(() => {
@@ -280,7 +280,7 @@ function SecurityInvariant(): JSX.Element {
           <InvariantLogoIcon className="mx-auto mb-1" />
           <b>Invariant Analyzer</b>
         </div>
-        <p style={{ fontSize: "10px" }}>
+        <p className="text-[0.6rem]">
           Invariant Analyzer continuously monitors your OpenDevin agent for
           security issues.{" "}
           <a

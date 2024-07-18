@@ -189,7 +189,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def update_policy(self, request: Request) -> Any:
         data = await request.json()
         policy = data.get('policy')
-        self.monitor = self.client.Monitor.from_string(policy)
+        new_monitor = self.client.Monitor.from_string(policy)
+        self.monitor = new_monitor
         return JSONResponse(content={'policy': policy})
 
     async def get_settings(self, request: Request) -> Any:

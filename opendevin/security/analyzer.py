@@ -28,9 +28,12 @@ class SecurityAnalyzer:
         if not isinstance(event, Action):
             await self.log_event(event)
             return
-        event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
-        await self.act(event)
-        await self.log_event(event)
+        try:
+            event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
+            await self.act(event)
+            await self.log_event(event)
+        except Exception as e:
+            logger.error(f'Error occurred while analyzing the event: {e}')
 
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""

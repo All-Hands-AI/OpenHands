@@ -69,7 +69,7 @@ class InvariantClient:
         def from_string(self, rule: str):
             policy_id, err = self._create_policy(rule)
             if err:
-                return err
+                raise err
             self.policy_id = policy_id
             return self
 
@@ -106,7 +106,7 @@ class InvariantClient:
         def from_string(self, rule: str):
             monitor_id, err = self._create_monitor(rule)
             if err:
-                return err
+                raise err
             self.monitor_id = monitor_id
             self.policy = rule
             return self
