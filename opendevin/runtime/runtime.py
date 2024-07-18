@@ -129,11 +129,17 @@ class Runtime:
     # ====================================================================
 
     async def add_env_var(self, vars):
+        if not vars or not isinstance(vars, dict):
+            return
         cmd = ''
         for key, value in vars.items():
+            if key is None:
+                continue
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
         cmd = cmd.strip()
+        if cmd == '':
+            return
         logger.debug(f'Adding env var: {cmd}')
         obs: Observation = await self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
