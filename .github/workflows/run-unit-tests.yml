@@ -93,7 +93,7 @@ jobs:
             colima start --network-address --arch x86_64 --cpu=1 --memory=1
           }
 
-          for i in $(seq 1 $ATTEMPT_LIMIT); do
+          for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."
               break
