@@ -39,7 +39,7 @@ class State:
     """
     OpenDevin is a multi-agentic system.
 
-    A `task` is an end-to-end conversation 54between OpenDevin (the whole sytem) and the
+    A `task` is an end-to-end conversation between OpenDevin (the whole sytem) and the
     user, which might involve one or more inputs from the user. It starts with
     an initial input (typically a task statement) from the user, and ends with either
     a `AgentFinishAction` initiated by the agent, or an error.
@@ -77,7 +77,7 @@ class State:
 
     -- TASK ENDS (SUBTASK 0 ENDS) --
 
-    Note how `ITERATION` counter is shared across agents, while `local_iteration`
+    Note how ITERATION counter is shared across agents, while LOCAL_ITERATION
     is local to each subtask.
     """
 
