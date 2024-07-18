@@ -117,7 +117,9 @@ class LLM:
             reraise=True,
             stop=stop_after_attempt(config.num_retries),
             wait=wait_random_exponential(
-                min=config.retry_min_wait, max=config.retry_max_wait
+                multiplier=config.retry_multiplier,
+                min=config.retry_min_wait,
+                max=config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (

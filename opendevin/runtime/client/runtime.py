@@ -6,7 +6,7 @@ import aiohttp
 import docker
 import tenacity
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
@@ -45,12 +45,15 @@ class EventStreamRuntime(Runtime):
 
     def __init__(
         self,
+        sandbox_config: SandboxConfig,
         event_stream: EventStream,
         sid: str = 'default',
         container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
-        super().__init__(event_stream, sid)  # will initialize the event stream
+        super().__init__(
+            sandbox_config, event_stream, sid
+        )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -71,7 +74,7 @@ class EventStreamRuntime(Runtime):
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
-    async def ainit(self):
+    async def ainit(self, env_vars: dict[str, str] | None = None):
         self.container_image = build_runtime_image(
             self.container_image,
             self.docker_client,
@@ -85,6 +88,8 @@ class EventStreamRuntime(Runtime):
             mount_dir=config.workspace_mount_path,
             plugins=self.plugins,
         )
+        # Initialize the env vars
+        await super().ainit(env_vars)
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -126,6 +131,7 @@ class EventStreamRuntime(Runtime):
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
+                environment={'DEBUG': 'true'} if config.debug else None,
                 volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
             )
             logger.info(f'Container started. Server url: {self.api_url}')
@@ -273,7 +279,9 @@ async def test_run_command():
     sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(event_stream)
+    runtime = EventStreamRuntime(
+        sandbox_config=config.sandbox, event_stream=event_stream, sid=sid
+    )
     await runtime.ainit()
     await runtime.run_action(CmdRunAction('ls -l'))
 
@@ -283,9 +291,10 @@ async def test_event_stream():
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(
-        event_stream,
-        sid,
-        'ubuntu:22.04',
+        sandbox_config=config.sandbox,
+        event_stream=event_stream,
+        sid=sid,
+        container_image='ubuntu:22.04',
         plugins=[JupyterRequirement(), AgentSkillsRequirement()],
     )
     await runtime.ainit()
