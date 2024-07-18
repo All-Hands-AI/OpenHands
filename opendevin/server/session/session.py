@@ -89,6 +89,9 @@ class Session:
         default_llm_config.api_key = args.get(
             ConfigType.LLM_API_KEY, default_llm_config.api_key
         )
+        default_llm_config.base_url = args.get(
+            ConfigType.LLM_BASE_URL, default_llm_config.base_url
+        )
 
         # TODO: override other LLM config & agent config groups (#2075)
 
