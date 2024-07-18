@@ -56,7 +56,7 @@ describe("Message", () => {
       const user = userEvent.setup();
       render(
         <ChatMessage
-          message={{ sender: "user", content: "Hello" }}
+          message={{ sender: "user", content: "Hello", imageUrls: [] }}
           isLastMessage={false}
         />,
       );
@@ -80,7 +80,7 @@ describe("Message", () => {
       const user = userEvent.setup();
       render(
         <ChatMessage
-          message={{ sender: "user", content: "Hello" }}
+          message={{ sender: "user", content: "Hello", imageUrls: [] }}
           isLastMessage={false}
         />,
       );
@@ -114,7 +114,7 @@ describe("Message", () => {
       // it should not render buttons if the message is not the last one
       const { rerender } = render(
         <ChatMessage
-          message={{ sender: "assistant", content: "Are you sure?" }}
+          message={{ sender: "assistant", content: "Are you sure?", imageUrls: [] }}
           isLastMessage={false}
           awaitingUserConfirmation
         />,
@@ -124,7 +124,7 @@ describe("Message", () => {
       // it should not render buttons if the message is not from the assistant
       rerender(
         <ChatMessage
-          message={{ sender: "user", content: "Yes" }}
+          message={{ sender: "user", content: "Yes", imageUrls: []}}
           isLastMessage
           awaitingUserConfirmation
         />,
@@ -134,7 +134,7 @@ describe("Message", () => {
       // it should not render buttons if the message is not awaiting user confirmation
       rerender(
         <ChatMessage
-          message={{ sender: "assistant", content: "Are you sure?" }}
+          message={{ sender: "assistant", content: "Are you sure?", imageUrls: [] }}
           isLastMessage
           awaitingUserConfirmation={false}
         />,
@@ -144,7 +144,7 @@ describe("Message", () => {
       // it should render buttons if all conditions are met
       rerender(
         <ChatMessage
-          message={{ sender: "assistant", content: "Are you sure?" }}
+          message={{ sender: "assistant", content: "Are you sure?", imageUrls: [] }}
           isLastMessage
           awaitingUserConfirmation
         />,
