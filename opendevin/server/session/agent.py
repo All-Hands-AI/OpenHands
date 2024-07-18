@@ -113,8 +113,8 @@ class AgentSession:
         )
         try:
             agent_state = State.restore_from_session(self.sid)
-            llm.config.stop_requested_callback = self.controller.is_stopped
             self.controller.set_initial_state(agent_state)
             logger.info(f'Restored agent state from session, sid: {self.sid}')
+            agent.llm.config.stop_requested_callback = self.controller.is_stopped
         except Exception as e:
             print('Error restoring state', e)
