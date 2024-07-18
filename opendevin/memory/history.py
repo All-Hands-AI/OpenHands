@@ -159,6 +159,12 @@ class ShortTermHistory(list[Event]):
             )
         )
 
+    def has_delegation(self) -> bool:
+        for event in self._event_stream.get_events():
+            if isinstance(event, AgentDelegateObservation):
+                return True
+        return False
+
     def on_event(self, event: Event):
         if not isinstance(event, AgentDelegateObservation):
             return

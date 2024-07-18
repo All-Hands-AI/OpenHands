@@ -60,6 +60,7 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
         # apply prompt
         with open(prompt_file_path, 'w') as prompt_file:
             prompt_file.write(messages)
+            prompt_file.write('\n')
         return response
     except FileNotFoundError:
         return None

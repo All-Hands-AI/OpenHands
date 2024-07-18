@@ -36,8 +36,57 @@ RESUMABLE_STATES = [
 
 @dataclass
 class State:
+    """
+    OpenDevin is a multi-agentic system.
+
+    A `task` is an end-to-end conversation 54between OpenDevin (the whole sytem) and the
+    user, which might involve one or more inputs from the user. It starts with
+    an initial input (typically a task statement) from the user, and ends with either
+    a `AgentFinishAction` initiated by the agent, or an error.
+
+    A `subtask` is an end-to-end conversation between an agent and the user, or
+    another agent. If a `task` is conducted by a single agent, then it's also a `subtask`
+    itself. Otherwise, a `task` consists of multiple `subtasks`, each executed by
+    one agent.
+
+    A `State` is a mutable object associated with a `subtask`. It includes several
+    mutable and immutable fields, among which `iteration` is shared across
+    subtasks.
+
+    For example, considering a task from the user: `tell me how many GitHub stars
+    OpenDevin repo has`. Let's assume the default agent is CodeActAgent.
+
+    -- TASK STARTS (SUBTASK 0 STARTS) --
+
+    DELEGATE_LEVEL 0, ITERATION 0, LOCAL_ITERATION 0
+    CodeActAgent: I should request help from BrowsingAgent
+
+    -- DELEGATE STARTS (SUBTASK 1 STARTS) --
+
+    DELEGATE_LEVEL 1, ITERATION 1, LOCAL_ITERATION 0
+    BrowsingAgent: Let me find the answer on GitHub
+
+    DELEGATE_LEVEL 1, ITERATION 2, LOCAL_ITERATION 1
+    BrowsingAgent: I found the answer, let me convey the result and finish
+
+    -- DELEGATE ENDS (SUBTASK 1 ENDS) --
+
+    DELEGATE_LEVEL 0, ITERATION 3, LOCAL_ITERATION 1
+    CodeActAgent: I got the answer from BrowsingAgent, let me convey the result
+    and finish
+
+    -- TASK ENDS (SUBTASK 0 ENDS) --
+
+    Note how `ITERATION` counter is shared across agents, while `local_iteration`
+    is local to each subtask.
+    """
+
     root_task: RootTask = field(default_factory=RootTask)
+    # global iteration for the current task
     iteration: int = 0
+    # local iteration for the current subtask
+    local_iteration: int = 0
+    # max number of iterations for the current task
     max_iterations: int = 100
     confirmation_mode: bool = False
     history: ShortTermHistory = field(default_factory=ShortTermHistory)
@@ -47,6 +96,7 @@ class State:
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
     traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
+    # global metrics for the current task
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
