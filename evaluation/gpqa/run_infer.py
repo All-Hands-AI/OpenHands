@@ -44,6 +44,12 @@ from opendevin.events.action import Action, AgentFinishAction, MessageAction
 from opendevin.events.observation import Observation
 from opendevin.llm.llm import LLM
 
+ACTION_FORMAT = """
+<<FINAL_ANSWER||
+<insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
+||FINAL_ANSWER>>
+""".strip()
+
 
 def gpqa_codeact_user_response(
     state: State,
@@ -56,9 +62,7 @@ def gpqa_codeact_user_response(
         'If you have finished reporting the answer in the expected format, (and only once that is done), please run the following command to submit: <execute_bash> exit </execute_bash>.\n'
         'Again you are being told a million times to first report the answer in the requested format (see again below for reference) before exiting. DO NOT EXIT WITHOUT REPORTING THE ANSWER FIRST.\n'
         'That is, when you have decided on the answer report in the following format:\n'
-        '<<FINAL_ANSWER||\n'
-        '<insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)\n'
-        '||FINAL_ANSWER>>\n'
+        f'{ACTION_FORMAT}\n'
         '<execute_bash> exit </execute_bash>\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP TO SOLVE THIS TASK.\n'
     )
@@ -202,9 +206,7 @@ Choices:\n
 \n\n
 
 MOST IMPORTANT: Format your response as follows:
-<<FINAL_ANSWER||
-<insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
-||FINAL_ANSWER>>
+{ACTION_FORMAT}
 
 Additional Instructions:
 - Do not try to solve the question in a single step. Break it down into smaller steps.
@@ -214,10 +216,8 @@ Additional Instructions:
 - Again you are being told a million times to first report the answer in the requested format (see again below for reference) before exiting. DO NOT EXIT WITHOUT REPORTING THE ANSWER FIRST.
     That is, when you have decided on the answer report in the following format:
 
-    <<FINAL_ANSWER||
-    <insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
-    ||FINAL_ANSWER>>
-    <execute_bash> exit </execute_bash>
+{ACTION_FORMAT}
+<execute_bash> exit </execute_bash>
 
 Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
