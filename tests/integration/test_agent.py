@@ -21,6 +21,8 @@ from opendevin.llm.llm import LLM
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
 workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
+max_iterations = 50
+max_budget_per_task = 4
 
 print('\nPaths used:')
 print(f'workspace_base: {workspace_base}')
@@ -63,7 +65,9 @@ def test_write_simple_script() -> None:
     agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     assert final_state is not None
     assert final_state.agent_state == AgentState.STOPPED
@@ -121,7 +125,9 @@ def test_edits():
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state)
 
@@ -154,7 +160,9 @@ def test_ipython():
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state)
 
@@ -210,7 +218,9 @@ def test_ipython_module():
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state)
 
@@ -249,7 +259,9 @@ def test_browse_internet(http_server):
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state)
 
