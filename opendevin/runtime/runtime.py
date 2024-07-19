@@ -75,10 +75,10 @@ class Runtime:
         This method should be called after the runtime's constructor.
         """
         logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
-        await self.add_env_var(self.DEFAULT_ENV_VARS)
+        await self.add_env_vars(self.DEFAULT_ENV_VARS)
         if env_vars is not None:
             logger.debug(f'Adding provided env vars: {env_vars}')
-            await self.add_env_var(env_vars)
+            await self.add_env_vars(env_vars)
 
     async def close(self) -> None:
         pass
@@ -115,16 +115,20 @@ class Runtime:
 
     # ====================================================================
 
-    async def add_env_var(self, vars):
+    async def add_env_vars(self, env_vars: dict[str, str]) -> None:
         cmd = ''
-        for key, value in vars.items():
+        for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
+        if not cmd:
+            return
         cmd = cmd.strip()
         logger.debug(f'Adding env var: {cmd}')
         obs: Observation = await self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to add {key} to environment: {obs}')
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
+            )
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
