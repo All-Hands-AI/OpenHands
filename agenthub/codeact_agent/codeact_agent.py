@@ -119,7 +119,6 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.memory_condenser = MemoryCondenser(llm)
-        self.attempts_to_condense = 2
         self.reset()
 
     def action_to_str(self, action: Action) -> str:
@@ -213,7 +212,7 @@ class CodeActAgent(Agent):
         # give it multiple chances to get a response
         # if it fails, we'll try to condense memory
         attempt = 0
-        while not response and attempt < self.attempts_to_condense:
+        while not response and attempt < self.llm.config.attempts_to_condense:
             # prepare what we want to send to the LLM
             messages: list[dict[str, str]] = self._get_messages(state)
             print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
@@ -258,9 +257,10 @@ class CodeActAgent(Agent):
         message_buffer_token_count = sum(
             token_counts[2:]
         )  # no system and example message
-        MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC = 0.75
+
         desired_token_count_to_summarize = int(
-            message_buffer_token_count * MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC
+            message_buffer_token_count
+            * self.llm.config.MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC
         )
 
         candidate_messages_to_summarize = []
@@ -292,7 +292,9 @@ class CodeActAgent(Agent):
         #     candidate_messages_to_summarize = candidate_messages_to_summarize[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
         #     token_counts = token_counts[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
 
-        print(f'MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC={MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC}')
+        print(
+            f'MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC={self.llm.config.MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC}'
+        )
         # print(f'MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}')
         print(f'token_counts={token_counts}')
         print(f'message_buffer_token_count={message_buffer_token_count}')
