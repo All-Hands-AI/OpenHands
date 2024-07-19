@@ -42,7 +42,7 @@ jobs:
 
     - name: Download Diff
       run: |
-        prr get ${{GITHUB_ACTION_REPOSITORY}}/${{ github.event.pull_request.number }}
+        prr get ${{ github.repository }}/${{ github.event.pull_request.number }}
 
     - name: Write Task File
       run: |
@@ -111,4 +111,4 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        prr submit ${{GITHUB_ACTION_REPOSITORY}}/${{ github.event.pull_request.number }}
+        prr submit ${{ github.repository }}/${{ github.event.pull_request.number }}
