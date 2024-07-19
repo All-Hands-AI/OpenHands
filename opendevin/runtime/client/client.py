@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import os
 import re
+import uuid
 from pathlib import Path
 
 import pexpect
@@ -61,54 +62,101 @@ class RuntimeClient:
 
     def _init_bash_shell(self, work_dir: str) -> None:
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
-        self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
-
-        # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
-        self.__bash_expect_regex = (
-            r'\[PEXPECT_BEGIN\] ([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
+        self.prompt_uuid = str(uuid.uuid4())
+        self.__bash_PS1 = (
+            f'[PEXPECT_BEGIN_{self.prompt_uuid}] $ [PEXPECT_END_{self.prompt_uuid}]'
         )
+        print(self.__bash_PS1)
+        self.__bash_expect_regex = f'\\[PEXPECT_BEGIN_{self.prompt_uuid}\\] \\$ \\[PEXPECT_END_{self.prompt_uuid}\\]'
 
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
-        self.shell.expect(self.__bash_expect_regex)
+        self._expect_prompt()
+
+        # Disable bracketed paste mode
+        self.shell.sendline("bind 'set enable-bracketed-paste off'")
+        self._expect_prompt()
 
         self.shell.sendline(f'cd {work_dir}')
-        self.shell.expect(self.__bash_expect_regex)
+        self._expect_prompt()
 
     def _get_bash_prompt(self):
-        ps1 = self.shell.after
-        # parse the ps1 to get username, hostname, and working directory
-        matched = re.match(self.__bash_expect_regex, ps1)
-        assert (
-            matched is not None
-        ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
-        username, hostname, working_dir = matched.groups()
+        prompt = self.shell.after
+        # Extract the actual prompt content between the PEXPECT markers
+        match = re.search(r'\[PEXPECT_BEGIN_.*?\] \$ \[PEXPECT_END_.*?\]', prompt)
+        if match:
+            return match.group(0)
+        return prompt
 
-        # re-assemble the prompt
-        prompt = f'{username}@{hostname}:{working_dir} '
-        if username == 'root':
-            prompt += '#'
-        else:
-            prompt += '$'
-        return prompt + ' '
-
-    def _execute_bash(self, command, keep_prompt: bool = True) -> tuple[str, int]:
-        logger.debug(f'Executing command: {command}')
+    def _execute_bash(
+        self, command, keep_prompt: bool = True, timeout=30
+    ) -> tuple[str, int]:
+        logger.info(f'Executing command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect_regex)
 
-        output = self.shell.before
+        output = ''
+        while True:
+            try:
+                index = self.shell.expect(
+                    [self.__bash_expect_regex, r'\(y/n\)|\[y/N\]'], timeout=timeout
+                )
+                output += self.shell.before
+                if index == 0:  # Matched our prompt
+                    break
+                elif index == 1:  # Matched an interactive prompt
+                    self.shell.sendline('n')  # Default to 'no' for safety
+                    output += "(Automatically responded 'n' to prompt)\n"
+            except pexpect.TIMEOUT:
+                raise RuntimeError(f'Timeout executing command: {command}')
+
         if keep_prompt:
             output += '\r\n' + self._get_bash_prompt()
-        logger.debug(f'Command output: {output}')
+        logger.info(f'Command output: {output}')
 
         # Get exit code
         self.shell.sendline('echo $?')
-        logger.debug(f'Executing command for exit code: {command}')
-        self.shell.expect(self.__bash_expect_regex)
-        _exit_code_output = self.shell.before
-        logger.debug(f'Exit code Output: {_exit_code_output}')
-        exit_code = int(_exit_code_output.strip())
+        logger.info(f'Sent "echo $?" to get exit code for command: {command}')
+        self._expect_prompt(
+            timeout=5
+        )  # Use a shorter timeout since we're expecting immediate output
+
+        # Capture the raw output for debugging
+        raw_exit_code_output = self.shell.before.strip()
+        logger.info(f'Raw exit code output before cleaning:\n{raw_exit_code_output}')
+
+        # Extract the last non-empty line as the exit code
+        exit_code_lines = raw_exit_code_output.split('\n')
+        exit_code_str = next(
+            (line.strip() for line in reversed(exit_code_lines) if line.strip()), None
+        )
+        if exit_code_str is None:
+            logger.error(
+                f'Failed to find a valid exit code in output: {raw_exit_code_output}'
+            )
+            exit_code = 1  # Default to non-zero exit code for safety
+        else:
+            try:
+                exit_code = int(exit_code_str)
+            except ValueError:
+                logger.error(f'Failed to convert exit code to integer: {exit_code_str}')
+                exit_code = 1
+
+        # Log the final command output and exit code
+        logger.info(f'Final command output: {output}')
+        logger.info(f'Final parsed exit code: {exit_code}')
+
         return output, exit_code
+
+    def capture_full_session_output(self):
+        self.shell.sendline('echo "Capturing full session output"')
+        self._expect_prompt()
+        full_output = self.shell.before.strip()
+        logger.info(f'Full session output:\n{full_output}')
+
+    def _expect_prompt(self, timeout=10):
+        try:
+            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+        except pexpect.TIMEOUT:
+            raise RuntimeError(f'Timeout waiting for prompt after {timeout} seconds')
 
     async def run_action(self, action) -> Observation:
         action_type = action.action
@@ -214,8 +262,10 @@ class RuntimeClient:
         return await browse(action, self.browser)
 
     def close(self):
+        self.shell.sendline('exit')
         self.shell.close()
-        self.browser.close()
+        if hasattr(self, 'browser') and self.browser:
+            self.browser.close()
 
 
 # def test_run_commond():
