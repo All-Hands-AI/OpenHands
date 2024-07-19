@@ -233,7 +233,6 @@ Ok now its time to start solving the question. Good luck!
                     agent.__class__.__name__
                 ),
                 sid=f'gptq_{str(instance.instance_id)}',
-                headless_mode=True,
             )
         )
         assert state is not None, 'State should not be None.'

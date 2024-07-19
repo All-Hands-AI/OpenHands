@@ -67,11 +67,7 @@ def process_instance(
 
     state: State | None = asyncio.run(
         run_agent_controller(
-            agent,
-            instruction,
-            max_iterations=metadata.max_iterations,
-            sid=env_id,
-            headless_mode=True,
+            agent, instruction, max_iterations=metadata.max_iterations, sid=env_id
         )
     )
 

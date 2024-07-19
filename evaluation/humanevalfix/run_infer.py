@@ -188,7 +188,6 @@ def process_instance(
                     agent.__class__.__name__
                 ),
                 sid=sid,
-                headless_mode=True,
             )
         )
 

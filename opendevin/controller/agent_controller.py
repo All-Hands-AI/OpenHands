@@ -68,7 +68,7 @@ class AgentController:
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
-        headless_mode: bool = False,
+        headless_mode: bool = True,
     ):
         """Initializes a new instance of the AgentController class.
 

@@ -40,7 +40,7 @@ async def run_agent_controller(
     sandbox: Sandbox | None = None,
     runtime_tools_config: dict | None = None,
     sid: str | None = None,
-    headless_mode: bool = False,
+    headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.

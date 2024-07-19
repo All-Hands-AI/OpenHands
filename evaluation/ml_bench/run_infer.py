@@ -157,7 +157,6 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
                 ),
                 sandbox=sandbox,
                 sid=sid,
-                headless_mode=True,
             )
         )
         assert state is not None

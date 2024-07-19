@@ -85,7 +85,6 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
                 agent.__class__.__name__
             ],
             sid=qid,
-            headless_mode=True,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======

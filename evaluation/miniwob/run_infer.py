@@ -84,7 +84,6 @@ def process_instance(
             runtime_tools_config=runtime_tools_config,
             sandbox=get_sandbox(),
             sid=env_id,
-            headless_mode=True,
         )
     )
 

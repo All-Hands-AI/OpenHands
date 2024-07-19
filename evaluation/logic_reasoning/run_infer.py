@@ -187,7 +187,6 @@ def process_instance(
                 ),
                 sandbox=sandbox,
                 sid=sid,
-                headless_mode=True,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======

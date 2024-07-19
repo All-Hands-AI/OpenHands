@@ -289,7 +289,6 @@ IMPORTANT TIPS:
             ],
             sandbox=sandbox,
             sid=instance.instance_id,
-            headless_mode=True,
         )
     )
 

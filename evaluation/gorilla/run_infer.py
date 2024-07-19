@@ -122,7 +122,6 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
                     agent.__class__.__name__
                 ),
                 sid=question_id,
-                headless_mode=True,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
