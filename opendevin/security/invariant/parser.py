@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from invariant.stdlib.invariant.nodes import Function, Message, ToolCall, ToolOutput
+from opendevin.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 from pydantic import BaseModel, Field
 
 from opendevin.core.logger import opendevin_logger as logger
@@ -30,7 +30,7 @@ from opendevin.events.observation import (
 TraceElement = Union[Message, ToolCall, ToolOutput, Function]
 
 
-def get_next_id(trace: TraceElement) -> str:
+def get_next_id(trace: list[TraceElement]) -> str:
     used_ids = [el.id for el in trace if type(el) == ToolCall]
     for i in range(1, len(used_ids) + 2):
         if str(i) not in used_ids:
@@ -47,7 +47,7 @@ def get_last_id(
     return None
 
 
-def parse_action(trace: list, action: Action) -> list[TraceElement]:
+def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement]:
     next_id = get_next_id(trace)
     inv_trace = []  # type: list[TraceElement]
     if type(action) == MessageAction:
@@ -106,7 +106,7 @@ def parse_action(trace: list, action: Action) -> list[TraceElement]:
     return inv_trace
 
 
-def parse_observation(trace: list[dict], obs: Observation) -> list[TraceElement]:
+def parse_observation(trace: list[TraceElement], obs: Observation) -> list[TraceElement]:
     last_id = get_last_id(trace)
     if type(obs) == NullObservation:
         return []
@@ -124,13 +124,13 @@ def parse_observation(trace: list[dict], obs: Observation) -> list[TraceElement]
     return []
 
 
-def parse_element(trace: list[dict], element: Action | Observation) -> list[dict]:
+def parse_element(trace: list[TraceElement], element: Action | Observation) -> list[TraceElement]:
     if isinstance(element, Action):
         return parse_action(trace, element)
     return parse_observation(trace, element)
 
 
-def print_inv_trace(trace: list[dict]):
+def print_inv_trace(trace: list[TraceElement]):
     for element in trace:
         print(element)
 
@@ -144,7 +144,7 @@ def parse_trace(trace: list[tuple[Action, Observation]]):
 
 
 class InvariantState(BaseModel):
-    trace: list[dict] = Field(default_factory=list)
+    trace: list[TraceElement] = Field(default_factory=list)
 
     def add_action(self, action: Action):
         self.trace.extend(parse_action(self.trace, action))
