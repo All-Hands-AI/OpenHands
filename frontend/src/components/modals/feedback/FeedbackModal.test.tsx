@@ -27,6 +27,7 @@ describe("FeedbackModal", () => {
   it("should render the feedback model when open", () => {
     const { rerender } = render(
       <FeedbackModal
+        polarity="positive"
         isOpen={false}
         onOpenChange={vi.fn}
         onSendFeedback={vi.fn}
@@ -35,7 +36,12 @@ describe("FeedbackModal", () => {
     expect(screen.queryByTestId("feedback-modal")).not.toBeInTheDocument();
 
     rerender(
-      <FeedbackModal isOpen onOpenChange={vi.fn} onSendFeedback={vi.fn} />,
+      <FeedbackModal
+        polarity="positive"
+        isOpen
+        onOpenChange={vi.fn}
+        onSendFeedback={vi.fn}
+      />,
     );
     expect(screen.getByTestId("feedback-modal")).toBeInTheDocument();
   });
@@ -43,7 +49,12 @@ describe("FeedbackModal", () => {
   it("should display an error if the email is invalid when submitting", async () => {
     const user = userEvent.setup();
     render(
-      <FeedbackModal isOpen onOpenChange={vi.fn} onSendFeedback={vi.fn} />,
+      <FeedbackModal
+        polarity="positive"
+        isOpen
+        onOpenChange={vi.fn}
+        onSendFeedback={vi.fn}
+      />,
     );
 
     const submitButton = screen.getByRole("button", {

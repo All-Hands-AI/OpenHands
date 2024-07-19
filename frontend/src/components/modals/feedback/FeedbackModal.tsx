@@ -89,6 +89,7 @@ function FeedbackModal({
           label: t(I18nKey.FEEDBACK$SHARE_LABEL),
           className: "bg-primary rounded-lg",
           action: handleSendFeedback,
+          isDisabled: !isEmailValid(email),
           closeAfterAction: true,
         },
         {
