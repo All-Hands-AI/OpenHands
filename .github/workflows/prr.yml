@@ -1,4 +1,4 @@
-name: Use OpenDevin to Review Pull Request
+name: Use OpenDevin to Review Pull Request using PRR tool
 
 on:
   pull_request:
@@ -44,12 +44,13 @@ jobs:
     - name: Download Diff
       run: |
         prr get $PRR_FILE_NAME
+        mv $PRR_FILE_NAME.prr $GITHUB_WORKSPACE
 
     - name: Write Task File
       run: |
         echo "Your coworker wants to apply a pull request to this project." > task.txt
         echo "Read and review $PRR_FILE_NAME.prr file. Edit this file to add comments and suggestions." >> task.txt
-        cat << EOF
+        cat << EOF >> task.txt
         Sample content of a .prr file:
         > diff --git a/ch4.txt b/ch4.txt
         > index 41e1932..8741175 100644
@@ -75,7 +76,7 @@ jobs:
         Remove this spam
 
         > +Some important line
-        EOF >> task.txt
+        EOF
         echo "Do not ask me for confirmation at any point." >> task.txt
         echo "" >> task.txt
         echo "Title" >> task.txt
@@ -113,4 +114,5 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
+        mv -f ${{ github.event.pull_request.number }}.prr $PRR_FILE_NAME.prr
         prr submit $PRR_FILE_NAME
