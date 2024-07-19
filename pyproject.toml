@@ -37,6 +37,8 @@ tenacity = "^8.5.0"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
+grep-ast = "0.3.2"
+tree-sitter = "0.21.3"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -57,12 +59,18 @@ pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
+flake8 = "*"
+openai = "*"
+python-docx = "*"
+PyPDF2 = "*"
+pylatexenc = "*"
+python-pptx = "*"
+opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -96,7 +104,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
