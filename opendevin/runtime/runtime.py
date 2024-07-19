@@ -126,7 +126,7 @@ class Runtime:
         logger.debug(f'Adding env var: {cmd}')
         obs: Observation = await self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to add {key} to environment: {obs}')
+            raise RuntimeError(f'Failed to add env vars [{vars}] to environment.')
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
