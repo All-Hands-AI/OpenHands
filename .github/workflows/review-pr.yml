@@ -48,7 +48,7 @@ jobs:
     - name: Write Task File
       run: |
         echo "Your coworker wants to apply a pull request to this project." > task.txt
-        echo "Read and review ${{ github.event.pull_request.number }}.prr file. Edit this file to add comments and suggestions." >> task.txt
+        echo "Read and review $PRR_FILE_NAME.prr file. Edit this file to add comments and suggestions." >> task.txt
         cat << EOF
         > diff --git a/ch4.txt b/ch4.txt
         > index 41e1932..8741175 100644
