@@ -75,10 +75,10 @@ class Runtime:
         This method should be called after the runtime's constructor.
         """
         logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
-        await self.add_env_var(self.DEFAULT_ENV_VARS)
+        await self.add_env_vars(self.DEFAULT_ENV_VARS)
         if env_vars is not None:
             logger.debug(f'Adding provided env vars: {env_vars}')
-            await self.add_env_var(env_vars)
+            await self.add_env_vars(env_vars)
 
     async def close(self) -> None:
         pass
@@ -115,7 +115,7 @@ class Runtime:
 
     # ====================================================================
 
-    async def add_env_var(self, env_vars: dict[str, str]) -> None:
+    async def add_env_vars(self, env_vars: dict[str, str]) -> None:
         cmd = ''
         for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
