@@ -93,7 +93,7 @@ class LLM:
                 self.config.max_output_tokens = 1024
 
         if self.config.drop_params:
-            litellm.set_drop_params(self.config.drop_params)
+            litellm.drop_params = self.config.drop_params
 
         self._completion = partial(
             litellm_completion,
