@@ -38,6 +38,12 @@ function FeedbackModal({
     "private",
   );
 
+  React.useEffect(() => {
+    // check if email is stored in local storage
+    const storedEmail = localStorage.getItem("feedback-email");
+    if (storedEmail) setEmail(storedEmail);
+  }, []);
+
   const handleEmailChange = (newEmail: string) => {
     setEmail(newEmail);
   };
@@ -55,6 +61,7 @@ function FeedbackModal({
 
     try {
       const response = await sendFeedback(feedback);
+      localStorage.setItem("feedback-email", email); // store email in local storage
       if (response.statusCode === 200) {
         const { message, feedback_id: feedbackId, password } = response.body;
         const toastMessage = `${message}\nFeedback link: ${VIEWER_PAGE}?share_id=${feedbackId}\nPassword: ${password}`;

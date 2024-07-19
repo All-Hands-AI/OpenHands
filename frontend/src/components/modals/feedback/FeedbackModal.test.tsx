@@ -6,6 +6,9 @@ import FeedbackModal from "./FeedbackModal";
 import { sendFeedback } from "#/services/feedbackService";
 
 describe("FeedbackModal", () => {
+  Storage.prototype.setItem = vi.fn();
+  Storage.prototype.getItem = vi.fn();
+
   vi.mock("#/services/feedbackService", () => ({
     sendFeedback: vi.fn(),
   }));
@@ -23,6 +26,10 @@ describe("FeedbackModal", () => {
       ],
     },
   }));
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("should render the feedback model when open", () => {
     const { rerender } = render(
@@ -109,5 +116,45 @@ describe("FeedbackModal", () => {
       token: "some-token",
       version: "1.0",
     });
+  });
+
+  it("should store the users email in local state for later use", async () => {
+    const email = "example@example.com";
+
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <FeedbackModal
+        polarity="negative"
+        isOpen
+        onOpenChange={vi.fn}
+        onSendFeedback={vi.fn}
+      />,
+    );
+
+    expect(localStorage.getItem).toHaveBeenCalledWith("feedback-email");
+    const emailInput = screen.getByTestId("email-input");
+    expect(emailInput).toHaveValue("");
+
+    await user.type(emailInput, email);
+    expect(emailInput).toHaveValue(email);
+
+    const submitButton = screen.getByRole("button", {
+      name: "FEEDBACK$SHARE_LABEL",
+    });
+    await user.click(submitButton);
+
+    expect(localStorage.setItem).toHaveBeenCalledWith("feedback-email", email);
+
+    rerender(
+      <FeedbackModal
+        polarity="positive"
+        isOpen
+        onOpenChange={vi.fn}
+        onSendFeedback={vi.fn}
+      />,
+    );
+
+    const emailInputAfterClose = screen.getByTestId("email-input");
+    expect(emailInputAfterClose).toHaveValue(email);
   });
 });

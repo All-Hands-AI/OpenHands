@@ -110,4 +110,6 @@ describe("ChatInterface", () => {
     expect(submitButton).toBeDisabled();
     expect(sessionSendSpy).not.toHaveBeenCalled();
   });
+
+
 });
