@@ -19,6 +19,7 @@ interface BaseModalProps {
   subtitle?: string;
   actions?: Action[];
   children?: React.ReactNode;
+  testID?: string;
 }
 
 function BaseModal({
@@ -31,9 +32,11 @@ function BaseModal({
   subtitle = undefined,
   actions = [],
   children = null,
+  testID,
 }: BaseModalProps) {
   return (
     <Modal
+      data-testid={testID}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={title}
