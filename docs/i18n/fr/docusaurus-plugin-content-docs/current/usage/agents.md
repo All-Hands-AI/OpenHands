@@ -61,42 +61,6 @@ _Exemple de CodeActAgent avec `gpt-4-turbo-2024-04-09` effectuant une tâche de 
 [] Support de la navigation sur le web
 [] Compléter le workflow pour l'agent CodeAct afin de soumettre des PRs Github
 
-## Agent Monologue
-
-### Description
-
-L'agent Monologue utilise la mémoire à long terme et à court terme pour accomplir des tâches.
-La mémoire à long terme est stockée en tant qu'objet LongTermMemory et le modèle l'utilise pour rechercher des exemples du passé.
-La mémoire à court terme est stockée en tant qu'objet Monologue et le modèle peut la condenser si nécessaire.
-
-### Actions
-
-`Action`,
-`NullAction`,
-`CmdRunAction`,
-`FileWriteAction`,
-`FileReadAction`,
-`BrowseURLAction`,
-`GithubPushAction`,
-`AgentThinkAction`
-
-### Observations
-
-`Observation`,
-`NullObservation`,
-`CmdOutputObservation`,
-`FileReadObservation`,
-`BrowserOutputObservation`
-
-### Méthodes
-
-| Méthode         | Description                                                                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `__init__`      | Initialise l'agent avec une mémoire à long terme et un monologue interne                                                                      |
-| `_add_event`    | Ajoute des événements au monologue de l'agent et condense avec un résumé automatiquement si le monologue est trop long                            |
-| `_initialize`   | Utilise la liste `INITIAL_THOUGHTS` pour donner à l'agent un contexte pour ses capacités et comment naviguer dans le `/workspace`                    |
-| `step`          | Modifie l'état actuel en ajoutant les actions et observations les plus récentes, puis invite le modèle à réfléchir à la prochaine action à entreprendre. |
-
 ## Agent Planificateur
 
 ### Description
