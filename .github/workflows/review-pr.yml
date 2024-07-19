@@ -7,7 +7,8 @@ on:
 permissions:
   contents: write
   pull-requests: write
-
+env:
+  PRR_FILE_NAME: ${{ github.repository }}/${{ github.event.pull_request.number }}
 jobs:
   dogfood:
     if: contains(github.event.pull_request.labels.*.name, 'review-this')
@@ -42,7 +43,7 @@ jobs:
 
     - name: Download Diff
       run: |
-        prr get ${{ github.repository }}/${{ github.event.pull_request.number }}
+        prr get $PRR_FILE_NAME
 
     - name: Write Task File
       run: |
@@ -82,7 +83,7 @@ jobs:
         echo "Description" >> task.txt
         echo "${{ github.event.pull_request.body }}" >> task.txt
         echo "" >> task.txt
-        echo "Diff file is: ${{ github.event.pull_request.number }}.prr" >> task.txt
+        echo "Diff file is: $PRR_FILE_NAME.prr" >> task.txt
         echo "" >> task.txt
 
     - name: Set up environment
@@ -111,4 +112,4 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        prr submit ${{ github.repository }}/${{ github.event.pull_request.number }}
+        prr submit $PRR_FILE_NAME
