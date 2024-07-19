@@ -80,6 +80,9 @@ class Session:
         confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.confirmation_mode
         )
+        security_analyzer = args.get(
+            ConfigType.SECURITY_ANALYZER, self.config.security_analyzer
+        )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
         # override default LLM config
         default_llm_config = self.config.get_llm_config()
@@ -105,6 +108,7 @@ class Session:
                 sandbox_config=self.config.sandbox,
                 agent=agent,
                 confirmation_mode=confirmation_mode,
+                security_analyzer=security_analyzer,
                 max_iterations=max_iterations,
             )
         except Exception as e:

@@ -38,6 +38,7 @@ class AgentSession:
         sandbox_config: SandboxConfig,
         agent: Agent,
         confirmation_mode: bool,
+        security_analyzer: str,
         max_iterations: int,
     ):
         """Starts the agent session.
@@ -49,7 +50,7 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_security_analyzer(start_event)
+        await self._create_security_analyzer(security_analyzer)
         await self._create_runtime(runtime_name, sandbox_config)
         await self._create_controller(agent, confirmation_mode, max_iterations)
 
@@ -67,14 +68,8 @@ class AgentSession:
         self._closed = True
 
     # TODO: Make this configurable
-    async def _create_security_analyzer(self, start_event: dict):
+    async def _create_security_analyzer(self, security_analyzer: str):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
-        args = {
-            key: value
-            for key, value in start_event.get('args', {}).items()
-            if value != ''
-        }  # remove empty values, prevent FE from sending empty strings
-        security_analyzer = args.get(ConfigType.SECURITY_ANALYZER, config.security_analyzer)
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(security_analyzer, SecurityAnalyzer)(self.event_stream)
 
