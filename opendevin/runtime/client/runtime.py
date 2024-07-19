@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from typing import Any, Optional
+from typing import Optional
 
 import aiohttp
 import docker
@@ -118,14 +118,16 @@ class EventStreamRuntime(Runtime):
             if plugins is None:
                 plugins = []
             plugin_names = ' '.join([plugin.name for plugin in plugins])
-            network_kwargs: dict[str, Any] = {}
+
+            network_mode: str | None = None
+            port_mapping: dict[str, int] | None = None
             if self.sandbox_config.use_host_network:
-                network_kwargs['network_mode'] = 'host'
+                network_mode = 'host'
                 logger.warn(
                     'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
                 )
             else:
-                network_kwargs['ports'] = {f'{self._port}/tcp': self._port}
+                port_mapping = {f'{self._port}/tcp': self._port}
 
             container = self.docker_client.containers.run(
                 self.container_image,
@@ -136,7 +138,8 @@ class EventStreamRuntime(Runtime):
                     f'--working-dir {sandbox_workspace_dir} '
                     f'--plugins {plugin_names}'
                 ),
-                **network_kwargs,
+                network_mode=network_mode,
+                ports=port_mapping,
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
