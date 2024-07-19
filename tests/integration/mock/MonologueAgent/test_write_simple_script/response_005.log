@@ -1,0 +1,9 @@
+```json
+{
+  "action": "message",
+  "args": {
+    "content": "I have written the 'hello.sh' script. Now, I need to make sure it is executable and then run it to verify that it prints 'hello'.",
+    "wait_for_response": false
+  }
+}
+```

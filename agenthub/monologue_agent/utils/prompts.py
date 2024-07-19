@@ -3,9 +3,6 @@ from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
 )
-from opendevin.events.observation import (
-    CmdOutputObservation,
-)
 from opendevin.events.serialization.action import action_from_dict
 
 ACTION_PROMPT = """
@@ -32,25 +29,18 @@ Here are the possible actions:
   * `content` - the content to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
-  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
-* `kill` - kills a background command
-  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `push` - Push a branch from the current repo to github:
   * `owner` - the owner of the repo to push to
   * `repo` - the name of the repo to push to
   * `branch` - the name of the branch to push
-* `recall` - recalls a past memory. Arguments:
-  * `query` - the query to search for
 * `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
   * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-%(background_commands)s
-
-You MUST take time to think in between read, write, run, kill, browse, push, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, browse, and push actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
@@ -100,15 +90,7 @@ INITIAL_THOUGHTS = [
     'It seems like I have some kind of short term memory.',
     'Each of my thoughts seems to be stored in a JSON array.',
     'It seems whatever I say next will be added as an object to the list.',
-    'But no one has perfect short-term memory. My list of thoughts will be summarized and condensed over time, losing information in the process.',
-    'Fortunately I have long term memory!',
-    'I can just perform a recall action, followed by the thing I want to remember. And then related thoughts just spill out!',
-    "Sometimes they're random thoughts that don't really have to do with what I wanted to remember. But usually they're exactly what I need!",
-    "Let's try it out!",
-    'RECALL what it is I want to do',
-    "Here's what I want to do: $TASK",
-    'How am I going to get there though?',
-    "Neat! And it looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
+    "It looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
     'RUN echo "hello world"',
     'hello world',
     'Cool! I bet I can write files too using the write action.',
@@ -138,8 +120,7 @@ INITIAL_THOUGHTS = [
 
 
 def get_summarize_monologue_prompt(thoughts: list[dict]):
-    """
-    Gets the prompt for summarizing the monologue
+    """Gets the prompt for summarizing the monologue
 
     Returns:
     - str: A formatted string with the current monologue within the prompt
@@ -153,23 +134,16 @@ def get_request_action_prompt(
     task: str,
     thoughts: list[dict],
     recent_events: list[dict],
-    background_commands_obs: list[CmdOutputObservation] | None = None,
 ):
-    """
-    Gets the action prompt formatted with appropriate values.
+    """Gets the action prompt formatted with appropriate values.
 
     Parameters:
     - task (str): The current task the agent is trying to accomplish
     - thoughts (list[dict]): The agent's current thoughts
-    - background_commands_obs (list[CmdOutputObservation]): list of all observed background commands running
 
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
-
-    if background_commands_obs is None:
-        background_commands_obs = []
-
     hint = ''
     if len(recent_events) > 0:
         latest_event = recent_events[-1]
@@ -187,15 +161,6 @@ def get_request_action_prompt(
     else:
         hint = "You're just getting started! What should you do first?"
 
-    bg_commands_message = ''
-    if len(background_commands_obs) > 0:
-        bg_commands_message = 'The following commands are running in the background:'
-        for command_obs in background_commands_obs:
-            bg_commands_message += (
-                f'\n`{command_obs.command_id}`: {command_obs.command}'
-            )
-        bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
-
     user = 'opendevin' if config.run_as_devin else 'root'
 
     monologue = thoughts + recent_events
@@ -203,17 +168,15 @@ def get_request_action_prompt(
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(monologue, indent=2),
-        'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.sandbox_timeout,
+        'timeout': config.sandbox.timeout,
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 
 
 def parse_action_response(orig_response: str) -> Action:
-    """
-    Parses a string to find an action within it
+    """Parses a string to find an action within it
 
     Parameters:
     - response (str): The string to be parsed
@@ -232,8 +195,7 @@ def parse_action_response(orig_response: str) -> Action:
 
 
 def parse_summary_response(response: str) -> list[dict]:
-    """
-    Parses a summary of the monologue
+    """Parses a summary of the monologue
 
     Parameters:
     - response (str): The response string to be parsed

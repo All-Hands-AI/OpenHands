@@ -1,3 +1,4 @@
+import json
 from typing import Any, Literal
 
 import requests
@@ -18,7 +19,7 @@ class FeedbackDataModel(BaseModel):
 FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_trajectory'
 
 
-def store_feedback(feedback: FeedbackDataModel):
+def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     # Start logging
     display_feedback = feedback.model_dump()
     if 'trajectory' in display_feedback:
@@ -34,6 +35,8 @@ def store_feedback(feedback: FeedbackDataModel):
         headers={'Content-Type': 'application/json'},
         json=feedback.model_dump(),
     )
-    logger.info(f'Stored feedback: {response.status_code} {response.text}')
     if response.status_code != 200:
         raise ValueError(f'Failed to store feedback: {response.text}')
+    response_data = json.loads(response.text)
+    logger.info(f'Stored feedback: {response.text}')
+    return response_data

@@ -13,8 +13,7 @@ OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs c
 :::
 
 The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
-But when using the OpenDevin UI, you'll need to choose your model in the settings window (the gear
-wheel on the bottom left).
+But when using the OpenDevin UI, you'll need to choose your model in the settings window.
 
 The following environment variables might be necessary for some LLMs:
 

@@ -25,17 +25,20 @@ Add the following configurations:
 max_iterations = 100
 cache_dir = "/tmp/cache"
 ssh_hostname = "localhost"
-enable_auto_lint = true
 run_as_devin = false
 sandbox_container_image = "public.ecr.aws/i5g0m1f6/ml-bench" # Use the latest image from the ML-Bench repository
 
+[sandbox]
+enable_auto_lint = true
+
+
 # TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
+[llm.eval_gpt4_1106_preview]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
 temperature = 0.0
 
-[eval_some_openai_compatible_model]
+[llm.eval_some_openai_compatible_model]
 model = "openai/MODEL_NAME"
 base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
@@ -47,11 +50,31 @@ temperature = 0.0
 To run the evaluation on the ML-Bench dataset, use the following command:
 
 ```bash
-./evaluation/ml_bench/scripts/run_infer.sh [model_config] [split] [agent] [eval_limit]
-# e.g., ./evaluation/ml_bench/scripts/run_infer.sh eval_gpt4_1106_preview full CodeActAgent 10
+./evaluation/ml_bench/scripts/run_infer.sh [model_config] [git-version] [split] [agent] [eval_limit]
+# e.g., ./evaluation/ml_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 full CodeActAgent 10
 ```
 
 You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.
+
+## Score Evaluation Output
+
+To score the evaluation output, use the following command:
+
+```bash
+./evaluation/ml_bench/scripts/summarise_results.py [eval_output_dir]
+# e.g., ./evaluation/ml_bench/scripts/summarise_results.py evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5
+```
+
+## Run Error Analysis on ML-Bench
+
+To run error analysis on the ML-Bench dataset, use the following command:
+
+```bash
+./evaluation/ml_bench/scripts/run_analysis.sh [eval_output_dir] [model_config]
+# e.g., ./evaluation/ml_bench/scripts/run_analysis.sh evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5/output.jsonl eval_gpt4_1106_preview
+```
+
+This command generates a report on the evaluation output and provides insights into the agent's performance.
 
 ## Examples
 

@@ -1,0 +1,48 @@
+name: Update pyproject.toml Version and Tags
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  update-pyproject-and-tags:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install toml
+
+      - name: Get release tag
+        id: get_release_tag
+        run: echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Update pyproject.toml with release tag
+        run: |
+          python -c "
+          import toml
+          with open('pyproject.toml', 'r') as f:
+              data = toml.load(f)
+          data['tool']['poetry']['version'] = '${{ env.RELEASE_TAG }}'
+          with open('pyproject.toml', 'w') as f:
+              toml.dump(data, f)
+          "
+
+      - name: Commit and push pyproject.toml changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Update pyproject.toml version to ${{ env.RELEASE_TAG }}"
+          branch: main
+          file_pattern: pyproject.toml

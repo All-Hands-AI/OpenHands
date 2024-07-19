@@ -17,21 +17,21 @@ enum ActionType {
   // Runs a IPython command.
   RUN_IPYTHON = "run_ipython",
 
-  // Kills a background command.
-  KILL = "kill",
-
   // Opens a web page.
   BROWSE = "browse",
 
   // Interact with the browser instance.
   BROWSE_INTERACTIVE = "browse_interactive",
 
-  // Searches long-term memory.
-  RECALL = "recall",
+  // Delegate a (sub)task to another agent.
+  DELEGATE = "delegate",
 
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",
+
+  // Reject a request from user or another agent.
+  REJECT = "reject",
 
   // Adds a task to the plan.
   ADD_TASK = "add_task",

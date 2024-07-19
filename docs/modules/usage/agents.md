@@ -55,12 +55,6 @@ _Example of CodeActAgent with `gpt-4-turbo-2024-04-09` performing a data science
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `__init__`      | Initializes an agent with `llm` and a list of messages `list[Mapping[str, str]]`                                                                |
 | `step`          | Performs one step using the CodeAct Agent. This includes gathering info on previous steps and prompting the model to make a command to execute. |
-| `search_memory` | Not yet implemented                                                                                                                             |
-
-### Work-in-progress &amp; Next step
-
-[] Support web-browsing
-[] Complete the workflow for CodeAct agent to submit Github PRs
 
 ## Monologue Agent
 
@@ -77,7 +71,6 @@ Short term memory is stored as a Monologue object and the model can condense it 
 `CmdRunAction`,
 `FileWriteAction`,
 `FileReadAction`,
-`AgentRecallAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `AgentThinkAction`
@@ -88,7 +81,6 @@ Short term memory is stored as a Monologue object and the model can condense it 
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Methods
@@ -99,7 +91,6 @@ Short term memory is stored as a Monologue object and the model can condense it 
 | `_add_event`    | Appends events to the monologue of the agent and condenses with summary automatically if the monologue is too long                            |
 | `_initialize`   | Utilizes the `INITIAL_THOUGHTS` list to give the agent a context for its capabilities and how to navigate the `/workspace`                    |
 | `step`          | Modifies the current state by adding the most recent actions and observations, then prompts the model to think about its next action to take. |
-| `search_memory` | Uses `VectorIndexRetriever` to find related memories within the long term memory.                                                             |
 
 ## Planner Agent
 
@@ -112,12 +103,10 @@ The agent is given its previous action-observation pairs, current task, and hint
 
 `NullAction`,
 `CmdRunAction`,
-`CmdKillAction`,
 `BrowseURLAction`,
 `GithubPushAction`,
 `FileReadAction`,
 `FileWriteAction`,
-`AgentRecallAction`,
 `AgentThinkAction`,
 `AgentFinishAction`,
 `AgentSummarizeAction`,
@@ -130,7 +119,6 @@ The agent is given its previous action-observation pairs, current task, and hint
 `NullObservation`,
 `CmdOutputObservation`,
 `FileReadObservation`,
-`AgentRecallObservation`,
 `BrowserOutputObservation`
 
 ### Methods
@@ -139,4 +127,3 @@ The agent is given its previous action-observation pairs, current task, and hint
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `__init__`      | Initializes an agent with `llm`                                                                                                                                                           |
 | `step`          | Checks to see if current step is completed, returns `AgentFinishAction` if True. Otherwise, creates a plan prompt and sends to model for inference, adding the result as the next action. |
-| `search_memory` | Not yet implemented                                                                                                                                                                       |

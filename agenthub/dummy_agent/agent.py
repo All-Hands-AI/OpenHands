@@ -7,7 +7,6 @@ from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -18,7 +17,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
-    AgentRecallObservation,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -31,16 +29,12 @@ from opendevin.llm.llm import LLM
 """
 FIXME: There are a few problems this surfaced
 * FileWrites seem to add an unintended newline at the end of the file
-* command_id is sometimes a number, sometimes a string
-* Why isn't the output of the background command split between two steps?
 * Browser not working
 """
 
 ActionObs = TypedDict(
     'ActionObs', {'action': Action, 'observations': list[Observation]}
 )
-
-BACKGROUND_CMD = 'echo "This is in the background" && sleep .1 && echo "This too"'
 
 
 class DummyAgent(Agent):
@@ -96,28 +90,6 @@ class DummyAgent(Agent):
                 ],
             },
             {
-                'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
-                'observations': [
-                    CmdOutputObservation(
-                        'Background command started. To stop it, send a `kill` action with command_id 42',
-                        command_id='42',  # type: ignore[arg-type]
-                        command=BACKGROUND_CMD,
-                    ),
-                    CmdOutputObservation(
-                        'This is in the background\nThis too\n',
-                        command_id='42',  # type: ignore[arg-type]
-                        command=BACKGROUND_CMD,
-                    ),
-                ],
-            },
-            {
-                'action': AgentRecallAction(query='who am I?'),
-                'observations': [
-                    AgentRecallObservation('', memories=['I am a computer.']),
-                    # CmdOutputObservation('This too\n', command_id='42', command=BACKGROUND_CMD),
-                ],
-            },
-            {
                 'action': BrowseURLAction(url='https://google.com'),
                 'observations': [
                     # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
@@ -145,11 +117,16 @@ class DummyAgent(Agent):
         time.sleep(0.1)
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
+
+            # a step is (action, observations list)
             if 'observations' in prev_step:
+                # one obs, at most
                 expected_observations = prev_step['observations']
-                hist_start = len(state.history) - len(expected_observations)
+
+                # check if the history matches the expected observations
+                hist_events = state.history.get_last_events(len(expected_observations))
                 for i in range(len(expected_observations)):
-                    hist_obs = event_to_dict(state.history[hist_start + i][1])
+                    hist_obs = event_to_dict(hist_events[i])
                     expected_obs = event_to_dict(expected_observations[i])
                     if (
                         'command_id' in hist_obs['extras']
@@ -163,13 +140,7 @@ class DummyAgent(Agent):
                     ):
                         del expected_obs['extras']['command_id']
                         expected_obs['content'] = ''
-                    if hist_obs != expected_obs:
-                        print('\nactual', hist_obs)
-                        print('\nexpect', expected_obs)
                     assert (
                         hist_obs == expected_obs
                     ), f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
-
-    def search_memory(self, query: str) -> list[str]:
-        return ['I am a computer.']

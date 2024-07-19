@@ -15,16 +15,23 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.PAUSED,
     AgentState.STOPPED,
     AgentState.FINISHED,
+    AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.RUNNING]: [
     AgentState.INIT,
     AgentState.RUNNING,
     AgentState.STOPPED,
     AgentState.FINISHED,
+    AgentState.REJECTED,
     AgentState.AWAITING_USER_INPUT,
+    AgentState.AWAITING_USER_CONFIRMATION,
   ],
   [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
+  [AgentState.USER_CONFIRMED]: [AgentState.RUNNING],
+  [AgentState.USER_REJECTED]: [AgentState.RUNNING],
+  [AgentState.AWAITING_USER_CONFIRMATION]: [],
 };
 
 interface ButtonProps {
@@ -48,10 +55,18 @@ function ActionButton({
       <button
         onClick={() => handleAction(action)}
         disabled={isDisabled}
-        className={`${large ? "rounded-full bg-neutral-800 p-3" : ""} hover:opacity-80 transition-all`}
+        className={`
+          relative overflow-visible cursor-default hover:cursor-pointer group
+          disabled:cursor-not-allowed disabled:opacity-60
+          ${large ? "rounded-full bg-neutral-800 p-3" : ""}
+          transition-all duration-300 ease-in-out
+        `}
         type="button"
       >
-        {children}
+        <span className="relative z-10 group-hover:filter group-hover:drop-shadow-[0_0_5px_rgba(255,64,0,0.4)]">
+          {children}
+        </span>
+        <span className="absolute -inset-[5px] border-2 border-red-400/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
       </button>
     </Tooltip>
   );
@@ -91,42 +106,44 @@ function AgentControlBar() {
   }, [curAgentState]);
 
   return (
-    <div className="flex items-center gap-3">
-      {curAgentState === AgentState.PAUSED ? (
+    <div className="flex justify-between items-center gap-20">
+      <div className="flex items-center gap-3">
+        {curAgentState === AgentState.PAUSED ? (
+          <ActionButton
+            isDisabled={
+              isLoading ||
+              IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
+            }
+            content="Resume the agent task"
+            action={AgentState.RUNNING}
+            handleAction={handleAction}
+            large
+          >
+            <PlayIcon />
+          </ActionButton>
+        ) : (
+          <ActionButton
+            isDisabled={
+              isLoading ||
+              IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
+            }
+            content="Pause the current task"
+            action={AgentState.PAUSED}
+            handleAction={handleAction}
+            large
+          >
+            <PauseIcon />
+          </ActionButton>
+        )}
         <ActionButton
-          isDisabled={
-            isLoading ||
-            IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
-          }
-          content="Resume the agent task"
-          action={AgentState.RUNNING}
+          isDisabled={isLoading}
+          content="Start a new task"
+          action={AgentState.STOPPED}
           handleAction={handleAction}
-          large
         >
-          <PlayIcon />
+          <ArrowIcon />
         </ActionButton>
-      ) : (
-        <ActionButton
-          isDisabled={
-            isLoading ||
-            IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
-          }
-          content="Pause the current task"
-          action={AgentState.PAUSED}
-          handleAction={handleAction}
-          large
-        >
-          <PauseIcon />
-        </ActionButton>
-      )}
-      <ActionButton
-        isDisabled={isLoading}
-        content="Start a new task"
-        action={AgentState.STOPPED}
-        handleAction={handleAction}
-      >
-        <ArrowIcon />
-      </ActionButton>
+      </div>
     </div>
   );
 }

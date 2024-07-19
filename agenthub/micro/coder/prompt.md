@@ -21,7 +21,7 @@ Do NOT finish until you have completed the tasks.
 
 ## History
 {{ instructions.history_truncated }}
-{{ history_to_json(state.history[-10:]) }}
+{{ history_to_json(state.history, max_events=20) }}
 
 ## Format
 {{ instructions.format.action }}

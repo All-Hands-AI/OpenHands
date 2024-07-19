@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import traceback
 
 import requests
 
@@ -14,21 +15,26 @@ def execute_code(code, print_output=True):
 
     # Set the default kernel ID
     kernel_id = 'default'
-
-    for i in range(10):
+    output = ''
+    for i in range(3):
         try:
             response = requests.post(
                 POST_URL, json={'kernel_id': kernel_id, 'code': code}
             )
-            if '500: Internal Server Error' not in response.text:
+            output = response.text
+            if '500: Internal Server Error' not in output:
                 if print_output:
-                    print(response.text)
+                    print(output)
                 break
         except requests.exceptions.ConnectionError:
-            pass
+            if i == 2:
+                traceback.print_exc()
         time.sleep(2)
     else:
-        print('Failed to connect to the Jupyter server')
+        if not output:
+            with open('/opendevin/logs/jupyter_execute_server.log', 'r') as f:
+                output = f.read()
+        print('Failed to connect to the Jupyter server', output)
 
 
 if jupyter_pwd := os.environ.get('JUPYTER_PWD'):

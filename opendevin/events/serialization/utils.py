@@ -1,6 +1,5 @@
 def remove_fields(obj, fields: set[str]):
-    """
-    Remove fields from an object.
+    """Remove fields from an object.
 
     Parameters:
     - obj: The dictionary, or list of dictionaries to remove fields from

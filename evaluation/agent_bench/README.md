@@ -18,22 +18,23 @@ cache_dir = "/path/to/cache"
 workspace_base = "/path/to/workspace"
 workspace_mount_path = "/path/to/workspace"
 
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-sandbox_type = "ssh"
-sandbox_timeout = 120
 ssh_hostname = "localhost"
 
-use_host_network = false
 # AgentBench specific
 run_as_devin = true
-enable_auto_lint = true
 
-[eval_gpt35_turbo]
+[sandbox]
+use_host_network = false
+enable_auto_lint = true
+box_type = "ssh"
+timeout = 120
+
+[llm.eval_gpt35_turbo]
 model = "gpt-3.5-turbo"
 api_key = "sk-123"
 temperature = 0.0
 
-[eval_gpt4o]
+[llm.eval_gpt4o]
 model = "gpt-4o"
 api_key = "sk-123"
 temperature = 0.0
@@ -42,7 +43,7 @@ temperature = 0.0
 ## Start the evaluation
 
 ```bash
-./evaluation/agent_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+./evaluation/agent_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
 ```
 
 Following is the basic command to start the evaluation. Here we are only evaluating the `osbench` for now.
@@ -56,5 +57,5 @@ You can update the arguments in the script `evaluation/agent_bench/scripts/run_i
 - `--eval-n-limit`: the number of examples to evaluate. For example, `100`.
 
 ```bash
-./evaluation/agent_bench/scripts/run_infer.sh eval_gpt35_turbo CodeActAgent 1
+./evaluation/agent_bench/scripts/run_infer.sh eval_gpt35_turbo 0.6.2 CodeActAgent 1
 ```

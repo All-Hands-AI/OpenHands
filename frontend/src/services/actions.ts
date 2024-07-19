@@ -1,4 +1,3 @@
-import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
@@ -13,18 +12,14 @@ import { getRootTask } from "./taskService";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
-    const { url, screenshotSrc } = message.args;
-    store.dispatch(setUrl(url));
-    store.dispatch(setScreenshotSrc(screenshotSrc));
     store.dispatch(addAssistantMessage(message.message));
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
     }
-    const { url, screenshotSrc } = message.args;
-    store.dispatch(setUrl(url));
-    store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
@@ -41,17 +36,33 @@ const messageActions = {
   [ActionType.FINISH]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.message));
   },
+  [ActionType.REJECT]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.message));
+  },
+  [ActionType.DELEGATE]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.message));
+  },
   [ActionType.RUN]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    store.dispatch(appendInput(message.args.command));
+    if (
+      !message.args.is_confirmed ||
+      message.args.is_confirmed !== "rejected"
+    ) {
+      store.dispatch(appendInput(message.args.command));
+    }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    store.dispatch(appendJupyterInput(message.args.code));
+    if (
+      !message.args.is_confirmed ||
+      message.args.is_confirmed !== "rejected"
+    ) {
+      store.dispatch(appendJupyterInput(message.args.code));
+    }
   },
   [ActionType.ADD_TASK]: () => {
     getRootTask().then((fetchedRootTask) =>
@@ -66,6 +77,32 @@ const messageActions = {
 };
 
 export function handleActionMessage(message: ActionMessage) {
+  if (
+    (message.action === ActionType.RUN ||
+      message.action === ActionType.RUN_IPYTHON) &&
+    message.args.is_confirmed === "awaiting_confirmation"
+  ) {
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    }
+    if (message.args.command) {
+      store.dispatch(
+        addAssistantMessage(
+          `Running this command now: \n\`\`\`\`bash\n${message.args.command}\n\`\`\`\`\n`,
+        ),
+      );
+    } else if (message.args.code) {
+      store.dispatch(
+        addAssistantMessage(
+          `Running this code now: \n\`\`\`\`python\n${message.args.code}\n\`\`\`\`\n`,
+        ),
+      );
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
+    }
+    return;
+  }
+
   if (message.action in messageActions) {
     const actionFn =
       messageActions[message.action as keyof typeof messageActions];

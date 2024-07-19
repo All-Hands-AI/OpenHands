@@ -10,7 +10,7 @@ import { initialState as initialCodeState } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import { TabOption, TabType } from "#/types/TabOption";
 import Browser from "./Browser";
-import CodeEditor from "./CodeEditor";
+import CodeEditor from "./file-explorer/CodeEditor";
 import Planner from "./Planner";
 import Jupyter from "./Jupyter";
 import { getSettings } from "#/services/settings";

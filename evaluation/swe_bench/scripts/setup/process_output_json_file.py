@@ -21,7 +21,7 @@ def process_jsonl(input_file, model_name, output_file):
             )  # Write the list of JSON objects to a file
         print(f'Output JSON list created at {output_file}')
     except Exception as e:
-        print(f'Error: {str(e)}')
+        print(f'Error: {e}')
 
 
 # Usage: python script.py input.jsonl model_name output.json

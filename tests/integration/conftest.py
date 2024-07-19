@@ -1,9 +1,9 @@
 import io
 import os
 import re
-import sys
-import tempfile
+import shutil
 import subprocess
+import tempfile
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread
@@ -13,12 +13,32 @@ from litellm import completion
 
 from opendevin.llm.llm import message_separator
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-workspace_path = os.getenv('WORKSPACE_BASE')
+script_dir = os.environ.get('SCRIPT_DIR')
+project_root = os.environ.get('PROJECT_ROOT')
+workspace_path = os.environ.get('WORKSPACE_BASE')
+
+assert script_dir is not None, 'SCRIPT_DIR environment variable is not set'
+assert project_root is not None, 'PROJECT_ROOT environment variable is not set'
+assert workspace_path is not None, 'WORKSPACE_BASE environment variable is not set'
+
+
+class SecretExit(Exception):
+    pass
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_exception_interact(node, call, report):
+    if isinstance(call.excinfo.value, SecretExit):
+        report.outcome = 'failed'
+        report.longrepr = (
+            'SecretExit: Exiting due to an error without revealing secrets.'
+        )
+        call.excinfo = None
 
 
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalnum()])
+    input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
+    return input
 
 
 def get_log_id(prompt_log_name):
@@ -28,14 +48,15 @@ def get_log_id(prompt_log_name):
 
 
 def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Apply the mock prompt, and find mock response based on id.
+    """Apply the mock prompt, and find mock response based on id.
     If there is no matching response file, return None.
 
     Note: this function blindly replaces existing prompt file with the given
     input without checking the contents.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     try:
@@ -45,18 +66,18 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
         # apply prompt
         with open(prompt_file_path, 'w') as prompt_file:
             prompt_file.write(messages)
+            prompt_file.write('\n')
         return response
     except FileNotFoundError:
         return None
 
 
 def get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Find mock response based on prompt. Prompts are stored under nested
+    """Find mock response based on prompt. Prompts are stored under nested
     folders under mock folder. If prompt_{id}.log matches,
     then the mock response we're looking for is at response_{id}.log.
 
-    Note: we filter out all non alpha-numerical characters, otherwise we would
+    Note: we filter out all non-alphanumerical characters, otherwise we would
     see surprising mismatches caused by linters and minor discrepancies between
     different platforms.
 
@@ -67,9 +88,10 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     we start from the end of the file, but again, that is unnecessary and only
     makes test code harder to understand.
     """
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
     prompt = filter_out_symbols(messages)
-    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    mock_dir = os.path.join(
+        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     # Open the prompt file and compare its contents
@@ -84,13 +106,19 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
             print('Mismatched Prompt File path', prompt_file_path)
             print('---' * 10)
             # Create a temporary file to store messages
-            with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_file:
+            with tempfile.NamedTemporaryFile(
+                delete=False, mode='w', encoding='utf-8'
+            ) as tmp_file:
                 tmp_file_path = tmp_file.name
                 tmp_file.write(messages)
 
             try:
                 # Use diff command to compare files and capture the output
-                result = subprocess.run(['diff', '-u', prompt_file_path, tmp_file_path], capture_output=True, text=True)
+                result = subprocess.run(
+                    ['diff', '-u', prompt_file_path, tmp_file_path],
+                    capture_output=True,
+                    text=True,
+                )
                 if result.returncode != 0:
                     print('Diff:')
                     print(result.stdout)
@@ -111,7 +139,11 @@ def mock_user_response(*args, test_name, **kwargs):
     STDIN input for the agent to read.
     """
     user_response_file = os.path.join(
-        script_dir, 'mock', os.environ.get('AGENT'), test_name, 'user_responses.log'
+        script_dir,
+        'mock',
+        os.environ.get('DEFAULT_AGENT'),
+        test_name,
+        'user_responses.log',
     )
     if not os.path.exists(user_response_file):
         return ''
@@ -136,9 +168,7 @@ def mock_completion(*args, test_name, **kwargs):
     else:
         mock_response = get_mock_response(test_name, message_str, cur_id)
     if mock_response is None:
-        print('Mock response for prompt is not found\n\n')
-        print('Exiting...')
-        sys.exit(1)
+        raise SecretExit('Mock response for prompt is not found')
     response = completion(**kwargs, mock_response=mock_response)
     return response
 
@@ -181,16 +211,41 @@ def http_server():
 def set_up():
     global cur_id
     cur_id = 0
-    assert workspace_path is not None
+    assert workspace_path is not None, 'workspace_path is not set'
+
+    # Remove and recreate the workspace_path
     if os.path.exists(workspace_path):
-        for file in os.listdir(workspace_path):
-            os.remove(os.path.join(workspace_path, file))
+        shutil.rmtree(workspace_path)
+    os.makedirs(workspace_path)
 
 
 @pytest.fixture(autouse=True)
 def resource_setup():
-    set_up()
-    if not os.path.exists(workspace_path):
-        os.makedirs(workspace_path)
-    # Yield to test execution
-    yield
+    try:
+        original_cwd = os.getcwd()
+    except FileNotFoundError:
+        print(
+            '[DEBUG] Original working directory does not exist. Using /tmp as fallback.'
+        )
+        original_cwd = '/tmp'
+        os.chdir('/tmp')
+
+    try:
+        set_up()
+        yield
+    finally:
+        try:
+            print(f'[DEBUG] Final working directory: {os.getcwd()}')
+        except FileNotFoundError:
+            print('[DEBUG] Final working directory does not exist')
+
+        if os.path.exists(workspace_path):
+            shutil.rmtree(workspace_path)
+        os.makedirs(workspace_path, exist_ok=True)
+
+        # Try to change back to the original directory
+        try:
+            os.chdir(original_cwd)
+            print(f'[DEBUG] Changed back to original directory: {original_cwd}')
+        except Exception:
+            os.chdir('/tmp')

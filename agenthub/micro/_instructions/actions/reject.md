@@ -1,2 +1,2 @@
 * `reject` - reject the task. Arguments:
-  * `outputs` - a dictionary representing the outputs of your task, if any
+  * `outputs` - a dictionary with only a `reason` attribute

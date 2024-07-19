@@ -7,7 +7,6 @@ import yaml
 
 def yaml_parser(message):
     """Parse a yaml message for the retry function."""
-
     # saves gpt-3.5 from some yaml parsing errors
     message = re.sub(r':\s*\n(?=\S|\n)', ': ', message)
 
@@ -47,7 +46,6 @@ def _compress_chunks(text, identifier, skip_list, split_regex='\n\n+'):
 
 def compress_string(text):
     """Compress a string by replacing redundant paragraphs and lines with identifiers."""
-
     # Perform paragraph-level compression
     def_dict, compressed_text = _compress_chunks(
         text, identifier='§', skip_list=[], split_regex='\n\n+'
@@ -79,12 +77,12 @@ def extract_html_tags(text, keys):
     keys : list of str
         The HTML tags to extract the content from.
 
-    Returns
+    Returns:
     -------
     dict
         A dictionary mapping each key to a list of subset in `text` that match the key.
 
-    Notes
+    Notes:
     -----
     All text and keys will be converted to lowercase before matching.
 
@@ -126,7 +124,7 @@ def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
     optional_keys : list of str
         The HTML tags to extract the content from, but are optional.
 
-    Returns
+    Returns:
     -------
     dict
         A dictionary mapping each key to subset of `text` that match the key.

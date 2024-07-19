@@ -7,11 +7,11 @@
         "typos_fixed": [
           {
             "original": "typoo",
-            "fixed": "typo"
+            "corrected": "typo"
           },
           {
             "original": "mor",
-            "fixed": "more"
+            "corrected": "more"
           }
         ]
       }

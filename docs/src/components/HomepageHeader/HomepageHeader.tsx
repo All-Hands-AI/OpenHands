@@ -1,8 +1,10 @@
+import React from 'react';
 import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Heading from "@theme/Heading";
 import { Demo } from "../Demo/Demo";
-import "../../css/homepageHeader.css"; // Importing the CSS file
+import Translate from '@docusaurus/Translate';
+import "../../css/homepageHeader.css";
 
 export function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
@@ -18,7 +20,7 @@ export function HomepageHeader() {
             className="button button--secondary button--lg"
             to="/modules/usage/intro"
           >
-            Get Started
+            <Translate id="homepage.getStarted">Get Started</Translate>
           </Link>
         </div>
         <Demo />
@@ -26,4 +28,3 @@ export function HomepageHeader() {
     </div>
   );
 }
-

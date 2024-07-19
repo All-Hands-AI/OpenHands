@@ -17,6 +17,7 @@ interface BaseModalProps {
   subtitle?: string;
   actions?: Action[];
   children?: React.ReactNode;
+  testID?: string;
 }
 
 function BaseModal({
@@ -27,9 +28,11 @@ function BaseModal({
   subtitle = undefined,
   actions = [],
   children = null,
+  testID,
 }: BaseModalProps) {
   return (
     <Modal
+      data-testid={testID}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={title}
@@ -39,7 +42,7 @@ function BaseModal({
       size="sm"
       className="bg-neutral-900 rounded-lg"
     >
-      <ModalContent className="max-w-[24rem] p-[40px]">
+      <ModalContent className="max-w-[30rem] p-[40px]">
         {(closeModal) => (
           <>
             <ModalHeader className="flex flex-col p-0">

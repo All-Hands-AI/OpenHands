@@ -1,0 +1,9 @@
+```json
+{
+  "action": "run",
+  "args": {
+    "command": "./hello.sh",
+    "thought": "I need to run the 'hello.sh' script to verify that it prints 'hello'."
+  }
+}
+```

@@ -4,13 +4,10 @@ from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ConfigType
 from opendevin.events.stream import EventStream
-from opendevin.llm.llm import LLM
-from opendevin.runtime import DockerSSHBox
-from opendevin.runtime.e2b.runtime import E2BRuntime
+from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
 
@@ -33,7 +30,14 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid)
 
-    async def start(self, start_event: dict):
+    async def start(
+        self,
+        runtime_name: str,
+        sandbox_config: SandboxConfig,
+        agent: Agent,
+        confirmation_mode: bool,
+        max_iterations: int,
+    ):
         """Starts the agent session.
 
         Args:
@@ -43,8 +47,8 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_runtime()
-        await self._create_controller(start_event)
+        await self._create_runtime(runtime_name, sandbox_config)
+        await self._create_controller(agent, confirmation_mode, max_iterations)
 
     async def close(self):
         if self._closed:
@@ -54,52 +58,39 @@ class AgentSession:
             end_state.save_to_session(self.sid)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            await self.runtime.close()
         self._closed = True
 
-    async def _create_runtime(self):
+    async def _create_runtime(self, runtime_name: str, sandbox_config: SandboxConfig):
+        """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
-        if config.runtime == 'server':
-            logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, self.sid)
-        elif config.runtime == 'e2b':
-            logger.info('Using E2B runtime')
-            self.runtime = E2BRuntime(self.event_stream, self.sid)
-        else:
-            raise Exception(
-                f'Runtime not defined in config, or is invalid: {config.runtime}'
-            )
 
-    async def _create_controller(self, start_event: dict):
-        """Creates an AgentController instance.
+        logger.info(f'Using runtime: {runtime_name}')
+        runtime_cls = get_runtime_cls(runtime_name)
+        self.runtime = runtime_cls(
+            sandbox_config=sandbox_config, event_stream=self.event_stream, sid=self.sid
+        )
+        await self.runtime.ainit()
 
-        Args:
-            start_event: The start event data (optional).
-        """
+    async def _create_controller(
+        self, agent: Agent, confirmation_mode: bool, max_iterations: int
+    ):
+        """Creates an AgentController instance."""
         if self.controller is not None:
             raise Exception('Controller already created')
         if self.runtime is None:
             raise Exception('Runtime must be initialized before the agent controller')
-        args = {
-            key: value
-            for key, value in start_event.get('args', {}).items()
-            if value != ''
-        }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = args.get(ConfigType.AGENT, config.agent.name)
-        model = args.get(ConfigType.LLM_MODEL, config.llm.model)
-        api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
-        api_base = config.llm.base_url
-        max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
-        max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
 
-        logger.info(f'Creating agent {agent_cls} using LLM {model}')
-        llm = LLM(model=model, api_key=api_key, base_url=api_base)
-        agent = Agent.get_cls(agent_cls)(llm)
+        logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
         if isinstance(agent, CodeActAgent):
-            if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
+            if not self.runtime or not (
+                isinstance(self.runtime, ServerRuntime)
+                and isinstance(self.runtime.sandbox, DockerSSHBox)
+            ):
                 logger.warning(
-                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
+                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
+                    ' LocalBox will not work properly.'
                 )
         self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         self.runtime.init_runtime_tools(agent.runtime_tools)
@@ -109,10 +100,11 @@ class AgentSession:
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
-            max_chars=int(max_chars),
+            confirmation_mode=confirmation_mode,
         )
         try:
             agent_state = State.restore_from_session(self.sid)
-            self.controller.set_state(agent_state)
+            self.controller.set_initial_state(agent_state)
+            logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             print('Error restoring state', e)

@@ -2,6 +2,8 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We created [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly built on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
+**UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
+
 ## Setup Environment
 
 Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to set up a local development environment for OpenDevin.
@@ -10,7 +12,7 @@ Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/D
 
 In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for efficient evaluation.
 
-**We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
+**We pack everything you need for SWE-Bench inference into one, gigantic, docker image.** To use it:
 
 ```bash
 docker pull ghcr.io/opendevin/eval-swe-bench:full-v1.2.1
@@ -42,23 +44,27 @@ Add the following configurations:
 [core]
 max_iterations = 100
 cache_dir = "/tmp/cache"
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-sandbox_type = "ssh"
 ssh_hostname = "localhost"
-sandbox_timeout = 120
 
+[sandbox]
+box_type = "ssh"
+timeout = 120
+
+run_as_devin = false
+max_budget_per_task = 4 # 4 USD
+
+[sandbox]
 # SWEBench eval specific
 use_host_network = false
-run_as_devin = false
 enable_auto_lint = true
 
 # TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
+[llm.eval_gpt4_1106_preview_llm]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
 temperature = 0.0
 
-[eval_some_openai_compatible_model]
+[llm.eval_some_openai_compatible_model_llm]
 model = "openai/MODEL_NAME"
 base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
@@ -71,6 +77,7 @@ Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench
 docker image. Then run this python script:
 
 ```bash
+# export USE_INSTANCE_IMAGE=true # if you want to test support for instance-level docker images
 poetry run python evaluation/swe_bench/swe_env_box.py
 ```
 
@@ -81,14 +88,17 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
 
 `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
+
+`git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
@@ -97,11 +107,24 @@ to `CodeActAgent`.
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
 
-Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
+`max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
+default, it is set to 30.
+
+`num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
+default, it is set to 1.
+
+There are also two optional environment variables you can set.
+```
+export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Ignore this if you are not sure.
+export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images
+```
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview_llm` and CodeActAgent,
+
 then your command would be:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 10
 ```
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
@@ -121,10 +144,23 @@ After running the inference, you will obtain a `output.jsonl` (by default it wil
 
 With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patches, and produce a fine-grained report.
 
+**This evaluation is performed using the official dockerized evaluation announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
+
 If you want to evaluate existing results, you should first run this to clone existing outputs
 
 ```bash
 git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
+```
+
+If you have extra local space (e.g., 500GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared to speed up the evaluation by running:
+
+```bash
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
+```
+
+If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
+```bash
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
 ```
 
 Then you can run the following:
@@ -135,66 +171,39 @@ Then you can run the following:
 ./evaluation/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
-The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.merged.jsonl`.
+PS: You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
-It will contain an additional field `fine_grained_report` (see example below) compared to the `output.jsonl` from the previous inference stage.
+The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
 
-```json
-"fine_grained_report": {
-  "gold_tests": {
-    "FAIL_TO_PASS": "[\"tests/test_ext_viewcode.py::test_viewcode_epub_default\"]",
-    "PASS_TO_PASS": "[\"tests/test_ext_viewcode.py::test_viewcode_epub_enabled\", \"tests/test_ext_viewcode.py::test_linkcode\", \"tests/test_ext_viewcode.py::test_local_source_files\"]"
-  },
-  "generated": true,
-  "with_logs": true,
-  "applied": true,
-  "test_errored": false,
-  "test_timeout": false,
-  "resolved": true,
-  "log_parse": {
-    "tests/test_ext_viewcode.py::test_viewcode_epub_default": "PASSED",
-    "tests/test_ext_viewcode.py::test_viewcode_epub_enabled": "PASSED",
-    "tests/test_ext_viewcode.py::test_linkcode": "PASSED",
-    "tests/test_ext_viewcode.py::test_local_source_files": "PASSED",
-    "tests/test_ext_viewcode.py::test_viewcode": "FAILED"
-  },
-  "eval_report": {
-    "FAIL_TO_PASS": {
-      "success": [
-        "tests/test_ext_viewcode.py::test_viewcode_epub_default"
-      ],
-      "failure": []
-    },
-    "PASS_TO_PASS": {
-      "success": [
-        "tests/test_ext_viewcode.py::test_viewcode_epub_enabled",
-        "tests/test_ext_viewcode.py::test_linkcode",
-        "tests/test_ext_viewcode.py::test_local_source_files"
-      ],
-      "failure": []
-    },
-    "FAIL_TO_FAIL": {
-      "success": [],
-      "failure": []
-    },
-    "PASS_TO_FAIL": {
-      "success": [],
-      "failure": []
-    }
-  }
-}
-```
+- `README.md`: a report showing what are the instances that passed, failed, etc.
+- `report.json`: a JSON file that contains keys like `"resolved_ids"` pointing to instance IDs that are resolved by the agent.
+- `eval_outputs/`: a directory of test logs
 
-Please refer to [EVAL_PATCH.md](./EVAL_PATCH.md) if you want to learn more about how to evaluate patches that are already generated (e.g., not by OpenDevin).
+## Visualize Results
 
-## View Result Summary
-
-If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
+First you need to clone `https://huggingface.co/spaces/OpenDevin/evaluation` and add your own running results from opendevin into the `outputs` of the cloned repo.
 
 ```bash
-poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_output_merged_jsonl_file>
-# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/output.merged.jsonl
+git clone https://huggingface.co/spaces/OpenDevin/evaluation
 ```
+
+**(optional) setup streamlit environment with conda**:
+```bash
+conda create -n streamlit python=3.10
+conda activate streamlit
+pip install streamlit altair st_pages
+```
+
+**run the visualizer**:
+Then, in a separate Python environment with `streamlit` library, you can run the following:
+
+```bash
+# Make sure you are inside the cloned `evaluation` repo
+conda activate streamlit # if you follow the optional conda env setup above
+streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 0.0.0.0
+```
+
+Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
 
 ## Submit your evaluation results
 

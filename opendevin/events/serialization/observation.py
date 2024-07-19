@@ -9,7 +9,7 @@ from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.error import ErrorObservation
 from opendevin.events.observation.files import FileReadObservation, FileWriteObservation
 from opendevin.events.observation.observation import Observation
-from opendevin.events.observation.recall import AgentRecallObservation
+from opendevin.events.observation.reject import RejectObservation
 from opendevin.events.observation.success import SuccessObservation
 
 observations = (
@@ -19,11 +19,11 @@ observations = (
     BrowserOutputObservation,
     FileReadObservation,
     FileWriteObservation,
-    AgentRecallObservation,
     AgentDelegateObservation,
     SuccessObservation,
     ErrorObservation,
     AgentStateChangedObservation,
+    RejectObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

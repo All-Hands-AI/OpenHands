@@ -1,4 +1,4 @@
 #!/bin/sh
 cd frontend
-npx lint-staged
-npm run test
+lint-staged
+vitest run

@@ -5,7 +5,7 @@ from agenthub.monologue_agent.utils.prompts import (
     parse_action_response as parse_response_monologue,
 )
 from agenthub.planner_agent.prompt import parse_response as parse_response_planner
-from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.exceptions import LLMResponseError
 from opendevin.core.utils.json import loads as custom_loads
 from opendevin.events.action import (
     FileWriteAction,
@@ -86,11 +86,11 @@ def test_parse_first_of_multiple_jsons(parse_response_module):
 def test_invalid_json_raises_error():
     # This should fail if repair_json is able to fix this faulty JSON
     input_response = '{"action": "write", "args": { "path": "./short_essay.txt", "content": "Missing closing brace" }'
-    with pytest.raises(LLMOutputError):
+    with pytest.raises(LLMResponseError):
         custom_loads(input_response)
 
 
 def test_no_json_found():
     input_response = 'This is just a string with no JSON object.'
-    with pytest.raises(LLMOutputError):
+    with pytest.raises(LLMResponseError):
         custom_loads(input_response)

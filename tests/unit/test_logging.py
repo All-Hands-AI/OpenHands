@@ -76,19 +76,14 @@ def test_llm_config_attributes_masking(test_handler):
     assert 'AKIAIOSFODNN7EXAMPLE' not in log_output
     assert 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' not in log_output
 
-    # reset the LLMConfig
-    LLMConfig.reset()
-
 
 def test_app_config_attributes_masking(test_handler):
     logger, stream = test_handler
-    app_config = AppConfig(
-        e2b_api_key='e2b-xyz789', github_token='ghp_abcdefghijklmnopqrstuvwxyz'
-    )
+    app_config = AppConfig(e2b_api_key='e2b-xyz789')
     logger.info(f'App Config: {app_config}')
     log_output = stream.getvalue()
     assert "e2b_api_key='******'" in log_output
-    assert "github_token='******'" in log_output
+    assert 'github_token' not in log_output
     assert 'e2b-xyz789' not in log_output
     assert 'ghp_abcdefghijklmnopqrstuvwxyz' not in log_output
 
@@ -104,6 +99,7 @@ def test_sensitive_env_vars_masking(test_handler):
         'AWS_SECRET_ACCESS_KEY': 'AWS_SECRET_ACCESS_KEY_VALUE',
         'E2B_API_KEY': 'E2B_API_KEY_VALUE',
         'GITHUB_TOKEN': 'GITHUB_TOKEN_VALUE',
+        'JWT_SECRET': 'JWT_SECRET_VALUE',
     }
 
     log_message = ' '.join(

@@ -1,0 +1,18 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.docsSidebar.category.🤖 Backends LLM": {
+    "message": "🤖 Backends LLM",
+    "description": "The label for category 🤖 Backends LLM in sidebar docsSidebar"
+  },
+  "sidebar.docsSidebar.category.🚧 Dépannage": {
+    "message": "🚧 Dépannage",
+    "description": "The label for category 🚧 Dépannage in sidebar docsSidebar"
+  },
+  "sidebar.apiSidebar.category.Backend": {
+    "message": "Backend",
+    "description": "The label for category Backend in sidebar apiSidebar"
+  }
+}

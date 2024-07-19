@@ -1,6 +1,9 @@
 codecov:
   notify:
     wait_for_ci: true
+    # our project is large, so 6 builds are typically uploaded. this waits till 5/6
+    # See https://docs.codecov.com/docs/notifications#section-preventing-notifications-until-after-n-builds
+    after_n_builds: 5
 
 coverage:
   status:
@@ -14,6 +17,3 @@ coverage:
 comment: false
 github_checks:
     annotations: false
-
-ignore:
-  - "agenthub/SWE_agent/**" # SWE agent is deprecated

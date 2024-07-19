@@ -8,15 +8,13 @@ from opendevin.llm.llm import LLM
 class DelegatorAgent(Agent):
     VERSION = '1.0'
     """
-    The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
-    The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
+    The Delegator Agent is responsible for delegating tasks to other agents based on the current task.
     """
 
     current_delegate: str = ''
 
     def __init__(self, llm: LLM):
-        """
-        Initialize the Delegator Agent with an LLM
+        """Initialize the Delegator Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -24,16 +22,15 @@ class DelegatorAgent(Agent):
         super().__init__(llm)
 
     def step(self, state: State) -> Action:
-        """
-        Checks to see if current step is completed, returns AgentFinishAction if True.
-        Otherwise, creates a plan prompt and sends to model for inference, returning the result as the next action.
+        """Checks to see if current step is completed, returns AgentFinishAction if True.
+        Otherwise, delegates the task to the next agent in the pipeline.
 
         Parameters:
         - state (State): The current state given the previous actions and observations
 
         Returns:
         - AgentFinishAction: If the last state was 'completed', 'verified', or 'abandoned'
-        - Action: The next action to take based on llm response
+        - AgentDelegateAction: The next agent to delegate the task to
         """
         if self.current_delegate == '':
             self.current_delegate = 'study'
@@ -42,7 +39,9 @@ class DelegatorAgent(Agent):
                 agent='StudyRepoForTaskAgent', inputs={'task': task}
             )
 
-        last_observation = state.history[-1][1]
+        # last observation in history should be from the delegate
+        last_observation = state.history.get_last_observation()
+
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 
@@ -81,6 +80,3 @@ class DelegatorAgent(Agent):
                 )
         else:
             raise Exception('Invalid delegate state')
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

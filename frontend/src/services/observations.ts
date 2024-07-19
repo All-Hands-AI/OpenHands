@@ -27,6 +27,12 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.AGENT_STATE_CHANGED:
       store.dispatch(changeAgentState(message.extras.agent_state));
       break;
+    case ObservationType.DELEGATE:
+      // TODO: better UI for delegation result (#2309)
+      if (message.content) {
+        store.dispatch(addAssistantMessage(message.content));
+      }
+      break;
     default:
       store.dispatch(addAssistantMessage(message.message));
       break;

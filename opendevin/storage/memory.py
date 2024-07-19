@@ -1,5 +1,7 @@
 import os
 
+from opendevin.core.logger import opendevin_logger as logger
+
 from .files import FileStore
 
 
@@ -37,4 +39,10 @@ class InMemoryFileStore(FileStore):
         return files
 
     def delete(self, path: str) -> None:
-        del self.files[path]
+        try:
+            keys_to_delete = [key for key in self.files.keys() if key.startswith(path)]
+            for key in keys_to_delete:
+                del self.files[key]
+            logger.debug(f'Cleared in-memory file store: {path}')
+        except Exception as e:
+            logger.error(f'Error clearing in-memory file store: {str(e)}')

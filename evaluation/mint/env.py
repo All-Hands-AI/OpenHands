@@ -99,7 +99,6 @@ class SimplifiedEnv:
             return
 
         content = output.to_str()
-        # self.state.history.append({"role": "user", "content": content})
         self.task_state.latest_output = output.to_dict()
         self.task_state.latest_output['content'] = content
 

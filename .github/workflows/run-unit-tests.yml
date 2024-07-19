@@ -19,11 +19,40 @@ env:
   PERSIST_SANDBOX : "false"
 
 jobs:
+  fe-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run tests and collect coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   test-on-macos:
     name: Test on macOS
-    runs-on: macos-13
+    runs-on: macos-12
     env:
-      INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -46,8 +75,42 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
-          brew install colima docker
-          colima start
+          # Uninstall colima to upgrade to the latest version
+          if brew list colima &>/dev/null; then
+              brew uninstall colima
+              # unlinking colima dependency: go
+              brew uninstall go@1.21
+          fi
+          rm -rf ~/.colima ~/.lima
+          brew install --HEAD colima
+          brew services start colima
+          brew install docker
+          colima delete
+          # Attempt to start Colima
+          ATTEMPT_LIMIT=3
+
+          start_colima() {
+            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+          }
+
+          for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
+            if start_colima; then
+              echo "Colima started successfully."
+              break
+            else
+              echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
+              if [ $i -eq $ATTEMPT_LIMIT ]; then
+                colima delete
+              else
+                colima stop
+              fi
+            fi
+          done
+
+          if [ $i -gt $ATTEMPT_LIMIT ]; then
+            echo "Failed to start Colima after $ATTEMPT_LIMIT attempts."
+            exit 1
+          fi
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
@@ -57,7 +120,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox and not test_runtime"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -91,37 +154,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  test-for-sandbox:
-    name: Test for Sandbox
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install poetry via pipx
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "poetry"
-
-      - name: Install Python dependencies using Poetry
-        run: poetry install
-
-      - name: Build Environment
-        run: make build
-
-      - name: Run Integration Test for Sandbox
-        run: |
-          poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox and not test_runtime"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

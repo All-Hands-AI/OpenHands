@@ -1,8 +1,20 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-EVAL_LIMIT=$3
-MAX_ITER=$4
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+MAX_ITER=$5
+NUM_WORKERS=$6
+
+if [ -z "$NUM_WORKERS" ]; then
+  NUM_WORKERS=1
+  echo "Number of workers not specified, use default $NUM_WORKERS"
+fi
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
@@ -14,17 +26,23 @@ if [ -z "$MAX_ITER" ]; then
   MAX_ITER=30
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+if [ -z "$USE_INSTANCE_IMAGE" ]; then
+  echo "USE_INSTANCE_IMAGE not specified, use default false"
+  USE_INSTANCE_IMAGE=false
+fi
+
+export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
+echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+
+get_agent_version
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-# Default to use Hint
+# Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
-  export USE_HINT_TEXT=true
+  export USE_HINT_TEXT=false
 fi
 echo "USE_HINT_TEXT: $USE_HINT_TEXT"
 EVAL_NOTE="$AGENT_VERSION"
@@ -40,7 +58,7 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations $MAX_ITER \
   --max-chars 10000000 \
-  --eval-num-workers 8 \
+  --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
@@ -50,3 +68,5 @@ fi
 
 # Run the command
 eval $COMMAND
+
+checkout_original_branch

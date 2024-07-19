@@ -2,7 +2,7 @@
 {
   "action": "message",
   "args": {
-    "content": "I have successfully created and executed the 'hello.sh' script, which printed 'hello' as expected. I believe I have completed the task as specified.",
+    "content": "The current directory is /workspace and it appears to be empty. This is a good place to create the 'hello.sh' script without any conflicts.",
     "wait_for_response": false
   }
 }

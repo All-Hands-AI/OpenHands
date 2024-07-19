@@ -1,0 +1,7 @@
+I will now correct the remaining typo on line 3.
+<execute_ipython>
+edit_file_by_replace(
+    "bad.txt",
+    to_replace="No mor typos!",
+    new_content="No more typos!"
+)
