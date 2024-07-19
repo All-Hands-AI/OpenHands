@@ -365,10 +365,8 @@ def test_defaults_dict_after_updates(default_config):
     updated_config.get_llm_config().api_key = 'updated-api-key'
     updated_config.get_llm_config('llm').api_key = 'updated-api-key'
     updated_config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
-    updated_config.get_llm_config_from_agent(
-        'MonologueAgent'
-    ).api_key = 'updated-api-key'
-    updated_config.default_agent = 'MonologueAgent'
+    updated_config.get_llm_config_from_agent('PlannerAgent').api_key = 'updated-api-key'
+    updated_config.default_agent = 'PlannerAgent'
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
