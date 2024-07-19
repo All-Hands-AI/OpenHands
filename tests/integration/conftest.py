@@ -173,6 +173,11 @@ def mock_completion(*args, test_name, **kwargs):
     return response
 
 
+@pytest.fixture
+def current_test_name(request):
+    return request.node.name
+
+
 @pytest.fixture(autouse=True)
 def patch_completion(monkeypatch, request):
     test_name = request.node.name
@@ -180,6 +185,12 @@ def patch_completion(monkeypatch, request):
     monkeypatch.setattr(
         'opendevin.llm.llm.litellm_completion',
         partial(mock_completion, test_name=test_name),
+    )
+
+    # Mock LLM completion cost (1 USD per conversation)
+    monkeypatch.setattr(
+        'opendevin.llm.llm.litellm_completion_cost',
+        lambda completion_response, **extra_kwargs: 1,
     )
 
     # Mock user input (only for tests that have user_responses.log)
