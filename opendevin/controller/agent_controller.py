@@ -297,13 +297,7 @@ class AgentController:
             logger.debug(
                 f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
             )
-            if delegate_state == AgentState.ERROR or (
-                self.headless_mode and delegate_state == AgentState.PAUSED
-            ):
-                # consider PAUSED state as an error if running in headless mode
-                # (since user cannot resume on the web interface so agent will hang forever)
-                # otherwise, PAUSED state is fine
-
+            if delegate_state == AgentState.ERROR:
                 # close the delegate upon error
                 await self.delegate.close()
                 self.delegate = None
@@ -352,10 +346,18 @@ class AgentController:
                 self.state.traffic_control_state = TrafficControlState.NORMAL
             else:
                 self.state.traffic_control_state = TrafficControlState.THROTTLING
-                await self.report_error(
-                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                )
-                await self.set_agent_state_to(AgentState.PAUSED)
+                if self.headless_mode:
+                    # set to ERROR state if running in headless mode
+                    # since user cannot resume on the web interface
+                    await self.report_error(
+                        'Agent reached maximum number of iterations in headless mode, task stopped.'
+                    )
+                    await self.set_agent_state_to(AgentState.ERROR)
+                else:
+                    await self.report_error(
+                        f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                    )
+                    await self.set_agent_state_to(AgentState.PAUSED)
                 return
         elif self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
