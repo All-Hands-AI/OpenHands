@@ -50,11 +50,13 @@ ssh_hostname = "localhost"
 box_type = "ssh"
 timeout = 120
 
+run_as_devin = false
+max_budget_per_task = 4 # 4 USD
+
+[sandbox]
 # SWEBench eval specific
 use_host_network = false
-run_as_devin = false
 enable_auto_lint = true
-max_budget_per_task = 4 # 4 USD
 
 # TODO: Change these to the model you want to evaluate
 [llm.eval_gpt4_1106_preview_llm]

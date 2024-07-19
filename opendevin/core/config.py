@@ -139,7 +139,9 @@ class SandboxConfig(metaclass=Singleton):
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
-
+        enable_auto_lint: Whether to enable auto-lint.
+        use_host_network: Whether to use the host network.
+        initialize_plugins: Whether to initialize plugins.
     """
 
     box_type: str = 'ssh'
@@ -153,6 +155,7 @@ class SandboxConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    use_host_network: bool = False
     initialize_plugins: bool = True
 
     def defaults_to_dict(self) -> dict:
@@ -201,7 +204,6 @@ class AppConfig(metaclass=Singleton):
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
-        use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
         debug: Whether to enable debugging.
@@ -230,7 +232,6 @@ class AppConfig(metaclass=Singleton):
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
-    use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
     persist_sandbox: bool = False
@@ -531,7 +532,7 @@ def finalize_config(cfg: AppConfig):
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 
-    if cfg.use_host_network and platform.system() == 'Darwin':
+    if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
         logger.opendevin_logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'

@@ -6,7 +6,7 @@ import { Feedback, sendFeedback } from "#/services/feedbackService";
 import FeedbackForm from "./FeedbackForm";
 import toast from "#/utils/toast";
 
-const VIEWER_PAGE = "https://od-feedback.vercel.app/show";
+const VIEWER_PAGE = "https://www.all-hands.dev/share-opendevin";
 
 interface FeedbackModalProps {
   feedback: Feedback;
@@ -33,7 +33,7 @@ function FeedbackModal({
       .then((response) => {
         if (response.statusCode === 200) {
           const { message, feedback_id: feedbackId, password } = response.body;
-          const toastMessage = `${message}\nFeedback link: ${VIEWER_PAGE}?feedback_id=${feedbackId}\nPassword: ${password}`;
+          const toastMessage = `${message}\nFeedback link: ${VIEWER_PAGE}?share_id=${feedbackId}\nPassword: ${password}`;
           toast.info(toastMessage);
         } else {
           toast.error(
