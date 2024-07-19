@@ -13,7 +13,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -29,7 +28,6 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': partial(
         codeact_user_response, encapsulate_solution=True, try_parse=None
     ),
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {

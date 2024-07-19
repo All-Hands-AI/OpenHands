@@ -96,9 +96,8 @@ def test_write_simple_script() -> None:
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
-    os.getenv('DEFAULT_AGENT') == 'MonologueAgent'
-    or os.getenv('DEFAULT_AGENT') == 'PlannerAgent',
-    reason='We only keep basic tests for MonologueAgent and PlannerAgent',
+    os.getenv('DEFAULT_AGENT') == 'PlannerAgent',
+    reason='We only keep basic tests for PlannerAgent',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_BOX_TYPE') == 'local',

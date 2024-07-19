@@ -98,8 +98,8 @@ class EmbeddingsLoader:
             )
         elif (strategy is not None) and (strategy.lower() == 'none'):
             # TODO: this works but is not elegant enough. The incentive is when
-            # monologue agent is not used, there is no reason we need to initialize an
-            # embedding model
+            # an agent using embeddings is not used, there is no reason we need to
+            # initialize an embedding model
             return None
         else:
             from llama_index.embeddings.huggingface import HuggingFaceEmbedding
