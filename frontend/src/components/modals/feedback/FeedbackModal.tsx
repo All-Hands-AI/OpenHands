@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Input, Select, SelectItem } from "@nextui-org/react";
+import { Input, Radio, RadioGroup } from "@nextui-org/react";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
@@ -40,10 +40,6 @@ function FeedbackModal({
 
   const handleEmailChange = (newEmail: string) => {
     setEmail(newEmail);
-  };
-
-  const handlePermissionsChange = (newPermissions: "public" | "private") => {
-    setPermissions(newPermissions);
   };
 
   const handleSendFeedback = async () => {
@@ -113,27 +109,21 @@ function FeedbackModal({
           handleEmailChange(e.target.value);
         }}
       />
-      <Select
-        label="Sharing settings"
-        aria-label="permissions"
-        data-testid="permissions-input"
-        value={permissions}
-        onChange={(e) => {
-          handlePermissionsChange(e.target.value as "public" | "private");
-        }}
-      >
-        <SelectItem key="public" value="public">
-          Public
-        </SelectItem>
-        <SelectItem key="private" value="private">
-          Private
-        </SelectItem>
-      </Select>
       {!isEmailValid(email) && (
         <p data-testid="invalid-email-message" className="text-red-500">
           Invalid email format
         </p>
       )}
+      <RadioGroup
+        data-testid="permissions-group"
+        label="Sharing settings"
+        orientation="horizontal"
+        value={permissions}
+        onValueChange={(value) => setPermissions(value as "public" | "private")}
+      >
+        <Radio value="private">{t(I18nKey.FEEDBACK$PRIVATE_LABEL)}</Radio>
+        <Radio value="public">{t(I18nKey.FEEDBACK$PUBLIC_LABEL)}</Radio>
+      </RadioGroup>
     </BaseModal>
   );
 }

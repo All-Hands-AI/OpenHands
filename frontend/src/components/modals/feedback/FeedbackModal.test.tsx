@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
@@ -87,10 +87,13 @@ describe("FeedbackModal", () => {
     await user.type(emailInput, email);
 
     // select public
-    const permissionsInput = screen.getByTestId("permissions-input");
-    await user.click(permissionsInput);
-    const publicOption = screen.getByRole("option", { name: "Public" });
+    const permissionsGroup = screen.getByTestId("permissions-group");
+    const publicOption = within(permissionsGroup).getByRole("radio", {
+      name: "FEEDBACK$PUBLIC_LABEL",
+    });
+    expect(publicOption).not.toBeChecked();
     await user.click(publicOption);
+    expect(publicOption).toBeChecked();
 
     await user.click(submitButton);
 
