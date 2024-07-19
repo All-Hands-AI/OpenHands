@@ -3,7 +3,7 @@
 Implements the evaluation of agents on the GPQA benchmark introduced in [GPQA: A Graduate-Level Google-Proof Q&A Benchmark](https://arxiv.org/abs/2308.07124).
 
 This code implements the evaluation of agents on the GPQA Benchmark with Open Book setting.
-- The benchmark consists of 448 high-quality and extremely difficult multiple-choice questions in the domains of biology, physics, and chemistry. The questions are intentionally designed to be "Google-proof," meaning that even highly skilled non-experts validators achieve only 34% accuracy despite unrestricted access to the web.
+- The benchmark consists of 448 high-quality and extremely difficult multiple-choice questions in the domains of biology, physics, and chemistry. The questions are intentionally designed to be "Google-proof," meaning that even highly skilled non-expert validators achieve only 34% accuracy despite unrestricted access to the web.
 - Even experts in the corresponding domains achieve only 65% accuracy.
 - State-of-the-art AI systems achieve only 39% accuracy on this challenging dataset.
 
