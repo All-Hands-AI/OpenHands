@@ -49,7 +49,7 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
         )
         await runtime.ainit()
         await runtime.init_sandbox_plugins(plugins)
-        await runtime.init_runtime_tools(
+        runtime.init_runtime_tools(
             [],
             is_async=False,
             runtime_tools_config={},
