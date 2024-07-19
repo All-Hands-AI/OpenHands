@@ -120,6 +120,8 @@ class Runtime:
         for key, value in vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
+        if not cmd:
+            return
         cmd = cmd.strip()
         logger.debug(f'Adding env var: {cmd}')
         obs: Observation = await self.run(CmdRunAction(cmd))
