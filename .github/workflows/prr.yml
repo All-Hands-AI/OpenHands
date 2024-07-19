@@ -85,7 +85,7 @@ jobs:
         echo "Description" >> task.txt
         echo "${{ github.event.pull_request.body }}" >> task.txt
         echo "" >> task.txt
-        echo "Diff file is: $PRR_FILE_NAME.prr" >> task.txt
+        echo "Diff file is: ${{ github.event.pull_request.number }}.prr" >> task.txt
         echo "" >> task.txt
 
     - name: Set up environment
