@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from opendevin.core.schema import ActionType
 
-from .action import Action
+from .action import Action, ActionSecurityRisk
 
 
 @dataclass
@@ -12,6 +12,7 @@ class BrowseURLAction(Action):
     thought: str = ''
     action: str = ActionType.BROWSE
     runnable: ClassVar[bool] = True
+    security_risk: Optional[ActionSecurityRisk] = None
 
     @property
     def message(self) -> str:
@@ -32,6 +33,7 @@ class BrowseInteractiveAction(Action):
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
+    security_risk: Optional[ActionSecurityRisk] = None
 
     @property
     def message(self) -> str:

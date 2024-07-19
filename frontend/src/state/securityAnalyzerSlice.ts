@@ -29,7 +29,8 @@ export const securityAnalyzerSlice = createSlice({
         content:
           action.payload.args.command ||
           action.payload.args.code ||
-          action.payload.args.content,
+          action.payload.args.content ||
+          action.payload.message,
         security_risk: action.payload.args.security_risk as ActionSecurityRisk,
         is_confirmed: action.payload.args.is_confirmed,
         confirmed_changed: false,
