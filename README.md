@@ -33,7 +33,7 @@
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
-  <a href="https://docs.all-hands.dev/OpenDevin/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
+  <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?style=for-the-badge" alt="Evaluation Benchmark"></a>
 </div>
 <hr>
