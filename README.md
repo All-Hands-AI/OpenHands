@@ -82,12 +82,12 @@ the `Settings` button (gear icon) in the UI. If the required `Model` does not ex
 
 For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
 
-Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/OpenDevin/modules/usage/troubleshooting).
+Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
 
 ## 🚀 Documentation
 
 To learn more about the project, and for tips on using OpenDevin,
-**check out our [documentation](https://docs.all-hands.dev/OpenDevin/modules/usage/intro)**.
+**check out our [documentation](https://docs.all-hands.dev/modules/usage/intro)**.
 
 There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
 troubleshooting resources, and advanced configuration options.
