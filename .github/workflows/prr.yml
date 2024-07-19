@@ -33,7 +33,7 @@ jobs:
         cat << EOF > ~/.config/prr/config.toml
         [prr]
         token = "${{ github.token }}"
-        workdir = "$GITHUB_WORKSPACE"
+        workdir = "/home/runner/work"
         EOF
 
     - name: Checkout Repository
@@ -44,7 +44,7 @@ jobs:
     - name: Download Diff
       run: |
         prr get $PRR_FILE_NAME
-        mv $PRR_FILE_NAME.prr $GITHUB_WORKSPACE
+        mv /home/runner/work/$PRR_FILE_NAME.prr $GITHUB_WORKSPACE
 
     - name: Write Task File
       run: |
@@ -114,5 +114,5 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        mv -f ${{ github.event.pull_request.number }}.prr $PRR_FILE_NAME.prr
+        mv -f ${{ github.event.pull_request.number }}.prr /home/runner/work/$PRR_FILE_NAME.prr
         prr submit $PRR_FILE_NAME
