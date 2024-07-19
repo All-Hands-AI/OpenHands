@@ -1,7 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe } from "vitest";
+import { Mock, describe } from "vitest";
 import React from "react";
 import userEvent from "@testing-library/user-event";
+import toast from "react-hot-toast";
 import FeedbackModal from "./FeedbackModal";
 import { sendFeedback } from "#/services/feedbackService";
 
@@ -16,7 +17,6 @@ describe("FeedbackModal", () => {
   vi.mock("#/services/auth", () => ({
     getToken: vi.fn().mockReturnValue("some-token"),
   }));
-
   // mock Session class
   vi.mock("#/services/session", () => ({
     default: {
@@ -156,5 +156,39 @@ describe("FeedbackModal", () => {
 
     const emailInputAfterClose = screen.getByTestId("email-input");
     expect(emailInputAfterClose).toHaveValue(email);
+  });
+
+  // TODO: figure out how to properly mock toast
+  it.skip("should display a success toast when the feedback is shared successfully", async () => {
+    (sendFeedback as Mock).mockResolvedValue({
+      statusCode: 200,
+      body: {
+        message: "Feedback shared",
+        feedback_id: "some-id",
+        password: "some-password",
+      },
+    });
+
+    const user = userEvent.setup();
+    render(
+      <FeedbackModal
+        polarity="negative"
+        isOpen
+        onOpenChange={vi.fn}
+        onSendFeedback={vi.fn}
+      />,
+    );
+
+    const submitButton = screen.getByRole("button", {
+      name: "FEEDBACK$SHARE_LABEL",
+    });
+
+    const email = "example@example.com";
+    const emailInput = screen.getByTestId("email-input");
+    await user.type(emailInput, email);
+
+    await user.click(submitButton);
+
+    expect(toast).toHaveBeenCalled();
   });
 });

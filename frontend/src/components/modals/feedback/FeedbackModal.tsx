@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Input, Radio, RadioGroup } from "@nextui-org/react";
+import hotToast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
@@ -48,6 +49,44 @@ function FeedbackModal({
     setEmail(newEmail);
   };
 
+  const copiedToClipboardToast = () => {
+    hotToast("Password copied to clipboard", {
+      icon: "📋",
+      position: "bottom-right",
+    });
+  };
+
+  const onPressToast = (password: string) => {
+    navigator.clipboard.writeText(password);
+    copiedToClipboardToast();
+  };
+
+  const shareFeedbackToast = (
+    message: string,
+    link: string,
+    password: string,
+  ) => {
+    hotToast(
+      <div className="flex flex-col gap-1">
+        <span>{message}</span>
+        <a
+          data-testid="toast-share-url"
+          className="text-blue-500 underline"
+          onClick={() => onPressToast(password)}
+          href={link}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Go to shared feedback
+        </a>
+        <span onClick={() => onPressToast(password)} className="cursor-pointer">
+          Password: {password} <span className="text-gray-500">(copy)</span>
+        </span>
+      </div>,
+      { duration: 5000 },
+    );
+  };
+
   const handleSendFeedback = async () => {
     onSendFeedback();
     const feedback: Feedback = {
@@ -64,8 +103,8 @@ function FeedbackModal({
       localStorage.setItem("feedback-email", email); // store email in local storage
       if (response.statusCode === 200) {
         const { message, feedback_id: feedbackId, password } = response.body;
-        const toastMessage = `${message}\nFeedback link: ${VIEWER_PAGE}?share_id=${feedbackId}\nPassword: ${password}`;
-        toast.info(toastMessage);
+        const link = `${VIEWER_PAGE}?share_id=${feedbackId}&password=${password}`;
+        shareFeedbackToast(message, link, password);
       } else {
         toast.error(
           "share-error",
