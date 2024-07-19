@@ -47,8 +47,7 @@ class MonologueAgent(Agent):
     response_parser = MonologueResponseParser()
 
     def __init__(self, llm: LLM):
-        """
-        Initializes the Monologue Agent with an llm.
+        """Initializes the Monologue Agent with an llm.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -56,8 +55,7 @@ class MonologueAgent(Agent):
         super().__init__(llm)
 
     def _initialize(self, task: str):
-        """
-        Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
+        """Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
         and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
         Will execute again when called after reset.
@@ -68,7 +66,6 @@ class MonologueAgent(Agent):
         Raises:
         - AgentNoInstructionError: If task is not provided
         """
-
         if self._initialized:
             return
 
@@ -86,10 +83,7 @@ class MonologueAgent(Agent):
         self._add_initial_thoughts(task)
         self._initialized = True
 
-    def _add_initial_thoughts(self, task):
-        max_message_chars = config.get_llm_config_from_agent(
-            'MonologueAgent'
-        ).max_message_chars
+    def _add_initial_thoughts(self, task: str):
         previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
@@ -106,7 +100,7 @@ class MonologueAgent(Agent):
                         content=thought, url='', screenshot=''
                     )
                 self.initial_thoughts.append(
-                    event_to_memory(observation, max_message_chars)
+                    event_to_memory(observation, self.llm.config.max_message_chars)
                 )
                 previous_action = ''
             else:
@@ -130,11 +124,12 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self.initial_thoughts.append(event_to_memory(action, max_message_chars))
+                self.initial_thoughts.append(
+                    event_to_memory(action, self.llm.config.max_message_chars)
+                )
 
     def step(self, state: State) -> Action:
-        """
-        Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
+        """Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
 
         Parameters:
         - state (State): The current state based on previous steps taken
@@ -142,9 +137,6 @@ class MonologueAgent(Agent):
         Returns:
         - Action: The next action to take based on LLM response
         """
-        max_message_chars = config.get_llm_config_from_agent(
-            'MonologueAgent'
-        ).max_message_chars
         goal = state.get_current_user_intent()
         self._initialize(goal)
 
@@ -152,7 +144,9 @@ class MonologueAgent(Agent):
 
         # add the events from state.history
         for event in state.history.get_events():
-            recent_events.append(event_to_memory(event, max_message_chars))
+            recent_events.append(
+                event_to_memory(event, self.llm.config.max_message_chars)
+            )
 
         # add the last messages to long term memory
         if self.memory is not None:
@@ -162,10 +156,12 @@ class MonologueAgent(Agent):
             # this should still work
             # we will need to do this differently: find out if there really is an action or an observation in this step
             if last_action:
-                self.memory.add_event(event_to_memory(last_action, max_message_chars))
+                self.memory.add_event(
+                    event_to_memory(last_action, self.llm.config.max_message_chars)
+                )
             if last_observation:
                 self.memory.add_event(
-                    event_to_memory(last_observation, max_message_chars)
+                    event_to_memory(last_observation, self.llm.config.max_message_chars)
                 )
 
         # the action prompt with initial thoughts and recent events

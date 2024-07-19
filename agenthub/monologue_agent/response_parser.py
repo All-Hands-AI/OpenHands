@@ -19,8 +19,7 @@ class MonologueResponseParser(ResponseParser):
         return response['choices'][0]['message']['content']
 
     def parse_action(self, action_str: str) -> Action:
-        """
-        Parses a string to find an action within it
+        """Parses a string to find an action within it
 
         Parameters:
         - response (str): The string to be parsed

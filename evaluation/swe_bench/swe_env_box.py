@@ -1,7 +1,12 @@
+import json
+import os
 import sys
+import tempfile
 import uuid
 
 from datasets import load_dataset
+from swebench.harness.constants import MAP_REPO_TO_TEST_FRAMEWORK
+from swebench.harness.utils import get_test_directives
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
@@ -15,6 +20,10 @@ from opendevin.runtime.plugins import (
 SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
 
 
+def get_image_name_from_instance_id(instance_id: str) -> str:
+    return 'sweb.eval.x86_64.' + instance_id
+
+
 class SWEBenchSSHBox(DockerSSHBox):
     def __init__(
         self,
@@ -26,6 +35,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         skip_workspace_mount: bool = True,
         sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
         workspace_dir_name: str | None = None,
+        use_instance_image: bool = False,
     ):
         if swe_instance_id is None:
             raise ValueError('swe_instance_id must be provided!')
@@ -39,6 +49,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
         sid = f'swe_bench_{swe_instance_id}_' + str(uuid.uuid4())
+        logger.info(f'===Using container image: {container_image}')
         super().__init__(container_image, timeout, sid)
         self.init_plugins(sandbox_plugins)
 
@@ -54,11 +65,61 @@ class SWEBenchSSHBox(DockerSSHBox):
         logger.info(
             'Initialization of SWEBench may take approximately 10 minutes due to long-running installations, such as those requiring compilation.'
         )
-        exit_code, output = self.execute('source /swe_util/swe_entry.sh', timeout=600)
-        logger.info('exit code: %d', exit_code)
-        logger.info(output)
-        assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
-        logger.info('Sourced swe_entry.sh successfully')
+        logger.info(f'Use instance image: {use_instance_image}')
+        if use_instance_image:
+            # we directly inject the instance info into the container and the init script
+            script_dir = os.path.dirname(__file__)
+
+            # inject test command
+            test_type = MAP_REPO_TO_TEST_FRAMEWORK[swe_instance['repo']][
+                swe_instance['version']
+            ]
+            swe_instance['test_directives'] = get_test_directives(swe_instance)
+            swe_instance['test_cmd'] = (
+                f"{test_type} {' '.join(swe_instance['test_directives'])}"
+            )
+            exit_code, output = self.execute(
+                f"""echo "export TEST_CMD='{swe_instance["test_cmd"]}'" >> ~/.bashrc"""
+            )
+            # assert exit_code == 0, f'Failed to set TEST_CMD in ~/.bashrc: {output}'
+
+            # inject the instance info
+            self.execute('mkdir -p /swe_util/eval_data/instances')
+            swe_instance_json_name = 'swe-bench-instance.json'
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Construct the full path for the desired file name within the temporary directory
+                temp_file_path = os.path.join(temp_dir, swe_instance_json_name)
+                # Write to the file with the desired name within the temporary directory
+                with open(temp_file_path, 'w') as f:
+                    if not isinstance(swe_instance, dict):
+                        json.dump([swe_instance.to_dict()], f)
+                    else:
+                        json.dump([swe_instance], f)
+
+                # Copy the file to the desired location
+                self.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
+
+            # inject the init script
+            self.copy_to(
+                str(os.path.join(script_dir, 'scripts/setup/instance_swe_entry.sh')),
+                '/swe_util/',
+            )
+            self.execute('cat ~/.bashrc')
+            self.execute('source ~/.bashrc')
+
+            self.execute('source /swe_util/instance_swe_entry.sh', timeout=600)
+            logger.info('exit code: %d', exit_code)
+            logger.info(output)
+            assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
+            logger.info('Sourced swe_entry.sh successfully')
+        else:
+            exit_code, output = self.execute(
+                'source /swe_util/swe_entry.sh', timeout=600
+            )
+            logger.info('exit code: %d', exit_code)
+            logger.info(output)
+            assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
+            logger.info('Sourced swe_entry.sh successfully')
 
     @property
     def volumes(self):
@@ -78,6 +139,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         skip_workspace_mount: bool = True,
         workspace_mount_path: str | None = None,
         sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
+        use_instance_image: bool = False,
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
@@ -94,13 +156,20 @@ class SWEBenchSSHBox(DockerSSHBox):
             config.enable_auto_lint = True
             # Need to run as root to use SWEBench container
             config.run_as_devin = False
+            if use_instance_image:
+                container_image = get_image_name_from_instance_id(
+                    instance['instance_id']
+                )
+            else:
+                container_image = SWE_BENCH_CONTAINER_IMAGE
             sandbox = cls(
-                container_image=SWE_BENCH_CONTAINER_IMAGE,
+                container_image=container_image,
                 swe_instance_id=instance['instance_id'],
                 swe_instance=instance,
                 skip_workspace_mount=skip_workspace_mount,
                 sandbox_plugins=sandbox_plugins,
                 workspace_dir_name=workspace_dir_name,
+                use_instance_image=use_instance_image,
             )
             logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
@@ -163,6 +232,8 @@ if __name__ == '__main__':
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
     swe_bench_tests = dataset['test'].to_pandas()
+    USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false') == 'true'
+    logger.info(f'USE_INSTANCE_IMAGE: {USE_INSTANCE_IMAGE}')
 
     # INSTANCE_ID = 'django__django-11099'
     INSTANCE_ID = 'astropy__astropy-12907'
@@ -172,6 +243,7 @@ if __name__ == '__main__':
     sandbox = SWEBenchSSHBox.get_box_for_instance(
         instance=EXAMPLE_INSTANCE,
         sandbox_plugins=[AgentSkillsRequirement(), JupyterRequirement()],
+        use_instance_image=USE_INSTANCE_IMAGE,
     )
 
     # PRE TEST

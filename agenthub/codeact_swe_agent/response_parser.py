@@ -9,12 +9,11 @@ from opendevin.events.action import Action
 
 
 class CodeActSWEResponseParser(ResponseParser):
-    """
-    Parser action:
-        - CmdRunAction(command) - bash command to run
-        - IPythonRunCellAction(code) - IPython code to run
-        - MessageAction(content) - Message action to run (e.g. ask for clarification)
-        - AgentFinishAction() - end the interaction
+    """Parser action:
+    - CmdRunAction(command) - bash command to run
+    - IPythonRunCellAction(code) - IPython code to run
+    - MessageAction(content) - Message action to run (e.g. ask for clarification)
+    - AgentFinishAction() - end the interaction
     """
 
     def __init__(self):

@@ -13,7 +13,6 @@ from opendevin.core.logger import opendevin_logger as logger
 
 def _create_project_source_dist():
     """Create a source distribution of the project. Return the path to the tarball."""
-
     # Copy the project directory to the container
     # get the location of "opendevin" package
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
@@ -54,8 +53,7 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
 def _generate_dockerfile(
     base_image: str, source_code_dirname: str, skip_init: bool = False
 ) -> str:
-    """
-    Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
+    """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """
@@ -65,8 +63,10 @@ def _generate_dockerfile(
         dockerfile_content = (
             f'FROM {base_image}\n'
             # FIXME: make this more generic / cross-platform
-            'RUN apt update && apt install -y wget sudo\n'
-            'RUN apt-get update && apt-get install -y libgl1-mesa-glx\n'  # Extra dependency for OpenCV
+            # Install necessary packages
+            # libgl1-mesa-glx is extra dependency for OpenCV
+            'RUN apt-get update && apt-get install -y wget sudo libgl1-mesa-glx\n'
+            'RUN apt-get clean && rm -rf /var/lib/apt/lists/*\n'  # Clean up the apt cache to reduce image size
             'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
             'RUN echo "" > /opendevin/bash.bashrc\n'
             'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
@@ -152,12 +152,13 @@ def _build_sandbox_image(
                 else:
                     logger.info(str(log))
 
+        # check if the image is built successfully
+        image = docker_client.images.get(target_image_name)
+        if image is None:
+            raise RuntimeError(f'Build failed: Image {target_image_name} not found')
         logger.info(f'Image {target_image_name} built successfully')
     except docker.errors.BuildError as e:
         logger.error(f'Sandbox image build failed: {e}')
-        raise e
-    except Exception as e:
-        logger.error(f'An error occurred during sandbox image build: {e}')
         raise e
 
 
@@ -200,8 +201,9 @@ def build_runtime_image(
     # Try to pull the new image from the registry
     try:
         docker_client.images.pull(new_image_name)
-    except docker.errors.ImageNotFound:
-        logger.info(f'Image {new_image_name} not found, building it from scratch')
+    except Exception as e:
+        logger.info(f'Error pulling image {new_image_name}, building it from scratch')
+        logger.info(f'Non-fatal error: {e}')
 
     # Detect if the sandbox image is built
     image_exists = _check_image_exists(new_image_name, docker_client)

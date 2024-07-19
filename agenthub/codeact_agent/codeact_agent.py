@@ -1,5 +1,3 @@
-#######
-
 from litellm.exceptions import ContextWindowExceededError
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
@@ -12,7 +10,6 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.core.exceptions import (
     ContextWindowLimitExceededError,
     SummarizeError,
@@ -32,6 +29,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
@@ -43,70 +41,7 @@ from opendevin.runtime.plugins import (
 )
 from opendevin.runtime.tools import RuntimeTool
 
-#######
-
 ENABLE_GITHUB = True
-
-
-def action_to_str(action: Action) -> str:
-    if isinstance(action, CmdRunAction):
-        return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
-    elif isinstance(action, IPythonRunCellAction):
-        return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-    elif isinstance(action, AgentDelegateAction):
-        return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
-    elif isinstance(action, MessageAction):
-        return action.content
-    elif isinstance(action, AgentSummarizeAction):
-        return action.summarized_actions
-    return ''
-
-
-def get_action_message(action: Action) -> dict[str, str] | None:
-    if (
-        isinstance(action, AgentDelegateAction)
-        or isinstance(action, CmdRunAction)
-        or isinstance(action, IPythonRunCellAction)
-        or isinstance(action, MessageAction)
-        or isinstance(action, AgentSummarizeAction)
-    ):
-        return {
-            'role': 'user' if action.source == 'user' else 'assistant',
-            'content': action_to_str(action),
-        }
-    return None
-
-
-def get_observation_message(obs) -> dict[str, str] | None:
-    max_message_chars = config.get_llm_config_from_agent(
-        'CodeActAgent'
-    ).max_message_chars
-    if isinstance(obs, CmdOutputObservation):
-        content = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
-        content += (
-            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
-        )
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, IPythonRunCellObservation):
-        content = 'OBSERVATION:\n' + obs.content
-        # replace base64 images with a placeholder
-        splitted = content.split('\n')
-        for i, line in enumerate(splitted):
-            if '![image](data:image/png;base64,' in line:
-                splitted[i] = (
-                    '![image](data:image/png;base64, ...) already displayed to user'
-                )
-        content = '\n'.join(splitted)
-        content = truncate_content(content, max_message_chars)
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, AgentDelegateObservation):
-        content = 'OBSERVATION:\n' + truncate_content(
-            str(obs.outputs), max_message_chars
-        )
-        return {'role': 'user', 'content': content}
-    elif isinstance(obs, AgentSummarizeAction):
-        return {'role': 'user', 'content': obs.summarized_observations}
-    return None
 
 
 # FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
@@ -177,8 +112,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
     ) -> None:
-        """
-        Initializes a new instance of the CodeActAgent class.
+        """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -188,15 +122,76 @@ class CodeActAgent(Agent):
         self.attempts_to_condense = 2
         self.reset()
 
+    def action_to_str(self, action: Action) -> str:
+        if isinstance(action, CmdRunAction):
+            return (
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+            )
+        elif isinstance(action, IPythonRunCellAction):
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
+        elif isinstance(action, AgentDelegateAction):
+            return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
+        elif isinstance(action, MessageAction):
+            return action.content
+        elif isinstance(action, AgentSummarizeAction):
+            return (
+                'Summary of all Action and Observations till now. \n'
+                + 'Action: '
+                + action.summarized_actions
+                + '\n Observation: '
+                + action.summarized_observations
+            )
+        return ''
+
+    def get_action_message(self, action: Action) -> dict[str, str] | None:
+        if (
+            isinstance(action, AgentDelegateAction)
+            or isinstance(action, CmdRunAction)
+            or isinstance(action, IPythonRunCellAction)
+            or isinstance(action, MessageAction)
+            or isinstance(action, AgentSummarizeAction)
+        ):
+            return {
+                'role': 'user' if action.source == 'user' else 'assistant',
+                'content': self.action_to_str(action),
+            }
+        return None
+
+    def get_observation_message(self, obs: Observation) -> dict[str, str] | None:
+        max_message_chars = self.llm.config.max_message_chars
+        if isinstance(obs, CmdOutputObservation):
+            content = 'OBSERVATION:\n' + truncate_content(
+                obs.content, max_message_chars
+            )
+            content += (
+                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
+            )
+            return {'role': 'user', 'content': content}
+        elif isinstance(obs, IPythonRunCellObservation):
+            content = 'OBSERVATION:\n' + obs.content
+            # replace base64 images with a placeholder
+            splitted = content.split('\n')
+            for i, line in enumerate(splitted):
+                if '![image](data:image/png;base64,' in line:
+                    splitted[i] = (
+                        '![image](data:image/png;base64, ...) already displayed to user'
+                    )
+            content = '\n'.join(splitted)
+            content = truncate_content(content, max_message_chars)
+            return {'role': 'user', 'content': content}
+        elif isinstance(obs, AgentDelegateObservation):
+            content = 'OBSERVATION:\n' + truncate_content(
+                str(obs.outputs), max_message_chars
+            )
+            return {'role': 'user', 'content': content}
+        return None
+
     def reset(self) -> None:
-        """
-        Resets the CodeAct Agent.
-        """
+        """Resets the CodeAct Agent."""
         super().reset()
 
     def step(self, state: State) -> Action:
-        """
-        Performs one step using the CodeAct Agent.
+        """Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
         Parameters:
@@ -209,7 +204,6 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-
         # if we're done, go back
         latest_user_message = state.history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
@@ -274,21 +268,17 @@ class CodeActAgent(Agent):
         for event in history.get_events():
             if event.id >= history.last_summarized_event_id:
                 if isinstance(event, AgentSummarizeAction):
-                    action_message = get_action_message(event)
+                    action_message = self.get_action_message(event)
                     if action_message:
                         candidate_messages_to_summarize.append(action_message)
                         tokens_so_far += self.llm.get_token_count([action_message])
-                    observation_message = get_observation_message(event)
-                    if observation_message:
-                        candidate_messages_to_summarize.append(observation_message)
-                        tokens_so_far += self.llm.get_token_count([observation_message])
-                    continue
                 else:
-                    message = (
-                        get_action_message(event)
-                        if isinstance(event, Action)
-                        else get_observation_message(event)
-                    )
+                    if isinstance(event, Action):
+                        message = self.get_action_message(event)
+                    elif isinstance(event, Observation):
+                        message = self.get_observation_message(event)
+                    else:
+                        raise ValueError(f'Unknown event type: {type(event)}')
                     if message:
                         candidate_messages_to_summarize.append(message)
                         tokens_so_far += self.llm.get_token_count([message])
@@ -350,24 +340,21 @@ class CodeActAgent(Agent):
         for event in state.history.get_events():
             if event.id >= state.history.last_summarized_event_id:
                 if isinstance(event, AgentSummarizeAction):
-                    action_message = get_action_message(event)
+                    action_message = self.get_action_message(event)
                     if action_message:
                         messages.append(action_message)
-                    observation_message = get_observation_message(event)
-                    if observation_message:
-                        messages.append(observation_message)
-                    continue
+                else:
+                    # create a regular message from an event
+                    if isinstance(event, Action):
+                        message = self.get_action_message(event)
+                    elif isinstance(event, Observation):
+                        message = self.get_observation_message(event)
+                    else:
+                        raise ValueError(f'Unknown event type: {type(event)}')
 
-                # create a regular message from an event
-                message = (
-                    get_action_message(event)
-                    if isinstance(event, Action)
-                    else get_observation_message(event)
-                )
-
-                # add regular message
-                if message:
-                    messages.append(message)
+                    # add regular message
+                    if message:
+                        messages.append(message)
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints

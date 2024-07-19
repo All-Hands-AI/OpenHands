@@ -62,7 +62,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata.eval_output_dir
     if reset_logger:

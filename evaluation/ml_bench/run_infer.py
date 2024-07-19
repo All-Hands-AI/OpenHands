@@ -1,5 +1,4 @@
-"""
-Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
+"""Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
 Large Language Models (LLMs) in leveraging existing functions in open-source libraries for
 machine learning tasks. The benchmark is introduced in the paper "ML-Bench: Evaluating Large
 Language Models for Code Generation in Repository-Level Machine Learning Tasks"
@@ -68,7 +67,7 @@ ID2CONDA = {
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:

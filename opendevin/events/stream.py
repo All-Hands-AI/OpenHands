@@ -1,11 +1,11 @@
 import asyncio
-import json
 import threading
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.utils import json
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 

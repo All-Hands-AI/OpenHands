@@ -120,8 +120,7 @@ INITIAL_THOUGHTS = [
 
 
 def get_summarize_monologue_prompt(thoughts: list[dict]):
-    """
-    Gets the prompt for summarizing the monologue
+    """Gets the prompt for summarizing the monologue
 
     Returns:
     - str: A formatted string with the current monologue within the prompt
@@ -136,8 +135,7 @@ def get_request_action_prompt(
     thoughts: list[dict],
     recent_events: list[dict],
 ):
-    """
-    Gets the action prompt formatted with appropriate values.
+    """Gets the action prompt formatted with appropriate values.
 
     Parameters:
     - task (str): The current task the agent is trying to accomplish
@@ -146,7 +144,6 @@ def get_request_action_prompt(
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
-
     hint = ''
     if len(recent_events) > 0:
         latest_event = recent_events[-1]
@@ -179,8 +176,7 @@ def get_request_action_prompt(
 
 
 def parse_action_response(orig_response: str) -> Action:
-    """
-    Parses a string to find an action within it
+    """Parses a string to find an action within it
 
     Parameters:
     - response (str): The string to be parsed
@@ -199,8 +195,7 @@ def parse_action_response(orig_response: str) -> Action:
 
 
 def parse_summary_response(response: str) -> list[dict]:
-    """
-    Parses a summary of the monologue
+    """Parses a summary of the monologue
 
     Parameters:
     - response (str): The response string to be parsed

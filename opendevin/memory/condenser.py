@@ -13,8 +13,7 @@ class MemoryCondenser:
         self.llm = llm
 
     def condense(self, summarize_prompt: str, llm: LLM):
-        """
-        Attempts to condense the monologue by using the llm
+        """Attempts to condense the monologue by using the llm
 
         Parameters:
         - llm (LLM): llm to be used for summarization
@@ -22,7 +21,6 @@ class MemoryCondenser:
         Raises:
         - Exception: the same exception as it got from the llm or processing the response
         """
-
         try:
             messages = [{'content': summarize_prompt, 'role': 'user'}]
             resp = llm.completion(messages=messages)
@@ -40,11 +38,12 @@ class MemoryCondenser:
 
     def summarize_messages(self, message_sequence_to_summarize: list[dict]):
         """Summarize a message sequence using LLM"""
-        context_window = self.llm.max_input_tokens
+        context_window = self.llm.config.max_input_tokens
         summary_prompt = SUMMARY_PROMPT_SYSTEM
         summary_input = self._format_summary_history(message_sequence_to_summarize)
         summary_input_tkns = self.llm.get_token_count(summary_input)
-
+        if context_window is None:
+            raise ValueError('context_window should not be None')
         if summary_input_tkns > MESSAGE_SUMMARY_WARNING_FRAC * context_window:
             trunc_ratio = (
                 MESSAGE_SUMMARY_WARNING_FRAC * context_window / summary_input_tkns
