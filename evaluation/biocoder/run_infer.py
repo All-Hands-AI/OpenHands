@@ -176,6 +176,7 @@ def process_instance(
             ],
             sandbox=sandbox,
             sid=sid,
+            headless_mode=True,
         )
     )
 

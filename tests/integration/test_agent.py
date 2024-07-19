@@ -52,7 +52,7 @@ def test_write_simple_script() -> None:
     agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(agent, task, exit_on_message=True, headless_mode=True)
     )
     assert final_state is not None
     assert final_state.agent_state == AgentState.STOPPED
@@ -110,7 +110,7 @@ def test_edits():
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(agent, task, exit_on_message=True, headless_mode=True)
     )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
@@ -144,7 +144,7 @@ def test_ipython():
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(agent, task, exit_on_message=True, headless_mode=True)
     )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
@@ -178,7 +178,9 @@ def test_simple_task_rejection():
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_state: State | None = asyncio.run(run_agent_controller(agent, task))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, headless_mode=True)
+    )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
@@ -202,7 +204,7 @@ def test_ipython_module():
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(agent, task, exit_on_message=True, headless_mode=True)
     )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
@@ -242,7 +244,7 @@ def test_browse_internet(http_server):
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(agent, task, exit_on_message=True, headless_mode=True)
     )
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None

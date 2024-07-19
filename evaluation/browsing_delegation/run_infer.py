@@ -71,6 +71,7 @@ def process_instance(
             instruction,
             max_iterations=metadata.max_iterations,
             sid=env_id,
+            headless_mode=True,
         )
     )
 

@@ -125,6 +125,7 @@ def process_instance(
                     agent.__class__.__name__
                 ],
                 sid=instance['task_id'],
+                headless_mode=True,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======

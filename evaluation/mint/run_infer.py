@@ -148,6 +148,7 @@ def process_instance(
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
             sid=sid,
+            headless_mode=True,
         )
     )
 

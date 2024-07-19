@@ -128,6 +128,7 @@ def process_instance(
                 agent.__class__.__name__
             ],
             sid=instance['text'].strip(),
+            headless_mode=True,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
