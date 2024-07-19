@@ -32,7 +32,7 @@ jobs:
         cat << EOF > ~/.config/prr/config.toml
         [prr]
         token = "${{ github.token }}"
-        workdir = "~/review"
+        workdir = "$GITHUB_WORKSPACE"
         EOF
 
     - name: Checkout Repository
