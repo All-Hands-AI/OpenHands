@@ -10,7 +10,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 from datasets import load_dataset
 from tqdm import tqdm
-
+# import sys; sys.path.append("/Users/ma/Desktop/projects/OD/OpenDevin/")
 from evaluation.swe_bench.swe_env_box import DockerSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
@@ -188,9 +188,9 @@ def process_instance(
             )
         logger.info(f'logic_inference.py copied to {workspace_mount_path}')
 
-        cache_dir = os.path.join(workspace_mount_path, '.cache_program')
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
+        # cache_dir = os.path.join(workspace_mount_path, '.cache_program')
+        # if not os.path.exists(cache_dir):
+        #     os.makedirs(cache_dir)
 
         # Prepare instruction
 
@@ -233,9 +233,14 @@ def process_instance(
             # if isinstance(act, MessageAction):
             messages.append(obs.content)
             # print("obs.content:", obs.content)
-            if str(obs.content) in ["'A'", "'B'", "'C'"]:
-                final_message = obs.content
-                break
+            if obs.content:
+                final_message = str(obs.content).split("\n")[-1]
+                logger.info(f'Final message: {final_message}')
+                final_message = eval(final_message)[0]
+                if final_message in ["'A'", "'B'", "'C'"]:
+            # if str(obs.content) in ["'A'", "'B'", "'C'"]:
+                # final_message = obs.content
+                    break
 
         final_message = final_message.strip("'")
         logger.info(
@@ -342,10 +347,10 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        # logic_reasoning_tests = logic_reasoning_tests.select(list(range(eval_n_limit)))
-        logic_reasoning_tests = logic_reasoning_tests[eval_n_limit]
-        logger.info(f'Limiting evaluation to 第{eval_n_limit}个 instances.')
-        # logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+        logic_reasoning_tests = logic_reasoning_tests.select(list(range(eval_n_limit)))
+        # logic_reasoning_tests = [logic_reasoning_tests[eval_n_limit]]
+        # logger.info(f'Limiting evaluation to 第{eval_n_limit}个 instances.')
+        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     start_time = time.strftime('%Y-%m-%d %H:%M:%S')
 

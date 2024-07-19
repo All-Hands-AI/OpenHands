@@ -10,7 +10,7 @@ An example would be look like this:
     answer, flag, error_message = engine.safe_execute_program(logic_programs)
     </execute_ipython>
 
-Please send the *answer* variable through message.
+Please send the *answer*, *flag*, *error_message* variables in a list [answer, flag, error_message] through message.
 
 dataset_name:
 [[dataset_name]]

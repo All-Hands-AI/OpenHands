@@ -13,8 +13,10 @@ class PykeProgram:
         self.logic_program = logic_program
         self.flag = self.parse_logic_program()
         self.dataset_name = dataset_name
-        self.cache_dir = os.path.join(workspace_mount_path, '.cache_program')
-
+        # self.cache_dir = os.path.join(workspace_mount_path, '.cache_program')
+        self.cache_dir = os.path.join(os.path.dirname(__file__), '.cache_program')
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
         # prepare the files for facts and rules
         try:
             self.create_fact_file(self.Facts)
@@ -149,7 +151,8 @@ class PykeProgram:
 
     def execute_program(self):
         # delete the compiled_krb dir
-        complied_krb_dir = './models/compiled_krb'
+        # complied_krb_dir = './models/compiled_krb'
+        complied_krb_dir = './compiled_krb'
         if os.path.exists(complied_krb_dir):
             print('removing compiled_krb')
             # os.system(f'rm -rf {complied_krb_dir}/*')
