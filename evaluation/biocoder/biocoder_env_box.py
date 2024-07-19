@@ -217,7 +217,7 @@ class BiocoderSSHBox(DockerSSHBox):
             config.workspace_mount_path = workspace_base
 
             # linting python after editing helps LLM fix indentations
-            config.enable_auto_lint = True
+            config.sandbox.enable_auto_lint = True
 
             # create folder for transferring files back/forth
             biocoder_cache_folder = 'biocoder_cache'
@@ -268,7 +268,7 @@ class BiocoderSSHBox(DockerSSHBox):
                 f.write(json.dumps(testcase_json, indent=4))
 
             # linting python after editing helps LLM fix indentations
-            config.enable_auto_lint = True
+            config.sandbox.enable_auto_lint = True
 
             sandbox = cls(
                 container_image=BIOCODER_BENCH_CONTAINER_IMAGE,

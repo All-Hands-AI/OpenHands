@@ -1,4 +1,4 @@
-import { screen, act, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import i18next from "i18next";
 import React from "react";
@@ -70,19 +70,15 @@ describe("SettingsModal", () => {
   });
 
   it("should close the modal when the close button is clicked", async () => {
+    const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    await act(async () =>
-      renderWithProviders(<SettingsModal isOpen onOpenChange={onOpenChange} />),
-    );
+    renderWithProviders(<SettingsModal isOpen onOpenChange={onOpenChange} />);
 
     const cancelButton = screen.getByRole("button", {
       name: /MODAL_CLOSE_BUTTON_LABEL/i, // i18n key
     });
 
-    await act(async () => {
-      await userEvent.click(cancelButton);
-    });
-
+    await user.click(cancelButton);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
@@ -113,11 +109,10 @@ describe("SettingsModal", () => {
     };
 
     it("should save the settings", async () => {
+      const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
-      await act(async () =>
-        renderWithProviders(
-          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
-        ),
+      renderWithProviders(
+        <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
       );
 
       // Use the helper function to assert models were fetched
@@ -126,19 +121,11 @@ describe("SettingsModal", () => {
       const saveButton = screen.getByRole("button", { name: /save/i });
       const modelInput = screen.getByRole("combobox", { name: "model" });
 
-      await act(async () => {
-        await userEvent.click(modelInput);
-      });
-
+      await user.click(modelInput);
       const model3 = screen.getByText("model3");
 
-      await act(async () => {
-        await userEvent.click(model3);
-      });
-
-      await act(async () => {
-        await userEvent.click(saveButton);
-      });
+      await user.click(model3);
+      await user.click(saveButton);
 
       expect(saveSettings).toHaveBeenCalledWith({
         ...initialSettings,
@@ -147,6 +134,7 @@ describe("SettingsModal", () => {
     });
 
     it("should reinitialize agent", async () => {
+      const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
       await act(async () =>
         renderWithProviders(
@@ -157,24 +145,17 @@ describe("SettingsModal", () => {
       const saveButton = screen.getByRole("button", { name: /save/i });
       const modelInput = screen.getByRole("combobox", { name: "model" });
 
-      await act(async () => {
-        await userEvent.click(modelInput);
-      });
-
+      await user.click(modelInput);
       const model3 = screen.getByText("model3");
 
-      await act(async () => {
-        await userEvent.click(model3);
-      });
-
-      await act(async () => {
-        await userEvent.click(saveButton);
-      });
+      await user.click(model3);
+      await user.click(saveButton);
 
       expect(startNewSessionSpy).toHaveBeenCalled();
     });
 
     it("should display a toast for every change", async () => {
+      const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
       await act(async () =>
         renderWithProviders(
@@ -185,24 +166,17 @@ describe("SettingsModal", () => {
       const saveButton = screen.getByRole("button", { name: /save/i });
       const modelInput = screen.getByRole("combobox", { name: "model" });
 
-      await act(async () => {
-        await userEvent.click(modelInput);
-      });
-
+      await user.click(modelInput);
       const model3 = screen.getByText("model3");
 
-      await act(async () => {
-        await userEvent.click(model3);
-      });
-
-      await act(async () => {
-        await userEvent.click(saveButton);
-      });
+      await user.click(model3);
+      await user.click(saveButton);
 
       expect(toastSpy).toHaveBeenCalledTimes(3);
     });
 
     it("should change the language", async () => {
+      const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
       await act(async () =>
         renderWithProviders(
@@ -213,24 +187,17 @@ describe("SettingsModal", () => {
       const saveButton = screen.getByRole("button", { name: /save/i });
       const languageInput = screen.getByRole("combobox", { name: "language" });
 
-      await act(async () => {
-        await userEvent.click(languageInput);
-      });
-
+      await user.click(languageInput);
       const spanish = screen.getByText("Español");
 
-      await act(async () => {
-        await userEvent.click(spanish);
-      });
-
-      await act(async () => {
-        await userEvent.click(saveButton);
-      });
+      await user.click(spanish);
+      await user.click(saveButton);
 
       expect(i18nSpy).toHaveBeenCalledWith("es");
     });
 
     it("should close the modal", async () => {
+      const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
       await act(async () =>
         renderWithProviders(
@@ -245,25 +212,18 @@ describe("SettingsModal", () => {
       const saveButton = screen.getByRole("button", { name: /save/i });
       const modelInput = screen.getByRole("combobox", { name: "model" });
 
-      await act(async () => {
-        await userEvent.click(modelInput);
-      });
-
+      await user.click(modelInput);
       const model3 = screen.getByText("model3");
 
-      await act(async () => {
-        await userEvent.click(model3);
-      });
-
-      await act(async () => {
-        await userEvent.click(saveButton);
-      });
+      await user.click(model3);
+      await user.click(saveButton);
 
       expect(onOpenChangeMock).toHaveBeenCalledWith(false);
     });
   });
 
   it("should reset settings to defaults when the 'reset to defaults' button is clicked", async () => {
+    const user = userEvent.setup();
     const onOpenChangeMock = vi.fn();
     await act(async () =>
       renderWithProviders(
@@ -276,18 +236,12 @@ describe("SettingsModal", () => {
     });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
 
-    await act(async () => {
-      await userEvent.click(agentInput);
-    });
+    await user.click(agentInput);
     const agent3 = screen.getByText("agent3");
-    await act(async () => {
-      await userEvent.click(agent3);
-    });
+    await user.click(agent3);
     expect(agentInput).toHaveValue("agent3");
 
-    await act(async () => {
-      await userEvent.click(resetButton);
-    });
+    await user.click(resetButton);
     expect(getDefaultSettings).toHaveBeenCalled();
 
     expect(agentInput).toHaveValue("CodeActAgent"); // Agent value is reset to default from getDefaultSettings()
