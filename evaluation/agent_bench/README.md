@@ -20,12 +20,12 @@ workspace_mount_path = "/path/to/workspace"
 
 ssh_hostname = "localhost"
 
-use_host_network = false
 # AgentBench specific
 run_as_devin = true
-enable_auto_lint = true
 
 [sandbox]
+use_host_network = false
+enable_auto_lint = true
 box_type = "ssh"
 timeout = 120
 

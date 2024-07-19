@@ -29,7 +29,9 @@ def temp_dir(monkeypatch):
 
 
 async def _load_runtime(box_class, event_stream, plugins, sid):
-    sandbox_config = SandboxConfig()
+    sandbox_config = SandboxConfig(
+        use_host_network=False,
+    )
     if box_class == EventStreamRuntime:
         runtime = EventStreamRuntime(
             sandbox_config=sandbox_config,
@@ -85,6 +87,8 @@ async def test_env_vars_os_environ():
                 obs.content.strip().split('\n\r')[0].strip() == 'BAZ'
             ), f'Output: [{obs.content}] for {box_class}'
 
+            await runtime.close()
+
 
 @pytest.mark.asyncio
 async def test_env_vars_runtime_add_env_var():
@@ -105,6 +109,7 @@ async def test_env_vars_runtime_add_env_var():
         assert (
             obs.content.strip().split('\r\n')[0].strip() == 'abc"def'
         ), f'Output: [{obs.content}] for {box_class}'
+        await runtime.close()
 
 
 @pytest.mark.asyncio
@@ -126,6 +131,7 @@ async def test_env_vars_runtime_add_multiple_env_vars():
         assert (
             obs.content.strip().split('\r\n')[0].strip() == 'abc"def xyz'
         ), f'Output: [{obs.content}] for {box_class}'
+        await runtime.close()
 
 
 @pytest.mark.asyncio
@@ -148,6 +154,7 @@ async def test_env_vars_runtime_add_env_var_overwrite():
             assert (
                 obs.content.strip().split('\r\n')[0].strip() == 'xyz'
             ), f'Output: [{obs.content}] for {box_class}'
+            await runtime.close()
 
 
 @pytest.mark.asyncio

@@ -147,7 +147,6 @@ class DockerSSHBox(Sandbox):
         workspace_mount_path: str,
         sandbox_workspace_dir: str,
         cache_dir: str,
-        use_host_network: Optional[bool],
         run_as_devin: bool,
         ssh_hostname: str = 'host.docker.internal',
         ssh_password: str | None = None,
@@ -170,7 +169,7 @@ class DockerSSHBox(Sandbox):
             self.ssh_port = ssh_port
             self.sid = sid
             self.timeout = config.timeout
-            self.use_host_network = use_host_network
+            self.use_host_network = config.use_host_network
             self.workspace_mount_path = workspace_mount_path
 
             # set up random user password
@@ -1248,7 +1247,6 @@ if __name__ == '__main__':
             workspace_mount_path='/path/to/workspace',
             cache_dir='/path/to/cache',
             sandbox_workspace_dir='/sandbox',
-            use_host_network=False,
             persist_sandbox=False,
         )
     except Exception as e:
