@@ -120,7 +120,6 @@ class DockerSSHBox(Sandbox):
         workspace_mount_path: str,
         sandbox_workspace_dir: str,
         cache_dir: str,
-        use_host_network: bool,
         run_as_devin: bool,
         ssh_hostname: str = 'host.docker.internal',
         ssh_password: str | None = None,
@@ -131,7 +130,7 @@ class DockerSSHBox(Sandbox):
         self.workspace_mount_path = workspace_mount_path
         self.sandbox_workspace_dir = sandbox_workspace_dir
         self.cache_dir = cache_dir
-        self.use_host_network = use_host_network
+        self.use_host_network = config.use_host_network
         self.run_as_devin = run_as_devin
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={config.user_id} in the sandbox'
@@ -641,7 +640,6 @@ if __name__ == '__main__':
             workspace_mount_path='/path/to/workspace',
             cache_dir='/path/to/cache',
             sandbox_workspace_dir='/sandbox',
-            use_host_network=False,
             persist_sandbox=False,
         )
     except Exception as e:

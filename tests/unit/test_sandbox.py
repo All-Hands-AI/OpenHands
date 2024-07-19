@@ -26,7 +26,6 @@ def create_docker_box_from_app_config(
         workspace_mount_path=path,
         sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
         cache_dir=config.cache_dir,
-        use_host_network=config.use_host_network,
         run_as_devin=True,
         ssh_hostname=config.ssh_hostname,
         ssh_password=config.ssh_password,

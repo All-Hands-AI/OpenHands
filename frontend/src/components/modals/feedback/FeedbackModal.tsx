@@ -15,7 +15,7 @@ const isEmailValid = (email: string) => {
   return emailRegex.test(email);
 };
 
-const VIEWER_PAGE = "https://od-feedback.vercel.app/show";
+const VIEWER_PAGE = "https://www.all-hands.dev/share-opendevin";
 const FEEDBACK_VERSION = "1.0";
 
 interface FeedbackModalProps {
@@ -48,7 +48,6 @@ function FeedbackModal({
 
   const handleSendFeedback = async () => {
     onSendFeedback();
-
     const feedback: Feedback = {
       version: FEEDBACK_VERSION,
       feedback: polarity,
@@ -62,7 +61,7 @@ function FeedbackModal({
       const response = await sendFeedback(feedback);
       if (response.statusCode === 200) {
         const { message, feedback_id: feedbackId, password } = response.body;
-        const toastMessage = `${message}\nFeedback link: ${VIEWER_PAGE}?feedback_id=${feedbackId}\nPassword: ${password}`;
+        const toastMessage = `${message}\nFeedback link: ${VIEWER_PAGE}?share_id=${feedbackId}\nPassword: ${password}`;
         toast.info(toastMessage);
       } else {
         toast.error(
