@@ -22,7 +22,9 @@ if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
   echo "Running OpenDevin as root"
   export RUN_AS_DEVIN=false
   mkdir -p /root/.cache/ms-playwright/
-  mv /home/opendevin/.cache/ms-playwright/ /root/.cache/
+  if [ -d "/home/opendevin/.cache/ms-playwright/" ]; then
+    mv /home/opendevin/.cache/ms-playwright/ /root/.cache/
+  fi
   "$@"
 else
   echo "Setting up enduser with id $SANDBOX_USER_ID"
@@ -52,7 +54,9 @@ else
 
   mkdir -p /home/enduser/.cache/huggingface/hub/
   mkdir -p /home/enduser/.cache/ms-playwright/
-  mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
+  if [ -d "/home/opendevin/.cache/ms-playwright/" ]; then
+    mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
+  fi
 
   usermod -aG $DOCKER_SOCKET_GID enduser
   echo "Running as enduser"
