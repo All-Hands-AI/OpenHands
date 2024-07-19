@@ -64,7 +64,9 @@ class RuntimeClient:
         self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
 
         # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
-        self.__bash_expect_regex = r'\[PEXPECT_BEGIN\] ([a-z_][a-z0-9_-]*)@([a-zA-Z][a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
+        self.__bash_expect_regex = (
+            r'\[PEXPECT_BEGIN\] ([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
+        )
 
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
         self.shell.expect(self.__bash_expect_regex)
