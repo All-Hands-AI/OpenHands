@@ -167,7 +167,15 @@ def process_instance(
 
         # use a session id for concurrent evaluation
         sid = instance['id'] + '_' + str(os.getpid())
-        sandbox = DockerSSHBox(sid=sid)
+        sandbox = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_base,
+            cache_dir=config.cache_dir,
+            run_as_devin=False,
+            sid=sid,
+        )
         exit_code, command_output = sandbox.execute('pip install scitools-pyke')
         if exit_code != 0:
             logger.error(f'Failed to install scitools-pyke: {command_output}')
@@ -252,6 +260,7 @@ if __name__ == '__main__':
         type=str,
         help='the logic reasoning dataset to evaluate on {ProntoQA, ProofWriter}',
         default='ProntoQA',
+        choices=['ProntoQA', 'ProofWriter'],
     )
     parser.add_argument(
         '--data_split',
@@ -269,7 +278,7 @@ if __name__ == '__main__':
     dataset_name = args.dataset
     data_split = args.data_split
     dataset = load_dataset(f'renma/{dataset_name}')
-    logic_reasoning_tests = dataset[data_split]
+    dataset = dataset[data_split].to_pandas()
 
     id_column = 'id'
     llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
@@ -277,7 +286,7 @@ if __name__ == '__main__':
 
     metadata = make_metadata(
         llm_config,
-        args.dataset_name,
+        args.dataset,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
