@@ -50,6 +50,7 @@ jobs:
         echo "Your coworker wants to apply a pull request to this project." > task.txt
         echo "Read and review $PRR_FILE_NAME.prr file. Edit this file to add comments and suggestions." >> task.txt
         cat << EOF
+        Sample content of a .prr file:
         > diff --git a/ch4.txt b/ch4.txt
         > index 41e1932..8741175 100644
         > --- a/ch4.txt
