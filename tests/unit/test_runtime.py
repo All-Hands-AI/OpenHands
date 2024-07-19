@@ -48,8 +48,8 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
             sandbox_config=sandbox_config, event_stream=event_stream, sid=sid
         )
         await runtime.ainit()
-        runtime.init_sandbox_plugins(plugins)
-        runtime.init_runtime_tools(
+        await runtime.init_sandbox_plugins(plugins)
+        await runtime.init_runtime_tools(
             [],
             is_async=False,
             runtime_tools_config={},
