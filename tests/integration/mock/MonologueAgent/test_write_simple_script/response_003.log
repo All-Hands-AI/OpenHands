@@ -1,9 +1,0 @@
-```json
-{
-  "action": "message",
-  "args": {
-    "content": "The current directory is /workspace and it appears to be empty. This is a good place to create the 'hello.sh' script without any conflicts.",
-    "wait_for_response": false
-  }
-}
-```
