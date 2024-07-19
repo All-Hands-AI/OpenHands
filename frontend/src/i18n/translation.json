@@ -351,9 +351,9 @@
     "zh-CN": "安全分析器"
   },
   "CONFIGURATION$SECURITY_SELECT_PLACEHOLDER": {
-    "en": "Select a security analyzer",
-    "de": "Wählen Sie einen Sicherheitsanalysator",
-    "zh-CN": "选择一个安全分析器"
+    "en": "Select a security analyzer (optional)",
+    "de": "Wählen Sie einen Sicherheitsanalysator (optional)",
+    "zh-CN": "选择一个安全分析器（可选）"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
