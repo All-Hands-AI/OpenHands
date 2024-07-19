@@ -115,9 +115,9 @@ class Runtime:
 
     # ====================================================================
 
-    async def add_env_var(self, vars):
+    async def add_env_var(self, env_vars: dict[str, str]) -> None:
         cmd = ''
-        for key, value in vars.items():
+        for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
         if not cmd:
@@ -126,7 +126,9 @@ class Runtime:
         logger.debug(f'Adding env var: {cmd}')
         obs: Observation = await self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to add env vars [{vars}] to environment.')
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
+            )
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
