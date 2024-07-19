@@ -1,0 +1,116 @@
+name: Use OpenDevin to Review Pull Request
+
+on:
+  pull_request:
+    types: [synchronize, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+env:
+  PRR_FILE_NAME: ${{ github.repository }}/${{ github.event.pull_request.number }}
+jobs:
+  dogfood:
+    if: contains(github.event.pull_request.labels.*.name, 'prr-this')
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: install git, github cli
+      run: |
+        sudo apt-get install -y git gh
+        git config --global --add safe.directory $PWD
+    - name: Install prr
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: prr
+    - name: Configure prr
+      run: |
+        mkdir -p ~/.config/prr
+        cat << EOF > ~/.config/prr/config.toml
+        [prr]
+        token = "${{ github.token }}"
+        workdir = "$GITHUB_WORKSPACE"
+        EOF
+
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.base.ref }} # check out the target branch
+
+    - name: Download Diff
+      run: |
+        prr get $PRR_FILE_NAME
+
+    - name: Write Task File
+      run: |
+        echo "Your coworker wants to apply a pull request to this project." > task.txt
+        echo "Read and review $PRR_FILE_NAME.prr file. Edit this file to add comments and suggestions." >> task.txt
+        cat << EOF
+        Sample content of a .prr file:
+        > diff --git a/ch4.txt b/ch4.txt
+        > index 41e1932..8741175 100644
+        > --- a/ch4.txt
+        > +++ b/ch4.txt
+        > @@ -16,6 +16,10 @@ CHAPTER 4. TACTICAL DISPOSITIONS
+        > +HERE IS SOME CONTENT I'M TRYING TO ADD
+        > +LALALALLALALALALAL
+        > +
+        > +Some important line
+
+        ---
+
+        > diff --git a/ch4.txt b/ch4.txt
+        > index 41e1932..8741175 100644
+        > --- a/ch4.txt
+        > +++ b/ch4.txt
+        > @@ -16,6 +16,10 @@ CHAPTER 4. TACTICAL DISPOSITIONS
+        > +HERE IS SOME CONTENT I'M TRYING TO ADD
+        > +LALALALLALALALALAL
+        > +
+
+        Remove this spam
+
+        > +Some important line
+        EOF >> task.txt
+        echo "Do not ask me for confirmation at any point." >> task.txt
+        echo "" >> task.txt
+        echo "Title" >> task.txt
+        echo "${{ github.event.pull_request.title }}" >> task.txt
+        echo "" >> task.txt
+        echo "Description" >> task.txt
+        echo "${{ github.event.pull_request.body }}" >> task.txt
+        echo "" >> task.txt
+        echo "Diff file is: $PRR_FILE_NAME.prr" >> task.txt
+        echo "" >> task.txt
+
+    - name: Set up environment
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="/github/home/.local/bin:$PATH"
+        poetry install --without evaluation
+        poetry run playwright install --with-deps chromium
+
+    - name: Run OpenDevin
+      env:
+        LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        LLM_MODEL: ${{ vars.LLM_MODEL }}
+        SANDBOX_BOX_TYPE: ssh
+      run: |
+        # Append path to launch poetry
+        export PATH="/github/home/.local/bin:$PATH"
+        # Append path to correctly import package, note: must set pwd at first
+        export PYTHONPATH=$(pwd):$PYTHONPATH
+        export WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE
+        export WORKSPACE_BASE=$GITHUB_WORKSPACE
+        echo -e "/exit\n" | poetry run python opendevin/core/main.py -i 50 -f task.txt
+        rm task.txt
+
+    - name: Create PR review
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        prr submit $PRR_FILE_NAME
