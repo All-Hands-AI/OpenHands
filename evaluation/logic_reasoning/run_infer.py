@@ -145,7 +145,6 @@ def process_instance(
 
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-        # sandbox = DockerSSHBox()
         logic_inference_path = os.path.join(workspace_mount_path, 'logic_inference.py')
         if not os.path.exists(logic_inference_path):
             shutil.copyfile(
@@ -170,6 +169,9 @@ def process_instance(
         sid = instance['id'] + '_' + str(os.getpid())
         sandbox = DockerSSHBox(sid=sid)
         exit_code, command_output = sandbox.execute('pip install scitools-pyke')
+        if exit_code != 0:
+            logger.error(f'Failed to install scitools-pyke: {command_output}')
+            raise RuntimeError(f'Failed to install scitools-pyke: {command_output}')
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State | None = asyncio.run(
@@ -223,7 +225,6 @@ def process_instance(
             'id': instance['id'],
             'instance': instance,
             'instruction': instruction,
-            # 'metadata': metadata.model_dump(),
             'history': histories,
             'metrics': metrics,
             'final_message': final_message,
