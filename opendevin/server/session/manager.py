@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import WebSocket
 
+from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
 
 from .session import Session
@@ -14,13 +15,14 @@ class SessionManager:
     cleanup_interval: int = 300
     session_timeout: int = 600
 
-    def __init__(self):
+    def __init__(self, config: AppConfig):
         asyncio.create_task(self._cleanup_sessions())
+        self.config = config
 
     def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         if sid in self._sessions:
             asyncio.create_task(self._sessions[sid].close())
-        self._sessions[sid] = Session(sid=sid, ws=ws_conn)
+        self._sessions[sid] = Session(sid=sid, ws=ws_conn, config=self.config)
         return self._sessions[sid]
 
     def get_session(self, sid: str) -> Session | None:

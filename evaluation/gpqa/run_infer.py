@@ -12,7 +12,7 @@ Further references:
 - https://github.com/idavidrein/gpqa
 
 TODOs:
-- Add evaluation on other Agent classes (e.g., MonologueAgent)
+- Add evaluation on other Agent classes
 - Batch inference and evaluation of agents on the GPQA Benchmark.
 """
 
@@ -43,6 +43,7 @@ from opendevin.core.main import run_agent_controller
 from opendevin.events.action import Action, AgentFinishAction, MessageAction
 from opendevin.events.observation import Observation
 from opendevin.llm.llm import LLM
+
 
 ACTION_FORMAT = """
 <<FINAL_ANSWER||
@@ -150,7 +151,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:

@@ -21,7 +21,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -64,7 +63,6 @@ LANGUAGE_TO_NUM_WORKERS = {
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -108,7 +106,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
 

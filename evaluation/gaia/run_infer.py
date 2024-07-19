@@ -15,7 +15,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -34,7 +33,6 @@ DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': partial(codeact_user_response, encapsulate_solution=True),
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -48,7 +46,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.

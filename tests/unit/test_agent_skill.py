@@ -46,6 +46,12 @@ def _generate_test_file_with_lines(temp_path, num_lines) -> str:
     return file_path
 
 
+def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
+    file_path = temp_path / 'test_file.rb'
+    file_path.write_text('\n' * num_lines)
+    return file_path
+
+
 def _calculate_window_bounds(current_line, total_lines, window_size):
     """Calculate the bounds of the window around the current line."""
     half_window = window_size // 2
@@ -56,6 +62,12 @@ def _calculate_window_bounds(current_line, total_lines, window_size):
         start = current_line - half_window
         end = current_line + half_window
     return start, end
+
+
+def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
+    file_path = temp_path / 'test_file.rb'
+    file_path.write_text('\n' * num_lines)
+    return file_path
 
 
 def test_open_file_unexist_path():
@@ -1490,3 +1502,46 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f'Expected output does not match. Got: {output}'
+
+
+def test_lint_file_fail_non_python(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    current_line = 1
+
+    file_path = _generate_ruby_test_file_with_lines(tmp_path, 1)
+
+    open_file(str(file_path), current_line)
+    insert_content_at_line(
+        str(file_path), 1, "def print_hello_world()\n    puts 'Hello World'"
+    )
+    result = capsys.readouterr().out
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+        'ERRORS:\n'
+        f'{file_path}:1\n'
+        '[This is how your edit would have looked if applied]\n'
+        '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
+        '1|def print_hello_world()\n'
+        "2|    puts 'Hello World'\n"
+        '(this is the end of the file)\n'
+        '-------------------------------------------------\n\n'
+        '[This is the original code before your edit]\n'
+        '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '-------------------------------------------------\n'
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+    )
+    assert result.split('\n') == expected.split('\n')

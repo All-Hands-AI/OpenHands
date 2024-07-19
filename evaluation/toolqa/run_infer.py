@@ -10,7 +10,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -26,7 +25,6 @@ from .utils import download_data, download_tools, encode_question, eval_answer, 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -35,7 +33,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -115,7 +113,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         'correct': correct,
         'answer_id': 'None',
         'model_id': metadata.model_name,
-        'metadata': metadata.model_dump(),
+        'metadata': metadata,
         'history': histories,
         'metrics': metrics,
         'error': state.last_error if state and state.last_error else None,

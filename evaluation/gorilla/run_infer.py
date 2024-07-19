@@ -53,13 +53,8 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
