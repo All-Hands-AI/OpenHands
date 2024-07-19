@@ -434,6 +434,17 @@ def get_code_region_containing_code(
         start = max(0, search_start)
         end = min(len(file_content), search_end)
         context = file_content[start:end]
-        occurrences.append((matched_line_no, context))
+
+        # Split the context into lines and add line numbers
+        lines = context.splitlines()
+        start_line_no = file_content.count('\n', 0, start) + 1
+        numbered_lines = [(start_line_no + i, line) for i, line in enumerate(lines)]
+
+        occurrences.append(
+            (
+                matched_line_no,
+                ''.join([f'{line_no}|{line}\n' for line_no, line in numbered_lines]),
+            )
+        )
 
     return occurrences
