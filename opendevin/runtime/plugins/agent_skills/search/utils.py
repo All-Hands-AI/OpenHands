@@ -2,6 +2,7 @@ import glob
 import re
 import warnings
 from dataclasses import dataclass
+from importlib import resources
 from os.path import join as pjoin
 from pathlib import Path
 
@@ -68,15 +69,11 @@ def get_captures_for_node(node: Node, lang: str) -> list | None:
     """
     language = get_language(lang)
     try:
-        # scm_fname = resources.files(__package__).joinpath(
-        #     "queries", f"{lang}-tags.scm"
-        # )
-        scm_fname = Path(__file__).parent.joinpath('queries', f'{lang}-tags.scm')
+        scm_fname = resources.files(__package__).joinpath('queries', f'{lang}-tags.scm')
+        # scm_fname = Path(__file__).parent.joinpath('queries', f'{lang}-tags.scm')
     except KeyError:
         return None
     query_scm = scm_fname
-    if not query_scm.exists():
-        return None
     query_scm_content = query_scm.read_text()
     query = language.query(query_scm_content)
     captures = query.captures(node)
@@ -183,6 +180,9 @@ def get_class_signature(file_full_path: str, class_name: str, lang: str) -> str:
         file_content_lst = f.readlines()
     result = ''
     for line in relevant_lines:
+        if line == -1:
+            result += '⋮...\n'
+            continue
         line_content: str = file_content_lst[line - 1]
         if line_content.strip().startswith('#'):
             # this kind of comment could be left until this stage.
@@ -229,6 +229,7 @@ def extract_class_sig_from_node(node: Node, lang: str) -> list[int]:
     for child_node, tag in captures:
         if tag == 'definition.method':
             sig_lines.extend(extract_func_sig_from_node(child_node))
+            sig_lines.append(-1)  # separator
 
     return sig_lines
 

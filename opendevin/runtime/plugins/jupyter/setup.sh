@@ -18,6 +18,9 @@ source ~/.bashrc
 echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
 export PATH=/opendevin/plugins/jupyter:$PATH
 
+# This fixes https://github.com/OpenDevin/OpenDevin/pull/2489#issuecomment-2223088169
+export PATH=/opendevin/miniforge3/bin:$PATH
+
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc

@@ -1,12 +1,7 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
+from collections.abc import MutableMapping
 
 if __package__ is None or __package__ == '':
-    from search_types import (
-        ClassFuncIndexType,
-        ClassIndexType,
-        FuncIndexType,
-        LineRange,
-    )
     from utils import (
         SearchResult,
         find_python_files,
@@ -16,12 +11,6 @@ if __package__ is None or __package__ == '':
         parse_file,
     )
 else:
-    from .search_types import (
-        ClassFuncIndexType,
-        ClassIndexType,
-        FuncIndexType,
-        LineRange,
-    )
     from .utils import (
         SearchResult,
         find_python_files,
@@ -31,6 +20,17 @@ else:
         parse_file,
     )
 
+
+LineRange = namedtuple('LineRange', ['start', 'end'])
+ClassIndexType = MutableMapping[
+    str, list[tuple[str, LineRange]]
+]  # class_name -> [(file_path, line_range)]
+ClassFuncIndexType = MutableMapping[
+    str, MutableMapping[str, list[tuple[str, LineRange]]]
+]  # class_name -> function_name -> [(file_path, line_range)]
+FuncIndexType = MutableMapping[
+    str, list[tuple[str, LineRange]]
+]  # function_name -> [(file_path, line_range)]
 
 RESULT_SHOW_LIMIT = 3
 

@@ -33,9 +33,9 @@ from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
 if __package__ is None or __package__ == '':
-    from search.manager import SearchManager
+    from search import SearchManager
 else:
-    from .search.manager import SearchManager
+    from .search import SearchManager
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
@@ -967,12 +967,13 @@ def parse_pptx(file_path: str) -> None:
 def search_class(cls_name: str) -> None:
     """
     Searches for a class with the given name in the project.
+    Preferered to use whenever having the exact class name.
     The signature of the class and its methods is printed.
 
     Args:
         cls_name (str): The name of the class to search for.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, summary, _ = search_manager.search_class(cls_name)
     print(tool_result)
@@ -982,14 +983,14 @@ def search_class(cls_name: str) -> None:
 def search_class_in_file(cls_name: str, file_name: str) -> None:
     """
     Searches for a class with the given name in the specified file.
-    Preferered to use when having the file path for the class.
+    Preferered to use over `open_file` when having the file name containing the class.
     The full class implementation is printed.
 
     Args:
         cls_name (str): The name of the class to search for.
         file_name (str): The name of the file to search in, not the path, e.g., 'example.py'.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, _, _ = search_manager.search_class_in_file(cls_name, file_name)
     print(tool_result)
@@ -999,12 +1000,13 @@ def search_class_in_file(cls_name: str, file_name: str) -> None:
 def search_method(method_name: str) -> None:
     """
     Searches for a method with the given name in the project.
+    Preferered to use whenever having the exact method name.
     The method with its full body is printed.
 
     Args:
         method_name (str): The name of the method to search for.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, _, _ = search_manager.search_method(method_name)
     print(tool_result)
@@ -1014,13 +1016,14 @@ def search_method(method_name: str) -> None:
 def search_method_in_class(method_name: str, cls_name: str) -> None:
     """
     Searches for a method with the given name in the specified class.
+    Preferered to use whenever having the class containing the method.
     The method with its full body is printed.
 
     Args:
         method_name (str): The name of the method to search for.
         cls_name (str): The name of the class to search in.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, _, _ = search_manager.search_method_in_class(method_name, cls_name)
     print(tool_result)
@@ -1030,13 +1033,14 @@ def search_method_in_class(method_name: str, cls_name: str) -> None:
 def search_method_in_file(method_name: str, file_name: str) -> None:
     """
     Searches for a method with the given name in the specified file.
+    Preferered to use when having the file name for the method.
     The method with its full body is printed.
 
     Args:
         method_name (str): The name of the method to search for.
         file_name (str): The file name to search in, not the path, e.g., 'example.py'.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, _, _ = search_manager.search_method_in_file(method_name, file_name)
     print(tool_result)
@@ -1051,7 +1055,7 @@ def search_code(code_content: str) -> None:
     Args:
         code_content (str): The code content to search for.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, _, _ = search_manager.search_code(code_content)
     print(tool_result)
@@ -1067,7 +1071,7 @@ def search_code_in_file(code_content: str, file_name: str) -> None:
         code_content (str): The code content to search for.
         file_name (str): The file name to search in, not the path, e.g., 'example.py'.
     """
-    project_path = './'
+    project_path = os.path.abspath('./')
     search_manager = SearchManager(project_path)
     tool_result, _, _ = search_manager.search_code_in_file(code_content, file_name)
     print(tool_result)
@@ -1091,6 +1095,7 @@ __all__ = [
     'parse_latex',
     'parse_pptx',
     'search_class',
+    # search
     'search_class_in_file',
     'search_method',
     'search_method_in_class',
