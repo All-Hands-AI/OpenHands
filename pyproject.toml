@@ -45,7 +45,7 @@ llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.2.2"
+torch = {version = "2.2.2", source = "pytorch-cpu"}
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
@@ -68,6 +68,11 @@ python-pptx = "*"
 opencv-python = "*"
 pandas = "*"
 reportlab = "*"
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+default = false
 
 [tool.coverage.run]
 concurrency = ["gevent"]
