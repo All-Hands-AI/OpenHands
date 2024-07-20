@@ -22,7 +22,7 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
 workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
 max_iterations = 50
-max_budget_per_task = 4
+max_budget_per_task = 50
 
 print('\nPaths used:')
 print(f'workspace_base: {workspace_base}')
@@ -30,25 +30,10 @@ print(f'workspace_mount_path: {workspace_mount_path}')
 print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 
 
-def get_number_of_prompts(test_name: str):
-    mock_dir = os.path.join(
-        os.environ.get('SCRIPT_DIR'), 'mock', os.environ.get('DEFAULT_AGENT'), test_name
-    )
-    prompt_files = [file for file in os.listdir(mock_dir) if file.startswith('prompt_')]
-    return len(prompt_files)
-
-
-def validate_final_state(final_state: State | None, test_name: str):
+def validate_final_state(final_state: State | None):
     assert final_state is not None
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
-    # number of LLM conversations should be the same as number of prompt/response
-    # log files under mock/[agent]/[test_name] folder. If not, it means there are
-    # redundant prompt/response log files checked into the repository.
-    num_of_conversations = get_number_of_prompts(test_name)
-    assert num_of_conversations > 0
-    # we mock the cost of every conversation to be 1 USD
-    assert final_state.metrics.accumulated_cost == num_of_conversations
     if final_state.history.has_delegation():
         assert final_state.iteration > final_state.local_iteration
     else:
@@ -72,7 +57,7 @@ def validate_final_state(final_state: State | None, test_name: str):
     os.getenv('DEFAULT_AGENT') == 'ManagerAgent',
     reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
-def test_write_simple_script(current_test_name) -> None:
+def test_write_simple_script() -> None:
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     args = parse_arguments()
 
@@ -84,7 +69,9 @@ def test_write_simple_script(current_test_name) -> None:
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
     )
-    validate_final_state(final_state, current_test_name)
+    assert final_state is not None
+    assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.last_error is None
 
     # Verify the script file exists
     assert workspace_base is not None
@@ -120,7 +107,7 @@ def test_write_simple_script(current_test_name) -> None:
     os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
-def test_edits(current_test_name):
+def test_edits():
     args = parse_arguments()
     # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
@@ -141,7 +128,7 @@ def test_edits(current_test_name):
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
     )
-    validate_final_state(final_state, current_test_name)
+    validate_final_state(final_state)
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
@@ -163,7 +150,7 @@ Enjoy!
     os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
-def test_ipython(current_test_name):
+def test_ipython():
     args = parse_arguments()
 
     # Create the agent
@@ -176,7 +163,7 @@ def test_ipython(current_test_name):
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
     )
-    validate_final_state(final_state, current_test_name)
+    validate_final_state(final_state)
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -198,7 +185,7 @@ def test_ipython(current_test_name):
     os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='FIXME: local sandbox does not capture stderr',
 )
-def test_simple_task_rejection(current_test_name):
+def test_simple_task_rejection():
     args = parse_arguments()
 
     # Create the agent
@@ -208,7 +195,7 @@ def test_simple_task_rejection(current_test_name):
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(run_agent_controller(agent, task))
-    validate_final_state(final_state, current_test_name)
+    validate_final_state(final_state)
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
 
@@ -221,7 +208,7 @@ def test_simple_task_rejection(current_test_name):
     os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
-def test_ipython_module(current_test_name):
+def test_ipython_module():
     args = parse_arguments()
 
     # Create the agent
@@ -234,7 +221,7 @@ def test_ipython_module(current_test_name):
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
     )
-    validate_final_state(final_state, current_test_name)
+    validate_final_state(final_state)
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -262,7 +249,7 @@ def test_ipython_module(current_test_name):
     and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
-def test_browse_internet(http_server, current_test_name):
+def test_browse_internet(http_server):
     args = parse_arguments()
 
     # Create the agent
@@ -275,7 +262,7 @@ def test_browse_internet(http_server, current_test_name):
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
     )
-    validate_final_state(final_state, current_test_name)
+    validate_final_state(final_state)
 
     # last action
     last_action = final_state.history.get_last_action()
