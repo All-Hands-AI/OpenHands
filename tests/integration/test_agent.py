@@ -194,7 +194,9 @@ def test_simple_task_rejection():
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_state: State | None = asyncio.run(run_agent_controller(agent, task))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, max_iterations, max_budget_per_task)
+    )
     validate_final_state(final_state)
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
