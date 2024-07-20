@@ -44,7 +44,6 @@ from opendevin.events.action import Action, AgentFinishAction, MessageAction
 from opendevin.events.observation import Observation
 from opendevin.llm.llm import LLM
 
-
 ACTION_FORMAT = """
 <<FINAL_ANSWER||
 <insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
