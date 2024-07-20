@@ -1,3 +1,3 @@
 TROUBLESHOOTING_URL = (
-    'https://docs.all-hands.dev/OpenDevin/modules/usage/troubleshooting'
+    'https://docs.all-hands.dev/modules/usage/troubleshooting'
 )

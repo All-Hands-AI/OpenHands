@@ -11,7 +11,6 @@ from evaluation.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
     EvalMetadata,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -48,7 +47,6 @@ def codeact_user_response_eda(state: State) -> str:
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response_eda,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
