@@ -68,6 +68,7 @@ class AgentController:
         max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
+        headless_mode: bool = True,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -79,10 +80,12 @@ class AgentController:
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
+            headless_mode: Whether the agent is run in headless mode.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
+        self.headless_mode = headless_mode
 
         # subscribe to the event stream
         self.event_stream = event_stream
@@ -293,6 +296,9 @@ class AgentController:
             logger.debug(f'[Agent Controller {self.id}] Delegate step done')
             assert self.delegate is not None
             delegate_state = self.delegate.get_agent_state()
+            logger.debug(
+                f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
+            )
             if delegate_state == AgentState.ERROR:
                 # close the delegate upon error
                 await self.delegate.close()
@@ -345,10 +351,18 @@ class AgentController:
                 self.state.traffic_control_state = TrafficControlState.NORMAL
             else:
                 self.state.traffic_control_state = TrafficControlState.THROTTLING
-                await self.report_error(
-                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                )
-                await self.set_agent_state_to(AgentState.PAUSED)
+                if self.headless_mode:
+                    # set to ERROR state if running in headless mode
+                    # since user cannot resume on the web interface
+                    await self.report_error(
+                        'Agent reached maximum number of iterations in headless mode, task stopped.'
+                    )
+                    await self.set_agent_state_to(AgentState.ERROR)
+                else:
+                    await self.report_error(
+                        f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                    )
+                    await self.set_agent_state_to(AgentState.PAUSED)
                 return
         elif self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
