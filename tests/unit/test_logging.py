@@ -76,9 +76,6 @@ def test_llm_config_attributes_masking(test_handler):
     assert 'AKIAIOSFODNN7EXAMPLE' not in log_output
     assert 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' not in log_output
 
-    # reset the LLMConfig
-    LLMConfig.reset()
-
 
 def test_app_config_attributes_masking(test_handler):
     logger, stream = test_handler

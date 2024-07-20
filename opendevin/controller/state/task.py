@@ -29,7 +29,7 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: list = [],  # noqa: B006
+        subtasks=None,  # noqa: B006
     ):
         """Initializes a new instance of the Task class.
 
@@ -39,13 +39,15 @@ class Task:
             state: The initial state of the task.
             subtasks: A list of subtasks associated with this task.
         """
+        if subtasks is None:
+            subtasks = []
         if parent.id:
             self.id = parent.id + '.' + str(len(parent.subtasks))
         else:
             self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        logger.debug('Creating task {self.id} with parent={parent.id}, goal={goal}')
+        logger.debug(f'Creating task {self.id} with parent={parent.id}, goal={goal}')
         self.subtasks = []
         for subtask in subtasks or []:
             if isinstance(subtask, Task):
@@ -54,7 +56,7 @@ class Task:
                 goal = subtask.get('goal')
                 state = subtask.get('state')
                 subtasks = subtask.get('subtasks')
-                logger.debug('Reading: {goal}, {state}, {subtasks}')
+                logger.debug(f'Reading: {goal}, {state}, {subtasks}')
                 self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE

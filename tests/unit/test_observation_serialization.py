@@ -9,7 +9,9 @@ from opendevin.events.serialization import (
 )
 
 
-def serialization_deserialization(original_observation_dict, cls):
+def serialization_deserialization(
+    original_observation_dict, cls, max_message_chars: int = 10000
+):
     observation_instance = event_from_dict(original_observation_dict)
     assert isinstance(
         observation_instance, Observation
@@ -18,7 +20,9 @@ def serialization_deserialization(original_observation_dict, cls):
         observation_instance, cls
     ), 'The observation instance should be an instance of CmdOutputObservation.'
     serialized_observation_dict = event_to_dict(observation_instance)
-    serialized_observation_memory = event_to_memory(observation_instance)
+    serialized_observation_memory = event_to_memory(
+        observation_instance, max_message_chars
+    )
     assert (
         serialized_observation_dict == original_observation_dict
     ), 'The serialized observation should match the original observation dict.'

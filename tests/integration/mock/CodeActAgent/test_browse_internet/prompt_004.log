@@ -8,7 +8,7 @@ possible next action to accomplish your goal. Your answer will be interpreted
 and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
-Sure! Let me browse the server's homepage at http://localhost:8000 and find the ultimate answer to life.. I should start with: Get the content on "http://localhost:8000"
+Certainly! I'll browse localhost:8000 and retrieve the ultimate answer to life for you.. I should start with: Get the content on "http://localhost:8000"
 
 # Action Space
 
@@ -122,7 +122,7 @@ RootWebArea 'The Ultimate Answer', focused
 	StaticText 'The answer is OpenDevin is all you need!'
 
 # Previous Actions
-goto('http://localhost:8000')
+goto("http://localhost:8000")
 click("10")
 
 Here is an example with chain of thought of a valid action when clicking on a button:

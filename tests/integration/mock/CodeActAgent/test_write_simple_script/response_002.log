@@ -1,9 +1,4 @@
-The shell script `hello.sh` has been created and made executable. Here is the content of the script:
+Now, I will write the content to the `hello.sh` file to print 'hello'.
 
-```bash
-#!/bin/bash
-
-echo "hello"
-```
-
-Would you like me to run the script to verify it works as expected?
+<execute_ipython>
+insert_content_at_line('hello.sh', 1, '#!/bin/bash\necho "hello"')

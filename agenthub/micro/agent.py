@@ -7,6 +7,7 @@ from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
+from opendevin.memory.history import ShortTermHistory
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -21,30 +22,36 @@ def parse_response(orig_response: str) -> Action:
 
 
 def to_json(obj, **kwargs):
-    """
-    Serialize an object to str format
-    """
+    """Serialize an object to str format"""
     return json.dumps(obj, **kwargs)
-
-
-def history_to_json(obj, **kwargs):
-    """
-    Serialize and simplify history to str format
-    """
-    if isinstance(obj, list):
-        # process history, make it simpler.
-        processed_history = []
-        for action, observation in obj:
-            processed_history.append(
-                (event_to_memory(action), event_to_memory(observation))
-            )
-        return json.dumps(processed_history, **kwargs)
 
 
 class MicroAgent(Agent):
     VERSION = '1.0'
     prompt = ''
     agent_definition: dict = {}
+
+    def history_to_json(
+        self, history: ShortTermHistory, max_events: int = 20, **kwargs
+    ):
+        """
+        Serialize and simplify history to str format
+        """
+        processed_history = []
+        event_count = 0
+
+        for event in history.get_events(reverse=True):
+            if event_count >= max_events:
+                break
+            processed_history.append(
+                event_to_memory(event, self.llm.config.max_message_chars)
+            )
+            event_count += 1
+
+        # history is in reverse order, let's fix it
+        processed_history.reverse()
+
+        return json.dumps(processed_history, **kwargs)
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -59,7 +66,7 @@ class MicroAgent(Agent):
             state=state,
             instructions=instructions,
             to_json=to_json,
-            history_to_json=history_to_json,
+            history_to_json=self.history_to_json,
             delegates=self.delegates,
             latest_user_message=state.get_current_user_intent(),
         )
@@ -68,6 +75,3 @@ class MicroAgent(Agent):
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

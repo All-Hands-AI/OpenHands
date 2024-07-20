@@ -32,20 +32,12 @@ class ActionTypeSchema(BaseModel):
     """Runs a IPython cell.
     """
 
-    KILL: str = Field(default='kill')
-    """Kills a background command.
-    """
-
     BROWSE: str = Field(default='browse')
     """Opens a web page.
     """
 
     BROWSE_INTERACTIVE: str = Field(default='browse_interactive')
     """Interact with the browser instance.
-    """
-
-    RECALL: str = Field(default='recall')
-    """Searches long-term memory
     """
 
     DELEGATE: str = Field(default='delegate')

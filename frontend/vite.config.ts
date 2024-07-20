@@ -1,8 +1,8 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import viteTsconfigPaths from "vite-tsconfig-paths";
-import path from "path";
 
 export default defineConfig(({ mode }) => {
   const {
@@ -62,6 +62,11 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       globals: true,
       setupFiles: ["vitest.setup.ts"],
+      coverage: {
+        reporter: ["text", "json", "html", "lcov", "text-summary"],
+        reportsDirectory: "coverage",
+        include: ["src/**/*.{ts,tsx}"],
+      },
     },
   };
 });

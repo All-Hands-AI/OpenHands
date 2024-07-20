@@ -18,6 +18,10 @@ The assistant can execute bash commands on behalf of the user by wrapping them w
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
 """
 
+PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
+
+SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + PIP_INSTALL_PREFIX
+
 SYSTEM_SUFFIX = """The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.

@@ -35,7 +35,6 @@ class PluginMixin:
 
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
-
         if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
             return
 
@@ -44,6 +43,10 @@ class PluginMixin:
 
             # clean-up ~/.bashrc and touch ~/.bashrc
             exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
+            if exit_code != 0:
+                logger.warning(
+                    f'Failed to clean-up ~/.bashrc with exit code {exit_code} and output: {output}'
+                )
 
             for requirement in requirements:
                 # source bashrc file when plugin loads

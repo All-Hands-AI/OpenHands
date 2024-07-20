@@ -15,6 +15,9 @@ model_name = os.path.basename(os.path.dirname(args.od_output_file))
 
 
 def process_git_patch(patch):
+    if not isinstance(patch, str):
+        return ''
+
     if not patch.strip():
         # skip empty patches
         return ''

@@ -1,17 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-
 import ActionType from "#/types/ActionType";
 import { Settings, saveSettings } from "./settings";
 import Session from "./session";
 
 const sendSpy = vi.spyOn(Session, "send");
-const setupSpy = vi
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  .spyOn(Session as any, "_setupSocket")
-  .mockImplementation(() => {
-    /* eslint-disable-next-line @typescript-eslint/dot-notation */
-    Session["_initializeAgent"](); // use key syntax to fix complaint about private fn
-  });
+// @ts-expect-error - spying on private function
+const setupSpy = vi.spyOn(Session, "_setupSocket").mockImplementation(() => {
+  // @ts-expect-error - calling a private function
+  Session._initializeAgent();
+});
 
 describe("startNewSession", () => {
   it("Should start a new session with the current settings", () => {
@@ -20,6 +17,7 @@ describe("startNewSession", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "sk-...",
+      CONFIRMATION_MODE: true,
     };
 
     const event = {

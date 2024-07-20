@@ -9,10 +9,9 @@ from opendevin.events.action import (
 
 
 class BrowsingResponseParser(ResponseParser):
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         # Need to pay attention to the item order in self.action_parsers
+        super().__init__()
         self.action_parsers = [BrowsingActionParserMessage()]
         self.default_parser = BrowsingActionParserBrowseInteractive()
 
@@ -21,7 +20,10 @@ class BrowsingResponseParser(ResponseParser):
         return self.parse_action(action_str)
 
     def parse_response(self, response) -> str:
-        action_str = response['choices'][0]['message']['content'].strip()
+        action_str = response['choices'][0]['message']['content']
+        if action_str is None:
+            return ''
+        action_str = action_str.strip()
         if not action_str.endswith('```'):
             action_str = action_str + ')```'
         logger.info(action_str)
@@ -35,9 +37,8 @@ class BrowsingResponseParser(ResponseParser):
 
 
 class BrowsingActionParserMessage(ActionParser):
-    """
-    Parser action:
-        - BrowseInteractiveAction(browser_actions) - unexpected response format, message back to user
+    """Parser action:
+    - BrowseInteractiveAction(browser_actions) - unexpected response format, message back to user
     """
 
     def __init__(
@@ -58,9 +59,8 @@ class BrowsingActionParserMessage(ActionParser):
 
 
 class BrowsingActionParserBrowseInteractive(ActionParser):
-    """
-    Parser action:
-        - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
+    """Parser action:
+    - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
     """
 
     def __init__(

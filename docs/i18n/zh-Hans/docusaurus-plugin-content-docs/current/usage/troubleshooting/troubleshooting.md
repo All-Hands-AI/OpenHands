@@ -23,7 +23,7 @@ sidebar_position: 5
 ### 症状
 
 ```bash
-创建控制器时出错。请检查 Docker 是否正在运行，并访问 `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` 获取更多调试信息。
+创建控制器时出错。请检查 Docker 是否正在运行，并访问 `https://docs.all-hands.dev/modules/usage/troubleshooting` 获取更多调试信息。
 ```
 
 ```bash
@@ -63,7 +63,6 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 * 确保拥有最新版本的 WSL 和 Docker
 * 检查您的 WSL 分发版也已更新
 * 尝试[此重新安装指南](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
-* 设置 `-e SANDBOX_TYPE=exec` 切换到 ExecBox Docker 容器
 
 ## 无法连接到 LLM
 

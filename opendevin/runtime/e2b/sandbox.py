@@ -7,36 +7,32 @@ from e2b.sandbox.exception import (
     TimeoutException,
 )
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.e2b.process import E2BProcess
-from opendevin.runtime.process import Process
 from opendevin.runtime.sandbox import Sandbox
 
 
 class E2BBox(Sandbox):
     closed = False
-    cur_background_id = 0
-    background_commands: dict[int, Process] = {}
     _cwd: str = '/home/user'
 
     def __init__(
         self,
+        config: SandboxConfig,
+        e2b_api_key: str,
         template: str = 'open-devin',
-        timeout: int = config.sandbox_timeout,
     ):
+        super().__init__(config)
         self.sandbox = E2BSandbox(
-            api_key=config.e2b_api_key,
+            api_key=e2b_api_key,
             template=template,
             # It's possible to stream stdout and stderr from sandbox and from each process
             on_stderr=lambda x: logger.info(f'E2B sandbox stderr: {x}'),
             on_stdout=lambda x: logger.info(f'E2B sandbox stdout: {x}'),
             cwd=self._cwd,  # Default workdir inside sandbox
         )
-        self.timeout = timeout
         logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
-        super().__init__()
 
     @property
     def filesystem(self):
@@ -65,18 +61,10 @@ class E2BBox(Sandbox):
                 tar.add(host_src, arcname=srcname)
         return tar_filename
 
-    # TODO: This won't work if we didn't wait for the background process to finish
-    def read_logs(self, process_id: int) -> str:
-        proc = self.background_commands.get(process_id)
-        if proc is None:
-            raise ValueError(f'Process {process_id} not found')
-        assert isinstance(proc, E2BProcess)
-        return '\n'.join([m.line for m in proc.output_messages])
-
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout if timeout is not None else self.config.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
             process_output = process.wait(timeout=timeout)
@@ -120,21 +108,6 @@ class E2BBox(Sandbox):
 
         # Delete the local archive
         os.remove(tar_filename)
-
-    def execute_in_background(self, cmd: str) -> Process:
-        process = self.sandbox.process.start(cmd)
-        e2b_process = E2BProcess(process, cmd)
-        self.cur_background_id += 1
-        self.background_commands[self.cur_background_id] = e2b_process
-        return e2b_process
-
-    def kill_background(self, process_id: int):
-        process = self.background_commands.get(process_id)
-        if process is None:
-            raise ValueError(f'Process {process_id} not found')
-        assert isinstance(process, E2BProcess)
-        process.kill()
-        return process
 
     def close(self):
         self.sandbox.close()

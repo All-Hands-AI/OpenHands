@@ -51,7 +51,7 @@ of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 
 ## Run Integration Tests
 
-Take a look at `run-integration-tests.yml` (in the `.github` folder) to learn
+Take a look at `ghcr.yml` (in the `.github/workflow` folder) to learn
 how integration tests are launched in a CI environment. You can also simply run:
 
 ```bash
@@ -99,6 +99,16 @@ by regenerating prompts alone, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you. Before asking,
 please try running the script first *without* setting `LLM_API_KEY`.
 Chance is, the test could be fixed after step 2.
+
+## Regenerate Integration Tests without testing first
+
+If you want to regenerate all prompts and/or responses without running the existing tests first, you can run:
+
+```bash
+FORCE_REGENERATE=true ./tests/integration/regenerate.sh
+```
+
+This will skip the first step and directly regenerate all tests when you know that the tests will fail due to changes in the prompt or the agent code itself and will save time.
 
 ## Regenerate a Specific Agent and/or Test
 

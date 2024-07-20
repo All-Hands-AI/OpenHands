@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class CmdOutputObservation(Observation):
-    """
-    This data class represents the output of a command.
-    """
+    """This data class represents the output of a command."""
 
     command_id: int
     command: str
@@ -25,14 +23,12 @@ class CmdOutputObservation(Observation):
         return f'Command `{self.command}` executed with exit code {self.exit_code}.'
 
     def __str__(self) -> str:
-        return f'**CmdOutputObservation (exit code={self.exit_code})**\n{self.content}'
+        return f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code})**\n{self.content}'
 
 
 @dataclass
 class IPythonRunCellObservation(Observation):
-    """
-    This data class represents the output of a IPythonRunCellAction.
-    """
+    """This data class represents the output of a IPythonRunCellAction."""
 
     code: str
     observation: str = ObservationType.RUN_IPYTHON

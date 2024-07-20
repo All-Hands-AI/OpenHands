@@ -15,7 +15,9 @@ report_json = os.path.join(dirname, 'report.json')
 df = pd.read_json(args.input_file, lines=True)
 
 output_md_filepath = os.path.join(dirname, 'README.md')
-instance_id_to_status = defaultdict(lambda: {'resolved': False})
+instance_id_to_status = defaultdict(
+    lambda: {'resolved': False, 'empty_generation': False}
+)
 if os.path.exists(report_json):
     with open(report_json, 'r') as f:
         report = json.load(f)
@@ -25,7 +27,9 @@ if os.path.exists(report_json):
         "This folder contains the evaluation results of the SWE-bench using the [official evaluation docker containerization](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level).\n\n"
         "## Summary\n"
         f"- total instances: {report['total_instances']}\n"
+        f"- submitted instances: {report['submitted_instances']}\n"
         f"- completed instances: {report['completed_instances']}\n"
+        f"- empty patch instances: {report['empty_patch_instances']}\n"
         f"- resolved instances: {report['resolved_instances']}\n"
         f"- unresolved instances: {report['unresolved_instances']}\n"
         f"- error instances: {report['error_instances']}\n"
@@ -49,6 +53,19 @@ if os.path.exists(report_json):
     output_md += '\n## Error Instances\n'
     for instance_id in report['error_ids']:
         instance_id_to_status[instance_id]['error_eval'] = True
+        output_md += (
+            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
+        )
+
+    output_md += '\n## Empty Patch Instances\n'
+    for instance_id in report['empty_patch_ids']:
+        instance_id_to_status[instance_id]['empty_generation'] = True
+        output_md += (
+            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
+        )
+
+    output_md += '\n## Incomplete Instances\n'
+    for instance_id in report['incomplete_ids']:
         output_md += (
             f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
         )
