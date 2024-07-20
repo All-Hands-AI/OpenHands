@@ -23,6 +23,8 @@ jobs:
       run: |
         sudo apt-get install -y git gh
         git config --global --add safe.directory $PWD
+        git config core.filemode false
+
     - name: Install prr
       uses: baptiste0928/cargo-install@v3
       with:
@@ -52,6 +54,8 @@ jobs:
         echo "Read and review $PRR_FILE_NAME.prr file. Edit this file to add comments and suggestions." >> task.txt
         cat << EOF >> task.txt
         Sample content of a .prr file:
+        Before Changes:
+
         > diff --git a/ch4.txt b/ch4.txt
         > index 41e1932..8741175 100644
         > --- a/ch4.txt
@@ -63,7 +67,7 @@ jobs:
         > +Some important line
 
         ---
-
+        After Changes:
         > diff --git a/ch4.txt b/ch4.txt
         > index 41e1932..8741175 100644
         > --- a/ch4.txt
