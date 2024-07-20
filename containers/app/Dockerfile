@@ -13,7 +13,7 @@ RUN npm run make-i18n && npm run build
 FROM python:3.12.3-slim AS backend-builder
 
 WORKDIR /app
-ENV PYTHONPATH '/app'
+ENV PYTHONPATH='/app'
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
