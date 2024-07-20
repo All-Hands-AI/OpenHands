@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pexpect
 from fastapi import FastAPI, HTTPException, Request
+from pexpect import EOF, TIMEOUT, ExceptionPexpect
 from pydantic import BaseModel
 from uvicorn import run
 
@@ -91,12 +92,65 @@ class RuntimeClient:
             prompt += '$'
         return prompt + ' '
 
+    def _send_interrupt(
+        self,
+        command: str,
+        prev_output: str = '',
+        ignore_last_output: bool = False,
+    ) -> tuple[str, int]:
+        logger.exception(
+            f'Command "{command}" timed out, killing process...', exc_info=False
+        )
+        # send a SIGINT to the process
+        self.shell.sendintr()
+        self.shell.prompt()
+        command_output = prev_output
+        if not ignore_last_output:
+            command_output += '\n' + self.shell.before
+        return (
+            f'Command: "{command}" timed out. Sent SIGINT to the process: {command_output}',
+            -1
+        )
+
     def _execute_bash(self, command, keep_prompt: bool = True) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect_regex)
 
-        output = self.shell.before
+        prompts = [
+            r'Do you want to continue\? \[Y/n\]',
+            self.shell.__bash_expect_regex,
+            EOF,
+            TIMEOUT,
+        ]
+        command_output = ''
+        timeout_counter = 0
+        timeout = 5
+        while True:
+            try:
+                # Wait for one of the prompts
+                index = self.shell.expect(prompts, timeout=1)
+                line = self.shell.before
+                logger.info(line)
+                command_output += line
+                if index == 0:
+                    self.shell.sendline('Y')
+                elif index == 1:
+                    break
+                elif index == 2:
+                    logger.debug('End of file')
+                    break
+                elif index == 3:
+                    timeout_counter += 1
+                    if timeout_counter > timeout:
+                        logger.exception(
+                            'Command timed out, killing process...', exc_info=False
+                        )
+                        return self._send_interrupt(command)
+            except ExceptionPexpect as e:
+                logger.exception(f'Unexpected exception: {e}')
+                break
+
+        output = command_output.strip()
         if keep_prompt:
             output += '\r\n' + self._get_bash_prompt()
         logger.debug(f'Command output: {output}')
