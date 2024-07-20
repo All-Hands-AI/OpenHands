@@ -260,7 +260,7 @@ class CodeActAgent(Agent):
 
         desired_token_count_to_summarize = int(
             message_buffer_token_count
-            * self.llm.config.MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC
+            * self.llm.config.message_summary_trunc_tokens_frac
         )
 
         candidate_messages_to_summarize = []
@@ -293,7 +293,7 @@ class CodeActAgent(Agent):
         #     token_counts = token_counts[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
 
         print(
-            f'MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC={self.llm.config.MESSAGE_SUMMARY_TRUNC_TOKEN_FRAC}'
+            f'message_summary_trunc_tokens_frac={self.llm.config.message_summary_trunc_tokens_frac}'
         )
         # print(f'MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}')
         print(f'token_counts={token_counts}')
