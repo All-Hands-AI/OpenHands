@@ -116,8 +116,8 @@ def _generate_dockerfile(
         'RUN cd /opendevin/code && '
         '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
         '/opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root\n'
-        '/opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all pypi\n'
-        'rm -rf /root/.cache/pypoetry\n'
+        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all pypi && \\\n'
+        'rm -rf /root/.cache/pypoetry && \\\n'
         'apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n'
     )
 
