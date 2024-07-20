@@ -217,7 +217,9 @@ def _get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
         repo = repo.replace('/', '___')
-        return f'{prefix}:{repo}_tag_{tag}'
+
+        od_version = _get_package_version()
+        return f'{prefix}:od_v{od_version}_image_{repo}_tag_{tag}'
 
 
 def _check_image_exists(image_name: str, docker_client: docker.DockerClient) -> bool:
