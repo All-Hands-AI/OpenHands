@@ -123,7 +123,7 @@ class AgentController:
 
     async def update_state_after_step(self):
         # update metrics especially for cost
-        self.state.metrics = self.agent.llm.metrics
+        self.state.local_metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
         """This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
@@ -174,9 +174,11 @@ class AgentController:
             self.state.root_task.set_subtask_state(event.task_id, event.state)
         elif isinstance(event, AgentFinishAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(event, AgentRejectAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if (
@@ -260,7 +262,7 @@ class AgentController:
             iteration=self.state.iteration,
             max_iterations=self.state.max_iterations,
             delegate_level=self.state.delegate_level + 1,
-            # metrics should be shared between parent and child
+            # global metrics should be shared between parent and child
             metrics=self.state.metrics,
         )
         logger.info(
