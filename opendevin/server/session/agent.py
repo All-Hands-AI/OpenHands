@@ -101,6 +101,9 @@ class AgentSession:
             agent=agent,
             max_iterations=int(max_iterations),
             confirmation_mode=confirmation_mode,
+            # AgentSession is designed to communicate with the frontend, so we don't want to
+            # run the agent in headless mode.
+            headless_mode=False,
         )
         try:
             agent_state = State.restore_from_session(self.sid)
