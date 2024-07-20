@@ -7,7 +7,7 @@ Thanks for your interest in contributing to OpenDevin! We welcome and appreciate
 There are many ways that you can contribute:
 
 1. **Download and use** OpenDevin, and send [issues](https://github.com/OpenDevin/OpenDevin/issues) when you encounter something that isn't working or a feature that you'd like to see.
-2. **Send feedback** after each session by [clicking the thumbs-up thumbs-down buttons](https://docs.all-hands.dev/OpenDevin/modules/usage/feedback), so we can see where things are working and failing, and also build an open dataset for training code agents.
+2. **Send feedback** after each session by [clicking the thumbs-up thumbs-down buttons](https://docs.all-hands.dev/modules/usage/feedback), so we can see where things are working and failing, and also build an open dataset for training code agents.
 3. **Improve the Codebase** by sending PRs (see details below). In particular, we have some [good first issue](https://github.com/OpenDevin/OpenDevin/labels/good%20first%20issue) issues that may be ones to start on.
 
 ## Understanding OpenDevin's CodeBase

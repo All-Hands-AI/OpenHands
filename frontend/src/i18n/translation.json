@@ -732,5 +732,17 @@
     "zh-CN": "计划未创建",
     "zh-TW": "未創建任何計劃。",
     "de": "Kein Plan erstellt."
+  },
+  "FEEDBACK$PUBLIC_LABEL": {
+    "en": "Public",
+    "zh-CN": "公开",
+    "zh-TW": "公開。",
+    "de": "Öffentlich"
+  },
+  "FEEDBACK$PRIVATE_LABEL": {
+    "en": "Private",
+    "zh-CN": "私有",
+    "zh-TW": "私有。",
+    "de": "Privat"
   }
 }

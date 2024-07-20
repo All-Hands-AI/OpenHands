@@ -91,7 +91,7 @@ async def test_env_vars_os_environ():
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_var():
+async def test_env_vars_runtime_add_env_vars():
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
     sid = 'test'
     cli_session = 'main_test'
@@ -99,7 +99,7 @@ async def test_env_vars_runtime_add_env_var():
     for box_class in RUNTIME_TO_TEST:
         event_stream = EventStream(cli_session)
         runtime = await _load_runtime(box_class, event_stream, plugins, sid)
-        await runtime.add_env_var({'QUUX': 'abc"def'})
+        await runtime.add_env_vars({'QUUX': 'abc"def'})
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='echo $QUUX')
@@ -113,6 +113,32 @@ async def test_env_vars_runtime_add_env_var():
 
 
 @pytest.mark.asyncio
+async def test_env_vars_runtime_add_empty_dict():
+    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
+    sid = 'test'
+    cli_session = 'main_test'
+
+    for box_class in RUNTIME_TO_TEST:
+        event_stream = EventStream(cli_session)
+        runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+
+        prev_obs = await runtime.run_action(CmdRunAction(command='env'))
+        assert prev_obs.exit_code == 0, 'The exit code should be 0.'
+        print(prev_obs)
+
+        await runtime.add_env_vars({})
+
+        obs = await runtime.run_action(CmdRunAction(command='env'))
+        assert obs.exit_code == 0, 'The exit code should be 0.'
+        print(obs)
+        assert (
+            obs.content == prev_obs.content
+        ), 'The env var content should be the same after adding an empty dict.'
+
+        await runtime.close()
+
+
+@pytest.mark.asyncio
 async def test_env_vars_runtime_add_multiple_env_vars():
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
     sid = 'test'
@@ -121,7 +147,7 @@ async def test_env_vars_runtime_add_multiple_env_vars():
     for box_class in RUNTIME_TO_TEST:
         event_stream = EventStream(cli_session)
         runtime = await _load_runtime(box_class, event_stream, plugins, sid)
-        await runtime.add_env_var({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
+        await runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='echo $QUUX $FOOBAR')
@@ -135,7 +161,7 @@ async def test_env_vars_runtime_add_multiple_env_vars():
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_var_overwrite():
+async def test_env_vars_runtime_add_env_vars_overwrite():
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
     sid = 'test'
     cli_session = 'main_test'
@@ -144,7 +170,7 @@ async def test_env_vars_runtime_add_env_var_overwrite():
         with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
             event_stream = EventStream(cli_session)
             runtime = await _load_runtime(box_class, event_stream, plugins, sid)
-            await runtime.add_env_var({'FOOBAR': 'xyz'})
+            await runtime.add_env_vars({'FOOBAR': 'xyz'})
 
             obs: CmdOutputObservation = await runtime.run_action(
                 CmdRunAction(command='echo $FOOBAR')

@@ -12,7 +12,7 @@ Further references:
 - https://github.com/idavidrein/gpqa
 
 TODOs:
-- Add evaluation on other Agent classes (e.g., MonologueAgent)
+- Add evaluation on other Agent classes
 - Batch inference and evaluation of agents on the GPQA Benchmark.
 """
 
@@ -30,7 +30,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -44,7 +43,6 @@ from opendevin.llm.llm import LLM
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
