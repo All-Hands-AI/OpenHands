@@ -60,7 +60,6 @@ agents=(
   "DelegatorAgent"
   "ManagerAgent"
   "BrowsingAgent"
-  "MonologueAgent"
   "CodeActAgent"
   "PlannerAgent"
   "CodeActSWEAgent"

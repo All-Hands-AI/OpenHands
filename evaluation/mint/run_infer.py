@@ -11,7 +11,6 @@ from evaluation.swe_bench.swe_env_box import DockerSSHBox
 from evaluation.utils.shared import (
     EvalMetadata,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -55,7 +54,6 @@ def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response_mint,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {

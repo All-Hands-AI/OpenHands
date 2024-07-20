@@ -56,42 +56,6 @@ _Example of CodeActAgent with `gpt-4-turbo-2024-04-09` performing a data science
 | `__init__`      | Initializes an agent with `llm` and a list of messages `list[Mapping[str, str]]`                                                                |
 | `step`          | Performs one step using the CodeAct Agent. This includes gathering info on previous steps and prompting the model to make a command to execute. |
 
-## Monologue Agent
-
-### Description
-
-The Monologue Agent utilizes long and short term memory to complete tasks.
-Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.
-Short term memory is stored as a Monologue object and the model can condense it as necessary.
-
-### Actions
-
-`Action`,
-`NullAction`,
-`CmdRunAction`,
-`FileWriteAction`,
-`FileReadAction`,
-`BrowseURLAction`,
-`GithubPushAction`,
-`AgentThinkAction`
-
-### Observations
-
-`Observation`,
-`NullObservation`,
-`CmdOutputObservation`,
-`FileReadObservation`,
-`BrowserOutputObservation`
-
-### Methods
-
-| Method          | Description                                                                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `__init__`      | Initializes the agent with a long term memory, and an internal monologue                                                                      |
-| `_add_event`    | Appends events to the monologue of the agent and condenses with summary automatically if the monologue is too long                            |
-| `_initialize`   | Utilizes the `INITIAL_THOUGHTS` list to give the agent a context for its capabilities and how to navigate the `/workspace`                    |
-| `step`          | Modifies the current state by adding the most recent actions and observations, then prompts the model to think about its next action to take. |
-
 ## Planner Agent
 
 ### Description

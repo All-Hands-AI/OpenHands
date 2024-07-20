@@ -46,7 +46,6 @@ def read_llm_models():
 @app.get('/api/options/agents')
 def read_llm_agents():
     return [
-        'MonologueAgent',
         'CodeActAgent',
         'PlannerAgent',
     ]

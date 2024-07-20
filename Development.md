@@ -39,18 +39,18 @@ make build
 OpenDevin supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
 
 To configure the LM of your choice, run:
-       
+
    ```bash
    make setup-config
    ```
-   
+
    This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
-   
+
    Note: If you have previously run OpenDevin using the docker command, you may have already set some environmental variables in your terminal. The final configurations are set from highest to lowest priority:
    Environment variables > config.toml variables > default variables
 
 **Note on Alternative Models:**
-Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. 
+Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest.
 And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to share your setup instructions with us by creating instructions and adding it [to our documentation](https://github.com/OpenDevin/OpenDevin/tree/main/docs/modules/usage/llms).
 
 For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
