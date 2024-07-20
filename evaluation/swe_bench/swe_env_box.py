@@ -8,7 +8,7 @@ from datasets import load_dataset
 from swebench.harness.constants import MAP_REPO_TO_TEST_FRAMEWORK
 from swebench.harness.utils import get_test_directives
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import (
@@ -50,7 +50,19 @@ class SWEBenchSSHBox(DockerSSHBox):
         # Need to run as root to use SWEBench container
         sid = f'swe_bench_{swe_instance_id}_' + str(uuid.uuid4())
         logger.info(f'===Using container image: {container_image}')
-        super().__init__(container_image, timeout, sid)
+        super().__init__(
+            config=SandboxConfig(container_image=container_image, timeout=timeout),
+            persist_sandbox=config.persist_sandbox,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            use_host_network=config.use_host_network,
+            run_as_devin=config.run_as_devin,
+            ssh_hostname=config.ssh_hostname,
+            ssh_password=config.ssh_password,
+            ssh_port=config.ssh_port,
+            sid=sid,
+        )
         self.init_plugins(sandbox_plugins)
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')

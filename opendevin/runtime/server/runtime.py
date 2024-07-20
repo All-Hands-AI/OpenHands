@@ -216,15 +216,28 @@ class ServerRuntime(Runtime):
     async def read(self, action: FileReadAction) -> Observation:
         # TODO: use self.file_store
         assert self.sandbox is not None
-        working_dir = await self.sandbox.get_working_directory()
-        return await read_file(action.path, working_dir, action.start, action.end)
+        working_dir = self.sandbox.get_working_directory()
+        return await read_file(
+            action.path,
+            working_dir,
+            config.workspace_base,
+            config.workspace_mount_path_in_sandbox,
+            action.start,
+            action.end,
+        )
 
     async def write(self, action: FileWriteAction) -> Observation:
         # TODO: use self.file_store
         assert self.sandbox is not None
         working_dir = await self.sandbox.get_working_directory()
         return await write_file(
-            action.path, working_dir, action.content, action.start, action.end
+            action.path,
+            working_dir,
+            config.workspace_base,
+            config.workspace_mount_path_in_sandbox,
+            action.content,
+            action.start,
+            action.end,
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:

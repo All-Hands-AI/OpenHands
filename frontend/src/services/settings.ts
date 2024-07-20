@@ -86,7 +86,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
  * Useful for notifying the user of exact changes.
  *
  * @example
- * // Assuming the current settings are: { LLM_MODEL: "gpt-4o", AGENT: "MonologueAgent", LANGUAGE: "en" }
+ * // Assuming the current settings are: { LLM_MODEL: "gpt-4o", AGENT: "CodeActAgent", LANGUAGE: "en" }
  * const updatedSettings = getSettingsDifference({ LLM_MODEL: "gpt-4o", AGENT: "OTHER_AGENT", LANGUAGE: "en" });
  * // updatedSettings = { AGENT: "OTHER_AGENT" }
  *
