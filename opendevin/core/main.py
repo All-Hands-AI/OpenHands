@@ -40,6 +40,7 @@ async def run_agent_controller(
     sandbox: Sandbox | None = None,
     runtime_tools_config: dict | None = None,
     sid: str | None = None,
+    headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -49,6 +50,7 @@ async def run_agent_controller(
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
         sandbox: An optional sandbox to run the agent in.
+        headless_mode: Whether the agent is run in headless mode.
     """
     # Logging
     logger.info(
@@ -76,6 +78,7 @@ async def run_agent_controller(
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
+        headless_mode=headless_mode,
     )
 
     # runtime and tools
