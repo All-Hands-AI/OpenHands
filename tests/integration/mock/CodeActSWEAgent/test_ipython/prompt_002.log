@@ -605,4 +605,4 @@ with open('/workspace/test.txt', 'w') as f:
 OBSERVATION:
 [Code executed successfully with no output]
 
-ENVIRONMENT REMINDER: You have 48 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task.

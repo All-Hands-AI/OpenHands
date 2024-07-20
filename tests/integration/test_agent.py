@@ -21,8 +21,8 @@ from opendevin.llm.llm import LLM
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
 workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
-max_iterations = 50
-max_budget_per_task = 50
+max_iterations = 15
+max_budget_per_task = 15
 
 print('\nPaths used:')
 print(f'workspace_base: {workspace_base}')

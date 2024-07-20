@@ -613,7 +613,39 @@ OBSERVATION:
 
 ----------
 
-I will now correct the typos in the `bad.txt` file.
+Let's correct the typos in the `bad.txt` file.
+
+1. "stupid typoo" should be "stupid typo".
+2. "No mor typos!" should be "No more typos!".
+
+I will make these changes now.
+<execute_ipython>
+edit_file_by_replace(
+    "bad.txt",
+    to_replace="This is a stupid typoo.\nNo mor typos!",
+    new_content="This is a stupid typo.\nNo more typos!"
+)
+</execute_ipython>
+
+----------
+
+OBSERVATION:
+[No exact match found in bad.txt for
+```
+This is a stupid typoo.
+No mor typos!
+```
+]
+
+
+----------
+
+It seems there was an issue with the exact match. I will correct the typos line by line instead.
+
+1. "This is a stupid typoo." should be "This is a stupid typo."
+2. "No mor typos!" should be "No more typos!".
+
+Let's proceed with these changes.
 <execute_ipython>
 edit_file_by_replace(
     "bad.txt",
@@ -635,28 +667,4 @@ OBSERVATION:
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 
-----------
-
-I will now correct the remaining typo on line 3.
-<execute_ipython>
-edit_file_by_replace(
-    "bad.txt",
-    to_replace="No mor typos!",
-    new_content="No more typos!"
-)
-</execute_ipython>
-
-----------
-
-OBSERVATION:
-[File: /workspace/bad.txt (4 lines total after edit)]
-(this is the beginning of the file)
-1|This is a stupid typo.
-2|Really?
-3|No more typos!
-4|Enjoy!
-(this is the end of the file)
-[File updated (edited at line 3). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
-
-
-ENVIRONMENT REMINDER: You have 46 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 11 turns left to complete the task.
