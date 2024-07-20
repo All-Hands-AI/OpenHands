@@ -32,6 +32,11 @@ from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
+if __package__ is None or __package__ == '':
+    from search.manager import SearchManager
+else:
+    from .search.manager import SearchManager
+
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
 WINDOW = 100
@@ -960,43 +965,112 @@ def parse_pptx(file_path: str) -> None:
 
 @update_pwd_decorator
 def search_class(cls_name: str) -> None:
-    pass
+    """
+    Searches for a class with the given name in the project.
+    The signature of the class and its methods is printed.
+
+    Args:
+        cls_name (str): The name of the class to search for.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, summary, _ = search_manager.search_class(cls_name)
+    print(tool_result)
 
 
 @update_pwd_decorator
-def search_class_in_file(cls_name: str, file_path: str) -> None:
-    # TODO:
-    pass
+def search_class_in_file(cls_name: str, file_name: str) -> None:
+    """
+    Searches for a class with the given name in the specified file.
+    Preferered to use when having the file path for the class.
+    The full class implementation is printed.
+
+    Args:
+        cls_name (str): The name of the class to search for.
+        file_name (str): The name of the file to search in, not the path, e.g., 'example.py'.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, _, _ = search_manager.search_class_in_file(cls_name, file_name)
+    print(tool_result)
 
 
 @update_pwd_decorator
 def search_method(method_name: str) -> None:
-    # TODO:
-    pass
+    """
+    Searches for a method with the given name in the project.
+    The method with its full body is printed.
+
+    Args:
+        method_name (str): The name of the method to search for.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, _, _ = search_manager.search_method(method_name)
+    print(tool_result)
 
 
 @update_pwd_decorator
 def search_method_in_class(method_name: str, cls_name: str) -> None:
-    # TODO:
-    pass
+    """
+    Searches for a method with the given name in the specified class.
+    The method with its full body is printed.
+
+    Args:
+        method_name (str): The name of the method to search for.
+        cls_name (str): The name of the class to search in.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, _, _ = search_manager.search_method_in_class(method_name, cls_name)
+    print(tool_result)
 
 
 @update_pwd_decorator
-def search_method_in_file(method_name: str, file_path: str) -> None:
-    # TODO:
-    pass
+def search_method_in_file(method_name: str, file_name: str) -> None:
+    """
+    Searches for a method with the given name in the specified file.
+    The method with its full body is printed.
+
+    Args:
+        method_name (str): The name of the method to search for.
+        file_name (str): The file name to search in, not the path, e.g., 'example.py'.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, _, _ = search_manager.search_method_in_file(method_name, file_name)
+    print(tool_result)
 
 
 @update_pwd_decorator
-def earch_code(code_content: str) -> None:
-    # TODO:
-    pass
+def search_code(code_content: str) -> None:
+    """
+    Searches for the given code content in the project.
+    The code content with its context is printed.
+
+    Args:
+        code_content (str): The code content to search for.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, _, _ = search_manager.search_code(code_content)
+    print(tool_result)
 
 
 @update_pwd_decorator
-def search_code_in_file(code_content: str, file_path: str) -> None:
-    # TODO:
-    pass
+def search_code_in_file(code_content: str, file_name: str) -> None:
+    """
+    Searches for the given code content in the specified file.
+    The code content with its context is printed.
+
+    Args:
+        code_content (str): The code content to search for.
+        file_name (str): The file name to search in, not the path, e.g., 'example.py'.
+    """
+    project_path = './'
+    search_manager = SearchManager(project_path)
+    tool_result, _, _ = search_manager.search_code_in_file(code_content, file_name)
+    print(tool_result)
 
 
 __all__ = [
@@ -1016,6 +1090,13 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
+    'search_class',
+    'search_class_in_file',
+    'search_method',
+    'search_method_in_class',
+    'search_method_in_file',
+    'search_code',
+    'search_code_in_file',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:

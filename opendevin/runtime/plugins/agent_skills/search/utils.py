@@ -1,5 +1,6 @@
 import glob
 import re
+import warnings
 from dataclasses import dataclass
 from os.path import join as pjoin
 from pathlib import Path
@@ -7,10 +8,8 @@ from pathlib import Path
 from tree_sitter import Node
 from tree_sitter_languages import get_language, get_parser
 
-if __package__ is None or __package__ == '':
-    pass
-else:
-    pass
+# tree_sitter is throwing a FutureWarning
+warnings.simplefilter('ignore', category=FutureWarning)
 
 
 def find_python_files(dir_path: str) -> list[str]:

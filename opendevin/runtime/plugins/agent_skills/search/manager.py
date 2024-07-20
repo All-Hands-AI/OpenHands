@@ -464,12 +464,12 @@ if __name__ == '__main__':
     import pprint
 
     sm = SearchManager('.')
-    # pprint.pprint(sm.search_class('SearchManager'))
+    print(sm.search_class('SearchManager'))
     # pprint.pprint(sm.search_class_in_file('SearchManager', 'manager.py'))
-    # pprint.pprint(sm.search_method('search_class'))
+    pprint.pprint(sm.search_method('search_class'))
     # pprint.pprint(sm.search_method_in_class('search_class', 'SearchManager'))
     # pprint.pprint(sm.search_method_in_file('search_class', 'manager.py'))
     # pprint.pprint(sm.search_code('for func_name in self.function_index:'))
-    pprint.pprint(
-        sm.search_code_in_file('for func_name in self.function_index:', 'manager.py')
-    )
+    # pprint.pprint(
+    #     sm.search_code_in_file('for func_name in self.function_index:', 'manager.py')
+    # )
