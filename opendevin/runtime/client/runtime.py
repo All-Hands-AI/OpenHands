@@ -88,7 +88,8 @@ class EventStreamRuntime(Runtime):
             mount_dir=config.workspace_mount_path,
             plugins=self.plugins,
         )
-        # Initialize the env vars
+        # MUST call super().ainit() to initialize both default env vars
+        # AND the ones in env vars!
         await super().ainit(env_vars)
 
     @staticmethod
