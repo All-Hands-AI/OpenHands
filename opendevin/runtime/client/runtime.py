@@ -81,7 +81,7 @@ class EventStreamRuntime(Runtime):
             # NOTE: You can need set DEBUG=true to update the source code
             # inside the container. This is useful when you want to test/debug the
             # latest code in the runtime docker container.
-            update_source_code=config.debug,
+            update_source_code=False,  # config.debug,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
@@ -130,21 +130,37 @@ class EventStreamRuntime(Runtime):
             else:
                 port_mapping = {f'{self._port}/tcp': self._port}
 
-            container = self.docker_client.containers.run(
-                self.container_image,
-                command=(
+            env_vars = {'PYTHONUNBUFFERED': '1'}
+            if config.debug:
+                env_vars['DEBUG'] = 'true'
+
+            # tobitege: for images without mamba, this should work:
+            # cmd = (
+            #     f'poetry run python -u -m opendevin.runtime.client.client {self._port} '
+            #     f'--working-dir {sandbox_workspace_dir} '
+            #     f'--plugins {plugin_names}'
+            # )
+
+            # ORIGINAL:
+            cmd = (
+                (
                     f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base '
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
                     f'--plugins {plugin_names}'
                 ),
+            )
+
+            container = self.docker_client.containers.run(
+                self.container_image,
+                command=cmd,
                 network_mode=network_mode,
                 ports=port_mapping,
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
-                environment={'DEBUG': 'true'} if config.debug else None,
+                environment=env_vars,
                 volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
             )
             logger.info(f'Container started. Server url: {self.api_url}')

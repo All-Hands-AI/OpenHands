@@ -58,7 +58,78 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
     logger.info(
         f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
     )
+
+    # Copy pyproject.toml to temp_dir
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
+    pyproject_path = os.path.join(project_root, 'pyproject.toml')
+    shutil.copy(pyproject_path, os.path.join(temp_dir, 'pyproject.toml'))
+    logger.info(f'pyproject.toml copied to {temp_dir}')
+
     return filename
+
+
+def _generate_dockerfile_nodejs(
+    base_image: str, source_code_dirname: str, skip_init: bool = False
+) -> str:
+    """Generate the Dockerfile content for a python-nodejs image for the eventstream runtime."""
+    dockerfile_content = f'FROM {base_image}\n'
+    if not skip_init:
+        # Set important ENV vars from the get go
+        # Otherwise poetry will not install the environment correctly
+        dockerfile_content += (
+            'ENV DEBIAN_FRONTEND=noninteractive '
+            'POETRY_NO_INTERACTION=1 '
+            'POETRY_VIRTUALENVS_IN_PROJECT=1 '
+            'POETRY_VIRTUALENVS_CREATE=1 '
+            'POETRY_CACHE_DIR=/tmp/poetry_cache\n'
+        )
+        # not sure if we need to set this in the sandbox? --tobitege
+        # ENV PYTHONPATH='/opendevin/code'
+
+        dockerfile_content += (
+            # Create a policy-rc.d script to prevent services from starting
+            "RUN echo '#!/bin/sh\\nexit 101' > /usr/sbin/policy-rc.d && chmod +x /usr/sbin/policy-rc.d \n"
+            # Install necessary packages and clean up
+            'RUN apt-get update && apt-get install -y apt-utils\n'
+            'RUN apt-get update && apt-get install -y sudo curl vim\\\n'
+            ' nano zip build-essential jq iproute2 &&\\\n'
+            ' apt-get clean && rm -rf /var/lib/apt/lists/*\n'
+            # symlink python3 to python
+            'RUN ln -s /usr/bin/python3 /usr/bin/python\n'
+            # Create necessary directories
+            'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
+        )
+    # Copy the project directory to the container
+    dockerfile_content += 'COPY project.tar.gz /opendevin\n'
+
+    # Copy pyproject.toml to the source code directory
+    dockerfile_content += 'COPY pyproject.toml /opendevin/code/\n'
+
+    # Remove /opendevin/code if it exists
+    dockerfile_content += (
+        'RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi\n'
+    )
+    # Unzip the tarball to /opendevin/code
+    dockerfile_content += (
+        'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
+    )
+
+    # Install agentskills and browser dependencies (update if needed)
+    dockerfile_content += (
+        f'RUN mv /opendevin/{source_code_dirname} /opendevin/code && cd /opendevin/code && \\\n'
+        '    poetry install --only main && \\\n'  # run main poetry install to install all dependencies!
+        '    poetry run pip install \\\n'
+        '    jupyterlab notebook jupyter_kernel_gateway flake8 \\\n'
+        '    python-docx PyPDF2 python-pptx pylatexenc openai \\\n'
+        '    python-dotenv toml termcolor pydantic python-docx pyyaml \\\n'
+        '    docker pexpect tenacity e2b \\\n'
+        '    browsergym minio playwright \n'
+        'RUN cd /opendevin/code && \\\n'
+        '    poetry run playwright install --with-deps chromium && \\\n'
+        '    rm -rf /root/.cache/pypoetry && \\\n'
+        '    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n'
+    )
+    return dockerfile_content
 
 
 def _generate_dockerfile(
@@ -68,9 +139,22 @@ def _generate_dockerfile(
 
     NOTE: This is only tested on debian yet.
     """
-    if skip_init:
-        dockerfile_content = f'FROM {base_image}\n'
-    else:
+
+    if 'python-nodejs' in base_image:
+        return _generate_dockerfile_nodejs(base_image, source_code_dirname, skip_init)
+
+    dockerfile_content = f'FROM {base_image}\n'
+    if not skip_init:
+        # Set important ENV vars from the get go
+        # Otherwise poetry will not install the environment correctly
+        dockerfile_content += (
+            'ENV DEBIAN_FRONTEND=noninteractive '
+            'POETRY_NO_INTERACTION=1 '
+            'POETRY_VIRTUALENVS_IN_PROJECT=1 '
+            'POETRY_VIRTUALENVS_CREATE=1 '
+            'POETRY_CACHE_DIR=/tmp/poetry_cache\n'
+        )
+
         # Ubuntu 22.x has libgl1-mesa-glx, but 24.x and above have libgl1!
         if 'ubuntu' in base_image and (
             base_image.endswith(':latest') or base_image.endswith(':24.04')
@@ -79,8 +163,7 @@ def _generate_dockerfile(
         else:
             LIBGL_MESA = 'libgl1-mesa-glx'
 
-        dockerfile_content = (
-            f'FROM {base_image}\n'
+        dockerfile_content += (
             # Install necessary packages and clean up in one layer
             f'RUN apt-get update && apt-get install -y wget sudo apt-utils {LIBGL_MESA} libasound2-plugins && \\\n'
             f'    apt-get clean && rm -rf /var/lib/apt/lists/*\n'
@@ -109,36 +192,20 @@ def _generate_dockerfile(
     dockerfile_content += (
         'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
     )
-    dockerfile_content += f'RUN mv /opendevin/{source_code_dirname} /opendevin/code\n'
 
-    # ALTERNATIVE, but maybe not complete? (toml error!)
+    # Install agentskills and browser dependencies (update if needed)
     dockerfile_content += (
-        'RUN cd /opendevin/code && '
-        '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
-        '/opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root\n'
-        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all pypi && \\\n'
-        'rm -rf /root/.cache/pypoetry && \\\n'
-        'apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n'
-    )
-
-    # THIS blows up the image by 13 GB!!!
-    # Install (or update) the dependencies
-    # dockerfile_content += (
-    #     'RUN cd /opendevin/code && \\\n'
-    #     '    /opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && \\\n'
-    #     '    /opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root && \\\n'
-    #     '    /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all pypi && \\\n'
-    #     '    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n'
-    # )
-
-    # For browser (update if needed)
-    dockerfile_content += (
-        'RUN apt-get update && \\\n'
-        '    cd /opendevin/code && \\\n'
-        '    /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \\\n'
-        '    /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \\\n'
-        '    apt-get clean && \\\n'
-        '    rm -rf /var/lib/apt/lists/*\n'
+        f'RUN mv /opendevin/{source_code_dirname} /opendevin/code && cd /opendevin/code \n'
+        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry run pip install \\\n'
+        '    jupyterlab notebook jupyter_kernel_gateway flake8 \\\n'
+        '    python-docx PyPDF2 python-pptx pylatexenc openai \n'
+        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry run pip install \\\n'
+        '    python-dotenv toml termcolor pydantic python-docx pyyaml \\\n'
+        '    docker pexpect tenacity e2b \\\n'
+        '    browsergym minio playwright \n'
+        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \\\n'
+        '    rm -rf /root/.cache/pypoetry && \\\n'
+        '    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*\n'
     )
     return dockerfile_content
 
@@ -217,6 +284,9 @@ def _get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
         repo = repo.replace('/', '___')
+        # Check if the base image already has the 'od_runtime' prefix
+        if repo.startswith('od_runtime'):
+            return f'{repo}:{tag}'
         return f'{prefix}:{repo}_tag_{tag}'
 
 

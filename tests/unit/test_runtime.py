@@ -40,6 +40,8 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
             # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
             container_image='ubuntu:22.04',
+            # this is an image with Python 3.11, NodeJS 21, poetry, pip already installed!
+            # container_image='od_runtime:nikolaik___python-nodejs_tag_python3.11-nodejs21',
             plugins=plugins,
         )
         await runtime.ainit()
