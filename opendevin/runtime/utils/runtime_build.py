@@ -156,6 +156,10 @@ def get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
             )
         # remove the 'od_runtime' prefix from the base_image
         return base_image.replace('od_runtime', 'od_runtime_dev')
+    elif 'od_runtime' in base_image:
+        # if the base image is a valid od_runtime image, we will use it as is
+        logger.info(f'Using existing od_runtime image [{base_image}]')
+        return base_image
     else:
         prefix = 'od_runtime'
         if ':' not in base_image:
@@ -187,7 +191,12 @@ def build_runtime_image(
     This is only used for **eventstream runtime**.
     """
     new_image_name = get_new_image_name(base_image)
-    logger.info(f'New image name: {new_image_name}')
+    if base_image == new_image_name:
+        logger.info(
+            f'Using existing od_runtime image [{base_image}]. Will NOT build a new image.'
+        )
+    else:
+        logger.info(f'New image name: {new_image_name}')
 
     # Ensure new_image_name contains a colon
     if ':' not in new_image_name:
