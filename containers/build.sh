@@ -27,13 +27,14 @@ echo "Tags: ${tags[@]}"
 
 if [[ "$image_name" == "opendevin" ]]; then
   dir="./containers/app"
-elif [[ "$image_name" == "runtime" ]]; then
+elif [[ "$image_name" == "od_runtime" ]]; then
   dir="./containers/runtime"
 else
   dir="./containers/$image_name"
 fi
 
-if [[ ! -f "$dir/Dockerfile" ]]; then
+if [[ (! -f "$dir/Dockerfile") && "$image_name" != "od_runtime" ]]; then
+  # Allow runtime to be built without a Dockerfile
   echo "No Dockerfile found"
   exit 1
 fi
