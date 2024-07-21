@@ -269,7 +269,7 @@ IMPORTANT TIPS:
             instruction += f'# Hints\n{instance.hints_text}\n\n'
         instruction += (
             'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-            'You DO NOT need to modify any existing test case files or add any new test cases. After making the required changes, you can exit. DO NOT perform any extra actions to try to test the changes.\n'
+            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         )
 
