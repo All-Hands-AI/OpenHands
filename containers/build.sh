@@ -46,6 +46,11 @@ if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
 
+# If $DOCKER_IMAGE_TAG is set, add it to the tags
+if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
+  tags+=("$DOCKER_IMAGE_TAG")
+fi
+
 DOCKER_REPOSITORY="$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE"
 DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase
 echo "Repo: $DOCKER_REPOSITORY"

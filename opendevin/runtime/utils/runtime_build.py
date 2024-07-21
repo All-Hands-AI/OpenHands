@@ -148,7 +148,7 @@ def _build_sandbox_image(
         raise e
 
 
-def _get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
+def get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
     if dev_mode:
         if 'od_runtime' not in base_image:
             raise ValueError(
@@ -186,7 +186,7 @@ def build_runtime_image(
 
     This is only used for **eventstream runtime**.
     """
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = get_new_image_name(base_image)
     logger.info(f'New image name: {new_image_name}')
 
     # Ensure new_image_name contains a colon
@@ -219,7 +219,7 @@ def build_runtime_image(
         # e.g., od_runtime:ubuntu_tag_latest -> od_runtime_dev:ubuntu_tag_latest
         logger.info('Image exists, but updating source code requested')
         base_image = new_image_name
-        new_image_name = _get_new_image_name(base_image, dev_mode=True)
+        new_image_name = get_new_image_name(base_image, dev_mode=True)
 
         skip_init = True  # since we only need to update the source code
     else:
@@ -270,9 +270,22 @@ if __name__ == '__main__':
         logger.info(
             f'Will prepare a build folder by copying the source code and generating the Dockerfile: {build_folder}'
         )
+        new_image_path = get_new_image_name(args.base_image)
         prep_docker_build_folder(
             build_folder, args.base_image, skip_init=args.update_source_code
         )
+        new_image_name, new_image_tag = new_image_path.split(':')
+        with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
+            file.write(
+                (
+                    f'DOCKER_IMAGE={new_image_name}\n'
+                    f'DOCKER_IMAGE_TAG={new_image_tag}\n'
+                )
+            )
+        logger.info(
+            f'`config.sh` is updated with the new image name [{new_image_name}] and tag [{new_image_tag}]'
+        )
+        logger.info(f'Dockerfile and source distribution are ready in {build_folder}')
     else:
         logger.info('Building image in a temporary folder')
         client = docker.from_env()
