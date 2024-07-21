@@ -27,6 +27,8 @@ echo "Tags: ${tags[@]}"
 
 if [[ "$image_name" == "opendevin" ]]; then
   dir="./containers/app"
+elif [[ "$image_name" == "runtime" ]]; then
+  dir="./containers/runtime"
 else
   dir="./containers/$image_name"
 fi
