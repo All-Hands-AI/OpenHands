@@ -102,7 +102,7 @@ jobs:
               if [ $i -eq $ATTEMPT_LIMIT ]; then
                 colima delete
               else
-                colima stop
+                colima stop -f
               fi
             fi
           done
