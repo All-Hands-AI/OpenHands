@@ -8,7 +8,6 @@ import docker
 import toml
 from jinja2 import Environment, FileSystemLoader
 
-
 import opendevin
 from opendevin.core.logger import opendevin_logger as logger
 
@@ -81,6 +80,27 @@ def _generate_dockerfile(
     return dockerfile_content
 
 
+def prep_docker_build_folder(
+    dir_path: str,
+    base_image: str,
+    skip_init: bool = False,
+):
+    """Prepares the docker build folder by copying the source code and generating the Dockerfile."""
+    source_code_dirname = _put_source_code_to_dir(dir_path)
+    dockerfile_content = _generate_dockerfile(
+        base_image, source_code_dirname, skip_init=skip_init
+    )
+    logger.info(
+        (
+            f'===== Dockerfile content =====\n'
+            f'{dockerfile_content}\n'
+            f'==============================='
+        )
+    )
+    with open(os.path.join(dir_path, 'Dockerfile'), 'w') as file:
+        file.write(dockerfile_content)
+
+
 def _build_sandbox_image(
     base_image: str,
     target_image_name: str,
@@ -89,26 +109,13 @@ def _build_sandbox_image(
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            source_code_dirname = _put_source_code_to_dir(temp_dir)
-            dockerfile_content = _generate_dockerfile(
-                base_image, source_code_dirname, skip_init=skip_init
-            )
             if skip_init:
                 logger.info(
                     f'Reusing existing od_sandbox image [{target_image_name}] but will update the source code in it.'
                 )
             else:
                 logger.info(f'Building agnostic sandbox image: {target_image_name}')
-            logger.info(
-                (
-                    f'===== Dockerfile content =====\n'
-                    f'{dockerfile_content}\n'
-                    f'==============================='
-                )
-            )
-            with open(f'{temp_dir}/Dockerfile', 'w') as file:
-                file.write(dockerfile_content)
-
+            prep_docker_build_folder(temp_dir, base_image, skip_init=skip_init)
             api_client = docker_client.api
             build_logs = api_client.build(
                 path=temp_dir,
@@ -250,15 +257,29 @@ def build_runtime_image(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_image', type=str, default='ubuntu:22.04')
-    parser.add_argument('--update_source_code', type=bool, default=False)
-    parser.add_argument('--save_to_local_store', type=bool, default=False)
+    parser.add_argument('--update_source_code', action='store_true')
+    parser.add_argument('--save_to_local_store', action='store_true')
+    parser.add_argument('--build_folder', type=str, default=None)
     args = parser.parse_args()
 
-    client = docker.from_env()
-    image_name = build_runtime_image(
-        args.base_image,
-        client,
-        update_source_code=args.update_source_code,
-        save_to_local_store=args.save_to_local_store,
-    )
-    print(f'\nBUILT Image: {image_name}\n')
+    if args.build_folder is not None:
+        build_folder = args.build_folder
+        assert os.path.exists(
+            build_folder
+        ), f'Build folder {build_folder} does not exist'
+        logger.info(
+            f'Will prepare a build folder by copying the source code and generating the Dockerfile: {build_folder}'
+        )
+        prep_docker_build_folder(
+            build_folder, args.base_image, skip_init=args.update_source_code
+        )
+    else:
+        logger.info('Building image in a temporary folder')
+        client = docker.from_env()
+        image_name = build_runtime_image(
+            args.base_image,
+            client,
+            update_source_code=args.update_source_code,
+            save_to_local_store=args.save_to_local_store,
+        )
+        print(f'\nBUILT Image: {image_name}\n')
