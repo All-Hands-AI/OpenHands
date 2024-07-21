@@ -118,7 +118,7 @@ def _generate_dockerfile(
         '/opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root\n'
         'RUN /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \\\n'
         'apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\\\n'
-        '/opendevin/miniforge3/bin/mamba clean --all'
+        '/opendevin/miniforge3/bin/mamba clean --all\n'
     )
 
     # For browser (update if needed)
