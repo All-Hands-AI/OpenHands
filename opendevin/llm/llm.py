@@ -27,6 +27,7 @@ from tenacity import (
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
+from opendevin.llm.messages import Message
 
 __all__ = ['LLM']
 
@@ -166,6 +167,9 @@ class LLM:
         """
         return self._completion
 
+    def get_response(self):
+        raise NotImplementedError('Method not implemented yet!')
+
     def _post_completion(self, response: str) -> None:
         """Post-process the completion response."""
         try:
@@ -189,7 +193,10 @@ class LLM:
             int: The number of tokens.
         """
         if isinstance(messages, list):
-            return litellm.token_counter(model=self.config.model, messages=messages)
+            text_messages = self.get_text_messages(messages)
+            return litellm.token_counter(
+                model=self.config.model, messages=text_messages
+            )
         elif isinstance(messages, str):
             return litellm.token_counter(model=self.config.model, text=messages)
 
@@ -255,7 +262,7 @@ class LLM:
     def __repr__(self):
         return str(self)
 
-    def is_over_token_limit(self, messages: list[dict]) -> bool:
+    def is_over_token_limit(self, messages: list[Message]) -> bool:
         """
         Estimates the token count of the given events using litellm tokenizer and returns True if over the max_input_tokens value.
 
@@ -270,8 +277,11 @@ class LLM:
         MAX_TOKEN_COUNT_PADDING = 512
         if not self.config.max_input_tokens:
             return False
-        token_count = (
-            litellm.token_counter(model=self.config.model, messages=messages)
-            + MAX_TOKEN_COUNT_PADDING
-        )
+        token_count = self.get_token_count(messages=messages) + MAX_TOKEN_COUNT_PADDING
         return token_count >= self.config.max_input_tokens
+
+    def get_text_messages(self, messages: list[Message]) -> list[dict]:
+        text_messages = []
+        for message in messages:
+            text_messages.append(message.message)
+        return text_messages

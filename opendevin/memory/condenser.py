@@ -1,6 +1,8 @@
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm.llm import LLM
+from opendevin.llm.messages import Message
 
+# from opendevin.events.action import AgentSummarizeAction
 from .prompts import (
     MESSAGE_SUMMARY_WARNING_FRAC,
     SUMMARY_PROMPT_SYSTEM,
@@ -32,15 +34,17 @@ class MemoryCondenser:
             # TODO If the llm fails with ContextWindowExceededError, we can try to condense the memory chunk by chunk
             raise
 
-    def _format_summary_history(self, message_history: list[dict]):
+    def _format_summary_history(self, message_history: list[dict]) -> str:
         # TODO use existing prompt formatters for this (eg ChatML)
         return '\n'.join([f'{m["role"]}: {m["content"]}' for m in message_history])
 
-    def summarize_messages(self, message_sequence_to_summarize: list[dict]):
+    def summarize_messages(self, message_sequence_to_summarize: list[Message]):
         """Summarize a message sequence using LLM"""
         context_window = self.llm.config.max_input_tokens
         summary_prompt = SUMMARY_PROMPT_SYSTEM
-        summary_input = self._format_summary_history(message_sequence_to_summarize)
+        summary_input = self._format_summary_history(
+            self.llm.get_text_messages(message_sequence_to_summarize)
+        )
         summary_input_tkns = self.llm.get_token_count(summary_input)
         if context_window is None:
             raise ValueError('context_window should not be None')

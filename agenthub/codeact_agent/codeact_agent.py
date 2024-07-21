@@ -32,6 +32,7 @@ from opendevin.events.observation import (
 from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
+from opendevin.llm.messages import Message
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.memory.history import ShortTermHistory
 from opendevin.runtime.plugins import (
@@ -142,7 +143,8 @@ class CodeActAgent(Agent):
             )
         return ''
 
-    def get_action_message(self, action: Action) -> dict[str, str] | None:
+    def get_action_message(self, action: Action) -> Message | None:
+        message = None
         if (
             isinstance(action, AgentDelegateAction)
             or isinstance(action, CmdRunAction)
@@ -150,13 +152,17 @@ class CodeActAgent(Agent):
             or isinstance(action, MessageAction)
             or isinstance(action, AgentSummarizeAction)
         ):
-            return {
+            message = {
                 'role': 'user' if action.source == 'user' else 'assistant',
                 'content': self.action_to_str(action),
             }
-        return None
+        if message:
+            return Message(message=message, condensable=True, event_id=action.id)
+        else:
+            return None
 
-    def get_observation_message(self, obs: Observation) -> dict[str, str] | None:
+    def get_observation_message(self, obs: Observation) -> Message | None:
+        message = None
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
             content = 'OBSERVATION:\n' + truncate_content(
@@ -165,7 +171,7 @@ class CodeActAgent(Agent):
             content += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            return {'role': 'user', 'content': content}
+            message = {'role': 'user', 'content': content}
         elif isinstance(obs, IPythonRunCellObservation):
             content = 'OBSERVATION:\n' + obs.content
             # replace base64 images with a placeholder
@@ -177,13 +183,16 @@ class CodeActAgent(Agent):
                     )
             content = '\n'.join(splitted)
             content = truncate_content(content, max_message_chars)
-            return {'role': 'user', 'content': content}
+            message = {'role': 'user', 'content': content}
         elif isinstance(obs, AgentDelegateObservation):
             content = 'OBSERVATION:\n' + truncate_content(
                 str(obs.outputs), max_message_chars
             )
-            return {'role': 'user', 'content': content}
-        return None
+            message = {'role': 'user', 'content': content}
+        if message:
+            return Message(message=message, condensable=True, event_id=obs.id)
+        else:
+            return None
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -208,19 +217,20 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
+        # TODO: Move this logic to LLM
         response = None
         # give it multiple chances to get a response
         # if it fails, we'll try to condense memory
         attempt = 0
         while not response and attempt < self.llm.config.attempts_to_condense:
             # prepare what we want to send to the LLM
-            messages: list[dict[str, str]] = self._get_messages(state)
+            messages: list[Message] = self._get_messages(state)
             print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
             try:
                 if self.llm.is_over_token_limit(messages):
                     raise TokenLimitExceededError()
                 response = self.llm.completion(
-                    messages=messages,
+                    messages=self.llm.get_text_messages(messages),
                     stop=[
                         '</execute_ipython>',
                         '</execute_bash>',
@@ -241,7 +251,6 @@ class CodeActAgent(Agent):
                     print('step() failed with an unrecognized exception:')
                     raise ContextWindowLimitExceededError()
 
-            # TODO: Manage the response for exception.
         return self.action_parser.parse(response)
 
     def condense(
@@ -322,7 +331,7 @@ class CodeActAgent(Agent):
                 f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
             )
 
-        summary_action = self.memory_condenser.summarize_messages(
+        summary_action: AgentSummarizeAction = self.memory_condenser.summarize_messages(
             message_sequence_to_summarize=message_sequence_to_summarize
         )
         summary_action.last_summarized_event_id = last_summarized_event_id
@@ -333,10 +342,16 @@ class CodeActAgent(Agent):
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
-    def _get_messages(self, state: State) -> list[dict[str, str]]:
+    def _get_messages(self, state: State) -> list[Message]:
         messages = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
+            Message(
+                message={'role': 'system', 'content': self.system_message},
+                condensable=False,
+            ),
+            Message(
+                message={'role': 'user', 'content': self.in_context_example},
+                condensable=False,
+            ),
         ]
 
         for event in state.history.get_events():
@@ -361,12 +376,12 @@ class CodeActAgent(Agent):
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
+            (m for m in reversed(messages) if m.message['role'] == 'user'), None
         )
 
         # add a reminder to the prompt
         if latest_user_message:
-            latest_user_message['content'] += (
+            latest_user_message.message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>'
             )
 
