@@ -9,9 +9,9 @@ import toml
 
 from opendevin.runtime.utils.runtime_build import (
     _generate_dockerfile,
-    _get_new_image_name,
     _put_source_code_to_dir,
     build_runtime_image,
+    get_new_image_name,
 )
 
 RUNTIME_IMAGE_PREFIX = 'od_runtime'
@@ -95,44 +95,44 @@ def test_generate_dockerfile_skip_init():
 
 def test_get_new_image_name_eventstream():
     base_image = 'debian:11'
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = get_new_image_name(base_image)
     assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'
 
     base_image = 'ubuntu:22.04'
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = get_new_image_name(base_image)
     assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_22.04'
 
     base_image = 'ubuntu'
-    new_image_name = _get_new_image_name(base_image)
+    new_image_name = get_new_image_name(base_image)
     assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_latest'
 
 
 def test_get_new_image_name_eventstream_dev_mode():
     base_image = f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'
-    new_image_name = _get_new_image_name(base_image, dev_mode=True)
+    new_image_name = get_new_image_name(base_image, dev_mode=True)
     assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:debian_tag_11'
 
     base_image = f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_22.04'
-    new_image_name = _get_new_image_name(base_image, dev_mode=True)
+    new_image_name = get_new_image_name(base_image, dev_mode=True)
     assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:ubuntu_tag_22.04'
 
     base_image = f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_latest'
-    new_image_name = _get_new_image_name(base_image, dev_mode=True)
+    new_image_name = get_new_image_name(base_image, dev_mode=True)
     assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:ubuntu_tag_latest'
 
 
 def test_get_new_image_name_eventstream_dev_invalid_base_image():
     with pytest.raises(ValueError):
         base_image = 'debian:11'
-        _get_new_image_name(base_image, dev_mode=True)
+        get_new_image_name(base_image, dev_mode=True)
 
     with pytest.raises(ValueError):
         base_image = 'ubuntu:22.04'
-        _get_new_image_name(base_image, dev_mode=True)
+        get_new_image_name(base_image, dev_mode=True)
 
     with pytest.raises(ValueError):
         base_image = 'ubuntu:latest'
-        _get_new_image_name(base_image, dev_mode=True)
+        get_new_image_name(base_image, dev_mode=True)
 
 
 @patch('opendevin.runtime.utils.runtime_build._build_sandbox_image')
