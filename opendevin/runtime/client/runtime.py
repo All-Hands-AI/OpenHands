@@ -81,14 +81,15 @@ class EventStreamRuntime(Runtime):
             # NOTE: You can need set DEBUG=true to update the source code
             # inside the container. This is useful when you want to test/debug the
             # latest code in the runtime docker container.
-            update_source_code=config.debug,
+            update_source_code=self.sandbox_config.update_source_code,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=config.workspace_mount_path,
             plugins=self.plugins,
         )
-        # Initialize the env vars
+        # MUST call super().ainit() to initialize both default env vars
+        # AND the ones in env vars!
         await super().ainit(env_vars)
 
     @staticmethod
