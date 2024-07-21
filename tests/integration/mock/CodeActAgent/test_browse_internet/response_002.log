@@ -1,5 +1,0 @@
-To accomplish our goal of retrieving the ultimate answer to life from localhost:8000, I need to start by accessing the content on that page. Here's my thought process and action:
-
-In order to accomplish my goal, I need to navigate to the specified URL using the goto action.
-
-```goto("http://localhost:8000"

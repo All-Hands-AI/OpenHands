@@ -2,7 +2,7 @@
   "action": "reject",
   "args": {
     "outputs": {
-      "reason": "Not a valid git repository."
+      "reason": "Not a git repository."
     }
   }
 }
