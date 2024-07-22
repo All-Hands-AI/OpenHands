@@ -34,7 +34,7 @@ async def run_agent_controller(
     agent: Agent,
     task_str: str,
     max_iterations: int,
-    max_budget_per_task: float,
+    max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
     sandbox: Sandbox | None = None,
