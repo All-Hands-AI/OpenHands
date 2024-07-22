@@ -68,9 +68,8 @@ def _generate_dockerfile(
 
     NOTE: This is only tested on debian yet.
     """
-    if skip_init:
-        dockerfile_content = f'FROM {base_image}\n'
-    else:
+    dockerfile_content = f'FROM {base_image}\n'
+    if not skip_init:
         # Ubuntu 22.x has libgl1-mesa-glx, but 24.x and above have libgl1!
         if 'ubuntu' in base_image and (
             base_image.endswith(':latest') or base_image.endswith(':24.04')
@@ -78,25 +77,30 @@ def _generate_dockerfile(
             LIBGL_MESA = 'libgl1'
         else:
             LIBGL_MESA = 'libgl1-mesa-glx'
-
-        dockerfile_content = (
-            f'FROM {base_image}\n'
+        dockerfile_content += (
+            'ENV DEBIAN_FRONTEND=noninteractive '
+            'POETRY_NO_INTERACTION=1 '
+            'POETRY_VIRTUALENVS_IN_PROJECT=1 '
+            'POETRY_VIRTUALENVS_CREATE=1 '
+            'POETRY_CACHE_DIR=/tmp/poetry_cache\n'
+            'SHELL ["/bin/bash", "-c"]\n'
+        )
+        dockerfile_content += (
             # Install necessary packages and clean up in one layer
-            f'RUN apt-get update && apt-get install -y wget sudo apt-utils {LIBGL_MESA} libasound2-plugins && \\\n'
+            f'RUN apt-get update && apt-get install -y wget sudo apt-utils {LIBGL_MESA} libasound2-plugins &&\\\n'
             f'    apt-get clean && rm -rf /var/lib/apt/lists/*\n'
             # Create necessary directories
-            f'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs && \\\n'
+            f'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs &&\\\n'
             f'    echo "" > /opendevin/bash.bashrc\n'
             # Install Miniforge3
             f'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
-            f'        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
-            f'        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
-            f'        rm Miniforge3.sh && \\\n'
-            f'        chmod -R g+w /opendevin/miniforge3 && \\\n'
-            f'        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
+            f'        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" &&\\\n'
+            f'        bash Miniforge3.sh -b -p /opendevin/miniforge3 &&\\\n'
+            f'        rm Miniforge3.sh &&\\\n'
+            f'        chmod -R g+w /opendevin/miniforge3 &&\\\n'
+            f'        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge";\\\n'
             f'    fi\n'
-            'RUN /opendevin/miniforge3/bin/mamba install python=3.11 -y\n'
-            'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y\n'
+            'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y\n'
         )
 
     # Copy the project directory to the container
@@ -105,30 +109,30 @@ def _generate_dockerfile(
     dockerfile_content += (
         'RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi\n'
     )
-    # Unzip the tarball to /opendevin/code
+    # Unzip the tarball to /opendevin/code and install dependencies via poetry
     dockerfile_content += (
         'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
-    )
-    dockerfile_content += f'RUN mv /opendevin/{source_code_dirname} /opendevin/code\n'
-
-    # ALTERNATIVE, but maybe not complete? (toml error!)
-    dockerfile_content += (
-        'RUN cd /opendevin/code && '
-        '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
-        '/opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root\n'
-        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \\\n'
-        'apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\\\n'
-        '/opendevin/miniforge3/bin/mamba clean --all\n'
+        f'RUN mv /opendevin/{source_code_dirname} /opendevin/code\n'
+        'WORKDIR /opendevin/code\n'
+        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11\n'
+        # Activate the opendevin virtual environment
+        'RUN source /opendevin/code/.venv/bin/activate\n'
+        'RUN /opendevin/miniforge3/bin/mamba run poetry install --only main --no-interaction --no-root\n'  # -n base
     )
 
     # For browser (update if needed)
     dockerfile_content += (
         'RUN apt-get update && \\\n'
-        '    cd /opendevin/code && \\\n'
-        '    /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \\\n'
-        '    /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \\\n'
-        '    apt-get clean && \\\n'
-        '    rm -rf /var/lib/apt/lists/*\n'
+        '  /opendevin/miniforge3/bin/mamba run -n base poetry run pip install --upgrade pip &&\\\n'
+        '  /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright'
+        ' jupyterlab notebook jupyter_kernel_gateway flake8 '
+        ' python-docx PyPDF2 python-pptx pylatexenc openai opencv_python'
+        ' diskcache grep-ast tree-sitter pathspec'
+        ' python-dotenv toml pydantic python-docx pyyaml '
+        ' docker pexpect tenacity e2b minio &&\\\n'
+        '  /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium &&\\\n'
+        '  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\\\n'
+        '  /opendevin/miniforge3/bin/mamba clean --all\n'
     )
     return dockerfile_content
 
