@@ -138,7 +138,7 @@ jobs:
       - name: Load Runtime image and run runtime tests
         run: |
           # Load the Docker image and capture the output
-          output=$(docker load -i /tmp/runtime_image_amd64.tar)
+          output=$(docker load -i /tmp/od_runtime_image_amd64.tar)
 
           # Extract the first image name from the output
           image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
