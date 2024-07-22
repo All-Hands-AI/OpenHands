@@ -130,6 +130,10 @@ class EventStreamRuntime(Runtime):
             else:
                 port_mapping = {f'{self._port}/tcp': self._port}
 
+            env_vars = {'PYTHONUNBUFFERED': '1'}
+            if config.debug:
+                env_vars['DEBUG'] = 'true'
+
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -144,7 +148,7 @@ class EventStreamRuntime(Runtime):
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
-                environment={'DEBUG': 'true'} if config.debug else None,
+                environment=env_vars,
                 volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
             )
             logger.info(f'Container started. Server url: {self.api_url}')
@@ -153,6 +157,10 @@ class EventStreamRuntime(Runtime):
             logger.error('Failed to start container')
             logger.exception(e)
             await self.close(close_client=False)
+            await asyncio.sleep(2)
+            if 'Ports are not available' in str(e):
+                self._port = find_available_tcp_port()
+                self.api_url = f'http://localhost:{self._port}'
             raise e
 
     async def _ensure_session(self):

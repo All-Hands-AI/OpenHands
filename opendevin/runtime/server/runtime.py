@@ -79,8 +79,8 @@ class ServerRuntime(Runtime):
         self.browser: BrowserEnv | None = None
         self._initialization_event = Event()
 
-    async def ainit(self):
-        await super().ainit()
+    async def ainit(self, env_vars: dict[str, str] | None = None):
+        await super().ainit(env_vars)
         if self.sandbox is not None and hasattr(self.sandbox, 'ainit'):
             logger.info('ServerRuntime: Initializing sandbox...')
             try:
@@ -98,29 +98,12 @@ class ServerRuntime(Runtime):
         await self._initialization_event.wait()
 
     async def close(self):
-        if (
-            hasattr(self, 'browser')
-            and self.browser is not None
-            and hasattr(self.browser, 'close')
-            and callable(self.browser.close)
-        ):
-            try:
-                self.browser.close()
-            except Exception as e:
-                logger.exception(f'Error closing browser: {e}')
+        if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
+            await self.sandbox.close()
+        if hasattr(self, 'browser') and self.browser is not None:
+            self.browser.close()
 
-        if (
-            hasattr(self, 'sandbox')
-            and self.sandbox is not None
-            and hasattr(self.sandbox, 'close')
-            and callable(self.sandbox.close)
-        ):
-            try:
-                await self.sandbox.close()
-            except Exception as e:
-                logger.exception(f'Error closing sandbox: {e}')
-
-    async def init_sandbox_plugins(self, plugins: list[PluginRequirement]):
+    async def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         await self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(

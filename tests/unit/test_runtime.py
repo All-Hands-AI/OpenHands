@@ -20,6 +20,11 @@ from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.server.runtime import ServerRuntime
 
 
+@pytest.fixture(autouse=True)
+def print_method_name(request):
+    print('\n########################################################################')
+
+
 @pytest.fixture
 def temp_dir(monkeypatch):
     # get a temporary directory
