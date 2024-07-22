@@ -125,7 +125,6 @@ def run_test_case(test_cases_dir, workspace_dir, request):
         else:
             os.makedirs(os.path.join(agent_dir, 'workspace'))
         agents_ref = {
-            'monologue_agent': 'MonologueAgent',
             'codeact_agent': 'CodeActAgent',
         }
         process = subprocess.Popen(
