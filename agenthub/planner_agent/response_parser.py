@@ -6,7 +6,7 @@ from opendevin.events.action import (
 from opendevin.events.serialization.action import action_from_dict
 
 
-class MonologueResponseParser(ResponseParser):
+class PlannerResponseParser(ResponseParser):
     def __init__(self):
         super().__init__()
 

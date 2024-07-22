@@ -25,7 +25,7 @@ Si vous utilisez Windows et que vous rencontrez des problèmes, consultez notre 
 ### Symptômes
 
 ```bash
-Erreur lors de la création du contrôleur. Veuillez vérifier que Docker est en cours d'exécution et visitez `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` pour plus d'informations sur le débogage.
+Erreur lors de la création du contrôleur. Veuillez vérifier que Docker est en cours d'exécution et visitez `https://docs.all-hands.dev/modules/usage/troubleshooting` pour plus d'informations sur le débogage.
 ```
 
 ```bash

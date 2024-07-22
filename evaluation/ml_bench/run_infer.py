@@ -25,7 +25,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
@@ -40,7 +39,6 @@ from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -67,7 +65,7 @@ ID2CONDA = {
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
