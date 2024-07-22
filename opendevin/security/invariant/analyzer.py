@@ -110,7 +110,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         if isinstance(event, Observation):
             element = parse_element(self.trace, event)
             self.trace.extend(element)
-            self.input.extend([e.dict() for e in element])  # type: ignore [call-overload]
+            self.input.extend([e.model_dump(exclude_none=True) for e in element])  # type: ignore [call-overload]
         else:
             logger.info('Invariant skipping element: event')
         self.print_trace()
@@ -147,7 +147,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
-        input = [e.dict() for e in new_elements]  # type: ignore [call-overload]
+        input = [e.model_dump(exclude_none=True) for e in new_elements]  # type: ignore [call-overload]
         self.trace.extend(new_elements)
         result, err = self.monitor.check(self.input, input)
         self.input.extend(input)

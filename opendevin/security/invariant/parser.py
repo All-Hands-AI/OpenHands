@@ -65,12 +65,10 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
         )
         inv_trace.append(Message(role='assistant', content=action.thought))
         inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-        # inv_trace.append({"role": "assistant", "content": action.thought, "tool_calls": [tool_call]})
     elif type(action) == AgentFinishAction:
         function = Function(name='agent_finish', arguments={'outputs': action.outputs})
         inv_trace.append(Message(role='assistant', content=action.thought))
         inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-        # inv_trace.append({"role": "assistant", "content": action.thought, "tool_calls": [tool_call]})
     elif type(action) == CmdRunAction:
         function = Function(
             name='cmd_run',
