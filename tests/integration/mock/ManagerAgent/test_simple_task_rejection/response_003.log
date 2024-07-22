@@ -1,8 +1,8 @@
+```json
 {
   "action": "reject",
   "args": {
-    "outputs": {
-      "reason": "Not a git repository."
-    }
+    "reason": "Not a valid git repository."
   }
 }
+```
