@@ -87,7 +87,7 @@ jobs:
           brew install docker
           colima delete
           # Attempt to start Colima
-          ATTEMPT_LIMIT=3
+          ATTEMPT_LIMIT=4
 
           start_colima() {
             colima start --network-address --arch x86_64 --cpu=1 --memory=1
@@ -99,8 +99,8 @@ jobs:
               break
             else
               echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
-              if [ $i -eq $ATTEMPT_LIMIT ]; then
-                colima delete
+              if [ $i -eq $(($ATTEMPT_LIMIT - 1)) ]; then
+                yes | colima delete
               else
                 colima stop -f
               fi
