@@ -3499,13 +3499,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.41.24"
+version = "1.41.25"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.41.24-py3-none-any.whl", hash = "sha256:e20047ee2789cddb704e7f27b2c123ce95093287a3c32a4e3d95daf751d71014"},
-    {file = "litellm-1.41.24.tar.gz", hash = "sha256:fba8668d17830b6444c74a7bc2e22c2dcfbb1283a847e86c430a52d9ee94a8ec"},
+    {file = "litellm-1.41.25-py3-none-any.whl", hash = "sha256:80ef35f141402be4ef106a9c720169f6f613ff47df717ab3d1b8ba845c2a5b38"},
+    {file = "litellm-1.41.25.tar.gz", hash = "sha256:f6f000b8e666b51914436c26659d4a91d67b350bcc44e47b3837d3b8f0e1640d"},
 ]
 
 [package.dependencies]
@@ -5059,13 +5059,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.36.0"
+version = "1.36.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.36.0-py3-none-any.whl", hash = "sha256:82b74ded1fe2ea94abb19a007178bc143675f1b6903cebd63e2968d654bb0a6f"},
-    {file = "openai-1.36.0.tar.gz", hash = "sha256:a124baf0e1657d6156e12248642f88489cd030be8655b69bc1c13eb50e71a93d"},
+    {file = "openai-1.36.1-py3-none-any.whl", hash = "sha256:d399b9d476dbbc167aceaac6bc6ed0b2e2bb6c9e189c7f7047f822743ae62e64"},
+    {file = "openai-1.36.1.tar.gz", hash = "sha256:41be9e0302e95dba8a9374b885c5cb1cec2202816a70b98736fee25a2cadd1f2"},
 ]
 
 [package.dependencies]
@@ -6237,20 +6237,20 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.2.2"
+version = "8.3.1"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.2.2-py3-none-any.whl", hash = "sha256:c434598117762e2bd304e526244f67bf66bbd7b5d6cf22138be51ff661980343"},
-    {file = "pytest-8.2.2.tar.gz", hash = "sha256:de4bb8104e201939ccdc688b27a89a7be2079b22e2bd2b07f806b6ba71117977"},
+    {file = "pytest-8.3.1-py3-none-any.whl", hash = "sha256:e9600ccf4f563976e2c99fa02c7624ab938296551f280835ee6516df8bc4ae8c"},
+    {file = "pytest-8.3.1.tar.gz", hash = "sha256:7e8e5c5abd6e93cb1cc151f23e57adc31fcf8cfd2a3ff2da63e23f732de35db6"},
 ]
 
 [package.dependencies]
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=1.5,<2.0"
+pluggy = ">=1.5,<2"
 
 [package.extras]
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
