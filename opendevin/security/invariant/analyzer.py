@@ -29,9 +29,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
     trace: list[TraceElement]
     input: list[dict]
     container_name: str = 'opendevin-invariant-server'
-    image_name: str = 'invariant-server'
+    image_name: str = 'ghcr.io/invariantlabs-ai/server:opendevin'
     api_host: str = 'http://localhost'
-    timeout: int = 120
+    timeout: int = 180
     settings: dict = {}
 
     def __init__(
