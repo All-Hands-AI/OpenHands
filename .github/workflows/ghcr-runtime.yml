@@ -132,7 +132,7 @@ jobs:
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: sandbox-docker-image-amd64
+          name: od_runtime-docker-image-amd64
           path: /tmp/
 
       - name: Load Runtime image and run runtime tests
