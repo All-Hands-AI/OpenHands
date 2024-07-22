@@ -1,10 +1,8 @@
-The typos in `bad.txt` have been corrected. The file now reads:
+Now, let's correct the second typo: "No mor typos!" should be "No more typos!".
 
-```
-This is a stupid typo.
-Really?
-No more typos!
-Enjoy!
-```
-
-If there are no further changes needed, the task is complete.
+<execute_ipython>
+edit_file_by_replace(
+    "bad.txt",
+    to_replace="No mor typos!",
+    new_content="No more typos!"
+)
