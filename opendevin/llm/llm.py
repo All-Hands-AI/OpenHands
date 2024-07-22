@@ -12,6 +12,7 @@ from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
     ContentPolicyViolationError,
+    ContextWindowExceededError,
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
@@ -24,10 +25,25 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from opendevin.controller.state.state import State
+from opendevin.core.exceptions import (
+    ContextWindowLimitExceededError,
+    SummarizeError,
+    TokenLimitExceededError,
+)
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
+from opendevin.events.action import (
+    AgentSummarizeAction,
+)
 from opendevin.llm.messages import Message
+
+from .prompts import (
+    MESSAGE_SUMMARY_WARNING_FRAC,
+    SUMMARY_PROMPT_SYSTEM,
+    parse_summary_response,
+)
 
 __all__ = ['LLM']
 
@@ -57,6 +73,7 @@ class LLM:
         self.config = copy.deepcopy(config)
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
+        # self.memory_condenser = MemoryCondenser()
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -167,8 +184,32 @@ class LLM:
         """
         return self._completion
 
-    def get_response(self):
-        raise NotImplementedError('Method not implemented yet!')
+    def get_response(self, messages: list[Message], state: State):
+        try:
+            if self.is_over_token_limit(messages):
+                raise TokenLimitExceededError()
+            response = self.completion(
+                messages=self.get_text_messages(messages),
+                stop=[
+                    '</execute_ipython>',
+                    '</execute_bash>',
+                    '</execute_browse>',
+                ],
+                temperature=0.0,
+            )
+            return response
+        except (ContextWindowExceededError, TokenLimitExceededError):
+            # Handle the specific exception
+            print('An error occurred: ')
+            # If we got a context alert, try trimming the messages length, then try again
+            if self.is_over_token_limit(messages):
+                # A separate call to run a summarizer
+                self.condense(messages=messages, state=state)
+                # Try step again
+            else:
+                print('step() failed with an unrecognized exception:')
+                raise ContextWindowLimitExceededError()
+        return None
 
     def _post_completion(self, response: str) -> None:
         """Post-process the completion response."""
@@ -285,3 +326,135 @@ class LLM:
         for message in messages:
             text_messages.append(message.message)
         return text_messages
+
+    def condense(
+        self,
+        messages: list[Message],
+        state: State,
+    ):
+        # Start past the system message, and example messages.,
+        # and collect messages for summarization until we reach the desired truncation token fraction (eg 50%)
+        # Do not allow truncation  for in-context examples of function calling
+        token_counts = [
+            self.get_token_count([message])
+            for message in messages
+            if message.condensable
+        ]
+        message_buffer_token_count = sum(token_counts)  # no system and example message
+
+        desired_token_count_to_summarize = int(
+            message_buffer_token_count * self.config.message_summary_trunc_tokens_frac
+        )
+
+        candidate_messages_to_summarize = []
+        tokens_so_far = 0
+        for message in messages:
+            if message.condensable:
+                candidate_messages_to_summarize.append(message)
+                tokens_so_far += self.get_token_count([message])
+            if tokens_so_far > desired_token_count_to_summarize:
+                last_summarized_event_id = message.event_id
+                break
+
+        # TODO: Add functionality for preserving last N messages
+        # MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST = 3
+        # if preserve_last_N_messages:
+        #     candidate_messages_to_summarize = candidate_messages_to_summarize[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
+        #     token_counts = token_counts[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
+
+        logger.debug(
+            f'message_summary_trunc_tokens_frac={self.config.message_summary_trunc_tokens_frac}'
+        )
+        # logger.debug(f'MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}')
+        logger.debug(f'token_counts={token_counts}')
+        logger.debug(f'message_buffer_token_count={message_buffer_token_count}')
+        logger.debug(
+            f'desired_token_count_to_summarize={desired_token_count_to_summarize}'
+        )
+        logger.debug(
+            f'len(candidate_messages_to_summarize)={len(candidate_messages_to_summarize)}'
+        )
+
+        if len(candidate_messages_to_summarize) == 0:
+            raise SummarizeError(
+                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(messages)}]"
+            )
+
+        # TODO: Try to make an assistant message come after the cutoff
+
+        message_sequence_to_summarize = candidate_messages_to_summarize
+
+        if len(message_sequence_to_summarize) <= 1:
+            # This prevents a potential infinite loop of summarizing the same message over and over
+            raise SummarizeError(
+                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(message_sequence_to_summarize)} <= 1]"
+            )
+        else:
+            print(
+                f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
+            )
+
+        summary_action: AgentSummarizeAction = self.summarize_messages(
+            message_sequence_to_summarize=message_sequence_to_summarize
+        )
+        summary_action.last_summarized_event_id = (
+            last_summarized_event_id if last_summarized_event_id else -1
+        )
+        print(f'Got summary: {summary_action}')
+        state.history.add_summary(summary_action)
+        print('Added summary to history')
+
+    def _format_summary_history(self, message_history: list[dict]) -> str:
+        # TODO use existing prompt formatters for this (eg ChatML)
+        return '\n'.join([f'{m["role"]}: {m["content"]}' for m in message_history])
+
+    def summarize_messages(self, message_sequence_to_summarize: list[Message]):
+        """Summarize a message sequence using LLM"""
+        context_window = self.config.max_input_tokens
+        summary_prompt = SUMMARY_PROMPT_SYSTEM
+        summary_input = self._format_summary_history(
+            self.get_text_messages(message_sequence_to_summarize)
+        )
+        summary_input_tkns = self.get_token_count(summary_input)
+        if context_window is None:
+            raise ValueError('context_window should not be None')
+        if summary_input_tkns > MESSAGE_SUMMARY_WARNING_FRAC * context_window:
+            trunc_ratio = (
+                MESSAGE_SUMMARY_WARNING_FRAC * context_window / summary_input_tkns
+            ) * 0.8  # For good measure...
+            cutoff = int(len(message_sequence_to_summarize) * trunc_ratio)
+            summary_input = str(
+                [
+                    self.summarize_messages(
+                        message_sequence_to_summarize=message_sequence_to_summarize[
+                            :cutoff
+                        ]
+                    )
+                ]
+                + message_sequence_to_summarize[cutoff:]
+            )
+
+        message_sequence = []
+        message_sequence.append({'role': 'system', 'content': summary_prompt})
+
+        # TODO: Check if this feature is needed
+        # if insert_acknowledgement_assistant_message:
+        #     message_sequence.append(Message(user_id=dummy_user_id, agent_id=dummy_agent_id, role="assistant", text=MESSAGE_SUMMARY_REQUEST_ACK))
+
+        message_sequence.append({'role': 'user', 'content': summary_input})
+
+        response = self.completion(
+            messages=message_sequence,
+            stop=[
+                '</execute_ipython>',
+                '</execute_bash>',
+                '</execute_browse>',
+            ],
+            temperature=0.0,
+        )
+
+        print(f'summarize_messages gpt reply: {response.choices[0]}')
+
+        action_response = response['choices'][0]['message']['content']
+        action = parse_summary_response(action_response)
+        return action

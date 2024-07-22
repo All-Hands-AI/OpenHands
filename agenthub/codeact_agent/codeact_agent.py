@@ -1,5 +1,3 @@
-from litellm.exceptions import ContextWindowExceededError
-
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -10,11 +8,6 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.exceptions import (
-    ContextWindowLimitExceededError,
-    SummarizeError,
-    TokenLimitExceededError,
-)
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -33,8 +26,6 @@ from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.llm.messages import Message
-from opendevin.memory.condenser import MemoryCondenser
-from opendevin.memory.history import ShortTermHistory
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -119,7 +110,6 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.memory_condenser = MemoryCondenser(llm)
         self.reset()
 
     def action_to_str(self, action: Action) -> str:
@@ -217,7 +207,6 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
-        # TODO: Move this logic to LLM
         response = None
         # give it multiple chances to get a response
         # if it fails, we'll try to condense memory
@@ -226,118 +215,10 @@ class CodeActAgent(Agent):
             # prepare what we want to send to the LLM
             messages: list[Message] = self._get_messages(state)
             print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
-            try:
-                if self.llm.is_over_token_limit(messages):
-                    raise TokenLimitExceededError()
-                response = self.llm.completion(
-                    messages=self.llm.get_text_messages(messages),
-                    stop=[
-                        '</execute_ipython>',
-                        '</execute_bash>',
-                        '</execute_browse>',
-                    ],
-                    temperature=0.0,
-                )
-            except (ContextWindowExceededError, TokenLimitExceededError):
-                # Handle the specific exception
-                print('An error occurred: ')
-                attempt += 1
-                # If we got a context alert, try trimming the messages length, then try again
-                if self.llm.is_over_token_limit(messages):
-                    # A separate call to run a summarizer
-                    self.condense(state=state)
-                    # Try step again
-                else:
-                    print('step() failed with an unrecognized exception:')
-                    raise ContextWindowLimitExceededError()
+            response = self.llm.get_response(messages=messages, state=state)
+            attempt += 1
 
         return self.action_parser.parse(response)
-
-    def condense(
-        self,
-        state: State,
-    ):
-        # Start past the system message, and example messages.,
-        # and collect messages for summarization until we reach the desired truncation token fraction (eg 50%)
-        # Do not allow truncation  for in-context examples of function calling
-        history: ShortTermHistory = state.history
-        messages = self._get_messages(state=state)
-        token_counts = [self.llm.get_token_count([message]) for message in messages]
-        message_buffer_token_count = sum(
-            token_counts[2:]
-        )  # no system and example message
-
-        desired_token_count_to_summarize = int(
-            message_buffer_token_count
-            * self.llm.config.message_summary_trunc_tokens_frac
-        )
-
-        candidate_messages_to_summarize = []
-        tokens_so_far = 0
-        for event in history.get_events():
-            if event.id >= history.last_summarized_event_id:
-                if isinstance(event, AgentSummarizeAction):
-                    action_message = self.get_action_message(event)
-                    if action_message:
-                        candidate_messages_to_summarize.append(action_message)
-                        tokens_so_far += self.llm.get_token_count([action_message])
-                else:
-                    if isinstance(event, Action):
-                        message = self.get_action_message(event)
-                    elif isinstance(event, Observation):
-                        message = self.get_observation_message(event)
-                    else:
-                        raise ValueError(f'Unknown event type: {type(event)}')
-                    if message:
-                        candidate_messages_to_summarize.append(message)
-                        tokens_so_far += self.llm.get_token_count([message])
-            if tokens_so_far > desired_token_count_to_summarize:
-                last_summarized_event_id = event.id
-                break
-
-        # TODO: Add functionality for preserving last N messages
-        # MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST = 3
-        # if preserve_last_N_messages:
-        #     candidate_messages_to_summarize = candidate_messages_to_summarize[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
-        #     token_counts = token_counts[:-MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST]
-
-        print(
-            f'message_summary_trunc_tokens_frac={self.llm.config.message_summary_trunc_tokens_frac}'
-        )
-        # print(f'MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST={MESSAGE_SUMMARY_TRUNC_KEEP_N_LAST}')
-        print(f'token_counts={token_counts}')
-        print(f'message_buffer_token_count={message_buffer_token_count}')
-        print(f'desired_token_count_to_summarize={desired_token_count_to_summarize}')
-        print(
-            f'len(candidate_messages_to_summarize)={len(candidate_messages_to_summarize)}'
-        )
-
-        if len(candidate_messages_to_summarize) == 0:
-            raise SummarizeError(
-                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(messages)}]"
-            )
-
-        # TODO: Try to make an assistant message come after the cutoff
-
-        message_sequence_to_summarize = candidate_messages_to_summarize
-
-        if len(message_sequence_to_summarize) <= 1:
-            # This prevents a potential infinite loop of summarizing the same message over and over
-            raise SummarizeError(
-                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(message_sequence_to_summarize)} <= 1]"
-            )
-        else:
-            print(
-                f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
-            )
-
-        summary_action: AgentSummarizeAction = self.memory_condenser.summarize_messages(
-            message_sequence_to_summarize=message_sequence_to_summarize
-        )
-        summary_action.last_summarized_event_id = last_summarized_event_id
-        print(f'Got summary: {summary_action}')
-        history.add_summary(summary_action)
-        print('Added summary to history')
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
