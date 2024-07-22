@@ -1,4 +1,4 @@
-name: Build and Test Runtime Image
+name: Build Publish and Test Runtime Image
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
