@@ -94,8 +94,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self.api_server = f'{self.api_host}:{self.api_port}'
         self.client = InvariantClient(self.api_server, self.sid)
         if policy is None:
-            policy, err = self.client.Policy.get_template()
-            if err is not None:
+            policy, _ = self.client.Policy.get_template()
+            if policy is None:
                 policy = ''
         self.monitor = self.client.Monitor.from_string(policy)
 
