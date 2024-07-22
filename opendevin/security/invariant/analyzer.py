@@ -21,7 +21,6 @@ from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.security.analyzer import SecurityAnalyzer
 from opendevin.security.invariant.client import InvariantClient
 from opendevin.security.invariant.parser import TraceElement, parse_element
-from opendevin.security.invariant.policies import DEFAULT_INVARIANT_POLICY
 
 
 class InvariantAnalyzer(SecurityAnalyzer):
@@ -46,8 +45,6 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self.trace = []
         self.input = []
         self.settings = {}
-        if policy is None:
-            policy = DEFAULT_INVARIANT_POLICY
         if sid is None:
             self.sid = str(uuid.uuid4())
 
@@ -96,6 +93,10 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
         self.api_server = f'{self.api_host}:{self.api_port}'
         self.client = InvariantClient(self.api_server, self.sid)
+        if policy is None:
+            policy, err = self.client.Policy.get_template()
+            if err is not None:
+                policy = ''
         self.monitor = self.client.Monitor.from_string(policy)
 
     async def close(self):

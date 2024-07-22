@@ -66,6 +66,17 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
+        def get_template(self) -> Tuple[Optional[str], Optional[Exception]]:
+            try:
+                response = requests.get(
+                    f'{self.server}/policy/template',
+                    timeout=60,
+                )
+                response.raise_for_status()
+                return response.json(), None
+            except (ConnectionError, Timeout, HTTPError) as err:
+                return None, err
+
         def from_string(self, rule: str):
             policy_id, err = self._create_policy(rule)
             if err:
