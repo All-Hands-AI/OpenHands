@@ -275,6 +275,10 @@ class AppConfig(metaclass=Singleton):
     def set_agent_config(self, value: AgentConfig, name='agent'):
         self.agents[name] = value
 
+    def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
+        """Get a map of agent names to llm configs."""
+        return {name: self.get_llm_config_from_agent(name) for name in self.agents}
+
     def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
         llm_config_name = agent_config.llm_config
