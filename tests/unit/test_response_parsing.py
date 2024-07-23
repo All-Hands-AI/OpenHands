@@ -1,9 +1,6 @@
 import pytest
 
 from agenthub.micro.agent import parse_response as parse_response_micro
-from agenthub.monologue_agent.utils.prompts import (
-    parse_action_response as parse_response_monologue,
-)
 from agenthub.planner_agent.prompt import parse_response as parse_response_planner
 from opendevin.core.exceptions import LLMResponseError
 from opendevin.core.utils.json import loads as custom_loads
@@ -15,7 +12,7 @@ from opendevin.events.action import (
 
 @pytest.mark.parametrize(
     'parse_response_module',
-    [parse_response_micro, parse_response_planner, parse_response_monologue],
+    [parse_response_micro, parse_response_planner],
 )
 def test_parse_single_complete_json(parse_response_module):
     input_response = """
@@ -35,7 +32,7 @@ def test_parse_single_complete_json(parse_response_module):
 
 @pytest.mark.parametrize(
     'parse_response_module',
-    [parse_response_micro, parse_response_planner, parse_response_monologue],
+    [parse_response_micro, parse_response_planner],
 )
 def test_parse_json_with_surrounding_text(parse_response_module):
     input_response = """
@@ -58,7 +55,7 @@ def test_parse_json_with_surrounding_text(parse_response_module):
 
 @pytest.mark.parametrize(
     'parse_response_module',
-    [parse_response_micro, parse_response_planner, parse_response_monologue],
+    [parse_response_micro, parse_response_planner],
 )
 def test_parse_first_of_multiple_jsons(parse_response_module):
     input_response = """

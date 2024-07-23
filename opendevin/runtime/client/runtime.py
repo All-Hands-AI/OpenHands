@@ -81,14 +81,15 @@ class EventStreamRuntime(Runtime):
             # NOTE: You can need set DEBUG=true to update the source code
             # inside the container. This is useful when you want to test/debug the
             # latest code in the runtime docker container.
-            update_source_code=config.debug,
+            update_source_code=self.sandbox_config.update_source_code,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=config.workspace_mount_path,
             plugins=self.plugins,
         )
-        # Initialize the env vars
+        # MUST call super().ainit() to initialize both default env vars
+        # AND the ones in env vars!
         await super().ainit(env_vars)
 
     @staticmethod
@@ -118,6 +119,17 @@ class EventStreamRuntime(Runtime):
             if plugins is None:
                 plugins = []
             plugin_names = ' '.join([plugin.name for plugin in plugins])
+
+            network_mode: str | None = None
+            port_mapping: dict[str, int] | None = None
+            if self.sandbox_config.use_host_network:
+                network_mode = 'host'
+                logger.warn(
+                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
+                )
+            else:
+                port_mapping = {f'{self._port}/tcp': self._port}
+
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -127,7 +139,8 @@ class EventStreamRuntime(Runtime):
                     f'--working-dir {sandbox_workspace_dir} '
                     f'--plugins {plugin_names}'
                 ),
-                network_mode='host',
+                network_mode=network_mode,
+                ports=port_mapping,
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
@@ -148,7 +161,7 @@ class EventStreamRuntime(Runtime):
         return self.session
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
+        stop=tenacity.stop_after_attempt(10),
         wait=tenacity.wait_exponential(multiplier=2, min=4, max=600),
     )
     async def _wait_until_alive(self):

@@ -40,7 +40,9 @@ from opendevin.events.observation import (
 from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.server.session import session_manager
+from opendevin.server.session import SessionManager
+
+session_manager = SessionManager(config)
 
 app = FastAPI()
 app.add_middleware(

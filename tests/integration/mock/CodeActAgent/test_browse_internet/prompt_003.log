@@ -8,7 +8,7 @@ possible next action to accomplish your goal. Your answer will be interpreted
 and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
-Certainly! I'll browse localhost:8000 and retrieve the ultimate answer to life for you.. I should start with: Get the content on "http://localhost:8000"
+Sure! Let me browse the server's homepage at http://localhost:8000 to find the ultimate answer to life.. I should start with: Get the content on "http://localhost:8000"
 
 # Action Space
 

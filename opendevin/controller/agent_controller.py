@@ -5,7 +5,7 @@ from typing import Optional, Type
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.controller.stuck import StuckDetector
-from opendevin.core.config import config
+from opendevin.core.config import LLMConfig
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
@@ -38,8 +38,6 @@ from opendevin.events.observation import (
 )
 from opendevin.llm.llm import LLM
 
-MAX_ITERATIONS = config.max_iterations
-MAX_BUDGET_PER_TASK = config.max_budget_per_task
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
@@ -53,6 +51,7 @@ class AgentController:
     event_stream: EventStream
     state: State
     confirmation_mode: bool
+    agent_to_llm_config: dict[str, LLMConfig]
     agent_task: Optional[asyncio.Task] = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
@@ -62,27 +61,33 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
+        max_iterations: int,
+        max_budget_per_task: float | None = None,
+        agent_to_llm_config: dict[str, LLMConfig] | None = None,
         sid: str = 'default',
-        max_iterations: int | None = MAX_ITERATIONS,
         confirmation_mode: bool = False,
-        max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         initial_state: State | None = None,
         is_delegate: bool = False,
+        headless_mode: bool = True,
     ):
         """Initializes a new instance of the AgentController class.
 
         Args:
             agent: The agent instance to control.
             event_stream: The event stream to publish events to.
-            sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
+            agent_to_llm_config: A dictionary mapping agent names to LLM configurations in the case that
+                we delegate to a different agent.
+            sid: The session ID of the agent.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
+            headless_mode: Whether the agent is run in headless mode.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
+        self.headless_mode = headless_mode
 
         # subscribe to the event stream
         self.event_stream = event_stream
@@ -91,16 +96,13 @@ class AgentController:
         )
 
         # state from the previous session, state from a parent agent, or a fresh state
-        max_iterations = (
-            max_iterations if max_iterations is not None else MAX_ITERATIONS
-        )
         self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
             confirmation_mode=confirmation_mode,
         )
-
         self.max_budget_per_task = max_budget_per_task
+        self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -116,10 +118,11 @@ class AgentController:
 
     def update_state_before_step(self):
         self.state.iteration += 1
+        self.state.local_iteration += 1
 
     async def update_state_after_step(self):
         # update metrics especially for cost
-        self.state.metrics = self.agent.llm.metrics
+        self.state.local_metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
         """This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
@@ -170,9 +173,11 @@ class AgentController:
             self.state.root_task.set_subtask_state(event.task_id, event.state)
         elif isinstance(event, AgentFinishAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(event, AgentRejectAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if (
@@ -247,15 +252,16 @@ class AgentController:
 
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
-        llm_config = config.get_llm_config_from_agent(action.agent)
+        llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config)
         delegate_agent = agent_cls(llm=llm)
         state = State(
             inputs=action.inputs or {},
-            iteration=0,
+            local_iteration=0,
+            iteration=self.state.iteration,
             max_iterations=self.state.max_iterations,
             delegate_level=self.state.delegate_level + 1,
-            # metrics should be shared between parent and child
+            # global metrics should be shared between parent and child
             metrics=self.state.metrics,
         )
         logger.info(
@@ -267,12 +273,13 @@ class AgentController:
             event_stream=self.event_stream,
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
+            agent_to_llm_config=self.agent_to_llm_config,
             initial_state=state,
             is_delegate=True,
         )
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
-    async def _step(self):
+    async def _step(self) -> None:
         if self.get_agent_state() != AgentState.RUNNING:
             await asyncio.sleep(1)
             return
@@ -291,6 +298,9 @@ class AgentController:
             logger.debug(f'[Agent Controller {self.id}] Delegate step done')
             assert self.delegate is not None
             delegate_state = self.delegate.get_agent_state()
+            logger.debug(
+                f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
+            )
             if delegate_state == AgentState.ERROR:
                 # close the delegate upon error
                 await self.delegate.close()
@@ -305,6 +315,9 @@ class AgentController:
                 )
                 # retrieve delegate result
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
+
+                # update iteration that shall be shared across agents
+                self.state.iteration = self.delegate.state.iteration
 
                 # close delegate controller: we must close the delegate controller before adding new events
                 await self.delegate.close()
@@ -328,7 +341,7 @@ class AgentController:
             return
 
         logger.info(
-            f'{self.agent.name} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
+            f'{self.agent.name} LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
 
@@ -340,10 +353,18 @@ class AgentController:
                 self.state.traffic_control_state = TrafficControlState.NORMAL
             else:
                 self.state.traffic_control_state = TrafficControlState.THROTTLING
-                await self.report_error(
-                    f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                )
-                await self.set_agent_state_to(AgentState.PAUSED)
+                if self.headless_mode:
+                    # set to ERROR state if running in headless mode
+                    # since user cannot resume on the web interface
+                    await self.report_error(
+                        'Agent reached maximum number of iterations in headless mode, task stopped.'
+                    )
+                    await self.set_agent_state_to(AgentState.ERROR)
+                else:
+                    await self.report_error(
+                        f'Agent reached maximum number of iterations, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                    )
+                    await self.set_agent_state_to(AgentState.PAUSED)
                 return
         elif self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
@@ -402,7 +423,7 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
-        max_iterations: int = MAX_ITERATIONS,
+        max_iterations: int,
         confirmation_mode: bool = False,
     ):
         # state from the previous session, state from a parent agent, or a new state

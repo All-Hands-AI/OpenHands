@@ -277,5 +277,8 @@ class LLM:
     def __repr__(self):
         return str(self)
 
+    def reset(self):
+        self.metrics = Metrics()
+
 
 MessageContent = list[dict[str, str | dict[str, str]]]

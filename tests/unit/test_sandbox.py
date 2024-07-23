@@ -26,7 +26,6 @@ def create_docker_box_from_app_config(
         workspace_mount_path=path,
         sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
         cache_dir=config.cache_dir,
-        use_host_network=config.use_host_network,
         run_as_devin=True,
         ssh_hostname=config.ssh_hostname,
         ssh_password=config.ssh_password,
@@ -260,7 +259,7 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
             """
 [Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
 ERRORS:
-hello.py:1:3: E999 IndentationError: unexpected indent
+/workspace/test/hello.py:1:3: E999 IndentationError: unexpected indent
 [This is how your edit would have looked if applied]
 -------------------------------------------------
 (this is the beginning of the file)

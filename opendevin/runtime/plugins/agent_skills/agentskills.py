@@ -21,7 +21,6 @@ import functools
 import os
 import re
 import shutil
-import subprocess
 import tempfile
 from inspect import signature
 from typing import Optional
@@ -32,9 +31,15 @@ from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
+if __package__ is None or __package__ == '':
+    from aider import Linter
+else:
+    from .aider import Linter
+
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
 WINDOW = 100
+
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
@@ -124,53 +129,12 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     Returns:
         tuple[str, Optional[int]]: (lint_error, first_error_line_number)
     """
-    if file_path.endswith('.py'):
-        # Define the flake8 command with selected error codes
-        def _command_fn(executable):
-            return [
-                executable,
-                '--isolated',
-                '--select=F821,F822,F831,E112,E113,E999,E902',
-                file_path,
-            ]
-
-        if os.path.exists('/opendevin/miniforge3/bin/flake8'):
-            # when this function is called from the docker sandbox,
-            # the flake8 command is available at /opendevin/miniforge3/bin/flake8
-            executable = '/opendevin/miniforge3/bin/flake8'
-        else:
-            executable = 'flake8'
-
-        command = _command_fn(executable)
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-        if result.returncode == 0:
-            # Linting successful. No issues found.
-            return None, None
-
-        # Extract the line number from the first error message
-        error_message = result.stdout.decode().strip()
-        lint_error = 'ERRORS:\n' + error_message
-        first_error_line = None
-        for line in error_message.splitlines(True):
-            if line.strip():
-                # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
-                parts = line.split(':')
-                if len(parts) >= 2:
-                    try:
-                        first_error_line = int(parts[1])
-                        break
-                    except ValueError:
-                        # Not a valid line number, continue to the next line
-                        continue
-
-        return lint_error, first_error_line
-
-    # Not a python file, skip linting
-    return None, None
+    linter = Linter(root=os.getcwd())
+    lint_error = linter.lint(file_path)
+    if not lint_error:
+        # Linting successful. No issues found.
+        return None, None
+    return 'ERRORS:\n' + lint_error.text, lint_error.lines[0]
 
 
 def _print_window(file_path, targeted_line, window, return_str=False):
@@ -641,7 +605,6 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file_by_replace` will only replace the *first* matching occurrences.
 
     For example, given a file "/workspace/example.txt" with the following content:
     ```
@@ -686,11 +649,19 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     if to_replace.strip() == '':
         raise ValueError('`to_replace` must not be empty.')
 
+    if to_replace == new_content:
+        raise ValueError('`to_replace` and `new_content` must be different.')
+
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
     # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`
     with open(file_name, 'r') as file:
         file_content = file.read()
+
+    if file_content.count(to_replace) > 1:
+        raise ValueError(
+            '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
+        )
 
     start = file_content.find(to_replace)
     if start != -1:
