@@ -19,9 +19,11 @@ function Browser(): JSX.Element {
     setEditableUrl(e.target.value);
   };
 
-  const handleUrlBlur = () => {
-    dispatch(setUrl(editableUrl));
-  };
+  const handleURLBar = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      dispatch(setUrl(editableUrl));
+    }
+  }
 
   const imgSrc =
     screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
@@ -35,7 +37,7 @@ function Browser(): JSX.Element {
           type="text"
           value={editableUrl}
           onChange={handleUrlChange}
-          onBlur={handleUrlBlur}
+          onKeyDown={handleURLBar}
           className="w-full bg-transparent border-none outline-none text-neutral-400"
         />
       </div>
