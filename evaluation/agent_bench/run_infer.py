@@ -116,6 +116,7 @@ def process_instance(
             agent,
             instruction,
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=FAKE_RESPONSES[agent.__class__.__name__],
             sandbox=sandbox,
             sid=inst_id,
