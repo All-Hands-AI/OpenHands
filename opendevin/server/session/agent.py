@@ -4,7 +4,7 @@ from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import SandboxConfig
+from opendevin.core.config import LLMConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.stream import EventStream
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
@@ -40,6 +40,8 @@ class AgentSession:
         confirmation_mode: bool,
         security_analyzer: str,
         max_iterations: int,
+        max_budget_per_task: float | None = None,
+        agent_to_llm_config: dict[str, LLMConfig] | None = None,
     ):
         """Starts the agent session.
 
@@ -52,7 +54,13 @@ class AgentSession:
             )
         await self._create_security_analyzer(security_analyzer)
         await self._create_runtime(runtime_name, sandbox_config)
-        await self._create_controller(agent, confirmation_mode, max_iterations)
+        await self._create_controller(
+            agent,
+            confirmation_mode,
+            max_iterations,
+            max_budget_per_task=max_budget_per_task,
+            agent_to_llm_config=agent_to_llm_config,
+        )
 
     async def close(self):
         if self._closed:
@@ -86,7 +94,12 @@ class AgentSession:
         await self.runtime.ainit()
 
     async def _create_controller(
-        self, agent: Agent, confirmation_mode: bool, max_iterations: int
+        self,
+        agent: Agent,
+        confirmation_mode: bool,
+        max_iterations: int,
+        max_budget_per_task: float | None = None,
+        agent_to_llm_config: dict[str, LLMConfig] | None = None,
     ):
         """Creates an AgentController instance."""
         if self.controller is not None:
@@ -112,6 +125,8 @@ class AgentSession:
             event_stream=self.event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
+            max_budget_per_task=max_budget_per_task,
+            agent_to_llm_config=agent_to_llm_config,
             confirmation_mode=confirmation_mode,
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
@@ -119,7 +134,9 @@ class AgentSession:
         )
         try:
             agent_state = State.restore_from_session(self.sid)
-            self.controller.set_initial_state(agent_state)
+            self.controller.set_initial_state(
+                agent_state, max_iterations, confirmation_mode
+            )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             print('Error restoring state', e)

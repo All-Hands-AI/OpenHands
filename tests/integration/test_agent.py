@@ -21,6 +21,8 @@ from opendevin.llm.llm import LLM
 workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
 workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
+max_iterations = 15
+max_budget_per_task = 15
 
 print('\nPaths used:')
 print(f'workspace_base: {workspace_base}')
@@ -30,7 +32,7 @@ print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 
 def get_number_of_prompts(test_name: str):
     mock_dir = os.path.join(
-        os.environ.get('SCRIPT_DIR'), 'mock', os.environ.get('DEFAULT_AGENT'), test_name
+        os.environ['SCRIPT_DIR'], 'mock', os.environ['DEFAULT_AGENT'], test_name
     )
     prompt_files = [file for file in os.listdir(mock_dir) if file.startswith('prompt_')]
     return len(prompt_files)
@@ -70,7 +72,7 @@ def validate_final_state(final_state: State | None, test_name: str):
     os.getenv('DEFAULT_AGENT') == 'ManagerAgent',
     reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
-def test_write_simple_script(current_test_name) -> None:
+def test_write_simple_script(current_test_name: str) -> None:
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     args = parse_arguments()
 
@@ -78,7 +80,9 @@ def test_write_simple_script(current_test_name) -> None:
     agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
 
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state, current_test_name)
 
@@ -116,7 +120,7 @@ def test_write_simple_script(current_test_name) -> None:
     os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
-def test_edits(current_test_name):
+def test_edits(current_test_name: str):
     args = parse_arguments()
     # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
@@ -133,7 +137,9 @@ def test_edits(current_test_name):
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state, current_test_name)
 
@@ -157,7 +163,7 @@ Enjoy!
     os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
-def test_ipython(current_test_name):
+def test_ipython(current_test_name: str):
     args = parse_arguments()
 
     # Create the agent
@@ -166,7 +172,9 @@ def test_ipython(current_test_name):
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state, current_test_name)
 
@@ -190,7 +198,7 @@ def test_ipython(current_test_name):
     os.getenv('SANDBOX_BOX_TYPE') == 'local',
     reason='FIXME: local sandbox does not capture stderr',
 )
-def test_simple_task_rejection(current_test_name):
+def test_simple_task_rejection(current_test_name: str):
     args = parse_arguments()
 
     # Create the agent
@@ -199,7 +207,9 @@ def test_simple_task_rejection(current_test_name):
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_state: State | None = asyncio.run(run_agent_controller(agent, task))
+    final_state: State | None = asyncio.run(
+        run_agent_controller(agent, task, max_iterations, max_budget_per_task)
+    )
     validate_final_state(final_state, current_test_name)
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
@@ -213,7 +223,7 @@ def test_simple_task_rejection(current_test_name):
     os.getenv('SANDBOX_BOX_TYPE') != 'ssh',
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
-def test_ipython_module(current_test_name):
+def test_ipython_module(current_test_name: str):
     args = parse_arguments()
 
     # Create the agent
@@ -222,7 +232,9 @@ def test_ipython_module(current_test_name):
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state, current_test_name)
 
@@ -252,7 +264,7 @@ def test_ipython_module(current_test_name):
     and os.getenv('SANDBOX_BOX_TYPE', '').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
-def test_browse_internet(http_server, current_test_name):
+def test_browse_internet(http_server, current_test_name: str):
     args = parse_arguments()
 
     # Create the agent
@@ -261,7 +273,9 @@ def test_browse_internet(http_server, current_test_name):
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_agent_controller(agent, task, exit_on_message=True)
+        run_agent_controller(
+            agent, task, max_iterations, max_budget_per_task, exit_on_message=True
+        )
     )
     validate_final_state(final_state, current_test_name)
 

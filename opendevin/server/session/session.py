@@ -110,6 +110,8 @@ class Session:
                 confirmation_mode=confirmation_mode,
                 security_analyzer=security_analyzer,
                 max_iterations=max_iterations,
+                max_budget_per_task=self.config.max_budget_per_task,
+                agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')

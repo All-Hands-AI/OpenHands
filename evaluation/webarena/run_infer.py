@@ -82,6 +82,7 @@ def process_instance(
             agent,
             'PLACEHOLDER_GOAL',
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             runtime_tools_config=runtime_tools_config,
             sandbox=get_sandbox(),
             sid=env_id,
