@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.8.0"
+version = "0.8.1"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
@@ -32,11 +32,13 @@ python-multipart = "*"
 boto3 = "*"
 minio = "^7.2.7"
 gevent = "^24.2.1"
-pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
+pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
 zope-interface = "6.4.post2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
+grep-ast = "0.3.2"
+tree-sitter = "0.21.3"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -48,8 +50,8 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.5.2"
-mypy = "1.10.1"
+ruff = "0.5.4"
+mypy = "1.11.0"
 pre-commit = "3.7.1"
 
 [tool.poetry.group.test.dependencies]
@@ -57,12 +59,18 @@ pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
+flake8 = "*"
+openai = "*"
+python-docx = "*"
+PyPDF2 = "*"
+pylatexenc = "*"
+python-pptx = "*"
+opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -96,7 +104,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

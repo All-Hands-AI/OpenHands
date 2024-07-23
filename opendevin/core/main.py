@@ -33,13 +33,14 @@ def read_task_from_stdin() -> str:
 async def run_agent_controller(
     agent: Agent,
     task_str: str,
-    max_iterations: int | None = None,
+    max_iterations: int,
     max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
     sandbox: Sandbox | None = None,
     runtime_tools_config: dict | None = None,
     sid: str | None = None,
+    headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -49,10 +50,11 @@ async def run_agent_controller(
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
         sandbox: An optional sandbox to run the agent in.
+        headless_mode: Whether the agent is run in headless mode.
     """
     # Logging
     logger.info(
-        f'Running agent {agent.name}, model {agent.llm.model_name}, with task: "{task_str}"'
+        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
     )
 
     # set up the event stream
@@ -73,13 +75,17 @@ async def run_agent_controller(
         agent=agent,
         max_iterations=max_iterations,
         max_budget_per_task=max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
+        headless_mode=headless_mode,
     )
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime = runtime_cls(event_stream=event_stream, sandbox=sandbox)
+    runtime = runtime_cls(
+        sandbox_config=config.sandbox, event_stream=event_stream, sandbox=sandbox
+    )
     await runtime.ainit()
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
@@ -163,7 +169,7 @@ if __name__ == '__main__':
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
-    llm = LLM(llm_config=config.get_llm_config_from_agent(args.agent_cls))
+    llm = LLM(config=config.get_llm_config_from_agent(args.agent_cls))
 
     # Create the agent
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)

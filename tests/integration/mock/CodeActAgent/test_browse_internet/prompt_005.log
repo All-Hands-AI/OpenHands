@@ -58,7 +58,6 @@ edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
     Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file_by_replace` will only replace the *first* matching occurrences.
     For example, given a file "/workspace/example.txt" with the following content:
     ```
     line 1
@@ -405,12 +404,12 @@ Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me fo
 
 
 <execute_browse>
-Certainly! I'll browse localhost:8000 and retrieve the ultimate answer to life for you.. I should start with: Get the content on "http://localhost:8000"
+Sure! Let me browse the server's homepage at http://localhost:8000 to find the ultimate answer to life.. I should start with: Get the content on "http://localhost:8000"
 </execute_browse>
 
 ----------
 
 OBSERVATION:
-{'content': 'The ultimate answer to life, the universe, and everything is: OpenDevin is all you need!'}
+{'content': 'The answer to life, the universe, and everything is: OpenDevin is all you need!'}
 
-ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>

@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.sandbox import Sandbox
@@ -25,24 +25,28 @@ from opendevin.runtime.sandbox import Sandbox
 
 
 class LocalBox(Sandbox):
-    def __init__(self, timeout: int = config.sandbox.timeout):
-        os.makedirs(config.workspace_base, exist_ok=True)
-        self.timeout = timeout
+    def __init__(
+        self,
+        config: SandboxConfig,
+        workspace_base: str,
+    ):
+        self.config = config
+        os.makedirs(workspace_base, exist_ok=True)
+        self.workspace_base = workspace_base
         atexit.register(self.cleanup)
-        super().__init__()
+        super().__init__(config)
 
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
         try:
             completed_process = subprocess.run(
                 cmd,
                 shell=True,
                 text=True,
                 capture_output=True,
-                timeout=timeout,
-                cwd=config.workspace_base,
+                timeout=self.config.timeout,
+                cwd=self.workspace_base,
                 env=self._env,
             )
             return completed_process.returncode, completed_process.stdout.strip()
@@ -55,7 +59,7 @@ class LocalBox(Sandbox):
             f'mkdir -p {sandbox_dest}',
             shell=True,
             text=True,
-            cwd=config.workspace_base,
+            cwd=self.workspace_base,
             env=self._env,
         )
         if res.returncode != 0:
@@ -66,7 +70,7 @@ class LocalBox(Sandbox):
                 f'cp -r {host_src} {sandbox_dest}',
                 shell=True,
                 text=True,
-                cwd=config.workspace_base,
+                cwd=self.workspace_base,
                 env=self._env,
             )
             if res.returncode != 0:
@@ -78,7 +82,7 @@ class LocalBox(Sandbox):
                 f'cp {host_src} {sandbox_dest}',
                 shell=True,
                 text=True,
-                cwd=config.workspace_base,
+                cwd=self.workspace_base,
                 env=self._env,
             )
             if res.returncode != 0:
@@ -93,11 +97,11 @@ class LocalBox(Sandbox):
         self.close()
 
     def get_working_directory(self):
-        return config.workspace_base
+        return self.workspace_base
 
 
 if __name__ == '__main__':
-    local_box = LocalBox()
+    local_box = LocalBox(SandboxConfig(), '/tmp/opendevin')
     sys.stdout.flush()
     try:
         while True:

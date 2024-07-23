@@ -33,7 +33,7 @@
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
-  <a href="https://opendevin.github.io/OpenDevin/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
+  <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?style=for-the-badge" alt="Evaluation Benchmark"></a>
 </div>
 <hr>
@@ -71,7 +71,7 @@ docker run -it \
 > By default, this command pulls the `latest` tag, which represents the most recent release of OpenDevin. You have other options as well:
 > - For a specific release version, use `ghcr.io/opendevin/opendevin:<OpenDevin_version>` (replace <OpenDevin_version> with the desired version number).
 > - For the most up-to-date development version, use `ghcr.io/opendevin/opendevin:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
-> 
+>
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
@@ -82,12 +82,12 @@ the `Settings` button (gear icon) in the UI. If the required `Model` does not ex
 
 For the development workflow, see [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
 
-Are you having trouble? Check out our [Troubleshooting Guide](https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting).
+Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
 
 ## 🚀 Documentation
 
 To learn more about the project, and for tips on using OpenDevin,
-**check out our [documentation](https://opendevin.github.io/OpenDevin/modules/usage/intro)**.
+**check out our [documentation](https://docs.all-hands.dev/modules/usage/intro)**.
 
 There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
 troubleshooting resources, and advanced configuration options.
