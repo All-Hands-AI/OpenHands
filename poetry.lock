@@ -878,41 +878,40 @@ files = [
 
 [[package]]
 name = "chroma-hnswlib"
-version = "0.7.5"
+version = "0.7.6"
 description = "Chromas fork of hnswlib"
 optional = false
 python-versions = "*"
 files = [
-    {file = "chroma_hnswlib-0.7.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:624ab09491a9bf2523ad54d8fdf8e868a706814373534eeb1f0d8195db03be6c"},
-    {file = "chroma_hnswlib-0.7.5-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b838b4f231bbf0e62b89552f2814eebbc3e17173abe50cb547c4c4aadbf62f6c"},
-    {file = "chroma_hnswlib-0.7.5-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c5f234e67632a33f75d8f6cb39f457fb7d10d16fdb48ba52f55a8983ac59cb4f"},
-    {file = "chroma_hnswlib-0.7.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bf54240944a0487d7aefb1338b6ea74f784aa888c41c6f1e96b66e24a40d37cd"},
-    {file = "chroma_hnswlib-0.7.5-cp310-cp310-win_amd64.whl", hash = "sha256:49fec3f01adc829104ed428b7d4362382092d481e01456f3f46040af5aa044ee"},
-    {file = "chroma_hnswlib-0.7.5-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:18cdbbf93c5b4855f2a050808976f5d261b36055b392a2df632a574410ffefaa"},
-    {file = "chroma_hnswlib-0.7.5-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:35b17814041d9512e99832327f49138da470df6478c9ad1e9ca334d9c18720dd"},
-    {file = "chroma_hnswlib-0.7.5-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:70893cfde9ac979ec17bb7389d6aa47e422930ccc20353778524d668473ee702"},
-    {file = "chroma_hnswlib-0.7.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1453494aea293ce2d8d38e7713b2b459e4245c59a744f9b3f85488165eb52b74"},
-    {file = "chroma_hnswlib-0.7.5-cp311-cp311-win_amd64.whl", hash = "sha256:109ee141a2f1241f7d7729443d96ea1450564c6c0923722a8139d70d738d1ad8"},
-    {file = "chroma_hnswlib-0.7.5-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:bf721938246f3c95340313cd7ac2564a38142e137d7fce9b098a0fd774bbc7ea"},
-    {file = "chroma_hnswlib-0.7.5-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:3dda8ff4609b41dab4cca14d146e4dda0d365be6264877de5dd17d8dee314740"},
-    {file = "chroma_hnswlib-0.7.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:af3a84ceebea8f750467304fabbeb77d5fa2b75ccf55fd2e0494c2ad84527df5"},
-    {file = "chroma_hnswlib-0.7.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e178ace2050e4e46c4f899d3cb15ad11a8dc6452eb9e365918c65f171bbf01e0"},
-    {file = "chroma_hnswlib-0.7.5-cp312-cp312-win_amd64.whl", hash = "sha256:ddf183960bd5081e23310377153b5bdd3ed1540b74271f3ff8aa741de165e39d"},
-    {file = "chroma_hnswlib-0.7.5-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:86ddae071363ba0f0c03325b6f022cfb14a969b9c989e188cfcaa81d8e0df177"},
-    {file = "chroma_hnswlib-0.7.5-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0dbff5658955df5983d32439b698b83044e8f612590716cd499e81376672edbd"},
-    {file = "chroma_hnswlib-0.7.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b50209cced093f286a76c619cc2b404a5da29df6792f5852fdf514a24b8acb4c"},
-    {file = "chroma_hnswlib-0.7.5-cp37-cp37m-win_amd64.whl", hash = "sha256:4c1535106ad3c6a727b8b2cdb01e02abf8a603b83489cb50bde3a6811731dee2"},
-    {file = "chroma_hnswlib-0.7.5-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:36e35f7773313480c27d0b63b26863408c9c6ab47f44d581783d4693bc52f54c"},
-    {file = "chroma_hnswlib-0.7.5-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:932220cc42a30abc9fdfa230be7ebdd25c1c4967a5ea514119b65ba0844fe193"},
-    {file = "chroma_hnswlib-0.7.5-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:85d12ada7a55271fbd2839fb1fdae9e2f485db7dad871f23fa359ec68d16a5e0"},
-    {file = "chroma_hnswlib-0.7.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b1657dff26eedb24f55d0a3f371bbe02c15c1fef447c8e57fba3e99c42f7683b"},
-    {file = "chroma_hnswlib-0.7.5-cp38-cp38-win_amd64.whl", hash = "sha256:2336483218ff5329743d8fcad3d7f870e220503f01ee9420c9469d857783015f"},
-    {file = "chroma_hnswlib-0.7.5-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:a4920e0b3045feb4bfe3cf891233024839d5e8384fee505b91a70ca540eef0ef"},
-    {file = "chroma_hnswlib-0.7.5-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:9f64134544c5c38d1075b314fcdc364bab6ba68f2e96e223b14559b7bef6f5ac"},
-    {file = "chroma_hnswlib-0.7.5-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:561ae3cb8dbf28251f8980666b608d9800c5f17d6eec53a27c7bd9b4d1093b34"},
-    {file = "chroma_hnswlib-0.7.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:645c6309761aadcf378eb88d7a9b598574a8033274d8931b9ca7079eb2206425"},
-    {file = "chroma_hnswlib-0.7.5-cp39-cp39-win_amd64.whl", hash = "sha256:89a80901995c68c4e019edf1375f8b2aaeb9e42e12faab6f999fdfd91aee53ee"},
-    {file = "chroma_hnswlib-0.7.5.tar.gz", hash = "sha256:45537d0142ad0fadf712092b8be55de211613d0322627a1a2de05b6e800c2954"},
+    {file = "chroma_hnswlib-0.7.6-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f35192fbbeadc8c0633f0a69c3d3e9f1a4eab3a46b65458bbcbcabdd9e895c36"},
+    {file = "chroma_hnswlib-0.7.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:6f007b608c96362b8f0c8b6b2ac94f67f83fcbabd857c378ae82007ec92f4d82"},
+    {file = "chroma_hnswlib-0.7.6-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:456fd88fa0d14e6b385358515aef69fc89b3c2191706fd9aee62087b62aad09c"},
+    {file = "chroma_hnswlib-0.7.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5dfaae825499c2beaa3b75a12d7ec713b64226df72a5c4097203e3ed532680da"},
+    {file = "chroma_hnswlib-0.7.6-cp310-cp310-win_amd64.whl", hash = "sha256:2487201982241fb1581be26524145092c95902cb09fc2646ccfbc407de3328ec"},
+    {file = "chroma_hnswlib-0.7.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:81181d54a2b1e4727369486a631f977ffc53c5533d26e3d366dda243fb0998ca"},
+    {file = "chroma_hnswlib-0.7.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4b4ab4e11f1083dd0a11ee4f0e0b183ca9f0f2ed63ededba1935b13ce2b3606f"},
+    {file = "chroma_hnswlib-0.7.6-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:53db45cd9173d95b4b0bdccb4dbff4c54a42b51420599c32267f3abbeb795170"},
+    {file = "chroma_hnswlib-0.7.6-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5c093f07a010b499c00a15bc9376036ee4800d335360570b14f7fe92badcdcf9"},
+    {file = "chroma_hnswlib-0.7.6-cp311-cp311-win_amd64.whl", hash = "sha256:0540b0ac96e47d0aa39e88ea4714358ae05d64bbe6bf33c52f316c664190a6a3"},
+    {file = "chroma_hnswlib-0.7.6-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:e87e9b616c281bfbe748d01705817c71211613c3b063021f7ed5e47173556cb7"},
+    {file = "chroma_hnswlib-0.7.6-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:ec5ca25bc7b66d2ecbf14502b5729cde25f70945d22f2aaf523c2d747ea68912"},
+    {file = "chroma_hnswlib-0.7.6-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:305ae491de9d5f3c51e8bd52d84fdf2545a4a2bc7af49765cda286b7bb30b1d4"},
+    {file = "chroma_hnswlib-0.7.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:822ede968d25a2c88823ca078a58f92c9b5c4142e38c7c8b4c48178894a0a3c5"},
+    {file = "chroma_hnswlib-0.7.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:2fe6ea949047beed19a94b33f41fe882a691e58b70c55fdaa90274ae78be046f"},
+    {file = "chroma_hnswlib-0.7.6-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:feceff971e2a2728c9ddd862a9dd6eb9f638377ad98438876c9aeac96c9482f5"},
+    {file = "chroma_hnswlib-0.7.6-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb0633b60e00a2b92314d0bf5bbc0da3d3320be72c7e3f4a9b19f4609dc2b2ab"},
+    {file = "chroma_hnswlib-0.7.6-cp37-cp37m-win_amd64.whl", hash = "sha256:a566abe32fab42291f766d667bdbfa234a7f457dcbd2ba19948b7a978c8ca624"},
+    {file = "chroma_hnswlib-0.7.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:6be47853d9a58dedcfa90fc846af202b071f028bbafe1d8711bf64fe5a7f6111"},
+    {file = "chroma_hnswlib-0.7.6-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:3a7af35bdd39a88bffa49f9bb4bf4f9040b684514a024435a1ef5cdff980579d"},
+    {file = "chroma_hnswlib-0.7.6-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a53b1f1551f2b5ad94eb610207bde1bb476245fc5097a2bec2b476c653c58bde"},
+    {file = "chroma_hnswlib-0.7.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3085402958dbdc9ff5626ae58d696948e715aef88c86d1e3f9285a88f1afd3bc"},
+    {file = "chroma_hnswlib-0.7.6-cp38-cp38-win_amd64.whl", hash = "sha256:77326f658a15adfb806a16543f7db7c45f06fd787d699e643642d6bde8ed49c4"},
+    {file = "chroma_hnswlib-0.7.6-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:93b056ab4e25adab861dfef21e1d2a2756b18be5bc9c292aa252fa12bb44e6ae"},
+    {file = "chroma_hnswlib-0.7.6-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:fe91f018b30452c16c811fd6c8ede01f84e5a9f3c23e0758775e57f1c3778871"},
+    {file = "chroma_hnswlib-0.7.6-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e6c0e627476f0f4d9e153420d36042dd9c6c3671cfd1fe511c0253e38c2a1039"},
+    {file = "chroma_hnswlib-0.7.6-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3e9796a4536b7de6c6d76a792ba03e08f5aaa53e97e052709568e50b4d20c04f"},
+    {file = "chroma_hnswlib-0.7.6-cp39-cp39-win_amd64.whl", hash = "sha256:d30e2db08e7ffdcc415bd072883a322de5995eb6ec28a8f8c054103bbd3ec1e0"},
+    {file = "chroma_hnswlib-0.7.6.tar.gz", hash = "sha256:4dce282543039681160259d29fcde6151cc9106c6461e0485f57cdccd83059b7"},
 ]
 
 [package.dependencies]
@@ -920,19 +919,19 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.5.4"
+version = "0.5.5"
 description = "Chroma."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "chromadb-0.5.4-py3-none-any.whl", hash = "sha256:60f468d44527bea8f88bd39ee26744d0d59c386dacbe544ff715e534691df0e8"},
-    {file = "chromadb-0.5.4.tar.gz", hash = "sha256:02878f527befa8f80ab350023241dbb29313a168f93010208f071e3db9572bb4"},
+    {file = "chromadb-0.5.5-py3-none-any.whl", hash = "sha256:2a5a4b84cb0fc32b380e193be68cdbadf3d9f77dbbf141649be9886e42910ddd"},
+    {file = "chromadb-0.5.5.tar.gz", hash = "sha256:84f4bfee320fb4912cbeb4d738f01690891e9894f0ba81f39ee02867102a1c4d"},
 ]
 
 [package.dependencies]
 bcrypt = ">=4.0.1"
 build = ">=1.0.3"
-chroma-hnswlib = "0.7.5"
+chroma-hnswlib = "0.7.6"
 fastapi = ">=0.95.2"
 grpcio = ">=1.58.0"
 httpx = ">=0.27.0"
