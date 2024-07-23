@@ -650,11 +650,22 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     if to_replace.strip() == '':
         raise ValueError('`to_replace` must not be empty.')
 
+    if to_replace == new_content:
+        raise ValueError('`to_replace` and `new_content` must be different.')
+
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
     # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`
     with open(file_name, 'r') as file:
         file_content = file.read()
+
+    if file_content is None:
+        raise ValueError('File cannot be open, please ensure `file_name` is valid.')
+
+    if file_content.count(to_replace) > 1:
+        raise ValueError(
+            '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
+        )
 
     start = file_content.find(to_replace)
     if start != -1:
