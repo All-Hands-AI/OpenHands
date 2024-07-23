@@ -143,6 +143,7 @@ def process_instance(
             agent,
             instruction,
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
             sid=sid,
