@@ -605,7 +605,6 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file_by_replace` will only replace the *first* matching occurrences.
 
     For example, given a file "/workspace/example.txt" with the following content:
     ```
