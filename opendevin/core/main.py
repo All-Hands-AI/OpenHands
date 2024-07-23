@@ -33,7 +33,7 @@ def read_task_from_stdin() -> str:
 async def run_agent_controller(
     agent: Agent,
     task_str: str,
-    max_iterations: int | None = None,
+    max_iterations: int,
     max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
@@ -75,6 +75,7 @@ async def run_agent_controller(
         agent=agent,
         max_iterations=max_iterations,
         max_budget_per_task=max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
         headless_mode=headless_mode,

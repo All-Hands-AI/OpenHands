@@ -667,4 +667,28 @@ OBSERVATION:
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 
-ENVIRONMENT REMINDER: You have 11 turns left to complete the task.
+----------
+
+Now, let's correct the second typo: "No mor typos!" should be "No more typos!".
+<execute_ipython>
+edit_file_by_replace(
+    "bad.txt",
+    to_replace="No mor typos!",
+    new_content="No more typos!"
+)
+</execute_ipython>
+
+----------
+
+OBSERVATION:
+[File: /workspace/bad.txt (4 lines total after edit)]
+(this is the beginning of the file)
+1|This is a stupid typo.
+2|Really?
+3|No more typos!
+4|Enjoy!
+(this is the end of the file)
+[File updated (edited at line 3). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+
+
+ENVIRONMENT REMINDER: You have 10 turns left to complete the task.

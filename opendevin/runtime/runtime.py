@@ -74,8 +74,9 @@ class Runtime:
 
         This method should be called after the runtime's constructor.
         """
-        logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
-        await self.add_env_vars(self.DEFAULT_ENV_VARS)
+        if self.DEFAULT_ENV_VARS:
+            logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
+            await self.add_env_vars(self.DEFAULT_ENV_VARS)
         if env_vars is not None:
             logger.debug(f'Adding provided env vars: {env_vars}')
             await self.add_env_vars(env_vars)

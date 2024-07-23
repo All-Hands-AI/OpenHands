@@ -142,6 +142,8 @@ class SandboxConfig(metaclass=Singleton):
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
+        update_source_code: Whether to update the source code in the EventStreamRuntime.
+            Used for development of EventStreamRuntime.
     """
 
     box_type: str = 'ssh'
@@ -157,6 +159,7 @@ class SandboxConfig(metaclass=Singleton):
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
+    update_source_code: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -271,6 +274,10 @@ class AppConfig(metaclass=Singleton):
 
     def set_agent_config(self, value: AgentConfig, name='agent'):
         self.agents[name] = value
+
+    def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
+        """Get a map of agent names to llm configs."""
+        return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
     def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
