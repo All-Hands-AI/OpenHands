@@ -658,9 +658,6 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     with open(file_name, 'r') as file:
         file_content = file.read()
 
-    if file_content is None:
-        raise ValueError('File cannot be open, please ensure `file_name` is valid.')
-
     if file_content.count(to_replace) > 1:
         raise ValueError(
             '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
