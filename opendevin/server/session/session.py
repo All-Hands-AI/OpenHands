@@ -17,6 +17,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
 from opendevin.llm.llm import LLM
@@ -132,7 +133,7 @@ class Session:
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER and isinstance(
-            event, CmdOutputObservation
+            event, (CmdOutputObservation, BrowserOutputObservation)
         ):
             await self.send(event_to_dict(event))
 
