@@ -12,7 +12,6 @@ from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
     ContentPolicyViolationError,
-    ContextWindowExceededError,
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
@@ -198,7 +197,7 @@ class LLM:
                 temperature=0.0,
             )
             return response
-        except (ContextWindowExceededError, TokenLimitExceededError):
+        except TokenLimitExceededError:
             # Handle the specific exception
             print('An error occurred: ')
             # If we got a context alert, try trimming the messages length, then try again
