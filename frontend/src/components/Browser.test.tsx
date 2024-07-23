@@ -29,7 +29,7 @@ describe("Browser", () => {
       },
     });
 
-    expect(screen.getByText("https://example.com")).toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toHaveValue("https://example.com");
     expect(screen.getByAltText(/browser screenshot/i)).toBeInTheDocument();
   });
 });

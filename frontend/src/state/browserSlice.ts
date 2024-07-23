@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { updateBrowserTabUrl } from "#/services/browseService";
 
 export const initialState = {
   // URL of browser window (placeholder for now, will be replaced with the actual URL later)
@@ -18,13 +17,9 @@ export const browserSlice = createSlice({
     setScreenshotSrc: (state, action) => {
       state.screenshotSrc = action.payload;
     },
-    sendUrl: (state, action) => {
-      state.url = action.payload;
-      updateBrowserTabUrl(action.payload);
-    },
   },
 });
 
-export const { setUrl, setScreenshotSrc, sendUrl } = browserSlice.actions;
+export const { setUrl, setScreenshotSrc } = browserSlice.actions;
 
 export default browserSlice.reducer;

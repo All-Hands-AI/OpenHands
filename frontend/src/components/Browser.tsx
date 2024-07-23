@@ -4,7 +4,7 @@ import { IoIosGlobe } from "react-icons/io";
 import { useSelector, useDispatch } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
-import { sendUrl } from "#/state/browserSlice";
+import { updateBrowserTabUrl } from "#/services/browseService";
 
 function Browser(): JSX.Element {
   const { t } = useTranslation();
@@ -21,7 +21,7 @@ function Browser(): JSX.Element {
 
   const handleURLBar = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      dispatch(sendUrl(editableUrl));
+      updateBrowserTabUrl(editableUrl);
     }
   };
 
