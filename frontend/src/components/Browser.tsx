@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoIosGlobe } from "react-icons/io";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { updateBrowserTabUrl } from "#/services/browseService";
 
 function Browser(): JSX.Element {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
   );
