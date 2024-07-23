@@ -23,7 +23,7 @@ function Browser(): JSX.Element {
     if (e.key === "Enter") {
       dispatch(sendUrl(editableUrl));
     }
-  }
+  };
 
   const imgSrc =
     screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")

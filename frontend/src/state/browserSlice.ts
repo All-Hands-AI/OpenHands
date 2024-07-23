@@ -22,7 +22,7 @@ export const browserSlice = createSlice({
     sendUrl: (state, action) => {
       state.url = action.payload;
       updateBrowserTabUrl(action.payload);
-    }
+    },
   },
 });
 
