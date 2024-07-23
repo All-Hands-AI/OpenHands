@@ -14,7 +14,6 @@ export const browserSlice = createSlice({
   reducers: {
     setUrl: (state, action) => {
       state.url = action.payload;
-      updateBrowserTabUrl(action.payload);
     },
     setScreenshotSrc: (state, action) => {
       state.screenshotSrc = action.payload;
