@@ -14,14 +14,12 @@ UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause']
 
 DELETE_FROM_MEMORY_EXTRAS = {
     'screenshot',
-    'dom_object',
-    'axtree_object',
+    'axtree_txt',
     'open_pages_urls',
     'active_page_index',
     'last_browser_action',
     'last_browser_action_error',
     'focused_element_bid',
-    'extra_element_properties',
 }
 
 

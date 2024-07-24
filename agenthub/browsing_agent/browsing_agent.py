@@ -1,7 +1,6 @@
 import os
 
 from browsergym.core.action.highlevel import HighLevelActionSet
-from browsergym.utils.obs import flatten_axtree_to_str
 
 from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
@@ -178,18 +177,13 @@ class BrowsingAgent(Agent):
                 self.error_accumulator += 1
                 if self.error_accumulator > 5:
                     return MessageAction('Too many errors encountered. Task failed.')
-            try:
-                cur_axtree_txt = flatten_axtree_to_str(
-                    last_obs.axtree_object,
-                    extra_properties=last_obs.extra_element_properties,
-                    with_clickable=True,
-                    filter_visible_only=True,
-                )
-            except Exception as e:
-                logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
-                )
-                return MessageAction('Error encountered when browsing.')
+                cur_axtree_txt = last_obs.axtree_txt
+                if cur_axtree_txt.startswith('AX Error:'):
+                    logger.error(
+                        'Error when trying to process the accessibility tree: %s',
+                        cur_axtree_txt.split(':', 1)[1],
+                    )
+                    return MessageAction('Error encountered when browsing.')
 
         if (goal := state.get_current_user_intent()) is None:
             goal = state.inputs['task']
