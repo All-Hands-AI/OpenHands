@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from opendevin.core.config import SandboxConfig
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
     CmdRunAction,
@@ -32,6 +33,14 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
     sandbox_config = SandboxConfig(
         use_host_network=False,
     )
+    container_image = sandbox_config.container_image
+    # NOTE: we will use the default container image specified in the config.sandbox
+    # if it is an official od_runtime image.
+    if 'od_runtime' not in container_image:
+        container_image = 'ubuntu:22.04'
+        logger.warning(
+            f'`sandbox_config.container_image` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
+        )
     if box_class == EventStreamRuntime:
         runtime = EventStreamRuntime(
             sandbox_config=sandbox_config,
@@ -39,7 +48,7 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
             sid=sid,
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
             # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
-            container_image='ubuntu:22.04',
+            container_image=container_image,
             plugins=plugins,
         )
         await runtime.ainit()
