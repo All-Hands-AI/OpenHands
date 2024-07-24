@@ -86,8 +86,11 @@ jobs:
           brew install docker
 
           export DOCKER_CONTEXT="colima-$GITHUB_RUN_ID"
+          docker context create $DOCKER_CONTEXT --docker host=unix:///var/run/docker.sock
+
           start_colima() {
-            colima start --network-address --arch x86_64 --cpu=1 --memory=1 --context $DOCKER_CONTEXT
+            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+            docker context use $DOCKER_CONTEXT
           }
 
           # Attempt to start Colima
