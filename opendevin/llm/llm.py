@@ -488,3 +488,6 @@ class LLM:
 
     def __repr__(self):
         return str(self)
+
+    def reset(self):
+        self.metrics = Metrics()

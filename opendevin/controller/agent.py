@@ -57,6 +57,9 @@ class Agent(ABC):
         # TODO clear history
         self._complete = False
 
+        if self.llm:
+            self.llm.reset()
+
     @property
     def name(self):
         return self.__class__.__name__
