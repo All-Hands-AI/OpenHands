@@ -89,7 +89,7 @@ jobs:
           docker context create $DOCKER_CONTEXT --docker host=unix:///var/run/docker.sock
 
           start_colima() {
-            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+            colima start --network-address --arch x86_64 --cpu=1 --memory=1 --ssh
             docker context use $DOCKER_CONTEXT
           }
 
