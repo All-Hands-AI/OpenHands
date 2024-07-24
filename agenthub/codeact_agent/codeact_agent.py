@@ -16,11 +16,13 @@ from opendevin.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from opendevin.events.action.browse import BrowseURLAction
 from opendevin.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
@@ -121,6 +123,8 @@ class CodeActAgent(Agent):
             return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
         elif isinstance(action, MessageAction):
             return action.content
+        elif isinstance(action, BrowseURLAction):
+            return f'Opening browser to {action.url}'
         return ''
 
     def get_action_message(self, action: Action) -> dict[str, str] | None:
@@ -129,6 +133,7 @@ class CodeActAgent(Agent):
             or isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
+            or isinstance(action, BrowseURLAction)
         ):
             return {
                 'role': 'user' if action.source == 'user' else 'assistant',
@@ -161,6 +166,11 @@ class CodeActAgent(Agent):
         elif isinstance(obs, AgentDelegateObservation):
             content = 'OBSERVATION:\n' + truncate_content(
                 str(obs.outputs), max_message_chars
+            )
+            return {'role': 'user', 'content': content}
+        elif isinstance(obs, BrowserOutputObservation):
+            content = 'OBSERVATION:\n' + truncate_content(
+                obs.content, max_message_chars
             )
             return {'role': 'user', 'content': content}
         return None

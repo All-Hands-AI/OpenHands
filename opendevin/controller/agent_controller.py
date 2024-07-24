@@ -36,6 +36,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     Observation,
 )
+from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.llm.llm import LLM
 
 # note: RESUME is only available on web GUI
@@ -195,6 +196,8 @@ class AgentController:
                     await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
+            elif isinstance(event, BrowserOutputObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
                 self.state.history.on_event(event)
