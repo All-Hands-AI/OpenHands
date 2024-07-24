@@ -124,7 +124,7 @@ class CodeActAgent(Agent):
         elif isinstance(action, MessageAction):
             return action.content
         elif isinstance(action, BrowseURLAction):
-            return f'Open {action.url} in browser'
+            return f'Opening {action.url} in browser manually'
         return ''
 
     def get_action_message(self, action: Action) -> dict[str, str] | None:
