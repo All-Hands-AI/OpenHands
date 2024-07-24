@@ -83,16 +83,15 @@ jobs:
           fi
           rm -rf ~/.colima ~/.lima
           brew install --HEAD colima
-          brew services start colima
           brew install docker
-          colima delete
-          # Attempt to start Colima
-          ATTEMPT_LIMIT=3
 
+          export DOCKER_CONTEXT="colima-$GITHUB_RUN_ID"
           start_colima() {
-            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+            colima start --network-address --arch x86_64 --cpu=1 --memory=1 --context $DOCKER_CONTEXT
           }
 
+          # Attempt to start Colima
+          ATTEMPT_LIMIT=3
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."
