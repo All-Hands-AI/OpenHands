@@ -14,7 +14,7 @@ class MemoryCondenser:
         """
         try:
             messages = [{'content': summarize_prompt, 'role': 'user'}]
-            resp = await llm.completion(messages=messages)
+            resp = await llm.async_completion(messages=messages)
             summary_response = resp['choices'][0]['message']['content']
             return summary_response
         except Exception as e:

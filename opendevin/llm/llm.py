@@ -8,7 +8,6 @@ from opendevin.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from litellm import acompletion as litellm_acompletion
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -34,6 +33,12 @@ from opendevin.core.metrics import Metrics
 __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
+
+
+class UserCancelledError(Exception):
+    """Custom exception to indicate a user-initiated cancellation."""
+
+    pass
 
 
 class LLM:
@@ -71,7 +76,7 @@ class LLM:
             logger.warning(f'Could not get model info for {config.model}:\n{e}')
 
         # Set the max tokens in an LM-specific way if not set
-        if config.max_input_tokens is None:
+        if not hasattr(config, 'max_input_tokens') or config.max_input_tokens is None:
             if (
                 self.model_info is not None
                 and 'max_input_tokens' in self.model_info
@@ -82,7 +87,7 @@ class LLM:
                 # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
 
-        if config.max_output_tokens is None:
+        if not hasattr(config, 'max_output_tokens') or config.max_output_tokens is None:
             if (
                 self.model_info is not None
                 and 'max_output_tokens' in self.model_info
@@ -98,12 +103,20 @@ class LLM:
             model=self.config.model,
             api_key=self.config.api_key,
             base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
+            api_version=self.config.api_version
+            if hasattr(self.config, 'api_version')
+            else None,
+            custom_llm_provider=self.config.custom_llm_provider
+            if hasattr(self.config, 'custom_llm_provider')
+            else None,
+            max_tokens=self.config.max_output_tokens
+            if hasattr(self.config, 'max_output_tokens')
+            else None,
+            timeout=self.config.timeout if hasattr(self.config, 'timeout') else None,
+            temperature=self.config.temperature
+            if hasattr(self.config, 'temperature')
+            else None,
+            top_p=self.config.top_p if hasattr(self.config, 'top_p') else None,
         )
 
         completion_unwrapped = self._completion
@@ -115,13 +128,24 @@ class LLM:
             )
             return None
 
+        num_retries = config.num_retries if hasattr(config, 'num_retries') else 3
+        retry_multiplier = (
+            config.retry_multiplier if hasattr(config, 'retry_multiplier') else 1.5
+        )
+        retry_min_wait = (
+            config.retry_min_wait if hasattr(config, 'retry_min_wait') else 0.1
+        )
+        retry_max_wait = (
+            config.retry_max_wait if hasattr(config, 'retry_max_wait') else 10
+        )
+
         @retry(
             reraise=True,
-            stop=stop_after_attempt(config.num_retries),
+            stop=stop_after_attempt(num_retries),
             wait=wait_random_exponential(
-                multiplier=config.retry_multiplier,
-                min=config.retry_min_wait,
-                max=config.retry_max_wait,
+                multiplier=retry_multiplier,
+                min=retry_min_wait,
+                max=retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
@@ -168,27 +192,36 @@ class LLM:
 
         # Async version
         self._async_completion = partial(
-            litellm_acompletion,
+            self._call_acompletion,
             model=self.config.model,
             api_key=self.config.api_key,
             base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
+            api_version=self.config.api_version
+            if hasattr(self.config, 'api_version')
+            else None,
+            custom_llm_provider=self.config.custom_llm_provider
+            if hasattr(self.config, 'custom_llm_provider')
+            else None,
+            max_tokens=self.config.max_output_tokens
+            if hasattr(self.config, 'max_output_tokens')
+            else None,
+            timeout=self.config.timeout if hasattr(self.config, 'timeout') else None,
+            temperature=self.config.temperature
+            if hasattr(self.config, 'temperature')
+            else None,
+            top_p=self.config.top_p if hasattr(self.config, 'top_p') else None,
+            drop_params=True,
         )
 
         async_completion_unwrapped = self._async_completion
 
         @retry(
             reraise=True,
-            stop=stop_after_attempt(config.num_retries),
+            stop=stop_after_attempt(num_retries),
             wait=wait_random_exponential(
-                multiplier=config.retry_multiplier,
-                min=config.retry_min_wait,
-                max=config.retry_max_wait,
+                multiplier=retry_multiplier,
+                min=retry_min_wait,
+                max=retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
@@ -222,34 +255,27 @@ class LLM:
                         and await self.config.stop_requested_callback()
                     ):
                         return True
-                    await asyncio.sleep(0.1)  # Check every 100ms
+                    await asyncio.sleep(0.1)
 
-            litellm_task = asyncio.create_task(
-                async_completion_unwrapped(*args, **kwargs)
-            )
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
-                done, pending = await asyncio.wait(
-                    [litellm_task, stop_check_task], return_when=asyncio.FIRST_COMPLETED
-                )
+                # Directly call and await litellm_acompletion
+                resp = await async_completion_unwrapped(*args, **kwargs)
 
-                if stop_check_task in done:
-                    litellm_task.cancel()
-                    raise asyncio.CancelledError(
-                        'LLM request cancelled due to CANCELLED state'
-                    )
-
-                resp = await litellm_task
-
-                # log the response
-                message_back = resp['choices'][0]['message']['content']
-                llm_response_logger.debug(message_back)
-
-                # post-process to log costs
+                # skip if messages is empty (thus debug_message is empty)
+                if debug_message:
+                    message_back = resp['choices'][0]['message']['content']
+                    llm_response_logger.debug(message_back)
+                else:
+                    resp = {'choices': [{'message': {'content': ''}}]}
                 self._post_completion(resp)
 
+                # We do not support streaming in this method, thus return resp
                 return resp
+
+            except UserCancelledError:
+                logger.info('LLM request cancelled by user.')
             except OpenAIError as e:
                 logger.error(f'OpenAIError occurred:\n{e}')
             except (
@@ -262,10 +288,96 @@ class LLM:
                 raise
 
             finally:
-                for task in pending:
-                    task.cancel()
+                await asyncio.sleep(0.1)
+                stop_check_task.cancel()
+
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(num_retries),
+            wait=wait_random_exponential(
+                multiplier=retry_multiplier,
+                min=retry_min_wait,
+                max=retry_max_wait,
+            ),
+            retry=retry_if_exception_type(
+                (
+                    RateLimitError,
+                    APIConnectionError,
+                    ServiceUnavailableError,
+                    InternalServerError,
+                    ContentPolicyViolationError,
+                )
+            ),
+            after=attempt_on_error,
+        )
+        async def async_completion_stream_wrapper(*args, **kwargs):
+            """Async wrapper for the litellm acompletion function."""
+            # some callers might just send the messages directly
+            if 'messages' in kwargs:
+                messages = kwargs['messages']
+            else:
+                messages = args[1]
+
+            # log the prompt
+            debug_message = ''
+            for message in messages:
+                debug_message += message_separator + message['content']
+            llm_prompt_logger.debug(debug_message)
+
+            async def check_stopped():
+                while True:
+                    if (
+                        self.config.stop_requested_callback is not None
+                        and await self.config.stop_requested_callback()
+                    ):
+                        return True
+                    await asyncio.sleep(0.1)
+
+            stop_check_task = asyncio.create_task(check_stopped())
+
+            try:
+                # Directly call and await litellm_acompletion
+                resp = await async_completion_unwrapped(*args, **kwargs)
+
+                # For streaming we iterate over the chunks
+                async for chunk in resp:
+                    # Check for cancellation before yielding the chunk
+                    if (
+                        self.config.stop_requested_callback is not None
+                        and await self.config.stop_requested_callback()
+                    ):
+                        raise UserCancelledError(
+                            'LLM request cancelled due to CANCELLED state'
+                        )
+                    # with streaming, it is "delta", not "message"!
+                    message_back = chunk['choices'][0]['delta']['content']
+                    llm_response_logger.debug(message_back)
+                    self._post_completion(chunk)
+
+                    yield chunk
+            except UserCancelledError:
+                logger.info('LLM request cancelled by user.')
+            except OpenAIError as e:
+                logger.error(f'OpenAIError occurred:\n{e}')
+            except (
+                RateLimitError,
+                APIConnectionError,
+                ServiceUnavailableError,
+                InternalServerError,
+            ) as e:
+                logger.error(f'Completion Error occurred:\n{e}')
+                raise
+
+            finally:
+                if kwargs.get('stream', False):
+                    await asyncio.sleep(0.1)
+                    stop_check_task.cancel()
 
         self._async_completion = async_completion_wrapper  # type: ignore
+        self._async_streaming_completion = async_completion_stream_wrapper  # type: ignore
+
+    async def _call_acompletion(self, *args, **kwargs):
+        return await litellm.acompletion(*args, **kwargs)
 
     @property
     def completion(self):
@@ -277,11 +389,19 @@ class LLM:
 
     @property
     def async_completion(self):
-        """Decorator for the async litellm completion function.
+        """Decorator for the async litellm acompletion function.
 
         Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
         return self._async_completion
+
+    @property
+    def async_streaming_completion(self):
+        """Decorator for the async litellm acompletion function with streaming.
+
+        Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
+        """
+        return self._async_streaming_completion
 
     def _post_completion(self, response: str) -> None:
         """Post-process the completion response."""
