@@ -67,10 +67,12 @@ class LLM:
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
-            if not config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(config.model.split(':')[0])
+            if self.config.model.startswith('openrouter'):
+                self.model_info = litellm.get_model_info(self.config.model)
             else:
-                self.model_info = litellm.get_model_info(config.model)
+                self.model_info = litellm.get_model_info(
+                    self.config.model.split(':')[0]
+                )
         # noinspection PyBroadException
         except Exception as e:
             logger.warning(f'Could not get model info for {config.model}:\n{e}')
@@ -97,6 +99,9 @@ class LLM:
             else:
                 # Max output tokens for gpt3.5, so this is a safe fallback for any potentially viable model
                 self.config.max_output_tokens = 1024
+
+        if self.config.drop_params:
+            litellm.drop_params = self.config.drop_params
 
         self._completion = partial(
             litellm_completion,

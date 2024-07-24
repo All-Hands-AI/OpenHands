@@ -50,6 +50,7 @@ class LLMConfig:
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
         ollama_base_url: The base URL for the OLLAMA API.
         stop_requested_callback: a callback for the frontend, default None.
+        drop_params: Drop any unmapped (unsupported) params without causing an exception.
     """
 
     model: str = 'gpt-4o'
@@ -77,6 +78,7 @@ class LLMConfig:
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
     stop_requested_callback: Callable | None = None
+    drop_params: bool | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
