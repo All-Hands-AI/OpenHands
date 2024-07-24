@@ -51,13 +51,8 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -126,7 +121,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     workspace_mount_path = os.path.join(
         config.workspace_mount_path, 'bird_eval_workspace'
     )
@@ -218,6 +213,7 @@ def process_instance(
             agent,
             instruction,
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],

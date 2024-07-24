@@ -1,39 +1,18 @@
-import os
-
 import boto3
 
-from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 
-# TODO: this assumes AWS-specific configs are under default 'llm' group
-AWS_ACCESS_KEY_ID = config.get_llm_config().aws_access_key_id
-AWS_SECRET_ACCESS_KEY = config.get_llm_config().aws_secret_access_key
-AWS_REGION_NAME = config.get_llm_config().aws_region_name
 
-# It needs to be set as an environment variable, if the variable is configured in the Config file.
-if AWS_ACCESS_KEY_ID is not None:
-    os.environ['AWS_ACCESS_KEY_ID'] = AWS_ACCESS_KEY_ID
-if AWS_SECRET_ACCESS_KEY is not None:
-    os.environ['AWS_SECRET_ACCESS_KEY'] = AWS_SECRET_ACCESS_KEY
-if AWS_REGION_NAME is not None:
-    os.environ['AWS_REGION_NAME'] = AWS_REGION_NAME
-
-
-def list_foundation_models():
+def list_foundation_models(
+    aws_region_name: str, aws_access_key_id: str, aws_secret_access_key: str
+) -> list[str]:
     try:
         # The AWS bedrock model id is not queried, if no AWS parameters are configured.
-        if (
-            AWS_REGION_NAME is None
-            or AWS_ACCESS_KEY_ID is None
-            or AWS_SECRET_ACCESS_KEY is None
-        ):
-            return []
-
         client = boto3.client(
             service_name='bedrock',
-            region_name=AWS_REGION_NAME,
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+            region_name=aws_region_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
         )
         foundation_models_list = client.list_foundation_models(
             byOutputModality='TEXT', byInferenceType='ON_DEMAND'

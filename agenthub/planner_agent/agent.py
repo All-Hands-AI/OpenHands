@@ -1,4 +1,4 @@
-from agenthub.monologue_agent.response_parser import MonologueResponseParser
+from agenthub.planner_agent.response_parser import PlannerResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentFinishAction
@@ -15,7 +15,7 @@ class PlannerAgent(Agent):
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
     """
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
-    response_parser = MonologueResponseParser()
+    response_parser = PlannerResponseParser()
 
     def __init__(self, llm: LLM):
         """Initialize the Planner Agent with an LLM
@@ -42,7 +42,7 @@ class PlannerAgent(Agent):
             'abandoned',
         ]:
             return AgentFinishAction()
-        prompt = get_prompt(state)
+        prompt = get_prompt(state, self.llm.config.max_message_chars)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         return self.response_parser.parse(resp)

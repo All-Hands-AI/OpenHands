@@ -37,7 +37,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
 
     inst_id = instance.instance_id
     question = instance.description
@@ -116,6 +116,7 @@ def process_instance(
             agent,
             instruction,
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=FAKE_RESPONSES[agent.__class__.__name__],
             sandbox=sandbox,
             sid=inst_id,
