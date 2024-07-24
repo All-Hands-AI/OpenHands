@@ -111,7 +111,7 @@ function FileExplorer() {
       const fileList = await listFiles("/");
       setFiles(fileList);
       if (fileList.length === 0) {
-        toast.info(t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE));
+        toast.info(t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE), true);
       }
     } catch (error) {
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));

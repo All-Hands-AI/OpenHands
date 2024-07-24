@@ -1,6 +1,7 @@
 import toast from "react-hot-toast";
 
 const idMap = new Map<string, string>();
+const history = new Set<string>();
 
 export default {
   error: (id: string, msg: string) => {
@@ -53,7 +54,9 @@ export default {
     });
   },
 
-  info: (msg: string) => {
+  info: (msg: string, once: boolean = false) => {
+    if (once && history.has(msg)) return;
+    history.add(msg);
     toast(msg, {
       position: "top-center",
       className: "bg-neutral-700",

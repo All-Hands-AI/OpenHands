@@ -81,13 +81,13 @@
     "de": "Beim Speichern der Datei ist ein unbekannter Fehler aufgetreten"
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
-    "en": "No file selected.",
+    "en": "No file is selected.",
     "zh-CN": "文件未选中",
     "zh-TW": "未選取任何文件。",
     "de": "Keine Datei ausgewählt."
   },
   "FILE_SERVICE$SELECT_FILE_ERROR": {
-    "en": "Error selecting file. Please try again.",
+    "en": "Error selecting the file. Please try again.",
     "zh-CN": "选择文件时出错。请重试。",
     "de": "Fehler beim Auswählen der Datei. Bitte versuchen Sie es erneut.",
     "ko-KR": "파일 선택 중 오류가 발생했습니다. 다시 시도해 주세요.",
