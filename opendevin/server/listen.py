@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import uuid
@@ -611,10 +612,21 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
         return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')
-        return JSONResponse(
-            status_code=500, content={'error': 'Failed to submit feedback'}
-        )
-
+        try:
+            fp = "workspace/feedback.json"
+            with open(fp, "w") as f:
+                data = feedback.model_dump()
+                data['token'] = 'elided'
+                json.dump(data, f, indent=4)
+            return JSONResponse(
+                status_code=200,
+                content={
+                    'error': f'Failed to submit feedback; feedback data saved to {fp}'
+                },
+            )
+        except Exception as e:
+            logger.error(f'Error saving feedback data: {e}')
+            return JSONResponse(status_code=500, content={'error': f'Failed to submit feedback {e}'})
 
 @app.get('/api/root_task')
 def get_root_task(request: Request):

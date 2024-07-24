@@ -108,7 +108,7 @@ function FeedbackModal({
       } else {
         toast.error(
           "share-error",
-          `Failed to share, please contact the developers: ${response.body.message}`,
+          `Failed to share, please contact the developers: ${response.error}`,
         );
       }
     } catch (error) {
