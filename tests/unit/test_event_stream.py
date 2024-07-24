@@ -22,48 +22,43 @@ from opendevin.runtime.plugins import (
 from opendevin.storage import get_file_store
 
 
-@pytest.fixture
-def event_stream():
-    # get temp directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        file_store = get_file_store('local', temp_dir)
-        event_stream = EventStream('abc', file_store)
-        yield event_stream
-
-        # clear after each test
-        event_stream.clear()
-
-
 def collect_events(stream):
     return [event for event in stream.get_events()]
 
 
-def test_basic_flow(event_stream: EventStream):
-    event_stream.add_event(NullAction(), EventSource.AGENT)
-    assert len(collect_events(event_stream)) == 1
-
-
-def test_stream_storage(event_stream: EventStream):
-    event_stream.add_event(NullObservation(''), EventSource.AGENT)
-    assert len(collect_events(event_stream)) == 1
-    content = event_stream._file_store.read('sessions/abc/events/0.json')
-    assert content is not None
-    data = json.loads(content)
-    assert 'timestamp' in data
-    del data['timestamp']
-    assert data == {
-        'id': 0,
-        'source': 'agent',
-        'observation': 'null',
-        'content': '',
-        'extras': {},
-        'message': 'No observation',
-    }
-
-
-def test_rehydration(event_stream: EventStream):
+def test_basic_flow():
     with tempfile.TemporaryDirectory() as temp_dir:
         file_store = get_file_store('local', temp_dir)
+        event_stream = EventStream('abc', file_store)
+        event_stream.add_event(NullAction(), EventSource.AGENT)
+        assert len(collect_events(event_stream)) == 1
+
+
+def test_stream_storage():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_store = get_file_store('local', temp_dir)
+        event_stream = EventStream('abc', file_store)
+        event_stream.add_event(NullObservation(''), EventSource.AGENT)
+        assert len(collect_events(event_stream)) == 1
+        content = event_stream._file_store.read('sessions/abc/events/0.json')
+        assert content is not None
+        data = json.loads(content)
+        assert 'timestamp' in data
+        del data['timestamp']
+        assert data == {
+            'id': 0,
+            'source': 'agent',
+            'observation': 'null',
+            'content': '',
+            'extras': {},
+            'message': 'No observation',
+        }
+
+
+def test_rehydration():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_store = get_file_store('local', temp_dir)
+        event_stream = EventStream('abc', file_store)
         event_stream.add_event(NullObservation('obs1'), EventSource.AGENT)
         event_stream.add_event(NullObservation('obs2'), EventSource.AGENT)
         assert len(collect_events(event_stream)) == 2
@@ -78,6 +73,7 @@ def test_rehydration(event_stream: EventStream):
         assert events[1].content == 'obs2'
 
 
+@pytest.mark.asyncio
 async def test_run_command():
     with tempfile.TemporaryDirectory() as temp_dir:
         file_store = get_file_store('local', temp_dir)
@@ -90,6 +86,7 @@ async def test_run_command():
         await runtime.run_action(CmdRunAction('ls -l'))
 
 
+@pytest.mark.asyncio
 async def test_event_stream():
     with tempfile.TemporaryDirectory() as temp_dir:
         file_store = get_file_store('local', temp_dir)
