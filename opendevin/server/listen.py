@@ -8,6 +8,7 @@ from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
+from opendevin.storage import get_file_store
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -42,7 +43,8 @@ from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import SessionManager
 
-session_manager = SessionManager(config)
+file_store = get_file_store(config.file_store, config.file_store_path)
+session_manager = SessionManager(config, file_store)
 
 app = FastAPI()
 app.add_middleware(

@@ -17,6 +17,7 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.storage import get_file_store
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -58,15 +59,16 @@ async def run_agent_controller(
     )
 
     # set up the event stream
+    file_store = get_file_store(config.file_store, config.file_store_path)
     cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session)
+    event_stream = EventStream(cli_session, file_store)
 
     # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
         try:
             logger.info('Restoring agent state from cli session')
-            initial_state = State.restore_from_session(cli_session)
+            initial_state = State.restore_from_session(cli_session, file_store)
         except Exception as e:
             print('Error restoring state', e)
 
@@ -140,7 +142,7 @@ async def run_agent_controller(
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
-        end_state.save_to_session(cli_session)
+        end_state.save_to_session(cli_session, file_store)
 
     # close when done
     await controller.close()

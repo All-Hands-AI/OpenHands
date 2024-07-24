@@ -10,6 +10,7 @@ from opendevin.events.stream import EventStream
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.storage.files import FileStore
 
 
 class AgentSession:
@@ -25,10 +26,11 @@ class AgentSession:
     runtime: Optional[Runtime] = None
     _closed: bool = False
 
-    def __init__(self, sid):
+    def __init__(self, sid: str, file_store: FileStore):
         """Initializes a new instance of the Session class."""
         self.sid = sid
-        self.event_stream = EventStream(sid)
+        self.event_stream = EventStream(sid, file_store)
+        self.file_store = file_store
 
     async def start(
         self,
@@ -63,7 +65,7 @@ class AgentSession:
             return
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid)
+            end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
             await self.runtime.close()
@@ -121,7 +123,7 @@ class AgentSession:
             headless_mode=False,
         )
         try:
-            agent_state = State.restore_from_session(self.sid)
+            agent_state = State.restore_from_session(self.sid, self.file_store)
             self.controller.set_initial_state(
                 agent_state, max_iterations, confirmation_mode
             )
