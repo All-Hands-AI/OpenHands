@@ -2,9 +2,22 @@ import json
 
 import pytest
 
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.events import EventSource, EventStream
-from opendevin.events.action import NullAction
+from opendevin.events.action import (
+    BrowseURLAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    IPythonRunCellAction,
+    NullAction,
+)
 from opendevin.events.observation import NullObservation
+from opendevin.runtime.client.runtime import EventStreamRuntime
+from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
+    JupyterRequirement,
+)
 
 
 @pytest.fixture
@@ -56,3 +69,55 @@ def test_rehydration(event_stream: EventStream):
     assert len(events) == 2
     assert events[0].content == 'obs1'
     assert events[1].content == 'obs2'
+
+
+async def test_run_command():
+    config = AppConfig()
+    sid = 'test'
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
+    runtime = EventStreamRuntime(config=config, event_stream=event_stream, sid=sid)
+    await runtime.ainit()
+    await runtime.run_action(CmdRunAction('ls -l'))
+
+
+async def test_event_stream():
+    config = SandboxConfig()
+    sid = 'test'
+    cli_session = 'main' + ('_' + sid if sid else '')
+    event_stream = EventStream(cli_session)
+    runtime = EventStreamRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid=sid,
+        container_image='ubuntu:22.04',
+        plugins=[JupyterRequirement(), AgentSkillsRequirement()],
+    )
+    await runtime.ainit()
+
+    # Test run command
+    action_cmd = CmdRunAction(command='ls -l')
+    await runtime.run_action(action_cmd)
+
+    # Test run ipython
+    test_code = "print('Hello, `World`!\\n')"
+    action_ipython = IPythonRunCellAction(code=test_code)
+    await runtime.run_action(action_ipython)
+
+    # Test read file (file should not exist)
+    action_read = FileReadAction(path='hello.sh')
+    await runtime.run_action(action_read)
+
+    # Test write file
+    action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
+    await runtime.run_action(action_write)
+
+    # Test read file (file should exist)
+    action_read = FileReadAction(path='hello.sh')
+    await runtime.run_action(action_read)
+
+    # Test browse
+    action_browse = BrowseURLAction(url='https://google.com')
+    await runtime.run_action(action_browse)
+
+    await runtime.close()

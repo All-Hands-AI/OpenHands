@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import SandboxConfig
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
@@ -30,10 +30,12 @@ def temp_dir(monkeypatch):
 
 
 async def _load_runtime(box_class, event_stream, plugins, sid):
-    sandbox_config = SandboxConfig(
-        use_host_network=False,
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            use_host_network=False,
+        )
     )
-    container_image = sandbox_config.container_image
+    container_image = config.sandbox.container_image
     # NOTE: we will use the default container image specified in the config.sandbox
     # if it is an official od_runtime image.
     if 'od_runtime' not in container_image:
@@ -43,7 +45,7 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
         )
     if box_class == EventStreamRuntime:
         runtime = EventStreamRuntime(
-            sandbox_config=sandbox_config,
+            config=config,
             event_stream=event_stream,
             sid=sid,
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
@@ -53,9 +55,7 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
-        runtime = ServerRuntime(
-            sandbox_config=sandbox_config, event_stream=event_stream, sid=sid
-        )
+        runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
         await runtime.ainit()
         runtime.init_sandbox_plugins(plugins)
         runtime.init_runtime_tools(
