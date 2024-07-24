@@ -8,7 +8,7 @@ from datasets import load_dataset
 from swebench.harness.constants import MAP_REPO_TO_TEST_FRAMEWORK
 from swebench.harness.utils import get_test_directives
 
-from opendevin.core.config import SandboxConfig, config
+from opendevin.core.config import AppConfig, SandboxConfig, load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import (
@@ -27,6 +27,7 @@ def get_image_name_from_instance_id(instance_id: str) -> str:
 class SWEBenchSSHBox(DockerSSHBox):
     def __init__(
         self,
+        config: AppConfig,
         container_image: str,
         timeout: int = 120,
         sid: str | None = None,
@@ -146,6 +147,7 @@ class SWEBenchSSHBox(DockerSSHBox):
     def get_box_for_instance(
         cls,
         instance,
+        config: AppConfig,
         workspace_dir_name=None,
         skip_workspace_mount: bool = True,
         workspace_mount_path: str | None = None,
@@ -239,6 +241,8 @@ class SWEBenchSSHBox(DockerSSHBox):
 
 
 if __name__ == '__main__':
+    config = load_app_config()
+
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
@@ -252,6 +256,7 @@ if __name__ == '__main__':
     EXAMPLE_INSTANCE = swe_bench_tests.iloc[0].to_dict()
 
     sandbox = SWEBenchSSHBox.get_box_for_instance(
+        config=config,
         instance=EXAMPLE_INSTANCE,
         sandbox_plugins=[AgentSkillsRequirement(), JupyterRequirement()],
         use_instance_image=USE_INSTANCE_IMAGE,
