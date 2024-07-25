@@ -85,6 +85,9 @@ jobs:
             # Find a free port in the range 10000-20000
             RANDOM_PORT=$((RANDOM % 10001 + 10000))
 
+            # Create Lima instance with the specific IP address
+            limactl create colima-${IP_ADDRESS}
+
             if ! colima start --network-address $IP_ADDRESS --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
               echo "Failed to start Colima."
               return 1
