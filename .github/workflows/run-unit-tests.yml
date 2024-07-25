@@ -98,7 +98,6 @@ jobs:
               echo "Failed to start Colima."
               return 1
             fi
-            docker context use $DOCKER_CONTEXT
           }
 
           # Attempt to start Colima; 4 retries:
@@ -106,6 +105,7 @@ jobs:
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."
+              docker context use $DOCKER_CONTEXT
               break
             else
               echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
