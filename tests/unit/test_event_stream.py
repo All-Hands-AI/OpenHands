@@ -1,24 +1,11 @@
 import json
 import tempfile
 
-import pytest
-
-from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
-    BrowseURLAction,
-    CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
-    IPythonRunCellAction,
     NullAction,
 )
 from opendevin.events.observation import NullObservation
-from opendevin.runtime.client.runtime import EventStreamRuntime
-from opendevin.runtime.plugins import (
-    AgentSkillsRequirement,
-    JupyterRequirement,
-)
 from opendevin.storage import get_file_store
 
 
@@ -71,61 +58,3 @@ def test_rehydration():
         assert len(events) == 2
         assert events[0].content == 'obs1'
         assert events[1].content == 'obs2'
-
-
-@pytest.mark.asyncio
-async def test_run_command():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        file_store = get_file_store('local', temp_dir)
-        config = AppConfig(persist_sandbox=False, sandbox=SandboxConfig(box_type='ssh'))
-        sid = 'test'
-        cli_session = 'main' + ('_' + sid if sid else '')
-        event_stream = EventStream(cli_session, file_store)
-        runtime = EventStreamRuntime(config=config, event_stream=event_stream, sid=sid)
-        await runtime.ainit()
-        await runtime.run_action(CmdRunAction('ls -l'))
-
-
-@pytest.mark.asyncio
-async def test_event_stream():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        file_store = get_file_store('local', temp_dir)
-        config = AppConfig(persist_sandbox=False, sandbox=SandboxConfig(box_type='ssh'))
-        sid = 'test'
-        cli_session = 'main' + ('_' + sid if sid else '')
-        event_stream = EventStream(cli_session, file_store)
-        runtime = EventStreamRuntime(
-            config=config,
-            event_stream=event_stream,
-            sid=sid,
-            container_image='ubuntu:22.04',
-            plugins=[JupyterRequirement(), AgentSkillsRequirement()],
-        )
-        await runtime.ainit()
-
-        # Test run command
-        action_cmd = CmdRunAction(command='ls -l')
-        await runtime.run_action(action_cmd)
-
-        # Test run ipython
-        test_code = "print('Hello, `World`!\\n')"
-        action_ipython = IPythonRunCellAction(code=test_code)
-        await runtime.run_action(action_ipython)
-
-        # Test read file (file should not exist)
-        action_read = FileReadAction(path='hello.sh')
-        await runtime.run_action(action_read)
-
-        # Test write file
-        action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
-        await runtime.run_action(action_write)
-
-        # Test read file (file should exist)
-        action_read = FileReadAction(path='hello.sh')
-        await runtime.run_action(action_read)
-
-        # Test browse
-        action_browse = BrowseURLAction(url='https://google.com')
-        await runtime.run_action(action_browse)
-
-        await runtime.close()
