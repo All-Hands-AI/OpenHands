@@ -1,4 +1,4 @@
-# Agent Framework Research
+# Agent Hub
 
 In this folder, there may exist multiple implementations of `Agent` that will be used by the framework.
 

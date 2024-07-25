@@ -437,6 +437,7 @@ class DockerSSHBox(Sandbox):
             logger.exception(f'Error during initialization: {e}')
             raise e
         logger.info('Environment setup complete')
+        time.sleep(1)
 
     async def _setup_user(self):
         logger.info('Setting up user')

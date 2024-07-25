@@ -4,6 +4,7 @@ import asyncio
 import os
 import pathlib
 import tempfile
+import time
 from unittest.mock import patch
 
 import pytest
@@ -41,12 +42,15 @@ def temp_dir(monkeypatch):
 # which caused them to fail previously.
 @pytest.fixture(scope='module', params=[EventStreamRuntime, ServerRuntime])
 def box_class(request):
+    time.sleep(1)
     return request.param
 
 
-async def _load_runtime(box_class, event_stream, plugins, sid):
+async def _load_runtime(box_class, event_stream):
+    sid = 'test'
+    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
     sandbox_config = SandboxConfig(
-        use_host_network=False,
+        use_host_network=True,
     )
     container_image = sandbox_config.container_image
     # NOTE: we will use the default container image specified in the config.sandbox
@@ -80,18 +84,17 @@ async def _load_runtime(box_class, event_stream, plugins, sid):
         )
     else:
         raise ValueError(f'Invalid box class: {box_class}')
+    await asyncio.sleep(1)
     return runtime
 
 
 @pytest.mark.asyncio
 async def test_env_vars_os_environ(box_class):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-        sid = 'test'
         cli_session = 'main_test'
 
         event_stream = EventStream(cli_session)
-        runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+        runtime = await _load_runtime(box_class, event_stream)
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='env')
@@ -113,12 +116,10 @@ async def test_env_vars_os_environ(box_class):
 
 @pytest.mark.asyncio
 async def test_env_vars_runtime_add_env_vars(box_class):
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-    sid = 'test'
     cli_session = 'main_test'
 
     event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+    runtime = await _load_runtime(box_class, event_stream)
     await runtime.add_env_vars({'QUUX': 'abc"def'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -136,12 +137,10 @@ async def test_env_vars_runtime_add_env_vars(box_class):
 
 @pytest.mark.asyncio
 async def test_env_vars_runtime_add_empty_dict(box_class):
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-    sid = 'test'
     cli_session = 'main_test'
 
     event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+    runtime = await _load_runtime(box_class, event_stream)
 
     prev_obs = await runtime.run_action(CmdRunAction(command='env'))
     assert prev_obs.exit_code == 0, 'The exit code should be 0.'
@@ -162,12 +161,10 @@ async def test_env_vars_runtime_add_empty_dict(box_class):
 
 @pytest.mark.asyncio
 async def test_env_vars_runtime_add_multiple_env_vars(box_class):
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-    sid = 'test'
     cli_session = 'main_test'
 
     event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+    runtime = await _load_runtime(box_class, event_stream)
     await runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -185,13 +182,11 @@ async def test_env_vars_runtime_add_multiple_env_vars(box_class):
 
 @pytest.mark.asyncio
 async def test_env_vars_runtime_add_env_vars_overwrite(box_class):
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-    sid = 'test'
     cli_session = 'main_test'
 
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
         event_stream = EventStream(cli_session)
-        runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+        runtime = await _load_runtime(box_class, event_stream)
         await runtime.add_env_vars({'FOOBAR': 'xyz'})
 
         obs: CmdOutputObservation = await runtime.run_action(
@@ -209,12 +204,10 @@ async def test_env_vars_runtime_add_env_vars_overwrite(box_class):
 
 @pytest.mark.asyncio
 async def test_bash_command_pexcept(temp_dir, box_class):
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-    sid = 'test'
     cli_session = 'main_test'
 
     event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream, plugins, sid)
+    runtime = await _load_runtime(box_class, event_stream)
 
     obs = await runtime.run_action(CmdRunAction(command='env'))
 

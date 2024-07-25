@@ -80,6 +80,8 @@ class ServerRuntime(Runtime):
         self._initialization_event = Event()
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
+        # MUST call super().ainit() to initialize both default env vars
+        # AND the ones in env vars!
         await super().ainit(env_vars)
         if self.sandbox is not None and hasattr(self.sandbox, 'ainit'):
             logger.info('ServerRuntime: Initializing sandbox...')
