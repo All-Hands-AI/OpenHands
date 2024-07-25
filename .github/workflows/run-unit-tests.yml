@@ -75,7 +75,7 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
-          local IP_BASE="192.168.172."
+          IP_BASE="192.168.172."
 
           start_colima() {
             # Change IP address between attempts
