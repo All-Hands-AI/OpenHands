@@ -175,6 +175,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
@@ -188,18 +199,30 @@ jobs:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.platform }}
 
+      - name: List downloaded files
+        run: |
+          ls -la /tmp/${{ matrix.platform }}
+          file /tmp/${{ matrix.platform }}/*
+
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }} ./${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          if ! loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
+            echo "Failed to load Docker image"
+            exit 1
+          fi
           echo "loaded image = $loaded_image"
           tags=$(echo ${tags} | tr ' ' '\n')
           image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
           echo "image name = $image_name"
           for tag in $tags; do
             echo "tag = $tag"
-            docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
-            docker push $image_name:${tag}_${{ matrix.platform }}
+            if [ -n "$image_name" ]; then
+              docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
+              docker push $image_name:${tag}_${{ matrix.platform }}
+            else
+              echo "Skipping tag and push due to empty image_name"
+            fi
           done
 
   create_manifest:
