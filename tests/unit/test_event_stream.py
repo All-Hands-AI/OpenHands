@@ -77,7 +77,7 @@ def test_rehydration():
 async def test_run_command():
     with tempfile.TemporaryDirectory() as temp_dir:
         file_store = get_file_store('local', temp_dir)
-        config = AppConfig()
+        config = AppConfig(persist_sandbox=False, sandbox=SandboxConfig(box_type='ssh'))
         sid = 'test'
         cli_session = 'main' + ('_' + sid if sid else '')
         event_stream = EventStream(cli_session, file_store)
@@ -90,7 +90,7 @@ async def test_run_command():
 async def test_event_stream():
     with tempfile.TemporaryDirectory() as temp_dir:
         file_store = get_file_store('local', temp_dir)
-        config = SandboxConfig()
+        config = AppConfig(persist_sandbox=False, sandbox=SandboxConfig(box_type='ssh'))
         sid = 'test'
         cli_session = 'main' + ('_' + sid if sid else '')
         event_stream = EventStream(cli_session, file_store)
