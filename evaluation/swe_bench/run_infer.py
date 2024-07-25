@@ -42,11 +42,13 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
     'CodeActSWEAgent': codeact_user_response,
     'MonologueAgent': monologue_user_response,
+    'AgentlessAgent': codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
     'CodeActSWEAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
+    'AgentlessAgent': '',
 }
 
 
@@ -258,6 +260,8 @@ IMPORTANT TIPS:
 
 [Current directory: /workspace/{workspace_dir_name}]
 """
+    elif metadata.agent_class == 'AgentlessAgent':
+        instruction = f'{instance.problem_statement}\n'
     else:
         # Testing general agents
         instruction = (

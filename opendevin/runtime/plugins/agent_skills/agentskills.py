@@ -966,6 +966,120 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
+def apply_git_patch(patch_str, directory='/workspace'):
+    """
+    Apply a git patch from a string to a designated folder within the given directory.
+
+    Parameters:
+    - patch_str (str): The git patch as a string.
+    - directory (str): The directory containing the subdirectory where the patch should be applied.
+
+    Returns:
+    - bool: True if the patch was successfully applied, False otherwise.
+    """
+    try:
+        # Ensure the target directory exists
+        if not os.path.isdir(directory):
+            raise FileNotFoundError(f'The directory {directory} does not exist.')
+
+        # Identify the full path to the subdirectory (assuming that there is only one subdirectory)
+        subdirectories = [
+            d
+            for d in os.listdir(directory)
+            if os.path.isdir(os.path.join(directory, d))
+        ]
+
+        if len(subdirectories) != 1:
+            raise FileNotFoundError(
+                f'Expected exactly one subdirectory in {directory}, found {len(subdirectories)}.'
+            )
+
+        subdirectory_path = os.path.join(directory, subdirectories[0])
+        print(subdirectory_path)
+        # Change the current working directory to the subdirectory
+        os.chdir(subdirectory_path)
+
+        # Apply the patch
+        result = subprocess.run(
+            ['git', 'apply', '-'], input=patch_str, text=True, capture_output=True
+        )
+
+        # Check if the patch was applied successfully
+        if result.returncode != 0:
+            print(f'Error applying patch: {result.stderr}')
+            return False
+
+        print('Patch applied successfully.')
+        return True
+
+    except Exception as e:
+        print(f'An error occurred: {e}')
+        return False
+
+
+def try_apply_git_patch(patch_str, directory='./workspace'):
+    """Apply a git patch from a string to a designated folder, then revert it.
+
+    Parameters:
+    - patch_str (str): The git patch as a string.
+    - directory (str): The directory where the patch should be applied.
+
+    Returns:
+    - str: The text of the new file if the patch was successfully applied,
+           an error message otherwise.
+    """
+    import os
+    import subprocess
+
+    try:
+        # Ensure the target directory exists
+        if not os.path.isdir(directory):
+            raise FileNotFoundError(f'The directory {directory} does not exist.')
+
+        # Change the current working directory to the target directory
+        os.chdir(directory)
+
+        # Create a branch for safely applying the patch
+        subprocess.run(
+            ['git', 'checkout', '-b', 'temp_patch_branch'], capture_output=True
+        )
+
+        # Apply the patch
+        result = subprocess.run(
+            ['git', 'apply', '-'], input=patch_str, text=True, capture_output=True
+        )
+
+        # Check if the patch was applied successfully
+        if result.returncode != 0:
+            return f'Error applying patch: {result.stderr}'
+
+        # Get the status of the changes
+        status_result = subprocess.run(
+            ['git', 'status', '-s'], text=True, capture_output=True
+        )
+        if status_result.returncode != 0:
+            return f'Error getting git status: {status_result.stderr}'
+
+        # Get the diff of the applied patch
+        diff_result = subprocess.run(
+            ['git', 'diff', '--cached'], text=True, capture_output=True
+        )
+        if diff_result.returncode != 0:
+            return f'Error getting git diff: {diff_result.stderr}'
+
+        # Revert the applied patch
+        subprocess.run(['git', 'checkout', '-'], capture_output=True)
+        subprocess.run(
+            ['git', 'branch', '-D', 'temp_patch_branch'], capture_output=True
+        )
+
+        print('Patch applied and reverted successfully.')
+        return diff_result.stdout
+
+    except Exception as e:
+        return f'An error occurred: {e}'
+
+
 __all__ = [
     # file operation
     'open_file',
@@ -983,6 +1097,8 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
+    # Agentless skills
+    'apply_git_patch',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:
