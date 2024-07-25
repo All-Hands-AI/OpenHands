@@ -52,6 +52,12 @@ MAX_SAMPLES = 20
 SKIP_GREEDY = False
 
 
+def _parse_model_return_lines(content: str) -> list[str]:
+    if content:
+        return content.strip().split('\n')
+    return ['']
+
+
 class AgentlessAgent(Agent):
     VERSION = '0.0.1'
     """
@@ -320,7 +326,7 @@ class AgentlessAgent(Agent):
             temperature=0,
             max_tokens=MAX_TOKENS,
         )['choices'][0]['message']['content']
-        model_found_files = LLMFL._parse_model_return_lines(raw_output)
+        model_found_files = _parse_model_return_lines(raw_output)
 
         files, classes, functions = get_full_file_paths_and_classes_and_functions(
             structure
