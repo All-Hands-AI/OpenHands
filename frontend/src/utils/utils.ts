@@ -29,3 +29,8 @@ export const removeApiKey = (
 
     return newItem;
   });
+
+export const getExtension = (code: string) => {
+  if (code.includes(".")) return code.split(".").pop() || "";
+  return "";
+};
