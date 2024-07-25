@@ -34,7 +34,9 @@
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
   <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
-  <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?style=for-the-badge" alt="Evaluation Benchmark"></a>
+  <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper-%20on%20Arxiv-red?logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
+  <br/>
+  <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark"></a>
 </div>
 <hr>
 
@@ -138,12 +140,13 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 ## 📚 Cite
 
 ```
-@misc{opendevin2024,
-  author       = {{OpenDevin Team}},
-  title        = {{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
-  year         = {2024},
-  version      = {v1.0},
-  howpublished = {\url{https://github.com/OpenDevin/OpenDevin}},
-  note         = {Accessed: ENTER THE DATE YOU ACCESSED THE PROJECT}
+@misc{opendevin,
+      title={{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}}, 
+      author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
+      year={2024},
+      eprint={2407.16741},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2407.16741}, 
 }
 ```
