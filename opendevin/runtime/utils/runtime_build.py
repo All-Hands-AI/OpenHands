@@ -6,6 +6,7 @@ import tempfile
 
 import docker
 import toml
+from jinja2 import Environment, FileSystemLoader
 
 import opendevin
 from opendevin.core.logger import opendevin_logger as logger
@@ -64,73 +65,40 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
 def _generate_dockerfile(
     base_image: str, source_code_dirname: str, skip_init: bool = False
 ) -> str:
-    """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image.
-
-    NOTE: This is only tested on debian yet.
-    """
-    if skip_init:
-        dockerfile_content = f'FROM {base_image}\n'
-    else:
-        # Ubuntu 22.x has libgl1-mesa-glx, but 24.x and above have libgl1!
-        if 'ubuntu' in base_image and (
-            base_image.endswith(':latest') or base_image.endswith(':24.04')
-        ):
-            LIBGL_MESA = 'libgl1'
-        else:
-            LIBGL_MESA = 'libgl1-mesa-glx'
-
-        dockerfile_content = (
-            f'FROM {base_image}\n'
-            # Install necessary packages and clean up in one layer
-            f'RUN apt-get update && apt-get install -y wget sudo apt-utils {LIBGL_MESA} libasound2-plugins && \\\n'
-            f'    apt-get clean && rm -rf /var/lib/apt/lists/*\n'
-            # Create necessary directories
-            f'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs && \\\n'
-            f'    echo "" > /opendevin/bash.bashrc\n'
-            # Install Miniforge3
-            f'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
-            f'        wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
-            f'        bash Miniforge3.sh -b -p /opendevin/miniforge3 && \\\n'
-            f'        rm Miniforge3.sh && \\\n'
-            f'        chmod -R g+w /opendevin/miniforge3 && \\\n'
-            f'        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
-            f'    fi\n'
-            'RUN /opendevin/miniforge3/bin/mamba install python=3.11 -y\n'
-            'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y\n'
+    """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image."""
+    env = Environment(
+        loader=FileSystemLoader(
+            searchpath=os.path.join(os.path.dirname(__file__), 'runtime_templates')
         )
-
-    # Copy the project directory to the container
-    dockerfile_content += 'COPY project.tar.gz /opendevin\n'
-    # Remove /opendevin/code if it exists
-    dockerfile_content += (
-        'RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi\n'
     )
-    # Unzip the tarball to /opendevin/code
-    dockerfile_content += (
-        'RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz\n'
-    )
-    dockerfile_content += f'RUN mv /opendevin/{source_code_dirname} /opendevin/code\n'
-
-    # ALTERNATIVE, but maybe not complete? (toml error!)
-    dockerfile_content += (
-        'RUN cd /opendevin/code && '
-        '/opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && '
-        '/opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root\n'
-        'RUN /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \\\n'
-        'apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\\\n'
-        '/opendevin/miniforge3/bin/mamba clean --all\n'
-    )
-
-    # For browser (update if needed)
-    dockerfile_content += (
-        'RUN apt-get update && \\\n'
-        '    cd /opendevin/code && \\\n'
-        '    /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \\\n'
-        '    /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \\\n'
-        '    apt-get clean && \\\n'
-        '    rm -rf /var/lib/apt/lists/*\n'
+    template = env.get_template('Dockerfile.j2')
+    dockerfile_content = template.render(
+        base_image=base_image,
+        source_code_dirname=source_code_dirname,
+        skip_init=skip_init,
     )
     return dockerfile_content
+
+
+def prep_docker_build_folder(
+    dir_path: str,
+    base_image: str,
+    skip_init: bool = False,
+):
+    """Prepares the docker build folder by copying the source code and generating the Dockerfile."""
+    source_code_dirname = _put_source_code_to_dir(dir_path)
+    dockerfile_content = _generate_dockerfile(
+        base_image, source_code_dirname, skip_init=skip_init
+    )
+    logger.info(
+        (
+            f'===== Dockerfile content =====\n'
+            f'{dockerfile_content}\n'
+            f'==============================='
+        )
+    )
+    with open(os.path.join(dir_path, 'Dockerfile'), 'w') as file:
+        file.write(dockerfile_content)
 
 
 def _build_sandbox_image(
@@ -141,26 +109,13 @@ def _build_sandbox_image(
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            source_code_dirname = _put_source_code_to_dir(temp_dir)
-            dockerfile_content = _generate_dockerfile(
-                base_image, source_code_dirname, skip_init=skip_init
-            )
             if skip_init:
                 logger.info(
                     f'Reusing existing od_sandbox image [{target_image_name}] but will update the source code in it.'
                 )
             else:
                 logger.info(f'Building agnostic sandbox image: {target_image_name}')
-            logger.info(
-                (
-                    f'===== Dockerfile content =====\n'
-                    f'{dockerfile_content}\n'
-                    f'==============================='
-                )
-            )
-            with open(f'{temp_dir}/Dockerfile', 'w') as file:
-                file.write(dockerfile_content)
-
+            prep_docker_build_folder(temp_dir, base_image, skip_init=skip_init)
             api_client = docker_client.api
             build_logs = api_client.build(
                 path=temp_dir,
@@ -193,7 +148,7 @@ def _build_sandbox_image(
         raise e
 
 
-def _get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
+def get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
     if dev_mode:
         if 'od_runtime' not in base_image:
             raise ValueError(
@@ -201,6 +156,10 @@ def _get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
             )
         # remove the 'od_runtime' prefix from the base_image
         return base_image.replace('od_runtime', 'od_runtime_dev')
+    elif 'od_runtime' in base_image:
+        # if the base image is a valid od_runtime image, we will use it as is
+        logger.info(f'Using existing od_runtime image [{base_image}]')
+        return base_image
     else:
         prefix = 'od_runtime'
         if ':' not in base_image:
@@ -231,8 +190,13 @@ def build_runtime_image(
 
     This is only used for **eventstream runtime**.
     """
-    new_image_name = _get_new_image_name(base_image)
-    logger.info(f'New image name: {new_image_name}')
+    new_image_name = get_new_image_name(base_image)
+    if base_image == new_image_name:
+        logger.info(
+            f'Using existing od_runtime image [{base_image}]. Will NOT build a new image.'
+        )
+    else:
+        logger.info(f'New image name: {new_image_name}')
 
     # Ensure new_image_name contains a colon
     if ':' not in new_image_name:
@@ -264,7 +228,7 @@ def build_runtime_image(
         # e.g., od_runtime:ubuntu_tag_latest -> od_runtime_dev:ubuntu_tag_latest
         logger.info('Image exists, but updating source code requested')
         base_image = new_image_name
-        new_image_name = _get_new_image_name(base_image, dev_mode=True)
+        new_image_name = get_new_image_name(base_image, dev_mode=True)
 
         skip_init = True  # since we only need to update the source code
     else:
@@ -302,15 +266,42 @@ def build_runtime_image(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--base_image', type=str, default='ubuntu:22.04')
-    parser.add_argument('--update_source_code', type=bool, default=False)
-    parser.add_argument('--save_to_local_store', type=bool, default=False)
+    parser.add_argument('--update_source_code', action='store_true')
+    parser.add_argument('--save_to_local_store', action='store_true')
+    parser.add_argument('--build_folder', type=str, default=None)
     args = parser.parse_args()
 
-    client = docker.from_env()
-    image_name = build_runtime_image(
-        args.base_image,
-        client,
-        update_source_code=args.update_source_code,
-        save_to_local_store=args.save_to_local_store,
-    )
-    print(f'\nBUILT Image: {image_name}\n')
+    if args.build_folder is not None:
+        build_folder = args.build_folder
+        assert os.path.exists(
+            build_folder
+        ), f'Build folder {build_folder} does not exist'
+        logger.info(
+            f'Will prepare a build folder by copying the source code and generating the Dockerfile: {build_folder}'
+        )
+        new_image_path = get_new_image_name(args.base_image)
+        prep_docker_build_folder(
+            build_folder, args.base_image, skip_init=args.update_source_code
+        )
+        new_image_name, new_image_tag = new_image_path.split(':')
+        with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
+            file.write(
+                (
+                    f'DOCKER_IMAGE={new_image_name}\n'
+                    f'DOCKER_IMAGE_TAG={new_image_tag}\n'
+                )
+            )
+        logger.info(
+            f'`config.sh` is updated with the new image name [{new_image_name}] and tag [{new_image_tag}]'
+        )
+        logger.info(f'Dockerfile and source distribution are ready in {build_folder}')
+    else:
+        logger.info('Building image in a temporary folder')
+        client = docker.from_env()
+        image_name = build_runtime_image(
+            args.base_image,
+            client,
+            update_source_code=args.update_source_code,
+            save_to_local_store=args.save_to_local_store,
+        )
+        print(f'\nBUILT Image: {image_name}\n')
