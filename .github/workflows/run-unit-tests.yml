@@ -75,6 +75,8 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
+          INSTANCE_NAME="colima-${GITHUB_RUN_ID}"
+
           # Uninstall colima to upgrade to the latest version
           if brew list colima &>/dev/null; then
             brew uninstall colima
@@ -85,6 +87,9 @@ jobs:
           brew install --HEAD colima
           brew install docker
 
+          # Initialize Colima
+          colima start --init
+
           start_colima() {
             # Find a free port in the range 10000-20000
             RANDOM_PORT=$((RANDOM % 10001 + 10000))
@@ -94,7 +99,6 @@ jobs:
 
             # Attempt to use limactl to prevent duplicate start of colima
             # with default and then docker context!
-            INSTANCE_NAME="colima-${GITHUB_RUN_ID}"
             if ! limactl start ${INSTANCE_NAME} --context docker --network-address --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
               echo "Failed to start Colima."
               return 1
