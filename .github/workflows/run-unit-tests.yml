@@ -89,17 +89,20 @@ jobs:
           docker context create $DOCKER_CONTEXT --docker host=unix:///var/run/docker.sock
 
           start_colima() {
-            # Find a free port
-            RANDOM_PORT=$((RANDOM % 16384 + 49152))
+            # Find a free port in the range 10000-20000
+            RANDOM_PORT=$((RANDOM % 10001 + 10000))
 
             echo "Using random port: $RANDOM_PORT for SSH"
 
-            colima start --network-address --arch x86_64 --cpu=1 --memory=1 --ssh-port $RANDOM_PORT
+            if ! colima start --network-address --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
+              echo "Failed to start Colima."
+              return 1
+            fi
             docker context use $DOCKER_CONTEXT
           }
 
-          # Attempt to start Colima
-          ATTEMPT_LIMIT=3
+          # Attempt to start Colima; 4 retries:
+          ATTEMPT_LIMIT=5
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."
@@ -110,6 +113,8 @@ jobs:
                 colima delete
               else
                 colima stop -f
+                echo "Waiting 10 seconds before next attempt..."
+                sleep 10
               fi
             fi
           done
