@@ -119,7 +119,7 @@ jobs:
               if [ $i -lt $ATTEMPT_LIMIT ]; then
                 echo "Stopping Colima forcefully..."
                 colima stop -f
-                ecthe "ho "Waiting 10 seconds before next attempt..."
+                echo "Waiting 10 seconds before next attempt..."
                 sleep 10
               fi
             fi
