@@ -75,6 +75,16 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
+          # Uninstall colima to upgrade to the latest version
+          if brew list colima &>/dev/null; then
+            brew uninstall colima
+              # unlinking colima dependency: go
+              brew uninstall go@1.21
+          fi
+          rm -rf ~/.colima ~/.lima
+          brew install --HEAD colima
+          brew install docker
+
           start_colima() {
             # Find a free port in the range 10000-20000
             RANDOM_PORT=$((RANDOM % 10001 + 10000))
@@ -86,37 +96,23 @@ jobs:
             return 0
           }
 
-          # Attempt to start Colima; 4 retries:
+          # Attempt to start Colima for 5 total attempts:
           ATTEMPT_LIMIT=5
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
-
-            # Uninstall colima to upgrade to the latest version
-            if brew list colima &>/dev/null; then
-                brew uninstall colima
-                # unlinking colima dependency: go
-                brew uninstall go@1.21
-            fi
-            rm -rf ~/.colima ~/.lima
-            brew install --HEAD colima
-            brew install docker
 
             if start_colima; then
               echo "Colima started successfully."
               break
             else
               colima stop -f
-              colima delete
+              sleep 10
+              colima delete -f
               if [ $i -eq $ATTEMPT_LIMIT ]; then
                 exit 1
-              else
-                sleep 10
               fi
+              sleep 10
             fi
           done
-
-          if [ $i -ge $ATTEMPT_LIMIT ]; then
-            exit 1
-          fi
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
