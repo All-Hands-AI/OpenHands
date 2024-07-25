@@ -17,6 +17,8 @@ on:
 
 env:
   PERSIST_SANDBOX : "false"
+  ACTIONS_RUNNER_DEBUG: "true"  # Enable runner debug logging
+  ACTIONS_STEP_DEBUG: "true"    # Enable step debug logging
 
 jobs:
   fe-test:
@@ -93,47 +95,51 @@ jobs:
             # Find a free port in the range 10000-20000
             RANDOM_PORT=$((RANDOM % 10001 + 10000))
 
-            echo "Using random port: $RANDOM_PORT for SSH"
+            echo "::group::Colima Start Attempt"
+            echo "::debug::Using random port: $RANDOM_PORT for SSH"
 
             if ! colima start --network-address --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
-              echo "Failed to start Colima."
+              echo "::error::Failed to start Colima."
               return 1
             fi
+            echo "::endgroup::"
           }
 
           # Attempt to start Colima; 4 retries:
           ATTEMPT_LIMIT=5
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
-              echo "Colima started successfully."
+              echo "::notice::Colima started successfully."
               break
             else
-              echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
-              echo "Colima logs:"
+              echo "::warning::Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
+              echo "::group::Colima logs"
               if [ -f /opt/homebrew/var/log/colima.log ]; then
                 cat /opt/homebrew/var/log/colima.log
               else
-                echo "Colima log file not found at /opt/homebrew/var/log/colima.log"
+                echo "::warning::Colima log file not found at /opt/homebrew/var/log/colima.log"
                 ls -l /opt/homebrew/var/log/
               fi
+              echo "::endgroup::"
               if [ $i -lt $ATTEMPT_LIMIT ]; then
-                echo "Stopping Colima forcefully..."
+                echo "::debug::Stopping Colima forcefully..."
                 colima stop -f
-                echo "Waiting 10 seconds before next attempt..."
+                echo "::debug::Waiting 10 seconds before next attempt..."
                 sleep 10
               fi
             fi
           done
 
           if [ $i -eq $ATTEMPT_LIMIT ]; then
-            echo "Failed to start Colima after $ATTEMPT_LIMIT attempts."
-            echo "Final Colima logs:"
+            echo "::error::Failed to start Colima after $ATTEMPT_LIMIT attempts."
+            echo "::group::Final Colima logs"
             if [ -f /opt/homebrew/var/log/colima.log ]; then
               cat /opt/homebrew/var/log/colima.log
             else
-              echo "Colima log file not found at /opt/homebrew/var/log/colima.log"
+              echo "::warning::Colima log file not found at /opt/homebrew/var/log/colima.log"
               ls -l /opt/homebrew/var/log/
             fi
+            echo "::endgroup::"
             exit 1
           fi
 
