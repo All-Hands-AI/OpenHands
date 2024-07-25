@@ -175,9 +175,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check disk space before freeing
-        run: df -h /
-
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -202,10 +199,13 @@ jobs:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.platform }}
 
+      - name: Unzip Docker image artifact
+        run: unzip /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }}.zip -d /tmp/${{ matrix.platform }}
+
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar .
-          if ! loaded_image=$(docker load -i ${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
+          if ! loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
             echo "Failed to load Docker image"
             exit 1
           fi
