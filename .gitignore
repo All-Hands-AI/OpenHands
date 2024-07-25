@@ -210,6 +210,7 @@ cache
 
 # configuration
 config.toml
+config.toml_
 config.toml.bak
 
 containers/agnostic_sandbox
@@ -217,3 +218,9 @@ containers/agnostic_sandbox
 # swe-bench-eval
 image_build_logs
 run_instance_logs
+
+od_runtime_*.tar
+
+# docker build
+containers/runtime/Dockerfile
+containers/runtime/project.tar.gz

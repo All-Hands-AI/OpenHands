@@ -68,7 +68,6 @@ class LLM:
         Args:
             config: The LLM configuration
         """
-
         self.config = copy.deepcopy(config)
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
@@ -77,10 +76,12 @@ class LLM:
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
-            if not config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(config.model.split(':')[0])
+            if self.config.model.startswith('openrouter'):
+                self.model_info = litellm.get_model_info(self.config.model)
             else:
-                self.model_info = litellm.get_model_info(config.model)
+                self.model_info = litellm.get_model_info(
+                    self.config.model.split(':')[0]
+                )
         # noinspection PyBroadException
         except Exception:
             logger.warning(f'Could not get model info for {config.model}')
@@ -106,6 +107,9 @@ class LLM:
             else:
                 # Max output tokens for gpt3.5, so this is a safe fallback for any potentially viable model
                 self.config.max_output_tokens = 1024
+
+        if self.config.drop_params:
+            litellm.drop_params = self.config.drop_params
 
         self._completion = partial(
             litellm_completion,
@@ -457,3 +461,6 @@ class LLM:
         action_response = response['choices'][0]['message']['content']
         action = parse_summary_response(action_response)
         return action
+
+    def reset(self):
+        self.metrics = Metrics()
