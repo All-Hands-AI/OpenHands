@@ -17,8 +17,6 @@ on:
 
 env:
   PERSIST_SANDBOX : "false"
-  ACTIONS_RUNNER_DEBUG: "true"  # Enable runner debug logging
-  ACTIONS_STEP_DEBUG: "true"    # Enable step debug logging
 
 jobs:
   fe-test:
@@ -77,69 +75,53 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
-          # Uninstall colima to upgrade to the latest version
-          if brew list colima &>/dev/null; then
-              brew uninstall colima
-              # unlinking colima dependency: go
-              brew uninstall go@1.21
-          fi
-          rm -rf ~/.colima ~/.lima
-          brew install --HEAD colima
-          brew install docker
-
-          export DOCKER_CONTEXT="colima-$GITHUB_RUN_ID"
-          docker context create $DOCKER_CONTEXT --docker host=unix:///var/run/docker.sock
-          docker context use $DOCKER_CONTEXT
+          local IP_BASE="192.168.172."
 
           start_colima() {
+            # Change IP address between attempts
+            local IP_SUFFIX=$1
+            local IP_ADDRESS="${IP_BASE}${IP_SUFFIX}"
+
             # Find a free port in the range 10000-20000
             RANDOM_PORT=$((RANDOM % 10001 + 10000))
 
-            echo "::group::Colima Start Attempt"
-            echo "::debug::Using random port: $RANDOM_PORT for SSH"
-
-            if ! colima start --network-address --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
-              echo "::error::Failed to start Colima."
+            if ! colima start --network-address $IP_ADDRESS --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
+              echo "Failed to start Colima."
               return 1
             fi
-            echo "::endgroup::"
           }
 
           # Attempt to start Colima; 4 retries:
           ATTEMPT_LIMIT=5
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
-            if start_colima; then
-              echo "::notice::Colima started successfully."
+
+            # Uninstall colima to upgrade to the latest version
+            if brew list colima &>/dev/null; then
+                brew uninstall colima
+                # unlinking colima dependency: go
+                brew uninstall go@1.21
+            fi
+            rm -rf ~/.colima ~/.lima
+            brew install --HEAD colima
+            brew install docker
+
+            IP_SUFFIX=$((100 + i))  # Increment the last IP block
+
+            if start_colima $IP_SUFFIX; then
+              echo "Colima started successfully."
               break
             else
-              echo "::warning::Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
-              echo "::group::Colima logs"
-              if [ -f /opt/homebrew/var/log/colima.log ]; then
-                cat /opt/homebrew/var/log/colima.log
+              colima stop -f
+              colima delete
+              if [ $i -eq $ATTEMPT_LIMIT ]; then
+                exit 1
               else
-                echo "::warning::Colima log file not found at /opt/homebrew/var/log/colima.log"
-                ls -l /opt/homebrew/var/log/
-              fi
-              echo "::endgroup::"
-              if [ $i -lt $ATTEMPT_LIMIT ]; then
-                echo "::debug::Stopping Colima forcefully..."
-                colima stop -f
-                echo "::debug::Waiting 10 seconds before next attempt..."
                 sleep 10
               fi
             fi
           done
 
-          if [ $i -eq $ATTEMPT_LIMIT ]; then
-            echo "::error::Failed to start Colima after $ATTEMPT_LIMIT attempts."
-            echo "::group::Final Colima logs"
-            if [ -f /opt/homebrew/var/log/colima.log ]; then
-              cat /opt/homebrew/var/log/colima.log
-            else
-              echo "::warning::Colima log file not found at /opt/homebrew/var/log/colima.log"
-              ls -l /opt/homebrew/var/log/
-            fi
-            echo "::endgroup::"
+          if [ $i -ge $ATTEMPT_LIMIT ]; then
             exit 1
           fi
 
