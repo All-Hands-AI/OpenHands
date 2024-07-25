@@ -199,12 +199,14 @@ jobs:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.platform }}
 
-      - name: Unzip Docker image artifact
-        run: unzip /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }}.zip -d /tmp/${{ matrix.platform }}
+      - name: List downloaded files
+        run: |
+          ls -la /tmp/${{ matrix.platform }}
+          file /tmp/${{ matrix.platform }}/*
 
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }} ./${{ matrix.image }}_image_${{ matrix.platform }}.tar
           if ! loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
             echo "Failed to load Docker image"
             exit 1
