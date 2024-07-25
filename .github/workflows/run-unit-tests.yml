@@ -83,6 +83,7 @@ jobs:
               echo "Failed to start Colima."
               return 1
             fi
+            return 0
           }
 
           # Attempt to start Colima; 4 retries:
