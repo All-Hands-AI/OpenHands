@@ -87,6 +87,7 @@ jobs:
 
           export DOCKER_CONTEXT="colima-$GITHUB_RUN_ID"
           docker context create $DOCKER_CONTEXT --docker host=unix:///var/run/docker.sock
+          docker context use $DOCKER_CONTEXT
 
           start_colima() {
             # Find a free port in the range 10000-20000
@@ -105,17 +106,20 @@ jobs:
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."
-              docker context use $DOCKER_CONTEXT
               break
             else
               echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
               echo "Colima logs:"
-              tail -n 50 /opt/homebrew/var/log/colima.log
-              if [ $i -lt $ATTEMPT_LIMIT ]; then
-                colima delete
+              if [ -f /opt/homebrew/var/log/colima.log ]; then
+                cat /opt/homebrew/var/log/colima.log
               else
+                echo "Colima log file not found at /opt/homebrew/var/log/colima.log"
+                ls -l /opt/homebrew/var/log/
+              fi
+              if [ $i -lt $ATTEMPT_LIMIT ]; then
+                echo "Stopping Colima forcefully..."
                 colima stop -f
-                echo "Waiting 10 seconds before next attempt..."
+                ecthe "ho "Waiting 10 seconds before next attempt..."
                 sleep 10
               fi
             fi
@@ -124,7 +128,12 @@ jobs:
           if [ $i -eq $ATTEMPT_LIMIT ]; then
             echo "Failed to start Colima after $ATTEMPT_LIMIT attempts."
             echo "Final Colima logs:"
-            tail -n 50 /opt/homebrew/var/log/colima.log
+            if [ -f /opt/homebrew/var/log/colima.log ]; then
+              cat /opt/homebrew/var/log/colima.log
+            else
+              echo "Colima log file not found at /opt/homebrew/var/log/colima.log"
+              ls -l /opt/homebrew/var/log/
+            fi
             exit 1
           fi
 
