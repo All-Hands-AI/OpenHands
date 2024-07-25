@@ -83,16 +83,23 @@ jobs:
           fi
           rm -rf ~/.colima ~/.lima
           brew install --HEAD colima
-          brew services start colima
           brew install docker
-          colima delete
-          # Attempt to start Colima
-          ATTEMPT_LIMIT=3
+
+          export DOCKER_CONTEXT="colima-$GITHUB_RUN_ID"
+          docker context create $DOCKER_CONTEXT --docker host=unix:///var/run/docker.sock
 
           start_colima() {
-            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+            # Find a free port
+            RANDOM_PORT=$((RANDOM % 16384 + 49152))
+
+            echo "Using random port: $RANDOM_PORT for SSH"
+
+            colima start --network-address --arch x86_64 --cpu=1 --memory=1 --ssh-port $RANDOM_PORT
+            docker context use $DOCKER_CONTEXT
           }
 
+          # Attempt to start Colima
+          ATTEMPT_LIMIT=3
           for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
             if start_colima; then
               echo "Colima started successfully."

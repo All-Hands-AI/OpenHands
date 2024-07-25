@@ -1,0 +1,66 @@
+{% if skip_init %}
+FROM {{ base_image }}
+{% else %}
+# ================================================================
+# START: Build Runtime Image from Scratch
+# ================================================================
+FROM {{ base_image }}
+{% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+{% set LIBGL_MESA = 'libgl1' %}
+{% else %}
+{% set LIBGL_MESA = 'libgl1-mesa-glx' %}
+{% endif %}
+
+# Install necessary packages and clean up in one layer
+RUN apt-get update && \
+    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins && \
+    apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create necessary directories
+RUN mkdir -p /opendevin && \
+    mkdir -p /opendevin/logs && \
+    chmod 777 /opendevin/logs && \
+    echo "" > /opendevin/bash.bashrc
+
+RUN if [ ! -d /opendevin/miniforge3 ]; then \
+    wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
+    bash Miniforge3.sh -b -p /opendevin/miniforge3 && \
+    rm Miniforge3.sh && \
+    chmod -R g+w /opendevin/miniforge3 && \
+    bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \
+    fi
+
+# Install Python and Poetry
+RUN /opendevin/miniforge3/bin/mamba install python=3.11 -y
+RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y
+# ================================================================
+# END: Build Runtime Image from Scratch
+# ================================================================
+{% endif %}
+
+# ================================================================
+# START: Copy Project and Install/Update Dependencies
+# ================================================================
+COPY project.tar.gz /opendevin
+RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi
+RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz
+RUN mv /opendevin/{{ source_code_dirname }} /opendevin/code
+
+# Install/Update Dependencies
+# 1. Install pyproject.toml via poetry
+# 2. Install playwright and chromium
+# 3. Clear poetry, apt, mamba caches
+RUN cd /opendevin/code && \
+    /opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
+    /opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root && \
+    apt-get update && \
+    /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
+    /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
+    /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    /opendevin/miniforge3/bin/mamba clean --all
+
+# ================================================================
+# END: Copy Project and Install/Update Dependencies
+# ================================================================

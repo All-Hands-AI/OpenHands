@@ -97,9 +97,9 @@ class State:
     resume_state: AgentState | None = None
     traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
     # global metrics for the current task
-    metrics: Metrics = Metrics()
+    metrics: Metrics = field(default_factory=Metrics)
     # local metrics for the current subtask
-    local_metrics: Metrics = Metrics()
+    local_metrics: Metrics = field(default_factory=Metrics)
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
