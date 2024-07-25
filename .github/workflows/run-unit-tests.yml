@@ -109,7 +109,9 @@ jobs:
               break
             else
               echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
-              if [ $i -eq $ATTEMPT_LIMIT ]; then
+              echo "Colima logs:"
+              tail -n 50 /opt/homebrew/var/log/colima.log
+              if [ $i -lt $ATTEMPT_LIMIT ]; then
                 colima delete
               else
                 colima stop -f
@@ -119,8 +121,10 @@ jobs:
             fi
           done
 
-          if [ $i -gt $ATTEMPT_LIMIT ]; then
+          if [ $i -eq $ATTEMPT_LIMIT ]; then
             echo "Failed to start Colima after $ATTEMPT_LIMIT attempts."
+            echo "Final Colima logs:"
+            tail -n 50 /opt/homebrew/var/log/colima.log
             exit 1
           fi
 
