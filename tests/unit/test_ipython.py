@@ -81,7 +81,7 @@ async def test_run_python_backticks():
 
 def test_sandbox_jupyter_plugin_backticks(temp_dir):
     box = DockerSSHBox(
-        config=SandboxConfig(),
+        config=SandboxConfig(use_host_network=True),
         persist_sandbox=False,
         workspace_mount_path=temp_dir,
         sandbox_workspace_dir='/workspace',
