@@ -201,6 +201,7 @@ class DockerSSHBox(Sandbox):
         except Exception as e:
             self.close()
             raise e
+        time.sleep(1)
 
         # make sure /tmp always exists
         self.execute('mkdir -p /tmp')
@@ -353,12 +354,15 @@ class DockerSSHBox(Sandbox):
             raise e
 
     def start_ssh_session(self):
+        time.sleep(1)
         self.__ssh_login()
         assert self.ssh is not None
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
+        time.sleep(1)
+
         # cd to workspace
         self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
