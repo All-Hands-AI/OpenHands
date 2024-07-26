@@ -6,7 +6,7 @@ import os
 from abc import abstractmethod
 from typing import Any, Optional
 
-from opendevin.core.config import AppConfig, SandboxConfig, load_app_config
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
@@ -28,14 +28,9 @@ from opendevin.events.observation import (
     RejectObservation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.client.runtime import EventStreamRuntime
-from opendevin.runtime.plugins import (
-    AgentSkillsRequirement,
-    JupyterRequirement,
-    PluginRequirement,
-)
+from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
-from opendevin.storage import FileStore, get_file_store
+from opendevin.storage import FileStore
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -199,66 +194,3 @@ class Runtime:
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
-
-
-async def test_event_stream():
-    config = load_app_config()
-    file_store = get_file_store(config.file_store, config.file_store_path)
-    sid = 'test'
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session, file_store)
-    runtime = EventStreamRuntime(
-        config=config,
-        event_stream=event_stream,
-        sid=sid,
-        container_image='ubuntu:22.04',
-        plugins=[JupyterRequirement(), AgentSkillsRequirement()],
-    )
-    await runtime.ainit()
-
-    # Test run command
-    action_cmd = CmdRunAction(command='ls -l')
-    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-    logger.info(await runtime.run_action(action_cmd), extra={'msg_type': 'OBSERVATION'})
-
-    # Test run ipython
-    test_code = "print('Hello, `World`!\\n')"
-    action_ipython = IPythonRunCellAction(code=test_code)
-    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_ipython), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test read file (file should not exist)
-    action_read = FileReadAction(path='hello.sh')
-    logger.info(action_read, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_read), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test write file
-    action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
-    logger.info(action_write, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_write), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test read file (file should exist)
-    action_read = FileReadAction(path='hello.sh')
-    logger.info(action_read, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_read), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test browse
-    action_browse = BrowseURLAction(url='https://google.com')
-    logger.info(action_browse, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_browse), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    await runtime.close()
-
-
-if __name__ == '__main__':
-    asyncio.run(test_event_stream())
