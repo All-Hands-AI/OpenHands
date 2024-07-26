@@ -9,7 +9,7 @@ import pytest
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
     WINDOW,
-    _edit_file_impl,    
+    _edit_file_impl,
     _print_window,
     append_file,
     create_file,
@@ -632,7 +632,7 @@ Sum(1,1)
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             _edit_file_impl(
-               str(temp_file_path), start=3, end=3, content='        answer = a+b'
+                str(temp_file_path), start=3, end=3, content='        answer = a+b'
             )
         result = buf.getvalue()
         expected = (
