@@ -53,9 +53,12 @@ llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = {version = "2.2.2+cpu", source = "pytorch-cpu"}
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
+torch = [
+    { version = "2.2.2+cpu", source = "pytorch-cpu", markers = "sys_platform != 'darwin'" },
+    { version = "2.2.2", markers = "sys_platform == 'darwin'" }
+]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.5.4"
