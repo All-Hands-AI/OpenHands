@@ -4,7 +4,7 @@ This directory contains the core components of OpenDevin.
 
 This diagram provides an overview of the roles of each component and how they communicate and collaborate.
 
-![OpenDevin System Architecture Diagram (July 4, 2024)](https://github.com/OpenDevin/OpenDevin/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38)
+![OpenDevin System Architecture Diagram (July 4, 2024)](diagrams/system_architecture_overview_20240704.svg)
 
 ## Classes
 The key classes in OpenDevin are:
