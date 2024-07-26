@@ -57,15 +57,15 @@ async def _load_runtime(box_class, event_stream):
         ),
     )
 
-    container_image = config.sandbox.container_image
-    # NOTE: we will use the default container image specified in the config.sandbox
-    # if it is an official od_runtime image.
-    if 'od_runtime' not in container_image:
-        container_image = 'ubuntu:22.04'
-        logger.warning(
-            f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
-        )
     if box_class == EventStreamRuntime:
+        container_image = config.sandbox.container_image
+        # NOTE: we will use the default container image specified in the config.sandbox
+        # if it is an official od_runtime image.
+        if 'od_runtime' not in container_image:
+            container_image = 'ubuntu:22.04'
+            logger.warning(
+                f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
+            )
         runtime = EventStreamRuntime(
             config=config,
             event_stream=event_stream,
