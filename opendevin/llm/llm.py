@@ -42,6 +42,7 @@ class LLM(BaseLLM, CondenserMixin):
         """
         super().__init__(config, metrics)
 
+    # TODO Replace get_response with completion
     def get_response(self, messages: list[Message], state: State):
         try:
             if self.is_over_token_limit(messages):

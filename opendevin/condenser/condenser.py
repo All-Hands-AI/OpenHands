@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import (
     SummarizeError,
@@ -16,23 +14,9 @@ from .prompts import (
     parse_summary_response,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class CondenserMixin:
     """Condenses a group of condensable messages as done by MemGPT."""
-
-    # if TYPE_CHECKING:
-    #     get_token_count: Callable[[str], int]
-    #     config: Any
-    #     get_text_messages: Callable[..., Any]
-    #     completion: Callable[..., Any]
-    # if TYPE_CHECKING:
-    #     get_token_count: BaseLLM.get_token_count
-    #     config: BaseLLM.config
-    #     get_text_messages: BaseLLM.get_text_messages
-    #     completion: BaseLLM.completion
 
     def condense(
         self,
@@ -158,7 +142,7 @@ class CondenserMixin:
                 '</execute_browse>',
             ],
             temperature=0.0,
-        )  # type: ignore
+        )
 
         print(f'summarize_messages gpt reply: {response.choices[0]}')
 
