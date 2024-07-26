@@ -166,7 +166,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             config.workspace_mount_path = workspace_mount_path
 
             # linting python after editing helps LLM fix indentations
-            config.enable_auto_lint = True
+            config.sandbox.enable_auto_lint = True
             # Need to run as root to use SWEBench container
             config.run_as_devin = False
             if use_instance_image:
@@ -177,6 +177,7 @@ class SWEBenchSSHBox(DockerSSHBox):
                 container_image = SWE_BENCH_CONTAINER_IMAGE
             sandbox = cls(
                 container_image=container_image,
+                config=config,
                 swe_instance_id=instance['instance_id'],
                 swe_instance=instance,
                 skip_workspace_mount=skip_workspace_mount,
