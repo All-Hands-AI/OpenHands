@@ -187,7 +187,7 @@ def process_instance(
         # Set up logger
         log_file = os.path.join(
             metadata.eval_output_dir,
-            'infer_logs',
+            'logs',
             f'instance_{instance.instance_id}.log',
         )
         # Remove all existing handlers from logger

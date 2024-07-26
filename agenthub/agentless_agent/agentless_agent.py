@@ -22,12 +22,6 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-"""
-FIXME: There are a few problems this surfaced
-* FileWrites seem to add an unintended newline at the end of the file
-* Browser not working
-"""
-
 ActionObs = TypedDict(
     'ActionObs', {'action': Action, 'observations': list[Observation]}
 )
@@ -48,7 +42,7 @@ FINE_GRAIN_LOC_ONLY = False
 COT = True
 DIFF_FORMAT = True
 STOP_AT_N_UNIQUE_VALID_SAMPLES = -1
-MAX_SAMPLES = 20
+MAX_SAMPLES = 2
 SKIP_GREEDY = False
 
 
@@ -75,6 +69,13 @@ class AgentlessAgent(Agent):
     def __init__(self, llm: LLM):
         super().__init__(llm)
         self.steps: list[ActionObs] = []
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        Resets the CodeAct Agent.
+        """
+        super().reset()
 
     def step(self, state: State) -> Action:
         """
@@ -108,24 +109,34 @@ class AgentlessAgent(Agent):
 
         # Use the above to test the apply_git_patch function
 
-        self.install_agentless_libraries()
-        self.copy_directory_to_local()
-
         problem_statement = state.history.get_last_user_message()
+
+        self.install_agentless_libraries()
+        workspace_path, outer_path = self.copy_directory_to_local(problem_statement)
+
         logger.info('PROBLEM STATEMENT')
         logger.info(problem_statement)
-
-        workspace_path = self.get_subfolder_path(
-            '/srv/home/soren/OpenDevin/workspace/_eval_workspace/workspace'
-        )
-
+        logger.info('Workspace path: ' + workspace_path)
         repo_structure = self.retrieve_structure(workspace_path)
+
+        import shutil
+
+        # Check if the path exists
+        if os.path.exists(outer_path):
+            # Delete the directory and all its contents
+            shutil.rmtree(outer_path)
+            logger.info(
+                f'The directory {outer_path} and all its contents have been deleted.'
+            )
+        else:
+            logger.info(f'The directory {outer_path} does not exist.')
+
         logger.info('REPO STRUCTURE')
         for key in repo_structure.keys():
             logger.info(key)
             for key2 in repo_structure[key]:
                 logger.info(f'    {key2}')
-
+        # return AgentFinishAction()
         file_localization = self.agentless_file_localization(
             problem_statement, repo_structure
         )
@@ -169,7 +180,11 @@ class AgentlessAgent(Agent):
         logger.info('FINAL PATCH')
         logger.info(final_patch)
 
-        return IPythonRunCellAction(code=f"apply_git_patch('''{final_patch}''')")
+        if final_patch:
+            return IPythonRunCellAction(code=f"apply_git_patch('''{final_patch}''')")
+        else:
+            logger.info('No final patch found!')
+            return AgentFinishAction()
 
     def search_memory(self, query: str) -> list[str]:
         return []
@@ -178,20 +193,13 @@ class AgentlessAgent(Agent):
         import sys
 
         def install_libcst():
-            # try:
-            #     # Try to import the package. If it's already installed, this will succeed.
-            #     import libcst
-
-            #     print('libcst is already installed.')
-            # except ImportError:
-            # If the import fails, it means the package is not installed.
             print('libcst not found. Installing...')
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'libcst'])
             print('libcst installed successfully.')
 
         install_libcst()
 
-    def copy_directory_to_local(self):
+    def copy_directory_to_local(self, problem_description):
         def get_most_recent_container_id(image_name):
             try:
                 result = subprocess.run(
@@ -211,28 +219,53 @@ class AgentlessAgent(Agent):
                 container_ids = result.stdout.strip().split('\n')
                 return container_ids[0] if container_ids else None
             except subprocess.CalledProcessError as e:
-                print(f'Error while fetching container ID: {e}')
+                logger.info(f'Error while fetching container ID: {e}')
                 return None
 
         def copy_workspace_from_container(container_id, destination_path):
+            try:
+                result = subprocess.run(
+                    ['docker', 'exec', container_id, 'ls', '-R', '/workspace'],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                logger.info(result.stdout)
+            except subprocess.CalledProcessError as e:
+                logger.info('Error listing directory contents:')
+                logger.info(e.stderr)
             try:
                 subprocess.run(
                     ['docker', 'cp', f'{container_id}:/workspace', destination_path],
                     check=True,
                 )
-                print(f'Successfully copied workspace to {destination_path}')
+                logger.info(f'Successfully copied workspace to {destination_path}')
             except subprocess.CalledProcessError as e:
-                print(f'Error while copying workspace: {e}')
+                logger.info(f'Error while copying workspace: {e}')
 
         image_name = 'od_sandbox:ghcr.io___opendevin___eval-swe-bench__full-v1.2.1'
-        destination_path = '/srv/home/soren/OpenDevin/workspace/_eval_workspace'
+        import random
+        import string
+
+        def generate_random_string(length=10):
+            letters = (
+                string.ascii_letters
+            )  # Generates a string with all lowercase and uppercase letters
+            random_string = ''.join(random.choice(letters) for _ in range(length))
+            return random_string
+
+        # Generate a 10-letter random string
+        random_string = generate_random_string()
+        destination_path = 'workspace/_eval_workspace/' + random_string
 
         container_id = get_most_recent_container_id(image_name)
         if container_id:
-            print(f'Most recent container ID: {container_id}')
+            logger.info(f'Most recent container ID: {container_id}')
             copy_workspace_from_container(container_id, destination_path)
         else:
-            print(f'No container found for image: {image_name}')
+            logger.info(f'No container found for image: {image_name}')
+
+        return self.get_subfolder_path(destination_path), destination_path
 
     def get_subfolder_path(self, parent_folder_path):
         try:
@@ -241,10 +274,11 @@ class AgentlessAgent(Agent):
                 full_path = os.path.join(parent_folder_path, entry)
                 if os.path.isdir(full_path):
                     return full_path
-            return None  # If no folders are found, return None
+            logger.info('No folder found')
+            return parent_folder_path  # If no folders are found, return None
         except Exception as e:
-            print(f'An error occurred: {e}')
-            return None
+            logger.info(f'An error occurred: {e}')
+            return parent_folder_path
 
     def retrieve_structure(self, directory_path):
         """Create the structure of the repository directory by parsing Python files.
@@ -317,8 +351,8 @@ class AgentlessAgent(Agent):
             problem_statement=problem_statement,
             structure=show_project_structure(structure).strip(),
         ).strip()
-        print(f'prompting with message:\n{message}')
-        print('=' * 80)
+        logger.info(f'prompting with message:\n{message}')
+        logger.info('=' * 80)
 
         raw_output = self.llm.completion(
             model=MODEL_NAME,
@@ -354,6 +388,8 @@ class AgentlessAgent(Agent):
 
         if len(found_files) != 0:
             file_names = found_files[:TOP_N]
+        else:
+            file_names = found_files
         file_contents = get_repo_files(structure, file_names)
         compressed_file_contents = {
             fn: get_skeleton(code) for fn, code in file_contents.items()
@@ -488,6 +524,8 @@ class AgentlessAgent(Agent):
             for loc in model_found_locs_separated:
                 logger.info(loc)
             logger.info('=' * 80)
+        logger.info('Localizations: ')
+        logger.info(model_found_locs_separated_in_samples)
         logger.info('==== Input coarse_locs')
         coarse_info = ''
         for fn, found_locs in coarse_locs.items():
@@ -503,14 +541,16 @@ class AgentlessAgent(Agent):
             )
 
         merged_locs = []
-        merged_locs.append(
+        first_merge = (
             model_found_locs_separated_in_samples[0]
             + model_found_locs_separated_in_samples[1]
         )
-        merged_locs.append(
+        second_merge = (
             model_found_locs_separated_in_samples[2]
             + model_found_locs_separated_in_samples[3]
         )
+        merged_locs.append(first_merge)
+        merged_locs.append(second_merge)
 
         def flatten_innermost_strings(nested_list):
             if isinstance(nested_list, list):
@@ -525,7 +565,7 @@ class AgentlessAgent(Agent):
         return flatten_innermost_strings(merged_locs)
 
     def agentless_repair(
-        self, structure, found_files, found_edit_locs, problem_statement
+        self, structure, found_files, both_found_edit_locs, problem_statement
     ):
         from Agentless.agentless.repair.repair import (
             _post_process_multifile_repair,
@@ -539,91 +579,95 @@ class AgentlessAgent(Agent):
             get_full_file_paths_and_classes_and_functions,
         )
 
-        pred_files = found_files[:TOP_N]
-        file_to_edit_locs = {}
-        for i, pred_file in enumerate(pred_files):
-            if len(found_edit_locs) > i:
-                file_to_edit_locs[pred_file] = found_edit_locs[i]
+        for found_edit_locs in both_found_edit_locs:
+            pred_files = found_files[:TOP_N]
+            file_to_edit_locs = {}
+            for i, pred_file in enumerate(pred_files):
+                if len(found_edit_locs) > i:
+                    file_to_edit_locs[pred_file] = found_edit_locs[i]
 
-        files, _, _ = get_full_file_paths_and_classes_and_functions(structure)
+            files, _, _ = get_full_file_paths_and_classes_and_functions(structure)
 
-        # Construct file contents
-        file_contents = dict()
-        for i, pred_file in enumerate(pred_files):
-            content = None
+            # Construct file contents
+            file_contents = dict()
+            for i, pred_file in enumerate(pred_files):
+                content = None
 
-            for file_content in files:
-                if file_content[0] == pred_file:
-                    content = '\n'.join(file_content[1])
-                    file_contents[pred_file] = content
-                    break
+                for file_content in files:
+                    if file_content[0] == pred_file:
+                        content = '\n'.join(file_content[1])
+                        file_contents[pred_file] = content
+                        break
 
-        topn_content, file_loc_intervals = construct_topn_file_context(
-            file_to_edit_locs,
-            pred_files,
-            file_contents,
-            structure,
-            context_window=CONTEXT_WINDOW,
-            loc_interval=LOC_INTERVAL,
-            fine_grain_loc_only=FINE_GRAIN_LOC_ONLY,
-            add_space=ADD_SPACE,
-            no_line_number=NO_LINE_NUMBER,
-            sticky_scroll=STICKY_SCROLL,
-        )
+            logger.info('FILE CONTENTS')
+            logger.info(file_contents)
 
-        if topn_content.strip() == '':
-            return []
+            topn_content, file_loc_intervals = construct_topn_file_context(
+                file_to_edit_locs,
+                pred_files,
+                file_contents,
+                structure,
+                context_window=CONTEXT_WINDOW,
+                loc_interval=LOC_INTERVAL,
+                fine_grain_loc_only=FINE_GRAIN_LOC_ONLY,
+                add_space=ADD_SPACE,
+                no_line_number=NO_LINE_NUMBER,
+                sticky_scroll=STICKY_SCROLL,
+            )
 
-        prompt_template = (
-            repair_prompt_combine_topn_cot_diff
-            if COT and DIFF_FORMAT
-            else repair_prompt_combine_topn_cot
-            if COT
-            else repair_prompt_combine_topn
-        )
-        file_instruction = repair_relevant_file_instruction
-        message = prompt_template.format(
-            repair_relevant_file_instruction=file_instruction,
-            problem_statement=problem_statement,
-            content=topn_content.rstrip(),
-        ).strip()
-        logger.info(f'prompting with message:\n{message}')
+            if topn_content.strip() == '':
+                return []
 
-        all_generations, counts, _, prev_contents, file_names = [], [], [], [], []
-        sample_responses: List[Dict[str, Any]] = []
-        # Using early stopping will cost more since the input tokens will be charged multiple times.
-        # For now we disable it.
-        assert STOP_AT_N_UNIQUE_VALID_SAMPLES == -1
+            prompt_template = (
+                repair_prompt_combine_topn_cot_diff
+                if COT and DIFF_FORMAT
+                else repair_prompt_combine_topn_cot
+                if COT
+                else repair_prompt_combine_topn
+            )
+            file_instruction = repair_relevant_file_instruction
+            message = prompt_template.format(
+                repair_relevant_file_instruction=file_instruction,
+                problem_statement=problem_statement,
+                content=topn_content.rstrip(),
+            ).strip()
+            logger.info(f'prompting with message:\n{message}')
 
-        if SKIP_GREEDY:
-            greedy_traj = {
-                'response': '',
-                'usage': {
-                    'completion_tokens': 0,
-                    'prompt_tokens': 0,
-                },
-            }
-        else:
-            greedy_traj = self.llm.completion(
-                model=MODEL_NAME,
-                messages=[{'content': message, 'role': 'user'}],
-                temperature=0,
-                max_tokens=1024,
-            )['choices'][0]
-        sample_responses.append(greedy_traj)
+            all_generations, counts, _, prev_contents, file_names = [], [], [], [], []
+            sample_responses: List[Dict[str, Any]] = []
+            # Using early stopping will cost more since the input tokens will be charged multiple times.
+            # For now we disable it.
+            assert STOP_AT_N_UNIQUE_VALID_SAMPLES == -1
 
-        if MAX_SAMPLES - 1:
-            sample_trajs = self.llm.completion(
-                model=MODEL_NAME,
-                messages=[{'content': message, 'role': 'user'}],
-                temperature=TEMPERATURE,
-                max_tokens=1024,
-                n=MAX_SAMPLES - 1,
-            )['choices']
-        else:
-            sample_trajs = []
+            if SKIP_GREEDY:
+                greedy_traj = {
+                    'response': '',
+                    'usage': {
+                        'completion_tokens': 0,
+                        'prompt_tokens': 0,
+                    },
+                }
+            else:
+                greedy_traj = self.llm.completion(
+                    model=MODEL_NAME,
+                    messages=[{'content': message, 'role': 'user'}],
+                    temperature=0,
+                    max_tokens=1024,
+                )['choices'][0]
+            sample_responses.append(greedy_traj)
 
-        sample_responses.extend(sample_trajs)
+            if MAX_SAMPLES - 1:
+                sample_trajs = self.llm.completion(
+                    model=MODEL_NAME,
+                    messages=[{'content': message, 'role': 'user'}],
+                    temperature=TEMPERATURE,
+                    max_tokens=1024,
+                    n=MAX_SAMPLES - 1,
+                )['choices']
+            else:
+                sample_trajs = []
+
+            sample_responses.extend(sample_trajs)
 
         count = 0
         raw_outputs = []
@@ -685,7 +729,7 @@ class AgentlessAgent(Agent):
             logger.info(edited_file)
             logger.info('NEW CONTENT')
             logger.info(new_content)
-            if edited_file in file_contents:
+            if (edited_file in file_contents) and new_content:
                 content = file_contents[edited_file]
 
                 git_diff = fake_git_repo(
@@ -736,7 +780,7 @@ class AgentlessAgent(Agent):
     def agentless_post_process_repair(
         self,
         pred_files,
-        found_edit_locs,
+        both_found_edit_locs,
         generation_original_file_contents,
         generation_pred_files,
         raw_outputs,
@@ -749,8 +793,14 @@ class AgentlessAgent(Agent):
             transfer_arb_locs_to_locs,
         )
 
+        num_each_edit_loc = int(len(raw_outputs) / 2)
+
         processed_patches = []
         for generation_idx, raw_output_text in enumerate(raw_outputs):
+            if num_each_edit_loc > generation_idx:
+                found_edit_locs = both_found_edit_locs[0]
+            else:
+                found_edit_locs = both_found_edit_locs[1]
             if raw_output_text != '':
                 try:
                     original_file_content = generation_original_file_contents[

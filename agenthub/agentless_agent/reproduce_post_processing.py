@@ -1,3 +1,6 @@
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# This script is only for testing purposes
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 import logging
 
 file_localization = [
