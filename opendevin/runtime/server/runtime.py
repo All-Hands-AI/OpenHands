@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from opendevin.core.config import SandboxConfig, config
+from opendevin.core.config import AppConfig
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -34,48 +34,49 @@ from ..browser import browse
 from .files import read_file, write_file
 
 
-def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
-    if box_type == 'local':
-        return LocalBox(config=config.sandbox, workspace_base=config.workspace_base)
-    elif box_type == 'ssh':
-        return DockerSSHBox(
-            config=config.sandbox,
-            persist_sandbox=config.persist_sandbox,
-            workspace_mount_path=config.workspace_mount_path,
-            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
-            cache_dir=config.cache_dir,
-            run_as_devin=config.run_as_devin,
-            ssh_hostname=config.ssh_hostname,
-            ssh_password=config.ssh_password,
-            ssh_port=config.ssh_port,
-            sid=sid,
-        )
-    elif box_type == 'e2b':
-        return E2BBox(
-            config=config.sandbox,
-            e2b_api_key=config.e2b_api_key,
-        )
-    else:
-        raise ValueError(f'Invalid sandbox type: {box_type}')
-
-
 class ServerRuntime(Runtime):
     def __init__(
         self,
-        sandbox_config: SandboxConfig,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(sandbox_config, event_stream, sid)
+        super().__init__(config, event_stream, sid)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
+            self.sandbox = self.create_sandbox(sid, config.sandbox.box_type)
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
+
+    def create_sandbox(self, sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+        if box_type == 'local':
+            return LocalBox(
+                config=self.config.sandbox, workspace_base=self.config.workspace_base
+            )
+        elif box_type == 'ssh':
+            return DockerSSHBox(
+                config=self.config.sandbox,
+                persist_sandbox=self.config.persist_sandbox,
+                workspace_mount_path=self.config.workspace_mount_path,
+                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
+                cache_dir=self.config.cache_dir,
+                run_as_devin=self.config.run_as_devin,
+                ssh_hostname=self.config.ssh_hostname,
+                ssh_password=self.config.ssh_password,
+                ssh_port=self.config.ssh_port,
+                sid=sid,
+            )
+        elif box_type == 'e2b':
+            return E2BBox(
+                config=self.config.sandbox,
+                e2b_api_key=self.config.e2b_api_key,
+            )
+        else:
+            raise ValueError(f'Invalid sandbox type: {box_type}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         # MUST call super().ainit() to initialize both default env vars
@@ -177,8 +178,8 @@ class ServerRuntime(Runtime):
         return await read_file(
             action.path,
             working_dir,
-            config.workspace_base,
-            config.workspace_mount_path_in_sandbox,
+            self.config.workspace_base,
+            self.config.workspace_mount_path_in_sandbox,
             action.start,
             action.end,
         )
@@ -189,8 +190,8 @@ class ServerRuntime(Runtime):
         return await write_file(
             action.path,
             working_dir,
-            config.workspace_base,
-            config.workspace_mount_path_in_sandbox,
+            self.config.workspace_base,
+            self.config.workspace_mount_path_in_sandbox,
             action.content,
             action.start,
             action.end,

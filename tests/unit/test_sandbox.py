@@ -11,14 +11,14 @@ from opendevin.runtime.utils import split_bash_commands
 
 
 def create_docker_box_from_app_config(
-    path: str, config: AppConfig = None
+    path: str, config: AppConfig | None = None
 ) -> DockerSSHBox:
     if config is None:
         config = AppConfig(
             sandbox=SandboxConfig(
                 box_type='ssh',
-                persist_sandbox=False,
-            )
+            ),
+            persist_sandbox=False,
         )
     return DockerSSHBox(
         config=config.sandbox,
@@ -305,9 +305,9 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     config = AppConfig(
         sandbox=SandboxConfig(
             box_type='ssh',
-            persist_sandbox=False,
             enable_auto_lint=False,
-        )
+        ),
+        persist_sandbox=False,
     )
     assert not config.sandbox.enable_auto_lint
     box = create_docker_box_from_app_config(temp_dir, config)
@@ -324,9 +324,9 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             sandbox=SandboxConfig(
                 box_type='ssh',
                 container_image=base_sandbox_image,
-                persist_sandbox=False,
                 enable_auto_lint=False,
-            )
+            ),
+            persist_sandbox=False,
         )
         assert not config.sandbox.enable_auto_lint
         box = create_docker_box_from_app_config(temp_dir, config)
@@ -337,11 +337,20 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
     config = AppConfig(
         sandbox=SandboxConfig(
             box_type='ssh',
-            persist_sandbox=False,
-            enable_auto_lint=False,
-        )
+        ),
+        persist_sandbox=False,
     )
-    box = create_docker_box_from_app_config(temp_dir, config)
+    box = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=config.persist_sandbox,
+        workspace_mount_path=temp_dir,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=True,
+        ssh_hostname=config.ssh_hostname,
+        ssh_password=config.ssh_password,
+        ssh_port=config.ssh_port,
+    )
     box.init_plugins([JupyterRequirement])
     test_code = "print('Hello, `World`!')"
     expected_write_command = (
