@@ -1,4 +1,5 @@
 import logging
+import tempfile
 from unittest.mock import Mock, patch
 
 import pytest
@@ -17,6 +18,7 @@ from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.error import ErrorObservation
 from opendevin.events.stream import EventSource, EventStream
 from opendevin.memory.history import ShortTermHistory
+from opendevin.storage import get_file_store
 
 
 def collect_events(stream):
@@ -28,11 +30,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 @pytest.fixture
 def event_stream():
-    event_stream = EventStream('asdf')
-    yield event_stream
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_store = get_file_store('local', temp_dir)
+        event_stream = EventStream('asdf', file_store)
+        yield event_stream
 
-    # clear after each test
-    event_stream.clear()
+        # clear after each test
+        event_stream.clear()
 
 
 class TestStuckDetector:

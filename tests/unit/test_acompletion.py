@@ -2,22 +2,16 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import config
+from opendevin.core.config import load_app_config
 from opendevin.llm.llm import LLM
 
-# from opendevin.core.config import AppConfig
+config = load_app_config()
 
 
 @pytest.fixture
 def test_llm():
     # Create a mock config for testing
-    llm = LLM(config=config.get_llm_config())
-    # config = AppConfig()
-    # config.model = 'gpt-3.5-turbo'
-    # config.base_url = 'https://api.openai.com/v1'
-    # config.api_key = 'test-api-key'
-    # config.api_version = '2024-02-15'
-    return llm
+    return LLM(config=config.get_llm_config())
 
 
 @pytest.fixture

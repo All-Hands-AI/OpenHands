@@ -14,7 +14,6 @@ from opendevin.storage import (
     FileStore,
     InMemoryFileStore,
     LocalFileStore,
-    get_file_store,
 )
 
 from .event import Event, EventSource
@@ -37,14 +36,13 @@ class EventStream:
     _lock: threading.Lock
     _file_store: FileStore
 
-    def __init__(self, sid: str, reinitialize: bool = True):
+    def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
-        self._file_store: FileStore = get_file_store()
+        self._file_store = file_store
         self._subscribers = {}
         self._cur_id = 0
         self._lock = threading.Lock()
-        if reinitialize:
-            self._reinitialize_from_file_store()
+        self._reinitialize_from_file_store()
 
     def reset(self):
         """Reset the EventStream instance to its initial state."""
@@ -63,18 +61,6 @@ class EventStream:
             self._clear_in_memory_file_store(session_dir)
         else:
             self._clear_generic_file_store(session_dir)
-
-    @classmethod
-    def clear_all_sessions(cls):
-        """Clear all sessions from the file store."""
-        file_store = get_file_store()
-
-        if isinstance(file_store, LocalFileStore):
-            cls._clear_local_sessions(file_store)
-        elif isinstance(file_store, InMemoryFileStore):
-            cls._clear_in_memory_sessions(file_store)
-        else:
-            cls._clear_generic_sessions(file_store)
 
     @staticmethod
     def _clear_in_memory_sessions(file_store: InMemoryFileStore):
@@ -161,7 +147,7 @@ class EventStream:
         except Exception as e:
             logger.error(f'Error clearing generic file store: {e}')
 
-    def _reinitialize_from_file_store(self):
+    def _reinitialize_from_file_store(self) -> None:
         try:
             events = self._file_store.list(f'sessions/{self.sid}/events')
         except FileNotFoundError:
