@@ -331,3 +331,28 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         assert not config.sandbox.enable_auto_lint
         box = create_docker_box_from_app_config(temp_dir, config)
         _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+
+
+def test_sandbox_jupyter_plugin_backticks(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            persist_sandbox=False,
+            enable_auto_lint=False,
+        )
+    )
+    box = create_docker_box_from_app_config(temp_dir, config)
+    box.init_plugins([JupyterRequirement])
+    test_code = "print('Hello, `World`!')"
+    expected_write_command = (
+        "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
+    )
+    expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+    exit_code, output = box.execute(expected_write_command)
+    exit_code, output = box.execute(expected_execute_command)
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip() == 'Hello, `World`!', (
+        'The output should be the same as the input for ' + box.__class__.__name__
+    )
+    box.close()
