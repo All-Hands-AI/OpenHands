@@ -652,8 +652,8 @@ Sum(1,1)
             + '\n'
         )
         assert result.split('\n') == expected.split('\n')
-        
-        
+
+
 # ================================
 
 
