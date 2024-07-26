@@ -47,14 +47,20 @@ def box_class(request):
     return request.param
 
 
-async def _load_runtime(box_class, event_stream):
+async def _load_runtime(temp_dir, box_class):
     sid = 'test'
+    cli_session = 'main_test'
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
     config = AppConfig(
+        workspace_base=temp_dir,
+        workspace_mount_path=temp_dir,
         sandbox=SandboxConfig(
             use_host_network=True,
-        )
+        ),
     )
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    event_stream = EventStream(cli_session, file_store)
+
     container_image = config.sandbox.container_image
     # NOTE: we will use the default container image specified in the config.sandbox
     # if it is an official od_runtime image.
@@ -90,15 +96,9 @@ async def _load_runtime(box_class, event_stream):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_os_environ(box_class):
-    with patch.dict(
-        os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}
-    ), tempfile.TemporaryDirectory() as temp_dir:
-        cli_session = 'main_test'
-
-        file_store = get_file_store('local', temp_dir)
-        event_stream = EventStream(cli_session, file_store)
-        runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_os_environ(temp_dir, box_class):
+    with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
+        runtime = await _load_runtime(temp_dir, box_class)
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='env')
@@ -119,11 +119,8 @@ async def test_env_vars_os_environ(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_vars(box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_runtime_add_env_vars(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
     await runtime.add_env_vars({'QUUX': 'abc"def'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -140,11 +137,8 @@ async def test_env_vars_runtime_add_env_vars(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_empty_dict(box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_runtime_add_empty_dict(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     prev_obs = await runtime.run_action(CmdRunAction(command='env'))
     assert prev_obs.exit_code == 0, 'The exit code should be 0.'
@@ -164,11 +158,8 @@ async def test_env_vars_runtime_add_empty_dict(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_multiple_env_vars(box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_runtime_add_multiple_env_vars(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
     await runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -185,12 +176,9 @@ async def test_env_vars_runtime_add_multiple_env_vars(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_vars_overwrite(box_class):
-    cli_session = 'main_test'
-
+async def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        event_stream = EventStream(cli_session)
-        runtime = await _load_runtime(box_class, event_stream)
+        runtime = await _load_runtime(temp_dir, box_class)
         await runtime.add_env_vars({'FOOBAR': 'xyz'})
 
         obs: CmdOutputObservation = await runtime.run_action(
@@ -208,10 +196,7 @@ async def test_env_vars_runtime_add_env_vars_overwrite(box_class):
 
 @pytest.mark.asyncio
 async def test_bash_command_pexcept(temp_dir, box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # We set env var PS1="\u@\h:\w $"
     # and construct the PEXCEPT prompt base on it.
