@@ -12,6 +12,7 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     _print_window,
     append_file,
     create_file,
+    _edit_file_impl,
     edit_file_by_replace,
     find_file,
     goto_line,
@@ -607,7 +608,7 @@ check(any_int)"""
         assert result == expected
 
 
-def test_edit_file_by_replace_with_problematic_file(tmp_path, monkeypatch):
+def test_edit_file_impl_with_problematic_file(tmp_path, monkeypatch):
     # Set environment variable via monkeypatch does NOT work!
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
@@ -630,10 +631,11 @@ Sum(1,1)
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
+            _edit_file_impl(
                 str(temp_file_path),
-                to_replace='        answer = a + b',
-                new_content='        answer = a+b',
+                start=3,
+                end=3,
+                content='        answer = a+b'
             )
         result = buf.getvalue()
         expected = (
