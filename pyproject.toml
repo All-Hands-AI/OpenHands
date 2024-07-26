@@ -56,7 +56,7 @@ llama-index-embeddings-huggingface = "*"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 torch = [
-    { version = "2.2.2+cpu", source = "pytorch-cpu", markers = "sys_platform != 'darwin'" },
+    { version = "2.2.2", source = "pytorch-cpu", markers = "sys_platform != 'darwin'" },
     { version = "2.2.2", markers = "sys_platform == 'darwin'" }
 ]
 
