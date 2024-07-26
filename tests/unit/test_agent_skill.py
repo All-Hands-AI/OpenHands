@@ -9,10 +9,10 @@ import pytest
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
     WINDOW,
+    _edit_file_impl,    
     _print_window,
     append_file,
     create_file,
-    _edit_file_impl,
     edit_file_by_replace,
     find_file,
     goto_line,
