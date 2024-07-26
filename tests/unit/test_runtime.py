@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import AppConfig, SandboxConfig
+from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
@@ -30,6 +30,7 @@ from opendevin.events.observation import (
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.runtime.utils import split_bash_commands
 from opendevin.storage import get_file_store
 
 
@@ -67,6 +68,7 @@ async def _load_runtime(temp_dir, box_class):
             use_host_network=True,
         ),
     )
+    load_from_env(config, os.environ)
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(cli_session, file_store)
 
@@ -330,3 +332,112 @@ async def test_simple_browse(temp_dir, box_class):
     assert 'server.log' in obs.content
 
     await runtime.close()
+
+
+def test_split_commands_util():
+    cmds = [
+        'ls -l',
+        'echo -e "hello\nworld"',
+        """
+echo -e "hello it\\'s me"
+""".strip(),
+        """
+echo \\
+    -e 'hello' \\
+    -v
+""".strip(),
+        """
+echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
+""".strip(),
+        """
+echo -e 'hello
+world
+are
+you\\n
+there?'
+""".strip(),
+        """
+echo -e 'hello
+world "
+'
+""".strip(),
+        """
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-sleep
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.28
+    args:
+    - sleep
+    - "1000000"
+EOF
+""".strip(),
+    ]
+    joined_cmds = '\n'.join(cmds)
+    split_cmds = split_bash_commands(joined_cmds)
+    for s in split_cmds:
+        print('\nCMD')
+        print(s)
+    cmds = [
+        c.replace('\\\n', '') for c in cmds
+    ]  # The function strips escaped newlines, but this shouldn't matter
+    assert (
+        split_cmds == cmds
+    ), 'The split commands should be the same as the input commands.'
+
+
+@pytest.mark.asyncio
+async def test_multiline_commands(temp_dir, box_class):
+    cmds = [
+        'ls -l',
+        'echo -e "hello\nworld"',
+        """
+echo -e "hello it\\'s me"
+""".strip(),
+        """
+echo \\
+    -e 'hello' \\
+    -v
+""".strip(),
+        """
+echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
+""".strip(),
+        """
+echo -e 'hello
+world
+are
+you\\n
+there?'
+""".strip(),
+        """
+echo -e 'hello
+world "
+'
+""".strip(),
+    ]
+    joined_cmds = '\n'.join(cmds)
+
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command=joined_cmds)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+
+    assert 'total 0' in obs.content
+    assert '> hello\r\nworld' in obs.content
+    assert "hello it\\'s me" in obs.content
+    assert 'hello -v' in obs.content
+    assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
+    assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
+    assert 'hello\r\nworld "\r\n' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
