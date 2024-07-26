@@ -206,7 +206,7 @@ jobs:
 
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }} ./${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar ./${{ matrix.image }}_image_${{ matrix.platform }}.tar
           if ! loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
             echo "Failed to load Docker image"
             exit 1
