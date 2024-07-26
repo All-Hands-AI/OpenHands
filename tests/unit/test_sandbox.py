@@ -17,8 +17,8 @@ def create_docker_box_from_app_config(
         config = AppConfig(
             sandbox=SandboxConfig(
                 box_type='ssh',
-                persist_sandbox=False,
-            )
+            ),
+            persist_sandbox=False,
         )
     return DockerSSHBox(
         config=config.sandbox,
@@ -305,9 +305,9 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     config = AppConfig(
         sandbox=SandboxConfig(
             box_type='ssh',
-            persist_sandbox=False,
             enable_auto_lint=False,
-        )
+        ),
+        persist_sandbox=False,
     )
     assert not config.sandbox.enable_auto_lint
     box = create_docker_box_from_app_config(temp_dir, config)
@@ -324,9 +324,9 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             sandbox=SandboxConfig(
                 box_type='ssh',
                 container_image=base_sandbox_image,
-                persist_sandbox=False,
                 enable_auto_lint=False,
-            )
+            ),
+            persist_sandbox=False,
         )
         assert not config.sandbox.enable_auto_lint
         box = create_docker_box_from_app_config(temp_dir, config)
