@@ -78,6 +78,11 @@ class ServerRuntime(Runtime):
         else:
             raise ValueError(f'Invalid sandbox type: {box_type}')
 
+    async def ainit(self, env_vars: dict[str, str] | None = None):
+        # MUST call super().ainit() to initialize both default env vars
+        # AND the ones in env vars!
+        await super().ainit(env_vars)
+
     async def close(self):
         if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
             self.sandbox.close()
