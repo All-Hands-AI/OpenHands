@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from opendevin.core.config import SandboxConfig, config
+from opendevin.core.config import AppConfig
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -34,7 +34,9 @@ from ..browser import browse
 from .files import read_file, write_file
 
 
-def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+def create_sandbox(
+    config: AppConfig, sid: str = 'default', box_type: str = 'ssh'
+) -> Sandbox:
     if box_type == 'local':
         return LocalBox(config=config.sandbox, workspace_base=config.workspace_base)
     elif box_type == 'ssh':
@@ -62,15 +64,15 @@ def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
 class ServerRuntime(Runtime):
     def __init__(
         self,
-        sandbox_config: SandboxConfig,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(sandbox_config, event_stream, sid)
+        super().__init__(config, event_stream, sid)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
+            self.sandbox = create_sandbox(config, sid, config.sandbox.box_type)
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
@@ -177,8 +179,8 @@ class ServerRuntime(Runtime):
         return await read_file(
             action.path,
             working_dir,
-            config.workspace_base,
-            config.workspace_mount_path_in_sandbox,
+            self.config.workspace_base,
+            self.config.workspace_mount_path_in_sandbox,
             action.start,
             action.end,
         )
@@ -189,8 +191,8 @@ class ServerRuntime(Runtime):
         return await write_file(
             action.path,
             working_dir,
-            config.workspace_base,
-            config.workspace_mount_path_in_sandbox,
+            self.config.workspace_base,
+            self.config.workspace_mount_path_in_sandbox,
             action.content,
             action.start,
             action.end,

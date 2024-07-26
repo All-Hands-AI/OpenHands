@@ -6,7 +6,7 @@ import aiohttp
 import docker
 import tenacity
 
-from opendevin.core.config import SandboxConfig, config
+from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
@@ -45,15 +45,13 @@ class EventStreamRuntime(Runtime):
 
     def __init__(
         self,
-        sandbox_config: SandboxConfig,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
         container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
-        super().__init__(
-            sandbox_config, event_stream, sid
-        )  # will initialize the event stream
+        super().__init__(config, event_stream, sid)  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -64,7 +62,7 @@ class EventStreamRuntime(Runtime):
         # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.container_image = (
-            config.sandbox.container_image
+            self.config.sandbox.container_image
             if container_image is None
             else container_image
         )
@@ -81,11 +79,11 @@ class EventStreamRuntime(Runtime):
             # NOTE: You can need set DEBUG=true to update the source code
             # inside the container. This is useful when you want to test/debug the
             # latest code in the runtime docker container.
-            update_source_code=self.sandbox_config.update_source_code,
+            update_source_code=self.config.sandbox.update_source_code,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
-            mount_dir=config.workspace_mount_path,
+            mount_dir=self.config.workspace_mount_path,
             plugins=self.plugins,
         )
         # MUST call super().ainit() to initialize both default env vars
@@ -109,7 +107,7 @@ class EventStreamRuntime(Runtime):
     async def _init_container(
         self,
         sandbox_workspace_dir: str,
-        mount_dir: str = config.workspace_mount_path,
+        mount_dir: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
@@ -122,13 +120,21 @@ class EventStreamRuntime(Runtime):
 
             network_mode: str | None = None
             port_mapping: dict[str, int] | None = None
-            if self.sandbox_config.use_host_network:
+            if self.config.sandbox.use_host_network:
                 network_mode = 'host'
                 logger.warn(
                     'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
                 )
             else:
                 port_mapping = {f'{self._port}/tcp': self._port}
+
+            if mount_dir is not None:
+                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+            else:
+                logger.warn(
+                    'Mount dir is not set, will not mount the workspace directory to the container.'
+                )
+                volumes = None
 
             container = self.docker_client.containers.run(
                 self.container_image,
@@ -144,8 +150,8 @@ class EventStreamRuntime(Runtime):
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
-                environment={'DEBUG': 'true'} if config.debug else None,
-                volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
+                environment={'DEBUG': 'true'} if self.config.debug else None,
+                volumes=volumes,
             )
             logger.info(f'Container started. Server url: {self.api_url}')
             return container
@@ -179,7 +185,7 @@ class EventStreamRuntime(Runtime):
 
     @property
     def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
+        return self.config.workspace_mount_path_in_sandbox
 
     async def close(self, close_client: bool = True):
         if self.session is not None and not self.session.closed:
@@ -288,23 +294,15 @@ class EventStreamRuntime(Runtime):
         pass
 
 
-async def test_run_command():
-    sid = 'test'
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(
-        sandbox_config=config.sandbox, event_stream=event_stream, sid=sid
-    )
-    await runtime.ainit()
-    await runtime.run_action(CmdRunAction('ls -l'))
-
-
 async def test_event_stream():
+    # load global config for testing
+    from opendevin.core.config import config
+
     sid = 'test'
     cli_session = 'main' + ('_' + sid if sid else '')
     event_stream = EventStream(cli_session)
     runtime = EventStreamRuntime(
-        sandbox_config=config.sandbox,
+        config=config,
         event_stream=event_stream,
         sid=sid,
         container_image='ubuntu:22.04',
