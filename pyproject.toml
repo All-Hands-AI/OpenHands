@@ -39,13 +39,21 @@ pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 grep-ast = "0.3.2"
 tree-sitter = "0.21.3"
+flake8 = "^7.1.0"
+isort = "^5.13.2"
+pytest = "^8.3.2"
+scipy = "^1.14.0"
+autopep8 = "^2.3.1"
+matplotlib = "^3.9.1"
+reportlab = "^4.2.2"
+tabulate = "^0.9.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.2.0"
+torch = {version = "2.2.2+cpu", source = "pytorch-cpu"}
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
@@ -68,6 +76,11 @@ python-pptx = "*"
 opencv-python = "*"
 pandas = "*"
 reportlab = "*"
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
