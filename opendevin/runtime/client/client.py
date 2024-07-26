@@ -80,7 +80,7 @@ class RuntimeClient:
             r'\[PEXPECT_BEGIN\] ([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
         )
 
-        self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
+        self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
         self.shell.sendline(f'cd {work_dir}')

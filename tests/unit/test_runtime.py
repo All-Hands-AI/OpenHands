@@ -69,6 +69,7 @@ async def _load_runtime(temp_dir, box_class):
         ),
     )
     load_from_env(config, os.environ)
+
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(cli_session, file_store)
 
@@ -432,7 +433,7 @@ world "
     assert obs.exit_code == 0, 'The exit code should be 0.'
 
     assert 'total 0' in obs.content
-    assert '> hello\r\nworld' in obs.content
+    assert 'hello\r\nworld' in obs.content
     assert "hello it\\'s me" in obs.content
     assert 'hello -v' in obs.content
     assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
@@ -441,3 +442,23 @@ world "
 
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_no_ps2_in_output(temp_dir, box_class):
+    """Test that the PS2 sign is not added to the output of a multiline command."""
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='echo -e "hello\nworld"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    if box_class == ServerRuntime:
+        # the extra PS2 '>' is NOT handled by the ServerRuntime
+        assert 'hello\r\nworld' in obs.content
+        assert '>' in obs.content
+        assert obs.content.count('>') == 1
+    else:
+        assert 'hello\r\nworld' in obs.content
+        assert '>' not in obs.content
