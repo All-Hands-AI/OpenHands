@@ -80,13 +80,22 @@ async def test_run_python_backticks():
 
 
 def test_sandbox_jupyter_plugin_backticks(temp_dir):
-    box = DockerSSHBox(
-        config=SandboxConfig(use_host_network=True),
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+        ),
         persist_sandbox=False,
+    )
+    box = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=config.persist_sandbox,
         workspace_mount_path=temp_dir,
-        sandbox_workspace_dir='/workspace',
-        cache_dir='/tmp/cache',
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
         run_as_devin=True,
+        ssh_hostname=config.ssh_hostname,
+        ssh_password=config.ssh_password,
+        ssh_port=config.ssh_port,
     )
     box.init_plugins([JupyterRequirement])
     test_code = "print('Hello, `World`!')"
