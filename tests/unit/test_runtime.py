@@ -13,10 +13,19 @@ from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
+    BrowseURLAction,
     CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    IPythonRunCellAction,
 )
 from opendevin.events.observation import (
+    BrowserOutputObservation,
     CmdOutputObservation,
+    ErrorObservation,
+    FileReadObservation,
+    FileWriteObservation,
+    IPythonRunCellObservation,
 )
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -223,3 +232,101 @@ async def test_bash_command_pexcept(temp_dir, box_class):
 
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # Test run command
+    action_cmd = CmdRunAction(command='ls -l')
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_cmd)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'total 0' in obs.content
+
+    # Test run ipython
+    test_code = "print('Hello, `World`!\\n')"
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.content.strip() == 'Hello, `World`!'
+
+    # Test read file (file should not exist)
+    action_read = FileReadAction(path='hello.sh')
+    logger.info(action_read, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_read)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, ErrorObservation)
+    assert 'File not found' in obs.content
+
+    # Test write file
+    action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
+    logger.info(action_write, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_write)
+    assert isinstance(obs, FileWriteObservation)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert obs.content == ''
+    if box_class == ServerRuntime:
+        assert obs.path == 'hello.sh'
+    else:
+        # event stream runtime will always use absolute path
+        assert obs.path == '/workspace/hello.sh'
+
+    # Test read file (file should exist)
+    action_read = FileReadAction(path='hello.sh')
+    logger.info(action_read, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_read)
+    assert isinstance(
+        obs, FileReadObservation
+    ), 'The observation should be a FileReadObservation.'
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert obs.content == 'echo "Hello, World!"\n'
+    if box_class == ServerRuntime:
+        assert obs.path == 'hello.sh'
+    else:
+        assert obs.path == '/workspace/hello.sh'
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_simple_browse(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # Test browse
+    action_cmd = CmdRunAction(command='python -m http.server 8000 > server.log 2>&1 &')
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_cmd)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert '[1]' in obs.content
+
+    action_browse = BrowseURLAction(url='http://localhost:8000')
+    logger.info(action_browse, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_browse)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, BrowserOutputObservation)
+    assert obs.url == 'http://localhost:8000'
+    assert obs.status_code == 200
+    assert not obs.error
+    assert obs.open_pages_urls == ['http://localhost:8000/']
+    assert obs.active_page_index == 0
+    assert obs.last_browser_action == 'goto("http://localhost:8000")'
+    assert obs.last_browser_action_error == ''
+    assert 'Directory listing for /' in obs.content
+    assert 'server.log' in obs.content
+
+    await runtime.close()
