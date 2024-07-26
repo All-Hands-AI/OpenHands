@@ -9,33 +9,26 @@ import {
   FaNpm,
   FaPython,
 } from "react-icons/fa";
+import { getExtension } from "#/utils/utils";
+
+const EXTENSION_ICON_MAP: Record<string, JSX.Element> = {
+  js: <DiJavascript />,
+  ts: <DiJavascript />,
+  py: <FaPython />,
+  css: <FaCss3 />,
+  json: <FaList />,
+  npmignore: <FaNpm />,
+  html: <FaHtml5 />,
+  md: <FaMarkdown />,
+};
 
 interface FileIconProps {
   filename: string;
 }
 
-function FileIcon({ filename }: FileIconProps): JSX.Element | null {
-  const extension = filename.slice(filename.lastIndexOf(".") + 1);
-  switch (extension) {
-    case "js":
-      return <DiJavascript />;
-    case "ts":
-      return <DiJavascript />;
-    case "py":
-      return <FaPython />;
-    case "css":
-      return <FaCss3 />;
-    case "json":
-      return <FaList />;
-    case "npmignore":
-      return <FaNpm />;
-    case "html":
-      return <FaHtml5 />;
-    case "md":
-      return <FaMarkdown />;
-    default:
-      return <FaFile />;
-  }
+function FileIcon({ filename }: FileIconProps) {
+  const extension = getExtension(filename);
+  return EXTENSION_ICON_MAP[extension] || <FaFile />;
 }
 
 export default FileIcon;
