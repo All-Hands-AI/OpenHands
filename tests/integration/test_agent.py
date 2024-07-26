@@ -7,7 +7,7 @@ import pytest
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, parse_arguments
+from opendevin.core.config import LLMConfig
 from opendevin.core.main import run_agent_controller
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
@@ -74,10 +74,9 @@ def validate_final_state(final_state: State | None, test_name: str):
 )
 def test_write_simple_script(current_test_name: str) -> None:
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
-    args = parse_arguments()
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
+    agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
     final_state: State | None = asyncio.run(
         run_agent_controller(
@@ -121,7 +120,6 @@ def test_write_simple_script(current_test_name: str) -> None:
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
 def test_edits(current_test_name: str):
-    args = parse_arguments()
     # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
@@ -132,7 +130,7 @@ def test_edits(current_test_name: str):
         shutil.copy(os.path.join(source_dir, file), dest_file)
 
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
+    agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
@@ -164,10 +162,8 @@ Enjoy!
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
 def test_ipython(current_test_name: str):
-    args = parse_arguments()
-
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
+    agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
@@ -199,10 +195,8 @@ def test_ipython(current_test_name: str):
     reason='FIXME: local sandbox does not capture stderr',
 )
 def test_simple_task_rejection(current_test_name: str):
-    args = parse_arguments()
-
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
+    agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
@@ -224,10 +218,8 @@ def test_simple_task_rejection(current_test_name: str):
     reason='Currently, only ssh sandbox supports stateful tasks',
 )
 def test_ipython_module(current_test_name: str):
-    args = parse_arguments()
-
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
+    agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
@@ -265,10 +257,8 @@ def test_ipython_module(current_test_name: str):
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server, current_test_name: str):
-    args = parse_arguments()
-
     # Create the agent
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(LLMConfig()))
+    agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
