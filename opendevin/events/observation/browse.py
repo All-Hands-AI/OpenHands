@@ -34,7 +34,6 @@ class BrowserOutputObservation(Observation):
             f'Error: {self.error}\n'
             f'Open pages: {self.open_pages_urls}\n'
             f'Active page index: {self.active_page_index}\n'
-            f'AX tree: {self.axtree_txt}\n'
             f'Last browser action: {self.last_browser_action}\n'
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
