@@ -543,6 +543,7 @@ def _edit_file_impl(
                 lint_error = subtract_strings(original_lint_error, lint_error)
                 if lint_error == "":
                     lint_error = None
+                    first_error_line = None
 
             if lint_error is not None:
                 if first_error_line is not None:
