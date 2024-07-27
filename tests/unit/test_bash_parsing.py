@@ -3,6 +3,68 @@ import pytest
 from opendevin.runtime.utils.bash import split_bash_commands
 
 
+def test_split_commands_util():
+    cmds = [
+        'ls -l',
+        'echo -e "hello\nworld"',
+        """
+echo -e "hello it\\'s me"
+""".strip(),
+        """
+echo \\
+    -e 'hello' \\
+    -v
+""".strip(),
+        """
+echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
+""".strip(),
+        """
+echo -e 'hello
+world
+are
+you\\n
+there?'
+""".strip(),
+        """
+echo -e 'hello
+world "
+'
+""".strip(),
+        """
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-sleep
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.28
+    args:
+    - sleep
+    - "1000000"
+EOF
+""".strip(),
+        """
+mkdir -p _modules && \
+for month in {01..04}; do
+    for day in {01..05}; do
+        touch "_modules/2024-${month}-${day}-sample.md"
+    done
+done
+""".strip(),
+    ]
+    joined_cmds = '\n'.join(cmds)
+    split_cmds = split_bash_commands(joined_cmds)
+    for s in split_cmds:
+        print('\nCMD')
+        print(s)
+    for i in range(len(cmds)):
+        assert (
+            split_cmds[i].strip() == cmds[i].strip()
+        ), f'At index {i}: {split_cmds[i]} != {cmds[i]}.'
+
+
 @pytest.mark.parametrize(
     'input_command, expected_output',
     [
