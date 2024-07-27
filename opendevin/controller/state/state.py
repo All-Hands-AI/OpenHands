@@ -126,10 +126,17 @@ class State:
         except Exception as e:
             logger.error(f'Failed to restore state from session: {e}')
             raise e
+
+        # update state
         if state.agent_state in RESUMABLE_STATES:
             state.resume_state = state.agent_state
         else:
             state.resume_state = None
+
+        # don't carry last_error anymore after restore
+        state.last_error = None
+
+        # first state after restore
         state.agent_state = AgentState.LOADING
         return state
 
