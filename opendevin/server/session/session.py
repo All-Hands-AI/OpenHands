@@ -20,6 +20,7 @@ from opendevin.events.observation import (
 from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.storage.files import FileStore
 
 from .agent import AgentSession
 
@@ -33,11 +34,13 @@ class Session:
     is_alive: bool = True
     agent_session: AgentSession
 
-    def __init__(self, sid: str, ws: WebSocket | None, config: AppConfig):
+    def __init__(
+        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
+    ):
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
-        self.agent_session = AgentSession(sid)
+        self.agent_session = AgentSession(sid, file_store)
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event
         )
@@ -102,7 +105,7 @@ class Session:
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
-                sandbox_config=self.config.sandbox,
+                config=self.config,
                 agent=agent,
                 confirmation_mode=confirmation_mode,
                 max_iterations=max_iterations,
