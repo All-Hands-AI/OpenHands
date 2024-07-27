@@ -26,6 +26,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from opendevin.core.exceptions import UserCancelledError
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
@@ -33,12 +34,6 @@ from opendevin.core.metrics import Metrics
 __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
-
-
-class UserCancelledError(Exception):
-    """Custom exception to indicate a user-initiated cancellation."""
-
-    pass
 
 
 class LLM:
@@ -256,10 +251,11 @@ class LLM:
             async def check_stopped():
                 while True:
                     if (
-                        self.config.stop_requested_callback is not None
-                        and await self.config.stop_requested_callback()
+                        hasattr(self.config, 'on_cancel_requested_fn')
+                        and self.config.on_cancel_requested_fn is not None
+                        and await self.config.on_cancel_requested_fn()
                     ):
-                        return True
+                        raise UserCancelledError('LLM request cancelled by user')
                     await asyncio.sleep(0.1)
 
             stop_check_task = asyncio.create_task(check_stopped())
@@ -295,6 +291,10 @@ class LLM:
             finally:
                 await asyncio.sleep(0.1)
                 stop_check_task.cancel()
+                try:
+                    await stop_check_task
+                except asyncio.CancelledError:
+                    pass
 
         @retry(
             reraise=True,
@@ -329,17 +329,6 @@ class LLM:
                 debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
 
-            async def check_stopped():
-                while True:
-                    if (
-                        self.config.stop_requested_callback is not None
-                        and await self.config.stop_requested_callback()
-                    ):
-                        return True
-                    await asyncio.sleep(0.1)
-
-            stop_check_task = asyncio.create_task(check_stopped())
-
             try:
                 # Directly call and await litellm_acompletion
                 resp = await async_completion_unwrapped(*args, **kwargs)
@@ -348,8 +337,9 @@ class LLM:
                 async for chunk in resp:
                     # Check for cancellation before yielding the chunk
                     if (
-                        self.config.stop_requested_callback is not None
-                        and await self.config.stop_requested_callback()
+                        hasattr(self.config, 'on_cancel_requested_fn')
+                        and self.config.on_cancel_requested_fn is not None
+                        and await self.config.on_cancel_requested_fn()
                     ):
                         raise UserCancelledError(
                             'LLM request cancelled due to CANCELLED state'
@@ -376,7 +366,6 @@ class LLM:
             finally:
                 if kwargs.get('stream', False):
                     await asyncio.sleep(0.1)
-                    stop_check_task.cancel()
 
         self._async_completion = async_completion_wrapper  # type: ignore
         self._async_streaming_completion = async_completion_stream_wrapper  # type: ignore

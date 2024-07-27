@@ -10,6 +10,7 @@ from opendevin.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
+    UserCancelledError,
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
@@ -322,6 +323,11 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
+        # Check for cancellation before proceeding
+        if self.get_agent_state() == AgentState.CANCELLED:
+            logger.info('Step cancelled due to agent state.')
+            return
+
         if self._pending_action:
             logger.debug(
                 f'[Agent Controller `{self.id}`] waiting for pending action: {self._pending_action}'
@@ -426,6 +432,11 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
 
+            # Check for cancellation after getting the action
+            if self.get_agent_state() == AgentState.CANCELLED:
+                logger.info('Action cancelled due to agent state.')
+                return
+
             if action is None:
                 raise LLMNoActionError('No action was returned')
 
@@ -433,6 +444,10 @@ class AgentController:
                 action = await action
             logger.info(action, extra={'msg_type': 'ACTION'})
 
+        except UserCancelledError:
+            logger.info('LLM request was cancelled.')
+            await self.set_agent_state_to(AgentState.CANCELLED)
+            return
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user and send the underlying exception to the LLM for self-correction
             await self.report_error(f'{e}')
@@ -550,10 +565,10 @@ class AgentController:
             logger.error(f'Invalid agent state received: {state_str}')
             return False, None
 
-    def is_stopped(self):
-        """Check if the agent is stopped. Serves as callback for the LLM.
+    async def check_if_cancelled(self):
+        """Check if the agent is cancelled. Serves as callback for the LLM.
 
         Returns:
             bool: True if the agent is stopped, False otherwise.
         """
-        return self.state.agent_state == AgentState.STOPPED.value
+        return self.get_agent_state() == AgentState.CANCELLED

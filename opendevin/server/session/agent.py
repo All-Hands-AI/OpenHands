@@ -137,6 +137,6 @@ class AgentSession:
                 agent_state, max_iterations, confirmation_mode
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
-            agent.llm.config.stop_requested_callback = self.controller.is_stopped
+            agent.llm.config.on_cancel_requested_fn = self.controller.check_if_cancelled
         except Exception as e:
             print('Error restoring state', e)
