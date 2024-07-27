@@ -59,7 +59,7 @@ Example image name: `od_runtime:od_v0.8.1_image_ubuntu__22.04`
 ### Build Process
 
 #### Production Build (if environment variable `SANDBOX_UPDATE_SOURCE_CODE` is not set)
-By default, when DEBUG is set to false, the build process only needs to run once:
+By default, when `SANDBOX_UPDATE_SOURCE_CODE` is unset OR set to false, the build process only needs to run once:
 - The Runtime Image (`od_runtime:od_v{OPENDEVIN_VERSION}_image_ubuntu__22.04`) is created by copying OpenDevin code into the original Ubuntu image and installing all dependencies.
 - This pre-built image is then used for running the OpenDevin environment.
 
