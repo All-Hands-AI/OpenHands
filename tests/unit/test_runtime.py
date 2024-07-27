@@ -377,18 +377,24 @@ spec:
     - "1000000"
 EOF
 """.strip(),
+        """
+mkdir -p _modules && \
+for month in {01..04}; do
+    for day in {01..05}; do
+        touch "_modules/2024-${month}-${day}-sample.md"
+    done
+done
+""".strip(),
     ]
     joined_cmds = '\n'.join(cmds)
     split_cmds = split_bash_commands(joined_cmds)
     for s in split_cmds:
         print('\nCMD')
         print(s)
-    cmds = [
-        c.replace('\\\n', '') for c in cmds
-    ]  # The function strips escaped newlines, but this shouldn't matter
-    assert (
-        split_cmds == cmds
-    ), 'The split commands should be the same as the input commands.'
+    for i in range(len(cmds)):
+        assert (
+            split_cmds[i].strip() == cmds[i].strip()
+        ), f'At index {i}: {split_cmds[i]} != {cmds[i]}.'
 
 
 @pytest.mark.asyncio
@@ -462,3 +468,47 @@ async def test_no_ps2_in_output(temp_dir, box_class):
     else:
         assert 'hello\r\nworld' in obs.content
         assert '>' not in obs.content
+
+
+@pytest.mark.asyncio
+async def test_multiline_command_loop(temp_dir, box_class):
+    # https://github.com/OpenDevin/OpenDevin/issues/3143
+
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    init_cmd = """
+mkdir -p _modules && \
+for month in {01..04}; do
+    for day in {01..05}; do
+        touch "_modules/2024-${month}-${day}-sample.md"
+    done
+done
+echo "created files"
+"""
+    action = CmdRunAction(command=init_cmd)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+    assert 'created files' in obs.content
+
+    follow_up_cmd = """
+for file in _modules/*.md; do
+    new_date=$(echo $file | sed -E 's/2024-(01|02|03|04)-/2024-/;s/2024-01/2024-08/;s/2024-02/2024-09/;s/2024-03/2024-10/;s/2024-04/2024-11/')
+    mv "$file" "$new_date"
+done
+echo "success"
+"""
+    action = CmdRunAction(command=follow_up_cmd)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+    assert 'success' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)

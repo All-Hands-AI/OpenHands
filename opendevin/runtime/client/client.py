@@ -88,6 +88,15 @@ class RuntimeClient:
 
     def _get_bash_prompt(self):
         ps1 = self.shell.after
+
+        # begin at the last occurence of '[PEXPECT_BEGIN]'.
+        # In multi-line bash commands, the prompt will be repeated
+        # and the matched regex captures all of them
+        # - we only want the last one (newest prompt)
+        _begin_pos = ps1.rfind('[PEXPECT_BEGIN]')
+        if _begin_pos != -1:
+            ps1 = ps1[_begin_pos:]
+
         # parse the ps1 to get username, hostname, and working directory
         matched = re.match(self.__bash_expect_regex, ps1)
         assert (
