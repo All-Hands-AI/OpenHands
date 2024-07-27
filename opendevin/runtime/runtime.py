@@ -1,8 +1,13 @@
 import asyncio
 import atexit
+import copy
+import json
+import os
 from abc import abstractmethod
 from typing import Any, Optional
 
+from opendevin.core.config import AppConfig, SandboxConfig
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
@@ -16,6 +21,7 @@ from opendevin.events.action import (
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import (
+    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -27,6 +33,17 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore
 
 
+def _default_env_vars(config: SandboxConfig) -> dict[str, str]:
+    ret = {}
+    for key in os.environ:
+        if key.startswith('SANDBOX_ENV_'):
+            sandbox_key = key.removeprefix('SANDBOX_ENV_')
+            ret[sandbox_key] = os.environ[key]
+    if config.enable_auto_lint:
+        ret['ENABLE_AUTO_LINT'] = 'true'
+    return ret
+
+
 class Runtime:
     """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
@@ -36,18 +53,33 @@ class Runtime:
 
     sid: str
     file_store: FileStore
+    DEFAULT_ENV_VARS: dict[str, str]
 
-    def __init__(self, event_stream: EventStream, sid: str = 'default'):
+    def __init__(
+        self,
+        config: AppConfig,
+        event_stream: EventStream,
+        sid: str = 'default',
+    ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self.config = copy.deepcopy(config)
+        self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close_sync)
 
-    async def ainit(self) -> None:
-        """Initialize the runtime (asynchronously).
+    async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
+        """
+        Initialize the runtime (asynchronously).
+
         This method should be called after the runtime's constructor.
         """
-        pass
+        if self.DEFAULT_ENV_VARS:
+            logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
+            await self.add_env_vars(self.DEFAULT_ENV_VARS)
+        if env_vars is not None:
+            logger.debug(f'Adding provided env vars: {env_vars}')
+            await self.add_env_vars(env_vars)
 
     async def close(self) -> None:
         pass
@@ -83,6 +115,21 @@ class Runtime:
         raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
+
+    async def add_env_vars(self, env_vars: dict[str, str]) -> None:
+        cmd = ''
+        for key, value in env_vars.items():
+            # Note: json.dumps gives us nice escaping for free
+            cmd += f'export {key}={json.dumps(value)}; '
+        if not cmd:
+            return
+        cmd = cmd.strip()
+        logger.debug(f'Adding env var: {cmd}')
+        obs: Observation = await self.run(CmdRunAction(cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
+            )
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):

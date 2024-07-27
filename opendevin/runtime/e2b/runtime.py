@@ -1,3 +1,4 @@
+from opendevin.core.config import AppConfig
 from opendevin.events.action import (
     FileReadAction,
     FileWriteAction,
@@ -20,11 +21,12 @@ from .sandbox import E2BSandbox
 class E2BRuntime(ServerRuntime):
     def __init__(
         self,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(event_stream, sid, sandbox)
+        super().__init__(config, event_stream, sid, sandbox)
         if not isinstance(self.sandbox, E2BSandbox):
             raise ValueError('E2BRuntime requires an E2BSandbox')
         self.file_store = E2BFileStore(self.sandbox.filesystem)

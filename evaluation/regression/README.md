@@ -29,9 +29,6 @@ cases/
 ├── hello-world/
 │   ├── task.txt
 │   ├── outputs/
-│   │   ├── monologue_agent/
-│   │   │   └── workspace/
-│   │   │       ├── hello_world.sh
 │   │   └── codeact_agent/
 │   │       └── workspace/
 │   │           ├── hello_world.sh
@@ -39,12 +36,6 @@ cases/
 ├── create_web_app/
 │   ├── task.txt
 │   ├── outputs/
-│   │   ├── monologue_agent/
-│   │   │   └── workspace/
-│   │   │       ├── app.py
-│   │   │       ├── requirements.txt
-│   │   │       ├── static/
-│   │   │       └── templates/
 │   │   └── codeact_agent/
 │   │       └── workspace/
 │   │           ├── app.py
