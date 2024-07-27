@@ -1,87 +1,181 @@
-def split_bash_commands(commands):
-    # States
-    NORMAL = 0
-    IN_SINGLE_QUOTE = 1
-    IN_DOUBLE_QUOTE = 2
-    IN_HEREDOC = 3
+import re
 
-    state = NORMAL
-    heredoc_trigger = None
-    result = []
-    current_command: list[str] = []
 
-    i = 0
-    while i < len(commands):
-        char = commands[i]
+def split_bash_commands(command_string):
+    def handle_heredoc(cmd_string):
+        lines = cmd_string.split('\n')
+        result = []
+        i = 0
+        in_heredoc = False
+        heredoc_delimiter = None
+        current_command = []
 
-        if state == NORMAL:
-            if char == "'":
-                state = IN_SINGLE_QUOTE
-            elif char == '"':
-                state = IN_DOUBLE_QUOTE
-            elif char == '\\':
-                # Check if this is escaping a newline
-                if i + 1 < len(commands) and commands[i + 1] == '\n':
-                    i += 1  # Skip the newline
-                    # Continue with the next line as part of the same command
-                    i += 1  # Move to the first character of the next line
-                    continue
-            elif char == '\n':
-                if not heredoc_trigger and current_command:
-                    result.append(''.join(current_command).strip())
+        while i < len(lines):
+            line = lines[i].strip()
+            if not in_heredoc and '<<' in line:
+                heredoc_match = re.search(r'<<-?\s*(\w+)', line)
+                if heredoc_match:
+                    heredoc_delimiter = heredoc_match.group(1)
+                    in_heredoc = True
+                current_command.append(lines[i])
+            elif in_heredoc:
+                current_command.append(lines[i])
+                if line == heredoc_delimiter:
+                    in_heredoc = False
+                    result.append('\n'.join(current_command))
                     current_command = []
-            elif char == '<' and commands[i : i + 2] == '<<':
-                # Detect heredoc
-                state = IN_HEREDOC
-                i += 2  # Skip '<<'
-                while commands[i] == ' ':
-                    i += 1
-                start = i
-                while commands[i] not in [' ', '\n']:
-                    i += 1
-                heredoc_trigger = commands[start:i]
-                current_command.append(commands[start - 2 : i])  # Include '<<'
-                continue  # Skip incrementing i at the end of the loop
-            current_command.append(char)
+            else:
+                if current_command:
+                    current_command.append(lines[i])
+                else:
+                    result.append(lines[i])
+            i += 1
 
-        elif state == IN_SINGLE_QUOTE:
-            current_command.append(char)
-            if char == "'" and commands[i - 1] != '\\':
-                state = NORMAL
+        if current_command:
+            if in_heredoc:
+                raise ValueError('Unclosed heredoc')
+            result.append('\n'.join(current_command))
 
-        elif state == IN_DOUBLE_QUOTE:
-            current_command.append(char)
-            if char == '"' and commands[i - 1] != '\\':
-                state = NORMAL
+        return result
 
-        elif state == IN_HEREDOC:
-            current_command.append(char)
-            if (
-                char == '\n'
-                and heredoc_trigger
-                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
-                == heredoc_trigger + '\n'
+    def clean_command(cmd):
+        in_quotes = False
+        quote_char = None
+        cleaned = []
+        i = 0
+        while i < len(cmd):
+            char = cmd[i]
+            if char in ('"', "'"):
+                if not in_quotes:
+                    in_quotes = True
+                    quote_char = char
+                elif quote_char == char:
+                    in_quotes = False
+                    quote_char = None
+                cleaned.append(char)
+            elif (
+                char == '\\'
+                and i + 1 < len(cmd)
+                and cmd[i + 1] == quote_char
+                and cmd[i - 1] != '\\'
             ):
-                # Check if the next line starts with the heredoc trigger followed by a newline
-                i += (
-                    len(heredoc_trigger) + 1
-                )  # Move past the heredoc trigger and newline
-                current_command.append(
-                    heredoc_trigger + '\n'
-                )  # Include the heredoc trigger and newline
-                result.append(''.join(current_command).strip())
+                # Handle escaped quote character ONLY if not preceded by a backslash
+                cleaned.append(char)  # Append the backslash
+                cleaned.append(cmd[i + 1])  # Append the quote character
+                i += 1  # Skip the next character (quote)
+            elif char == '#' and not in_quotes:
+                break  # Ignore comments outside of quotes
+            else:
+                cleaned.append(char)
+            i += 1
+        # print(cleaned)
+        return ''.join(cleaned).strip()
+
+    def parse_commands(cmds):
+        parsed_commands = []
+        current_command = []
+        in_quotes = False
+        quote_char = None
+        brace_level = 0
+        for_level = 0
+        escaped = False
+        in_heredoc = False
+        heredoc_delimiter = None
+
+        for cmd in cmds:
+            cmd_chars = list(cmd)
+            i = 0
+            while i < len(cmd_chars):
+                char = cmd_chars[i]
+
+                if escaped:
+                    current_command.append(char)
+                    escaped = False
+                elif char == '\\':
+                    escaped = True
+                    current_command.append(char)
+                elif in_heredoc:
+                    current_command.append(char)
+                    if cmd[i:].startswith(heredoc_delimiter):
+                        in_heredoc = False
+                        heredoc_delimiter = None
+                elif char in ('"', "'"):
+                    if not in_quotes:
+                        in_quotes = True
+                        quote_char = char
+                    elif quote_char == char:
+                        in_quotes = False
+                        quote_char = None
+                    current_command.append(char)
+                elif char == '{':
+                    brace_level += 1
+                    current_command.append(char)
+                elif char == '}':
+                    brace_level -= 1
+                    current_command.append(char)
+                elif (
+                    char == ';'
+                    and not in_quotes
+                    and brace_level == 0
+                    and for_level == 0
+                ):
+                    if current_command:
+                        parsed_commands.append(''.join(current_command).strip())
+                        current_command = []
+                elif char == '#' and not in_quotes:
+                    break  # Ignore comments outside of quotes
+                else:
+                    current_command.append(char)
+
+                if not in_heredoc and '<<' in ''.join(current_command[-2:]):
+                    heredoc_match = re.search(r'<<-?\s*(\w+)', ''.join(current_command))
+                    if heredoc_match:
+                        in_heredoc = True
+                        heredoc_delimiter = heredoc_match.group(1)
+
+                if ''.join(current_command).strip().startswith('for '):
+                    for_level += 1
+                elif ''.join(current_command).strip() == 'done' and for_level > 0:
+                    for_level -= 1
+
+                i += 1
+
+            if current_command:
+                parsed_commands.append(''.join(current_command).strip())
                 current_command = []
-                heredoc_trigger = None
-                state = NORMAL
-                continue
 
-        i += 1
+        if in_quotes:
+            raise ValueError('Unclosed quote')
+        if in_heredoc:
+            raise ValueError('Unclosed heredoc')
 
-    # Add the last command if any
+        return parsed_commands
+
+    # Handle heredocs first
+    try:
+        preprocessed_commands = handle_heredoc(command_string)
+    except ValueError as e:
+        raise ValueError(str(e))
+
+    # Clean and parse commands
+    cleaned_commands = [clean_command(cmd) for cmd in preprocessed_commands]
+    parsed_commands = parse_commands(cleaned_commands)
+
+    # Filter out empty commands and join multi-line commands
+    result = []
+    current_command = []
+    for cmd in parsed_commands:
+        if cmd.endswith('\\') and not cmd.endswith('\\\\'):
+            current_command.append(cmd[:-1])  # Remove the trailing backslash
+        else:
+            if current_command:
+                current_command.append(cmd)
+                result.append(clean_command(' '.join(current_command)))
+                current_command = []
+            else:
+                result.append(clean_command(cmd))
+
     if current_command:
-        result.append(''.join(current_command).strip())
+        result.append(clean_command(' '.join(current_command)))
 
-    # Remove any empty strings from the result
-    result = [cmd for cmd in result if cmd]
-
-    return result
+    return [cmd.strip() for cmd in result if cmd.strip()]
