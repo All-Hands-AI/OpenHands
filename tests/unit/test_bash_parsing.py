@@ -1,6 +1,6 @@
 import pytest
 
-from opendevin.runtime.utils.bash_command_splitter import split_bash_commands
+from opendevin.runtime.utils.bash import split_bash_commands
 
 
 @pytest.mark.parametrize(
