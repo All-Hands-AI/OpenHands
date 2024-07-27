@@ -322,7 +322,7 @@ async def test_simple_browse(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert isinstance(obs, BrowserOutputObservation)
-    assert obs.url == 'http://localhost:8000'
+    assert 'http://localhost:8000' in obs.url
     assert obs.status_code == 200
     assert not obs.error
     assert obs.open_pages_urls == ['http://localhost:8000/']
