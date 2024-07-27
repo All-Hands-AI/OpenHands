@@ -47,6 +47,16 @@ class BrowserEnv:
         self.process = multiprocessing.Process(
             target=self.browser_process,
         )
+
+        try:
+            self.original_cwd = os.getcwd()
+        except FileNotFoundError:
+            logger.warning(
+                'Current working directory does not exist. Using /tmp as fallback.'
+            )
+            self.original_cwd = '/tmp'
+            os.chdir('/tmp')
+
         if is_async:
             threading.Thread(target=self.init_browser).start()
         else:
@@ -66,7 +76,23 @@ class BrowserEnv:
 
     def init_browser(self):
         logger.info('Starting browser env...')
-        self.process.start()
+
+        # Ensure we're in a valid directory before starting the process
+        try:
+            os.chdir(self.original_cwd)
+            logger.debug(f'Changed back to original directory: {self.original_cwd}')
+        except Exception as e:
+            logger.error(f'Failed to change to original directory: {e}')
+            # If we can't change to the original directory, try to use a known valid directory
+            os.chdir('/tmp')
+            logger.debug('Changed to /tmp directory as fallback')
+
+        try:
+            self.process.start()
+        except Exception as e:
+            logger.error(f'Failed to start browser process: {e}')
+            raise
+
         if not self.check_alive():
             self.close()
             raise BrowserInitException('Failed to start browser environment.')

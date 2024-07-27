@@ -29,6 +29,14 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
 
+    def model_dump_json(self, *args, **kwargs):
+        dumped = super().model_dump_json(*args, **kwargs)
+        dumped_dict = json.loads(dumped)
+        logger.debug(f'Dumped metadata: {dumped_dict}')
+        # avoid leaking sensitive information
+        dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        return json.dumps(dumped_dict)
+
 
 def codeact_user_response(
     state: State,
@@ -71,10 +79,6 @@ def codeact_user_response(
                 + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
             )
     return msg
-
-
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
 
 
 def cleanup():

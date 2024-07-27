@@ -3,11 +3,14 @@ import time
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from opendevin.controller.agent import Agent
+from opendevin.core.config import AppConfig
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
-from opendevin.events.action import Action, ChangeAgentStateAction, NullAction
+from opendevin.core.schema.config import ConfigType
+from opendevin.events.action import ChangeAgentStateAction, NullAction
 from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import (
     AgentStateChangedObservation,
@@ -16,6 +19,8 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
+from opendevin.llm.llm import LLM
+from opendevin.storage.files import FileStore
 
 from .agent import AgentSession
 
@@ -29,14 +34,17 @@ class Session:
     is_alive: bool = True
     agent_session: AgentSession
 
-    def __init__(self, sid: str, ws: WebSocket | None):
+    def __init__(
+        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
+    ):
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
-        self.agent_session = AgentSession(sid)
+        self.agent_session = AgentSession(sid, file_store)
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event
         )
+        self.config = config
 
     async def close(self):
         self.is_alive = False
@@ -67,8 +75,43 @@ class Session:
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
         )
+        # Extract the agent-relevant arguments from the request
+        args = {
+            key: value for key, value in data.get('args', {}).items() if value != ''
+        }
+        agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
+        confirmation_mode = args.get(
+            ConfigType.CONFIRMATION_MODE, self.config.confirmation_mode
+        )
+        max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
+        # override default LLM config
+        default_llm_config = self.config.get_llm_config()
+        default_llm_config.model = args.get(
+            ConfigType.LLM_MODEL, default_llm_config.model
+        )
+        default_llm_config.api_key = args.get(
+            ConfigType.LLM_API_KEY, default_llm_config.api_key
+        )
+        default_llm_config.base_url = args.get(
+            ConfigType.LLM_BASE_URL, default_llm_config.base_url
+        )
+
+        # TODO: override other LLM config & agent config groups (#2075)
+
+        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
+        agent = Agent.get_cls(agent_cls)(llm)
+
+        # Create the agent session
         try:
-            await self.agent_session.start(data)
+            await self.agent_session.start(
+                runtime_name=self.config.runtime,
+                config=self.config,
+                agent=agent,
+                confirmation_mode=confirmation_mode,
+                max_iterations=max_iterations,
+                max_budget_per_task=self.config.max_budget_per_task,
+                agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
+            )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
@@ -103,10 +146,6 @@ class Session:
             return
         event = event_from_dict(data.copy())
         self.agent_session.event_stream.add_event(event, EventSource.USER)
-        if isinstance(event, Action):
-            logger.info(
-                event, extra={'msg_type': 'ACTION', 'event_source': EventSource.USER}
-            )
 
     async def send(self, data: dict[str, object]) -> bool:
         try:
