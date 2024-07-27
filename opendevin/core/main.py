@@ -7,7 +7,7 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
@@ -17,6 +17,9 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.storage import get_file_store
+
+config = load_app_config()
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -33,7 +36,7 @@ def read_task_from_stdin() -> str:
 async def run_agent_controller(
     agent: Agent,
     task_str: str,
-    max_iterations: int | None = None,
+    max_iterations: int,
     max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
@@ -58,15 +61,16 @@ async def run_agent_controller(
     )
 
     # set up the event stream
+    file_store = get_file_store(config.file_store, config.file_store_path)
     cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session)
+    event_stream = EventStream(cli_session, file_store)
 
     # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
         try:
             logger.info('Restoring agent state from cli session')
-            initial_state = State.restore_from_session(cli_session)
+            initial_state = State.restore_from_session(cli_session, file_store)
         except Exception as e:
             print('Error restoring state', e)
 
@@ -75,6 +79,7 @@ async def run_agent_controller(
         agent=agent,
         max_iterations=max_iterations,
         max_budget_per_task=max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
         headless_mode=headless_mode,
@@ -82,9 +87,7 @@ async def run_agent_controller(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime = runtime_cls(
-        sandbox_config=config.sandbox, event_stream=event_stream, sandbox=sandbox
-    )
+    runtime = runtime_cls(config=config, event_stream=event_stream, sandbox=sandbox)
     await runtime.ainit()
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
@@ -141,7 +144,7 @@ async def run_agent_controller(
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
-        end_state.save_to_session(cli_session)
+        end_state.save_to_session(cli_session, file_store)
 
     # close when done
     await controller.close()

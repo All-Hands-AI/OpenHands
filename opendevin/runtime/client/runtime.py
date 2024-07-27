@@ -6,7 +6,7 @@ import aiohttp
 import docker
 import tenacity
 
-from opendevin.core.config import SandboxConfig, config
+from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
@@ -26,11 +26,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.plugins import (
-    AgentSkillsRequirement,
-    JupyterRequirement,
-    PluginRequirement,
-)
+from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.runtime_build import build_runtime_image
@@ -45,15 +41,13 @@ class EventStreamRuntime(Runtime):
 
     def __init__(
         self,
-        sandbox_config: SandboxConfig,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
         container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
-        super().__init__(
-            sandbox_config, event_stream, sid
-        )  # will initialize the event stream
+        super().__init__(config, event_stream, sid)  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -81,11 +75,11 @@ class EventStreamRuntime(Runtime):
             # NOTE: You can need set DEBUG=true to update the source code
             # inside the container. This is useful when you want to test/debug the
             # latest code in the runtime docker container.
-            update_source_code=self.sandbox_config.update_source_code,
+            update_source_code=self.config.sandbox.update_source_code,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
-            mount_dir=config.workspace_mount_path,
+            mount_dir=self.config.workspace_mount_path,
             plugins=self.plugins,
         )
         # MUST call super().ainit() to initialize both default env vars
@@ -109,7 +103,7 @@ class EventStreamRuntime(Runtime):
     async def _init_container(
         self,
         sandbox_workspace_dir: str,
-        mount_dir: str = config.workspace_mount_path,
+        mount_dir: str,
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
@@ -122,7 +116,7 @@ class EventStreamRuntime(Runtime):
 
             network_mode: str | None = None
             port_mapping: dict[str, int] | None = None
-            if self.sandbox_config.use_host_network:
+            if self.config.sandbox.use_host_network:
                 network_mode = 'host'
                 logger.warn(
                     'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
@@ -144,7 +138,7 @@ class EventStreamRuntime(Runtime):
                 working_dir='/opendevin/code/',
                 name=self.container_name,
                 detach=True,
-                environment={'DEBUG': 'true'} if config.debug else None,
+                environment={'DEBUG': 'true'} if self.config.debug else None,
                 volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
             )
             logger.info(f'Container started. Server url: {self.api_url}')
@@ -179,7 +173,7 @@ class EventStreamRuntime(Runtime):
 
     @property
     def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
+        return self.config.workspace_mount_path_in_sandbox
 
     async def close(self, close_client: bool = True):
         if self.session is not None and not self.session.closed:
@@ -286,75 +280,3 @@ class EventStreamRuntime(Runtime):
     # Overwrite the init_sandbox_plugins
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         pass
-
-
-async def test_run_command():
-    sid = 'test'
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(
-        sandbox_config=config.sandbox, event_stream=event_stream, sid=sid
-    )
-    await runtime.ainit()
-    await runtime.run_action(CmdRunAction('ls -l'))
-
-
-async def test_event_stream():
-    sid = 'test'
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session)
-    runtime = EventStreamRuntime(
-        sandbox_config=config.sandbox,
-        event_stream=event_stream,
-        sid=sid,
-        container_image='ubuntu:22.04',
-        plugins=[JupyterRequirement(), AgentSkillsRequirement()],
-    )
-    await runtime.ainit()
-
-    # Test run command
-    action_cmd = CmdRunAction(command='ls -l')
-    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-    logger.info(await runtime.run_action(action_cmd), extra={'msg_type': 'OBSERVATION'})
-
-    # Test run ipython
-    test_code = "print('Hello, `World`!\\n')"
-    action_ipython = IPythonRunCellAction(code=test_code)
-    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_ipython), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test read file (file should not exist)
-    action_read = FileReadAction(path='hello.sh')
-    logger.info(action_read, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_read), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test write file
-    action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
-    logger.info(action_write, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_write), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test read file (file should exist)
-    action_read = FileReadAction(path='hello.sh')
-    logger.info(action_read, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_read), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    # Test browse
-    action_browse = BrowseURLAction(url='https://google.com')
-    logger.info(action_browse, extra={'msg_type': 'ACTION'})
-    logger.info(
-        await runtime.run_action(action_browse), extra={'msg_type': 'OBSERVATION'}
-    )
-
-    await runtime.close()
-
-
-if __name__ == '__main__':
-    asyncio.run(test_event_stream())
