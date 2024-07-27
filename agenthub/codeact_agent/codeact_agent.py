@@ -131,8 +131,7 @@ class CodeActAgent(Agent):
             or isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
-            or isinstance(action, AgentFinishAction)
-            and action.source == 'agent'
+            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
             return {
                 'role': 'user' if action.source == 'user' else 'assistant',
