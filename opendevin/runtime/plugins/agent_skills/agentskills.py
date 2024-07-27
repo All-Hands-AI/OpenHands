@@ -539,7 +539,7 @@ def _edit_file_impl(
 
                 result = '\n'.join(remaining_lines)
                 return result
-            if original_lint_error:
+            if original_lint_error and lint_error:
                 lint_error = subtract_strings(original_lint_error, lint_error)
                 if lint_error == "":
                     lint_error = None
