@@ -6,6 +6,7 @@ export interface IconButtonProps {
   onClick: MouseEventHandler<HTMLButtonElement>;
   ariaLabel: string;
   testId?: string;
+  style?: React.CSSProperties;
 }
 
 function IconButton({
@@ -13,6 +14,7 @@ function IconButton({
   onClick,
   ariaLabel,
   testId = "",
+  style = {},
 }: IconButtonProps): React.ReactElement {
   return (
     <Button
@@ -22,6 +24,7 @@ function IconButton({
       className="cursor-pointer text-[12px] bg-transparent aspect-square px-0 min-w-[20px] h-[20px]"
       aria-label={ariaLabel}
       data-testid={testId}
+      style={style}
     >
       {icon}
     </Button>
