@@ -607,7 +607,8 @@ check(any_int)"""
         assert result == expected
 
 
-def test_edit_file_by_replace_with_problematic_file(tmp_path, monkeypatch):
+def test_edit_file_by_replace_with_multiple_errors(tmp_path, monkeypatch):
+    # If the file has multiple errors, but the suggested modification can only fix one error, make sure it is applied.
     # Set environment variable via monkeypatch does NOT work!
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
