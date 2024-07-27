@@ -58,7 +58,7 @@ class EventStreamRuntime(Runtime):
         # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.container_image = (
-            config.sandbox.container_image
+            self.config.sandbox.container_image
             if container_image is None
             else container_image
         )
@@ -103,7 +103,7 @@ class EventStreamRuntime(Runtime):
     async def _init_container(
         self,
         sandbox_workspace_dir: str,
-        mount_dir: str,
+        mount_dir: str | None = None,
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
@@ -124,6 +124,14 @@ class EventStreamRuntime(Runtime):
             else:
                 port_mapping = {f'{self._port}/tcp': self._port}
 
+            if mount_dir is not None:
+                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+            else:
+                logger.warn(
+                    'Mount dir is not set, will not mount the workspace directory to the container.'
+                )
+                volumes = None
+
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -139,7 +147,7 @@ class EventStreamRuntime(Runtime):
                 name=self.container_name,
                 detach=True,
                 environment={'DEBUG': 'true'} if self.config.debug else None,
-                volumes={mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}},
+                volumes=volumes,
             )
             logger.info(f'Container started. Server url: {self.api_url}')
             return container
