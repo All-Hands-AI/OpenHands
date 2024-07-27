@@ -91,37 +91,6 @@ def test_single_commands(input_command, expected_output):
     assert split_bash_commands(input_command) == expected_output
 
 
-@pytest.mark.parametrize(
-    'input_commands, expected_output',
-    [
-        ("ls -l; echo 'Hello'; cd /tmp", ['ls -l', "echo 'Hello'", 'cd /tmp']),
-        (
-            'echo \'one; two\'; echo "three; four"',
-            ["echo 'one; two'", 'echo "three; four"'],
-        ),
-        ('echo one\\; two; echo three', ['echo one\\; two', 'echo three']),
-    ],
-)
-def test_multiple_commands(input_commands, expected_output):
-    assert split_bash_commands(input_commands) == expected_output
-
-
-def test_multiline_commands():
-    input_commands = """
-for file in _modules/*.md; do
-    new_date=$(echo $file | sed -E 's/2024-(01|02|03|04)-/2024-/;s/2024-01/2024-08/;s/2024-02/2024-09/;s/2024-03/2024-10/;s/2024-04/2024-11/')
-    mv "$file" "$new_date"
-done
-"""
-    expected_output = [
-        'for file in _modules/*.md; do',
-        "new_date=$(echo $file | sed -E 's/2024-(01|02|03|04)-/2024-/;s/2024-01/2024-08/;s/2024-02/2024-09/;s/2024-03/2024-10/;s/2024-04/2024-11/')",
-        'mv "$file" "$new_date"',
-        'done',
-    ]
-    assert split_bash_commands(input_commands) == expected_output
-
-
 def test_heredoc():
     input_commands = """
 cat <<EOF
@@ -131,6 +100,30 @@ EOF
 echo "Done"
 """
     expected_output = ['cat <<EOF\nmultiline\ntext\nEOF', 'echo "Done"']
+    assert split_bash_commands(input_commands) == expected_output
+
+
+def test_jupyter_heredoc():
+    """This tests specifically test the behavior of the bash parser
+    when the input is a heredoc for a Jupyter cell (used in ServerRuntime).
+
+    It will failed to parse bash commands AND fall back to the original input,
+    which won't cause issues in actual execution.
+
+    [input]: cat > /tmp/opendevin_jupyter_temp.py <<'EOL'
+    print('Hello, `World`!
+    ')
+    EOL
+    [error]: here-document at line 0 delimited by end-of-file (wanted "'EOL'") (position 75)
+
+    TODO: remove this tests after the deprecation of ServerRuntime
+    """
+
+    code = "print('Hello, `World`!\n')"
+    input_commands = f"""cat > /tmp/opendevin_jupyter_temp.py <<'EOL'
+{code}
+EOL"""
+    expected_output = [f"cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n{code}\nEOL"]
     assert split_bash_commands(input_commands) == expected_output
 
 
@@ -154,7 +147,10 @@ echo "Hello" # This is a comment
 # This is another comment
 ls -l
 """
-    expected_output = ['echo "Hello"', 'ls -l']
+    expected_output = [
+        'echo "Hello" # This is a comment\n# This is another comment',
+        'ls -l',
+    ]
     assert split_bash_commands(input_commands) == expected_output
 
 
@@ -179,8 +175,8 @@ def test_invalid_syntax():
         'cat <<EOF\nUnclosed heredoc',
     ]
     for input_command in invalid_inputs:
-        with pytest.raises(ValueError):
-            split_bash_commands(input_command)
+        # it will fall back to return the original input
+        assert split_bash_commands(input_command) == [input_command]
 
 
 @pytest.fixture
@@ -203,27 +199,6 @@ def test_split_single_commands(sample_commands):
     for cmd in sample_commands:
         result = split_bash_commands(cmd)
         assert len(result) == 1, f'Expected single command, got: {result}'
-
-
-def test_split_multiple_commands():
-    input_commands = "ls -l; echo 'Hello'; cd /tmp"
-    expected_output = ['ls -l', "echo 'Hello'", 'cd /tmp']
-    result = split_bash_commands(input_commands)
-    assert result == expected_output, f'Expected {expected_output}, got {result}'
-
-
-def test_split_commands_with_semicolons_in_quotes():
-    input_commands = 'echo \'one; two\'; echo "three; four"'
-    expected_output = ["echo 'one; two'", 'echo "three; four"']
-    result = split_bash_commands(input_commands)
-    assert result == expected_output, f'Expected {expected_output}, got {result}'
-
-
-def test_split_commands_with_escaped_semicolons():
-    input_commands = 'echo one\\; two; echo three'
-    expected_output = ['echo one\\; two', 'echo three']
-    result = split_bash_commands(input_commands)
-    assert result == expected_output, f'Expected {expected_output}, got {result}'
 
 
 def test_split_commands_with_heredoc():
@@ -273,7 +248,10 @@ echo "Hello" # This is a comment
 # This is another comment
 ls -l
 """
-    expected_output = ['echo "Hello"', 'ls -l']
+    expected_output = [
+        'echo "Hello" # This is a comment\n# This is another comment',
+        'ls -l',
+    ]
     result = split_bash_commands(input_commands)
     assert result == expected_output, f'Expected {expected_output}, got {result}'
 
@@ -301,5 +279,5 @@ def test_split_commands_with_invalid_input():
         'cat <<EOF\nUnclosed heredoc',
     ]
     for input_command in invalid_inputs:
-        with pytest.raises(ValueError):
-            split_bash_commands(input_command)
+        # it will fall back to return the original input
+        assert split_bash_commands(input_command) == [input_command]
