@@ -40,39 +40,6 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-def test_ssh_box_run_as_devin(temp_dir):
-    # get a temporary directory
-    for box in [
-        create_docker_box_from_app_config(temp_dir),
-    ]:  # FIXME: permission error on mkdir test for exec box
-        exit_code, output = box.execute('ls -l')
-        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-        assert output.strip() == 'total 0'
-
-        assert box.workspace_mount_path == temp_dir
-        exit_code, output = box.execute('ls -l')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == 'total 0'
-
-        exit_code, output = box.execute('mkdir test')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == ''
-
-        exit_code, output = box.execute('ls -l')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert 'opendevin' in output, "The output should contain username 'opendevin'"
-        assert 'test' in output, 'The output should contain the test directory'
-
-        exit_code, output = box.execute('touch test/foo.txt')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == ''
-
-        exit_code, output = box.execute('ls -l test')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert 'foo.txt' in output, 'The output should contain the foo.txt file'
-        box.close()
-
-
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
     box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('pwd && ls -l')

@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import pexpect
@@ -60,19 +61,58 @@ class RuntimeClient:
     It is responsible for executing actions received from OpenDevin backend and producing observations.
     """
 
-    def __init__(self, plugins_to_load: list[Plugin], work_dir: str) -> None:
-        self._init_bash_shell(work_dir)
+    def __init__(
+        self, plugins_to_load: list[Plugin], work_dir: str, username: str, user_id: int
+    ) -> None:
+        self._init_user(username, user_id)
+        self._init_bash_shell(work_dir, username)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv()
 
         for plugin in plugins_to_load:
-            plugin.initialize()
+            plugin.initialize(username)
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
 
-    def _init_bash_shell(self, work_dir: str) -> None:
-        self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
+    def _init_user(self, username: str, user_id: int) -> None:
+        """Create user if not exists."""
+        # Add sudoer
+        sudoer_line = "echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
+        if output.returncode != 0:
+            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
+
+        # Add user
+        output = subprocess.run(
+            [
+                'useradd',
+                '-rm',
+                '-d',
+                '-s',
+                '/bin/bash',
+                '-g',
+                'root',
+                '-G',
+                'sudo',
+                '-u',
+                str(user_id),
+                username,
+            ],
+            shell=True,
+            capture_output=True,
+        )
+        if output.returncode != 0:
+            raise RuntimeError(
+                f'Failed to create user {username}: {output.stderr.decode()}'
+            )
+
+    def _init_bash_shell(self, work_dir: str, username: str) -> None:
+        self.shell = pexpect.spawn(
+            f'su -u {username} -c "/bin/bash"',
+            encoding='utf-8',
+            echo=False,
+        )
         self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
 
         # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
@@ -272,6 +312,10 @@ if __name__ == '__main__':
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
     parser.add_argument('--plugins', type=str, help='Plugins to initialize', nargs='+')
+    parser.add_argument(
+        '--username', type=str, help='User to run as', default='opendevin'
+    )
+    parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -282,7 +326,12 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client = RuntimeClient(plugins_to_load, work_dir=args.working_dir)
+    client = RuntimeClient(
+        plugins_to_load,
+        work_dir=args.working_dir,
+        username=args.username,
+        user_id=args.user_id,
+    )
 
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):

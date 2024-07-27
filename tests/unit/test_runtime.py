@@ -512,3 +512,99 @@ echo "success"
 
     await runtime.close()
     await asyncio.sleep(1)
+
+
+async def test_cmd_run(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='ls -l')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'total 0' in obs.content
+
+    action = CmdRunAction(command='mkdir test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert obs.content == ''
+
+    action = CmdRunAction(command='ls -l')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'opendevin' in obs.content
+    assert 'test' in obs.content
+
+    action = CmdRunAction(command='touch test/foo.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert obs.content.strip() == ''
+
+    action = CmdRunAction(command='ls -l test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'foo.txt' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_multi_cmd_run_in_single_line(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='ls -l')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'total 0' in obs.content
+
+    action = CmdRunAction(command='mkdir test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='ls -l')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'opendevin' in obs.content
+    assert 'test' in obs.content
+
+    action = CmdRunAction(command='touch test/foo.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert obs.content.strip() == ''
+
+    action = CmdRunAction(command='ls -l test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'foo.txt' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)

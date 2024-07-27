@@ -29,11 +29,15 @@ class JupyterRequirement(PluginRequirement):
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
-    def initialize(self, kernel_id: str = 'opendevin-default'):
+    def initialize(self, username: str, kernel_id: str = 'opendevin-default'):
         self.kernel_gateway_port = find_available_tcp_port()
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
             [
+                'su',
+                '-u',
+                username,
+                '-c',
                 '/opendevin/miniforge3/bin/mamba',
                 'run',
                 '-n',
