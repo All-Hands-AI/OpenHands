@@ -120,7 +120,7 @@ class RuntimeClient:
             command_output += '\n' + self.shell.before
         return (
             f'Command: "{command}" timed out. Sent SIGINT to the process: {command_output}',
-            -1
+            -1,
         )
 
     def _execute_bash(self, command, keep_prompt: bool = True) -> tuple[str, int]:
@@ -129,7 +129,7 @@ class RuntimeClient:
 
         prompts = [
             r'Do you want to continue\? \[Y/n\]',
-            self.shell.__bash_expect_regex,
+            self.__bash_expect_regex,
             EOF,
             TIMEOUT,
         ]
