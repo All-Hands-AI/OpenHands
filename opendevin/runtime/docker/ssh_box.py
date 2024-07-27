@@ -10,7 +10,6 @@ import tarfile
 import tempfile
 import time
 import uuid
-from contextlib import suppress
 from glob import glob
 from typing import Any, Dict, Optional, Tuple, Union  # type: ignore[unused-import]
 
@@ -188,10 +187,8 @@ class DockerSSHBox(Sandbox):
                         'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                     )
                 self._ssh_password = ssh_password
-                self._ssh_port = ssh_port
             else:
                 self._ssh_password = str(uuid.uuid4())
-                self._ssh_port = find_available_tcp_port()
 
             self.is_initial_session = True
 
@@ -923,11 +920,14 @@ class DockerSSHBox(Sandbox):
             container = await self.docker_client.containers.get(self.container_name)
             if not container:
                 return
+
             if await self.is_container_running():
                 await container.stop()
+                await asyncio.sleep(2)
                 logger.info('Container stopped')
+
             try:
-                await container.delete()
+                await container.delete(force=True)
             except DockerError as e:
                 if e.status == 404:
                     # If gone we don't care here
@@ -936,6 +936,7 @@ class DockerSSHBox(Sandbox):
                     raise
 
             # Wait for the container to be fully removed
+            await asyncio.sleep(1)
             elapsed = 0
             while elapsed < self.timeout:
                 try:
@@ -1163,44 +1164,32 @@ class DockerSSHBox(Sandbox):
         await self._cleanup()
 
     async def _cleanup(self):
-        if self._cleanup_done:
+        if self._cleanup_done or not hasattr(self, 'docker_client'):
             return
         try:
-            if hasattr(self, 'docker_client'):
+            containers = await self.docker_client.containers.list(all=True)
+            for container in containers:
                 try:
-                    # Use synchronous Docker client to list containers
-                    sync_client = docker.from_env()
-                    containers = sync_client.containers.list(all=True)
-                    for container in containers:
-                        if container.name.startswith(f'/{self.container_name}'):
-                            if self.persist_sandbox:
-                                with suppress(Exception):
-                                    container.stop()
-                            else:
-                                with suppress(Exception):
-                                    container.remove(force=True)
-                except Exception as e:
-                    logger.error(f'Error cleaning up containers: {e}', exc_info=True)
+                    container_info = await container.show()
+                    container_name = container_info['Name'].lstrip('/')
+                    if container_name.startswith(self.container_name_prefix):
+                        await container.stop()
+                        await asyncio.sleep(1)
+                        await container.delete(force=True)
+                        await asyncio.sleep(1)
+                        logger.info(f'Container {container_name} removed')
+                except DockerError as e:
+                    logger.error(f'Error removing container: {e}')
 
-                # Close the Docker client
-                if self.docker_client:
-                    with suppress(Exception):
-                        await self.docker_client.close()
-
-                # Ensure all aiohttp connections are closed
-                if (
-                    hasattr(self.docker_client, 'session')
-                    and self.docker_client.session
-                    and hasattr(self.docker_client.session, 'connector')
-                ):
-                    with suppress(Exception):
-                        await self.docker_client.session.connector.close()
+            # Close the Docker client
+            await self.docker_client.close()
 
         except Exception as e:
             logger.error(f'Error during cleanup: {e}', exc_info=True)
         finally:
             self._cleanup_done = True
             atexit.unregister(self.sync_cleanup)
+            DockerSSHBox._instance = None
 
     def sync_cleanup(self):
         if self._cleanup_done:

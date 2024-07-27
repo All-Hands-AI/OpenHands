@@ -12,7 +12,8 @@ from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.utils import split_bash_commands
 
 
-def create_docker_box_from_app_config(
+@pytest.mark.asyncio
+async def create_docker_box_from_app_config(
     path: str, config: AppConfig | None = None
 ) -> DockerSSHBox:
     if config is None:
@@ -22,7 +23,7 @@ def create_docker_box_from_app_config(
             ),
             persist_sandbox=False,
         )
-    return DockerSSHBox(
+    box = DockerSSHBox(
         config=config.sandbox,
         persist_sandbox=config.persist_sandbox,
         workspace_mount_path=path,
@@ -33,6 +34,8 @@ def create_docker_box_from_app_config(
         ssh_password=config.ssh_password,
         ssh_port=config.ssh_port,
     )
+    await box.ainit()
+    return box
 
 
 @pytest.fixture
@@ -53,32 +56,28 @@ def reset_docker_ssh_box():
         time.sleep(1)
 
 
-def test_env_vars(temp_dir):
+@pytest.mark.asyncio
+async def test_env_vars(temp_dir):
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    ssh_box = create_docker_box_from_app_config(temp_dir)
-
-    local_box_config = AppConfig(
+    config = AppConfig(
         sandbox=SandboxConfig(
             box_type='local',
         )
     )
-    local_box = LocalBox(local_box_config.sandbox, temp_dir)
-    for box in [
-        ssh_box,
-        local_box,
-    ]:
-        box.initialize()
-        box.add_to_env(key='QUUX', value='abc"def')
-        assert box._env['FOOBAR'] == 'BAZ'
-        assert box._env['QUUX'] == 'abc"def'
-        exit_code, output = box.execute('echo $FOOBAR $QUUX')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert (
-            output.strip() == 'BAZ abc"def'
-        ), f'Output: {output} for {box.__class__.__name__}'
+    box = LocalBox(config.sandbox, temp_dir)
+    await box.ainit()
+    await box.add_to_env(key='QUUX', value='abc"def')
+    assert box._env['FOOBAR'] == 'BAZ'
+    assert box._env['QUUX'] == 'abc"def'
+    exit_code, output = await box.execute_async('echo $FOOBAR $QUUX')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert (
+        output.strip() == 'BAZ abc"def'
+    ), f'Output: {output} for {box.__class__.__name__}'
 
 
-def test_split_commands():
+@pytest.mark.asyncio
+async def test_split_commands():
     cmds = [
         'ls -l',
         'echo -e "hello\nworld"',
@@ -134,126 +133,132 @@ EOF
     ), 'The split commands should be the same as the input commands.'
 
 
-def test_ssh_box_run_as_devin(temp_dir):
+@pytest.mark.asyncio
+async def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
-    for box in [
-        create_docker_box_from_app_config(temp_dir),
-    ]:  # FIXME: permission error on mkdir test for exec box
-        box.initialize()
-        exit_code, output = box.execute('ls -l')
-        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-        assert output.strip() == 'total 0'
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('ls -l')
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip() == 'total 0'
 
-        assert box.workspace_mount_path == temp_dir
-        exit_code, output = box.execute('ls -l')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == 'total 0'
+    assert box.workspace_mount_path == temp_dir
+    exit_code, output = await box.execute_async('ls -l')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert output.strip() == 'total 0'
 
-        exit_code, output = box.execute('mkdir test')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == ''
+    exit_code, output = await box.execute_async('mkdir test')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert output.strip() == ''
 
-        exit_code, output = box.execute('ls -l')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert 'opendevin' in output, "The output should contain username 'opendevin'"
-        assert 'test' in output, 'The output should contain the test directory'
+    exit_code, output = await box.execute_async('ls -l')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert 'opendevin' in output, "The output should contain username 'opendevin'"
+    assert 'test' in output, 'The output should contain the test directory'
 
-        exit_code, output = box.execute('touch test/foo.txt')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert output.strip() == ''
+    exit_code, output = await box.execute_async('touch test/foo.txt')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert output.strip() == ''
 
-        exit_code, output = box.execute('ls -l test')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert 'foo.txt' in output, 'The output should contain the foo.txt file'
-        box.close()
+    exit_code, output = await box.execute_async('ls -l test')
+    assert exit_code == 0, 'The exit code should be 0.'
+    assert 'foo.txt' in output, 'The output should contain the foo.txt file'
+    await box.close()
 
 
-def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('pwd && ls -l')
+@pytest.mark.asyncio
+async def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('pwd && ls -l')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     expected_lines = ['/workspace', 'total 0']
     line_sep = '\r\n' if isinstance(box, DockerSSHBox) else '\n'
     assert output == line_sep.join(expected_lines), (
         'The output should be the same as the input for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
-def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('mkdir test')
+@pytest.mark.asyncio
+async def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('mkdir test')
     assert exit_code == 0, 'The exit code should be 0.'
     assert output.strip() == ''
 
-    exit_code, output = box.execute('cd test')
+    exit_code, output = await box.execute_async('cd test')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip() == '', (
         'The output should be empty for ' + box.__class__.__name__
     )
 
-    exit_code, output = box.execute('pwd')
+    exit_code, output = await box.execute_async('pwd')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip() == '/workspace/test', (
         'The output should be /workspace for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
-def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('non_existing_command')
+@pytest.mark.asyncio
+async def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('non_existing_command')
     assert exit_code != 0, (
         'The exit code should not be 0 for a failed command for '
         + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
-def test_single_multiline_command(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('echo \\\n -e "foo"')
+@pytest.mark.asyncio
+async def test_single_multiline_command(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('echo \\\n -e "foo"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output? Probably PS2?
     assert output == '> foo', (
         'The output should be the same as the input for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
-def test_multiline_echo(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('echo -e "hello\nworld"')
+@pytest.mark.asyncio
+async def test_multiline_echo(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('echo -e "hello\nworld"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output?
     assert output == '> hello\r\nworld', (
         'The output should be the same as the input for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
-def test_sandbox_whitespace(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('echo -e "\\n\\n\\n"')
+@pytest.mark.asyncio
+async def test_sandbox_whitespace(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    exit_code, output = await box.execute_async('echo -e "\\n\\n\\n"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output == '\r\n\r\n\r\n', (
         'The output should be the same as the input for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
-def test_sandbox_jupyter_plugin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    box.init_plugins([JupyterRequirement])
-    exit_code, output = box.execute('echo "print(1)" | execute_cli')
+@pytest.mark.asyncio
+async def test_sandbox_jupyter_plugin(temp_dir):
+    box = await create_docker_box_from_app_config(temp_dir)
+    await box.init_plugins([JupyterRequirement])
+    exit_code, output = await box.execute_async('echo "print(1)" | execute_cli')
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output == '1\r\n', (
         'The output should be the same as the input for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
 
 
+@pytest.mark.asyncio
 async def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
     await box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = await box.execute('mkdir test')
@@ -339,9 +344,9 @@ async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         persist_sandbox=False,
     )
     assert not config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(temp_dir, config)
+    box = await create_docker_box_from_app_config(temp_dir, config)
     try:
-        await box.initialize()
+        await box.ainit()
         await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
     finally:
         await box.close()
@@ -363,15 +368,13 @@ async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             persist_sandbox=False,
         )
         assert not config.sandbox.enable_auto_lint
-        box = create_docker_box_from_app_config(temp_dir, config)
-        try:
-            await box.initialize()
-            await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
-        finally:
-            await box.close()
+        box = await create_docker_box_from_app_config(temp_dir, config)
+        await box.ainit()
+        await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
-def test_sandbox_jupyter_plugin_backticks(temp_dir):
+@pytest.mark.asyncio
+async def test_sandbox_jupyter_plugin_backticks(temp_dir):
     config = AppConfig(
         sandbox=SandboxConfig(
             box_type='ssh',
@@ -389,17 +392,18 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
         ssh_password=config.ssh_password,
         ssh_port=config.ssh_port,
     )
-    box.init_plugins([JupyterRequirement])
+    await box.ainit()
+    await box.init_plugins([JupyterRequirement])
     test_code = "print('Hello, `World`!')"
     expected_write_command = (
         "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
     )
     expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-    exit_code, output = box.execute(expected_write_command)
-    exit_code, output = box.execute(expected_execute_command)
+    exit_code, output = await box.execute_async(expected_write_command)
+    exit_code, output = await box.execute_async(expected_execute_command)
     print(output)
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip() == 'Hello, `World`!', (
         'The output should be the same as the input for ' + box.__class__.__name__
     )
-    box.close()
+    await box.close()
