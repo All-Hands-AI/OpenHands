@@ -95,6 +95,29 @@ class CondenserMixin:
         state.history.add_summary(summary_action)
         print('Added summary to history')
 
+        def action_to_str(action: AgentSummarizeAction) -> str:
+            return (
+                'Summary of all Action and Observations till now. \n'
+                + 'Action: '
+                + action.summarized_actions
+                + '\n Observation: '
+                + action.summarized_observations
+            )
+
+        final_messages = messages[0:2] + [
+            Message(
+                message={
+                    'role': 'user',
+                    'content': action_to_str(summary_action),
+                },
+                condensable=True,
+            )
+        ]
+        for message in messages[2:]:
+            if last_summarized_event_id < message.event_id:
+                final_messages.append(message)
+        return final_messages
+
     def _format_summary_history(self, message_history: list[dict]) -> str:
         # TODO use existing prompt formatters for this (eg ChatML)
         return '\n'.join([f'{m["role"]}: {m["content"]}' for m in message_history])
@@ -126,13 +149,13 @@ class CondenserMixin:
             )
 
         message_sequence = []
-        message_sequence.append({'role': 'system', 'content': summary_prompt})
+        message_sequence.append(Message({'role': 'system', 'content': summary_prompt}))
 
         # TODO: Check if this feature is needed
         # if insert_acknowledgement_assistant_message:
         #     message_sequence.append(Message(user_id=dummy_user_id, agent_id=dummy_agent_id, role="assistant", text=MESSAGE_SUMMARY_REQUEST_ACK))
 
-        message_sequence.append({'role': 'user', 'content': summary_input})
+        message_sequence.append(Message({'role': 'user', 'content': summary_input}))
 
         response = self.completion(  # type: ignore
             messages=message_sequence,

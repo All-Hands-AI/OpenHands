@@ -4,15 +4,13 @@ from opendevin.core.config import LLMConfig
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
-
 from opendevin.condenser.condenser import CondenserMixin
-from opendevin.controller.state.state import State
 from opendevin.core.exceptions import (
     ContextWindowLimitExceededError,
     TokenLimitExceededError,
 )
+from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.metrics import Metrics
-from opendevin.llm.messages import Message
 
 from .basellm import BaseLLM
 
@@ -42,30 +40,58 @@ class LLM(BaseLLM, CondenserMixin):
         """
         super().__init__(config, metrics)
 
-    # TODO Replace get_response with completion
-    def get_response(self, messages: list[Message], state: State):
-        try:
-            if self.is_over_token_limit(messages):
-                raise TokenLimitExceededError()
-            response = self.completion(
-                messages=self.get_text_messages(messages),
-                stop=[
+        def wrapper(*args, **kwargs):
+            """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
+            # some callers might just send the messages directly
+            if 'messages' in kwargs:
+                messages = kwargs['messages']
+            else:
+                messages = args[1]
+
+            try:
+                if self.is_over_token_limit(messages):
+                    raise TokenLimitExceededError()
+            except TokenLimitExceededError:
+                print('An error occurred: ')
+                # If we got a context alert, try trimming the messages length, then try again
+                if kwargs['condense'] and self.is_over_token_limit(messages):
+                    # A separate call to run a summarizer
+                    if 'state' in kwargs:
+                        state = kwargs['state']
+                    messages = self.condense(messages=messages, state=state)
+                else:
+                    print('step() failed with an unrecognized exception:')
+                    raise ContextWindowLimitExceededError()
+
+            # log the prompt
+            debug_message = ''
+            for message in messages:
+                debug_message += message_separator + message.message['content']
+            llm_prompt_logger.debug(debug_message)
+
+            # call the completion function
+            text_messages = self.get_text_messages(messages)
+            kwargs = {
+                'messages': text_messages,
+                'stop': [
                     '</execute_ipython>',
                     '</execute_bash>',
                     '</execute_browse>',
                 ],
-                temperature=0.0,
-            )
-            return response
-        except TokenLimitExceededError:
-            # Handle the specific exception
-            print('An error occurred: ')
-            # If we got a context alert, try trimming the messages length, then try again
-            if self.is_over_token_limit(messages):
-                # A separate call to run a summarizer
-                self.condense(messages=messages, state=state)
-                # Try step again
-            else:
-                print('step() failed with an unrecognized exception:')
-                raise ContextWindowLimitExceededError()
-        return None
+                'temperature': 0.0,
+            }
+            resp = self.completion_unwrapped(**kwargs)
+
+            # log the response
+            message_back = resp['choices'][0]['message']['content']
+            llm_response_logger.debug(message_back)
+
+            # post-process to log costs
+            self._post_completion(resp)
+            return resp
+
+        self._completion = wrapper  # type: ignore
+
+    @property
+    def completion(self):
+        return self._completion

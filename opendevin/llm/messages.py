@@ -6,9 +6,9 @@ class Message:
 
     message: dict[str, str]
     condensable: bool
-    event_id: int | None
+    event_id: int
 
-    def __init__(self, message, condensable, event_id=None):
+    def __init__(self, message, condensable=True, event_id=-1):
         self.message = message
         self.condensable = condensable
         self.event_id = event_id

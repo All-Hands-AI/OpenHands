@@ -215,7 +215,17 @@ class CodeActAgent(Agent):
             # prepare what we want to send to the LLM
             messages: list[Message] = self._get_messages(state)
             print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
-            response = self.llm.get_response(messages=messages, state=state)
+            response = self.llm.completion(
+                messages=messages,
+                stop=[
+                    '</execute_ipython>',
+                    '</execute_bash>',
+                    '</execute_browse>',
+                ],
+                temperature=0.0,
+                condense=True,
+                state=state,
+            )
             attempt += 1
 
         return self.action_parser.parse(response)

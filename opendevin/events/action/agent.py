@@ -18,23 +18,6 @@ class ChangeAgentStateAction(Action):
         return f'Agent state changed to {self.agent_state}'
 
 
-# @dataclass
-# class AgentSummarizeAction(Action):
-#     summary: str
-#     action: str = ActionType.SUMMARIZE
-#     _chunk_start: int = -1
-#     _chunk_end: int = -1
-
-#     @property
-#     def message(self) -> str:
-#         return self.summary
-
-#     def __str__(self) -> str:
-#         ret = '**AgentSummarizeAction**\n'
-#         ret += f'SUMMARY: {self.summary}'
-#         return
-
-
 @dataclass
 class AgentSummarizeAction(Action):
     """
@@ -48,10 +31,7 @@ class AgentSummarizeAction(Action):
     summarized_actions: str = ''
     summarized_observations: str = ''
     action: str = ActionType.SUMMARIZE
-    # _chunk_start: int = -1
-    # _chunk_end: int = -1
     last_summarized_event_id = -1
-    is_delegate_summary: bool = False
 
     @property
     def message(self) -> str:

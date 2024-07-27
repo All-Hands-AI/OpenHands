@@ -107,7 +107,7 @@ class BaseLLM:
             top_p=self.config.top_p,
         )
 
-        completion_unwrapped = self._completion
+        self.completion_unwrapped = self._completion
 
         def attempt_on_error(retry_state):
             logger.error(
@@ -150,7 +150,7 @@ class BaseLLM:
             llm_prompt_logger.debug(debug_message)
 
             # call the completion function
-            resp = completion_unwrapped(*args, **kwargs)
+            resp = self.completion_unwrapped(*args, **kwargs)
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
