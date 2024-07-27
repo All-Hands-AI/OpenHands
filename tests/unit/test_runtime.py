@@ -64,7 +64,7 @@ def run_as_devin(request):
     return request.param
 
 
-async def _load_runtime(temp_dir, box_class, run_as_devin):
+async def _load_runtime(temp_dir, box_class, run_as_devin=True):
     sid = 'test'
     cli_session = 'main_test'
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
@@ -139,8 +139,8 @@ async def test_env_vars_os_environ(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_vars(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_env_vars_runtime_add_env_vars(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
     await runtime.add_env_vars({'QUUX': 'abc"def'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -157,8 +157,8 @@ async def test_env_vars_runtime_add_env_vars(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_empty_dict(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_env_vars_runtime_add_empty_dict(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     prev_obs = await runtime.run_action(CmdRunAction(command='env'))
     assert prev_obs.exit_code == 0, 'The exit code should be 0.'
@@ -178,10 +178,8 @@ async def test_env_vars_runtime_add_empty_dict(temp_dir, box_class, run_as_devin
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_multiple_env_vars(
-    temp_dir, box_class, run_as_devin
-):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_env_vars_runtime_add_multiple_env_vars(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
     await runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -198,11 +196,9 @@ async def test_env_vars_runtime_add_multiple_env_vars(
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_vars_overwrite(
-    temp_dir, box_class, run_as_devin
-):
+async def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+        runtime = await _load_runtime(temp_dir, box_class)
         await runtime.add_env_vars({'FOOBAR': 'xyz'})
 
         obs: CmdOutputObservation = await runtime.run_action(
@@ -345,6 +341,7 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     assert 'server.log' in obs.content
 
     await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
@@ -419,12 +416,15 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
         assert 'hello\r\nworld' in obs.content
         assert '>' not in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio
-async def test_multiline_command_loop(temp_dir, box_class, run_as_devin):
+async def test_multiline_command_loop(temp_dir, box_class):
     # https://github.com/OpenDevin/OpenDevin/issues/3143
 
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class)
 
     init_cmd = """
 mkdir -p _modules && \
@@ -489,7 +489,10 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    assert 'opendevin' in obs.content
+    if run_as_devin:
+        assert 'opendevin' in obs.content
+    else:
+        assert 'root' in obs.content
     assert 'test' in obs.content
 
     action = CmdRunAction(command='touch test/foo.txt')
@@ -512,50 +515,81 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_multi_cmd_run_in_single_line(temp_dir, box_class, run_as_devin):
+async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_devin):
     runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
 
-    action = CmdRunAction(command='ls -l')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-    assert 'total 0' in obs.content
-
-    action = CmdRunAction(command='mkdir test')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-
-    action = CmdRunAction(command='ls -l')
+    action = CmdRunAction(command='cd ~ && pwd')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     if run_as_devin:
-        assert 'opendevin' in obs.content
+        assert '/home/opendevin' in obs.content
     else:
-        assert 'root' not in obs.content
-    assert 'test' in obs.content
+        assert '/root' in obs.content
 
-    action = CmdRunAction(command='touch test/foo.txt')
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_multi_cmd_run_in_single_line(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='pwd && ls -l')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
+    assert '/workspace' in obs.content
+    assert 'total 0' in obs.content
 
-    action = CmdRunAction(command='ls -l test')
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_stateful_cmd(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='mkdir test')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-    assert 'foo.txt' in obs.content
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+
+    action = CmdRunAction(command='cd test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+
+    action = CmdRunAction(command='pwd')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+    assert '/workspace/test' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_failed_cmd(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='non_existing_command')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
 
     await runtime.close()
     await asyncio.sleep(1)

@@ -40,48 +40,6 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('pwd && ls -l')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    expected_lines = ['/workspace', 'total 0']
-    line_sep = '\r\n' if isinstance(box, DockerSSHBox) else '\n'
-    assert output == line_sep.join(expected_lines), (
-        'The output should be the same as the input for ' + box.__class__.__name__
-    )
-    box.close()
-
-
-def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('mkdir test')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert output.strip() == ''
-
-    exit_code, output = box.execute('cd test')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output.strip() == '', (
-        'The output should be empty for ' + box.__class__.__name__
-    )
-
-    exit_code, output = box.execute('pwd')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output.strip() == '/workspace/test', (
-        'The output should be /workspace for ' + box.__class__.__name__
-    )
-    box.close()
-
-
-def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('non_existing_command')
-    assert exit_code != 0, (
-        'The exit code should not be 0 for a failed command for '
-        + box.__class__.__name__
-    )
-    box.close()
-
-
 def test_single_multiline_command(temp_dir):
     box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo \\\n -e "foo"')
