@@ -203,13 +203,6 @@ class BrowsingAgent(Agent):
             self.action_space.describe(with_long_description=False, with_examples=True),
         )
 
-        # Unable to pass images to a system prompt, but goal is present only inside the system_msg
-
-        # content = [{'type': 'text', 'text': system_msg}]
-        # if goal_image_urls:
-        #     for image_url in goal_image_urls:
-        #         content.append({'type': 'image_url', 'image_url': {'url': image_url}})
-
         messages.append(Message(role='system', text=system_msg))
 
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
