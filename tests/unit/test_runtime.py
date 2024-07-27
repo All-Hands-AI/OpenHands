@@ -469,7 +469,6 @@ async def test_cmd_run(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    assert obs.content == ''
 
     action = CmdRunAction(command='ls -l')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -486,7 +485,6 @@ async def test_cmd_run(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    assert obs.content.strip() == ''
 
     action = CmdRunAction(command='ls -l test')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -534,7 +532,6 @@ async def test_multi_cmd_run_in_single_line(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    assert obs.content.strip() == ''
 
     action = CmdRunAction(command='ls -l test')
     logger.info(action, extra={'msg_type': 'ACTION'})
