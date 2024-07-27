@@ -47,16 +47,18 @@ The OpenDevin runtime uses a layered approach for building Docker images:
    - This is the base image used for all subsequent layers.
 
 2. **Runtime Image**:  `od_runtime:od_v{OPENDEVIN_VERSION}_image_ubuntu__22.04`
+
+Example image name: `od_runtime:od_v0.8.1_image_ubuntu__22.04`
    - Built from the stable release of OpenDevin.
    - This is the primary runtime image that users will interact with.
    - Created by copying all OpenDevin code into the original image and installing dependencies using Poetry.
 
-3. **Dev Runtime Image**:  `od_runtime_dev:od_v{OPENDEVIN_VERSION}_image_ubuntu__22.04`
+1. **Dev Runtime Image**:  `od_runtime_dev:od_v{OPENDEVIN_VERSION}_image_ubuntu__22.04`
    - Built from local source code for development purposes.
 
 ### Build Process
 
-#### Production Build (env var `SANDBOX_UPDATE_SOURCE_CODE` unset)
+#### Production Build (if environment variable `SANDBOX_UPDATE_SOURCE_CODE` is not set)
 By default, when DEBUG is set to false, the build process only needs to run once:
 - The Runtime Image (`od_runtime:od_v{OPENDEVIN_VERSION}_image_ubuntu__22.04`) is created by copying OpenDevin code into the original Ubuntu image and installing all dependencies.
 - This pre-built image is then used for running the OpenDevin environment.
