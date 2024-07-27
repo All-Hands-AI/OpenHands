@@ -27,15 +27,3 @@ class Message(BaseModel):
                 content.append({'type': 'image_url', 'image_url': {'url': url}})
 
         return {'role': self.role, 'content': content}
-
-
-# # Example usage
-# message = Message(
-#     role="user",
-#     text="What’s in this image?",
-#     image_urls=["https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"]
-# )
-
-# # Using model_dump to call the custom serializer
-# serialized_message = message.model_dump()
-# print(serialized_message)
