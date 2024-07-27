@@ -78,27 +78,18 @@ class RuntimeClient:
     def _init_user(self, username: str, user_id: int) -> None:
         """Create user if not exists."""
         # Add sudoer
-        sudoer_line = "echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
         output = subprocess.run(sudoer_line, shell=True, capture_output=True)
         if output.returncode != 0:
             raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
+        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
         # Add user
         output = subprocess.run(
-            [
-                'useradd',
-                '-rm',
-                '-d',
-                '-s',
-                '/bin/bash',
-                '-g',
-                'root',
-                '-G',
-                'sudo',
-                '-u',
-                str(user_id),
-                username,
-            ],
+            (
+                'useradd -rm -d /home/{username} -s /bin/bash '
+                f'-g root -G sudo -g root -G sudo -u {user_id} {username}'
+            ),
             shell=True,
             capture_output=True,
         )
@@ -106,10 +97,13 @@ class RuntimeClient:
             raise RuntimeError(
                 f'Failed to create user {username}: {output.stderr.decode()}'
             )
+        logger.debug(
+            f'Added user {username} successfully. Output: [{output.stdout.decode()}]'
+        )
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
-            f'su -u {username} -c "/bin/bash"',
+            f'su - {username}',
             encoding='utf-8',
             echo=False,
         )
@@ -125,6 +119,9 @@ class RuntimeClient:
 
         self.shell.sendline(f'cd {work_dir}')
         self.shell.expect(self.__bash_expect_regex)
+        logger.debug(
+            f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
+        )
 
     def _get_bash_prompt(self):
         ps1 = self.shell.after
@@ -152,10 +149,15 @@ class RuntimeClient:
             prompt += '$'
         return prompt + ' '
 
-    def _execute_bash(self, command: str, keep_prompt: bool = True) -> tuple[str, int]:
+    def _execute_bash(
+        self,
+        command: str,
+        keep_prompt: bool = True,
+        timeout: int = 10,
+    ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect_regex)
+        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
         output = self.shell.before
         if keep_prompt:
@@ -165,7 +167,7 @@ class RuntimeClient:
         # Get exit code
         self.shell.sendline('echo $?')
         logger.debug(f'Executing command for exit code: {command}')
-        self.shell.expect(self.__bash_expect_regex)
+        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
         _exit_code_output = self.shell.before
         logger.debug(f'Exit code Output: {_exit_code_output}')
         exit_code = int(_exit_code_output.strip())

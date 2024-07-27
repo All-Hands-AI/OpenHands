@@ -451,6 +451,7 @@ echo "success"
     await asyncio.sleep(1)
 
 
+@pytest.mark.asyncio
 async def test_cmd_run(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
 

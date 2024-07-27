@@ -140,7 +140,6 @@ class EventStreamRuntime(Runtime):
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
                     f'--plugins {plugin_names} '
-                    f'--user {"opendevin" if self.config.run_as_devin else "root"} '
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
                     f'--user-id {self.config.sandbox.user_id}'
                 ),
