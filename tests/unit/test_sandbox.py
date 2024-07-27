@@ -40,38 +40,6 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-def test_single_multiline_command(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('echo \\\n -e "foo"')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    # FIXME: why is there a `>` in the output? Probably PS2?
-    assert output == '> foo', (
-        'The output should be the same as the input for ' + box.__class__.__name__
-    )
-    box.close()
-
-
-def test_multiline_echo(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('echo -e "hello\nworld"')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    # FIXME: why is there a `>` in the output?
-    assert output == '> hello\r\nworld', (
-        'The output should be the same as the input for ' + box.__class__.__name__
-    )
-    box.close()
-
-
-def test_sandbox_whitespace(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    exit_code, output = box.execute('echo -e "\\n\\n\\n"')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output == '\r\n\r\n\r\n', (
-        'The output should be the same as the input for ' + box.__class__.__name__
-    )
-    box.close()
-
-
 def test_sandbox_jupyter_plugin(temp_dir):
     box = create_docker_box_from_app_config(temp_dir)
     box.init_plugins([JupyterRequirement])

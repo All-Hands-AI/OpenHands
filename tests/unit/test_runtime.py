@@ -345,7 +345,53 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_multiline_commands(temp_dir, box_class, run_as_devin):
+async def test_single_multiline_command(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='echo \\\n -e "foo"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+    assert 'foo' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_multiline_echo(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='echo -e "hello\nworld"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+    assert 'hello\r\nworld' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_runtime_whitespace(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='echo -e "\\n\\n\\n"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert obs.exit_code == 0, 'The exit code should be 0.'
+    assert '\r\n\r\n\r\n' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_multiple_multiline_commands(temp_dir, box_class, run_as_devin):
     cmds = [
         'ls -l',
         'echo -e "hello\nworld"',
