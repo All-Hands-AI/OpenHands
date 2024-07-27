@@ -111,7 +111,7 @@ async def test_env_vars_os_environ(temp_dir, box_class):
         print(obs)
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert (
-            obs.content.strip().split('\n\r')[0].strip() == 'BAZ'
+            obs.content.strip().split('\r\n')[0].strip() == 'BAZ'
         ), f'Output: [{obs.content}] for {box_class}'
 
         await runtime.close()
