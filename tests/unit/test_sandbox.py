@@ -329,7 +329,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 """
     ).strip().split('\n')
 
-    exit_code, output = await box.execute('ls /workspace')
+    exit_code, output = await box.execute('rm -rf /workspace/*')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
 
 
@@ -345,11 +345,9 @@ async def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     )
     assert not config.sandbox.enable_auto_lint
     box = await create_docker_box_from_app_config(temp_dir, config)
-    try:
-        await box.ainit()
-        await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
-    finally:
-        await box.close()
+    await box.ainit()
+    await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+    await box.close()
 
 
 @pytest.mark.skipif(
@@ -371,6 +369,7 @@ async def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         box = await create_docker_box_from_app_config(temp_dir, config)
         await box.ainit()
         await _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+        await box.close()
 
 
 @pytest.mark.asyncio
