@@ -1,7 +1,12 @@
-I will now correct the remaining typo on line 3.
+It seems there was an issue with the exact match. I will correct the typos line by line instead.
+
+1. "This is a stupid typoo." should be "This is a stupid typo."
+2. "No mor typos!" should be "No more typos!".
+
+Let's proceed with these changes.
 <execute_ipython>
 edit_file_by_replace(
     "bad.txt",
-    to_replace="No mor typos!",
-    new_content="No more typos!"
+    to_replace="This is a stupid typoo.",
+    new_content="This is a stupid typo."
 )

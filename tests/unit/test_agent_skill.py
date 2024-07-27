@@ -693,41 +693,58 @@ def test_edit_file_by_replace_multiline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                file_name=str(temp_file_path),
-                to_replace='Line 2',
-                new_content='REPLACE TEXT',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (5 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|Line 1\n'
-            '2|REPLACE TEXT\n'
-            '3|Line 2\n'
-            '4|Line 4\n'
-            '5|Line 5\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=2)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 5
-    assert lines[0].rstrip() == 'Line 1'
-    assert lines[1].rstrip() == 'REPLACE TEXT'
-    assert lines[2].rstrip() == 'Line 2'
-    assert lines[3].rstrip() == 'Line 4'
-    assert lines[4].rstrip() == 'Line 5'
+            with pytest.raises(
+                ValueError,
+                match='`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique',
+            ):
+                edit_file_by_replace(
+                    file_name=str(temp_file_path),
+                    to_replace='Line 2',
+                    new_content='REPLACE TEXT',
+                )
 
 
-def test_edit_file_by_replace_toreplace_empty():
-    with pytest.raises(ValueError):
+def test_edit_file_by_replace_no_diff(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            with pytest.raises(
+                ValueError, match='`to_replace` and `new_content` must be different'
+            ):
+                edit_file_by_replace(
+                    file_name=str(temp_file_path),
+                    to_replace='Line 1',
+                    new_content='Line 1',
+                )
+
+
+def test_edit_file_by_replace_toreplace_empty(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            with pytest.raises(ValueError, match='`to_replace` must not be empty.'):
+                edit_file_by_replace(
+                    file_name=str(temp_file_path),
+                    to_replace='    ',
+                    new_content='Line 1',
+                )
+
+
+def test_edit_file_by_replace_unknown_file():
+    with pytest.raises(FileNotFoundError):
         edit_file_by_replace(
             str('unknown file'),
-            '',
+            'ORIGINAL TEXT',
             'REPLACE TEXT',
         )
 
