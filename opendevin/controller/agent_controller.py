@@ -380,10 +380,18 @@ class AgentController:
                     self.state.traffic_control_state = TrafficControlState.NORMAL
                 else:
                     self.state.traffic_control_state = TrafficControlState.THROTTLING
-                    await self.report_error(
-                        f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
-                    )
-                    await self.set_agent_state_to(AgentState.PAUSED)
+                    if self.headless_mode:
+                        # set to ERROR state if running in headless mode
+                        # there is no way to resume
+                        await self.report_error(
+                            f'Task budget exceeded. Current cost: {current_cost:.2f}, max budget: {self.max_budget_per_task:.2f}, task stopped.'
+                        )
+                        await self.set_agent_state_to(AgentState.ERROR)
+                    else:
+                        await self.report_error(
+                            f'Task budget exceeded. Current cost: {current_cost:.2f}, Max budget: {self.max_budget_per_task:.2f}, task paused. {TRAFFIC_CONTROL_REMINDER}'
+                        )
+                        await self.set_agent_state_to(AgentState.PAUSED)
                     return
 
         self.update_state_before_step()
