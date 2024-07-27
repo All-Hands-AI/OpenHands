@@ -1,12 +1,17 @@
 import bashlex
 
+from opendevin.core.logger import opendevin_logger as logger
+
 
 def split_bash_commands(commands):
     try:
         parsed = bashlex.parse(commands)
-    except bashlex.errors.ParsingError:
+    except bashlex.errors.ParsingError as e:
+        logger.error(
+            f'Failed to parse bash commands\n[input]: {commands}\n[error]: {e}'
+        )
         # If parsing fails, return the original commands
-        return commands
+        return [commands]
 
     result: list[str] = []
     last_end = 0
@@ -17,25 +22,28 @@ def split_bash_commands(commands):
         # Include any text between the last command and this one
         if start > last_end:
             between = commands[last_end:start]
+            logger.debug(f'BASH PARSING between: {between}')
             if result:
-                result[-1] += between
+                result[-1] += between.rstrip()
             elif between.strip():
                 # THIS SHOULD NOT HAPPEN
-                result.append(between.strip())
+                result.append(between.rstrip())
 
         # Extract the command, preserving original formatting
-        command = commands[start:end]
-        if command.strip():
-            result.append(command)
+        command = commands[start:end].rstrip()
+        logger.debug(f'BASH PARSING command: {command}')
+        result.append(command)
 
         last_end = end
 
     # Add any remaining text after the last command to the last command
+    remaining = commands[last_end:].rstrip()
+    logger.debug(f'BASH PARSING remaining: {remaining}')
     if last_end < len(commands) and result:
-        result[-1] += commands[last_end:]
+        result[-1] += remaining
+        logger.debug(f'BASH PARSING result[-1] += remaining: {result[-1]}')
     elif last_end < len(commands):
-        remaining = commands[last_end:].strip()
         if remaining:
             result.append(remaining)
-
+            logger.debug(f'BASH PARSING result.append(remaining): {result[-1]}')
     return result
