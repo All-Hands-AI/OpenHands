@@ -1,8 +1,9 @@
 from agenthub.planner_agent.response_parser import PlannerResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.Message import Message
 from opendevin.events.action import Action, AgentFinishAction
-from opendevin.llm.llm import LLM, MessageContent
+from opendevin.llm.llm import LLM
 from opendevin.runtime.tools import RuntimeTool
 
 from .prompt import get_prompt_and_images
@@ -42,14 +43,11 @@ class PlannerAgent(Agent):
             'abandoned',
         ]:
             return AgentFinishAction()
+
         prompt, image_urls = get_prompt_and_images(
             state, self.llm.config.max_message_chars
         )
-        content: MessageContent = [{'type': 'text', 'text': prompt}]
-        if image_urls:
-            for image_url in image_urls:
-                content.append({'type': 'image_url', 'image_url': {'url': image_url}})
 
-        messages = [{'content': content, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+        message = Message(role='user', text=prompt, image_urls=image_urls)
+        resp = self.llm.completion(messages=[message.model_dump()])
         return self.response_parser.parse(resp)

@@ -192,7 +192,8 @@ class BrowsingAgent(Agent):
                 )
                 return MessageAction('Error encountered when browsing.')
 
-        goal, goal_image_urls = state.get_current_user_intent()
+        message = state.get_current_user_intent()
+        goal = message.text
 
         if goal is None:
             goal = state.inputs['task']

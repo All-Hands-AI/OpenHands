@@ -283,6 +283,3 @@ class LLM:
 
     def reset(self):
         self.metrics = Metrics()
-
-
-MessageContent = list[dict[str, str | dict[str, str]]]

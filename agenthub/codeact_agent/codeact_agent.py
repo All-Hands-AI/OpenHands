@@ -1,5 +1,3 @@
-from typing import Dict
-
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -200,7 +198,7 @@ class CodeActAgent(Agent):
         messages = self._get_messages(state)
 
         response = self.llm.completion(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -210,7 +208,7 @@ class CodeActAgent(Agent):
         )
         return self.action_parser.parse(response)
 
-    def _get_messages(self, state: State) -> list[Dict]:
+    def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
             Message(role='system', text=self.system_message),
             Message(role='user', text=self.in_context_example),
@@ -239,6 +237,4 @@ class CodeActAgent(Agent):
         if latest_user_message:
             latest_user_message.text = f'{latest_user_message.text}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
-        messages_dict = [message.model_dump() for message in messages]
-
-        return messages_dict
+        return messages
