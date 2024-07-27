@@ -19,7 +19,7 @@ from opendevin.core.schema import CancellableStream
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.plugins.requirement import PluginRequirement
 from opendevin.runtime.sandbox import Sandbox
-from opendevin.runtime.utils import find_available_tcp_port
+from opendevin.runtime.utils import find_available_tcp_port, split_bash_commands
 from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
 
 
@@ -101,95 +101,6 @@ class SSHExecCancellableStream(CancellableStream):
                 break
 
 
-def split_bash_commands(commands):
-    # States
-    NORMAL = 0
-    IN_SINGLE_QUOTE = 1
-    IN_DOUBLE_QUOTE = 2
-    IN_HEREDOC = 3
-
-    state = NORMAL
-    heredoc_trigger = None
-    result = []
-    current_command: list[str] = []
-
-    i = 0
-    while i < len(commands):
-        char = commands[i]
-
-        if state == NORMAL:
-            if char == "'":
-                state = IN_SINGLE_QUOTE
-            elif char == '"':
-                state = IN_DOUBLE_QUOTE
-            elif char == '\\':
-                # Check if this is escaping a newline
-                if i + 1 < len(commands) and commands[i + 1] == '\n':
-                    i += 1  # Skip the newline
-                    # Continue with the next line as part of the same command
-                    i += 1  # Move to the first character of the next line
-                    continue
-            elif char == '\n':
-                if not heredoc_trigger and current_command:
-                    result.append(''.join(current_command).strip())
-                    current_command = []
-            elif char == '<' and commands[i : i + 2] == '<<':
-                # Detect heredoc
-                state = IN_HEREDOC
-                i += 2  # Skip '<<'
-                while commands[i] == ' ':
-                    i += 1
-                start = i
-                while commands[i] not in [' ', '\n']:
-                    i += 1
-                heredoc_trigger = commands[start:i]
-                current_command.append(commands[start - 2 : i])  # Include '<<'
-                continue  # Skip incrementing i at the end of the loop
-            current_command.append(char)
-
-        elif state == IN_SINGLE_QUOTE:
-            current_command.append(char)
-            if char == "'" and commands[i - 1] != '\\':
-                state = NORMAL
-
-        elif state == IN_DOUBLE_QUOTE:
-            current_command.append(char)
-            if char == '"' and commands[i - 1] != '\\':
-                state = NORMAL
-
-        elif state == IN_HEREDOC:
-            current_command.append(char)
-            if (
-                char == '\n'
-                and heredoc_trigger
-                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
-                == heredoc_trigger + '\n'
-            ):
-                # Check if the next line starts with the heredoc trigger followed by a newline
-                i += (
-                    len(heredoc_trigger) + 1
-                )  # Move past the heredoc trigger and newline
-                current_command.append(
-                    heredoc_trigger + '\n'
-                )  # Include the heredoc trigger and newline
-                result.append(''.join(current_command).strip())
-                current_command = []
-                heredoc_trigger = None
-                state = NORMAL
-                continue
-
-        i += 1
-
-    # Add the last command if any
-    if current_command:
-        result.append(''.join(current_command).strip())
-
-    # Remove any empty strings from the result
-    result = [cmd for cmd in result if cmd]
-
-    return result
-
-
 class DockerSSHBox(Sandbox):
     instance_id: str
     container_image: str
@@ -209,7 +120,6 @@ class DockerSSHBox(Sandbox):
         workspace_mount_path: str,
         sandbox_workspace_dir: str,
         cache_dir: str,
-        use_host_network: bool,
         run_as_devin: bool,
         ssh_hostname: str = 'host.docker.internal',
         ssh_password: str | None = None,
@@ -220,7 +130,7 @@ class DockerSSHBox(Sandbox):
         self.workspace_mount_path = workspace_mount_path
         self.sandbox_workspace_dir = sandbox_workspace_dir
         self.cache_dir = cache_dir
-        self.use_host_network = use_host_network
+        self.use_host_network = config.use_host_network
         self.run_as_devin = run_as_devin
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={config.user_id} in the sandbox'
@@ -291,6 +201,7 @@ class DockerSSHBox(Sandbox):
         except Exception as e:
             self.close()
             raise e
+        time.sleep(1)
 
         # make sure /tmp always exists
         self.execute('mkdir -p /tmp')
@@ -443,12 +354,15 @@ class DockerSSHBox(Sandbox):
             raise e
 
     def start_ssh_session(self):
+        time.sleep(1)
         self.__ssh_login()
         assert self.ssh is not None
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
+        time.sleep(1)
+
         # cd to workspace
         self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
@@ -730,7 +644,6 @@ if __name__ == '__main__':
             workspace_mount_path='/path/to/workspace',
             cache_dir='/path/to/cache',
             sandbox_workspace_dir='/sandbox',
-            use_host_network=False,
             persist_sandbox=False,
         )
     except Exception as e:

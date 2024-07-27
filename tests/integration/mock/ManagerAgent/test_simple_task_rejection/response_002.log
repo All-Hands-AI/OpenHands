@@ -1,8 +1,6 @@
-```json
 {
   "action": "run",
   "args": {
     "command": "git status"
   }
 }
-```

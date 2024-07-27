@@ -1,5 +1,4 @@
 import argparse
-import logging
 import os
 import pathlib
 import platform
@@ -12,11 +11,15 @@ from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 import toml
 from dotenv import load_dotenv
 
+from opendevin.core import logger
 from opendevin.core.utils import Singleton
 
-logger = logging.getLogger(__name__)
-
 load_dotenv()
+
+
+LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
+_DEFAULT_AGENT = 'CodeActAgent'
+_MAX_ITERATIONS = 100
 
 
 @dataclass
@@ -35,6 +38,7 @@ class LLMConfig:
         aws_secret_access_key: The AWS secret access key.
         aws_region_name: The AWS region name.
         num_retries: The number of retries to attempt.
+        retry_multiplier: The multiplier for the exponential backoff.
         retry_min_wait: The minimum time to wait between retries, in seconds. This is exponential backoff minimum. For models with very low limits, this can be set to 15-20.
         retry_max_wait: The maximum time to wait between retries, in seconds. This is exponential backoff maximum.
         timeout: The timeout for the API.
@@ -47,6 +51,7 @@ class LLMConfig:
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
         ollama_base_url: The base URL for the OLLAMA API.
+        drop_params: Drop any unmapped (unsupported) params without causing an exception.
     """
 
     model: str = 'gpt-4o'
@@ -59,9 +64,10 @@ class LLMConfig:
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
-    num_retries: int = 5
+    num_retries: int = 10
+    retry_multiplier: float = 2
     retry_min_wait: int = 3
-    retry_max_wait: int = 60
+    retry_max_wait: int = 300
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0
@@ -72,6 +78,7 @@ class LLMConfig:
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
+    drop_params: bool | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -86,7 +93,7 @@ class LLMConfig:
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            if attr_name in ['api_key', 'aws_access_key_id', 'aws_secret_access_key']:
+            if attr_name in LLM_SENSITIVE_FIELDS:
                 attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
@@ -95,6 +102,14 @@ class LLMConfig:
 
     def __repr__(self):
         return self.__str__()
+
+    def to_safe_dict(self):
+        """Return a dict with the sensitive fields replaced with ******."""
+        ret = self.__dict__.copy()
+        for k, v in ret.items():
+            if k in LLM_SENSITIVE_FIELDS:
+                ret[k] = '******' if v else None
+        return ret
 
 
 @dataclass
@@ -128,7 +143,11 @@ class SandboxConfig(metaclass=Singleton):
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
-
+        enable_auto_lint: Whether to enable auto-lint.
+        use_host_network: Whether to use the host network.
+        initialize_plugins: Whether to initialize plugins.
+        update_source_code: Whether to update the source code in the EventStreamRuntime.
+            Used for development of EventStreamRuntime.
     """
 
     box_type: str = 'ssh'
@@ -142,7 +161,9 @@ class SandboxConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    use_host_network: bool = False
     initialize_plugins: bool = True
+    update_source_code: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -190,7 +211,6 @@ class AppConfig(metaclass=Singleton):
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
-        use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
         debug: Whether to enable debugging.
@@ -200,9 +220,9 @@ class AppConfig(metaclass=Singleton):
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
     """
 
-    llms: dict = field(default_factory=dict)
+    llms: dict[str, LLMConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
-    default_agent: str = 'CodeActAgent'
+    default_agent: str = _DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     runtime: str = 'server'
     file_store: str = 'memory'
@@ -216,10 +236,9 @@ class AppConfig(metaclass=Singleton):
     cache_dir: str = '/tmp/cache'
     run_as_devin: bool = True
     confirmation_mode: bool = False
-    max_iterations: int = 100
+    max_iterations: int = _MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
-    use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
     persist_sandbox: bool = False
@@ -239,7 +258,9 @@ class AppConfig(metaclass=Singleton):
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
-            logger.warning(f'llm config group {name} not found, using default config')
+            logger.opendevin_logger.warning(
+                f'llm config group {name} not found, using default config'
+            )
         if 'llm' not in self.llms:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
@@ -257,6 +278,10 @@ class AppConfig(metaclass=Singleton):
 
     def set_agent_config(self, value: AgentConfig, name='agent'):
         self.agents[name] = value
+
+    def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
+        """Get a map of agent names to llm configs."""
+        return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
     def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
@@ -377,21 +402,23 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
                 except (ValueError, TypeError):
-                    logger.error(
+                    logger.opendevin_logger.error(
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
     if 'SANDBOX_TYPE' in env_or_toml_dict:
-        logger.error('SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.')
+        logger.opendevin_logger.error(
+            'SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.'
+        )
         env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
 
     # load default LLM config from env
-    default_llm_config = config.get_llm_config()
+    default_llm_config = cfg.get_llm_config()
     set_attr_from_env(default_llm_config, 'LLM_')
     # load default agent config from env
-    default_agent_config = config.get_agent_config()
+    default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
 
 
@@ -407,10 +434,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.info(f'Config file not found: {e}')
+        logger.opendevin_logger.info(f'Config file not found: {e}')
         return
     except toml.TomlDecodeError as e:
-        logger.warning(
+        logger.opendevin_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
@@ -429,7 +456,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
-                    logger.info('Attempt to load default agent config from config toml')
+                    logger.opendevin_logger.info(
+                        'Attempt to load default agent config from config toml'
+                    )
                     non_dict_fields = {
                         k: v for k, v in value.items() if not isinstance(v, dict)
                     }
@@ -437,13 +466,15 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_agent_config(agent_config, 'agent')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.info(
+                            logger.opendevin_logger.info(
                                 f'Attempt to load group {nested_key} from config toml as agent config'
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 if key is not None and key.lower() == 'llm':
-                    logger.info('Attempt to load default LLM config from config toml')
+                    logger.opendevin_logger.info(
+                        'Attempt to load default LLM config from config toml'
+                    )
                     non_dict_fields = {
                         k: v for k, v in value.items() if not isinstance(v, dict)
                     }
@@ -451,20 +482,20 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.info(
+                            logger.opendevin_logger.info(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
             except (TypeError, KeyError) as e:
-                logger.warning(
+                logger.opendevin_logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
                     exc_info=False,
                 )
 
     try:
         # set sandbox config from the toml file
-        sandbox_config = config.sandbox
+        sandbox_config = cfg.sandbox
 
         # migrate old sandbox configs from [core] section to sandbox config
         keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
@@ -476,7 +507,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.warning(f'Unknown sandbox config: {key}')
+                logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -485,7 +516,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         # update the config object with the new values
         AppConfig(sandbox=sandbox_config, **core_config)
     except (TypeError, KeyError) as e:
-        logger.warning(
+        logger.opendevin_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
@@ -512,8 +543,8 @@ def finalize_config(cfg: AppConfig):
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 
-    if cfg.use_host_network and platform.system() == 'Darwin':
-        logger.warning(
+    if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
+        logger.opendevin_logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
@@ -521,12 +552,6 @@ def finalize_config(cfg: AppConfig):
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
-
-
-config = AppConfig()
-load_from_toml(config)
-load_from_env(config, os.environ)
-finalize_config(config)
 
 
 # Utility function for command line --group argument
@@ -564,23 +589,25 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.info(f'Loading llm config from {llm_config_arg}')
+    logger.opendevin_logger.info(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.error(f'Config file not found: {e}')
+        logger.opendevin_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
-        logger.error(f'Cannot parse llm group from {llm_config_arg}. Exception: {e}')
+        logger.opendevin_logger.error(
+            f'Cannot parse llm group from {llm_config_arg}. Exception: {e}'
+        )
         return None
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
         return LLMConfig(**toml_config['llm'][llm_config_arg])
-    logger.debug(f'Loading from toml failed for {llm_config_arg}')
+    logger.opendevin_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
 
@@ -606,21 +633,20 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.default_agent,
+        default=_DEFAULT_AGENT,
         type=str,
         help='Name of the default agent to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=config.max_iterations,
+        default=_MAX_ITERATIONS,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
     parser.add_argument(
         '-b',
         '--max-budget-per-task',
-        default=config.max_budget_per_task,
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
@@ -663,7 +689,20 @@ def parse_arguments() -> argparse.Namespace:
     """Parse the command line arguments."""
     parser = get_parser()
     parsed_args, _ = parser.parse_known_args()
-    if parsed_args.directory:
-        config.workspace_base = os.path.abspath(parsed_args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
     return parsed_args
+
+
+def load_app_config(set_logging_levels: bool = True) -> AppConfig:
+    """Load the configuration from the config.toml file and environment variables.
+
+    Args:
+        set_logger_levels: Whether to set the global variables for logging levels.
+    """
+    config = AppConfig()
+    load_from_toml(config)
+    load_from_env(config, os.environ)
+    finalize_config(config)
+    if set_logging_levels:
+        logger.DEBUG = config.debug
+        logger.DISABLE_COLOR_PRINTING = config.disable_color
+    return config

@@ -15,13 +15,15 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.tools import RuntimeTool
+
+config = load_app_config()
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
@@ -41,7 +43,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     env_id = instance.id
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -81,6 +83,7 @@ def process_instance(
             agent,
             'PLACEHOLDER_GOAL',
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             runtime_tools_config=runtime_tools_config,
             sandbox=get_sandbox(),
             sid=env_id,

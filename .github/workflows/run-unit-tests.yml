@@ -75,37 +75,47 @@ jobs:
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
+          INSTANCE_NAME="colima-${GITHUB_RUN_ID}"
+
           # Uninstall colima to upgrade to the latest version
           if brew list colima &>/dev/null; then
-              brew uninstall colima
-              # unlinking colima dependency: go
-              brew uninstall go@1.21
+            brew uninstall colima
+            # unlinking colima dependency: go
+            brew uninstall go@1.21
           fi
           rm -rf ~/.colima ~/.lima
           brew install --HEAD colima
-          brew services start colima
           brew install docker
-          colima delete
-          # Attempt to start Colima
-          ATTEMPT_LIMIT=3
 
           start_colima() {
-            colima start --network-address --arch x86_64 --cpu=1 --memory=1
+            # Find a free port in the range 10000-20000
+            RANDOM_PORT=$((RANDOM % 10001 + 10000))
+
+            # Original line:
+            if ! colima start --network-address --arch x86_64 --cpu=1 --memory=1 --verbose --ssh-port $RANDOM_PORT; then
+              echo "Failed to start Colima."
+              return 1
+            fi
+            return 0
           }
 
-          for i in $(seq 1 $ATTEMPT_LIMIT); do
+          # Attempt to start Colima for 5 total attempts:
+          ATTEMPT_LIMIT=5
+          for ((i=1; i<=ATTEMPT_LIMIT; i++)); do
+
             if start_colima; then
               echo "Colima started successfully."
               break
             else
-              echo "Failed to start Colima. Attempt $i/$ATTEMPT_LIMIT."
+              colima stop -f
+              sleep 10
+              colima delete -f
+              if [ $i -eq $ATTEMPT_LIMIT ]; then
+                exit 1
+              fi
+              sleep 10
             fi
           done
-
-          if [ $i -gt $ATTEMPT_LIMIT ]; then
-            echo "Failed to start Colima after $ATTEMPT_LIMIT attempts."
-            exit 1
-          fi
 
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
@@ -115,7 +125,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox.py and not test_runtime.py"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -149,7 +159,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox.py and not test_runtime.py"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

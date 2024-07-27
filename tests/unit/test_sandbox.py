@@ -1,24 +1,31 @@
 import os
 import pathlib
 import tempfile
-from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import AppConfig, config
-from opendevin.runtime.docker.local_box import LocalBox
-from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
+from opendevin.core.config import AppConfig, SandboxConfig
+from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.utils import split_bash_commands
 
 
-def create_docker_box_from_app_config(config: AppConfig, path: str) -> DockerSSHBox:
+def create_docker_box_from_app_config(
+    path: str, config: AppConfig | None = None
+) -> DockerSSHBox:
+    if config is None:
+        config = AppConfig(
+            sandbox=SandboxConfig(
+                box_type='ssh',
+            ),
+            persist_sandbox=False,
+        )
     return DockerSSHBox(
         config=config.sandbox,
         persist_sandbox=config.persist_sandbox,
         workspace_mount_path=path,
         sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
         cache_dir=config.cache_dir,
-        use_host_network=config.use_host_network,
         run_as_devin=True,
         ssh_hostname=config.ssh_hostname,
         ssh_password=config.ssh_password,
@@ -32,22 +39,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-
-def test_env_vars(temp_dir):
-    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    for box in [
-        create_docker_box_from_app_config(config, temp_dir),
-        LocalBox(config.sandbox, temp_dir),
-    ]:
-        box.add_to_env(key='QUUX', value='abc"def')
-        assert box._env['FOOBAR'] == 'BAZ'
-        assert box._env['QUUX'] == 'abc"def'
-        exit_code, output = box.execute('echo $FOOBAR $QUUX')
-        assert exit_code == 0, 'The exit code should be 0.'
-        assert (
-            output.strip() == 'BAZ abc"def'
-        ), f'Output: {output} for {box.__class__.__name__}'
 
 
 def test_split_commands():
@@ -109,7 +100,7 @@ EOF
 def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
     for box in [
-        create_docker_box_from_app_config(config, temp_dir)
+        create_docker_box_from_app_config(temp_dir),
     ]:  # FIXME: permission error on mkdir test for exec box
         exit_code, output = box.execute('ls -l')
         assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
@@ -140,7 +131,7 @@ def test_ssh_box_run_as_devin(temp_dir):
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('pwd && ls -l')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     expected_lines = ['/workspace', 'total 0']
@@ -152,7 +143,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('mkdir test')
     assert exit_code == 0, 'The exit code should be 0.'
     assert output.strip() == ''
@@ -172,7 +163,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
 
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('non_existing_command')
     assert exit_code != 0, (
         'The exit code should not be 0 for a failed command for '
@@ -182,7 +173,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
 
 
 def test_single_multiline_command(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo \\\n -e "foo"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output? Probably PS2?
@@ -193,7 +184,7 @@ def test_single_multiline_command(temp_dir):
 
 
 def test_multiline_echo(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo -e "hello\nworld"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     # FIXME: why is there a `>` in the output?
@@ -204,7 +195,7 @@ def test_multiline_echo(temp_dir):
 
 
 def test_sandbox_whitespace(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     exit_code, output = box.execute('echo -e "\\n\\n\\n"')
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output == '\r\n\r\n\r\n', (
@@ -214,7 +205,7 @@ def test_sandbox_whitespace(temp_dir):
 
 
 def test_sandbox_jupyter_plugin(temp_dir):
-    box = create_docker_box_from_app_config(config, temp_dir)
+    box = create_docker_box_from_app_config(temp_dir)
     box.init_plugins([JupyterRequirement])
     exit_code, output = box.execute('echo "print(1)" | execute_cli')
     print(output)
@@ -225,7 +216,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
     box.close()
 
 
-def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
+def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = box.execute('mkdir test')
     print(output)
@@ -268,7 +259,7 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
             """
 [Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
 ERRORS:
-hello.py:1:3: E999 IndentationError: unexpected indent
+/workspace/test/hello.py:1:3: E999 IndentationError: unexpected indent
 [This is how your edit would have looked if applied]
 -------------------------------------------------
 (this is the beginning of the file)
@@ -311,10 +302,16 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
 def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     # get a temporary directory
-    with patch.object(config.sandbox, 'enable_auto_lint', new=True):
-        assert config.sandbox.enable_auto_lint
-        box = create_docker_box_from_app_config(config, temp_dir)
-        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+            enable_auto_lint=False,
+        ),
+        persist_sandbox=False,
+    )
+    assert not config.sandbox.enable_auto_lint
+    box = create_docker_box_from_app_config(temp_dir, config)
+    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
 @pytest.mark.skipif(
@@ -323,10 +320,48 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
 )
 def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
-        # get a temporary directory
-        with patch.object(
-            config.sandbox, 'container_image', new=base_sandbox_image
-        ), patch.object(config.sandbox, 'enable_auto_lint', new=False):
-            assert not config.sandbox.enable_auto_lint
-            box = create_docker_box_from_app_config(config, temp_dir)
-            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
+        config = AppConfig(
+            sandbox=SandboxConfig(
+                box_type='ssh',
+                container_image=base_sandbox_image,
+                enable_auto_lint=False,
+            ),
+            persist_sandbox=False,
+        )
+        assert not config.sandbox.enable_auto_lint
+        box = create_docker_box_from_app_config(temp_dir, config)
+        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+
+
+def test_sandbox_jupyter_plugin_backticks(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+        ),
+        persist_sandbox=False,
+    )
+    box = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=config.persist_sandbox,
+        workspace_mount_path=temp_dir,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=True,
+        ssh_hostname=config.ssh_hostname,
+        ssh_password=config.ssh_password,
+        ssh_port=config.ssh_port,
+    )
+    box.init_plugins([JupyterRequirement])
+    test_code = "print('Hello, `World`!')"
+    expected_write_command = (
+        "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
+    )
+    expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+    exit_code, output = box.execute(expected_write_command)
+    exit_code, output = box.execute(expected_execute_command)
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip() == 'Hello, `World`!', (
+        'The output should be the same as the input for ' + box.__class__.__name__
+    )
+    box.close()

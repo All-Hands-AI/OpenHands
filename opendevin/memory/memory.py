@@ -13,14 +13,14 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core.config import LLMConfig, config
+from opendevin.core.config import LLMConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 
-# TODO: this should depend on specific agent setting
-num_retries = config.get_llm_config().num_retries
-retry_min_wait = config.get_llm_config().retry_min_wait
-retry_max_wait = config.get_llm_config().retry_max_wait
+# TODO: this could be made configurable
+num_retries: int = 10
+retry_min_wait: int = 3
+retry_max_wait: int = 300
 
 # llama-index includes a retry decorator around openai.get_embeddings() function
 # it is initialized with hard-coded values and errors
@@ -98,8 +98,8 @@ class EmbeddingsLoader:
             )
         elif (strategy is not None) and (strategy.lower() == 'none'):
             # TODO: this works but is not elegant enough. The incentive is when
-            # monologue agent is not used, there is no reason we need to initialize an
-            # embedding model
+            # an agent using embeddings is not used, there is no reason we need to
+            # initialize an embedding model
             return None
         else:
             from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -110,21 +110,19 @@ class EmbeddingsLoader:
 class LongTermMemory:
     """Handles storing information for the agent to access later, using chromadb."""
 
-    def __init__(self, agent_config_name='agent'):
+    def __init__(self, llm_config: LLMConfig, memory_max_threads: int = 1):
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
         db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
-        agent_config = config.get_agent_config(agent_config_name)
-        llm_config = config.get_llm_config(agent_config.llm_config)
         embedding_strategy = llm_config.embedding_model
         embed_model = EmbeddingsLoader.get_embedding_model(
             embedding_strategy, llm_config
         )
         self.index = VectorStoreIndex.from_vector_store(vector_store, embed_model)
-        self.sema = threading.Semaphore(value=agent_config.memory_max_threads)
+        self.sema = threading.Semaphore(value=memory_max_threads)
         self.thought_idx = 0
-        self._add_threads = []
+        self._add_threads: list[threading.Thread] = []
 
     def add_event(self, event: dict):
         """Adds a new event to the long term memory with a unique id.
