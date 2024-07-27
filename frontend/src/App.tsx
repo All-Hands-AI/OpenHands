@@ -90,9 +90,9 @@ function App(): JSX.Element {
               className="grow h-full min-h-0 min-w-0"
               initialSize={window.innerHeight - 300}
               firstChild={<Workspace />}
-              firstClassName="rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
+              firstClassName="min-h-0 rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
               secondChild={<Terminal />}
-              secondClassName="rounded-xl border border-neutral-600 bg-neutral-800"
+              secondClassName="min-h-0 rounded-xl border border-neutral-600 bg-neutral-800"
             />
           }
           secondClassName="flex flex-col overflow-hidden grow"
