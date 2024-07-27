@@ -39,6 +39,7 @@ pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 grep-ast = "0.3.2"
 tree-sitter = "0.21.3"
+bashlex = "^0.18"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -72,6 +73,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -104,6 +106,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
