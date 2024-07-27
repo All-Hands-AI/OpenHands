@@ -7,6 +7,7 @@ from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.Message import Message
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -16,7 +17,7 @@ from opendevin.events.action import (
 from opendevin.events.event import EventSource
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.events.observation.observation import Observation
-from opendevin.llm.llm import LLM, MessageContent
+from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
@@ -136,7 +137,7 @@ class BrowsingAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages: list[dict[str, str | MessageContent]] = []
+        messages: list[Message] = []
         prev_actions = []
         cur_axtree_txt = ''
         error_prefix = ''
@@ -169,7 +170,7 @@ class BrowsingAgent(Agent):
             isinstance(last_action, BrowseInteractiveAction)
             and last_action.browsergym_send_msg_to_user
         ):
-            return MessageAction(last_action.browsergym_send_msg_to_user)
+            return MessageAction(Message(last_action.browsergym_send_msg_to_user))
 
         if isinstance(last_obs, BrowserOutputObservation):
             if last_obs.error:
@@ -208,13 +209,13 @@ class BrowsingAgent(Agent):
         #     for image_url in goal_image_urls:
         #         content.append({'type': 'image_url', 'image_url': {'url': image_url}})
 
-        messages.append({'role': 'system', 'content': system_msg})
+        messages.append(Message(role='system', text=system_msg))
 
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
-        messages.append({'role': 'user', 'content': prompt})
+        messages.append(Message(role='user', text=prompt))
         logger.debug(prompt)
         response = self.llm.completion(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             temperature=0.0,
             stop=[')```', ')\n```'],
         )
