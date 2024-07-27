@@ -77,6 +77,10 @@ class RuntimeClient:
 
     def _init_user(self, username: str, user_id: int) -> None:
         """Create user if not exists."""
+        # Skip root since it is already created
+        if username == 'root':
+            return
+
         # Add sudoer
         sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
         output = subprocess.run(sudoer_line, shell=True, capture_output=True)
@@ -87,7 +91,7 @@ class RuntimeClient:
         # Add user
         output = subprocess.run(
             (
-                'useradd -rm -d /home/{username} -s /bin/bash '
+                f'useradd -rm -d /home/{username} -s /bin/bash '
                 f'-g root -G sudo -g root -G sudo -u {user_id} {username}'
             ),
             shell=True,
