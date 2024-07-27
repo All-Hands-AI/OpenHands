@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import SandboxConfig
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
@@ -21,6 +21,7 @@ from opendevin.events.observation import (
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.storage import get_file_store
 
 
 @pytest.fixture(autouse=True)
@@ -46,23 +47,31 @@ def box_class(request):
     return request.param
 
 
-async def _load_runtime(box_class, event_stream):
+async def _load_runtime(temp_dir, box_class):
     sid = 'test'
+    cli_session = 'main_test'
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
-    sandbox_config = SandboxConfig(
-        use_host_network=True,
+    config = AppConfig(
+        workspace_base=temp_dir,
+        workspace_mount_path=temp_dir,
+        sandbox=SandboxConfig(
+            use_host_network=True,
+        ),
     )
-    container_image = sandbox_config.container_image
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    event_stream = EventStream(cli_session, file_store)
+
+    container_image = config.sandbox.container_image
     # NOTE: we will use the default container image specified in the config.sandbox
     # if it is an official od_runtime image.
     if 'od_runtime' not in container_image:
         container_image = 'ubuntu:22.04'
         logger.warning(
-            f'`{sandbox_config.container_image}` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
+            f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
         )
     if box_class == EventStreamRuntime:
         runtime = EventStreamRuntime(
-            sandbox_config=sandbox_config,
+            config=config,
             event_stream=event_stream,
             sid=sid,
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
@@ -72,9 +81,7 @@ async def _load_runtime(box_class, event_stream):
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
-        runtime = ServerRuntime(
-            sandbox_config=sandbox_config, event_stream=event_stream, sid=sid
-        )
+        runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
         await runtime.ainit()
         runtime.init_sandbox_plugins(plugins)
         runtime.init_runtime_tools(
@@ -89,12 +96,9 @@ async def _load_runtime(box_class, event_stream):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_os_environ(box_class):
+async def test_env_vars_os_environ(temp_dir, box_class):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        cli_session = 'main_test'
-
-        event_stream = EventStream(cli_session)
-        runtime = await _load_runtime(box_class, event_stream)
+        runtime = await _load_runtime(temp_dir, box_class)
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='env')
@@ -115,11 +119,8 @@ async def test_env_vars_os_environ(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_vars(box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_runtime_add_env_vars(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
     await runtime.add_env_vars({'QUUX': 'abc"def'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -136,11 +137,8 @@ async def test_env_vars_runtime_add_env_vars(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_empty_dict(box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_runtime_add_empty_dict(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     prev_obs = await runtime.run_action(CmdRunAction(command='env'))
     assert prev_obs.exit_code == 0, 'The exit code should be 0.'
@@ -160,11 +158,8 @@ async def test_env_vars_runtime_add_empty_dict(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_multiple_env_vars(box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+async def test_env_vars_runtime_add_multiple_env_vars(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
     await runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
 
     obs: CmdOutputObservation = await runtime.run_action(
@@ -181,12 +176,9 @@ async def test_env_vars_runtime_add_multiple_env_vars(box_class):
 
 
 @pytest.mark.asyncio
-async def test_env_vars_runtime_add_env_vars_overwrite(box_class):
-    cli_session = 'main_test'
-
+async def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        event_stream = EventStream(cli_session)
-        runtime = await _load_runtime(box_class, event_stream)
+        runtime = await _load_runtime(temp_dir, box_class)
         await runtime.add_env_vars({'FOOBAR': 'xyz'})
 
         obs: CmdOutputObservation = await runtime.run_action(
@@ -204,10 +196,7 @@ async def test_env_vars_runtime_add_env_vars_overwrite(box_class):
 
 @pytest.mark.asyncio
 async def test_bash_command_pexcept(temp_dir, box_class):
-    cli_session = 'main_test'
-
-    event_stream = EventStream(cli_session)
-    runtime = await _load_runtime(box_class, event_stream)
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # We set env var PS1="\u@\h:\w $"
     # and construct the PEXCEPT prompt base on it.

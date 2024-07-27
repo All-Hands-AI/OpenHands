@@ -30,12 +30,14 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
+
+config = load_app_config()
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
