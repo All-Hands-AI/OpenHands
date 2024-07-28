@@ -119,7 +119,7 @@ class ServerRuntime(Runtime):
         )
 
         # run the code
-        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        obs = self._run_command(('cat /tmp/opendevin_jupyter_temp.py | execute_cli'))
         output = obs.content
         if 'pip install' in action.code:
             print(output)

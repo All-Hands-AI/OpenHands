@@ -78,7 +78,9 @@ async def _load_runtime(
 ):
     sid = 'test'
     cli_session = 'main_test'
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
+    # AgentSkills need to be initialized **before** Jupyter
+    # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
     config = AppConfig(
         workspace_base=temp_dir,
         workspace_mount_path=temp_dir,
