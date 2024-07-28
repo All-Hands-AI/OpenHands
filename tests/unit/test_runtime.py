@@ -50,10 +50,16 @@ def temp_dir(monkeypatch):
 
 # This assures that all tests run together for each runtime, not alternating between them,
 # which caused them to fail previously.
-@pytest.fixture(scope='module', params=[EventStreamRuntime, ServerRuntime])
+@pytest.fixture(scope='module')
 def box_class(request):
     time.sleep(1)
-    return request.param
+    runtime = os.environ.get('TEST_RUNTIME', 'both')
+    if runtime.lower() == 'eventstream':
+        return EventStreamRuntime
+    elif runtime.lower() == 'server':
+        return ServerRuntime
+    else:
+        return pytest.param([EventStreamRuntime, ServerRuntime])
 
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
