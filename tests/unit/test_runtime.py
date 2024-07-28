@@ -76,6 +76,12 @@ def enable_auto_lint(request):
     return request.param
 
 
+@pytest.fixture(scope='module', params=['ubuntu:22.04', 'debian:11'])
+def container_image(request):
+    time.sleep(1)
+    return request.param
+
+
 async def _load_runtime(
     temp_dir,
     box_class,
@@ -851,7 +857,7 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
 )
 @pytest.mark.asyncio
 async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
-    temp_dir, enable_auto_lint
+    temp_dir, enable_auto_lint, container_image
 ):
     """Make sure that cd in bash also update the current working directory in ipython."""
 
@@ -860,7 +866,7 @@ async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
         # NOTE: we only test for ServerRuntime, since EventStreamRuntime is image agnostic by design.
         ServerRuntime,
         enable_auto_lint=enable_auto_lint,
-        container_image='ubuntu:22.04',
+        container_image=container_image,
     )
     await _test_ipython_agentskills_fileop_pwd_impl(runtime)
     await runtime.close()
