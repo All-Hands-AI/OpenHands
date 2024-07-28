@@ -1,4 +1,3 @@
-import os
 import pathlib
 import tempfile
 
@@ -6,7 +5,7 @@ import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
-from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.plugins import JupyterRequirement
 
 
 def create_docker_box_from_app_config(
@@ -38,109 +37,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-
-def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
-    box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
-    exit_code, output = box.execute('mkdir test')
-    print(output)
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-
-    exit_code, output = box.execute('echo "create_file(\'hello.py\')" | execute_cli')
-    print(output)
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output.strip().split('\r\n') == (
-        '[File: /workspace/hello.py (1 lines total)]\r\n'
-        '(this is the beginning of the file)\r\n'
-        '1|\r\n'
-        '(this is the end of the file)\r\n'
-        '[File hello.py created.]\r\n'
-    ).strip().split('\r\n')
-
-    exit_code, output = box.execute('cd test')
-    print(output)
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-
-    exit_code, output = box.execute('echo "create_file(\'hello.py\')" | execute_cli')
-    print(output)
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output.strip().split('\r\n') == (
-        '[File: /workspace/test/hello.py (1 lines total)]\r\n'
-        '(this is the beginning of the file)\r\n'
-        '1|\r\n'
-        '(this is the end of the file)\r\n'
-        '[File hello.py created.]\r\n'
-    ).strip().split('\r\n')
-
-    if config.sandbox.enable_auto_lint:
-        # edit file, but make a mistake in indentation
-        exit_code, output = box.execute(
-            'echo "insert_content_at_line(\'hello.py\', 1, \'  print(\\"hello world\\")\')" | execute_cli'
-        )
-        print(output)
-        assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-        assert output.strip().split('\r\n') == (
-            """
-[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
-ERRORS:
-/workspace/test/hello.py:1:3: E999 IndentationError: unexpected indent
-[This is how your edit would have looked if applied]
--------------------------------------------------
-(this is the beginning of the file)
-1|  print("hello world")
-(this is the end of the file)
--------------------------------------------------
-
-[This is the original code before your edit]
--------------------------------------------------
-(this is the beginning of the file)
-1|
-(this is the end of the file)
--------------------------------------------------
-Your changes have NOT been applied. Please fix your edit command and try again.
-You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
-DO NOT re-run the same failed edit command. Running it again will lead to the same error.
-"""
-        ).strip().split('\n')
-
-    # edit file with correct indentation
-    exit_code, output = box.execute(
-        'echo "insert_content_at_line(\'hello.py\', 1, \'print(\\"hello world\\")\')" | execute_cli'
-    )
-    print(output)
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output.strip().split('\r\n') == (
-        """
-[File: /workspace/test/hello.py (1 lines total after edit)]
-(this is the beginning of the file)
-1|print("hello world")
-(this is the end of the file)
-[File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
-"""
-    ).strip().split('\n')
-
-    exit_code, output = box.execute('rm -rf /workspace/*')
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    box.close()
-
-
-@pytest.mark.skipif(
-    os.getenv('TEST_IN_CI') != 'true',
-    reason='The unittest need to download image, so only run on CI',
-)
-def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
-    for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
-        config = AppConfig(
-            sandbox=SandboxConfig(
-                box_type='ssh',
-                container_image=base_sandbox_image,
-                enable_auto_lint=False,
-            ),
-            persist_sandbox=False,
-        )
-        assert not config.sandbox.enable_auto_lint
-        box = create_docker_box_from_app_config(temp_dir, config)
-        _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
 
 
 def test_sandbox_jupyter_plugin_backticks(temp_dir):

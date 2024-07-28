@@ -75,6 +75,7 @@ async def _load_runtime(
     box_class,
     run_as_devin: bool = True,
     enable_auto_lint: bool = False,
+    container_image: str | None = None,
 ):
     sid = 'test'
     cli_session = 'main_test'
@@ -95,22 +96,26 @@ async def _load_runtime(
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(cli_session, file_store)
 
-    container_image = config.sandbox.container_image
-    # NOTE: we will use the default container image specified in the config.sandbox
-    # if it is an official od_runtime image.
-    if 'od_runtime' not in container_image:
-        container_image = 'ubuntu:22.04'
-        logger.warning(
-            f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
-        )
+    if container_image is not None:
+        config.sandbox.container_image = container_image
+
     if box_class == EventStreamRuntime:
+        # NOTE: we will use the default container image specified in the config.sandbox
+        # if it is an official od_runtime image.
+        cur_container_image = config.sandbox.container_image
+        if 'od_runtime' not in cur_container_image:
+            cur_container_image = 'ubuntu:22.04'
+            logger.warning(
+                f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
+            )
+
         runtime = EventStreamRuntime(
             config=config,
             event_stream=event_stream,
             sid=sid,
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
             # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
-            container_image=container_image,
+            container_image=cur_container_image,
             plugins=plugins,
         )
         await runtime.ainit()
@@ -721,14 +726,7 @@ async def test_ipython_simple(temp_dir, box_class):
     assert obs.content.strip() == '1'
 
 
-@pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
-    """Make sure that cd in bash also update the current working directory in ipython."""
-
-    runtime = await _load_runtime(
-        temp_dir, box_class, enable_auto_lint=enable_auto_lint
-    )
-
+async def _test_ipython_agentskills_fileop_pwd_impl(runtime):
     action = CmdRunAction(command='mkdir test')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
@@ -828,5 +826,36 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
+
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+
+    runtime = await _load_runtime(
+        temp_dir, box_class, enable_auto_lint=enable_auto_lint
+    )
+    await _test_ipython_agentskills_fileop_pwd_impl(runtime)
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.skipif(
+    os.getenv('TEST_IN_CI') != 'true',
+    reason='The unittest need to download image, so only run on CI',
+)
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
+    temp_dir, enable_auto_lint
+):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+
+    runtime = await _load_runtime(
+        temp_dir,
+        # NOTE: we only test for ServerRuntime, since EventStreamRuntime is image agnostic by design.
+        ServerRuntime,
+        enable_auto_lint=enable_auto_lint,
+        container_image='ubuntu:22.04',
+    )
+    await _test_ipython_agentskills_fileop_pwd_impl(runtime)
     await runtime.close()
     await asyncio.sleep(1)
