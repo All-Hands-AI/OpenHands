@@ -1,5 +1,4 @@
 import asyncio
-import json
 import uuid
 from typing import Optional
 
@@ -27,7 +26,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
+from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.runtime_build import build_runtime_image
@@ -45,10 +44,12 @@ class EventStreamRuntime(Runtime):
         config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
-        container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
+        container_image: str | None = None,
     ):
-        super().__init__(config, event_stream, sid)  # will initialize the event stream
+        super().__init__(
+            config, event_stream, sid, plugins
+        )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -272,20 +273,6 @@ class EventStreamRuntime(Runtime):
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
 
-    async def add_env_vars(self, env_vars: dict[str, str]) -> None:
-        # Add env vars to the IPython shell (if Jupyter is used)
-        if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
-            code = 'import os\n'
-            for key, value in env_vars.items():
-                # Note: json.dumps gives us nice escaping for free
-                code += f'os.environ["{key}"] = {json.dumps(value)}\n'
-            code += '\n'
-            obs = await self.run_ipython(IPythonRunCellAction(code))
-            logger.info(f'Added env vars to IPython: code={code}, obs={obs}')
-
-        # parent class implementation will add env vars to the Bash shell
-        await super().add_env_vars(env_vars)
-
     ############################################################################
     # Keep the same with other runtimes
     ############################################################################
@@ -294,14 +281,3 @@ class EventStreamRuntime(Runtime):
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
-
-    ############################################################################
-    # Initialization work inside sandbox image
-    ############################################################################
-
-    # init_runtime_tools direcctly do as what Runtime do
-
-    # Do in the od_runtime_client
-    # Overwrite the init_sandbox_plugins
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        pass

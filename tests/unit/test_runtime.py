@@ -132,9 +132,10 @@ async def _load_runtime(
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
-        runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
+        runtime = ServerRuntime(
+            config=config, event_stream=event_stream, sid=sid, plugins=plugins
+        )
         await runtime.ainit()
-        runtime.init_sandbox_plugins(plugins)
         runtime.init_runtime_tools(
             [],
             is_async=False,
@@ -851,10 +852,10 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
     await asyncio.sleep(1)
 
 
-@pytest.mark.skipif(
-    os.getenv('TEST_IN_CI') != 'true',
-    reason='The unittest need to download image, so only run on CI',
-)
+# @pytest.mark.skipif(
+#     os.getenv('TEST_IN_CI') != 'true',
+#     reason='The unittest need to download image, so only run on CI',
+# )
 @pytest.mark.asyncio
 async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
     temp_dir, enable_auto_lint, container_image
