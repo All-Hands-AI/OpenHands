@@ -13,7 +13,11 @@ if [ -z "$LEVEL" ]; then
     exit 1
 fi
 
-NAMESPACE=xingyaoww
+NAMESPACE=$2 # xingyaoww
+if [ -z "$NAMESPACE" ]; then
+    echo "Default to namespace: xingyaoww"
+    NAMESPACE="xingyaoww"
+fi
 IMAGE_FILE="$(dirname "$0")/all-swebench-lite-instance-images.txt"
 
 # Define a pattern based on the level

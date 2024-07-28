@@ -125,7 +125,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox and not test_runtime"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox.py and not test_runtime.py"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -159,7 +159,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox and not test_runtime"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox.py and not test_runtime.py"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

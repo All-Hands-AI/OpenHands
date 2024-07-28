@@ -4,12 +4,13 @@ from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import LLMConfig, SandboxConfig
+from opendevin.core.config import AppConfig, LLMConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.stream import EventStream
 from opendevin.runtime import DockerSSHBox, get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.storage.files import FileStore
 
 
 class AgentSession:
@@ -25,15 +26,16 @@ class AgentSession:
     runtime: Optional[Runtime] = None
     _closed: bool = False
 
-    def __init__(self, sid):
+    def __init__(self, sid: str, file_store: FileStore):
         """Initializes a new instance of the Session class."""
         self.sid = sid
-        self.event_stream = EventStream(sid)
+        self.event_stream = EventStream(sid, file_store)
+        self.file_store = file_store
 
     async def start(
         self,
         runtime_name: str,
-        sandbox_config: SandboxConfig,
+        config: AppConfig,
         agent: Agent,
         confirmation_mode: bool,
         max_iterations: int,
@@ -49,7 +51,7 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_runtime(runtime_name, sandbox_config)
+        await self._create_runtime(runtime_name, config)
         await self._create_controller(
             agent,
             confirmation_mode,
@@ -63,13 +65,13 @@ class AgentSession:
             return
         if self.controller is not None:
             end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid)
+            end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
             await self.runtime.close()
         self._closed = True
 
-    async def _create_runtime(self, runtime_name: str, sandbox_config: SandboxConfig):
+    async def _create_runtime(self, runtime_name: str, config: AppConfig):
         """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
@@ -77,7 +79,7 @@ class AgentSession:
         logger.info(f'Using runtime: {runtime_name}')
         runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(
-            sandbox_config=sandbox_config, event_stream=self.event_stream, sid=self.sid
+            config=config, event_stream=self.event_stream, sid=self.sid
         )
         await self.runtime.ainit()
 
@@ -121,7 +123,7 @@ class AgentSession:
             headless_mode=False,
         )
         try:
-            agent_state = State.restore_from_session(self.sid)
+            agent_state = State.restore_from_session(self.sid, self.file_store)
             self.controller.set_initial_state(
                 agent_state, max_iterations, confirmation_mode
             )
