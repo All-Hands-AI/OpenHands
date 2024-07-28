@@ -639,3 +639,22 @@ async def test_failed_cmd(temp_dir, box_class):
 
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+
+    # Test run ipython
+    # get username
+    test_code = "import os; print(os.environ['USER'])"
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    if run_as_devin:
+        assert 'opendevin' in obs.content
+    else:
+        assert 'root' in obs.content
