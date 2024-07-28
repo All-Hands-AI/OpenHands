@@ -38,8 +38,7 @@ def get_number_of_prompts(test_name: str):
     return len(prompt_files)
 
 
-def validate_final_state(final_state: State | None, test_name: str):
-    assert final_state is not None
+def validate_final_state(final_state: State, test_name: str):
     assert final_state.agent_state == AgentState.STOPPED
     assert final_state.last_error is None
     # number of LLM conversations should be the same as number of prompt/response
@@ -78,7 +77,7 @@ def test_write_simple_script(current_test_name: str) -> None:
     # Create the agent
     agent = Agent.get_cls(os.getenv('DEFAULT_AGENT'))(llm=LLM(LLMConfig()))
 
-    final_state: State | None = asyncio.run(
+    final_state: State = asyncio.run(
         run_agent_controller(
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
@@ -134,7 +133,7 @@ def test_edits(current_test_name: str):
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    final_state: State | None = asyncio.run(
+    final_state: State = asyncio.run(
         run_agent_controller(
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
@@ -167,7 +166,7 @@ def test_ipython(current_test_name: str):
 
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
-    final_state: State | None = asyncio.run(
+    final_state: State = asyncio.run(
         run_agent_controller(
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
@@ -201,7 +200,7 @@ def test_simple_task_rejection(current_test_name: str):
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_state: State | None = asyncio.run(
+    final_state: State = asyncio.run(
         run_agent_controller(agent, task, max_iterations, max_budget_per_task)
     )
     validate_final_state(final_state, current_test_name)
@@ -223,7 +222,7 @@ def test_ipython_module(current_test_name: str):
 
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
-    final_state: State | None = asyncio.run(
+    final_state: State = asyncio.run(
         run_agent_controller(
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
@@ -262,7 +261,7 @@ def test_browse_internet(http_server, current_test_name: str):
 
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
-    final_state: State | None = asyncio.run(
+    final_state: State = asyncio.run(
         run_agent_controller(
             agent, task, max_iterations, max_budget_per_task, exit_on_message=True
         )
@@ -282,3 +281,15 @@ def test_browse_internet(http_server, current_test_name: str):
         assert 'OpenDevin is all you need!' in last_observation.content
     elif isinstance(last_observation, AgentDelegateObservation):
         assert 'OpenDevin is all you need!' in last_observation.outputs['content']
+
+
+def test_dummy_agent(current_test_name: str):
+    # Create the agent
+    agent = Agent.get_cls('DummyAgent')(llm=LLM(LLMConfig()))
+
+    # Execute the task
+    task = 'Do nothing. Do not ask me for confirmation at any point.'
+    final_state: State = asyncio.run(
+        run_agent_controller(agent, task, max_iterations, max_budget_per_task)
+    )
+    assert final_state.last_error is None
