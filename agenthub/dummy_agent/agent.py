@@ -20,7 +20,6 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
-    NullObservation,
     Observation,
 )
 from opendevin.events.serialization.event import event_to_dict
@@ -52,23 +51,23 @@ class DummyAgent(Agent):
         self.steps: list[ActionObs] = [
             {
                 'action': AddTaskAction(parent='', goal='start'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': AddTaskAction(parent='0', goal='check the current directory'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': AddTaskAction(parent='0.0', goal='run ls'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': ModifyTaskAction(task_id='0.0', state='in_progress'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': MessageAction('Time to get started!'),
-                'observations': [NullObservation('')],
+                'observations': [],
             },
             {
                 'action': CmdRunAction(command='echo "foo"'),
@@ -153,4 +152,4 @@ class DummyAgent(Agent):
                     assert (
                         hist_obs == expected_obs
                     ), f'Expected observation {expected_obs}, got {hist_obs}'
-        return self.steps[state.iteration]['action']
+        return self.steps[state.iteration - 1]['action']
