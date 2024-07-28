@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import Action, IPythonRunCellAction
-from opendevin.events.observation import IPythonRunCellObservation, Observation
+from opendevin.events.observation import IPythonRunCellObservation
 from opendevin.runtime.plugins.requirement import Plugin, PluginRequirement
 from opendevin.runtime.utils import find_available_tcp_port
 
@@ -62,7 +62,7 @@ class JupyterPlugin(Plugin):
         )
         await self.run(IPythonRunCellAction(code='import os; os.chdir("/workspace")'))
 
-    async def run(self, action: Action) -> Observation:
+    async def run(self, action: Action) -> IPythonRunCellObservation:
         if not isinstance(action, IPythonRunCellAction):
             raise ValueError(
                 f'Jupyter plugin only supports IPythonRunCellAction, but got {action}'

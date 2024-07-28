@@ -41,22 +41,38 @@ CURRENT_LINE = 1
 WINDOW = 100
 
 
-ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
-
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
 
+
+# ==================================================================================================
 # OPENAI
-OPENAI_API_KEY = os.getenv(
-    'OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', '')
-)
-OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://api.openai.com/v1')
-OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
-MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
+# TODO: Move this to EventStream Actions when EventStreamRuntime is fully implemented
+# NOTE: we need to get env vars inside functions because they will be set in IPython
+# AFTER the agentskills is imported (the case for EventStreamRuntime)
+# ==================================================================================================
+def _get_openai_api_key():
+    return os.getenv('OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', ''))
 
-OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
 
-client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+def _get_openai_base_url():
+    return os.getenv('OPENAI_BASE_URL', 'https://api.openai.com/v1')
+
+
+def _get_openai_model():
+    return os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
+
+
+def _get_max_token():
+    return os.getenv('MAX_TOKEN', 500)
+
+
+def _get_openai_client():
+    client = OpenAI(api_key=_get_openai_api_key(), base_url=_get_openai_base_url())
+    return client
+
+
+# ==================================================================================================
 
 
 # Define the decorator using the functionality of UpdatePwd
@@ -506,7 +522,10 @@ def _edit_file_impl(
         shutil.move(temp_file_path, src_abs_path)
 
         # Handle linting
-        if ENABLE_AUTO_LINT:
+        # NOTE: we need to get env var inside this function
+        # because the env var will be set AFTER the agentskills is imported
+        enable_auto_lint = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
+        if enable_auto_lint:
             # BACKUP the original file
             original_file_backup_path = os.path.join(
                 os.path.dirname(file_name),
@@ -954,7 +973,9 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     try:
         # TODO: record the COST of the API call
         with open(file_path, 'rb') as audio_file:
-            transcript = client.audio.translations.create(model=model, file=audio_file)
+            transcript = _get_openai_client().audio.translations.create(
+                model=model, file=audio_file
+            )
         print(transcript.text)
 
     except Exception as e:
@@ -975,10 +996,10 @@ def parse_image(
     # TODO: record the COST of the API call
     try:
         base64_image = _base64_img(file_path)
-        response = client.chat.completions.create(
-            model=OPENAI_MODEL,
+        response = _get_openai_client().chat.completions.create(
+            model=_get_openai_model(),
             messages=_prepare_image_messages(task, base64_image),
-            max_tokens=MAX_TOKEN,
+            max_tokens=_get_max_token(),
         )
         content = response.choices[0].message.content
         print(content)
@@ -1021,10 +1042,10 @@ def parse_video(
         print(f'Process the {file_path}, current No. {idx * frame_interval} frame...')
         # TODO: record the COST of the API call
         try:
-            response = client.chat.completions.create(
-                model=OPENAI_MODEL,
+            response = _get_openai_client().chat.completions.create(
+                model=_get_openai_model(),
                 messages=_prepare_image_messages(task, base64_frame),
-                max_tokens=MAX_TOKEN,
+                max_tokens=_get_max_token(),
             )
 
             content = response.choices[0].message.content
@@ -1077,7 +1098,9 @@ __all__ = [
     'parse_pptx',
 ]
 
-if OPENAI_API_KEY and OPENAI_BASE_URL:
+# This is called from OpenDevin's side
+# If SANDBOX_ENV_OPENAI_API_KEY is set, we will be able to use these tools in the sandbox environment
+if _get_openai_api_key() and _get_openai_base_url():
     __all__ += ['parse_audio', 'parse_video', 'parse_image']
 
 DOCUMENTATION = ''

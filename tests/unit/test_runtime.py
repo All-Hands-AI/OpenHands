@@ -64,7 +64,18 @@ def run_as_devin(request):
     return request.param
 
 
-async def _load_runtime(temp_dir, box_class, run_as_devin=True):
+@pytest.fixture(scope='module', params=[True, False])
+def enable_auto_lint(request):
+    time.sleep(1)
+    return request.param
+
+
+async def _load_runtime(
+    temp_dir,
+    box_class,
+    run_as_devin: bool = True,
+    enable_auto_lint: bool = False,
+):
     sid = 'test'
     cli_session = 'main_test'
     plugins = [JupyterRequirement(), AgentSkillsRequirement()]
@@ -77,6 +88,7 @@ async def _load_runtime(temp_dir, box_class, run_as_devin=True):
     )
     load_from_env(config, os.environ)
     config.run_as_devin = run_as_devin
+    config.sandbox.enable_auto_lint = enable_auto_lint
 
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(cli_session, file_store)
@@ -705,3 +717,114 @@ async def test_ipython_simple(temp_dir, box_class):
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.content.strip() == '1'
+
+
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+
+    runtime = await _load_runtime(
+        temp_dir, box_class, enable_auto_lint=enable_auto_lint
+    )
+
+    action = CmdRunAction(command='mkdir test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /workspace/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+    ).strip().split('\n')
+
+    action = CmdRunAction(command='cd test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # This should create a file in the current working directory
+    # i.e., /workspace/test/hello.py instead of /workspace/hello.py
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /workspace/test/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+    ).strip().split('\n')
+
+    if enable_auto_lint:
+        # edit file, but make a mistake in indentation
+        action = IPythonRunCellAction(
+            code="insert_content_at_line('hello.py', 1, '  print(\"hello world\")')"
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, IPythonRunCellObservation)
+        assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+            """
+[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
+ERRORS:
+/workspace/test/hello.py:1:3: E999 IndentationError: unexpected indent
+[This is how your edit would have looked if applied]
+-------------------------------------------------
+(this is the beginning of the file)
+1|  print("hello world")
+(this is the end of the file)
+-------------------------------------------------
+
+[This is the original code before your edit]
+-------------------------------------------------
+(this is the beginning of the file)
+1|
+(this is the end of the file)
+-------------------------------------------------
+Your changes have NOT been applied. Please fix your edit command and try again.
+You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+"""
+        ).strip().split('\n')
+
+    # edit file with correct indentation
+    action = IPythonRunCellAction(
+        code="insert_content_at_line('hello.py', 1, 'print(\"hello world\")')"
+    )
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        """
+[File: /workspace/test/hello.py (1 lines total after edit)]
+(this is the beginning of the file)
+1|print("hello world")
+(this is the end of the file)
+[File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+"""
+    ).strip().split('\n')
+
+    action = CmdRunAction(command='rm -rf /workspace/*')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    await runtime.close()
+    await asyncio.sleep(1)

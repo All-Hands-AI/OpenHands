@@ -37,6 +37,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
+    IPythonRunCellObservation,
     Observation,
 )
 from opendevin.events.serialization import event_from_dict, event_to_dict
@@ -66,9 +67,9 @@ class RuntimeClient:
         self.plugins_to_load = plugins_to_load
         self.username = username
         self.user_id = user_id
-        self.work_dir = work_dir
+        self.pwd = work_dir  # current PWD
         self._init_user(self.username, self.user_id)
-        self._init_bash_shell(self.work_dir, self.username)
+        self._init_bash_shell(self.pwd, self.username)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv()
@@ -78,6 +79,22 @@ class RuntimeClient:
             await plugin.initialize(self.username)
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
+
+        # This is a temporary workaround
+        # TODO: refactor AgentSkills to be part of JupyterPlugin
+        # AFTER ServerRuntime is deprecated
+        if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
+            obs = await self.run_ipython(
+                IPythonRunCellAction(
+                    code=(
+                        'import sys\n'
+                        'sys.path.insert(0, "/opendevin/code")\n'
+                        # TODO: figure out how to pass added env var to IPython?
+                        'from opendevin.runtime.plugins.agent_skills.agentskills import *'
+                    )
+                )
+            )
+            logger.info(f'AgentSkills initialized: {obs}')
 
     def _init_user(self, username: str, user_id: int) -> None:
         """Create user if not exists."""
@@ -131,7 +148,7 @@ class RuntimeClient:
             f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
         )
 
-    def _get_bash_prompt(self):
+    def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
 
         # begin at the last occurence of '[PEXPECT_BEGIN]'.
@@ -148,6 +165,7 @@ class RuntimeClient:
             matched is not None
         ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
         username, hostname, working_dir = matched.groups()
+        self.pwd = working_dir
 
         # re-assemble the prompt
         prompt = f'{username}@{hostname}:{working_dir} '
@@ -169,7 +187,7 @@ class RuntimeClient:
 
         output = self.shell.before
         if keep_prompt:
-            output += '\r\n' + self._get_bash_prompt()
+            output += '\r\n' + self._get_bash_prompt_and_update_pwd()
         logger.debug(f'Command output: {output}')
 
         # Get exit code
@@ -214,7 +232,20 @@ class RuntimeClient:
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
-            return await _jupyter_plugin.run(action)
+
+            # This is used to make AgentSkills in Jupyter aware of the
+            # current working directory in Bash
+            reset_jupyter_pwd_code = (
+                f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
+            )
+            action.code = reset_jupyter_pwd_code + action.code
+
+            obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
+
+            obs.code = obs.code.replace(
+                reset_jupyter_pwd_code, ''
+            )  # clean up the injected code
+            return obs
         else:
             raise RuntimeError(
                 'JupyterRequirement not found. Unable to run IPython action.'

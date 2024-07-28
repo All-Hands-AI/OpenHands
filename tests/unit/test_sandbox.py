@@ -124,20 +124,6 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     box.close()
 
 
-def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
-    # get a temporary directory
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='ssh',
-            enable_auto_lint=False,
-        ),
-        persist_sandbox=False,
-    )
-    assert not config.sandbox.enable_auto_lint
-    box = create_docker_box_from_app_config(temp_dir, config)
-    _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
-
-
 @pytest.mark.skipif(
     os.getenv('TEST_IN_CI') != 'true',
     reason='The unittest need to download image, so only run on CI',
