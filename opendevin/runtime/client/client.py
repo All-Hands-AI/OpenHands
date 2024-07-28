@@ -46,6 +46,7 @@ from opendevin.runtime.plugins import (
     Plugin,
 )
 from opendevin.runtime.server.files import insert_lines, read_lines
+from opendevin.runtime.utils import split_bash_commands
 
 app = FastAPI()
 
@@ -79,7 +80,7 @@ class RuntimeClient:
             r'\[PEXPECT_BEGIN\] ([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
         )
 
-        self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
+        self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
         self.shell.sendline(f'cd {work_dir}')
@@ -87,6 +88,15 @@ class RuntimeClient:
 
     def _get_bash_prompt(self):
         ps1 = self.shell.after
+
+        # begin at the last occurence of '[PEXPECT_BEGIN]'.
+        # In multi-line bash commands, the prompt will be repeated
+        # and the matched regex captures all of them
+        # - we only want the last one (newest prompt)
+        _begin_pos = ps1.rfind('[PEXPECT_BEGIN]')
+        if _begin_pos != -1:
+            ps1 = ps1[_begin_pos:]
+
         # parse the ps1 to get username, hostname, and working directory
         matched = re.match(self.__bash_expect_regex, ps1)
         assert (
@@ -102,7 +112,7 @@ class RuntimeClient:
             prompt += '$'
         return prompt + ' '
 
-    def _execute_bash(self, command, keep_prompt: bool = True) -> tuple[str, int]:
+    def _execute_bash(self, command: str, keep_prompt: bool = True) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
         self.shell.expect(self.__bash_expect_regex)
@@ -129,10 +139,22 @@ class RuntimeClient:
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
-            output, exit_code = self._execute_bash(action.command)
+            commands = split_bash_commands(action.command)
+            all_output = ''
+            for command in commands:
+                output, exit_code = self._execute_bash(command)
+                if all_output:
+                    # previous output already exists with prompt "user@hostname:working_dir #""
+                    # we need to add the command to the previous output,
+                    # so model knows the following is the output of another action)
+                    all_output = all_output.rstrip() + ' ' + command + '\r\n'
+
+                all_output += str(output) + '\r\n'
+                if exit_code != 0:
+                    break
             return CmdOutputObservation(
                 command_id=-1,
-                content=str(output),
+                content=all_output.rstrip('\r\n'),
                 command=action.command,
                 exit_code=exit_code,
             )

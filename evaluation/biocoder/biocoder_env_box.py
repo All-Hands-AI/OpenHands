@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from datasets import load_dataset
 
-from opendevin.core.config import config
+from opendevin.core.config import load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import (
@@ -15,6 +15,8 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
     SWEAgentCommandsRequirement,
 )
+
+config = load_app_config()
 
 BIOCODER_BENCH_CONTAINER_IMAGE = 'public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0'
 

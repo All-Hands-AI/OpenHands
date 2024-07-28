@@ -131,6 +131,8 @@ class CodeActAgent(Agent):
                 + '\n Observation: '
                 + action.summarized_observations
             )
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
+            return action.thought
         return ''
 
     def get_action_message(self, action: Action) -> Message | None:
@@ -141,6 +143,7 @@ class CodeActAgent(Agent):
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
             or isinstance(action, AgentSummarizeAction)
+            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
             message = {
                 'role': 'user' if action.source == 'user' else 'assistant',
