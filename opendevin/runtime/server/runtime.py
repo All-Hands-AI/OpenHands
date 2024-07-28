@@ -115,7 +115,7 @@ class ServerRuntime(Runtime):
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         self._run_command(
-            ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
+            f"cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n{action.code}\nEOL"
         )
 
         # run the code

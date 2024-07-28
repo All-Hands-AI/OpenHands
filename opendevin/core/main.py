@@ -177,6 +177,13 @@ if __name__ == '__main__':
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
+    # if max budget per task is not sent on the command line, use the config value
+    max_budget_per_task = (
+        args.max_budget_per_task
+        if args.max_budget_per_task
+        else config.max_budget_per_task
+    )
+
     asyncio.run(
         run_agent_controller(
             agent=agent,

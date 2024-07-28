@@ -33,13 +33,13 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore
 
 
-def _default_env_vars(config: SandboxConfig) -> dict[str, str]:
+def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     ret = {}
     for key in os.environ:
         if key.startswith('SANDBOX_ENV_'):
             sandbox_key = key.removeprefix('SANDBOX_ENV_')
             ret[sandbox_key] = os.environ[key]
-    if config.enable_auto_lint:
+    if sandbox_config.enable_auto_lint:
         ret['ENABLE_AUTO_LINT'] = 'true'
     return ret
 
