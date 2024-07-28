@@ -14,6 +14,7 @@ import asyncio
 import os
 import re
 import subprocess
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
@@ -49,8 +50,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.server.files import insert_lines, read_lines
 from opendevin.runtime.utils import split_bash_commands
 
-app = FastAPI()
-
 
 class ActionRequest(BaseModel):
     action: dict
@@ -64,14 +63,19 @@ class RuntimeClient:
     def __init__(
         self, plugins_to_load: list[Plugin], work_dir: str, username: str, user_id: int
     ) -> None:
-        self._init_user(username, user_id)
-        self._init_bash_shell(work_dir, username)
+        self.plugins_to_load = plugins_to_load
+        self.username = username
+        self.user_id = user_id
+        self.work_dir = work_dir
+        self._init_user(self.username, self.user_id)
+        self._init_bash_shell(self.work_dir, self.username)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv()
 
-        for plugin in plugins_to_load:
-            plugin.initialize(username)
+    async def ainit(self):
+        for plugin in self.plugins_to_load:
+            await plugin.initialize(self.username)
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
 
@@ -332,21 +336,34 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client = RuntimeClient(
-        plugins_to_load,
-        work_dir=args.working_dir,
-        username=args.username,
-        user_id=args.user_id,
-    )
+    client: RuntimeClient | None = None
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        global client
+        client = RuntimeClient(
+            plugins_to_load,
+            work_dir=args.working_dir,
+            username=args.username,
+            user_id=args.user_id,
+        )
+        await client.ainit()
+        yield
+        # Clean up & release the resources
+        client.close()
+
+    app = FastAPI(lifespan=lifespan)
 
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):
+        assert client is not None
         async with client.lock:
             response = await call_next(request)
         return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
+        assert client is not None
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):

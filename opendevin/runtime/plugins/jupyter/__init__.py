@@ -30,7 +30,7 @@ class JupyterRequirement(PluginRequirement):
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
-    def initialize(self, username: str, kernel_id: str = 'opendevin-default'):
+    async def initialize(self, username: str, kernel_id: str = 'opendevin-default'):
         self.kernel_gateway_port = find_available_tcp_port()
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
@@ -60,6 +60,7 @@ class JupyterPlugin(Plugin):
         logger.info(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
+        await self.run(IPythonRunCellAction(code='import os; os.chdir("/workspace")'))
 
     async def run(self, action: Action) -> Observation:
         if not isinstance(action, IPythonRunCellAction):

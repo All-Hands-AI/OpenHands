@@ -40,18 +40,6 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-def test_sandbox_jupyter_plugin(temp_dir):
-    box = create_docker_box_from_app_config(temp_dir)
-    box.init_plugins([JupyterRequirement])
-    exit_code, output = box.execute('echo "print(1)" | execute_cli')
-    print(output)
-    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
-    assert output == '1\r\n', (
-        'The output should be the same as the input for ' + box.__class__.__name__
-    )
-    box.close()
-
-
 def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config: AppConfig):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = box.execute('mkdir test')

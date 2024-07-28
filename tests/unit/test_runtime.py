@@ -658,3 +658,50 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
         assert 'opendevin' in obs.content
     else:
         assert 'root' in obs.content
+
+    # print pwd
+    test_code = 'import os; print(os.getcwd())'
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.content.strip() == '/workspace'
+
+    # write a file
+    test_code = "with open('test.txt', 'w') as f: f.write('Hello, world!')"
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_ipython)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.strip() == '[Code executed successfully with no output]'
+
+    # check file owner via bash
+    action = CmdRunAction(command='ls -alh test.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    if run_as_devin:
+        # -rw-r--r-- 1 opendevin root 13 Jul 28 03:53 test.txt
+        assert 'opendevin' in obs.content.split('\r\n')[0]
+        assert 'root' in obs.content.split('\r\n')[0]
+    else:
+        # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
+        assert 'root' in obs.content.split('\r\n')[0]
+
+
+@pytest.mark.asyncio
+async def test_ipython_simple(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # Test run ipython
+    # get username
+    test_code = 'print(1)'
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.content.strip() == '1'
