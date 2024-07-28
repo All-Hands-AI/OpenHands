@@ -100,6 +100,7 @@ async def _load_runtime(
         sandbox=SandboxConfig(
             use_host_network=True,
         ),
+        user_id=os.getuid(),
     )
     load_from_env(config, os.environ)
     config.run_as_devin = run_as_devin
