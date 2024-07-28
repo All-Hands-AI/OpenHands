@@ -184,7 +184,7 @@ if __name__ == '__main__':
         else config.max_budget_per_task
     )
 
-    final_state = asyncio.run(
+    asyncio.run(
         run_agent_controller(
             agent=agent,
             task_str=task_str,
@@ -192,5 +192,3 @@ if __name__ == '__main__':
             max_budget_per_task=args.max_budget_per_task,
         )
     )
-    if final_state.last_error:
-        sys.exit(1)
