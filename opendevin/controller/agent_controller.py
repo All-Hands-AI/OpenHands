@@ -150,6 +150,9 @@ class AgentController:
                 except asyncio.CancelledError:
                     logger.info(f'AgentController step was cancelled for `{self.id}`')
                     break
+                except UserCancelledError:
+                    logger.info('AgentController step was cancelled by user')
+                    break
                 except Exception as e:
                     traceback.print_exc()
                     logger.error(f'Error while running the agent: {e}')
@@ -181,7 +184,8 @@ class AgentController:
             if isinstance(event, Observation) and not isinstance(
                 event, AgentStateChangedObservation
             ):
-                logger.info('Task cancelled.')
+                logger.info('Task cancelled, setting to finished.')
+                await self.set_agent_state_to(AgentState.FINISHED)
                 return
             elif isinstance(event, ChangeAgentStateAction):
                 # Allow ChangeAgentStateAction to be processed even when stopped

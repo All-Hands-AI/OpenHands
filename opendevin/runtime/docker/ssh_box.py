@@ -8,9 +8,11 @@ import shlex
 import sys
 import tarfile
 import tempfile
+import threading
 import time
 import uuid
 from glob import glob
+from queue import Empty, Queue
 from typing import Any, Dict, Optional, Tuple, Union  # type: ignore[unused-import]
 
 import aiodocker
@@ -37,6 +39,7 @@ from opendevin.runtime.utils.async_utils import async_to_sync
 from opendevin.runtime.utils.image_agnostic import get_od_sandbox_image
 
 logger.setLevel(logging.DEBUG)
+PEXPECT_PROMPT = '[PEXPECT]$'
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -44,10 +47,17 @@ class SSHExecCancellableStream(CancellableStream):
         super().__init__(self.read_output())
         self.ssh = ssh
         self.cmd = cmd
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else 120
+        self.output_queue: Queue[str] = Queue()
+        self.thread = threading.Thread(target=self._read_output_thread)
+        self.thread.daemon = True
+        self.thread.start()
+        self.eof_reached = False
+        self.closed = False
 
     def close(self):
         self.closed = True
+        self.thread.join(timeout=1)
 
     def exit_code(self):
         assert self.ssh is not None
@@ -72,50 +82,78 @@ class SSHExecCancellableStream(CancellableStream):
             logger.error(f'Could not find exit code in output: {output}')
             return None
 
-    def read_output(self):
-        st = time.time()
-        buf = ''
-        crlf = '\r\n'
-        lf = '\n'
-        prompt_len = len(self.ssh.PROMPT)
-        while True:
+    def _read_output_thread(self):
+        while not self.closed:
             try:
-                if self.closed:
-                    break
-                _output = self.ssh.read_nonblocking(timeout=1)
-                if not _output:
-                    continue
-
-                buf += _output
-
-                if len(buf) < prompt_len:
-                    continue
-
-                match = re.search(self.ssh.PROMPT, buf)
-                if match:
-                    idx, _ = match.span()
-                    yield buf[:idx].replace(crlf, lf)
-                    buf = ''
-                    break
-
-                res = buf[:-prompt_len]
-                if len(res) == 0 or res.find(crlf) == -1:
-                    continue
-                buf = buf[-prompt_len:]
-                yield res.replace(crlf, lf)
-            except exceptions.TIMEOUT:
-                if time.time() - st < self.timeout:
-                    match = re.search(self.ssh.PROMPT, buf)
-                    if match:
-                        idx, _ = match.span()
-                        yield buf[:idx].replace(crlf, lf)
+                new_output = self.ssh.read_nonblocking(size=512, timeout=1)
+                if new_output:
+                    self.output_queue.put(new_output)
+                    if PEXPECT_PROMPT in new_output:
+                        self.eof_reached = True
                         break
-                    continue
-                else:
-                    yield buf.replace(crlf, lf)
+            except pxssh.TIMEOUT:
+                pass
+            except pxssh.EOF:
+                self.eof_reached = True
                 break
-            except exceptions.EOF:
+            except Exception as e:
+                logger.error(f'Error reading output: {e}')
+                self.eof_reached = True
                 break
+
+    def read_output(self):
+        while not self.closed:
+            try:
+                yield self.output_queue.get(timeout=0.1)
+            except Empty:
+                if self.eof_reached:
+                    break
+                # Check if the command has finished
+                if self.ssh.prompt(timeout=0.1):
+                    break
+
+            # If the queue is empty and EOF is reached, break the loop
+            if self.output_queue.empty() and self.eof_reached:
+                break
+
+    def _read_and_process_buffer(self, buf):
+        try:
+            new_output = self._read_nonblocking()
+            if not new_output:
+                return buf
+            buf += new_output
+            buf, yield_data = self._check_and_yield_buffer(buf)
+            if yield_data:
+                yield yield_data
+        except exceptions.TIMEOUT:
+            buf = self._handle_timeout(buf)
+        except exceptions.EOF:
+            return ''
+        return buf
+
+    def _read_nonblocking(self):
+        return self.ssh.read_nonblocking(timeout=1)
+
+    def _check_and_yield_buffer(self, buf):
+        prompt_len = len(self.ssh.PROMPT)
+        if len(buf) < prompt_len:
+            return buf, None
+        match = re.search(self.ssh.PROMPT, buf)
+        if match:
+            idx, _ = match.span()
+            return '', buf[:idx].replace('\r\n', '\n')
+        if '\r\n' not in buf[:-prompt_len]:
+            return buf, None
+        yield_data = buf[:-prompt_len].replace('\r\n', '\n')
+        return buf[-prompt_len:], yield_data
+
+    def _handle_timeout(self, buf):
+        match = re.search(self.ssh.PROMPT, buf)
+        if match:
+            idx, _ = match.span()
+            yield buf[:idx].replace('\r\n', '\n')
+            return ''
+        return buf
 
 
 class DockerSSHBox(Sandbox):
@@ -804,6 +842,11 @@ class DockerSSHBox(Sandbox):
                 all_output += str(output)
                 if exit_code != 0:
                     return exit_code, all_output
+                if PEXPECT_PROMPT in output:
+                    logger.debug(
+                        'Detected [PEXPECT]$ prompt, ending command execution.'
+                    )
+                    break
             return 0, all_output
 
         # Prepare environment variables
@@ -819,7 +862,7 @@ class DockerSSHBox(Sandbox):
         if stream:
             return 0, SSHExecCancellableStream(self.ssh, full_cmd, timeout)
 
-        success = self.ssh.prompt(timeout=600)
+        success = self.ssh.prompt(timeout=timeout)
         if not success:
             return self._send_interrupt(full_cmd)  # type: ignore
         command_output = self.ssh.before
@@ -827,11 +870,17 @@ class DockerSSHBox(Sandbox):
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             self.send_line('\n')
-            self.ssh.prompt(timeout=timeout)
+            timeout_not_reached = self.ssh.prompt(timeout=1)
+            if not timeout_not_reached:
+                logger.debug('TIMEOUT REACHED')
+                break
             output = self.ssh.before
             if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
+            if PEXPECT_PROMPT in output:
+                logger.debug('Detected [PEXPECT]$ prompt, ending command execution.')
+                break
         command_output = command_output.removesuffix('\r\n')
 
         # get the exit code
@@ -846,6 +895,9 @@ class DockerSSHBox(Sandbox):
                 return self._send_interrupt(  # type: ignore
                     cmd, command_output, ignore_last_output=True
                 )
+            if PEXPECT_PROMPT in exit_code_str:
+                logger.debug('Detected [PEXPECT]$ prompt, ending command execution.')
+                break
         cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
 
         try:
@@ -1272,4 +1324,5 @@ if __name__ == '__main__':
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')
-    ssh_box.close()
+    finally:
+        ssh_box.close()

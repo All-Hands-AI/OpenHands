@@ -250,7 +250,7 @@ if __name__ == '__main__':
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    asyncio.run(
+    final_state = asyncio.run(
         run_agent_controller(
             agent=agent,
             task_str=task_str,
@@ -258,3 +258,6 @@ if __name__ == '__main__':
             max_budget_per_task=args.max_budget_per_task,
         )
     )
+    if final_state and hasattr(final_state, 'last_error') and final_state.last_error:
+        logger.error(f'Agent encountered an error: {final_state.last_error}')
+        sys.exit(1)

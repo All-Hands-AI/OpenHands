@@ -1,5 +1,8 @@
 import os
+import time
 from typing import Protocol
+
+from pexpect.exceptions import EOF, TIMEOUT
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
@@ -12,6 +15,14 @@ class SandboxProtocol(Protocol):
 
     @property
     def initialize_plugins(self) -> bool: ...
+
+    def source_bashrc(self): ...
+
+    async def source_bashrc_async(self): ...
+
+    def init_plugins(self, requirements: list[PluginRequirement]): ...
+
+    async def init_plugins_async(self, requirements: list[PluginRequirement]): ...
 
     def execute(
         self, cmd: str, stream: bool = False
@@ -27,15 +38,50 @@ class SandboxProtocol(Protocol):
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ): ...
 
-    async def _source_bashrc_async(self) -> None: ...
 
-    async def _init_plugins_async(self, plugins: list[PluginRequirement]) -> None: ...
+def _handle_stream_output(output: CancellableStream, plugin_name: str):
+    total_output = ''
+    exit_code_value = None
+    start_time = time.time()
+    minor_timeout = 10
+    timeout = 30
+    last_output_time = start_time
 
-    @property
-    def plugin_initialized(self) -> bool: ...
+    try:
+        for line in output:
+            line = line.rstrip()
+            if line.strip():
+                logger.info(f'>>> {line}')
+                total_output += line + '\n'
+            last_output_time = time.time()
 
-    @plugin_initialized.setter
-    def plugin_initialized(self, value: bool): ...
+            if line.endswith('[PEXPECT]$') or '[PEXPECT]$' in line:
+                logger.debug('Detected [PEXPECT]$ prompt, ending stream.')
+                break
+
+            if time.time() - start_time > timeout:
+                logger.warning(f'Execution timed out after {timeout} seconds.')
+                break
+
+            if time.time() - last_output_time > minor_timeout:
+                logger.warning(f'No output for {minor_timeout} seconds, ending stream.')
+                break
+
+    except (EOF, TIMEOUT) as e:
+        logger.warning(f'Stream interrupted: {e}')
+    finally:
+        try:
+            exit_code_value = output.exit_code()
+        except Exception as e:
+            logger.error(f'Failed to get exit code: {e}')
+            exit_code_value = -1
+        output.close()
+
+    if exit_code_value is not None and exit_code_value != 0:
+        raise RuntimeError(
+            f'Failed to initialize plugin {plugin_name} with exit code {exit_code_value} and output: {total_output.strip()}'
+        )
+    logger.info(f'Plugin {plugin_name} initialized successfully')
 
 
 class PluginMixin:
@@ -43,9 +89,9 @@ class PluginMixin:
 
     # @async_to_sync
     def source_bashrc(self: SandboxProtocol):
-        return self._source_bashrc_async()
+        return self.source_bashrc_async()
 
-    async def _source_bashrc_async(self: SandboxProtocol):
+    async def source_bashrc_async(self: SandboxProtocol):
         exit_code, output = await self.execute_async('source /opendevin/bash.bashrc')
         if exit_code == 0:
             exit_code, output = await self.execute_async('source ~/.bashrc')
@@ -57,13 +103,14 @@ class PluginMixin:
 
     @async_to_sync
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
-        return self._init_plugins_async(requirements)
+        return self.init_plugins_async(requirements)
 
-    async def _init_plugins_async(
+    async def init_plugins_async(
         self: SandboxProtocol, requirements: list[PluginRequirement]
     ):
         """Load plugins into the sandbox."""
         if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
+            logger.info('Plugins already initialized, skipping.')
             return
 
         # Check if the sandbox is initialized
@@ -86,9 +133,15 @@ class PluginMixin:
                     f'Failed to clean-up ~/.bashrc with exit code {exit_code} and output: {output}'
                 )
 
-            for requirement in requirements:
+            for index, requirement in enumerate(requirements, 1):
+                logger.info(
+                    f'Initializing plugin {index}/{len(requirements)}: {requirement.name}'
+                )
+
                 # source bashrc file when plugin loads
-                await self._source_bashrc_async()
+                logger.info(f'Sourcing for {requirement.name}.')
+                await self.source_bashrc_async()
+                logger.info(f'Sourcing done for {requirement.name}.')
 
                 # copy over the files
                 await self.copy_to_async(
@@ -108,18 +161,20 @@ class PluginMixin:
                     abs_path_to_bash_script, stream=True
                 )
                 if isinstance(output, CancellableStream):
-                    total_output = ''
-                    for line in output:
-                        line = line.rstrip()
-                        if 'Requirement already satisfied: ' not in line:
-                            logger.info(f'>>> {line.strip()}')
-                        total_output += line + ' '
-                    _exit_code = output.exit_code()
-                    output.close()
-                    if _exit_code != 0:
-                        raise RuntimeError(
-                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
-                        )
+                    logger.info('CancellableStream processing output')
+                    # total_output = ''
+                    # for line in output:
+                    #     line = line.rstrip()
+                    #     if 'Requirement already satisfied: ' not in line:
+                    #         logger.info(f'>>> {line.strip()}')
+                    #     total_output += line + ' '
+                    # _exit_code = output.exit_code()
+                    # output.close()
+                    # if _exit_code != 0:
+                    #     raise RuntimeError(
+                    #         f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
+                    #     )
+                    _handle_stream_output(output, requirement.name)
                 else:
                     if exit_code != 0:
                         raise RuntimeError(
@@ -130,6 +185,8 @@ class PluginMixin:
             logger.info('Skipping plugin initialization in the sandbox.')
 
         if len(requirements) > 0:
-            await self._source_bashrc_async()
+            await self.source_bashrc_async()
 
-        self.plugin_initialized = True
+        setattr(self, '_plugin_initialized', True)
+        if isinstance(output, CancellableStream):
+            output.close()  # Ensure the stream is closed
