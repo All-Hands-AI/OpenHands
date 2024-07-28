@@ -30,6 +30,7 @@ from opendevin.events.observation import (
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import get_file_store
 
 
@@ -92,11 +93,13 @@ async def _load_runtime(temp_dir, box_class):
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
+        # enable use_host_network for the server runtime
+        config.sandbox.use_host_network = True
         runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
         await runtime.ainit()
         runtime.init_sandbox_plugins(plugins)
         runtime.init_runtime_tools(
-            [],
+            [RuntimeTool.BROWSER],
             is_async=False,
             runtime_tools_config={},
         )
@@ -314,24 +317,32 @@ async def test_simple_browse(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert '[1]' in obs.content
+    # contents =
+    url_contents = {
+        'https://example.com/': [
+            'Example Domain',
+            'This domain is for use in illustrative examples',
+        ],
+        'http://localhost:8000': ['Directory listing for /', 'server.log'],
+    }
+    for url, contents in url_contents.items():
+        action_browse = BrowseURLAction(url=url)
+        logger.info(action_browse, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action_browse)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    action_browse = BrowseURLAction(url='http://localhost:8000')
-    logger.info(action_browse, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_browse)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, BrowserOutputObservation)
+        assert url in obs.url
+        assert obs.status_code == 200
+        assert not obs.error
+        assert obs.open_pages_urls == [url]
+        assert obs.active_page_index == 0
+        assert obs.last_browser_action == f'goto("{url}")'
+        assert obs.last_browser_action_error == ''
 
-    assert isinstance(obs, BrowserOutputObservation)
-    assert 'http://localhost:8000' in obs.url
-    assert obs.status_code == 200
-    assert not obs.error
-    assert obs.open_pages_urls == ['http://localhost:8000/']
-    assert obs.active_page_index == 0
-    assert obs.last_browser_action == 'goto("http://localhost:8000")'
-    assert obs.last_browser_action_error == ''
-    assert 'Directory listing for /' in obs.content
-    assert 'server.log' in obs.content
+        assert all(content in obs.content for content in contents)
 
-    await runtime.close()
+        await runtime.close()
 
 
 @pytest.mark.asyncio

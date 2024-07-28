@@ -43,7 +43,7 @@ class BrowserInitException(Exception):
 class BrowserUnavailableException(Exception):
     def __init__(
         self,
-        message='Browser environment is not available, please check if has been initialized',
+        message='The browser environment is not available, please check if it has been initialized.',
     ):
         super().__init__(message)
 
