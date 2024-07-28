@@ -125,6 +125,8 @@ class CodeActAgent(AsyncAgent):
             return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
         elif isinstance(action, MessageAction):
             return action.content
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
+            return action.thought
         return ''
 
     def get_action_message(self, action: Action) -> dict[str, str] | None:
@@ -133,6 +135,7 @@ class CodeActAgent(AsyncAgent):
             or isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
+            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
             return {
                 'role': 'user' if action.source == 'user' else 'assistant',

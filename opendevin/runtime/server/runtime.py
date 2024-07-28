@@ -134,7 +134,7 @@ class ServerRuntime(Runtime):
         await self.wait_for_initialization()  # important
 
         write_result = await self._run_command(
-            ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
+            f"cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n{action.code}\nEOL"
         )
         if isinstance(write_result, ErrorObservation):
             return write_result

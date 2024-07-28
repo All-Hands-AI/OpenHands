@@ -81,7 +81,6 @@ def _handle_stream_output(output: CancellableStream, plugin_name: str):
         raise RuntimeError(
             f'Failed to initialize plugin {plugin_name} with exit code {exit_code_value} and output: {total_output.strip()}'
         )
-    logger.info(f'Plugin {plugin_name} initialized successfully')
 
 
 class PluginMixin:
@@ -94,12 +93,18 @@ class PluginMixin:
     async def source_bashrc_async(self: SandboxProtocol):
         exit_code, output = await self.execute_async('source /opendevin/bash.bashrc')
         if exit_code == 0:
-            exit_code, output = await self.execute_async('source ~/.bashrc')
-        if exit_code != 0:
+            logger.info('Sourced /opendevin/bash.bashrc')
+        else:
             raise RuntimeError(
-                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+                f'Failed to source /opendevin/bash.bashrc! Exit code {exit_code} and output: {output}'
             )
-        logger.info('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully.')
+        exit_code, output = await self.execute_async('source ~/.bashrc')
+        if exit_code == 0:
+            logger.info('Sourced ~/.bashrc')
+        else:
+            raise RuntimeError(
+                f'Failed to source ~/.bashrc! Exit code {exit_code} and output: {output}'
+            )
 
     @async_to_sync
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):

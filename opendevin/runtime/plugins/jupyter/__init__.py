@@ -48,7 +48,12 @@ class JupyterPlugin(Plugin):
             stderr=subprocess.STDOUT,
         )
         # read stdout until the kernel gateway is ready
-        while True and self.gateway_process.stdout is not None:
+        start_time = time.time()
+        timeout = 30  # 30 seconds timeout
+        while (
+            time.time() - start_time < timeout
+            and self.gateway_process.stdout is not None
+        ):
             line = self.gateway_process.stdout.readline().decode('utf-8')
             if 'at' in line:
                 break

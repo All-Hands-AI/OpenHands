@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.8.1"
+version = "0.8.2"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
@@ -39,6 +39,7 @@ pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 grep-ast = "0.3.2"
 tree-sitter = "0.21.3"
+bashlex = "^0.18"
 aiodocker = "*"
 
 [tool.poetry.group.llama-index.dependencies]

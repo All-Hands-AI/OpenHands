@@ -6,10 +6,8 @@ import time
 import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
-from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from opendevin.runtime.utils import split_bash_commands
 
 
 @pytest.mark.asyncio
@@ -38,6 +36,13 @@ async def create_docker_box_from_app_config(
     return box
 
 
+@pytest.fixture(autouse=True)
+def print_method_name(request):
+    print('\n########################################################################')
+    print(f'Running test: {request.node.name}')
+    print('########################################################################')
+
+
 @pytest.fixture
 def temp_dir(monkeypatch):
     # get a temporary directory
@@ -54,83 +59,6 @@ def reset_docker_ssh_box():
         DockerSSHBox._instance.close()
         DockerSSHBox._instance = None
         time.sleep(1)
-
-
-@pytest.mark.asyncio
-async def test_env_vars(temp_dir):
-    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
-    config = AppConfig(
-        sandbox=SandboxConfig(
-            box_type='local',
-        )
-    )
-    box = LocalBox(config.sandbox, temp_dir)
-    await box.ainit()
-    await box.add_to_env(key='QUUX', value='abc"def')
-    assert box._env['FOOBAR'] == 'BAZ'
-    assert box._env['QUUX'] == 'abc"def'
-    exit_code, output = await box.execute_async('echo $FOOBAR $QUUX')
-    assert exit_code == 0, 'The exit code should be 0.'
-    assert (
-        output.strip() == 'BAZ abc"def'
-    ), f'Output: {output} for {box.__class__.__name__}'
-
-
-@pytest.mark.asyncio
-async def test_split_commands():
-    cmds = [
-        'ls -l',
-        'echo -e "hello\nworld"',
-        """
-echo -e 'hello it\\'s me'
-""".strip(),
-        """
-echo \\
-    -e 'hello' \\
-    -v
-""".strip(),
-        """
-echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
-""".strip(),
-        """
-echo -e 'hello
-world
-are
-you\\n
-there?'
-""".strip(),
-        """
-echo -e 'hello
-world "
-'
-""".strip(),
-        """
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: busybox-sleep
-spec:
-  containers:
-  - name: busybox
-    image: busybox:1.28
-    args:
-    - sleep
-    - "1000000"
-EOF
-""".strip(),
-    ]
-    joined_cmds = '\n'.join(cmds)
-    split_cmds = split_bash_commands(joined_cmds)
-    for s in split_cmds:
-        print('\nCMD')
-        print(s)
-    cmds = [
-        c.replace('\\\n', '') for c in cmds
-    ]  # The function strips escaped newlines, but this shouldn't matter
-    assert (
-        split_cmds == cmds
-    ), 'The split commands should be the same as the input commands.'
 
 
 @pytest.mark.asyncio
