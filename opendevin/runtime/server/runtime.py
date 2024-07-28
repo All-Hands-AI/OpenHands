@@ -206,6 +206,12 @@ class ServerRuntime(Runtime):
     def _run_command(self, command: str) -> Observation:
         try:
             exit_code, output = self.sandbox.execute(command)
+            # reject interactive commands
+            for interactive_command in ['nano', 'vim']:
+                if command.startswith(interactive_command):
+                    return ErrorObservation(
+                        f'Interactive command {interactive_command} is not supported'
+                    )
             if 'pip install' in command:
                 package_names = command.split(' ', 2)[-1]
                 is_single_package = ' ' not in package_names
