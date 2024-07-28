@@ -44,10 +44,11 @@ def validate_final_state(final_state: State, test_name: str):
     # number of LLM conversations should be the same as number of prompt/response
     # log files under mock/[agent]/[test_name] folder. If not, it means there are
     # redundant prompt/response log files checked into the repository.
-    num_of_conversations = get_number_of_prompts(test_name)
-    assert num_of_conversations > 0
-    # we mock the cost of every conversation to be 1 USD
-    assert final_state.metrics.accumulated_cost == num_of_conversations
+    if test_name != 'test_dummy_agent':
+        num_of_conversations = get_number_of_prompts(test_name)
+        assert num_of_conversations > 0
+        # we mock the cost of every conversation to be 1 USD
+        assert final_state.metrics.accumulated_cost == num_of_conversations
     if final_state.history.has_delegation():
         assert final_state.iteration > final_state.local_iteration
     else:
@@ -292,4 +293,4 @@ def test_dummy_agent(current_test_name: str):
     final_state: State = asyncio.run(
         run_agent_controller(agent, task, max_iterations, max_budget_per_task)
     )
-    assert final_state.last_error is None
+    validate_final_state(final_state, current_test_name)
