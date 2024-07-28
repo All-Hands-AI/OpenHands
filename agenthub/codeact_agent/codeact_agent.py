@@ -125,6 +125,8 @@ class CodeActAgent(Agent):
             return action.content
         elif isinstance(action, BrowseURLAction):
             return f'Opening {action.url} in browser manually'
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
+            return action.thought
         return ''
 
     def get_action_message(self, action: Action) -> dict[str, str] | None:
@@ -134,6 +136,7 @@ class CodeActAgent(Agent):
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
             or isinstance(action, BrowseURLAction)
+            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
             return {
                 'role': 'user' if action.source == 'user' else 'assistant',

@@ -12,7 +12,7 @@ from opendevin.events.action import (
 )
 from opendevin.events.action.agent import AgentFinishAction
 from opendevin.memory.history import ShortTermHistory
-from opendevin.storage import get_file_store
+from opendevin.storage.files import FileStore
 
 
 class TrafficControlState(str, Enum):
@@ -107,31 +107,36 @@ class State:
     end_id: int = -1
     almost_stuck: int = 0
 
-    def save_to_session(self, sid: str):
-        fs = get_file_store()
+    def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
-            fs.write(f'sessions/{sid}/agent_state.pkl', encoded)
+            file_store.write(f'sessions/{sid}/agent_state.pkl', encoded)
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
 
     @staticmethod
-    def restore_from_session(sid: str) -> 'State':
-        fs = get_file_store()
+    def restore_from_session(sid: str, file_store: FileStore) -> 'State':
         try:
-            encoded = fs.read(f'sessions/{sid}/agent_state.pkl')
+            encoded = file_store.read(f'sessions/{sid}/agent_state.pkl')
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
             logger.error(f'Failed to restore state from session: {e}')
             raise e
+
+        # update state
         if state.agent_state in RESUMABLE_STATES:
             state.resume_state = state.agent_state
         else:
             state.resume_state = None
+
+        # don't carry last_error anymore after restore
+        state.last_error = None
+
+        # first state after restore
         state.agent_state = AgentState.LOADING
         return state
 

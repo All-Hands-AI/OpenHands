@@ -18,6 +18,8 @@ load_dotenv()
 
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
+_DEFAULT_AGENT = 'CodeActAgent'
+_MAX_ITERATIONS = 100
 
 
 @dataclass
@@ -220,7 +222,7 @@ class AppConfig(metaclass=Singleton):
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
-    default_agent: str = 'CodeActAgent'
+    default_agent: str = _DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     runtime: str = 'server'
     file_store: str = 'memory'
@@ -234,7 +236,7 @@ class AppConfig(metaclass=Singleton):
     cache_dir: str = '/tmp/cache'
     run_as_devin: bool = True
     confirmation_mode: bool = False
-    max_iterations: int = 100
+    max_iterations: int = _MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     ssh_hostname: str = 'localhost'
@@ -631,21 +633,20 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.default_agent,
+        default=_DEFAULT_AGENT,
         type=str,
         help='Name of the default agent to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=config.max_iterations,
+        default=_MAX_ITERATIONS,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
     parser.add_argument(
         '-b',
         '--max-budget-per-task',
-        default=config.max_budget_per_task,
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
@@ -688,9 +689,6 @@ def parse_arguments() -> argparse.Namespace:
     """Parse the command line arguments."""
     parser = get_parser()
     parsed_args, _ = parser.parse_known_args()
-    if parsed_args.directory:
-        config.workspace_base = os.path.abspath(parsed_args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
     return parsed_args
 
 
@@ -708,6 +706,3 @@ def load_app_config(set_logging_levels: bool = True) -> AppConfig:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
     return config
-
-
-config = load_app_config()

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.8.1"
+version = "0.8.2"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
@@ -39,18 +39,19 @@ pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 grep-ast = "0.3.2"
 tree-sitter = "0.21.3"
+bashlex = "^0.18"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.2.2"
+torch = "2.2.0"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.5.4"
+ruff = "0.5.5"
 mypy = "1.11.0"
 pre-commit = "3.7.1"
 
@@ -71,6 +72,7 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -104,6 +106,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
