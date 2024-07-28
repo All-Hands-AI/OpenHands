@@ -125,10 +125,10 @@ async def _load_runtime(
             config=config,
             event_stream=event_stream,
             sid=sid,
+            plugins=plugins,
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
             # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
             container_image=cur_container_image,
-            plugins=plugins,
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
@@ -739,7 +739,9 @@ async def test_ipython_simple(temp_dir, box_class):
     assert obs.content.strip() == '1'
 
 
-async def _test_ipython_agentskills_fileop_pwd_impl(runtime):
+async def _test_ipython_agentskills_fileop_pwd_impl(
+    runtime: ServerRuntime | EventStreamRuntime, enable_auto_lint: bool
+):
     action = CmdRunAction(command='mkdir test')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
@@ -847,7 +849,7 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
     runtime = await _load_runtime(
         temp_dir, box_class, enable_auto_lint=enable_auto_lint
     )
-    await _test_ipython_agentskills_fileop_pwd_impl(runtime)
+    await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)
 
@@ -869,6 +871,6 @@ async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
         enable_auto_lint=enable_auto_lint,
         container_image=container_image,
     )
-    await _test_ipython_agentskills_fileop_pwd_impl(runtime)
+    await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)

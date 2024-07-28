@@ -93,7 +93,9 @@ class ServerRuntime(Runtime):
                     code=f'import os; os.chdir("{self.config.workspace_mount_path_in_sandbox}")'
                 )
             )
-            logger.info(f'Switch to working directory in IPython: {obs.content}')
+            logger.info(
+                f'Switch to working directory {self.config.workspace_mount_path_in_sandbox} in IPython. Output: {obs.content}'
+            )
 
     async def close(self):
         if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
