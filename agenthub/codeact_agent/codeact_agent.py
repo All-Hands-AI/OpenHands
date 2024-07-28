@@ -8,6 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import load_app_config
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -33,6 +34,8 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.runtime.utils import find_relevant_files
 
 ENABLE_GITHUB = True
+
+config = load_app_config()
 
 
 # FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
