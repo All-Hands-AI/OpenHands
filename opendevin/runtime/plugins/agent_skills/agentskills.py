@@ -85,12 +85,6 @@ def update_pwd_decorator(func):
             os.chdir(jupyter_pwd)
         try:
             return func(*args, **kwargs)
-        except Exception as e:
-            print(f'Failed to execute function {func.__name__}: {e}')
-            # Print debugging info
-            print(f'Current user: {os.getlogin()}')
-            print(f'Current IPython working directory: {os.getcwd()}')
-            raise e
         finally:
             os.chdir(old_pwd)
 
