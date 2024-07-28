@@ -19,7 +19,7 @@ import aiodocker
 import docker
 from aiodocker.containers import Exec
 from aiodocker.exceptions import DockerError
-from pexpect import exceptions, pxssh
+from pexpect import pxssh
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -115,45 +115,6 @@ class SSHExecCancellableStream(CancellableStream):
             # If the queue is empty and EOF is reached, break the loop
             if self.output_queue.empty() and self.eof_reached:
                 break
-
-    def _read_and_process_buffer(self, buf):
-        try:
-            new_output = self._read_nonblocking()
-            if not new_output:
-                return buf
-            buf += new_output
-            buf, yield_data = self._check_and_yield_buffer(buf)
-            if yield_data:
-                yield yield_data
-        except exceptions.TIMEOUT:
-            buf = self._handle_timeout(buf)
-        except exceptions.EOF:
-            return ''
-        return buf
-
-    def _read_nonblocking(self):
-        return self.ssh.read_nonblocking(timeout=1)
-
-    def _check_and_yield_buffer(self, buf):
-        prompt_len = len(self.ssh.PROMPT)
-        if len(buf) < prompt_len:
-            return buf, None
-        match = re.search(self.ssh.PROMPT, buf)
-        if match:
-            idx, _ = match.span()
-            return '', buf[:idx].replace('\r\n', '\n')
-        if '\r\n' not in buf[:-prompt_len]:
-            return buf, None
-        yield_data = buf[:-prompt_len].replace('\r\n', '\n')
-        return buf[-prompt_len:], yield_data
-
-    def _handle_timeout(self, buf):
-        match = re.search(self.ssh.PROMPT, buf)
-        if match:
-            idx, _ = match.span()
-            yield buf[:idx].replace('\r\n', '\n')
-            return ''
-        return buf
 
 
 class DockerSSHBox(Sandbox):
