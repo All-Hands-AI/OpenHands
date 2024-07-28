@@ -56,9 +56,8 @@ class LLM(BaseLLM, CondenserMixin):
                 # If we got a context alert, try trimming the messages length, then try again
                 if kwargs['condense'] and self.is_over_token_limit(messages):
                     # A separate call to run a summarizer
-                    if 'state' in kwargs:
-                        state = kwargs['state']
-                    messages = self.condense(messages=messages, state=state)
+                    summary_action = self.condense(messages=messages)
+                    return summary_action
                 else:
                     print('step() failed with an unrecognized exception:')
                     raise ContextWindowLimitExceededError()
@@ -69,16 +68,14 @@ class LLM(BaseLLM, CondenserMixin):
                 debug_message += message_separator + message.message['content']
             llm_prompt_logger.debug(debug_message)
 
-            # call the completion function
+            # get the messages in form of list[str]
             text_messages = self.get_text_messages(messages)
+
+            # call the completion function
             kwargs = {
                 'messages': text_messages,
-                'stop': [
-                    '</execute_ipython>',
-                    '</execute_bash>',
-                    '</execute_browse>',
-                ],
-                'temperature': 0.0,
+                'stop': kwargs['stop'],
+                'temperature': kwargs['temperature'],
             }
             resp = self.completion_unwrapped(**kwargs)
 

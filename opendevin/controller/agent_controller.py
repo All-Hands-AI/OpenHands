@@ -21,6 +21,7 @@ from opendevin.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    AgentSummarizeAction,
     ChangeAgentStateAction,
     CmdRunAction,
     IPythonRunCellAction,
@@ -386,6 +387,9 @@ class AgentController:
         action: Action = NullAction()
         try:
             action = self.agent.step(self.state)
+            if isinstance(action, AgentSummarizeAction):
+                self.state.history.add_summary(action)
+                return
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:

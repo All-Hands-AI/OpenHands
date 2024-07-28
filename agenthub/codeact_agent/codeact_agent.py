@@ -224,7 +224,6 @@ class CodeActAgent(Agent):
                 ],
                 temperature=0.0,
                 condense=True,
-                state=state,
             )
             attempt += 1
 

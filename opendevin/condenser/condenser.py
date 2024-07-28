@@ -1,4 +1,3 @@
-from opendevin.controller.state.state import State
 from opendevin.core.exceptions import (
     SummarizeError,
 )
@@ -21,7 +20,6 @@ class CondenserMixin:
     def condense(
         self,
         messages: list[Message],
-        state: State,
     ):
         # Start past the system message, and example messages.,
         # and collect messages for summarization until we reach the desired truncation token fraction (eg 50%)
@@ -91,32 +89,7 @@ class CondenserMixin:
         summary_action.last_summarized_event_id = (
             last_summarized_event_id if last_summarized_event_id else -1
         )
-        print(f'Got summary: {summary_action}')
-        state.history.add_summary(summary_action)
-        print('Added summary to history')
-
-        def action_to_str(action: AgentSummarizeAction) -> str:
-            return (
-                'Summary of all Action and Observations till now. \n'
-                + 'Action: '
-                + action.summarized_actions
-                + '\n Observation: '
-                + action.summarized_observations
-            )
-
-        final_messages = messages[0:2] + [
-            Message(
-                message={
-                    'role': 'user',
-                    'content': action_to_str(summary_action),
-                },
-                condensable=True,
-            )
-        ]
-        for message in messages[2:]:
-            if last_summarized_event_id < message.event_id:
-                final_messages.append(message)
-        return final_messages
+        return summary_action
 
     def _format_summary_history(self, message_history: list[dict]) -> str:
         # TODO use existing prompt formatters for this (eg ChatML)

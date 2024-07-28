@@ -5,6 +5,7 @@ from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentSummarizeAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
@@ -32,6 +33,8 @@ class CodeActResponseParser(ResponseParser):
         self.default_parser = CodeActActionParserMessage()
 
     def parse(self, response) -> Action:
+        if isinstance(response, AgentSummarizeAction):
+            return response
         action_str = self.parse_response(response)
         return self.parse_action(action_str)
 
