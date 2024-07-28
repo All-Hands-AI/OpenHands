@@ -79,14 +79,25 @@ def _get_openai_client():
 def update_pwd_decorator(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        old_pwd = os.getcwd()
+        try:
+            old_pwd = os.getcwd()
+        except FileNotFoundError as e:
+            # This error occurs when the code tries to get the current working directory using os.getcwd(), but the current working directory does not exist or is not accessible.
+            # There are a few reasons why this might happen:
+            # The current working directory has been deleted or moved while the program is running.
+            # The user or process doesn't have permission to access the current working directory.
+            # The program is running in an environment where the concept of a current working directory doesn't apply or is not properly set up.
+            print(f'Failed to get current working directory: {e}')
+            old_pwd = None
+
         jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
         if jupyter_pwd:
             os.chdir(jupyter_pwd)
         try:
             return func(*args, **kwargs)
         finally:
-            os.chdir(old_pwd)
+            if old_pwd:
+                os.chdir(old_pwd)
 
     return wrapper
 
