@@ -7,18 +7,17 @@ import pytest
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from opendevin.runtime.utils import split_bash_commands
 
 
 def create_docker_box_from_app_config(
-    path: str, config: AppConfig = None
+    path: str, config: AppConfig | None = None
 ) -> DockerSSHBox:
     if config is None:
         config = AppConfig(
             sandbox=SandboxConfig(
                 box_type='ssh',
-                persist_sandbox=False,
-            )
+            ),
+            persist_sandbox=False,
         )
     return DockerSSHBox(
         config=config.sandbox,
@@ -39,62 +38,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-
-def test_split_commands():
-    cmds = [
-        'ls -l',
-        'echo -e "hello\nworld"',
-        """
-echo -e 'hello it\\'s me'
-""".strip(),
-        """
-echo \\
-    -e 'hello' \\
-    -v
-""".strip(),
-        """
-echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
-""".strip(),
-        """
-echo -e 'hello
-world
-are
-you\\n
-there?'
-""".strip(),
-        """
-echo -e 'hello
-world "
-'
-""".strip(),
-        """
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: busybox-sleep
-spec:
-  containers:
-  - name: busybox
-    image: busybox:1.28
-    args:
-    - sleep
-    - "1000000"
-EOF
-""".strip(),
-    ]
-    joined_cmds = '\n'.join(cmds)
-    split_cmds = split_bash_commands(joined_cmds)
-    for s in split_cmds:
-        print('\nCMD')
-        print(s)
-    cmds = [
-        c.replace('\\\n', '') for c in cmds
-    ]  # The function strips escaped newlines, but this shouldn't matter
-    assert (
-        split_cmds == cmds
-    ), 'The split commands should be the same as the input commands.'
 
 
 def test_ssh_box_run_as_devin(temp_dir):
@@ -305,9 +248,9 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     config = AppConfig(
         sandbox=SandboxConfig(
             box_type='ssh',
-            persist_sandbox=False,
             enable_auto_lint=False,
-        )
+        ),
+        persist_sandbox=False,
     )
     assert not config.sandbox.enable_auto_lint
     box = create_docker_box_from_app_config(temp_dir, config)
@@ -324,10 +267,44 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             sandbox=SandboxConfig(
                 box_type='ssh',
                 container_image=base_sandbox_image,
-                persist_sandbox=False,
                 enable_auto_lint=False,
-            )
+            ),
+            persist_sandbox=False,
         )
         assert not config.sandbox.enable_auto_lint
         box = create_docker_box_from_app_config(temp_dir, config)
         _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box, config)
+
+
+def test_sandbox_jupyter_plugin_backticks(temp_dir):
+    config = AppConfig(
+        sandbox=SandboxConfig(
+            box_type='ssh',
+        ),
+        persist_sandbox=False,
+    )
+    box = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=config.persist_sandbox,
+        workspace_mount_path=temp_dir,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=True,
+        ssh_hostname=config.ssh_hostname,
+        ssh_password=config.ssh_password,
+        ssh_port=config.ssh_port,
+    )
+    box.init_plugins([JupyterRequirement])
+    test_code = "print('Hello, `World`!')"
+    expected_write_command = (
+        "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{test_code}\n' 'EOL'
+    )
+    expected_execute_command = 'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+    exit_code, output = box.execute(expected_write_command)
+    exit_code, output = box.execute(expected_execute_command)
+    print(output)
+    assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+    assert output.strip() == 'Hello, `World`!', (
+        'The output should be the same as the input for ' + box.__class__.__name__
+    )
+    box.close()

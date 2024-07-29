@@ -9,7 +9,7 @@ from typing import Literal, Mapping
 from termcolor import colored
 
 DISABLE_COLOR_PRINTING = False
-DEBUG = False
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
 ColorType = Literal[
     'red',

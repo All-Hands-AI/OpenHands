@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,15 +13,18 @@ from opendevin.events import EventSource
 from opendevin.events.action import MessageAction
 from opendevin.events.stream import EventStream
 from opendevin.memory.history import ShortTermHistory
+from opendevin.storage import get_file_store
 
 
 @pytest.fixture
 def event_stream():
-    event_stream = EventStream('asdf')
-    yield event_stream
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_store = get_file_store('local', temp_dir)
+        event_stream = EventStream('asdf', file_store)
+        yield event_stream
 
-    # clear after each test
-    event_stream.clear()
+        # clear after each test
+        event_stream.clear()
 
 
 def test_all_agents_are_loaded():
