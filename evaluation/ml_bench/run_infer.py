@@ -112,7 +112,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
         # Create a sandbox, using the instance ID and PID as the session ID to avoid conflicts
         sid = str(instance['id']) + '_' + str(os.getpid())
-        sandbox = DockerSSHBox(sid=sid)
+        sandbox = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            run_as_devin=config.run_as_devin,
+            sid=sid,
+        )
 
         # Set up the task environment
         sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
