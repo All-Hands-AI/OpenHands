@@ -71,6 +71,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 self.container = self.docker_client.containers.run(
                     self.image_name,
                     name=self.container_name,
+                    platform='linux/amd64',
                     ports={'8000/tcp': self.api_port},
                     detach=True,
                 )
