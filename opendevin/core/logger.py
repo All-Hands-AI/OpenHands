@@ -161,7 +161,7 @@ opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
-opendevin_logger.addHandler(get_file_handler())
+    opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
