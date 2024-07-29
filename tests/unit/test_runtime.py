@@ -307,7 +307,7 @@ async def test_simple_browse(temp_dir, box_class):
 
     # Test browse
     action_cmd = CmdRunAction(
-        command='python -m http.server 8000 -b 0.0.0.0  > server.log 2>&1 &'
+        command='/opendevin/miniforge3/bin/python -m http.server 8000 -b 0.0.0.0  > server.log 2>&1 &'
     )
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action_cmd)
@@ -336,10 +336,9 @@ async def test_simple_browse(temp_dir, box_class):
         obs3 = await runtime.run_action(action_cmd)
         logger.info(obs3, extra={'msg_type': 'OBSERVATION'})
 
-        raise AssertionError('The URL should be http://localhost:8000 but got: ' + obs.url)
-
-
-
+        raise AssertionError(
+            'The URL should be http://localhost:8000 but got: ' + obs.url
+        )
 
     assert obs.status_code == 200
     assert not obs.error
