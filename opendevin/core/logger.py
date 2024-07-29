@@ -160,13 +160,13 @@ opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
-    # default log to project root
-    log_dir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        'logs',
-    )
-    opendevin_logger.addHandler(get_file_handler(log_dir))
-    opendevin_logger.info('DEBUG logging is enabled. Logging to %s', log_dir)
+    # # default log to project root
+    # log_dir = os.path.join(
+    #     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    #     'logs',
+    # )
+    # opendevin_logger.addHandler(get_file_handler(log_dir))
+    # opendevin_logger.info('DEBUG logging is enabled. Logging to %s', log_dir)
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
