@@ -88,9 +88,8 @@ class RuntimeClient:
                 IPythonRunCellAction(
                     code=(
                         'import sys\n'
-                        'sys.path.insert(0, "/opendevin/code")\n'
-                        # TODO: figure out how to pass added env var to IPython?
-                        'from opendevin.runtime.plugins.agent_skills.agentskills import *'
+                        'sys.path.insert(0, "/opendevin/code/opendevin/runtime/plugins/agent_skills")\n'
+                        'from agentskills import *'
                     )
                 )
             )
