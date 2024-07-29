@@ -49,6 +49,7 @@ def temp_dir(monkeypatch):
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
+PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 
 # This assures that all tests run together for each runtime, not alternating between them,
@@ -352,7 +353,9 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
 
     # Test browse
-    action_cmd = CmdRunAction(command='python -m http.server 8000 > server.log 2>&1 &')
+    action_cmd = CmdRunAction(
+        command=f'{PY3_FOR_TESTING} -m http.server 8000 > server.log 2>&1 &'
+    )
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -360,6 +363,12 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert '[1]' in obs.content
+
+    action_cmd = CmdRunAction(command='sleep 5 && cat server.log')
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_cmd)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
 
     action_browse = BrowseURLAction(url='http://localhost:8000')
     logger.info(action_browse, extra={'msg_type': 'ACTION'})
