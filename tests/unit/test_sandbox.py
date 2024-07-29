@@ -32,6 +32,13 @@ def create_docker_box_from_app_config(
     )
 
 
+@pytest.fixture(autouse=True)
+def print_method_name(request):
+    print('\n########################################################################')
+    print(f'Running test: {request.node.name}')
+    print('########################################################################')
+
+
 @pytest.fixture
 def temp_dir(monkeypatch):
     # get a temporary directory

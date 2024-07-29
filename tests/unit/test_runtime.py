@@ -30,7 +30,6 @@ from opendevin.events.observation import (
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.server.runtime import ServerRuntime
-from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import get_file_store
 
 
@@ -97,7 +96,7 @@ async def _load_runtime(temp_dir, box_class):
         await runtime.ainit()
         runtime.init_sandbox_plugins(plugins)
         runtime.init_runtime_tools(
-            [RuntimeTool.BROWSER],
+            [],
             is_async=False,
             runtime_tools_config={},
         )
@@ -302,7 +301,6 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
     await asyncio.sleep(1)
 
 
-@pytest.mark.skipif(True, reason='Needs fixing!')
 @pytest.mark.asyncio
 async def test_simple_browse(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
@@ -409,7 +407,6 @@ async def test_no_ps2_in_output(temp_dir, box_class):
         assert '>' not in obs.content
 
 
-@pytest.mark.skipif(True, reason='Needs fixing!')
 @pytest.mark.asyncio
 async def test_multiline_command_loop(temp_dir, box_class):
     # https://github.com/OpenDevin/OpenDevin/issues/3143
