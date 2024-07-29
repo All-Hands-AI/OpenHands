@@ -8,7 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import Message
+from opendevin.core.Message import ImageContent, Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -129,46 +129,43 @@ class CodeActAgent(Agent):
             isinstance(action, AgentDelegateAction)
             or isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
+            or isinstance(action, MessageAction)
         ):
+            content = [TextContent(text=self.action_to_str(action))]
+
+            if isinstance(action, MessageAction) and action.images_base64:
+                content.append(ImageContent(image_urls=action.images_base64))
+
             return Message(
-                role='user' if action.source == 'user' else 'assistant',
-                text=self.action_to_str(action),
-            )
-        if isinstance(action, MessageAction) and action.images_base64:
-            return Message(
-                role='user' if action.source == 'user' else 'assistant',
-                image_urls=action.images_base64,
-                text=action.content,
+                role='user' if action.source == 'user' else 'assistant', content=content
             )
         return None
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            content = 'OBSERVATION:\n' + truncate_content(
-                obs.content, max_message_chars
-            )
-            content += (
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            return Message(role='user', text=content)
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            content = 'OBSERVATION:\n' + obs.content
+            text = 'OBSERVATION:\n' + obs.content
             # replace base64 images with a placeholder
-            splitted = content.split('\n')
+            splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            content = '\n'.join(splitted)
-            content = truncate_content(content, max_message_chars)
-            return Message(role='user', text=content)
+            text = '\n'.join(splitted)
+            text = truncate_content(text, max_message_chars)
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            content = 'OBSERVATION:\n' + truncate_content(
+            text = 'OBSERVATION:\n' + truncate_content(
                 str(obs.outputs), max_message_chars
             )
-            return Message(role='user', text=content)
+            return Message(role='user', content=[TextContent(text=text)])
         return None
 
     def reset(self) -> None:
@@ -210,8 +207,8 @@ class CodeActAgent(Agent):
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
-            Message(role='system', text=self.system_message),
-            Message(role='user', text=self.in_context_example),
+            Message(role='system', content=[TextContent(text=self.system_message)]),
+            Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
         for event in state.history.get_events():
@@ -230,11 +227,27 @@ class CodeActAgent(Agent):
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m.role == 'user'), None
+            (
+                m
+                for m in reversed(messages)
+                if m.role == 'user'
+                and any(isinstance(c, TextContent) for c in m.content)
+            ),
+            None,
         )
 
-        # add a reminder to the prompt
+        # Get the last user text inside content
         if latest_user_message:
-            latest_user_message.text = f'{latest_user_message.text}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            latest_user_message_text = next(
+                (
+                    t
+                    for t in reversed(latest_user_message.content)
+                    if isinstance(t, TextContent)
+                )
+            )
+
+        # add a reminder to the prompt
+        if latest_user_message_text:
+            latest_user_message_text.text = f'{latest_user_message_text.text}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
         return messages

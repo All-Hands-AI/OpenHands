@@ -163,16 +163,16 @@ def get_prompt_and_images(
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
     # the last relevant user message (the task)
-    message = state.get_current_user_intent()
+    message, image_urls = state.get_current_user_intent()
 
     # finally, fill in the prompt
     return prompt % {
-        'task': message.text,
+        'task': message,
         'plan': plan_str,
         'history': history_str,
         'hint': hint,
         'plan_status': plan_status,
-    }, message.image_urls
+    }, image_urls
 
 
 def parse_response(response: str) -> Action:

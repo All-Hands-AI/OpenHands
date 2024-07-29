@@ -7,7 +7,7 @@ from agenthub.codeact_swe_agent.prompt import (
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import Message
+from opendevin.core.Message import ImageContent, Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -87,40 +87,37 @@ class CodeActSWEAgent(Agent):
 
     def get_action_message(self, action: Action) -> Message | None:
         if isinstance(action, CmdRunAction) or isinstance(action, IPythonRunCellAction):
+            content = [TextContent(text=self.action_to_str(action))]
+
+            if isinstance(action, MessageAction) and action.images_base64:
+                content.append(ImageContent(image_urls=action.images_base64))
+
             return Message(
-                role='user' if action.source == 'user' else 'assistant',
-                text=self.action_to_str(action),
+                role='user' if action.source == 'user' else 'assistant', content=content
             )
-        if isinstance(action, MessageAction) and action.images_base64:
-            return Message(
-                role='user' if action.source == 'user' else 'assistant',
-                image_urls=action.images_base64,
-                text=action.content,
-            )
+
         return None
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            content = 'OBSERVATION:\n' + truncate_content(
-                obs.content, max_message_chars
-            )
-            content += (
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            return Message(role='user', text=content)
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            content = 'OBSERVATION:\n' + obs.content
+            text = 'OBSERVATION:\n' + obs.content
             # replace base64 images with a placeholder
-            splitted = content.split('\n')
+            splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            content = '\n'.join(splitted)
-            content = truncate_content(content, max_message_chars)
-            return Message(role='user', text=content)
+            text = '\n'.join(splitted)
+            text = truncate_content(text, max_message_chars)
+            return Message(role='user', content=[TextContent(text=text)])
         return None
 
     def reset(self) -> None:
@@ -161,8 +158,8 @@ class CodeActSWEAgent(Agent):
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
-            Message(role='system', text=self.system_message),
-            Message(role='user', text=self.in_context_example),
+            Message(role='system', content=[TextContent(text=self.system_message)]),
+            Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
         for event in state.history.get_events():

@@ -1,7 +1,7 @@
 from agenthub.planner_agent.response_parser import PlannerResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import Message
+from opendevin.core.Message import ImageContent, Message, TextContent
 from opendevin.events.action import Action, AgentFinishAction
 from opendevin.llm.llm import LLM
 from opendevin.runtime.tools import RuntimeTool
@@ -47,7 +47,9 @@ class PlannerAgent(Agent):
         prompt, image_urls = get_prompt_and_images(
             state, self.llm.config.max_message_chars
         )
-
-        message = Message(role='user', text=prompt, image_urls=image_urls)
+        content = [TextContent(text=prompt)]
+        if image_urls:
+            content.append(ImageContent(image_urls=image_urls))
+        message = Message(role='user', content=content)
         resp = self.llm.completion(messages=[message.model_dump()])
         return self.response_parser.parse(resp)

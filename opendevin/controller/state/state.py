@@ -5,7 +5,6 @@ from enum import Enum
 
 from opendevin.controller.state.task import RootTask
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.Message import Message
 from opendevin.core.metrics import Metrics
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
@@ -163,13 +162,13 @@ class State:
     def get_current_user_intent(self):
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
+        last_user_message_image_urls: list[str] | None = []
         for event in self.history.get_events(reverse=True):
             if isinstance(event, MessageAction) and event.source == 'user':
-                last_user_message = Message(
-                    role='user', text=event.content, image_urls=event.images_base64
-                )
+                last_user_message = event.content
+                last_user_message_image_urls = event.images_base64
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
                     return last_user_message
 
-        return last_user_message
+        return last_user_message, last_user_message_image_urls

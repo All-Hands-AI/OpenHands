@@ -1,6 +1,5 @@
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import Message
 from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
 from opendevin.events.observation import AgentDelegateObservation
 from opendevin.llm.llm import LLM
@@ -35,9 +34,9 @@ class DelegatorAgent(Agent):
         """
         if self.current_delegate == '':
             self.current_delegate = 'study'
-            message: Message = state.get_current_user_intent()
+            task, _ = state.get_current_user_intent()
             return AgentDelegateAction(
-                agent='StudyRepoForTaskAgent', inputs={'task': message.text}
+                agent='StudyRepoForTaskAgent', inputs={'task': task}
             )
 
         # last observation in history should be from the delegate
@@ -46,9 +45,7 @@ class DelegatorAgent(Agent):
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 
-        message = state.get_current_user_intent()
-        goal = message.text
-
+        goal, _ = state.get_current_user_intent()
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
             return AgentDelegateAction(
