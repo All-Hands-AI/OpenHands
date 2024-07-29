@@ -230,26 +230,18 @@ class RuntimeClient:
         except UnicodeDecodeError:
             raise RuntimeError('Command output could not be decoded as utf-8')
 
-    async def run_ipython(
-        self, action: IPythonRunCellAction, base_case: bool = False
-    ) -> Observation:
+    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
 
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            if (
-                not hasattr(self, '_prev_pwd')
-                or self.pwd != self._prev_pwd
-                and not base_case
-            ):
+            if not hasattr(self, '_prev_pwd') or self.pwd != self._prev_pwd:
                 reset_jupyter_pwd_code = (
                     f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
                 )
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
-                _ = await self.run_ipython(
-                    _aux_action, base_case=True
-                )  # use base_case to avoid infinite recursion
+                _ = await _jupyter_plugin.run(_aux_action)
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             return obs
