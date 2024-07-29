@@ -433,8 +433,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
-    except FileNotFoundError as e:
-        logger.opendevin_logger.info(f'Config file not found: {e}')
+    except FileNotFoundError:
         return
     except toml.TomlDecodeError as e:
         logger.opendevin_logger.warning(
