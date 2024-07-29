@@ -36,7 +36,7 @@ def create_docker_box_from_app_config(
 def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path().mkdir(parents=True, exist_ok=True)
+        pathlib.Path(temp_dir).mkdir(parents=True, exist_ok=True)
         yield temp_dir
 
 
