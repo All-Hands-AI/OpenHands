@@ -859,7 +859,7 @@ class DockerSSHBox(Sandbox):
             if PEXPECT_PROMPT in exit_code_str:
                 logger.debug('Detected [PEXPECT]$ prompt, ending command execution.')
                 break
-        cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
+        cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip().split()[0]
 
         try:
             exit_code = int(cleaned_exit_code_str)

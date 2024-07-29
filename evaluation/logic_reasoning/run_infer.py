@@ -173,7 +173,15 @@ def process_instance(
 
         # use a session id for concurrent evaluation
         sid = instance['id'] + '_' + str(os.getpid())
-        sandbox = DockerSSHBox(sid=sid)
+        sandbox = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            run_as_devin=config.run_as_devin,
+            sid=sid,
+        )
         exit_code, command_output = sandbox.execute('pip install scitools-pyke')
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state

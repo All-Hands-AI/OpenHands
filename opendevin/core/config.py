@@ -442,10 +442,8 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
-    except UnicodeDecodeError:
-        # Fallback to system default encoding if UTF-8 fails
-        with open(toml_file, 'r') as toml_contents:
-            toml_config = toml.load(toml_contents)
+    except FileNotFoundError:
+        return
     except toml.TomlDecodeError as e:
         logger.opendevin_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
