@@ -1,5 +1,3 @@
-import pathlib
-import tempfile
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
@@ -11,14 +9,6 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
 )
 from opendevin.runtime.server.runtime import ServerRuntime
-
-
-@pytest.fixture
-def temp_dir(monkeypatch):
-    # get a temporary directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path().mkdir(parents=True, exist_ok=True)
-        yield temp_dir
 
 
 @pytest.mark.asyncio
