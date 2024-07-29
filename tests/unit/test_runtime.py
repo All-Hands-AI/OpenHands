@@ -93,8 +93,6 @@ async def _load_runtime(temp_dir, box_class):
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
-        # enable use_host_network for the server runtime
-        config.sandbox.use_host_network = True
         runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
         await runtime.ainit()
         runtime.init_sandbox_plugins(plugins)
@@ -308,7 +306,9 @@ async def test_simple_browse(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
 
     # Test browse
-    action_cmd = CmdRunAction(command='python -m http.server 8000 > server.log 2>&1 &')
+    action_cmd = CmdRunAction(
+        command='python -m http.server 8000 -b 0.0.0.0  > server.log 2>&1 &'
+    )
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

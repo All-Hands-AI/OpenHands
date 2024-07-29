@@ -570,6 +570,7 @@ class DockerSSHBox(Sandbox):
         try:
             network_kwargs: dict[str, str | dict[str, int]] = {}
             if self.use_host_network:
+                logger.info('Using host network mode')
                 network_kwargs['network_mode'] = 'host'
             else:
                 # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
