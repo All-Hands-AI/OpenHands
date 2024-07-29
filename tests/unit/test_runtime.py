@@ -856,10 +856,10 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
     await asyncio.sleep(1)
 
 
-# @pytest.mark.skipif(
-#     os.getenv('TEST_IN_CI') != 'true',
-#     reason='The unittest need to download image, so only run on CI',
-# )
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME').lower() == 'eventstream',
+    reason='Skip this if we want to test EventStreamRuntime',
+)
 @pytest.mark.asyncio
 async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
     temp_dir, enable_auto_lint, container_image
