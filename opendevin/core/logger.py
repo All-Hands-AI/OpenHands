@@ -159,7 +159,8 @@ sys.excepthook = log_uncaught_exceptions
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 LOG_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    # parent dir of opendevin/core (i.e., root of the repo)
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
 )
 if DEBUG:
