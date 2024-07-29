@@ -97,10 +97,7 @@ async def _load_runtime(
     config = AppConfig(
         workspace_base=temp_dir,
         workspace_mount_path=temp_dir,
-        sandbox=SandboxConfig(
-            use_host_network=True,
-        ),
-        user_id=os.getuid(),
+        sandbox=SandboxConfig(use_host_network=True),
     )
     load_from_env(config, os.environ)
     config.run_as_devin = run_as_devin
