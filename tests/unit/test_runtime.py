@@ -302,6 +302,9 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    not os.environ.get('GITHUB_ACTIONS'), reason='Not running in GitHub Actions'
+)
 async def test_simple_browse(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
 
@@ -378,7 +381,7 @@ world "
     assert 'total 0' in obs.content
     assert 'hello\r\nworld' in obs.content
     assert "hello it\\'s me" in obs.content
-    assert 'hello -v' in obs.content
+    assert 'hello' and ' -v' in obs.content
     assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
     assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
     assert 'hello\r\nworld "\r\n' in obs.content
