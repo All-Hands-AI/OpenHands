@@ -134,8 +134,12 @@ async def _load_runtime(
             config=config, event_stream=event_stream, sid=sid, plugins=plugins
         )
         await runtime.ainit()
+        from opendevin.runtime.tools import (
+            RuntimeTool,  # deprecate this after ServerRuntime is deprecated
+        )
+
         runtime.init_runtime_tools(
-            [],
+            [RuntimeTool.BROWSER],
             is_async=False,
             runtime_tools_config={},
         )
