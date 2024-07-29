@@ -444,7 +444,7 @@ class DockerSSHBox(Sandbox):
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
                 )
-        cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
+        cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip().split()[0]
 
         try:
             exit_code = int(cleaned_exit_code_str)

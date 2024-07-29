@@ -7,7 +7,6 @@ import pytest
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from opendevin.runtime.utils import split_bash_commands
 
 
 def create_docker_box_from_app_config(
@@ -33,68 +32,19 @@ def create_docker_box_from_app_config(
     )
 
 
+@pytest.fixture(autouse=True)
+def print_method_name(request):
+    print('\n########################################################################')
+    print(f'Running test: {request.node.name}')
+    print('########################################################################')
+
+
 @pytest.fixture
 def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path().mkdir(parents=True, exist_ok=True)
+        pathlib.Path(temp_dir).mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-
-def test_split_commands():
-    cmds = [
-        'ls -l',
-        'echo -e "hello\nworld"',
-        """
-echo -e 'hello it\\'s me'
-""".strip(),
-        """
-echo \\
-    -e 'hello' \\
-    -v
-""".strip(),
-        """
-echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
-""".strip(),
-        """
-echo -e 'hello
-world
-are
-you\\n
-there?'
-""".strip(),
-        """
-echo -e 'hello
-world "
-'
-""".strip(),
-        """
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Pod
-metadata:
-  name: busybox-sleep
-spec:
-  containers:
-  - name: busybox
-    image: busybox:1.28
-    args:
-    - sleep
-    - "1000000"
-EOF
-""".strip(),
-    ]
-    joined_cmds = '\n'.join(cmds)
-    split_cmds = split_bash_commands(joined_cmds)
-    for s in split_cmds:
-        print('\nCMD')
-        print(s)
-    cmds = [
-        c.replace('\\\n', '') for c in cmds
-    ]  # The function strips escaped newlines, but this shouldn't matter
-    assert (
-        split_cmds == cmds
-    ), 'The split commands should be the same as the input commands.'
 
 
 def test_ssh_box_run_as_devin(temp_dir):

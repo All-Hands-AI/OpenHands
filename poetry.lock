@@ -399,6 +399,17 @@ files = [
 ]
 
 [[package]]
+name = "bashlex"
+version = "0.18"
+description = "Python parser for bash"
+optional = false
+python-versions = ">=2.7, !=3.0, !=3.1, !=3.2, !=3.3, !=3.4"
+files = [
+    {file = "bashlex-0.18-py2.py3-none-any.whl", hash = "sha256:91d73a23a3e51711919c1c899083890cdecffc91d8c088942725ac13e9dcfffa"},
+    {file = "bashlex-0.18.tar.gz", hash = "sha256:5bb03a01c6d5676338c36fd1028009c8ad07e7d61d8a1ce3f513b7fff52796ee"},
+]
+
+[[package]]
 name = "bcrypt"
 version = "4.1.3"
 description = "Modern password hashing for your software and your servers"
@@ -3498,13 +3509,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.42.3"
+version = "1.42.5"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.42.3-py3-none-any.whl", hash = "sha256:08060c35dd2261a7955a9da30aca294f921adad4074157876be9a1e901bd107c"},
-    {file = "litellm-1.42.3.tar.gz", hash = "sha256:69b4a4c748d9dfd21016f7738b8ad31768271c8c37491d7a1a3c3ffae0e47ac2"},
+    {file = "litellm-1.42.5-py3-none-any.whl", hash = "sha256:c8c2f9e40b5aa1c2dcfcac9adb854b8ac22ce2112825d742d8fce516d26e9a65"},
+    {file = "litellm-1.42.5.tar.gz", hash = "sha256:64ea24040751009e70e816e9340c5c82717d9a309f4480e5ece9f3f67328e04e"},
 ]
 
 [package.dependencies]
@@ -9109,4 +9120,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e1520f1342ab527bc3bb2619f8909cbdddeb227c14614eb3d82e133961f1f4d2"
+content-hash = "6d6cfaf3a614a4bf766d9a0e886e82dc9f8cfb8bf08a642f0207f260e72dd6da"
