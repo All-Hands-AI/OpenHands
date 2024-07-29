@@ -158,15 +158,15 @@ sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
+LOG_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'logs',
+)
 if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
-    # # default log to project root
-    # log_dir = os.path.join(
-    #     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    #     'logs',
-    # )
-    # opendevin_logger.addHandler(get_file_handler(log_dir))
-    # opendevin_logger.info('DEBUG logging is enabled. Logging to %s', log_dir)
+    # default log to project root
+    opendevin_logger.info('DEBUG logging is enabled. Logging to %s', LOG_DIR)
+opendevin_logger.addHandler(get_file_handler(LOG_DIR))
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
@@ -197,7 +197,7 @@ class LlmFileHandler(logging.FileHandler):
             self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
         else:
             self.session = 'default'
-        self.log_directory = os.path.join(os.getcwd(), 'logs', 'llm', self.session)
+        self.log_directory = os.path.join(LOG_DIR, 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
         if not DEBUG:
             # Clear the log directory if not in debug mode
