@@ -316,32 +316,41 @@ async def test_simple_browse(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert '[1]' in obs.content
-    # contents =
-    url_contents = {
-        'https://example.com/': [
-            'Example Domain',
-            'This domain is for use in illustrative examples',
-        ],
-        'http://localhost:8000': ['Directory listing for /', 'server.log'],
-    }
-    for url, contents in list(url_contents.items())[1:]:
-        action_browse = BrowseURLAction(url=url)
-        logger.info(action_browse, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action_browse)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, BrowserOutputObservation)
-        assert url in obs.url
-        assert obs.status_code == 200
-        assert not obs.error
-        assert obs.open_pages_urls == [url]
-        assert obs.active_page_index == 0
-        assert obs.last_browser_action == f'goto("{url}")'
-        assert obs.last_browser_action_error == ''
+    action_browse = BrowseURLAction(url='http://localhost:8000')
+    logger.info(action_browse, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_browse)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert all(content in obs.content for content in contents)
+    assert isinstance(obs, BrowserOutputObservation)
+    if 'http://localhost:8000' not in obs.url:
+        #  check server log for the actual URL
+        action_cmd = CmdRunAction(command='cat server.log')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs2 = await runtime.run_action(action_cmd)
+        logger.info(obs2, extra={'msg_type': 'OBSERVATION'})
 
-        await runtime.close()
+        # curl http://localhost:8000
+        action_cmd = CmdRunAction(command='curl http://localhost:8000')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs3 = await runtime.run_action(action_cmd)
+        logger.info(obs3, extra={'msg_type': 'OBSERVATION'})
+
+        raise AssertionError('The URL should be http://localhost:8000 but got: ' + obs.url)
+
+
+
+
+    assert obs.status_code == 200
+    assert not obs.error
+    assert obs.open_pages_urls == ['http://localhost:8000/']
+    assert obs.active_page_index == 0
+    assert obs.last_browser_action == 'goto("http://localhost:8000")'
+    assert obs.last_browser_action_error == ''
+    assert 'Directory listing for /' in obs.content
+    assert 'server.log' in obs.content
+
+    await runtime.close()
 
 
 @pytest.mark.asyncio
