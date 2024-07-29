@@ -88,6 +88,9 @@ def update_pwd_decorator(func):
             old_pwd = out.stdout.decode('utf-8').strip()
             print(f'DEBUGGING OLD working directory: {old_pwd}')
 
+            os.chdir(old_pwd)
+            print(f'DEBUGGING change to OLD working directory: {old_pwd}')
+
             # ls -alh
             out = subprocess.run(['ls', '-alh'], capture_output=True)
             print(
