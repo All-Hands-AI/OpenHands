@@ -48,12 +48,15 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
+
+
 # This assures that all tests run together for each runtime, not alternating between them,
 # which caused them to fail previously.
 @pytest.fixture(scope='module')
 def box_class(request):
     time.sleep(1)
-    runtime = os.environ.get('TEST_RUNTIME', 'both')
+    runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return EventStreamRuntime
     elif runtime.lower() == 'server':
@@ -857,7 +860,7 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
 
 
 @pytest.mark.skipif(
-    os.getenv('TEST_RUNTIME').lower() == 'eventstream',
+    TEST_RUNTIME.lower() == 'eventstream',
     reason='Skip this if we want to test EventStreamRuntime',
 )
 @pytest.mark.asyncio
