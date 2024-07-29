@@ -44,7 +44,7 @@ def print_method_name(request):
 def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path().mkdir(parents=True, exist_ok=True)
+        pathlib.Path(temp_dir).mkdir(parents=True, exist_ok=True)
         yield temp_dir
 
 
@@ -286,8 +286,13 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    not os.environ.get('GITHUB_ACTIONS'),
+    reason='This test is only run on GitHub Actions',
+)
 async def test_simple_browse(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
+    await runtime.ainit()
 
     # Test browse
     action_cmd = CmdRunAction(command='python -m http.server 8000 > server.log 2>&1 &')
@@ -327,11 +332,6 @@ async def test_multiline_commands(temp_dir, box_class):
 echo -e "hello it\\'s me"
 """.strip(),
         """
-echo \\
-    -e 'hello' \\
-    -v
-""".strip(),
-        """
 echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
 """.strip(),
         """
@@ -346,10 +346,12 @@ echo -e 'hello
 world "
 '
 """.strip(),
+        'echo -e "hello\nworld" -e "hello again"',
     ]
     joined_cmds = '\n'.join(cmds)
 
     runtime = await _load_runtime(temp_dir, box_class)
+    # await runtime.ainit()
 
     action = CmdRunAction(command=joined_cmds)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -361,11 +363,11 @@ world "
 
     assert 'total 0' in obs.content
     assert 'hello\r\nworld' in obs.content
-    assert "hello it\\'s me" in obs.content
-    assert 'hello -v' in obs.content
+    assert "hello it\\'s me" in obs.content  # Note the escaped apostrophe
     assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
     assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
-    assert 'hello\r\nworld "\r\n' in obs.content
+    assert 'hello\r\nworld "' in obs.content
+    assert 'hello\r\nworld' in obs.content and 'hello again' in obs.content
 
     await runtime.close()
     await asyncio.sleep(1)

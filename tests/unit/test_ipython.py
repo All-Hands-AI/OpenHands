@@ -1,12 +1,15 @@
 import pathlib
 import tempfile
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.events.action import IPythonRunCellAction
 from opendevin.events.observation import IPythonRunCellObservation
+from opendevin.runtime.plugins import (
+    JupyterRequirement,
+)
 from opendevin.runtime.server.runtime import ServerRuntime
 
 
@@ -18,6 +21,7 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
+@pytest.mark.asyncio
 async def test_run_python_backticks():
     # Create a mock event_stream
     mock_event_stream = MagicMock()
@@ -25,7 +29,7 @@ async def test_run_python_backticks():
     test_code = "print('Hello, `World`!\n')"
 
     # Mock the asynchronous sandbox execute method
-    mock_sandbox_execute = MagicMock()
+    mock_sandbox_execute = AsyncMock()
     mock_sandbox_execute.side_effect = [
         (0, ''),  # Initial call during DockerSSHBox initialization
         (0, ''),  # Initial call during DockerSSHBox initialization
@@ -40,12 +44,15 @@ async def test_run_python_backticks():
         new=mock_sandbox_execute,
     ):
         # Initialize the runtime with the mock event_stream
+        plugins = [JupyterRequirement()]
         runtime = ServerRuntime(
             config=AppConfig(
                 persist_sandbox=False, sandbox=SandboxConfig(box_type='ssh')
             ),
             event_stream=mock_event_stream,
         )
+        await runtime.ainit()
+        await runtime.init_sandbox_plugins(plugins)
 
         # Define the test action with a simple IPython command
         action = IPythonRunCellAction(code=test_code)

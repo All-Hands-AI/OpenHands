@@ -1198,7 +1198,7 @@ class DockerSSHBox(Sandbox):
             await self.docker_client.close()
 
         except Exception as e:
-            logger.error(f'Error during cleanup: {e}', exc_info=True)
+            logger.error(f'Error during cleanup: {e}', exc_info=False)
         finally:
             self._cleanup_done = True
             atexit.unregister(self.sync_cleanup)

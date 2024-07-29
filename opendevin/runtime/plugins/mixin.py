@@ -163,7 +163,7 @@ class PluginMixin:
                     f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
                 )
                 exit_code, output = await self.execute_async(
-                    abs_path_to_bash_script, stream=True
+                    abs_path_to_bash_script, stream=False
                 )
                 if isinstance(output, CancellableStream):
                     logger.info('CancellableStream processing output')
