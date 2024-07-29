@@ -195,12 +195,12 @@ build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
 	@cd frontend && npm run build
 
-# Start backend
+# Start backend server with auto-reload
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-exclude "workspace/*"
 
-# Start frontend
+# Start frontend server
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
@@ -221,8 +221,8 @@ _run_backend:
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
 
-# Run the app (standard mode)
-run:
+# Start the app in standard mode for end-users
+start:
 	@echo "$(YELLOW)Running the app...$(RESET)"
 	@$(MAKE) -s _run_check
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
@@ -231,14 +231,14 @@ run:
 	@echo "$(GREEN)Application started successfully.$(RESET)"
 
 # Run the app (development mode)
-run-dev:
+run:
 	@echo "$(YELLOW)Running the app in dev mode...$(RESET)"
 	@$(MAKE) -s _run_backend
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
 
 # Run the app (development mode for WSL)
-run-dev-wsl:
+run-wsl:
 	@echo "$(YELLOW)Running the app in dev mode for WSL...$(RESET)"
 	@$(MAKE) -s _run_backend
 	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
@@ -313,6 +313,12 @@ clean:
 	@rm -rf opendevin/.cache
 	@echo "$(GREEN)Caches cleaned up successfully.$(RESET)"
 
+# Kill all processes on port 3000 and 3001
+kill:
+	@echo "$(YELLOW)Killing all processes on port 3000(RESET)"
+	@kill -9  $(lsof -t -i:3000)
+	@echo "$(YELLOW)Killing all processes on port 3001(RESET)"
+	@kill -9  $(lsof -t -i:3001)
 # Help
 help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
@@ -321,13 +327,14 @@ help:
 	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenDevin by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
-	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenDevin project."
+	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenDevin project with auto-reload."
 	@echo "  $(GREEN)start-frontend$(RESET)      - Start the frontend server for the OpenDevin project."
-	@echo "  $(GREEN)run$(RESET)                 - Run the OpenDevin application"
-	@echo "  $(GREEN)run-dev$(RESET)             - Run the OpenDevin application, starting both backend and frontend servers."
-	@echo "  $(GREEN)run-dev-wsl$(RESET)         - Run the OpenDevin application, starting both backend and frontend servers for WSL users."
+	@echo "  $(GREEN)start$(RESET)               - Start the OpenDevin application for end users.
+	@echo "  $(GREEN)run$(RESET)                 - Run the OpenDevin application, starting both backend and frontend servers."
+	@echo "  $(GREEN)run-wsl$(RESET)         - Run the OpenDevin application, starting both backend and frontend servers for WSL users."
+	@echo "  $(GREEN)kill$(RESET)                - Kill all processes on port 3000 and 3001."
 	@echo "                        Backend Log file will be stored in the 'logs' directory."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-dev run-dev-wsl setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend start run run-wsl setup-config setup-config-prompts kill help
