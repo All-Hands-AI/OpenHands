@@ -88,6 +88,16 @@ def update_pwd_decorator(func):
             old_pwd = out.stdout.decode('utf-8').strip()
             print(f'DEBUGGING OLD working directory: {old_pwd}')
 
+            # ls -alh
+            out = subprocess.run(['ls', '-alh'], capture_output=True)
+            print(
+                f'DEBUGGING OLD working directory contents: {out.stdout.decode("utf-8")}'
+            )
+
+            # whoami
+            out = subprocess.run(['whoami'], capture_output=True)
+            print(f'DEBUGGING OLD whoami: {out.stdout.decode("utf-8")}')
+
         jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
         if jupyter_pwd:
             os.chdir(jupyter_pwd)
