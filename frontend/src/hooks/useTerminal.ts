@@ -73,7 +73,14 @@ export const useTerminal = (commands: Command[] = []) => {
         }
         return true;
       });
-
+      // right click to paste
+      terminal.current.element?.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        navigator.clipboard.readText().then((text) => {
+          terminal.current?.write(text);
+          commandBuffer += text;
+        });
+      });
       /* Listen for resize events */
       resizeObserver = new ResizeObserver(() => {
         fitAddon.current?.fit();
