@@ -79,7 +79,15 @@ def _get_openai_client():
 def update_pwd_decorator(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        old_pwd = os.getcwd()
+        try:
+            old_pwd = os.getcwd()
+        except FileNotFoundError:
+            import subprocess
+
+            out = subprocess.run(['pwd'], capture_output=True)
+            old_pwd = out.stdout.decode('utf-8').strip()
+            print(f'DEBUGGING OLD working directory: {old_pwd}')
+
         jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
         if jupyter_pwd:
             os.chdir(jupyter_pwd)
