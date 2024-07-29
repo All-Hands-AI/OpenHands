@@ -179,7 +179,7 @@ class RuntimeClient:
         self,
         command: str,
         keep_prompt: bool = True,
-        timeout: int = 10,
+        timeout: int = 300,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
