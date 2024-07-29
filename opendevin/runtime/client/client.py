@@ -236,7 +236,7 @@ class RuntimeClient:
 
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            if self.pwd != self._prev_pwd:
+            if not hasattr(self, '_prev_pwd') or self.pwd != self._prev_pwd:
                 reset_jupyter_pwd_code = (
                     f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
                 )
