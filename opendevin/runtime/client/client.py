@@ -165,6 +165,7 @@ class RuntimeClient:
             matched is not None
         ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
         username, hostname, working_dir = matched.groups()
+        self._prev_pwd = self.pwd
         self.pwd = working_dir
 
         # re-assemble the prompt
@@ -235,16 +236,14 @@ class RuntimeClient:
 
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            reset_jupyter_pwd_code = (
-                f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
-            )
-            action.code = reset_jupyter_pwd_code + action.code
+            if self.pwd != self._prev_pwd:
+                reset_jupyter_pwd_code = (
+                    f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
+                )
+                _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
+                _ = await self.run_action(_aux_action)
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
-
-            obs.code = obs.code.replace(
-                reset_jupyter_pwd_code, ''
-            )  # clean up the injected code
             return obs
         else:
             raise RuntimeError(
