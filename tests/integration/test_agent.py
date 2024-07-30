@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from opendevin.controller.state.state import State
-from opendevin.core.config import AppConfig, SandboxConfig
+from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.main import run_controller
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
@@ -32,6 +32,7 @@ CONFIG = AppConfig(
         box_type=os.getenv('SANDBOX_BOX_TYPE', 'ssh'),
     ),
 )
+CONFIG = load_from_env(CONFIG, os.environ)
 print('\nPaths used:')
 print(f'workspace_base: {CONFIG.workspace_base}')
 print(f'workspace_mount_path: {CONFIG.workspace_mount_path}')
