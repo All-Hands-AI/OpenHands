@@ -323,7 +323,16 @@ async def test_simple_browse(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert isinstance(obs, BrowserOutputObservation)
-    assert 'http://localhost:8000' in obs.url
+    if 'http://localhost:8000' not in obs.url:
+        #  check server log for the actual URL
+        action_cmd = CmdRunAction(command='cat server.log')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs2 = await runtime.run_action(action_cmd)
+        logger.info(obs2, extra={'msg_type': 'OBSERVATION'})
+
+        raise AssertionError(
+            'The URL should be http://localhost:8000 but got: ' + obs.url
+        )
     assert obs.status_code == 200
     assert not obs.error
     assert obs.open_pages_urls == ['http://localhost:8000/']
