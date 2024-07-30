@@ -43,7 +43,6 @@ function SettingsForm({
         onChange={onAgentChange}
         tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
         disabled={disabled}
-        hidden={true}
       />
       <AutocompleteCombobox
         ariaLabel="model"

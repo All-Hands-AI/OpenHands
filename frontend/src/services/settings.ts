@@ -52,7 +52,7 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = (): Settings => {
   const model = localStorage.getItem("LLM_MODEL");
-  const agent = "CodeActAgent" // Always use CodeActAgent for now since the agent selection is hidden
+  const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";

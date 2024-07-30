@@ -40,11 +40,13 @@ describe("SettingsForm", () => {
     renderSettingsForm();
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
+    const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
     const confirmationModeInput = screen.getByTestId("confirmationmode");
 
     expect(modelInput).toHaveValue("model1");
+    expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
     expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
@@ -60,9 +62,11 @@ describe("SettingsForm", () => {
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
+    const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
 
     expect(modelInput).toHaveValue("model2");
+    expect(agentInput).toHaveValue("agent2");
     expect(languageInput).toHaveValue("Español");
   });
 
@@ -87,10 +91,12 @@ describe("SettingsForm", () => {
       />,
     );
     const modelInput = screen.getByRole("combobox", { name: "model" });
+    const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const confirmationModeInput = screen.getByTestId("confirmationmode");
 
     expect(modelInput).toBeDisabled();
+    expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
     expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
   });
@@ -112,7 +118,7 @@ describe("SettingsForm", () => {
       expect(onModelChangeMock).toHaveBeenCalledWith("model3");
     });
 
-    it.skip("should call the onAgentChange handler when the agent changes", async () => {
+    it("should call the onAgentChange handler when the agent changes", async () => {
       renderSettingsForm();
 
       const agentInput = screen.getByRole("combobox", { name: "agent" });

@@ -79,20 +79,5 @@ describe("AutocompleteCombobox", () => {
     expect(modelInput).toHaveValue("m2");
   });
 
-  it("should hide the combobox when hidden is true", () => {
-    render(
-      <AutocompleteCombobox
-        ariaLabel="model"
-        items={[{ value: "m1", label: "model1" }]}
-        defaultKey="m2"
-        tooltip="tooltip"
-        onChange={onChangeMock}
-        hidden={true}
-      />,
-    );
-
-    expect(screen.queryByRole("combobox", { name: "model" })).toBeNull();
-  });
-
   it.todo("should show a tooltip after 0.5 seconds of focus");
 });
