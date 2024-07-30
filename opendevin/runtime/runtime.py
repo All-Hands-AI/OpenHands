@@ -143,10 +143,8 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
-            logger.info(event, extra={'msg_type': 'ACTION'})
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
             source = event.source if event.source else EventSource.AGENT
             self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
