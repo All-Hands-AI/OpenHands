@@ -7,6 +7,7 @@ import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
+const onAgentSelectEnabledChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
 const onConfirmationModeChangeMock = vi.fn();
@@ -26,8 +27,10 @@ const renderSettingsForm = (settings?: Settings) => {
       }
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
+      isAgentSelectEnabled
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
+      onAgentSelectEnabledChange={onAgentSelectEnabledChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
       onConfirmationModeChange={onConfirmationModeChangeMock}
@@ -52,7 +55,7 @@ describe("SettingsForm", () => {
     expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
   });
 
-  it("should display the existing values if it they are present", () => {
+  it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "model2",
       AGENT: "agent2",
@@ -82,9 +85,11 @@ describe("SettingsForm", () => {
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
+        isAgentSelectEnabled
         disabled
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
+        onAgentSelectEnabledChange={onAgentSelectEnabledChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
         onConfirmationModeChange={onConfirmationModeChangeMock}
@@ -159,6 +164,43 @@ describe("SettingsForm", () => {
       });
 
       expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
+    });
+
+    it("should call onAgentSelectEnabledChange handler when toggled", async () => {
+      renderWithProviders(
+        <SettingsForm
+          settings={{
+            LLM_MODEL: "model1",
+            AGENT: "agent1",
+            LANGUAGE: "en",
+            LLM_API_KEY: "sk-...",
+            CONFIRMATION_MODE: true,
+          }}
+          models={["model1", "model2", "model3"]}
+          agents={["agent1", "agent2", "agent3"]}
+          isAgentSelectEnabled={false}
+          disabled
+          onModelChange={onModelChangeMock}
+          onAgentChange={onAgentChangeMock}
+          onAgentSelectEnabledChange={onAgentSelectEnabledChangeMock}
+          onLanguageChange={onLanguageChangeMock}
+          onAPIKeyChange={onAPIKeyChangeMock}
+          onConfirmationModeChange={onConfirmationModeChangeMock}
+        />,
+      );
+
+      const agentSelectEnable = screen.getByTestId("enableagentselect");
+
+      await act(async () => {
+        await userEvent.click(agentSelectEnable);
+      });
+
+      await act(async () => {
+        await userEvent.click(agentSelectEnable);
+      });
+
+      expect(onAgentSelectEnabledChangeMock).toHaveBeenNthCalledWith(1, true);
+      expect(onAgentSelectEnabledChangeMock).toHaveBeenNthCalledWith(2, false);
     });
   });
 });

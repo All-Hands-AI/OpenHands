@@ -11,11 +11,13 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   agents: string[];
+  isAgentSelectEnabled: boolean;
   disabled: boolean;
 
   onModelChange: (model: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
+  onAgentSelectEnabledChange: (enabled: boolean) => void;
   onLanguageChange: (language: string) => void;
   onConfirmationModeChange: (confirmationMode: boolean) => void;
 }
@@ -24,10 +26,12 @@ function SettingsForm({
   settings,
   models,
   agents,
+  isAgentSelectEnabled,
   disabled,
   onModelChange,
   onAPIKeyChange,
   onAgentChange,
+  onAgentSelectEnabledChange,
   onLanguageChange,
   onConfirmationModeChange,
 }: SettingsFormProps) {
@@ -36,14 +40,6 @@ function SettingsForm({
 
   return (
     <>
-      <AutocompleteCombobox
-        ariaLabel="agent"
-        items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT}
-        onChange={onAgentChange}
-        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
-        disabled={disabled}
-      />
       <AutocompleteCombobox
         ariaLabel="model"
         items={models.map((model) => ({ value: model, label: model }))}
@@ -88,6 +84,22 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
+      <AutocompleteCombobox
+        ariaLabel="agent"
+        items={agents.map((agent) => ({ value: agent, label: agent }))}
+        defaultKey={settings.AGENT}
+        onChange={onAgentChange}
+        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
+        disabled={disabled || !isAgentSelectEnabled}
+      />
+      <Switch
+        checked={isAgentSelectEnabled}
+        onChange={(e) => onAgentSelectEnabledChange(e.target.checked)}
+        aria-label="enableagentselect"
+        data-testid="enableagentselect"
+      >
+        {t(I18nKey.SETTINGS$AGENT_SELECT_ENABLED)}
+      </Switch>
       <Switch
         aria-label="confirmationmode"
         data-testid="confirmationmode"
