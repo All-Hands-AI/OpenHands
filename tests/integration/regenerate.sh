@@ -212,7 +212,7 @@ regenerate_with_llm() {
       WORKSPACE_BASE=$WORKSPACE_BASE \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
       DEFAULT_AGENT=$agent \
-      TEST_RUNTIME="$TEST_RUNTIME" \
+      RUNTIME="$TEST_RUNTIME" \
       poetry run python "$PROJECT_ROOT/opendevin/core/main.py" \
       -i $MAX_ITERATIONS \
       -t "$task Do not ask me for confirmation at any point." \
