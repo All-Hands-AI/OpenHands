@@ -179,7 +179,8 @@ class ServerRuntime(Runtime):
         )
         obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
-        if action.code.startswith('!pip install'):
+        # it may start with % or !, so we need to check for the pip install command
+        if 'pip install' in action.code:
             output = self.parse_pip_output(action.code, output)
         return IPythonRunCellObservation(content=output, code=action.code)
 
