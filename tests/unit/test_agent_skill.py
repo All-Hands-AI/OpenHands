@@ -2,6 +2,7 @@ import contextlib
 import io
 import os
 import sys
+from unittest.mock import patch
 
 import docx
 import pytest
@@ -488,13 +489,9 @@ def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
         assert result == expected
 
 
-def test_edit_file_by_replace_window(tmp_path, monkeypatch):
-    # Set environment variable via monkeypatch does NOT work!
-    monkeypatch.setattr(
-        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
-    )
-
-    content = """def any_int(a, b, c):
+def test_edit_file_by_replace_window(tmp_path):
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        content = """def any_int(a, b, c):
     return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)
 
 def test_any_int():
@@ -528,83 +525,83 @@ def check(any_int):
 
 check(any_int)"""
 
-    temp_file_path = tmp_path / 'error-test.py'
-    temp_file_path.write_text(content)
+        temp_file_path = tmp_path / 'error-test.py'
+        temp_file_path.write_text(content)
 
-    open_file(str(temp_file_path))
+        open_file(str(temp_file_path))
 
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                str(temp_file_path),
-                to_replace='    assert any_int(1.0, 2, 3) == False',
-                new_content='        assert any_int(1.0, 2, 3) == False',
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                edit_file_by_replace(
+                    str(temp_file_path),
+                    to_replace='    assert any_int(1.0, 2, 3) == False',
+                    new_content='        assert any_int(1.0, 2, 3) == False',
+                )
+            result = buf.getvalue()
+            expected = (
+                '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+                'ERRORS:\n'
+                + str(temp_file_path)
+                + ':9:9: '
+                + 'E999 IndentationError: unexpected indent\n'
+                '[This is how your edit would have looked if applied]\n'
+                '-------------------------------------------------\n'
+                '(this is the beginning of the file)\n'
+                '1|def any_int(a, b, c):\n'
+                '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
+                '3|\n'
+                '4|def test_any_int():\n'
+                '5|    assert any_int(1, 2, 3) == True\n'
+                '6|    assert any_int(1.5, 2, 3) == False\n'
+                '7|    assert any_int(1, 2.5, 3) == False\n'
+                '8|    assert any_int(1, 2, 3.5) == False\n'
+                '9|        assert any_int(1.0, 2, 3) == False\n'
+                '10|    assert any_int(1, 2.0, 3) == False\n'
+                '11|    assert any_int(1, 2, 3.0) == False\n'
+                '12|    assert any_int(0, 0, 0) == True\n'
+                '13|    assert any_int(-1, -2, -3) == True\n'
+                '14|    assert any_int(1, -2, 3) == True\n'
+                '15|    assert any_int(1.5, -2, 3) == False\n'
+                '16|    assert any_int(1, -2.5, 3) == False\n'
+                '17|\n'
+                '18|def check(any_int):\n'
+                '19|    # Check some simple cases\n'
+                '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
+                '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
+                '(12 more lines below)\n'
+                '-------------------------------------------------\n'
+                '\n'
+                '[This is the original code before your edit]\n'
+                '-------------------------------------------------\n'
+                '(this is the beginning of the file)\n'
+                '1|def any_int(a, b, c):\n'
+                '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
+                '3|\n'
+                '4|def test_any_int():\n'
+                '5|    assert any_int(1, 2, 3) == True\n'
+                '6|    assert any_int(1.5, 2, 3) == False\n'
+                '7|    assert any_int(1, 2.5, 3) == False\n'
+                '8|    assert any_int(1, 2, 3.5) == False\n'
+                '9|    assert any_int(1.0, 2, 3) == False\n'
+                '10|    assert any_int(1, 2.0, 3) == False\n'
+                '11|    assert any_int(1, 2, 3.0) == False\n'
+                '12|    assert any_int(0, 0, 0) == True\n'
+                '13|    assert any_int(-1, -2, -3) == True\n'
+                '14|    assert any_int(1, -2, 3) == True\n'
+                '15|    assert any_int(1.5, -2, 3) == False\n'
+                '16|    assert any_int(1, -2.5, 3) == False\n'
+                '17|\n'
+                '18|def check(any_int):\n'
+                '19|    # Check some simple cases\n'
+                '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
+                '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
+                '(12 more lines below)\n'
+                '-------------------------------------------------\n'
+                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+                'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
             )
-        result = buf.getvalue()
-        expected = (
-            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-            'ERRORS:\n'
-            + str(temp_file_path)
-            + ':9:9: '
-            + 'E999 IndentationError: unexpected indent\n'
-            '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
-            '1|def any_int(a, b, c):\n'
-            '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
-            '3|\n'
-            '4|def test_any_int():\n'
-            '5|    assert any_int(1, 2, 3) == True\n'
-            '6|    assert any_int(1.5, 2, 3) == False\n'
-            '7|    assert any_int(1, 2.5, 3) == False\n'
-            '8|    assert any_int(1, 2, 3.5) == False\n'
-            '9|        assert any_int(1.0, 2, 3) == False\n'
-            '10|    assert any_int(1, 2.0, 3) == False\n'
-            '11|    assert any_int(1, 2, 3.0) == False\n'
-            '12|    assert any_int(0, 0, 0) == True\n'
-            '13|    assert any_int(-1, -2, -3) == True\n'
-            '14|    assert any_int(1, -2, 3) == True\n'
-            '15|    assert any_int(1.5, -2, 3) == False\n'
-            '16|    assert any_int(1, -2.5, 3) == False\n'
-            '17|\n'
-            '18|def check(any_int):\n'
-            '19|    # Check some simple cases\n'
-            '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
-            '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
-            '(12 more lines below)\n'
-            '-------------------------------------------------\n'
-            '\n'
-            '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
-            '1|def any_int(a, b, c):\n'
-            '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
-            '3|\n'
-            '4|def test_any_int():\n'
-            '5|    assert any_int(1, 2, 3) == True\n'
-            '6|    assert any_int(1.5, 2, 3) == False\n'
-            '7|    assert any_int(1, 2.5, 3) == False\n'
-            '8|    assert any_int(1, 2, 3.5) == False\n'
-            '9|    assert any_int(1.0, 2, 3) == False\n'
-            '10|    assert any_int(1, 2.0, 3) == False\n'
-            '11|    assert any_int(1, 2, 3.0) == False\n'
-            '12|    assert any_int(0, 0, 0) == True\n'
-            '13|    assert any_int(-1, -2, -3) == True\n'
-            '14|    assert any_int(1, -2, 3) == True\n'
-            '15|    assert any_int(1.5, -2, 3) == False\n'
-            '16|    assert any_int(1, -2.5, 3) == False\n'
-            '17|\n'
-            '18|def check(any_int):\n'
-            '19|    # Check some simple cases\n'
-            '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
-            '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
-            '(12 more lines below)\n'
-            '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-        )
-        assert result == expected
+            assert result == expected
 
 
 # ================================
@@ -1253,153 +1250,140 @@ def test_find_file_not_exist_file_specific_path(tmp_path):
     assert result.split('\n') == expected.split('\n')
 
 
-def test_edit_lint_file_pass(tmp_path, monkeypatch):
+def test_edit_lint_file_pass(tmp_path):
     # Enable linting
-    monkeypatch.setattr(
-        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
-    )
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        file_path = _generate_test_file_with_lines(tmp_path, 1)
 
-    file_path = _generate_test_file_with_lines(tmp_path, 1)
-
-    # Test linting functionality
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            open_file(str(file_path))
-            insert_content_at_line(str(file_path), 1, "print('hello')\n")
-        result = buf.getvalue()
-    assert result is not None
-    expected = (
-        f'[File: {file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        f'[File: {file_path} (1 lines total after edit)]\n'
-        '(this is the beginning of the file)\n'
-        "1|print('hello')\n"
-        '(this is the end of the file)\n'
-        + MSG_FILE_UPDATED.format(line_number=1)
-        + '\n'
-    )
-    assert result.split('\n') == expected.split('\n')
+        # Test linting functionality
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                open_file(str(file_path))
+                insert_content_at_line(str(file_path), 1, "print('hello')\n")
+            result = buf.getvalue()
+        assert result is not None
+        expected = (
+            f'[File: {file_path} (1 lines total)]\n'
+            '(this is the beginning of the file)\n'
+            '1|\n'
+            '(this is the end of the file)\n'
+            f'[File: {file_path} (1 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
+            "1|print('hello')\n"
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
 
 
-def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
-    # Enable linting
-    monkeypatch.setattr(
-        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
-    )
+def test_lint_file_fail_undefined_name(tmp_path, capsys):
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        current_line = 1
 
-    current_line = 1
+        file_path = _generate_test_file_with_lines(tmp_path, 1)
 
-    file_path = _generate_test_file_with_lines(tmp_path, 1)
+        open_file(str(file_path), current_line)
+        insert_content_at_line(str(file_path), 1, 'undefined_name()\n')
 
-    open_file(str(file_path), current_line)
-    insert_content_at_line(str(file_path), 1, 'undefined_name()\n')
+        result = capsys.readouterr().out
+        assert result is not None
 
-    result = capsys.readouterr().out
-    assert result is not None
-
-    expected = (
-        f'[File: {file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-        'ERRORS:\n'
-        f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
-        '[This is how your edit would have looked if applied]\n'
-        '-------------------------------------------------\n'
-        '(this is the beginning of the file)\n'
-        '1|undefined_name()\n'
-        '(this is the end of the file)\n'
-        '-------------------------------------------------\n\n'
-        '[This is the original code before your edit]\n'
-        '-------------------------------------------------\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '-------------------------------------------------\n'
-        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-    )
-    assert result.split('\n') == expected.split('\n')
+        expected = (
+            f'[File: {file_path} (1 lines total)]\n'
+            '(this is the beginning of the file)\n'
+            '1|\n'
+            '(this is the end of the file)\n'
+            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+            'ERRORS:\n'
+            f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
+            '[This is how your edit would have looked if applied]\n'
+            '-------------------------------------------------\n'
+            '(this is the beginning of the file)\n'
+            '1|undefined_name()\n'
+            '(this is the end of the file)\n'
+            '-------------------------------------------------\n\n'
+            '[This is the original code before your edit]\n'
+            '-------------------------------------------------\n'
+            '(this is the beginning of the file)\n'
+            '1|\n'
+            '(this is the end of the file)\n'
+            '-------------------------------------------------\n'
+            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+        )
+        assert result.split('\n') == expected.split('\n')
 
 
-def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
-    # Enable linting
-    monkeypatch.setattr(
-        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
-    )
+def test_lint_file_fail_undefined_name_long(tmp_path, capsys):
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        num_lines = 1000
+        error_line = 500
 
-    num_lines = 1000
-    error_line = 500
+        file_path = _generate_test_file_with_lines(tmp_path, num_lines)
 
-    file_path = _generate_test_file_with_lines(tmp_path, num_lines)
+        error_message = (
+            f"{file_path}:{error_line}:1: F821 undefined name 'undefined_name'"
+        )
 
-    error_message = f"{file_path}:{error_line}:1: F821 undefined name 'undefined_name'"
+        open_file(str(file_path))
+        insert_content_at_line(str(file_path), error_line, 'undefined_name()\n')
 
-    open_file(str(file_path))
-    insert_content_at_line(str(file_path), error_line, 'undefined_name()\n')
+        result = capsys.readouterr().out
+        assert result is not None
 
-    result = capsys.readouterr().out
-    assert result is not None
-
-    open_lines = '\n'.join([f'{i}|' for i in range(1, WINDOW + 1)])
-    expected = (
-        f'[File: {file_path} ({num_lines} lines total)]\n'
-        '(this is the beginning of the file)\n'
-        f'{open_lines}\n'
-        f'({num_lines - WINDOW} more lines below)\n'
-        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-        f'ERRORS:\n{error_message}\n'
-        '[This is how your edit would have looked if applied]\n'
-        '-------------------------------------------------\n'
-        '(489 more lines above)\n'
-        + _numbered_test_lines(error_line - 10, error_line - 1)
-        + '500|undefined_name()\n'
-        + _numbered_test_lines(error_line + 1, error_line + 10)
-        + '(491 more lines below)\n'
-        + '-------------------------------------------------\n\n'
-        '[This is the original code before your edit]\n'
-        '-------------------------------------------------\n'
-        '(489 more lines above)\n'
-        + _numbered_test_lines(error_line - 10, error_line + 10)
-        + '(490 more lines below)\n'
-        + '-------------------------------------------------\n'
-        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-    )
-    assert result.split('\n') == expected.split('\n')
+        open_lines = '\n'.join([f'{i}|' for i in range(1, WINDOW + 1)])
+        expected = (
+            f'[File: {file_path} ({num_lines} lines total)]\n'
+            '(this is the beginning of the file)\n'
+            f'{open_lines}\n'
+            f'({num_lines - WINDOW} more lines below)\n'
+            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+            f'ERRORS:\n{error_message}\n'
+            '[This is how your edit would have looked if applied]\n'
+            '-------------------------------------------------\n'
+            '(489 more lines above)\n'
+            + _numbered_test_lines(error_line - 10, error_line - 1)
+            + '500|undefined_name()\n'
+            + _numbered_test_lines(error_line + 1, error_line + 10)
+            + '(491 more lines below)\n'
+            + '-------------------------------------------------\n\n'
+            '[This is the original code before your edit]\n'
+            '-------------------------------------------------\n'
+            '(489 more lines above)\n'
+            + _numbered_test_lines(error_line - 10, error_line + 10)
+            + '(490 more lines below)\n'
+            + '-------------------------------------------------\n'
+            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+        )
+        assert result.split('\n') == expected.split('\n')
 
 
-def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
-    # Disable linting
-    monkeypatch.setattr(
-        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', False
-    )
+def test_lint_file_disabled_undefined_name(tmp_path, capsys):
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'False'}):
+        file_path = _generate_test_file_with_lines(tmp_path, 1)
 
-    file_path = _generate_test_file_with_lines(tmp_path, 1)
+        open_file(str(file_path))
+        insert_content_at_line(str(file_path), 1, 'undefined_name()\n')
 
-    open_file(str(file_path))
-    insert_content_at_line(str(file_path), 1, 'undefined_name()\n')
-
-    result = capsys.readouterr().out
-    assert result is not None
-    expected = (
-        f'[File: {file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        f'[File: {file_path} (1 lines total after edit)]\n'
-        '(this is the beginning of the file)\n'
-        '1|undefined_name()\n'
-        '(this is the end of the file)\n'
-        + MSG_FILE_UPDATED.format(line_number=1)
-        + '\n'
-    )
-    assert result.split('\n') == expected.split('\n')
+        result = capsys.readouterr().out
+        assert result is not None
+        expected = (
+            f'[File: {file_path} (1 lines total)]\n'
+            '(this is the beginning of the file)\n'
+            '1|\n'
+            '(this is the end of the file)\n'
+            f'[File: {file_path} (1 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
+            '1|undefined_name()\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=1)
+            + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
 
 
 def test_parse_docx(tmp_path):
@@ -1521,44 +1505,40 @@ def test_parse_pptx(tmp_path):
     assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 
-def test_lint_file_fail_non_python(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(
-        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
-    )
+def test_lint_file_fail_non_python(tmp_path, capsys):
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        current_line = 1
+        file_path = _generate_ruby_test_file_with_lines(tmp_path, 1)
 
-    current_line = 1
-
-    file_path = _generate_ruby_test_file_with_lines(tmp_path, 1)
-
-    open_file(str(file_path), current_line)
-    insert_content_at_line(
-        str(file_path), 1, "def print_hello_world()\n    puts 'Hello World'"
-    )
-    result = capsys.readouterr().out
-    assert result is not None
-    expected = (
-        f'[File: {file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-        'ERRORS:\n'
-        f'{file_path}:1\n'
-        '[This is how your edit would have looked if applied]\n'
-        '-------------------------------------------------\n'
-        '(this is the beginning of the file)\n'
-        '1|def print_hello_world()\n'
-        "2|    puts 'Hello World'\n"
-        '(this is the end of the file)\n'
-        '-------------------------------------------------\n\n'
-        '[This is the original code before your edit]\n'
-        '-------------------------------------------------\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '-------------------------------------------------\n'
-        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-    )
-    assert result.split('\n') == expected.split('\n')
+        open_file(str(file_path), current_line)
+        insert_content_at_line(
+            str(file_path), 1, "def print_hello_world()\n    puts 'Hello World'"
+        )
+        result = capsys.readouterr().out
+        assert result is not None
+        expected = (
+            f'[File: {file_path} (1 lines total)]\n'
+            '(this is the beginning of the file)\n'
+            '1|\n'
+            '(this is the end of the file)\n'
+            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+            'ERRORS:\n'
+            f'{file_path}:1\n'
+            '[This is how your edit would have looked if applied]\n'
+            '-------------------------------------------------\n'
+            '(this is the beginning of the file)\n'
+            '1|def print_hello_world()\n'
+            "2|    puts 'Hello World'\n"
+            '(this is the end of the file)\n'
+            '-------------------------------------------------\n\n'
+            '[This is the original code before your edit]\n'
+            '-------------------------------------------------\n'
+            '(this is the beginning of the file)\n'
+            '1|\n'
+            '(this is the end of the file)\n'
+            '-------------------------------------------------\n'
+            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+        )
+        assert result.split('\n') == expected.split('\n')

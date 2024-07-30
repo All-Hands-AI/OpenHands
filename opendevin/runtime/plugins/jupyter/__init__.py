@@ -3,8 +3,9 @@ import subprocess
 import time
 from dataclasses import dataclass
 
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import Action, IPythonRunCellAction
-from opendevin.events.observation import IPythonRunCellObservation, Observation
+from opendevin.events.observation import IPythonRunCellObservation
 from opendevin.runtime.plugins.requirement import Plugin, PluginRequirement
 from opendevin.runtime.utils import find_available_tcp_port
 
@@ -29,33 +30,38 @@ class JupyterRequirement(PluginRequirement):
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
-    def initialize(self, kernel_id: str = 'opendevin-default'):
+    async def initialize(self, username: str, kernel_id: str = 'opendevin-default'):
         self.kernel_gateway_port = find_available_tcp_port()
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
-            [
-                '/opendevin/miniforge3/bin/mamba',
-                'run',
-                '-n',
-                'base',
-                'poetry',
-                'run',
-                'jupyter',
-                'kernelgateway',
-                '--KernelGatewayApp.ip=0.0.0.0',
-                f'--KernelGatewayApp.port={self.kernel_gateway_port}',
-            ],
+            (
+                f"su - {username} -s /bin/bash << 'EOF'\n"
+                'cd /opendevin/code\n'
+                'export POETRY_VIRTUALENVS_PATH=/opendevin/poetry;\n'
+                '/opendevin/miniforge3/bin/mamba run -n base '
+                'poetry run jupyter kernelgateway '
+                '--KernelGatewayApp.ip=0.0.0.0 '
+                f'--KernelGatewayApp.port={self.kernel_gateway_port}\n'
+                'EOF'
+            ),
             stderr=subprocess.STDOUT,
+            shell=True,
         )
         # read stdout until the kernel gateway is ready
+        output = ''
         while True and self.gateway_process.stdout is not None:
             line = self.gateway_process.stdout.readline().decode('utf-8')
+            output += line
             if 'at' in line:
                 break
             time.sleep(1)
-            print('Waiting for jupyter kernel gateway to start...')
+            logger.debug('Waiting for jupyter kernel gateway to start...')
 
-    async def run(self, action: Action) -> Observation:
+        logger.info(
+            f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
+        )
+
+    async def run(self, action: Action) -> IPythonRunCellObservation:
         if not isinstance(action, IPythonRunCellAction):
             raise ValueError(
                 f'Jupyter plugin only supports IPythonRunCellAction, but got {action}'
