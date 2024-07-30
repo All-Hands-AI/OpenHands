@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import toml
+from pytest import TempPathFactory
 
 from opendevin.runtime.utils.runtime_build import (
     _generate_dockerfile,
@@ -19,8 +20,8 @@ RUNTIME_IMAGE_PREFIX = 'od_runtime'
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory):
-    return tmp_path_factory.mktemp('test_runtime_build')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_runtime_build'))
 
 
 def test_put_source_code_to_dir(temp_dir):

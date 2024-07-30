@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from pytest import TempPathFactory
 
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
@@ -11,8 +12,8 @@ from opendevin.storage import get_file_store
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory):
-    return tmp_path_factory.mktemp('test_event_stream')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_event_stream'))
 
 
 def collect_events(stream):

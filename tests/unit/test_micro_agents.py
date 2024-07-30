@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
+from pytest import TempPathFactory
 
 from agenthub.micro.registry import all_microagents
 from opendevin.controller.agent import Agent
@@ -16,8 +17,8 @@ from opendevin.storage import get_file_store
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory):
-    return tmp_path_factory.mktemp('test_micro_agents')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_micro_agents'))
 
 
 @pytest.fixture

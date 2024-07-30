@@ -2,6 +2,7 @@ import logging
 from unittest.mock import Mock, patch
 
 import pytest
+from pytest import TempPathFactory
 
 from opendevin.controller.agent_controller import AgentController
 from opendevin.controller.state.state import State
@@ -28,8 +29,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory):
-    return tmp_path_factory.mktemp('test_is_stuck')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_is_stuck'))
 
 
 @pytest.fixture

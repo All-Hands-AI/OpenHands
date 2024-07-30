@@ -6,6 +6,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+from pytest import TempPathFactory
 
 from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.logger import opendevin_logger as logger
@@ -39,8 +40,8 @@ def print_method_name(request):
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory):
-    return tmp_path_factory.mktemp('test_runtime')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_runtime'))
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
