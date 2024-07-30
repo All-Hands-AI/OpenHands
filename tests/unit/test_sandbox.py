@@ -1,5 +1,4 @@
 import os
-import pathlib
 import tempfile
 
 import pytest
@@ -43,7 +42,6 @@ def print_method_name(request):
 def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path(temp_dir).mkdir(parents=True, exist_ok=True)
         yield temp_dir
 
 

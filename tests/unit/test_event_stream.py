@@ -1,5 +1,4 @@
 import json
-import pathlib
 import tempfile
 
 import pytest
@@ -16,7 +15,6 @@ from opendevin.storage import get_file_store
 def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path(temp_dir).mkdir(parents=True, exist_ok=True)
         yield temp_dir
 
 
