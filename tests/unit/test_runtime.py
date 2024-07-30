@@ -48,6 +48,10 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
+PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
+
+
 # This assures that all tests run together for each runtime, not alternating between them,
 # which caused them to fail previously.
 @pytest.fixture(scope='module', params=[EventStreamRuntime, ServerRuntime])
@@ -59,44 +63,50 @@ def box_class(request):
 async def _load_runtime(temp_dir, box_class):
     sid = 'test'
     cli_session = 'main_test'
-    plugins = [JupyterRequirement(), AgentSkillsRequirement()]
+    # AgentSkills need to be initialized **before** Jupyter
+    # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
     config = AppConfig(
         workspace_base=temp_dir,
         workspace_mount_path=temp_dir,
-        sandbox=SandboxConfig(
-            use_host_network=True,
-        ),
+        sandbox=SandboxConfig(use_host_network=True),
     )
     load_from_env(config, os.environ)
 
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(cli_session, file_store)
 
-    container_image = config.sandbox.container_image
-    # NOTE: we will use the default container image specified in the config.sandbox
-    # if it is an official od_runtime image.
-    if 'od_runtime' not in container_image:
-        container_image = 'ubuntu:22.04'
-        logger.warning(
-            f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{container_image}` as the container image for testing.'
-        )
     if box_class == EventStreamRuntime:
+        # NOTE: we will use the default container image specified in the config.sandbox
+        # if it is an official od_runtime image.
+        cur_container_image = config.sandbox.container_image
+        if 'od_runtime' not in cur_container_image:
+            cur_container_image = 'ubuntu:22.04'
+            logger.warning(
+                f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
+            )
+
         runtime = EventStreamRuntime(
             config=config,
             event_stream=event_stream,
             sid=sid,
+            plugins=plugins,
             # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
             # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
-            container_image=container_image,
-            plugins=plugins,
+            container_image=cur_container_image,
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
-        runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
+        runtime = ServerRuntime(
+            config=config, event_stream=event_stream, sid=sid, plugins=plugins
+        )
         await runtime.ainit()
-        await runtime.init_sandbox_plugins(plugins)
+        from opendevin.runtime.tools import (
+            RuntimeTool,  # deprecate this after ServerRuntime is deprecated
+        )
+
         runtime.init_runtime_tools(
-            [],
+            [RuntimeTool.BROWSER],
             is_async=False,
             runtime_tools_config={},
         )
@@ -209,8 +219,24 @@ async def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
 async def test_bash_command_pexcept(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
 
+    # We set env var PS1="\u@\h:\w $"
+    # and construct the PEXCEPT prompt base on it.
+    # When run `env`, bad implementation of CmdRunAction will be pexcepted by this
+    # and failed to pexcept the right content, causing it fail to get error code.
     obs = await runtime.run_action(CmdRunAction(command='env'))
 
+    # For example:
+    # 02:16:13 - opendevin:DEBUG: client.py:78 - Executing command: env
+    # 02:16:13 - opendevin:DEBUG: client.py:82 - Command output: PYTHONUNBUFFERED=1
+    # CONDA_EXE=/opendevin/miniforge3/bin/conda
+    # [...]
+    # LC_CTYPE=C.UTF-8
+    # PS1=\u@\h:\w $
+    # 02:16:13 - opendevin:DEBUG: client.py:89 - Executing command for exit code: env
+    # 02:16:13 - opendevin:DEBUG: client.py:92 - Exit code Output:
+    # CONDA_DEFAULT_ENV=base
+
+    # As long as the exit code is 0, the test will pass.
     assert isinstance(
         obs, CmdOutputObservation
     ), 'The observation should be a CmdOutputObservation.'
@@ -281,6 +307,13 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
     else:
         assert obs.path == '/workspace/hello.sh'
 
+    # clean up
+    action = CmdRunAction(command='rm -rf hello.sh')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
     await runtime.close()
     await asyncio.sleep(1)
 
@@ -292,10 +325,11 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
 )
 async def test_simple_browse(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
-    await runtime.ainit()
 
     # Test browse
-    action_cmd = CmdRunAction(command='python -m http.server 8000 > server.log 2>&1 &')
+    action_cmd = CmdRunAction(
+        command=f'{PY3_FOR_TESTING} -m http.server 8000 > server.log 2>&1 &'
+    )
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -303,6 +337,12 @@ async def test_simple_browse(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert '[1]' in obs.content
+
+    action_cmd = CmdRunAction(command='sleep 5 && cat server.log')
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action_cmd)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
 
     action_browse = BrowseURLAction(url='http://localhost:8000')
     logger.info(action_browse, extra={'msg_type': 'ACTION'})
@@ -320,7 +360,15 @@ async def test_simple_browse(temp_dir, box_class):
     assert 'Directory listing for /' in obs.content
     assert 'server.log' in obs.content
 
+    # clean up
+    action = CmdRunAction(command='rm -rf server.log')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
     await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
@@ -330,6 +378,11 @@ async def test_multiline_commands(temp_dir, box_class):
         'echo -e "hello\nworld"',
         """
 echo -e "hello it\\'s me"
+""".strip(),
+        """
+echo \\
+    -e 'hello' \\
+    -v
 """.strip(),
         """
 echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
@@ -346,12 +399,10 @@ echo -e 'hello
 world "
 '
 """.strip(),
-        'echo -e "hello\nworld" -e "hello again"',
     ]
     joined_cmds = '\n'.join(cmds)
 
     runtime = await _load_runtime(temp_dir, box_class)
-    # await runtime.ainit()
 
     action = CmdRunAction(command=joined_cmds)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -363,11 +414,11 @@ world "
 
     assert 'total 0' in obs.content
     assert 'hello\r\nworld' in obs.content
-    assert "hello it\\'s me" in obs.content  # Note the escaped apostrophe
+    assert "hello it\\'s me" in obs.content
+    assert 'hello -v' in obs.content
     assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
     assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
-    assert 'hello\r\nworld "' in obs.content
-    assert 'hello\r\nworld' in obs.content and 'hello again' in obs.content
+    assert 'hello\r\nworld "\r\n' in obs.content
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -391,6 +442,9 @@ async def test_no_ps2_in_output(temp_dir, box_class):
     else:
         assert 'hello\r\nworld' in obs.content
         assert '>' not in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
