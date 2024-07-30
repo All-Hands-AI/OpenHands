@@ -606,6 +606,7 @@
   },
   "CHAT_INTERFACE$INPUT_AUTO_MESSAGE":{
     "en": "Sent the default Auto Msg 🤖"
+  },
   "CHAT_INTERFACE$USER_ASK_CONFIRMATION": {
     "en": "Do you want to continue with this action?",
     "de": "Möchten Sie mit dieser Aktion fortfahren?",
