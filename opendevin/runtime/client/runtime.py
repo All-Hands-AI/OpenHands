@@ -8,7 +8,7 @@ import tenacity
 
 from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream
+from opendevin.events import EventStream
 from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -18,7 +18,6 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.action.action import Action
-from opendevin.events.event import Event
 from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
@@ -66,7 +65,6 @@ class EventStreamRuntime(Runtime):
         )
         self.container_name = self.container_name_prefix + self.instance_id
 
-        self.plugins = plugins if plugins is not None else []
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
@@ -112,9 +110,11 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Starting container with image: {self.container_image} and name: {self.container_name}'
             )
-            if plugins is None:
-                plugins = []
-            plugin_names = ' '.join([plugin.name for plugin in plugins])
+            plugin_arg = ''
+            if plugins is not None and len(plugins) > 0:
+                plugin_arg = (
+                    f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+                )
 
             network_mode: str | None = None
             port_mapping: dict[str, int] | None = None
@@ -141,7 +141,7 @@ class EventStreamRuntime(Runtime):
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
-                    f'--plugins {plugin_names} '
+                    f'{plugin_arg}'
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
                     f'--user-id {self.config.sandbox.user_id}'
                 ),
@@ -204,16 +204,6 @@ class EventStreamRuntime(Runtime):
                 pass
         if close_client:
             self.docker_client.close()
-
-    async def on_event(self, event: Event) -> None:
-        logger.info(f'EventStreamRuntime: on_event triggered: {event}')
-        if isinstance(event, Action):
-            logger.info(event, extra={'msg_type': 'ACTION'})
-            observation = await self.run_action(event)
-            observation._cause = event.id  # type: ignore[attr-defined]
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-            source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action, timeout: int = 600) -> Observation:
         async with self.action_semaphore:
