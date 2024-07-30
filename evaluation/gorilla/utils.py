@@ -10,7 +10,6 @@ from ast_eval_th import ast_eval_th
 # This function is modified from Gorilla's APIBench implementations (https://github.com/ShishirPatil/gorilla/blob/main/eval/get_llm_responses.py).
 def encode_question(question, api_name):
     """Encode multiple prompt instructions into a single string."""
-
     prompts = []
     if api_name == 'torch':
         api_name = 'torchhub'

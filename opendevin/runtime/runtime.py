@@ -1,17 +1,19 @@
 import asyncio
+import atexit
+import copy
+import json
+import os
 from abc import abstractmethod
 from typing import Any, Optional
 
-from opendevin.core.config import config
-from opendevin.core.exceptions import BrowserInitException
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events import EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
-    AgentRecallAction,
+    ActionConfirmationStatus,
     BrowseInteractiveAction,
     BrowseURLAction,
-    CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -23,34 +25,27 @@ from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    RejectObservation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime import (
-    DockerSSHBox,
-    E2BBox,
-    LocalBox,
-    Sandbox,
-)
-from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
-from opendevin.storage import FileStore, InMemoryFileStore
+from opendevin.storage import FileStore
 
 
-def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
-    if box_type == 'local':
-        return LocalBox()
-    elif box_type == 'ssh':
-        return DockerSSHBox(sid=sid)
-    elif box_type == 'e2b':
-        return E2BBox()
-    else:
-        raise ValueError(f'Invalid sandbox type: {box_type}')
+def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
+    ret = {}
+    for key in os.environ:
+        if key.startswith('SANDBOX_ENV_'):
+            sandbox_key = key.removeprefix('SANDBOX_ENV_')
+            ret[sandbox_key] = os.environ[key]
+    if sandbox_config.enable_auto_lint:
+        ret['ENABLE_AUTO_LINT'] = 'true'
+    return ret
 
 
 class Runtime:
-    """
-    The runtime is how the agent interacts with the external environment.
+    """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
     sid is the session id, which is used to identify the current user session.
@@ -58,35 +53,57 @@ class Runtime:
 
     sid: str
     file_store: FileStore
+    DEFAULT_ENV_VARS: dict[str, str]
 
     def __init__(
         self,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
-        sandbox: Sandbox | None = None,
     ):
         self.sid = sid
-        if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
-            self._is_external_sandbox = False
-        else:
-            self.sandbox = sandbox
-            self._is_external_sandbox = True
-        self.browser: BrowserEnv | None = None
-        self.file_store = InMemoryFileStore()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self._bg_task = asyncio.create_task(self._start_background_observation_loop())
+        self.config = copy.deepcopy(config)
+        self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
+        atexit.register(self.close_sync)
 
-    def close(self):
-        if not self._is_external_sandbox:
-            self.sandbox.close()
-        if self.browser is not None:
-            self.browser.close()
-        self._bg_task.cancel()
+    async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
+        """
+        Initialize the runtime (asynchronously).
+
+        This method should be called after the runtime's constructor.
+        """
+        if self.DEFAULT_ENV_VARS:
+            logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
+            await self.add_env_vars(self.DEFAULT_ENV_VARS)
+        if env_vars is not None:
+            logger.debug(f'Adding provided env vars: {env_vars}')
+            await self.add_env_vars(env_vars)
+
+    async def close(self) -> None:
+        pass
+
+    def close_sync(self) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running event loop, use asyncio.run()
+            asyncio.run(self.close())
+        else:
+            # There is a running event loop, create a task
+            if loop.is_running():
+                loop.create_task(self.close())
+            else:
+                loop.run_until_complete(self.close())
+
+    # ====================================================================
+    # Methods we plan to deprecate when we move to new EventStreamRuntime
+    # ====================================================================
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        self.sandbox.init_plugins(plugins)
+        # TODO: deprecate this method when we move to the new EventStreamRuntime
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     def init_runtime_tools(
         self,
@@ -94,32 +111,43 @@ class Runtime:
         runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
         is_async: bool = True,
     ) -> None:
-        # if browser in runtime_tools, init it
-        if RuntimeTool.BROWSER in runtime_tools:
-            if runtime_tools_config is None:
-                runtime_tools_config = {}
-            browser_env_config = runtime_tools_config.get(RuntimeTool.BROWSER, {})
-            try:
-                self.browser = BrowserEnv(is_async=is_async, **browser_env_config)
-            except BrowserInitException:
-                logger.warn(
-                    'Failed to start browser environment, web browsing functionality will not work'
-                )
+        # TODO: deprecate this method when we move to the new EventStreamRuntime
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    # ====================================================================
+
+    async def add_env_vars(self, env_vars: dict[str, str]) -> None:
+        cmd = ''
+        for key, value in env_vars.items():
+            # Note: json.dumps gives us nice escaping for free
+            cmd += f'export {key}={json.dumps(value)}; '
+        if not cmd:
+            return
+        cmd = cmd.strip()
+        logger.debug(f'Adding env var: {cmd}')
+        obs: Observation = await self.run(CmdRunAction(cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
+            )
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
-            source = event.source if event.source else EventSource.AGENT
-            self.event_stream.add_event(observation, source)
+            self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
-        """
-        Run an action and return the resulting observation.
+        """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
         if not action.runnable:
+            return NullObservation('')
+        if (
+            hasattr(action, 'is_confirmed')
+            and action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION
+        ):
             return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
         if action_type not in ACTION_TYPE_TO_CLASS:
@@ -128,38 +156,23 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_type} is not supported in the current runtime.'
             )
+        if (
+            hasattr(action, 'is_confirmed')
+            and action.is_confirmed == ActionConfirmationStatus.REJECTED
+        ):
+            return RejectObservation(
+                'Action has been rejected by the user! Waiting for further user input.'
+            )
         observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
-    async def _start_background_observation_loop(self):
-        while True:
-            await self.submit_background_obs()
-            await asyncio.sleep(1)
-
-    async def submit_background_obs(self):
-        """
-        Returns all observations that have accumulated in the runtime's background.
-        Right now, this is just background commands, but could include e.g. asynchronous
-        events happening in the browser.
-        """
-        for _id, cmd in self.sandbox.background_commands.items():
-            output = cmd.read_logs()
-            if output:
-                self.event_stream.add_event(
-                    CmdOutputObservation(
-                        content=output, command_id=_id, command=cmd.command
-                    ),
-                    EventSource.AGENT,  # FIXME: use the original action's source
-                )
-        await asyncio.sleep(1)
+    # ====================================================================
+    # Implement these methods in the subclass
+    # ====================================================================
 
     @abstractmethod
     async def run(self, action: CmdRunAction) -> Observation:
-        pass
-
-    @abstractmethod
-    async def kill(self, action: CmdKillAction) -> Observation:
         pass
 
     @abstractmethod
@@ -180,8 +193,4 @@ class Runtime:
 
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        pass
-
-    @abstractmethod
-    async def recall(self, action: AgentRecallAction) -> Observation:
         pass

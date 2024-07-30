@@ -1,15 +1,15 @@
 from unittest.mock import MagicMock, patch
 
-from opendevin.runtime.docker.image_agnostic_util import (
+from opendevin.runtime.utils.image_agnostic import (
     _get_new_image_name,
-    generate_dockerfile_content,
+    generate_dockerfile,
     get_od_sandbox_image,
 )
 
 
-def test_generate_dockerfile_content():
+def test_generate_dockerfile():
     base_image = 'debian:11'
-    dockerfile_content = generate_dockerfile_content(base_image)
+    dockerfile_content = generate_dockerfile(base_image)
     assert base_image in dockerfile_content
     assert (
         'RUN apt update && apt install -y openssh-server wget sudo'
@@ -17,7 +17,8 @@ def test_generate_dockerfile_content():
     )
 
 
-def test_get_new_image_name():
+def test_get_new_image_name_legacy():
+    # test non-eventstream runtime (sandbox-based)
     base_image = 'debian:11'
     new_image_name = _get_new_image_name(base_image)
     assert new_image_name == 'od_sandbox:debian__11'
@@ -31,8 +32,8 @@ def test_get_new_image_name():
     assert new_image_name == 'od_sandbox:ubuntu__latest'
 
 
-@patch('opendevin.runtime.docker.image_agnostic_util._build_sandbox_image')
-@patch('opendevin.runtime.docker.image_agnostic_util.docker.DockerClient')
+@patch('opendevin.runtime.utils.image_agnostic._build_sandbox_image')
+@patch('opendevin.runtime.utils.image_agnostic.docker.DockerClient')
 def test_get_od_sandbox_image(mock_docker_client, mock_build_sandbox_image):
     base_image = 'debian:11'
     mock_docker_client.images.list.return_value = [

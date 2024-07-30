@@ -18,6 +18,11 @@ source ~/.bashrc
 echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
 export PATH=/opendevin/plugins/jupyter:$PATH
 
+# Temporary add /opendevin/miniforge3/bin to PATH
+# will not persist after the end of the script
+# This fixes https://github.com/OpenDevin/OpenDevin/pull/2489#issuecomment-2223088169
+export PATH=/opendevin/miniforge3/bin:$PATH
+
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
@@ -64,7 +69,7 @@ echo "JupyterKernelGateway started with PID: $JUPYTER_GATEWAY_PID"
 # Start the jupyter_server
 export JUPYTER_EXEC_SERVER_PORT=$(find_free_port 30000 40000)
 echo "export JUPYTER_EXEC_SERVER_PORT=$JUPYTER_EXEC_SERVER_PORT" >> ~/.bashrc
-$OPENDEVIN_PYTHON_INTERPRETER /opendevin/plugins/jupyter/execute_server > /opendevin/logs/jupyter_execute_server.log 2>&1 &
+$OPENDEVIN_PYTHON_INTERPRETER /opendevin/plugins/jupyter/execute_server.py > /opendevin/logs/jupyter_execute_server.log 2>&1 &
 export JUPYTER_EXEC_SERVER_PID=$!
 echo "export JUPYTER_EXEC_SERVER_PID=$JUPYTER_EXEC_SERVER_PID" >> ~/.bashrc
 echo "Execution server started with PID: $JUPYTER_EXEC_SERVER_PID"

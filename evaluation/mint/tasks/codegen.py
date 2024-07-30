@@ -74,7 +74,6 @@ class HumanEvalTask(CodeGenTask):
         Modified from:
         https://github.com/bigcode-project/bigcode-evaluation-harness/blob/d61afde130005ecc65cf800ad8eca790a9bc2115/lm_eval/tasks/humaneval.py#L56
         """
-
         # STOP_WORDS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
         # # Remove the last block of the code containing stop_words for HumanEval
         # string_list = re.split("(%s)" % "|".join(STOP_WORDS), solution)

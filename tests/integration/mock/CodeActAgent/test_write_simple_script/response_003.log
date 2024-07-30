@@ -1,4 +1,5 @@
-The shell script 'hello.sh' has been created successfully with the correct content. Now, let's run it to make sure it works as expected:
+The `hello.sh` script has been created and updated to print 'hello'. Now, let's make the script executable and run it.
 
 <execute_bash>
+chmod +x hello.sh
 ./hello.sh

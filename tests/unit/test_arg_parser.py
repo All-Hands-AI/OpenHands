@@ -10,7 +10,7 @@ def test_help_message(capsys):
     captured = capsys.readouterr()
     expected_help_message = """
 usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
-              [-m MODEL_NAME] [-i MAX_ITERATIONS] [-b MAX_BUDGET_PER_TASK]
+              [-i MAX_ITERATIONS] [-b MAX_BUDGET_PER_TASK]
               [--eval-output-dir EVAL_OUTPUT_DIR]
               [--eval-n-limit EVAL_N_LIMIT]
               [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
@@ -26,9 +26,7 @@ options:
   -f FILE, --file FILE  Path to a file containing the task. Overrides -t if
                         both are provided.
   -c AGENT_CLS, --agent-cls AGENT_CLS
-                        The agent class to use
-  -m MODEL_NAME, --model-name MODEL_NAME
-                        The (litellm) model name to use
+                        Name of the default agent to use
   -i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS
                         The maximum number of iterations to run the agent
   -b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK
@@ -43,8 +41,9 @@ options:
   --eval-note EVAL_NOTE
                         The note to add to the evaluation directory
   -l LLM_CONFIG, --llm-config LLM_CONFIG
-                        The group of llm settings, e.g. a [llama3] section in
-                        the toml file. Overrides model if both are provided.
+                        Replace default LLM ([llm] section in config.toml)
+                        config with the specified LLM config, e.g. "llama3"
+                        for [llm.llama3] section in config.toml
 """
 
     actual_lines = captured.out.strip().split('\n')

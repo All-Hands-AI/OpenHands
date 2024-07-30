@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class BrowserOutputObservation(Observation):
-    """
-    This data class represents the output of a browser.
-    """
+    """This data class represents the output of a browser."""
 
     url: str
     screenshot: str = field(repr=False)  # don't show in repr

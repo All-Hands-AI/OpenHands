@@ -15,11 +15,7 @@ import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import { Feedback } from "#/services/feedbackService";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
-import { removeApiKey } from "#/utils/utils";
-import Session from "#/services/session";
-import { getToken } from "#/services/auth";
 import beep from "#/utils/beep";
 
 interface ScrollButtonProps {
@@ -55,15 +51,9 @@ function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const feedbackVersion = "1.0";
-  const [feedback, setFeedback] = React.useState<Feedback>({
-    email: "",
-    feedback: "positive",
-    permissions: "private",
-    trajectory: [],
-    token: "",
-    version: feedbackVersion,
-  });
+  const [feedbackPolarity, setFeedbackPolarity] = React.useState<
+    "positive" | "negative"
+  >("positive");
   const [feedbackShared, setFeedbackShared] = React.useState(0);
   const [autoMode, setAutoMode] = useState(false);
 
@@ -74,26 +64,13 @@ function ChatInterface() {
   } = useDisclosure();
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
-    setFeedback((prev) => ({
-      ...prev,
-      feedback: polarity,
-      trajectory: removeApiKey(Session._history),
-      token: getToken(),
-    }));
     onFeedbackModalOpen();
+    setFeedbackPolarity(polarity);
   };
 
   const handleSendMessage = (content: string, dispatchContent: string = "") => {
     dispatch(addUserMessage(dispatchContent || content));
     sendChatMessage(content);
-  };
-
-  const handleEmailChange = (key: string) => {
-    setFeedback({ ...feedback, email: key } as Feedback);
-  };
-
-  const handlePermissionsChange = (permissions: "public" | "private") => {
-    setFeedback({ ...feedback, permissions } as Feedback);
   };
 
   const { t } = useTranslation();
@@ -160,7 +137,7 @@ function ChatInterface() {
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
-          <Chat messages={messages} />
+          <Chat messages={messages} curAgentState={curAgentState} />
         </div>
       </div>
 
@@ -207,13 +184,14 @@ function ChatInterface() {
       </div>
 
       <ChatInput
-        disabled={curAgentState === AgentState.LOADING}
+        disabled={
+          curAgentState === AgentState.LOADING ||
+          curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+        }
         onSendMessage={handleSendMessage}
       />
       <FeedbackModal
-        feedback={feedback}
-        handleEmailChange={handleEmailChange}
-        handlePermissionsChange={handlePermissionsChange}
+        polarity={feedbackPolarity}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
         onSendFeedback={() => setFeedbackShared(messages.length)}

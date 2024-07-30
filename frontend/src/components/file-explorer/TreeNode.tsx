@@ -58,7 +58,9 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   };
 
   React.useEffect(() => {
-    refreshChildren();
+    (async () => {
+      await refreshChildren();
+    })();
   }, [refreshID, isOpen]);
 
   const handleClick = async () => {

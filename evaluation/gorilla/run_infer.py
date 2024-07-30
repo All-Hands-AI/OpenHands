@@ -12,15 +12,16 @@ from tqdm import tqdm
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 from .utils import encode_question, get_data
+
+config = load_app_config()
 
 
 def cleanup():
@@ -37,13 +38,15 @@ def codeact_user_response(state: State) -> str:
         'Please run the following command: <execute_bash> exit </execute_bash>.\n'
         #'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
+
+    # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
     if state.history:
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
-        if len(user_msgs) >= 2:
+        if len(user_msgs) > 2:
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
@@ -52,13 +55,8 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -116,6 +114,8 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
             run_agent_controller(
                 agent,
                 instruction,
+                max_iterations=metadata.max_iterations,
+                max_budget_per_task=config.max_budget_per_task,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),
@@ -129,11 +129,9 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
         if state is None:
             raise ValueError('State should not be None.')
 
-        model_answer_raw = ''
-        for act, _ in reversed(state.history):
-            if isinstance(act, MessageAction) and act.source == 'agent':
-                model_answer_raw = act.content
-                break
+        # retrieve the last message from the agent
+        model_answer_raw = state.history.get_last_agent_message()
+
         # attempt to parse model_answer
         _, _, ast_eval = get_data(metadata['hub'])
         correct, hallucination = ast_eval(question_id, model_answer_raw)
@@ -141,6 +139,12 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
         logger.info(
             f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
         )
+
+        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        histories = state.history.compatibility_for_eval_history_pairs()
+
         # Save the output
         output = {
             'question_id': question_id,
@@ -149,11 +153,8 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
             'hallucination': hallucination,
             'answer_id': 'None',
             'model_id': metadata['model_name'],
-            'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            'metadata': metadata.model_dump(),
+            'history': histories,
             'metrics': metrics,
             'error': state.last_error if state and state.last_error else None,
         }

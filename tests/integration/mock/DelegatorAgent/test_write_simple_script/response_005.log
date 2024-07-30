@@ -1,8 +1,8 @@
+```json
 {
-  "action": "finish",
+  "action": "run",
   "args": {
-    "outputs": {
-      "result": "hello"
-    }
+    "command": "./hello.sh"
   }
 }
+```

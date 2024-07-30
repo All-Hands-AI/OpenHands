@@ -15,10 +15,6 @@ Further references:
 - https://paperswithcode.com/dataset/gpqa
 - https://github.com/idavidrein/gpqa
 
-## TODOs
-- [ ] Add support for other agents (currently only tested on `CodeActAgent`)
-- [ ] Complete full benchmark evaluation
-- [ ] Fix intermittent `BrowserException: Failed to start browser environment` error
 
 ## Setup Environment
 
@@ -27,24 +23,18 @@ Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/D
 
 ## Configure OpenDevin and your LLM
 
-Create a `config.toml` file if it does not exist at the root of the workspace.
+Create a `config.toml` file (you can copy from `config.template.toml`) if it does not exist at the root of the workspace.
 
 Add the following configurations:
 
 ```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-enable_auto_lint = true
-
 # TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
+[llm.eval_gpt4_1106_preview]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
 temperature = 0.0
 
-[eval_azure_openai_compatible_model]
+[llm.eval_azure_openai_compatible_model]
 model = "AZURE_OPENAI_EXACT_DEPLOYMENT_MODEL_NAME"
 base_url = "AZURE_OPENAI_ENDPOINT"
 api_key = "AZURE_ENDPOINT_API_KEY"

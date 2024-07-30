@@ -4,8 +4,7 @@ from opendevin.events.action import Action
 
 
 class ResponseParser(ABC):
-    """
-    This abstract base class is a general interface for an response parser dedicated to
+    """This abstract base class is a general interface for an response parser dedicated to
     parsing the action from the response from the LLM.
     """
 
@@ -17,8 +16,7 @@ class ResponseParser(ABC):
 
     @abstractmethod
     def parse(self, response: str) -> Action:
-        """
-        Parses the action from the response from the LLM.
+        """Parses the action from the response from the LLM.
 
         Parameters:
         - response (str): The response from the LLM.
@@ -30,8 +28,7 @@ class ResponseParser(ABC):
 
     @abstractmethod
     def parse_response(self, response) -> str:
-        """
-        Parses the action from the response from the LLM.
+        """Parses the action from the response from the LLM.
 
         Parameters:
         - response (str): The response from the LLM.
@@ -43,8 +40,7 @@ class ResponseParser(ABC):
 
     @abstractmethod
     def parse_action(self, action_str: str) -> Action:
-        """
-        Parses the action from the response from the LLM.
+        """Parses the action from the response from the LLM.
 
         Parameters:
         - action_str (str): The response from the LLM.
@@ -56,21 +52,16 @@ class ResponseParser(ABC):
 
 
 class ActionParser(ABC):
-    """
-    This abstract base class is a general interface for an action parser dedicated to
+    """This abstract base class is a general interface for an action parser dedicated to
     parsing the action from the action str from the LLM.
     """
 
     @abstractmethod
     def check_condition(self, action_str: str) -> bool:
-        """
-        Check if the action string can be parsed by this parser.
-        """
+        """Check if the action string can be parsed by this parser."""
         pass
 
     @abstractmethod
     def parse(self, action_str: str) -> Action:
-        """
-        Parses the action from the action string from the LLM response.
-        """
+        """Parses the action from the action string from the LLM response."""
         pass

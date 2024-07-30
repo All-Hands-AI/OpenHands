@@ -1,4 +1,4 @@
-Great! The shell script has been created successfully. Let's verify its contents:
+Now, I will write the content to the `hello.sh` file to print 'hello'.
 
-<execute_bash>
-cat hello.sh
+<execute_ipython>
+insert_content_at_line('hello.sh', 1, '#!/bin/bash\necho "hello"')

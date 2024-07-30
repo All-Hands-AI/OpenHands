@@ -100,6 +100,16 @@ to cover the cost, ask one of the maintainers to regenerate for you. Before aski
 please try running the script first *without* setting `LLM_API_KEY`.
 Chance is, the test could be fixed after step 2.
 
+## Regenerate Integration Tests without testing first
+
+If you want to regenerate all prompts and/or responses without running the existing tests first, you can run:
+
+```bash
+FORCE_REGENERATE=true ./tests/integration/regenerate.sh
+```
+
+This will skip the first step and directly regenerate all tests when you know that the tests will fail due to changes in the prompt or the agent code itself and will save time.
+
 ## Regenerate a Specific Agent and/or Test
 
 If you only want to run a specific test, set environment variable
