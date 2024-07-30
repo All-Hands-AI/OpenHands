@@ -80,6 +80,11 @@ class RuntimeClient:
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
 
+            if isinstance(plugin, JupyterPlugin):
+                await self.run_ipython(
+                    IPythonRunCellAction(code=f'import os; os.chdir("{self.pwd}")')
+                )
+
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
