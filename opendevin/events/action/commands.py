@@ -33,7 +33,6 @@ class IPythonRunCellAction(Action):
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
-    kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'

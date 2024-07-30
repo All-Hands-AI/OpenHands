@@ -113,63 +113,74 @@ class ServerRuntime(Runtime):
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command)
 
+    def restart_kernel(self) -> str:
+        if self.config.default_agent in ['CodeActAgent', 'CodeActSWEAgent']:
+            kernel_init_code = 'from agentskills import *'
+        else:
+            return ''
+
+        restart_kernel_code = (
+            'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
+        )
+        self._run_command(
+            (
+                "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
+                f'{restart_kernel_code}\n'
+                'EOL'
+            )
+        )
+        obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
+        output = obs.content
+        if "{'status': 'ok', 'restart': True}" != output.strip():
+            print(output)
+            output = '\n[Failed to restart the kernel]'
+        else:
+            output = '\n[Kernel restarted successfully]'
+
+        # re-init the kernel after restart
+        self._run_command(
+            (
+                f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
+                f'{kernel_init_code}\n'
+                'EOL'
+            ),
+        )
+        self._run_command(
+            'cat /tmp/opendevin_jupyter_init.py | execute_cli',
+        )
+        return output
+
+    def parse_pip_output(self, code, output) -> str:
+        print(output)
+        package_names = code.split(' ', 2)[-1]
+        is_single_package = ' ' not in package_names
+
+        if 'Successfully installed' in output:
+            output = '[Package installed successfully]'
+            if (
+                'Note: you may need to restart the kernel to use updated packages.'
+                in output
+            ):
+                output += self.restart_kernel()
+            else:
+                # restart kernel if installed via bash too
+                self.restart_kernel()
+        elif (
+            is_single_package
+            and f'Requirement already satisfied: {package_names}' in output
+        ):
+            output = '[Package already installed]'
+
+        return output
+
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         self._run_command(
             f"cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n{action.code}\nEOL"
         )
-
-        # run the code
         obs = self._run_command('cat /tmp/opendevin_jupyter_temp.py | execute_cli')
         output = obs.content
-        if 'pip install' in action.code:
-            print(output)
-            package_names = action.code.split(' ', 2)[-1]
-            is_single_package = ' ' not in package_names
-
-            if 'Successfully installed' in output:
-                restart_kernel = 'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
-                if (
-                    'Note: you may need to restart the kernel to use updated packages.'
-                    in output
-                ):
-                    self._run_command(
-                        (
-                            "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
-                            f'{restart_kernel}\n'
-                            'EOL'
-                        )
-                    )
-                    obs = self._run_command(
-                        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-                    )
-                    output = '[Package installed successfully]'
-                    if "{'status': 'ok', 'restart': True}" != obs.content.strip():
-                        print(obs.content)
-                        output += (
-                            '\n[But failed to restart the kernel to load the package]'
-                        )
-                    else:
-                        output += (
-                            '\n[Kernel restarted successfully to load the package]'
-                        )
-
-                    # re-init the kernel after restart
-                    if action.kernel_init_code:
-                        self._run_command(
-                            (
-                                f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
-                                f'{action.kernel_init_code}\n'
-                                'EOL'
-                            ),
-                        )
-                        obs = self._run_command(
-                            'cat /tmp/opendevin_jupyter_init.py | execute_cli',
-                        )
-            elif (
-                is_single_package
-                and f'Requirement already satisfied: {package_names}' in output
-            ):
-                output = '[Package already installed]'
+        if action.code.startswith('!pip install'):
+            output = self.parse_pip_output(action.code, output)
         return IPythonRunCellObservation(content=output, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
@@ -206,17 +217,8 @@ class ServerRuntime(Runtime):
     def _run_command(self, command: str) -> Observation:
         try:
             exit_code, output = self.sandbox.execute(command)
-            if 'pip install' in command:
-                package_names = command.split(' ', 2)[-1]
-                is_single_package = ' ' not in package_names
-                print(output)
-                if 'Successfully installed' in output:
-                    output = '[Package installed successfully]'
-                elif (
-                    is_single_package
-                    and f'Requirement already satisfied: {package_names}' in output
-                ):
-                    output = '[Package already installed]'
+            if command.startswith('pip install'):
+                output = self.parse_pip_output(command, output)
             return CmdOutputObservation(
                 command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
