@@ -344,6 +344,13 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     else:
         assert obs.path == '/workspace/hello.sh'
 
+    # clean up
+    action = CmdRunAction(command='rm -rf hello.sh')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
     await runtime.close()
     await asyncio.sleep(1)
 
@@ -385,6 +392,13 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     assert obs.last_browser_action_error == ''
     assert 'Directory listing for /' in obs.content
     assert 'server.log' in obs.content
+
+    # clean up
+    action = CmdRunAction(command='rm -rf server.log')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -602,6 +616,16 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
     assert obs.exit_code == 0
     assert 'foo.txt' in obs.content
 
+    # clean up: this is needed, since CI will not be
+    # run as root, and this test may leave a file
+    # owned by root
+    action = CmdRunAction(command='rm -rf test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
     await runtime.close()
     await asyncio.sleep(1)
 
@@ -736,6 +760,16 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     else:
         # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
         assert 'root' in obs.content.split('\r\n')[0]
+
+    # clean up
+    action = CmdRunAction(command='rm -rf test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
