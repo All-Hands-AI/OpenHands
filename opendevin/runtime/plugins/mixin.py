@@ -169,9 +169,11 @@ class PluginMixin:
                     logger.info('CancellableStream processing output')
                     # total_output = ''
                     # for line in output:
+                    # Removes any trailing whitespace, including \n and \r\n
                     #     line = line.rstrip()
                     #     if 'Requirement already satisfied: ' not in line:
                     #         logger.info(f'>>> {line.strip()}')
+                    # Avoid text from lines running into each other
                     #     total_output += line + ' '
                     # _exit_code = output.exit_code()
                     # output.close()
@@ -179,6 +181,7 @@ class PluginMixin:
                     #     raise RuntimeError(
                     #         f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
                     #     )
+                    # logger.debug(f'Output: {total_output.strip()}')
                     _handle_stream_output(output, requirement.name)
                 else:
                     if exit_code != 0:

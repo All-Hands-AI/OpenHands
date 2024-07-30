@@ -73,8 +73,8 @@ class JupyterKernel:
         if os.path.exists('/opendevin/plugins/agent_skills/agentskills.py'):
             self.tools_to_run.append('from agentskills import *')
         for tool in self.tools_to_run:
-            # logging.info(f'Tool initialized:\n{tool}')
-            await self.execute(tool)
+            res = await self.execute(tool)
+            logging.info(f'Tool [{tool}] initialized:\n{res}')
         self.initialized = True
 
     async def _send_heartbeat(self):
