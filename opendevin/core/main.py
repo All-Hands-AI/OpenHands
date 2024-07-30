@@ -111,6 +111,7 @@ async def run_controller(
         extra_kwargs['sandbox'] = sandbox
         # TODO: deprecate this and accept runtime as a parameter instead
 
+    logger.info(f'Initializing runtime: {runtime_cls}')
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
