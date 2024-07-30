@@ -60,7 +60,6 @@ class JupyterPlugin(Plugin):
         logger.info(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
-        await self.run(IPythonRunCellAction(code='import os; os.chdir("/workspace")'))
 
     async def run(self, action: Action) -> IPythonRunCellObservation:
         if not isinstance(action, IPythonRunCellAction):
