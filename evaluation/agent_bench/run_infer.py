@@ -99,7 +99,14 @@ def process_instance(
     # create sandbox and run the agent
     # =============================================
 
-    sandbox = DockerSSHBox()
+    sandbox = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=False,
+        workspace_mount_path=config.workspace_mount_path,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=config.run_as_devin,
+    )
     sandbox.execute(f'cd {inst_id}')
 
     init_cmd = instance.init
