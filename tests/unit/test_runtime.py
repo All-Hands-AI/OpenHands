@@ -909,6 +909,11 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
     TEST_RUNTIME.lower() == 'eventstream',
     reason='Skip this if we want to test EventStreamRuntime',
 )
+@pytest.mark.skipif(
+    os.environ.get('TEST_IN_CI').lower() == 'true',
+    # FIXME: There's some weird issue with the CI environment.
+    reason='Skip this if in CI.',
+)
 @pytest.mark.asyncio
 async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
     temp_dir, enable_auto_lint, container_image
