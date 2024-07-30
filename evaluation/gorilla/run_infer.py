@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -20,6 +20,8 @@ from opendevin.events.action import MessageAction
 from opendevin.llm.llm import LLM
 
 from .utils import encode_question, get_data
+
+config = load_app_config()
 
 
 def cleanup():
@@ -53,13 +55,8 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -118,6 +115,7 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
                 agent,
                 instruction,
                 max_iterations=metadata.max_iterations,
+                max_budget_per_task=config.max_budget_per_task,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),

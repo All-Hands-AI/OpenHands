@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,15 +13,18 @@ from opendevin.events import EventSource
 from opendevin.events.action import MessageAction
 from opendevin.events.stream import EventStream
 from opendevin.memory.history import ShortTermHistory
+from opendevin.storage import get_file_store
 
 
 @pytest.fixture
 def event_stream():
-    event_stream = EventStream('asdf')
-    yield event_stream
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_store = get_file_store('local', temp_dir)
+        event_stream = EventStream('asdf', file_store)
+        yield event_stream
 
-    # clear after each test
-    event_stream.clear()
+        # clear after each test
+        event_stream.clear()
 
 
 def test_all_agents_are_loaded():
@@ -41,9 +45,7 @@ def test_all_agents_are_loaded():
 
 
 def test_coder_agent_with_summary(event_stream: EventStream):
-    """
-    Coder agent should render code summary as part of prompt
-    """
+    """Coder agent should render code summary as part of prompt"""
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
     mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
@@ -69,8 +71,7 @@ def test_coder_agent_with_summary(event_stream: EventStream):
 
 
 def test_coder_agent_without_summary(event_stream: EventStream):
-    """
-    When there's no codebase_summary available, there shouldn't be any prompt
+    """When there's no codebase_summary available, there shouldn't be any prompt
     about 'code summary'
     """
     mock_llm = MagicMock()

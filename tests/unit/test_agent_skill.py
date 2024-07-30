@@ -46,6 +46,12 @@ def _generate_test_file_with_lines(temp_path, num_lines) -> str:
     return file_path
 
 
+def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
+    file_path = temp_path / 'test_file.rb'
+    file_path.write_text('\n' * num_lines)
+    return file_path
+
+
 def _calculate_window_bounds(current_line, total_lines, window_size):
     """Calculate the bounds of the window around the current line."""
     half_window = window_size // 2
@@ -56,6 +62,12 @@ def _calculate_window_bounds(current_line, total_lines, window_size):
         start = current_line - half_window
         end = current_line + half_window
     return start, end
+
+
+def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
+    file_path = temp_path / 'test_file.rb'
+    file_path.write_text('\n' * num_lines)
+    return file_path
 
 
 def test_open_file_unexist_path():
@@ -681,41 +693,58 @@ def test_edit_file_by_replace_multiline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                file_name=str(temp_file_path),
-                to_replace='Line 2',
-                new_content='REPLACE TEXT',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (5 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|Line 1\n'
-            '2|REPLACE TEXT\n'
-            '3|Line 2\n'
-            '4|Line 4\n'
-            '5|Line 5\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=2)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 5
-    assert lines[0].rstrip() == 'Line 1'
-    assert lines[1].rstrip() == 'REPLACE TEXT'
-    assert lines[2].rstrip() == 'Line 2'
-    assert lines[3].rstrip() == 'Line 4'
-    assert lines[4].rstrip() == 'Line 5'
+            with pytest.raises(
+                ValueError,
+                match='`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique',
+            ):
+                edit_file_by_replace(
+                    file_name=str(temp_file_path),
+                    to_replace='Line 2',
+                    new_content='REPLACE TEXT',
+                )
 
 
-def test_edit_file_by_replace_toreplace_empty():
-    with pytest.raises(ValueError):
+def test_edit_file_by_replace_no_diff(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            with pytest.raises(
+                ValueError, match='`to_replace` and `new_content` must be different'
+            ):
+                edit_file_by_replace(
+                    file_name=str(temp_file_path),
+                    to_replace='Line 1',
+                    new_content='Line 1',
+                )
+
+
+def test_edit_file_by_replace_toreplace_empty(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            with pytest.raises(ValueError, match='`to_replace` must not be empty.'):
+                edit_file_by_replace(
+                    file_name=str(temp_file_path),
+                    to_replace='    ',
+                    new_content='Line 1',
+                )
+
+
+def test_edit_file_by_replace_unknown_file():
+    with pytest.raises(FileNotFoundError):
         edit_file_by_replace(
             str('unknown file'),
-            '',
+            'ORIGINAL TEXT',
             'REPLACE TEXT',
         )
 
@@ -1490,3 +1519,46 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f'Expected output does not match. Got: {output}'
+
+
+def test_lint_file_fail_non_python(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    current_line = 1
+
+    file_path = _generate_ruby_test_file_with_lines(tmp_path, 1)
+
+    open_file(str(file_path), current_line)
+    insert_content_at_line(
+        str(file_path), 1, "def print_hello_world()\n    puts 'Hello World'"
+    )
+    result = capsys.readouterr().out
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+        'ERRORS:\n'
+        f'{file_path}:1\n'
+        '[This is how your edit would have looked if applied]\n'
+        '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
+        '1|def print_hello_world()\n'
+        "2|    puts 'Hello World'\n"
+        '(this is the end of the file)\n'
+        '-------------------------------------------------\n\n'
+        '[This is the original code before your edit]\n'
+        '-------------------------------------------------\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '-------------------------------------------------\n'
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+    )
+    assert result.split('\n') == expected.split('\n')

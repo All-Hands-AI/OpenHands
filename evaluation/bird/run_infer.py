@@ -21,12 +21,14 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
 from opendevin.llm.llm import LLM
+
+config = load_app_config()
 
 
 def codeact_user_response(state: State) -> str:
@@ -51,13 +53,8 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-def monologue_user_response(state: State) -> str:
-    raise NotImplementedError('MonologueAgent should never ask for user responses.')
-
-
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -66,9 +63,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def execute_sql(db_path, gen_sql, gold_sql):
-    """
-    Execute the generated SQL and the ground truth SQL and compare the results.
-    """
+    """Execute the generated SQL and the ground truth SQL and compare the results."""
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(gen_sql)
@@ -128,7 +123,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     workspace_mount_path = os.path.join(
         config.workspace_mount_path, 'bird_eval_workspace'
     )
@@ -220,6 +215,7 @@ def process_instance(
             agent,
             instruction,
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
@@ -255,18 +251,14 @@ def process_instance(
 
 
 def load_bird():
-    """
-    Main function to handle the flow of downloading, processing, and loading the bird dataset.
-    """
+    """Main function to handle the flow of downloading, processing, and loading the bird dataset."""
     raw_dataset_path = download_bird()
     bird_dataset = process_bird(raw_dataset_path)
     return bird_dataset
 
 
 def download_bird():
-    """
-    Downloads and extracts the bird dataset from a specified URL into a local directory.
-    """
+    """Downloads and extracts the bird dataset from a specified URL into a local directory."""
     dataset_path = os.path.join(config.workspace_base, 'evaluation_bird')
     devset_path = os.path.join(dataset_path, 'dev')
     if not os.path.exists(dataset_path):
@@ -292,9 +284,7 @@ def download_bird():
 
 
 def process_bird(dataset_path):
-    """
-    Processes the raw bird dataset into a structured format and saves it as JSON.
-    """
+    """Processes the raw bird dataset into a structured format and saves it as JSON."""
     processed_path = os.path.join(dataset_path, 'processed_dev.json')
     if not os.path.exists(processed_path):
         logger.info(f'{processed_path} folder does not exist, starting processing...')
@@ -325,9 +315,7 @@ def process_bird(dataset_path):
 
 
 def extract_create_table_prompt(db_path, limit_value=0):
-    """
-    Generates a SQL prompt with CREATE TABLE statements and sample data from the database.
-    """
+    """Generates a SQL prompt with CREATE TABLE statements and sample data from the database."""
     table_query = "SELECT * FROM sqlite_master WHERE type='table';"
     tables = sqlite3.connect(db_path).cursor().execute(table_query).fetchall()
     prompt = ''
@@ -367,9 +355,7 @@ def extract_create_table_prompt(db_path, limit_value=0):
 
 
 def create_prompt(e, database_path):
-    """
-    Create a prompt for the given example
-    """
+    """Create a prompt for the given example"""
     db_id = e['db_id']
     db_path = pathlib.Path(database_path) / db_id / f'{db_id}.sqlite'
 

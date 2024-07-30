@@ -2,7 +2,9 @@ import argparse
 
 import pytest
 
-from opendevin.config import config
+from opendevin.config import load_app_config
+
+config = load_app_config()
 
 if __name__ == '__main__':
     """Main entry point of the script.

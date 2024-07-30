@@ -9,11 +9,13 @@ import toml
 
 from opendevin.runtime.utils.runtime_build import (
     _generate_dockerfile,
-    _get_new_image_name,
+    _get_package_version,
     _put_source_code_to_dir,
     build_runtime_image,
+    get_new_image_name,
 )
 
+OD_VERSION = f'od_v{_get_package_version()}'
 RUNTIME_IMAGE_PREFIX = 'od_runtime'
 
 
@@ -51,16 +53,15 @@ def test_generate_dockerfile_scratch():
         skip_init=False,
     )
     assert base_image in dockerfile_content
-    assert 'RUN apt update && apt install -y wget sudo' in dockerfile_content
+    assert 'apt-get update' in dockerfile_content
+    assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
     assert (
         'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y'
         in dockerfile_content
     )
 
     # Check the update command
-    assert (
-        f'RUN mv /opendevin/{source_code_dirname} /opendevin/code' in dockerfile_content
-    )
+    assert f'mv /opendevin/{source_code_dirname} /opendevin/code' in dockerfile_content
     assert (
         '/opendevin/miniforge3/bin/mamba run -n base poetry install'
         in dockerfile_content
@@ -95,44 +96,56 @@ def test_generate_dockerfile_skip_init():
 
 def test_get_new_image_name_eventstream():
     base_image = 'debian:11'
-    new_image_name = _get_new_image_name(base_image)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'
+    new_image_name = get_new_image_name(base_image)
+    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
 
     base_image = 'ubuntu:22.04'
-    new_image_name = _get_new_image_name(base_image)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_22.04'
+    new_image_name = get_new_image_name(base_image)
+    assert (
+        new_image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_22.04'
+    )
 
     base_image = 'ubuntu'
-    new_image_name = _get_new_image_name(base_image)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_latest'
+    new_image_name = get_new_image_name(base_image)
+    assert (
+        new_image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_latest'
+    )
 
 
 def test_get_new_image_name_eventstream_dev_mode():
-    base_image = f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'
-    new_image_name = _get_new_image_name(base_image, dev_mode=True)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:debian_tag_11'
+    base_image = f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
+    new_image_name = get_new_image_name(base_image, dev_mode=True)
+    assert (
+        new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_debian_tag_11'
+    )
 
-    base_image = f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_22.04'
-    new_image_name = _get_new_image_name(base_image, dev_mode=True)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:ubuntu_tag_22.04'
+    base_image = f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_22.04'
+    new_image_name = get_new_image_name(base_image, dev_mode=True)
+    assert (
+        new_image_name
+        == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_ubuntu_tag_22.04'
+    )
 
-    base_image = f'{RUNTIME_IMAGE_PREFIX}:ubuntu_tag_latest'
-    new_image_name = _get_new_image_name(base_image, dev_mode=True)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:ubuntu_tag_latest'
+    base_image = f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_latest'
+    new_image_name = get_new_image_name(base_image, dev_mode=True)
+    assert (
+        new_image_name
+        == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_ubuntu_tag_latest'
+    )
 
 
 def test_get_new_image_name_eventstream_dev_invalid_base_image():
     with pytest.raises(ValueError):
         base_image = 'debian:11'
-        _get_new_image_name(base_image, dev_mode=True)
+        get_new_image_name(base_image, dev_mode=True)
 
     with pytest.raises(ValueError):
         base_image = 'ubuntu:22.04'
-        _get_new_image_name(base_image, dev_mode=True)
+        get_new_image_name(base_image, dev_mode=True)
 
     with pytest.raises(ValueError):
         base_image = 'ubuntu:latest'
-        _get_new_image_name(base_image, dev_mode=True)
+        get_new_image_name(base_image, dev_mode=True)
 
 
 @patch('opendevin.runtime.utils.runtime_build._build_sandbox_image')
@@ -142,11 +155,11 @@ def test_build_runtime_image_from_scratch(mock_docker_client, mock_build_sandbox
     mock_docker_client.images.list.return_value = []
 
     image_name = build_runtime_image(base_image, mock_docker_client)
-    assert image_name == f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'
+    assert image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
 
     mock_build_sandbox_image.assert_called_once_with(
         base_image,
-        f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11',
+        f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11',
         mock_docker_client,
         skip_init=False,
     )
@@ -159,11 +172,11 @@ def test_build_runtime_image_exist_no_update_source(
 ):
     base_image = 'debian:11'
     mock_docker_client.images.list.return_value = [
-        MagicMock(tags=[f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'])
+        MagicMock(tags=[f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'])
     ]
 
     image_name = build_runtime_image(base_image, mock_docker_client)
-    assert image_name == f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'
+    assert image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
 
     mock_build_sandbox_image.assert_not_called()
 
@@ -175,17 +188,17 @@ def test_build_runtime_image_exist_with_update_source(
 ):
     base_image = 'debian:11'
     mock_docker_client.images.list.return_value = [
-        MagicMock(tags=[f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11'])
+        MagicMock(tags=[f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'])
     ]
 
     image_name = build_runtime_image(
         base_image, mock_docker_client, update_source_code=True
     )
-    assert image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:debian_tag_11'
+    assert image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_debian_tag_11'
 
     mock_build_sandbox_image.assert_called_once_with(
-        f'{RUNTIME_IMAGE_PREFIX}:debian_tag_11',
-        f'{RUNTIME_IMAGE_PREFIX}_dev:debian_tag_11',
+        f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11',
+        f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_debian_tag_11',
         mock_docker_client,
         skip_init=True,
     )

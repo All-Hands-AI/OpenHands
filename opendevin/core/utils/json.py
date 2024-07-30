@@ -9,9 +9,7 @@ from opendevin.events.serialization import event_to_dict
 
 
 def my_default_encoder(obj):
-    """
-    Custom JSON encoder that handles datetime and event objects
-    """
+    """Custom JSON encoder that handles datetime and event objects"""
     if isinstance(obj, datetime):
         return obj.isoformat()
     if isinstance(obj, Event):
@@ -20,17 +18,12 @@ def my_default_encoder(obj):
 
 
 def dumps(obj, **kwargs):
-    """
-    Serialize an object to str format
-    """
-
+    """Serialize an object to str format"""
     return json.dumps(obj, default=my_default_encoder, **kwargs)
 
 
 def loads(json_str, **kwargs):
-    """
-    Create a JSON object from str
-    """
+    """Create a JSON object from str"""
     try:
         return json.loads(json_str, **kwargs)
     except json.JSONDecodeError:

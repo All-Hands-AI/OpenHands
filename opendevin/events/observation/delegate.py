@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class AgentDelegateObservation(Observation):
-    """
-    This data class represents the result from delegating to another agent
-    """
+    """This data class represents the result from delegating to another agent"""
 
     outputs: dict
     observation: str = ObservationType.DELEGATE

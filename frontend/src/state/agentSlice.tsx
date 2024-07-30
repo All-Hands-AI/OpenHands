@@ -7,12 +7,12 @@ export const agentSlice = createSlice({
     curAgentState: AgentState.LOADING,
   },
   reducers: {
-    changeAgentState: (state, action) => {
+    setCurrentAgentState: (state, action) => {
       state.curAgentState = action.payload;
     },
   },
 });
 
-export const { changeAgentState } = agentSlice.actions;
+export const { setCurrentAgentState } = agentSlice.actions;
 
 export default agentSlice.reducer;

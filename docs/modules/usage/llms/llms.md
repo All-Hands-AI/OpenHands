@@ -15,13 +15,14 @@ OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs c
 The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
 But when using the OpenDevin UI, you'll need to choose your model in the settings window.
 
-The following environment variables might be necessary for some LLMs:
+The following environment variables might be necessary for some LLMs/providers:
 
 - `LLM_API_KEY`
 - `LLM_BASE_URL`
 - `LLM_EMBEDDING_MODEL`
 - `LLM_EMBEDDING_DEPLOYMENT_NAME`
 - `LLM_API_VERSION`
+- `LLM_DROP_PARAMS`
 
 We have a few guides for running OpenDevin with specific model providers:
 

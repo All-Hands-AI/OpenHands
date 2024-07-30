@@ -1,6 +1,18 @@
+"""
+This is the main file for the runtime client.
+It is responsible for executing actions received from OpenDevin backend and producing observations.
+
+NOTE: this will be executed inside the docker sandbox.
+
+If you already have pre-build docker image yet you changed the code in this file OR dependencies, you need to rebuild the docker image to update the source code.
+
+You should add SANDBOX_UPDATE_SOURCE_CODE=True to any `python XXX.py` command you run to update the source code.
+"""
+
 import argparse
 import asyncio
 import os
+import re
 from pathlib import Path
 
 import pexpect
@@ -34,6 +46,7 @@ from opendevin.runtime.plugins import (
     Plugin,
 )
 from opendevin.runtime.server.files import insert_lines, read_lines
+from opendevin.runtime.utils import split_bash_commands
 
 app = FastAPI()
 
@@ -60,26 +73,62 @@ class RuntimeClient:
 
     def _init_bash_shell(self, work_dir: str) -> None:
         self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
-        self.__bash_expect = r'\[PEXPECT\][\$\#] '
-        self.__bash_PS1 = r'\u@\h:\w [PEXPECT]\$ '
-        self.shell.sendline(f'export PS1="{self.__bash_PS1}"')
-        self.shell.expect(self.__bash_expect)
+        self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
+
+        # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
+        self.__bash_expect_regex = (
+            r'\[PEXPECT_BEGIN\] ([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
+        )
+
+        self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
+        self.shell.expect(self.__bash_expect_regex)
+
         self.shell.sendline(f'cd {work_dir}')
-        self.shell.expect(self.__bash_expect)
+        self.shell.expect(self.__bash_expect_regex)
 
-    def _execute_bash(self, command, keep_prompt: bool = True):
-        logger.info(f'Received command: {command}')
+    def _get_bash_prompt(self):
+        ps1 = self.shell.after
+
+        # begin at the last occurence of '[PEXPECT_BEGIN]'.
+        # In multi-line bash commands, the prompt will be repeated
+        # and the matched regex captures all of them
+        # - we only want the last one (newest prompt)
+        _begin_pos = ps1.rfind('[PEXPECT_BEGIN]')
+        if _begin_pos != -1:
+            ps1 = ps1[_begin_pos:]
+
+        # parse the ps1 to get username, hostname, and working directory
+        matched = re.match(self.__bash_expect_regex, ps1)
+        assert (
+            matched is not None
+        ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
+        username, hostname, working_dir = matched.groups()
+
+        # re-assemble the prompt
+        prompt = f'{username}@{hostname}:{working_dir} '
+        if username == 'root':
+            prompt += '#'
+        else:
+            prompt += '$'
+        return prompt + ' '
+
+    def _execute_bash(self, command: str, keep_prompt: bool = True) -> tuple[str, int]:
+        logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect)
-        output = self.shell.before + '$ '
-        if not keep_prompt:
-            # remove the last line of the output (the prompt)
-            # e.g., user@host:~$
-            output = '\r\n'.join(output.split('\r\n')[:-1])
+        self.shell.expect(self.__bash_expect_regex)
 
+        output = self.shell.before
+        if keep_prompt:
+            output += '\r\n' + self._get_bash_prompt()
+        logger.debug(f'Command output: {output}')
+
+        # Get exit code
         self.shell.sendline('echo $?')
-        self.shell.expect(r'[$#] ')
-        exit_code = int(self.shell.before.split('\r\n')[0].strip())
+        logger.debug(f'Executing command for exit code: {command}')
+        self.shell.expect(self.__bash_expect_regex)
+        _exit_code_output = self.shell.before
+        logger.debug(f'Exit code Output: {_exit_code_output}')
+        exit_code = int(_exit_code_output.strip().split()[0])
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
@@ -90,10 +139,22 @@ class RuntimeClient:
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
-            output, exit_code = self._execute_bash(action.command)
+            commands = split_bash_commands(action.command)
+            all_output = ''
+            for command in commands:
+                output, exit_code = self._execute_bash(command)
+                if all_output:
+                    # previous output already exists with prompt "user@hostname:working_dir #""
+                    # we need to add the command to the previous output,
+                    # so model knows the following is the output of another action)
+                    all_output = all_output.rstrip() + ' ' + command + '\r\n'
+
+                all_output += str(output) + '\r\n'
+                if exit_code != 0:
+                    break
             return CmdOutputObservation(
                 command_id=-1,
-                content=str(output),
+                content=all_output.rstrip('\r\n'),
                 command=action.command,
                 exit_code=exit_code,
             )

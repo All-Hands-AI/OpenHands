@@ -25,9 +25,6 @@ workspace_base = "./workspace"
 # Disable color in terminal output
 #disable_color = false
 
-# Enable auto linting after editing
-#enable_auto_lint = false
-
 # Enable saving and restoring the session when run from CLI
 #enable_cli_session = false
 
@@ -76,8 +73,6 @@ persist_sandbox = false
 # SSH port for the sandbox
 #ssh_port = 63710
 
-# Use host network
-#use_host_network = false
 
 # Name of the default agent
 #default_agent = "CodeActAgent"
@@ -196,6 +191,12 @@ llm_config = 'gpt3'
 
 # Container image to use for the sandbox
 #container_image = "ghcr.io/opendevin/sandbox:main"
+
+# Use host network
+#use_host_network = false
+
+# Enable auto linting after editing
+#enable_auto_lint = false
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation
