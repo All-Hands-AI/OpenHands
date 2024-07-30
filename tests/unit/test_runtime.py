@@ -786,6 +786,13 @@ async def test_ipython_simple(temp_dir, box_class):
 async def _test_ipython_agentskills_fileop_pwd_impl(
     runtime: ServerRuntime | EventStreamRuntime, enable_auto_lint: bool
 ):
+    # remove everything in /workspace
+    action = CmdRunAction(command='rm -rf /workspace/*')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
     action = CmdRunAction(command='mkdir test')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
