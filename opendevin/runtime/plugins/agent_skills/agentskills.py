@@ -90,34 +90,26 @@ def update_pwd_decorator(func):
                 f'DEBUGGING Environment variables: {json.dumps(dict(os.environ), indent=2)}'
             )
             print(f'DEBUGGING User ID: {os.getuid()}, Group ID: {os.getgid()}')
-            import sys
-
-            print(f'DEBUGGING Loaded modules: {list(sys.modules.keys())}')
-            import tempfile
-
-            try:
-                tempfile.TemporaryFile(dir=os.getcwd())
-                print(f'DEBUGGING Directory {os.getcwd()} is writable')
-            except Exception as e:
-                print(f'DEBUGGING Directory {os.getcwd()} is not writable: {str(e)}')
 
             out = subprocess.run(['pwd'], capture_output=True)
             old_pwd = out.stdout.decode('utf-8').strip()
-            print(f'DEBUGGING OLD working directory: {old_pwd}')
-
             os.chdir(old_pwd)
-            print(f'DEBUGGING change to OLD working directory: {old_pwd}')
+            print(f'DEBUGGING Change to working directory: {old_pwd}')
+
+            import tempfile
+
+            try:
+                tempfile.TemporaryFile(dir=old_pwd)
+                print(f'DEBUGGING Directory {old_pwd} is writable')
+            except Exception as e:
+                print(f'DEBUGGING Directory {old_pwd} is not writable: {str(e)}')
 
             # ls -alh
-            out = subprocess.run(['ls', '-alh', '$(pwd)'], capture_output=True)
+            out = subprocess.run(['ls', '-alh', old_pwd], capture_output=True)
             print(
                 f'DEBUGGING OLD working directory contents: {out.stdout.decode("utf-8")}'
             )
-
-            # whoami
-            out = subprocess.run(['whoami'], capture_output=True)
-            print(f'DEBUGGING OLD whoami: {out.stdout.decode("utf-8")}')
-            print(f'DEBUGGING JUPYTER pwd: {jupyter_pwd}')
+            print(f'DEBUGGING Target JUPYTER pwd: {jupyter_pwd}')
 
         if jupyter_pwd:
             os.chdir(jupyter_pwd)
