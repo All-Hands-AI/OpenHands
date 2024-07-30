@@ -307,7 +307,7 @@ async def test_simple_browse(temp_dir, box_class):
 
     # Test browse
     action_cmd = CmdRunAction(
-        command='$OPENDEVIN_PYTHON_INTERPRETER -m http.server 8000 > server.log 2>&1 &'
+        command='/opendevin/miniforge3/bin/python -m http.server 8000 > server.log 2>&1 &'
     )
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action_cmd)
