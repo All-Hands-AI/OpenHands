@@ -252,7 +252,6 @@ class EventStreamRuntime(Runtime):
             except Exception as e:
                 logger.error(f'Error during command execution: {e}')
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
-            obs._parent = action.id  # type: ignore[attr-defined]
             return obs
 
     async def run(self, action: CmdRunAction) -> Observation:

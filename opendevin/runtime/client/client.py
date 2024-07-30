@@ -202,7 +202,6 @@ class RuntimeClient:
     async def run_action(self, action) -> Observation:
         action_type = action.action
         observation = await getattr(self, action_type)(action)
-        observation._parent = action.id
         return observation
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:

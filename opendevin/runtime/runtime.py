@@ -174,7 +174,6 @@ class Runtime:
                 'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = await getattr(self, action_type)(action)
-        observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
     # ====================================================================
