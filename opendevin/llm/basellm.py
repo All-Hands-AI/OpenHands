@@ -54,7 +54,6 @@ class BaseLLM:
         self.config = copy.deepcopy(config)
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
-        # self.memory_condenser = MemoryCondenser()
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None

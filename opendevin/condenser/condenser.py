@@ -83,9 +83,10 @@ class CondenserMixin:
                 f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
             )
 
-        summary_action: AgentSummarizeAction = self.summarize_messages(
+        action_response = self.summarize_messages(
             message_sequence_to_summarize=message_sequence_to_summarize
         )
+        summary_action: AgentSummarizeAction = parse_summary_response(action_response)
         summary_action.last_summarized_event_id = (
             last_summarized_event_id if last_summarized_event_id else -1
         )
@@ -110,24 +111,23 @@ class CondenserMixin:
                 MESSAGE_SUMMARY_WARNING_FRAC * context_window / summary_input_tkns
             ) * 0.8  # For good measure...
             cutoff = int(len(message_sequence_to_summarize) * trunc_ratio)
-            summary_input = str(
-                [
-                    self.summarize_messages(
-                        message_sequence_to_summarize=message_sequence_to_summarize[
-                            :cutoff
-                        ]
-                    )
-                ]
-                + message_sequence_to_summarize[cutoff:]
+            curr_summary = self.summarize_messages(
+                message_sequence_to_summarize=message_sequence_to_summarize[:cutoff]
             )
+            curr_summary_message = (
+                'Summary of all Action and Observations till now. \n'
+                + 'Action: '
+                + curr_summary['args']['summarized_actions']
+                + '\nObservation: '
+                + curr_summary['args']['summarized_observations']
+            )
+            input = [
+                Message({'role': 'assistant', 'content': curr_summary_message})
+            ] + message_sequence_to_summarize[cutoff:]
+            summary_input = self._format_summary_history(self.get_text_messages(input))  # type: ignore
 
         message_sequence = []
         message_sequence.append(Message({'role': 'system', 'content': summary_prompt}))
-
-        # TODO: Check if this feature is needed
-        # if insert_acknowledgement_assistant_message:
-        #     message_sequence.append(Message(user_id=dummy_user_id, agent_id=dummy_agent_id, role="assistant", text=MESSAGE_SUMMARY_REQUEST_ACK))
-
         message_sequence.append(Message({'role': 'user', 'content': summary_input}))
 
         response = self.completion(  # type: ignore
@@ -143,5 +143,4 @@ class CondenserMixin:
         print(f'summarize_messages gpt reply: {response.choices[0]}')
 
         action_response = response['choices'][0]['message']['content']
-        action = parse_summary_response(action_response)
-        return action
+        return action_response

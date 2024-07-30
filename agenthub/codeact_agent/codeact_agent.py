@@ -128,7 +128,7 @@ class CodeActAgent(Agent):
                 'Summary of all Action and Observations till now. \n'
                 + 'Action: '
                 + action.summarized_actions
-                + '\n Observation: '
+                + '\nObservation: '
                 + action.summarized_observations
             )
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
