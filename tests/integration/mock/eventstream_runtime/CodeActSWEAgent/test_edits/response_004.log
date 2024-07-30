@@ -1,0 +1,10 @@
+The typos in `bad.txt` have been corrected successfully. The file now reads:
+
+```
+1|This is a stupid typo.
+2|Really?
+3|No more typos!
+4|Enjoy!
+```
+
+The task is complete.
