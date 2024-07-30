@@ -81,7 +81,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "husky": "^9.1.2",
+    "husky": "^9.1.3",
     "jsdom": "^24.1.1",
     "lint-staged": "^15.2.7",
     "postcss": "^8.4.40",
