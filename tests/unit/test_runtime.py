@@ -54,7 +54,7 @@ PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 # This assures that all tests run together for each runtime, not alternating between them,
 # which caused them to fail previously.
-@pytest.fixture(scope='module', params=[EventStreamRuntime, ServerRuntime])
+@pytest.fixture(scope='module', params=[ServerRuntime, EventStreamRuntime])
 def box_class(request):
     time.sleep(1)
     return request.param
@@ -97,14 +97,13 @@ async def _load_runtime(temp_dir, box_class):
         )
         await runtime.ainit()
     elif box_class == ServerRuntime:
-        runtime = ServerRuntime(
-            config=config, event_stream=event_stream, sid=sid, plugins=plugins
-        )
+        runtime = ServerRuntime(config=config, event_stream=event_stream, sid=sid)
         await runtime.ainit()
         from opendevin.runtime.tools import (
             RuntimeTool,  # deprecate this after ServerRuntime is deprecated
         )
 
+        await runtime.init_sandbox_plugins(plugins)
         runtime.init_runtime_tools(
             [RuntimeTool.BROWSER],
             is_async=False,
