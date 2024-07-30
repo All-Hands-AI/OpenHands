@@ -7,8 +7,11 @@ def split_bash_commands(commands):
     try:
         parsed = bashlex.parse(commands)
     except bashlex.errors.ParsingError as e:
-        logger.error(
-            f'Failed to parse bash commands\n[input]: {commands}\n[error]: {e}'
+        logger.debug(
+            f'Failed to parse bash commands\n'
+            f'[input]: {commands}\n'
+            f'[warning]: {e}\n'
+            f'The original command will be returned as is.'
         )
         # If parsing fails, return the original commands
         return [commands]
