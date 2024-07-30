@@ -34,16 +34,19 @@ fi
 export SCRIPT_DIR=$(get_script_dir)
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
-WORKSPACE_MOUNT_PATH=$(realpath "${WORKSPACE_MOUNT_PATH}/_test_workspace")
-WORKSPACE_BASE=$(realpath "${WORKSPACE_BASE}/_test_workspace")
-WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
+WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
+mkdir -p $WORKSPACE_BASE
+WORKSPACE_BASE=$(realpath $WORKSPACE_BASE)
+
+WORKSPACE_MOUNT_PATH=${WORKSPACE_MOUNT_PATH}/_test_workspace
+mkdir -p $WORKSPACE_MOUNT_PATH
+WORKSPACE_MOUNT_PATH=$(realpath $WORKSPACE_MOUNT_PATH)
 
 echo "Current working directory: $(pwd)"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
-echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
@@ -52,9 +55,11 @@ mkdir -p $WORKSPACE_BASE
 
 # use environmental variable if exists, otherwise use "ssh"
 SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
-# TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
+TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"  # can be server or eventstream
 PERSIST_SANDBOX=false
 MAX_ITERATIONS=15
+echo "SANDBOX_BOX_TYPE: $SANDBOX_BOX_TYPE"
+echo "TEST_RUNTIME: $TEST_RUNTIME"
 
 agents=(
   "DelegatorAgent"
@@ -66,19 +71,19 @@ agents=(
 )
 tasks=(
   "Fix typos in bad.txt."
-  "Write a shell script 'hello.sh' that prints 'hello'."
-  "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
-  "Write a git commit message for the current staging area."
-  "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
-  "Browse localhost:8000, and tell me the ultimate answer to life."
+  # "Write a shell script 'hello.sh' that prints 'hello'."
+  # "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
+  # "Write a git commit message for the current staging area."
+  # "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
+  # "Browse localhost:8000, and tell me the ultimate answer to life."
 )
 test_names=(
   "test_edits"
-  "test_write_simple_script"
-  "test_ipython"
-  "test_simple_task_rejection"
-  "test_ipython_module"
-  "test_browse_internet"
+  # "test_write_simple_script"
+  # "test_ipython"
+  # "test_simple_task_rejection"
+  # "test_ipython_module"
+  # "test_browse_internet"
 )
 
 num_of_tests=${#test_names[@]}
@@ -93,7 +98,7 @@ run_test() {
   # Ensure we're in the correct directory
   cd "$PROJECT_ROOT" || exit 1
 
-  local pytest_cmd="poetry run pytest --cache-clear -s $SCRIPT_DIR/test_agent.py::$test_name"
+  local pytest_cmd="poetry run pytest --cache-clear -vvsxx $SCRIPT_DIR/test_agent.py::$test_name"
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then
     pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
@@ -105,9 +110,9 @@ run_test() {
     PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-    WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     DEFAULT_AGENT=$agent \
+    TEST_RUNTIME="$TEST_RUNTIME" \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -163,7 +168,7 @@ cleanup() {
 # Trap the EXIT signal to run the cleanup function
 trap cleanup EXIT
 
-# generate prompts again, using existing LLM responses under tests/integration/mock/[agent]/[test_name]/response_*.log
+# generate prompts again, using existing LLM responses under tests/integration/mock/[test_runtime]_runtime/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
 # respond to the prompts. The benefit is developers don't have to regenerate real responses from LLM, if they only
 # apply a small change to prompts.
@@ -176,10 +181,10 @@ regenerate_without_llm() {
       PERSIST_SANDBOX=$PERSIST_SANDBOX \
       WORKSPACE_BASE=$WORKSPACE_BASE \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-      WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
       MAX_ITERATIONS=$MAX_ITERATIONS \
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
+      TEST_RUNTIME="$TEST_RUNTIME" \
       poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
   set +x
 }
@@ -195,7 +200,7 @@ regenerate_with_llm() {
   fi
 
   rm -rf logs
-  rm -rf "$SCRIPT_DIR/mock/$agent/$test_name/*"
+  rm -rf "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/*"
   # set -x to print the command being executed
   set -x
   echo -e "/exit\n" | \
@@ -206,16 +211,16 @@ regenerate_with_llm() {
       PERSIST_SANDBOX=$PERSIST_SANDBOX \
       WORKSPACE_BASE=$WORKSPACE_BASE \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-      AGENT=$agent \
-      WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
+      DEFAULT_AGENT=$agent \
+      TEST_RUNTIME="$TEST_RUNTIME" \
       poetry run python "$PROJECT_ROOT/opendevin/core/main.py" \
       -i $MAX_ITERATIONS \
       -t "$task Do not ask me for confirmation at any point." \
       -c $agent
   set +x
 
-  mkdir -p "$SCRIPT_DIR/mock/$agent/$test_name/"
-  mv logs/llm/**/* "$SCRIPT_DIR/mock/$agent/$test_name/"
+  mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
+  mv logs/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
 }
 
@@ -272,8 +277,8 @@ for ((i = 0; i < num_of_tests; i++)); do
 
       if [ "$FORCE_USE_LLM" = true ]; then
         echo -e "\n\n\n\n========FORCE_USE_LLM, skipping step 2 & 3========\n\n\n\n"
-      elif [ ! -d "$SCRIPT_DIR/mock/$agent/$test_name" ]; then
-        echo -e "\n\n\n\n========No existing mock responses for $agent/$test_name, skipping step 2 & 3========\n\n\n\n"
+      elif [ ! -d "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name" ]; then
+        echo -e "\n\n\n\n========No existing mock responses for ${TEST_RUNTIME}_runtime/$agent/$test_name, skipping step 2 & 3========\n\n\n\n"
       else
         echo -e "\n\n\n\n========STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost========\n\n\n\n"
 

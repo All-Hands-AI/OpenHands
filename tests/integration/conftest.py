@@ -16,10 +16,18 @@ from opendevin.llm.llm import message_separator
 script_dir = os.environ.get('SCRIPT_DIR')
 project_root = os.environ.get('PROJECT_ROOT')
 workspace_path = os.environ.get('WORKSPACE_BASE')
+test_runtime = os.environ.get('TEST_RUNTIME')
+MOCK_ROOT_DIR = os.path.join(
+    script_dir,
+    'mock',
+    f'{test_runtime}_runtime',
+    os.environ.get('DEFAULT_AGENT'),
+)
 
 assert script_dir is not None, 'SCRIPT_DIR environment variable is not set'
 assert project_root is not None, 'PROJECT_ROOT environment variable is not set'
 assert workspace_path is not None, 'WORKSPACE_BASE environment variable is not set'
+assert test_runtime is not None, 'TEST_RUNTIME environment variable is not set'
 
 
 class SecretExit(Exception):
@@ -38,6 +46,11 @@ def pytest_exception_interact(node, call, report):
 
 def filter_out_symbols(input):
     input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
+
+    # remove shell hostname patterns (e.g., will change between each run)
+    # opendevin@379c7fce40b4:/workspace $
+    input = re.sub(r'(.*@).*(:/.*)', r'\1[DUMMY_HOSTNAME]\2', input)
+
     return input
 
 
@@ -54,9 +67,7 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
     Note: this function blindly replaces existing prompt file with the given
     input without checking the contents.
     """
-    mock_dir = os.path.join(
-        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
-    )
+    mock_dir = os.path.join(MOCK_ROOT_DIR, test_name)
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     try:
@@ -88,10 +99,8 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     we start from the end of the file, but again, that is unnecessary and only
     makes test code harder to understand.
     """
+    mock_dir = os.path.join(MOCK_ROOT_DIR, test_name)
     prompt = filter_out_symbols(messages)
-    mock_dir = os.path.join(
-        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
-    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     # Open the prompt file and compare its contents
