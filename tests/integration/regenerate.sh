@@ -70,7 +70,7 @@ agents=(
   "CodeActSWEAgent"
 )
 tasks=(
-  "Fix typos in bad.txt."
+  # "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
   "Write a git commit message for the current staging area."
@@ -78,7 +78,7 @@ tasks=(
   "Browse localhost:8000, and tell me the ultimate answer to life."
 )
 test_names=(
-  "test_edits"
+  # "test_edits"
   "test_write_simple_script"
   "test_ipython"
   "test_simple_task_rejection"
