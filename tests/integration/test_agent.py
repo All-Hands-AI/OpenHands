@@ -282,15 +282,3 @@ def test_browse_internet(http_server, current_test_name: str):
         assert 'OpenDevin is all you need!' in last_observation.content
     elif isinstance(last_observation, AgentDelegateObservation):
         assert 'OpenDevin is all you need!' in last_observation.outputs['content']
-
-
-def test_dummy_agent(current_test_name: str):
-    # Create the agent
-    agent = Agent.get_cls('DummyAgent')(llm=LLM(LLMConfig()))
-
-    # Execute the task
-    task = 'Do nothing. Do not ask me for confirmation at any point.'
-    final_state: State = asyncio.run(
-        run_agent_controller(agent, task, max_iterations, max_budget_per_task)
-    )
-    validate_final_state(final_state, current_test_name)

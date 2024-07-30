@@ -326,6 +326,13 @@ for ((i = 0; i < num_of_tests; i++)); do
   done
 done
 
+echo "Running dummy agent test..."
+poetry run pytest -s $SCRIPT_DIR/test_dummy_agent.py
+if [ $? -ne 0 ]; then
+  echo "Dummy agent test failed!"
+  exit 1
+fi
+
 rm -rf logs
 rm -rf $WORKSPACE_BASE
 echo "Done!"
