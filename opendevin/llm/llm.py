@@ -95,10 +95,11 @@ class LLM:
         if self.config.drop_params:
             litellm.drop_params = self.config.drop_params
 
-        if self.model_name.startswith('ollama'):
-            litellm.OllamaConfig.num_ctx = (
-                self.max_input_tokens + self.max_output_tokens
-            )
+        if self.config.model.startswith('ollama'):
+            max_input_tokens = self.config.max_input_tokens
+            max_output_tokens = self.config.max_output_tokens
+            if max_input_tokens and max_output_tokens:
+                litellm.OllamaConfig.num_ctx = max_input_tokens + max_output_tokens
 
         self._completion = partial(
             litellm_completion,
