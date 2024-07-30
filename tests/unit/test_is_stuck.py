@@ -1,5 +1,4 @@
 import logging
-import tempfile
 from unittest.mock import Mock, patch
 
 import pytest
@@ -29,14 +28,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.fixture
-def event_stream():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        file_store = get_file_store('local', temp_dir)
-        event_stream = EventStream('asdf', file_store)
-        yield event_stream
+def temp_dir(tmp_path_factory):
+    return tmp_path_factory.mktemp('test_is_stuck')
 
-        # clear after each test
-        event_stream.clear()
+
+@pytest.fixture
+def event_stream(temp_dir):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('asdf', file_store)
+    yield event_stream
+    # clear after each test
+    event_stream.clear()
 
 
 class TestStuckDetector:

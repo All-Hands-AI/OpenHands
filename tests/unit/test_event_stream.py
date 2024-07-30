@@ -12,7 +12,7 @@ from opendevin.storage import get_file_store
 
 @pytest.fixture
 def temp_dir(tmp_path_factory):
-    return tmp_path_factory.mktemp()
+    return tmp_path_factory.mktemp('test_event_stream')
 
 
 def collect_events(stream):

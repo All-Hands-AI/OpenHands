@@ -1,6 +1,5 @@
 import os
 import tarfile
-import tempfile
 from importlib.metadata import version
 from unittest.mock import MagicMock, patch
 
@@ -20,9 +19,8 @@ RUNTIME_IMAGE_PREFIX = 'od_runtime'
 
 
 @pytest.fixture
-def temp_dir():
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield temp_dir
+def temp_dir(tmp_path_factory):
+    return tmp_path_factory.mktemp('test_runtime_build')
 
 
 def test_put_source_code_to_dir(temp_dir):
