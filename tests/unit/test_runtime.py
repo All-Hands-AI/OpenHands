@@ -903,3 +903,25 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.skipif(
+    TEST_RUNTIME.lower() == 'eventstream',
+    reason='Skip this if we want to test EventStreamRuntime',
+)
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
+    temp_dir, enable_auto_lint, container_image
+):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+
+    runtime = await _load_runtime(
+        temp_dir,
+        # NOTE: we only test for ServerRuntime, since EventStreamRuntime is image agnostic by design.
+        ServerRuntime,
+        enable_auto_lint=enable_auto_lint,
+        container_image=container_image,
+    )
+    await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
+    await runtime.close()
+    await asyncio.sleep(1)
