@@ -88,21 +88,6 @@ class ServerRuntime(Runtime):
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
         await super().ainit(env_vars)
-        if self.sandbox is not None and hasattr(self.sandbox, 'ainit'):
-            logger.info('ServerRuntime: Initializing sandbox...')
-            try:
-                await self.sandbox.ainit()
-                logger.info('ServerRuntime: Sandbox initialized.')
-            except Exception as e:
-                logger.exception(f'Error initializing sandbox: {e}')
-                # Consider if you should raise the exception here to halt further execution
-
-        if not self._initialization_event.is_set():
-            self._initialization_event.set()
-            logger.info('ServerRuntime initialization complete.')
-
-    async def wait_for_initialization(self):
-        await self._initialization_event.wait()
 
         if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
             obs = await self.run_ipython(
@@ -142,8 +127,6 @@ class ServerRuntime(Runtime):
         return await self._run_command(action.command)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        await self.wait_for_initialization()  # important
-
         write_result = await self._run_command(
             f"cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n{action.code}\nEOL"
         )
@@ -261,7 +244,6 @@ class ServerRuntime(Runtime):
                     and f'Requirement already satisfied: {package_names}' in output
                 ):
                     output = '[Package already installed]'
-
             return CmdOutputObservation(
                 command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
