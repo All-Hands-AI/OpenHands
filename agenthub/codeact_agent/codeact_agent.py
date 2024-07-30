@@ -247,24 +247,22 @@ class CodeActAgent(Agent):
             ),
         ]
 
+        if state.history.summary:
+            summary_message = self.get_action_message(state.history.summary)
+            if summary_message:
+                messages.append(summary_message)
         for event in state.history.get_events():
-            if event.id >= state.history.last_summarized_event_id:
-                if isinstance(event, AgentSummarizeAction):
-                    action_message = self.get_action_message(event)
-                    if action_message:
-                        messages.append(action_message)
+            if event.id > state.history.last_summarized_event_id:
+                # create a regular message from an event
+                if isinstance(event, Action):
+                    message = self.get_action_message(event)
+                elif isinstance(event, Observation):
+                    message = self.get_observation_message(event)
                 else:
-                    # create a regular message from an event
-                    if isinstance(event, Action):
-                        message = self.get_action_message(event)
-                    elif isinstance(event, Observation):
-                        message = self.get_observation_message(event)
-                    else:
-                        raise ValueError(f'Unknown event type: {type(event)}')
-
-                    # add regular message
-                    if message:
-                        messages.append(message)
+                    raise ValueError(f'Unknown event type: {type(event)}')
+                # add regular message
+                if message:
+                    messages.append(message)
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
