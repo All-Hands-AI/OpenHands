@@ -30,6 +30,7 @@ interface AutocompleteComboboxProps {
   tooltip: string;
   allowCustomValue?: boolean;
   disabled?: boolean;
+  hidden?: boolean;
 }
 
 export function AutocompleteCombobox({
@@ -40,8 +41,13 @@ export function AutocompleteCombobox({
   tooltip,
   allowCustomValue = false,
   disabled = false,
+  hidden = false,
 }: AutocompleteComboboxProps) {
   const { t } = useTranslation();
+
+  if (hidden) {
+    return null;
+  }
 
   return (
     <Tooltip
