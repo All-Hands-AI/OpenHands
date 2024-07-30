@@ -128,7 +128,7 @@ class RuntimeClient:
         self.shell.expect(self.__bash_expect_regex)
         _exit_code_output = self.shell.before
         logger.debug(f'Exit code Output: {_exit_code_output}')
-        exit_code = int(_exit_code_output.strip())
+        exit_code = int(_exit_code_output.strip().split()[0])
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
