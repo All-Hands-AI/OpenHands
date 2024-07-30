@@ -52,7 +52,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
+                f'Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.',
                 exc_info=False,
             )
             raise ex

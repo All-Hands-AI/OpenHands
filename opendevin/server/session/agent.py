@@ -39,8 +39,6 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        confirmation_mode: bool,
-        security_analyzer: str,
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -54,11 +52,11 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_security_analyzer(security_analyzer)
+        await self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(runtime_name, config)
         await self._create_controller(
             agent,
-            confirmation_mode,
+            config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
@@ -77,9 +75,9 @@ class AgentSession:
             await self.security_analyzer.close()
         self._closed = True
 
-    # TODO: Make this configurable
-    async def _create_security_analyzer(self, security_analyzer: str):
+    async def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
+        logger.info(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(security_analyzer, SecurityAnalyzer)(self.event_stream)
 
