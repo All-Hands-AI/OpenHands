@@ -211,6 +211,7 @@ def process_instance(
     # You can omit this if you don't need to setup specialized sandbox
     workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
     sandbox = SWEBenchSSHBox.get_box_for_instance(
+        config,
         instance,
         workspace_dir_name,
         workspace_mount_path=workspace_mount_path,
