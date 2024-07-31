@@ -89,8 +89,8 @@ class CodeActSWEAgent(Agent):
         if isinstance(action, CmdRunAction) or isinstance(action, IPythonRunCellAction):
             content = [TextContent(text=self.action_to_str(action))]
 
-            if isinstance(action, MessageAction) and action.images_base64:
-                content.append(ImageContent(image_urls=action.images_base64))
+            if isinstance(action, MessageAction) and action.images_urls:
+                content.append(ImageContent(image_urls=action.images_urls))
 
             return Message(
                 role='user' if action.source == 'user' else 'assistant', content=content

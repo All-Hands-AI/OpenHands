@@ -19,7 +19,7 @@ describe("ChatInterface", () => {
 
   const userMessageEvent = {
     action: ActionType.MESSAGE,
-    args: { content: "my message", images_base64: [] },
+    args: { content: "my message", images_urls: [] },
   };
 
   afterEach(() => {

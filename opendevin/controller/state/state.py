@@ -173,7 +173,7 @@ class State:
         for event in self.history.get_events(reverse=True):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
-                last_user_message_image_urls = event.images_base64
+                last_user_message_image_urls = event.images_urls
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
                     return last_user_message
