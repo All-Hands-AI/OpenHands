@@ -44,7 +44,7 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime'))
 
 
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
 PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 
