@@ -38,8 +38,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const [isAgentSelectEnabled, setIsAgentSelectEnabled] =
-    React.useState<boolean>(false);
 
   useEffect(() => {
     maybeMigrateSettings();
@@ -67,13 +65,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       }
     })();
   }, []);
-
-  // Always start with the Agent selection being disabled when the settings open up
-  useEffect(() => {
-    if (isOpen) {
-      setIsAgentSelectEnabled(false);
-    }
-  }, [isOpen]);
 
   const handleModelChange = (model: string) => {
     setSettings((prev) => ({
@@ -180,10 +171,8 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           settings={settings}
           models={models}
           agents={agents}
-          isAgentSelectEnabled={isAgentSelectEnabled}
           onModelChange={handleModelChange}
           onAgentChange={handleAgentChange}
-          onAgentSelectEnabledChange={setIsAgentSelectEnabled}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
           onConfirmationModeChange={handleConfirmationModeChange}

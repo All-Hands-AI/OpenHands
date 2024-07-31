@@ -11,13 +11,11 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   agents: string[];
-  isAgentSelectEnabled: boolean;
   disabled: boolean;
 
   onModelChange: (model: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
-  onAgentSelectEnabledChange: (enabled: boolean) => void;
   onLanguageChange: (language: string) => void;
   onConfirmationModeChange: (confirmationMode: boolean) => void;
 }
@@ -26,17 +24,16 @@ function SettingsForm({
   settings,
   models,
   agents,
-  isAgentSelectEnabled,
   disabled,
   onModelChange,
   onAPIKeyChange,
   onAgentChange,
-  onAgentSelectEnabledChange,
   onLanguageChange,
   onConfirmationModeChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
+  const [isAgentSelectEnabled, setIsAgentSelectEnabled] = React.useState(false);
 
   return (
     <>
@@ -93,8 +90,9 @@ function SettingsForm({
         disabled={disabled || !isAgentSelectEnabled}
       />
       <Switch
-        checked={isAgentSelectEnabled}
-        onChange={(e) => onAgentSelectEnabledChange(e.target.checked)}
+        defaultSelected={false}
+        isSelected={isAgentSelectEnabled}
+        onValueChange={setIsAgentSelectEnabled}
         aria-label="enableagentselect"
         data-testid="enableagentselect"
       >

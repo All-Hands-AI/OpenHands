@@ -7,7 +7,6 @@ import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
-const onAgentSelectEnabledChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
 const onConfirmationModeChangeMock = vi.fn();
@@ -27,10 +26,8 @@ const renderSettingsForm = (settings?: Settings) => {
       }
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
-      isAgentSelectEnabled
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
-      onAgentSelectEnabledChange={onAgentSelectEnabledChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
       onConfirmationModeChange={onConfirmationModeChangeMock}
@@ -85,11 +82,9 @@ describe("SettingsForm", () => {
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
-        isAgentSelectEnabled
         disabled
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
-        onAgentSelectEnabledChange={onAgentSelectEnabledChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
         onConfirmationModeChange={onConfirmationModeChangeMock}
@@ -124,17 +119,18 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onAgentChange handler when the agent changes", async () => {
+      const user = userEvent.setup();
       renderSettingsForm();
 
+      // We need to enable the agent select first
+      const agentSwitch = screen.getByTestId("enableagentselect");
+      await user.click(agentSwitch);
+
       const agentInput = screen.getByRole("combobox", { name: "agent" });
-      await act(async () => {
-        await userEvent.click(agentInput);
-      });
+      await user.click(agentInput);
 
       const agent3 = screen.getByText("agent3");
-      await act(async () => {
-        await userEvent.click(agent3);
-      });
+      await user.click(agent3);
 
       expect(onAgentChangeMock).toHaveBeenCalledWith("agent3");
     });
@@ -164,43 +160,6 @@ describe("SettingsForm", () => {
       });
 
       expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
-    });
-
-    it("should call onAgentSelectEnabledChange handler when toggled", async () => {
-      renderWithProviders(
-        <SettingsForm
-          settings={{
-            LLM_MODEL: "model1",
-            AGENT: "agent1",
-            LANGUAGE: "en",
-            LLM_API_KEY: "sk-...",
-            CONFIRMATION_MODE: true,
-          }}
-          models={["model1", "model2", "model3"]}
-          agents={["agent1", "agent2", "agent3"]}
-          isAgentSelectEnabled={false}
-          disabled
-          onModelChange={onModelChangeMock}
-          onAgentChange={onAgentChangeMock}
-          onAgentSelectEnabledChange={onAgentSelectEnabledChangeMock}
-          onLanguageChange={onLanguageChangeMock}
-          onAPIKeyChange={onAPIKeyChangeMock}
-          onConfirmationModeChange={onConfirmationModeChangeMock}
-        />,
-      );
-
-      const agentSelectEnable = screen.getByTestId("enableagentselect");
-
-      await act(async () => {
-        await userEvent.click(agentSelectEnable);
-      });
-
-      await act(async () => {
-        await userEvent.click(agentSelectEnable);
-      });
-
-      expect(onAgentSelectEnabledChangeMock).toHaveBeenNthCalledWith(1, true);
-      expect(onAgentSelectEnabledChangeMock).toHaveBeenNthCalledWith(2, false);
     });
   });
 });
