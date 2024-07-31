@@ -57,8 +57,8 @@ mkdir -p $WORKSPACE_BASE
 SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"  # can be server or eventstream
 # TODO: set this as default after ServerRuntime is deprecated
-if [ "$TEST_RUNTIME" == "eventstream" ]; then
-    SANDBOX_CONTAINER_IMAGE="ubuntu:22.04"
+if [ "$TEST_RUNTIME" == "eventstream" ] && [ -z "$SANDBOX_CONTAINER_IMAGE" ]; then
+  SANDBOX_CONTAINER_IMAGE="ubuntu:22.04"
 fi
 
 PERSIST_SANDBOX=false
