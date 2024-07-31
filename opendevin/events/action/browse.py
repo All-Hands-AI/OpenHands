@@ -12,7 +12,7 @@ class BrowseURLAction(Action):
     thought: str = ''
     action: str = ActionType.BROWSE
     runnable: ClassVar[bool] = True
-    security_risk: Optional[ActionSecurityRisk] = None
+    security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:
@@ -33,7 +33,7 @@ class BrowseInteractiveAction(Action):
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
-    security_risk: Optional[ActionSecurityRisk] = None
+    security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:

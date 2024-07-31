@@ -357,7 +357,7 @@ async def get_agents():
 
 @app.get('/api/options/security-analyzers')
 async def get_security_analyzers():
-    """Get all security analyzers supported by the agent.
+    """Get all supported security analyzers.
 
     To get the security analyzers:
     ```sh

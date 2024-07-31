@@ -25,7 +25,7 @@ class AgentSession:
     event_stream: EventStream
     controller: Optional[AgentController] = None
     runtime: Optional[Runtime] = None
-    security_analyzer: Optional[SecurityAnalyzer] = None
+    security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
 
     def __init__(self, sid: str, file_store: FileStore):
