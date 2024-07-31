@@ -117,7 +117,7 @@ class RuntimeClient:
         output = subprocess.run(
             (
                 f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -g root -G sudo -u {user_id} {username}'
+                f'-g root -G sudo -u {user_id} {username}'
             ),
             shell=True,
             capture_output=True,
