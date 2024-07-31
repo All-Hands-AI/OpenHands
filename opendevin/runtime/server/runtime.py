@@ -1,4 +1,3 @@
-from asyncio import Event
 from typing import Any, Optional
 
 from opendevin.core.config import AppConfig
@@ -53,7 +52,6 @@ class ServerRuntime(Runtime):
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
-        self._initialization_event = Event()
 
     def create_sandbox(self, sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
         if box_type == 'local':
@@ -83,7 +81,7 @@ class ServerRuntime(Runtime):
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         # init sandbox plugins
-        self.sandbox.init_plugins(self.plugins)
+        await self.sandbox.init_plugins(self.plugins)
 
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
