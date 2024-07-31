@@ -14,6 +14,7 @@ from tornado.ioloop import PeriodicCallback
 from tornado.websocket import websocket_connect
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def strip_ansi(o: str) -> str:
