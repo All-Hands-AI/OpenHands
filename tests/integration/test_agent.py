@@ -30,6 +30,7 @@ CONFIG = AppConfig(
     workspace_mount_path=os.getenv('WORKSPACE_MOUNT_PATH'),
     sandbox=SandboxConfig(
         box_type=os.getenv('SANDBOX_BOX_TYPE', 'ssh'),
+        use_host_network=True,
     ),
 )
 load_from_env(CONFIG, os.environ)
