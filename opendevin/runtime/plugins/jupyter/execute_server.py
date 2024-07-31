@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import asyncio
+import logging
 import os
 import re
 from uuid import uuid4
@@ -12,7 +13,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.ioloop import PeriodicCallback
 from tornado.websocket import websocket_connect
 
-from opendevin.core.logger import opendevin_logger as logger
+logger = logging.getLogger(__name__)
 
 
 def strip_ansi(o: str) -> str:
