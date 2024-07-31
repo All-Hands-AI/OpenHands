@@ -1,10 +1,5 @@
 import threading
 
-import chromadb
-import llama_index.embeddings.openai.base as llama_openai
-from llama_index.core import Document, VectorStoreIndex
-from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.vector_stores.chroma import ChromaVectorStore
 from openai._exceptions import APIConnectionError, InternalServerError, RateLimitError
 from tenacity import (
     retry,
@@ -17,94 +12,102 @@ from opendevin.core.config import LLMConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 
-# TODO: this could be made configurable
-num_retries: int = 10
-retry_min_wait: int = 3
-retry_max_wait: int = 300
+try:
+    import chromadb
+    import llama_index.embeddings.openai.base as llama_openai
+    from llama_index.core import Document, VectorStoreIndex
+    from llama_index.core.retrievers import VectorIndexRetriever
+    from llama_index.vector_stores.chroma import ChromaVectorStore
 
-# llama-index includes a retry decorator around openai.get_embeddings() function
-# it is initialized with hard-coded values and errors
-# this non-customizable behavior is creating issues when it's retrying faster than providers' rate limits
-# this block attempts to banish it and replace it with our decorator, to allow users to set their own limits
+    LLAMA_INDEX_AVAILABLE = True
+except ImportError:
+    LLAMA_INDEX_AVAILABLE = False
 
-if hasattr(llama_openai.get_embeddings, '__wrapped__'):
-    original_get_embeddings = llama_openai.get_embeddings.__wrapped__
-else:
-    logger.warning('Cannot set custom retry limits.')
-    num_retries = 1
-    original_get_embeddings = llama_openai.get_embeddings
+if LLAMA_INDEX_AVAILABLE:
+    # TODO: this could be made configurable
+    num_retries: int = 10
+    retry_min_wait: int = 3
+    retry_max_wait: int = 300
 
+    # llama-index includes a retry decorator around openai.get_embeddings() function
+    # it is initialized with hard-coded values and errors
+    # this non-customizable behavior is creating issues when it's retrying faster than providers' rate limits
+    # this block attempts to banish it and replace it with our decorator, to allow users to set their own limits
 
-def attempt_on_error(retry_state):
-    logger.error(
-        f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
-        exc_info=False,
+    if hasattr(llama_openai.get_embeddings, '__wrapped__'):
+        original_get_embeddings = llama_openai.get_embeddings.__wrapped__
+    else:
+        logger.warning('Cannot set custom retry limits.')
+        num_retries = 1
+        original_get_embeddings = llama_openai.get_embeddings
+
+    def attempt_on_error(retry_state):
+        logger.error(
+            f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
+            exc_info=False,
+        )
+        return None
+
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(num_retries),
+        wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
+        retry=retry_if_exception_type(
+            (RateLimitError, APIConnectionError, InternalServerError)
+        ),
+        after=attempt_on_error,
     )
-    return None
+    def wrapper_get_embeddings(*args, **kwargs):
+        return original_get_embeddings(*args, **kwargs)
 
+    llama_openai.get_embeddings = wrapper_get_embeddings
 
-@retry(
-    reraise=True,
-    stop=stop_after_attempt(num_retries),
-    wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
-    retry=retry_if_exception_type(
-        (RateLimitError, APIConnectionError, InternalServerError)
-    ),
-    after=attempt_on_error,
-)
-def wrapper_get_embeddings(*args, **kwargs):
-    return original_get_embeddings(*args, **kwargs)
+    class EmbeddingsLoader:
+        """Loader for embedding model initialization."""
 
+        @staticmethod
+        def get_embedding_model(strategy: str, llm_config: LLMConfig):
+            supported_ollama_embed_models = [
+                'llama2',
+                'mxbai-embed-large',
+                'nomic-embed-text',
+                'all-minilm',
+                'stable-code',
+            ]
+            if strategy in supported_ollama_embed_models:
+                from llama_index.embeddings.ollama import OllamaEmbedding
 
-llama_openai.get_embeddings = wrapper_get_embeddings
+                return OllamaEmbedding(
+                    model_name=strategy,
+                    base_url=llm_config.embedding_base_url,
+                    ollama_additional_kwargs={'mirostat': 0},
+                )
+            elif strategy == 'openai':
+                from llama_index.embeddings.openai import OpenAIEmbedding
 
+                return OpenAIEmbedding(
+                    model='text-embedding-ada-002',
+                    api_key=llm_config.api_key,
+                )
+            elif strategy == 'azureopenai':
+                from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 
-class EmbeddingsLoader:
-    """Loader for embedding model initialization."""
+                return AzureOpenAIEmbedding(
+                    model='text-embedding-ada-002',
+                    deployment_name=llm_config.embedding_deployment_name,
+                    api_key=llm_config.api_key,
+                    azure_endpoint=llm_config.base_url,
+                    api_version=llm_config.api_version,
+                )
+            elif (strategy is not None) and (strategy.lower() == 'none'):
+                # TODO: this works but is not elegant enough. The incentive is when
+                # an agent using embeddings is not used, there is no reason we need to
+                # initialize an embedding model
+                return None
+            else:
+                from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-    @staticmethod
-    def get_embedding_model(strategy: str, llm_config: LLMConfig):
-        supported_ollama_embed_models = [
-            'llama2',
-            'mxbai-embed-large',
-            'nomic-embed-text',
-            'all-minilm',
-            'stable-code',
-        ]
-        if strategy in supported_ollama_embed_models:
-            from llama_index.embeddings.ollama import OllamaEmbedding
-
-            return OllamaEmbedding(
-                model_name=strategy,
-                base_url=llm_config.embedding_base_url,
-                ollama_additional_kwargs={'mirostat': 0},
-            )
-        elif strategy == 'openai':
-            from llama_index.embeddings.openai import OpenAIEmbedding
-
-            return OpenAIEmbedding(
-                model='text-embedding-ada-002',
-                api_key=llm_config.api_key,
-            )
-        elif strategy == 'azureopenai':
-            from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
-
-            return AzureOpenAIEmbedding(
-                model='text-embedding-ada-002',
-                deployment_name=llm_config.embedding_deployment_name,
-                api_key=llm_config.api_key,
-                azure_endpoint=llm_config.base_url,
-                api_version=llm_config.api_version,
-            )
-        elif (strategy is not None) and (strategy.lower() == 'none'):
-            # TODO: this works but is not elegant enough. The incentive is when
-            # an agent using embeddings is not used, there is no reason we need to
-            # initialize an embedding model
-            return None
-        else:
-            from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
-            return HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
+                return HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
 
 
 class LongTermMemory:
@@ -112,6 +115,12 @@ class LongTermMemory:
 
     def __init__(self, llm_config: LLMConfig, memory_max_threads: int = 1):
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
+        if not LLAMA_INDEX_AVAILABLE:
+            raise ImportError(
+                'llama_index and its dependencies are not installed. '
+                'To use LongTermMemory, please run: poetry install --with llama-index'
+            )
+
         db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
