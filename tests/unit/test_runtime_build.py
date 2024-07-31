@@ -55,7 +55,7 @@ def test_generate_dockerfile_scratch():
     assert 'apt-get update' in dockerfile_content
     assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
     assert (
-        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y'
+        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
         in dockerfile_content
     )
 
