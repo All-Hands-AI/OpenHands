@@ -1,5 +1,4 @@
 import os
-import selectors
 import subprocess
 import time
 from dataclasses import dataclass
@@ -49,40 +48,17 @@ class JupyterPlugin(Plugin):
             shell=True,
         )
         # read stdout until the kernel gateway is ready
-        elapsed_time: int = 0
-        start_time = time.time()
-        timeout = 30  # 30 seconds timeout
         output = ''
+        while True and self.gateway_process.stdout is not None:
+            line = self.gateway_process.stdout.readline().decode('utf-8')
+            output += line
+            if 'at' in line:
+                break
+            time.sleep(1)
+            logger.debug('Waiting for jupyter kernel gateway to start...')
 
-        if self.gateway_process.stdout is None:
-            raise RuntimeError('Failed to capture stdout from the gateway process')
-
-        stdout = self.gateway_process.stdout  # Remove the cast
-        sel = selectors.DefaultSelector()
-        sel.register(stdout, selectors.EVENT_READ)
-
-        while time.time() - start_time < timeout:
-            events = sel.select(timeout=1)  # Wait for up to 1 second
-            if events:
-                line = stdout.readline().decode('utf-8')
-                if line:
-                    output += line
-                    if 'at' in line:
-                        break
-            elapsed_time = int(time.time() - start_time)  # Change type hint to float
-            logger.debug(
-                f'Waiting for jupyter kernel gateway to start... (Elapsed time: {elapsed_time}s)'
-            )
-
-        sel.close()
-
-        if time.time() - start_time >= timeout:
-            logger.error(
-                f'Timeout waiting for jupyter kernel gateway to start after {timeout} seconds'
-            )
-            # Handle the timeout case (e.g., raise an exception or clean up)
         logger.info(
-            f'Jupyter kernel gateway started at port {self.kernel_gateway_port} after {elapsed_time}s. Output: {output}'
+            f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
 
     async def run(self, action: Action) -> IPythonRunCellObservation:
