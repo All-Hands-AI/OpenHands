@@ -60,7 +60,7 @@ RUN cd /opendevin/code && \
     /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
     /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
     /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
-    chmod -R g+rws /opendevin/poetry && \
+    {% if not skip_init %}chmod -R g+rws /opendevin/poetry && {% endif %} \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /opendevin/miniforge3/bin/mamba clean --all
 

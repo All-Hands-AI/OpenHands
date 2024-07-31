@@ -90,13 +90,7 @@ class RuntimeClient:
         # AFTER ServerRuntime is deprecated
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code=(
-                        'import sys\n'
-                        'sys.path.insert(0, "/opendevin/code/opendevin/runtime/plugins/agent_skills")\n'
-                        'from agentskills import *'
-                    )
-                )
+                IPythonRunCellAction(code='from agentskills import *')
             )
             logger.info(f'AgentSkills initialized: {obs}')
 
