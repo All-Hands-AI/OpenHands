@@ -13,6 +13,8 @@ import argparse
 import asyncio
 import os
 import re
+import subprocess
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
@@ -35,6 +37,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
+    IPythonRunCellObservation,
     Observation,
 )
 from opendevin.events.serialization import event_from_dict, event_to_dict
@@ -48,8 +51,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.server.files import insert_lines, read_lines
 from opendevin.runtime.utils import split_bash_commands
 
-app = FastAPI()
-
 
 class ActionRequest(BaseModel):
     action: dict
@@ -60,19 +61,81 @@ class RuntimeClient:
     It is responsible for executing actions received from OpenDevin backend and producing observations.
     """
 
-    def __init__(self, plugins_to_load: list[Plugin], work_dir: str) -> None:
-        self._init_bash_shell(work_dir)
+    def __init__(
+        self, plugins_to_load: list[Plugin], work_dir: str, username: str, user_id: int
+    ) -> None:
+        self.plugins_to_load = plugins_to_load
+        self.username = username
+        self.user_id = user_id
+        self.pwd = work_dir  # current PWD
+        self._init_user(self.username, self.user_id)
+        self._init_bash_shell(self.pwd, self.username)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv()
 
-        for plugin in plugins_to_load:
-            plugin.initialize()
+    async def ainit(self):
+        for plugin in self.plugins_to_load:
+            await plugin.initialize(self.username)
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
 
-    def _init_bash_shell(self, work_dir: str) -> None:
-        self.shell = pexpect.spawn('/bin/bash', encoding='utf-8', echo=False)
+            if isinstance(plugin, JupyterPlugin):
+                await self.run_ipython(
+                    IPythonRunCellAction(code=f'import os; os.chdir("{self.pwd}")')
+                )
+
+        # This is a temporary workaround
+        # TODO: refactor AgentSkills to be part of JupyterPlugin
+        # AFTER ServerRuntime is deprecated
+        if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
+            obs = await self.run_ipython(
+                IPythonRunCellAction(
+                    code=(
+                        'import sys\n'
+                        'sys.path.insert(0, "/opendevin/code/opendevin/runtime/plugins/agent_skills")\n'
+                        'from agentskills import *'
+                    )
+                )
+            )
+            logger.info(f'AgentSkills initialized: {obs}')
+
+    def _init_user(self, username: str, user_id: int) -> None:
+        """Create user if not exists."""
+        # Skip root since it is already created
+        if username == 'root':
+            return
+
+        # Add sudoer
+        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
+        if output.returncode != 0:
+            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
+        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
+
+        # Add user
+        output = subprocess.run(
+            (
+                f'useradd -rm -d /home/{username} -s /bin/bash '
+                f'-g root -G sudo -g root -G sudo -u {user_id} {username}'
+            ),
+            shell=True,
+            capture_output=True,
+        )
+        if output.returncode != 0:
+            raise RuntimeError(
+                f'Failed to create user {username}: {output.stderr.decode()}'
+            )
+        logger.debug(
+            f'Added user {username} successfully. Output: [{output.stdout.decode()}]'
+        )
+
+    def _init_bash_shell(self, work_dir: str, username: str) -> None:
+        self.shell = pexpect.spawn(
+            f'su - {username}',
+            encoding='utf-8',
+            echo=False,
+        )
         self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
 
         # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
@@ -85,8 +148,11 @@ class RuntimeClient:
 
         self.shell.sendline(f'cd {work_dir}')
         self.shell.expect(self.__bash_expect_regex)
+        logger.debug(
+            f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
+        )
 
-    def _get_bash_prompt(self):
+    def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
 
         # begin at the last occurence of '[PEXPECT_BEGIN]'.
@@ -103,6 +169,8 @@ class RuntimeClient:
             matched is not None
         ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
         username, hostname, working_dir = matched.groups()
+        self._prev_pwd = self.pwd
+        self.pwd = working_dir
 
         # re-assemble the prompt
         prompt = f'{username}@{hostname}:{working_dir} '
@@ -112,20 +180,25 @@ class RuntimeClient:
             prompt += '$'
         return prompt + ' '
 
-    def _execute_bash(self, command: str, keep_prompt: bool = True) -> tuple[str, int]:
+    def _execute_bash(
+        self,
+        command: str,
+        keep_prompt: bool = True,
+        timeout: int = 300,
+    ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect_regex)
+        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
         output = self.shell.before
         if keep_prompt:
-            output += '\r\n' + self._get_bash_prompt()
+            output += '\r\n' + self._get_bash_prompt_and_update_pwd()
         logger.debug(f'Command output: {output}')
 
         # Get exit code
         self.shell.sendline('echo $?')
         logger.debug(f'Executing command for exit code: {command}')
-        self.shell.expect(self.__bash_expect_regex)
+        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
         _exit_code_output = self.shell.before
         logger.debug(f'Exit code Output: {_exit_code_output}')
         exit_code = int(_exit_code_output.strip().split()[0])
@@ -134,7 +207,6 @@ class RuntimeClient:
     async def run_action(self, action) -> Observation:
         action_type = action.action
         observation = await getattr(self, action_type)(action)
-        observation._parent = action.id
         return observation
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
@@ -164,7 +236,18 @@ class RuntimeClient:
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
-            return await _jupyter_plugin.run(action)
+
+            # This is used to make AgentSkills in Jupyter aware of the
+            # current working directory in Bash
+            if not hasattr(self, '_prev_pwd') or self.pwd != self._prev_pwd:
+                reset_jupyter_pwd_code = (
+                    f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
+                )
+                _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
+                _ = await _jupyter_plugin.run(_aux_action)
+
+            obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
+            return obs
         else:
             raise RuntimeError(
                 'JupyterRequirement not found. Unable to run IPython action.'
@@ -272,6 +355,10 @@ if __name__ == '__main__':
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
     parser.add_argument('--plugins', type=str, help='Plugins to initialize', nargs='+')
+    parser.add_argument(
+        '--username', type=str, help='User to run as', default='opendevin'
+    )
+    parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -282,16 +369,34 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client = RuntimeClient(plugins_to_load, work_dir=args.working_dir)
+    client: RuntimeClient | None = None
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        global client
+        client = RuntimeClient(
+            plugins_to_load,
+            work_dir=args.working_dir,
+            username=args.username,
+            user_id=args.user_id,
+        )
+        await client.ainit()
+        yield
+        # Clean up & release the resources
+        client.close()
+
+    app = FastAPI(lifespan=lifespan)
 
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):
+        assert client is not None
         async with client.lock:
             response = await call_next(request)
         return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
+        assert client is not None
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
