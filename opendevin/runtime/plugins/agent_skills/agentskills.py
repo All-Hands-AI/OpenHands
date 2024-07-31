@@ -21,6 +21,7 @@ import functools
 import os
 import re
 import shutil
+import sys
 import tempfile
 from inspect import signature
 from typing import Optional
@@ -89,7 +90,8 @@ def update_pwd_decorator(func):
             print(
                 f'DEBUGGING Environment variables: {json.dumps(dict(os.environ), indent=2)}'
             )
-            print(f'DEBUGGING User ID: {os.getuid()}, Group ID: {os.getgid()}')
+            if sys.platform != 'win32':
+                print(f'DEBUGGING User ID: {os.getuid()}, Group ID: {os.getgid()}')
 
             out = subprocess.run(['pwd'], capture_output=True)
             old_pwd = out.stdout.decode('utf-8').strip()
