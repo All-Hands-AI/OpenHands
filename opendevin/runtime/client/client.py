@@ -328,22 +328,6 @@ class RuntimeClient:
         self.browser.close()
 
 
-# def test_run_commond():
-#     client = RuntimeClient()
-#     command = CmdRunAction(command='ls -l')
-#     obs = client.run_action(command)
-#     print(obs)
-
-# def test_shell(message):
-#     shell = pexpect.spawn('/bin/bash', encoding='utf-8')
-#     shell.expect(r'[$#] ')
-#     print(f'Received command: {message}')
-#     shell.sendline(message)
-#     shell.expect(r'[$#] ')
-#     output = shell.before.strip().split('\r\n', 1)[1].strip()
-#     print(f'Output: {output}')
-#     shell.close()
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
