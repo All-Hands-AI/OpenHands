@@ -48,7 +48,7 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
             inv_trace.append(Message(role='assistant', content=action.content))
     elif type(action) in [NullAction, ChangeAgentStateAction]:
         pass
-    elif hasattr(action, 'action'):
+    elif hasattr(action, 'action') and action.action is not None:
         event_dict = event_to_dict(action)
         args = event_dict.get("args", {})
         thought = args.pop("thought", None)
