@@ -11,7 +11,7 @@ from opendevin.events.action import (
 )
 
 
-class RiskCalcResponseParser(ResponseParser):
+class CodeActResponseParser(ResponseParser):
     """
     Parser action:
         - CmdRunAction(command) - bash command to run
