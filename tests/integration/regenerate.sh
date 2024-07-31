@@ -36,10 +36,12 @@ export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
 WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
 mkdir -p $WORKSPACE_BASE
+chmod -R 777 $WORKSPACE_BASE
 WORKSPACE_BASE=$(realpath $WORKSPACE_BASE)
 
 WORKSPACE_MOUNT_PATH=${WORKSPACE_MOUNT_PATH}/_test_workspace
 mkdir -p $WORKSPACE_MOUNT_PATH
+chmod -R 777 $WORKSPACE_MOUNT_PATH
 WORKSPACE_MOUNT_PATH=$(realpath $WORKSPACE_MOUNT_PATH)
 
 echo "Current working directory: $(pwd)"
