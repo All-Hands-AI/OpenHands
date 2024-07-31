@@ -589,10 +589,6 @@ NOW, LET'S START!
 
 ----------
 
-Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
-
-----------
-
 Sure, I'll create the shell script `hello.sh` that prints 'hello'.
 <execute_bash>
 echo 'echo "hello"' > hello.sh
@@ -604,4 +600,4 @@ OBSERVATION:
 
 [Command -1 finished with exit code 0]
 
-ENVIRONMENT REMINDER: You have 13 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.

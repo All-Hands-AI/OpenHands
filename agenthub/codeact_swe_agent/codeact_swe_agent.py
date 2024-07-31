@@ -178,11 +178,21 @@ class CodeActSWEAgent(Agent):
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
+            (m for m in reversed(messages) if m.role == 'user'), None
         )
 
-        # add a reminder to the prompt
+        # Get the last user text inside content
         if latest_user_message:
-            latest_user_message.text = f'{latest_user_message.text}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            latest_user_message_text = next(
+                (
+                    t
+                    for t in reversed(latest_user_message.content)
+                    if isinstance(t, TextContent)
+                )
+            )
+
+        # add a reminder to the prompt
+        if latest_user_message_text:
+            latest_user_message_text.text = f'{latest_user_message_text.text}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
         return messages

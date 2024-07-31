@@ -589,10 +589,6 @@ NOW, LET'S START!
 
 ----------
 
-Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
-
-----------
-
 Sure! Let me write 'hello world' to a text file named 'test.txt' in the '/workspace' directory without asking for confirmation:
 <execute_ipython>
 with open('/workspace/test.txt', 'w') as f:
@@ -604,4 +600,4 @@ with open('/workspace/test.txt', 'w') as f:
 OBSERVATION:
 [Code executed successfully with no output]
 
-ENVIRONMENT REMINDER: You have 13 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
