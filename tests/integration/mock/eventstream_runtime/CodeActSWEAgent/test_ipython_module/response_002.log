@@ -1,0 +1,11 @@
+Now, let's import `pymsgbox`, print its version, and write the output to `/workspace/test.txt`.
+
+<execute_ipython>
+import pymsgbox
+
+version_info = pymsgbox.__version__
+
+with open("/workspace/test.txt", "w") as file:
+    file.write(f"pymsgbox version: {version_info}\n")
+
+version_info

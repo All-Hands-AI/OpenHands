@@ -1,0 +1,4 @@
+Understood. Let's start by installing the `pymsgbox` package.
+
+<execute_ipython>
+%pip install pymsgbox==1.0.9
