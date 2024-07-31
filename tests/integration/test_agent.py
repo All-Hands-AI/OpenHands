@@ -32,7 +32,7 @@ CONFIG = AppConfig(
         box_type=os.getenv('SANDBOX_BOX_TYPE', 'ssh'),
     ),
 )
-CONFIG = load_from_env(CONFIG, os.environ)
+load_from_env(CONFIG, os.environ)
 print('\nPaths used:')
 print(f'workspace_base: {CONFIG.workspace_base}')
 print(f'workspace_mount_path: {CONFIG.workspace_mount_path}')
