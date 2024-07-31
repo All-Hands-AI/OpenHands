@@ -62,63 +62,6 @@ class JupyterPlugin(Plugin):
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
 
-    async def _postprocess_pip(
-        self, action: IPythonRunCellAction, obs: IPythonRunCellObservation
-    ):
-        if 'pip install' in action.code:
-            package_names = action.code.split(' ', 2)[-1]
-            is_single_package = ' ' not in package_names
-
-            output = ''
-            if 'Successfully installed' in obs.content:
-                restart_kernel = 'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
-                if (
-                    'Note: you may need to restart the kernel to use updated packages.'
-                    in obs.content
-                ):
-                    _next_obs = await self._run(
-                        IPythonRunCellAction(code=restart_kernel)
-                    )
-                    output = '[Package installed successfully]'
-                    if _next_obs.content.strip() != "{'status': 'ok', 'restart': True}":
-                        logger.error(
-                            'Failed to restart the kernel to load the package: '
-                            f'{_next_obs.content}'
-                        )
-                        output += (
-                            '\n[But failed to restart the kernel to load the package]'
-                        )
-                    else:
-                        output += (
-                            '\n[Kernel restarted successfully to load the package]'
-                        )
-
-                    # re-init the kernel after restart
-                    if action.kernel_init_code:
-                        _next_obs = await self._run(
-                            IPythonRunCellAction(code=action.kernel_init_code)
-                        )
-                        assert (
-                            _next_obs.content
-                            == '[Code executed successfully with no output]'
-                        )
-                        logger.debug(
-                            'Kernel re-initialized successfully after package installation:\n'
-                            f'CODE: {action.code}\n'
-                            f'OUTPUT: {obs.content}'
-                        )
-            elif (
-                is_single_package
-                and f'Requirement already satisfied: {package_names}' in output
-            ):
-                output = '[Package already installed]'
-            return IPythonRunCellObservation(
-                content=output,
-                code=action.code,
-            )
-        # return the default observation
-        return obs
-
     async def _run(self, action: Action) -> IPythonRunCellObservation:
         """Internal method to run a code cell in the jupyter kernel."""
         if not isinstance(action, IPythonRunCellAction):
@@ -141,5 +84,4 @@ class JupyterPlugin(Plugin):
 
     async def run(self, action: Action) -> IPythonRunCellObservation:
         obs = await self._run(action)
-        assert isinstance(action, IPythonRunCellAction)
-        return await self._postprocess_pip(action, obs)
+        return obs
