@@ -956,9 +956,9 @@ async def test_bash_python_version(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_ipython_package_install(temp_dir, box_class):
+async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = await _load_runtime(temp_dir, box_class)
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -972,8 +972,7 @@ async def test_ipython_package_install(temp_dir, box_class):
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Package installed successfully]' in obs.content
-    assert '[Kernel restarted successfully to load the package]' in obs.content
+    assert 'Successfully installed pymsgbox-1.0.9' in obs.content
 
     action = IPythonRunCellAction(code='import pymsgbox')
     logger.info(action, extra={'msg_type': 'ACTION'})
