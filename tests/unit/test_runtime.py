@@ -117,7 +117,7 @@ async def _load_runtime(
         sandbox=SandboxConfig(use_host_network=True),
     )
     load_from_env(config, os.environ)
-    config.run_as_devin = run_as_devin
+    config.run_as_devin = run_as_devin or box_class == ServerRuntime
     config.sandbox.enable_auto_lint = enable_auto_lint
 
     file_store = get_file_store(config.file_store, config.file_store_path)
