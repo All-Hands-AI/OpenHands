@@ -14,7 +14,7 @@ FROM {{ base_image }}
 
 # Install necessary packages and clean up in one layer
 RUN apt-get update && \
-    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins python3 && \
+    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins python3 git && \
     apt-get clean \
     && ln -s /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
