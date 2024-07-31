@@ -1,7 +1,5 @@
 from typing import Optional, Union
 
-from opendevin.events.serialization.event import event_to_dict
-from opendevin.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 from pydantic import BaseModel, Field
 
 from opendevin.core.logger import opendevin_logger as logger
@@ -17,6 +15,8 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.event import event_to_dict
+from opendevin.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 
 TraceElement = Union[Message, ToolCall, ToolOutput, Function]
 
@@ -50,8 +50,8 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
         pass
     elif hasattr(action, 'action') and action.action is not None:
         event_dict = event_to_dict(action)
-        args = event_dict.get("args", {})
-        thought = args.pop("thought", None)
+        args = event_dict.get('args', {})
+        thought = args.pop('thought', None)
         function = Function(name=action.action, arguments=args)
         if thought is not None:
             inv_trace.append(Message(role='assistant', content=thought))
@@ -61,7 +61,9 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
     return inv_trace
 
 
-def parse_observation(trace: list[TraceElement], obs: Observation) -> list[TraceElement]:
+def parse_observation(
+    trace: list[TraceElement], obs: Observation
+) -> list[TraceElement]:
     last_id = get_last_id(trace)
     if type(obs) in [NullObservation, AgentStateChangedObservation]:
         return []
@@ -72,7 +74,9 @@ def parse_observation(trace: list[TraceElement], obs: Observation) -> list[Trace
     return []
 
 
-def parse_element(trace: list[TraceElement], element: Action | Observation) -> list[TraceElement]:
+def parse_element(
+    trace: list[TraceElement], element: Action | Observation
+) -> list[TraceElement]:
     if isinstance(element, Action):
         return parse_action(trace, element)
     return parse_observation(trace, element)
