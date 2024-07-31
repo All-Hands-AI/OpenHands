@@ -85,6 +85,7 @@ python-pptx = "*"
 pylatexenc = "*"
 opencv-python = "*"
 
+
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = [
