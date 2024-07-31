@@ -122,7 +122,7 @@ describe("SettingsForm", () => {
       const user = userEvent.setup();
       renderSettingsForm();
 
-      // We need to enable the agent select first
+      // We need to enable the agent select
       const agentSwitch = screen.getByTestId("enableagentselect");
       await user.click(agentSwitch);
 
