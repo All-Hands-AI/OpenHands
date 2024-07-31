@@ -52,7 +52,7 @@ describe("SettingsForm", () => {
     expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
   });
 
-  it("should display the existing values if it they are present", () => {
+  it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "model2",
       AGENT: "agent2",
@@ -119,17 +119,18 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onAgentChange handler when the agent changes", async () => {
+      const user = userEvent.setup();
       renderSettingsForm();
 
+      // We need to enable the agent select
+      const agentSwitch = screen.getByTestId("enableagentselect");
+      await user.click(agentSwitch);
+
       const agentInput = screen.getByRole("combobox", { name: "agent" });
-      await act(async () => {
-        await userEvent.click(agentInput);
-      });
+      await user.click(agentInput);
 
       const agent3 = screen.getByText("agent3");
-      await act(async () => {
-        await userEvent.click(agent3);
-      });
+      await user.click(agent3);
 
       expect(onAgentChangeMock).toHaveBeenCalledWith("agent3");
     });
