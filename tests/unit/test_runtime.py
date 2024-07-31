@@ -37,6 +37,7 @@ def print_method_name(request):
     print('\n########################################################################')
     print(f'Running test: {request.node.name}')
     print('########################################################################')
+    yield
 
 
 @pytest.fixture
