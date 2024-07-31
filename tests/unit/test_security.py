@@ -4,6 +4,7 @@ import tempfile
 
 import pytest
 
+from opendevin.core.schema.action import ActionType
 from opendevin.core.schema.agent import AgentState
 from opendevin.events.action import (
     AgentDelegateAction,
@@ -77,7 +78,7 @@ def test_cmd(cmd, expected_risk, temp_dir: str):
     policy = """
     raise "Disallow rm -rf [risk=medium]" if:
         (call: ToolCall)
-        call is tool:cmd_run
+        call is tool:run
         match("rm -rf", call.function.arguments.command)
     """
     InvariantAnalyzer(event_stream, policy)
@@ -105,7 +106,7 @@ def test_leak_secrets(code, expected_risk, temp_dir: str):
 
     raise "Disallow writing secrets [risk=medium]" if:
         (call: ToolCall)
-        call is tool:ipython_run_cell
+        call is tool:run_ipython
         any(secrets(call.function.arguments.code))
     """
     InvariantAnalyzer(event_stream, policy)
@@ -172,8 +173,12 @@ def test_unsafe_bash_command(temp_dir: str):
                     id='1',
                     type='function',
                     function=Function(
-                        name='ipython_run_cell',
-                        arguments={'code': "print('hello')", 'kernel_init_code': ''},
+                        name=ActionType.RUN_IPYTHON,
+                        arguments={
+                            'code': "print('hello')",
+                            'kernel_init_code': '',
+                            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+                        },
                     ),
                 ),
             ],
@@ -194,7 +199,7 @@ def test_unsafe_bash_command(temp_dir: str):
                     id='1',
                     type='function',
                     function=Function(
-                        name='agent_finish',
+                        name=ActionType.FINISH,
                         arguments={'outputs': {'content': 'outputs content'}},
                     ),
                 ),
@@ -211,7 +216,7 @@ def test_unsafe_bash_command(temp_dir: str):
                     id='1',
                     type='function',
                     function=Function(
-                        name='cmd_run',
+                        name=ActionType.RUN,
                         arguments={
                             'command': 'ls',
                             'is_confirmed': ActionConfirmationStatus.CONFIRMED,
@@ -238,7 +243,7 @@ def test_unsafe_bash_command(temp_dir: str):
                     id='1',
                     type='function',
                     function=Function(
-                        name='agent_delegate',
+                        name=ActionType.DELEGATE,
                         arguments={
                             'agent': 'VerifierAgent',
                             'inputs': {'task': 'verify this task'},
@@ -265,7 +270,7 @@ def test_unsafe_bash_command(temp_dir: str):
                     id='1',
                     type='function',
                     function=Function(
-                        name='browse_interactive',
+                        name=ActionType.BROWSE_INTERACTIVE,
                         arguments={
                             'browser_actions': 'goto("http://localhost:3000")',
                             'browsergym_send_msg_to_user': 'browsergym',
@@ -290,7 +295,8 @@ def test_unsafe_bash_command(temp_dir: str):
                     id='1',
                     type='function',
                     function=Function(
-                        name='browse_url', arguments={'url': 'http://localhost:3000'}
+                        name=ActionType.BROWSE,
+                        arguments={'url': 'http://localhost:3000'},
                     ),
                 ),
             ],

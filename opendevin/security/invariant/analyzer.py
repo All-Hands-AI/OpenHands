@@ -7,7 +7,6 @@ import re
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import (
     Action,
@@ -103,11 +102,6 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def close(self):
         self.container.stop()
 
-    def print_trace(self):
-        logger.info('-> Invariant trace:')
-        for element in self.trace:
-            logger.info('\t-> ' + str(element))
-
     async def log_event(self, event: Event) -> None:
         if isinstance(event, Observation):
             element = parse_element(self.trace, event)
@@ -115,7 +109,6 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.input.extend([e.model_dump(exclude_none=True) for e in element])  # type: ignore [call-overload]
         else:
             logger.info('Invariant skipping element: event')
-        self.print_trace()
 
     def get_risk(self, results: List[str]) -> ActionSecurityRisk:
         mapping = {"high": ActionSecurityRisk.HIGH, "medium": ActionSecurityRisk.MEDIUM, "low": ActionSecurityRisk.LOW}

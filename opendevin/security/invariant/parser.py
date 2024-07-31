@@ -1,28 +1,19 @@
 from typing import Optional, Union
 
+from opendevin.events.serialization.event import event_to_dict
 from opendevin.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 from pydantic import BaseModel, Field
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
-    AgentDelegateAction,
-    AgentFinishAction,
-    BrowseInteractiveAction,
-    BrowseURLAction,
     ChangeAgentStateAction,
-    CmdRunAction,
-    IPythonRunCellAction,
     MessageAction,
     NullAction,
 )
 from opendevin.events.event import EventSource
 from opendevin.events.observation import (
-    AgentDelegateObservation,
     AgentStateChangedObservation,
-    BrowserOutputObservation,
-    CmdOutputObservation,
-    IPythonRunCellObservation,
     NullObservation,
     Observation,
 )
@@ -55,50 +46,16 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
             inv_trace.append(Message(role='user', content=action.content))
         else:
             inv_trace.append(Message(role='assistant', content=action.content))
-    elif type(action) == IPythonRunCellAction:
-        function = Function(
-            name='ipython_run_cell',
-            arguments={
-                'code': action.code,
-                'kernel_init_code': action.kernel_init_code,
-            },
-        )
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-    elif type(action) == AgentFinishAction:
-        function = Function(name='agent_finish', arguments={'outputs': action.outputs})
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-    elif type(action) == CmdRunAction:
-        function = Function(
-            name='cmd_run',
-            arguments={'command': action.command, 'is_confirmed': action.is_confirmed},
-        )
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-    elif type(action) == AgentDelegateAction:
-        function = Function(
-            name='agent_delegate',
-            arguments={'agent': action.agent, 'inputs': action.inputs},
-        )
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-    elif type(action) == BrowseInteractiveAction:
-        function = Function(
-            name='browse_interactive',
-            arguments={
-                'browser_actions': action.browser_actions,
-                'browsergym_send_msg_to_user': action.browsergym_send_msg_to_user,
-            },
-        )
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
-    elif type(action) == BrowseURLAction:
-        function = Function(name='browse_url', arguments={'url': action.url})
-        inv_trace.append(Message(role='assistant', content=action.thought))
-        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
     elif type(action) in [NullAction, ChangeAgentStateAction]:
         pass
+    elif hasattr(action, 'action'):
+        event_dict = event_to_dict(action)
+        args = event_dict.get("args", {})
+        thought = args.pop("thought", None)
+        function = Function(name=action.action, arguments=args)
+        if thought is not None:
+            inv_trace.append(Message(role='assistant', content=thought))
+        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
     else:
         logger.error(f'Unknown action type: {type(action)}')
     return inv_trace
@@ -106,19 +63,12 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
 
 def parse_observation(trace: list[TraceElement], obs: Observation) -> list[TraceElement]:
     last_id = get_last_id(trace)
-    if type(obs) == NullObservation:
+    if type(obs) in [NullObservation, AgentStateChangedObservation]:
         return []
-    elif type(obs) == CmdOutputObservation:
+    elif hasattr(obs, 'content') and obs.content is not None:
         return [ToolOutput(role='tool', content=obs.content, tool_call_id=last_id)]
-    elif type(obs) == IPythonRunCellObservation:
-        return [ToolOutput(role='tool', content=obs.content, tool_call_id=last_id)]
-    elif type(obs) == AgentStateChangedObservation:
-        return []
-    elif type(obs) == BrowserOutputObservation:
-        return [ToolOutput(role='tool', content=obs.content, tool_call_id=last_id)]
-    elif type(obs) == AgentDelegateObservation:
-        return [ToolOutput(role='tool', content=obs.content, tool_call_id=last_id)]
-    logger.error(f'Unknown observation type: {type(obs)}')
+    else:
+        logger.error(f'Unknown observation type: {type(obs)}')
     return []
 
 
@@ -126,11 +76,6 @@ def parse_element(trace: list[TraceElement], element: Action | Observation) -> l
     if isinstance(element, Action):
         return parse_action(trace, element)
     return parse_observation(trace, element)
-
-
-def print_inv_trace(trace: list[TraceElement]):
-    for element in trace:
-        print(element)
 
 
 def parse_trace(trace: list[tuple[Action, Observation]]):
