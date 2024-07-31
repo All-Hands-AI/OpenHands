@@ -44,10 +44,12 @@ class EventStreamRuntime(Runtime):
         config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
-        container_image: str | None = None,
         plugins: list[PluginRequirement] | None = None,
+        container_image: str | None = None,
     ):
-        super().__init__(config, event_stream, sid)  # will initialize the event stream
+        super().__init__(
+            config, event_stream, sid, plugins
+        )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://localhost:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
@@ -139,7 +141,9 @@ class EventStreamRuntime(Runtime):
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
-                    f'--plugins {plugin_names}'
+                    f'--plugins {plugin_names} '
+                    f'--username {"opendevin" if self.config.run_as_devin else "root"} '
+                    f'--user-id {self.config.sandbox.user_id}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
@@ -206,7 +210,7 @@ class EventStreamRuntime(Runtime):
         if isinstance(event, Action):
             logger.info(event, extra={'msg_type': 'ACTION'})
             observation = await self.run_action(event)
-            # observation._cause = event.id  # type: ignore[attr-defined]
+            observation._cause = event.id  # type: ignore[attr-defined]
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
@@ -248,7 +252,6 @@ class EventStreamRuntime(Runtime):
             except Exception as e:
                 logger.error(f'Error during command execution: {e}')
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
-            obs._parent = action.id  # type: ignore[attr-defined]
             return obs
 
     async def run(self, action: CmdRunAction) -> Observation:
@@ -277,14 +280,3 @@ class EventStreamRuntime(Runtime):
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
-
-    ############################################################################
-    # Initialization work inside sandbox image
-    ############################################################################
-
-    # init_runtime_tools direcctly do as what Runtime do
-
-    # Do in the od_runtime_client
-    # Overwrite the init_sandbox_plugins
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        pass

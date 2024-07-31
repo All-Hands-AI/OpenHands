@@ -231,6 +231,10 @@ describe("SettingsModal", () => {
       ),
     );
 
+    // We need to enable the agent select first
+    const agentSwitch = screen.getByTestId("enableagentselect");
+    await user.click(agentSwitch);
+
     const resetButton = screen.getByRole("button", {
       name: /MODAL_RESET_BUTTON_LABEL/i,
     });

@@ -1,8 +1,7 @@
 import json
-import pathlib
-import tempfile
 
 import pytest
+from pytest import TempPathFactory
 
 from opendevin.events import EventSource, EventStream
 from opendevin.events.action import (
@@ -13,11 +12,8 @@ from opendevin.storage import get_file_store
 
 
 @pytest.fixture
-def temp_dir(monkeypatch):
-    # get a temporary directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path().mkdir(parents=True, exist_ok=True)
-        yield temp_dir
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_event_stream'))
 
 
 def collect_events(stream):

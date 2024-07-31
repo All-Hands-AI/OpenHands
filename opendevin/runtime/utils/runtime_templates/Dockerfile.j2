@@ -5,6 +5,7 @@ FROM {{ base_image }}
 # START: Build Runtime Image from Scratch
 # ================================================================
 FROM {{ base_image }}
+
 {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
 {% set LIBGL_MESA = 'libgl1' %}
 {% else %}
@@ -20,8 +21,10 @@ RUN apt-get update && \
 # Create necessary directories
 RUN mkdir -p /opendevin && \
     mkdir -p /opendevin/logs && \
-    chmod 777 /opendevin/logs && \
-    echo "" > /opendevin/bash.bashrc
+    mkdir -p /opendevin/poetry && \
+    chmod 777 -R /opendevin
+
+ENV POETRY_VIRTUALENVS_PATH=/opendevin/poetry
 
 RUN if [ ! -d /opendevin/miniforge3 ]; then \
     wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \

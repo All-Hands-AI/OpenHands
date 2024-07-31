@@ -25,7 +25,7 @@ from opendevin.runtime import (
     Sandbox,
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
-from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage.local import LocalFileStore
@@ -40,9 +40,10 @@ class ServerRuntime(Runtime):
         config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
+        plugins: list[PluginRequirement] | None = None,
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(config, event_stream, sid)
+        super().__init__(config, event_stream, sid, plugins)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
             self.sandbox = self.create_sandbox(sid, config.sandbox.box_type)
@@ -79,18 +80,28 @@ class ServerRuntime(Runtime):
             raise ValueError(f'Invalid sandbox type: {box_type}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
+        # init sandbox plugins
+        self.sandbox.init_plugins(self.plugins)
+
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
         await super().ainit(env_vars)
+
+        if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
+            obs = await self.run_ipython(
+                IPythonRunCellAction(
+                    code=f'import os; os.chdir("{self.config.workspace_mount_path_in_sandbox}")'
+                )
+            )
+            logger.info(
+                f'Switch to working directory {self.config.workspace_mount_path_in_sandbox} in IPython. Output: {obs.content}'
+            )
 
     async def close(self):
         if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
             self.sandbox.close()
         if hasattr(self, 'browser') and self.browser is not None:
             self.browser.close()
-
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(
         self,
