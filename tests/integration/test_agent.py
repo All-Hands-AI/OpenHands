@@ -33,6 +33,8 @@ CONFIG = AppConfig(
     ),
 )
 load_from_env(CONFIG, os.environ)
+
+# TODO: set this as default after ServerRuntime is deprecated
 if CONFIG.runtime == 'eventstream':
     CONFIG.sandbox.container_image = 'ubuntu:22.04'
 
