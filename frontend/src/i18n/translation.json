@@ -721,6 +721,9 @@
     "de": "Wartet auf die Bestätigung des Benutzers, bevor der Code ausgeführt wird.",
     "zh-CN": "在执行代码之前等待用户确认。"
   },
+  "SETTINGS$AGENT_SELECT_ENABLED": {
+    "en": "Enable Agent Selection - Advanced Users"
+  },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",
     "zh-CN": "页面未加载",
