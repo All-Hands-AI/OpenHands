@@ -19,7 +19,7 @@ from opendevin.controller.state.state import State
 from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_agent_controller
+from opendevin.core.main import run_controller
 from opendevin.llm.llm import LLM
 
 from .datatypes import TaskState
@@ -149,12 +149,13 @@ def process_instance(
     )
 
     state: State | None = asyncio.run(
-        run_agent_controller(
-            agent,
-            instruction,
+        run_controller(
+            config=config,
+            task_str=instruction,
             max_iterations=metadata.max_iterations,
             max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=fake_user_response_fn,
+            agent=agent,
             sandbox=sandbox,
             sid=sid,
         )
