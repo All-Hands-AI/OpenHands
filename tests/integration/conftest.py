@@ -55,6 +55,9 @@ def filter_out_symbols(input):
 
     # remove newlines and whitespace
     input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
+
+    # remove all non-alphanumeric characters
+    input = re.sub(r'[^a-zA-Z0-9]', '', input)
     return input
 
 
