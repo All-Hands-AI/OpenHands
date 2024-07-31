@@ -114,7 +114,7 @@ def test_jupyter_heredoc():
     print('Hello, `World`!
     ')
     EOL
-    [error]: here-document at line 0 delimited by end-of-file (wanted "'EOL'") (position 75)
+    [warning]: here-document at line 0 delimited by end-of-file (wanted "'EOL'") (position 75)
 
     TODO: remove this tests after the deprecation of ServerRuntime
     """

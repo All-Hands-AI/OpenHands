@@ -53,7 +53,7 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
         await self._create_security_analyzer(config.security.security_analyzer)
-        await self._create_runtime(runtime_name, config)
+        await self._create_runtime(runtime_name, config, agent)
         await self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -81,7 +81,7 @@ class AgentSession:
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(security_analyzer, SecurityAnalyzer)(self.event_stream)
 
-    async def _create_runtime(self, runtime_name: str, config: AppConfig):
+    async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
         """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
@@ -89,7 +89,10 @@ class AgentSession:
         logger.info(f'Using runtime: {runtime_name}')
         runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(
-            config=config, event_stream=self.event_stream, sid=self.sid
+            config=config,
+            event_stream=self.event_stream,
+            sid=self.sid,
+            plugins=agent.sandbox_plugins,
         )
         await self.runtime.ainit()
 
@@ -117,7 +120,6 @@ class AgentSession:
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
                     ' LocalBox will not work properly.'
                 )
-        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(
