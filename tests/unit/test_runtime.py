@@ -146,6 +146,7 @@ async def _load_runtime(
             container_image=cur_container_image,
         )
         await runtime.ainit()
+
     elif box_class == ServerRuntime:
         runtime = ServerRuntime(
             config=config, event_stream=event_stream, sid=sid, plugins=plugins
