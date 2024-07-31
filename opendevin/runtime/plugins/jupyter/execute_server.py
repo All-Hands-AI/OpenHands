@@ -13,8 +13,7 @@ from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.ioloop import PeriodicCallback
 from tornado.websocket import websocket_connect
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 
 def strip_ansi(o: str) -> str:
@@ -58,7 +57,9 @@ class JupyterKernel:
         self.kernel_id = None
         self.ws = None
         self.convid = convid
-        logger.info(f'Jupyter kernel created for conversation {convid} at {url_suffix}')
+        logging.info(
+            f'Jupyter kernel created for conversation {convid} at {url_suffix}'
+        )
 
         self.heartbeat_interval = 10000  # 10 seconds
         self.heartbeat_callback = None
@@ -74,7 +75,7 @@ class JupyterKernel:
             self.tools_to_run.append('from agentskills import *')
         for tool in self.tools_to_run:
             res = await self.execute(tool)
-            logger.info(f'Tool [{tool}] initialized:\n{res}')
+            logging.info(f'Tool [{tool}] initialized:\n{res}')
         self.initialized = True
 
     async def _send_heartbeat(self):
@@ -88,7 +89,7 @@ class JupyterKernel:
             try:
                 await self._connect()
             except ConnectionRefusedError:
-                logger.info(
+                logging.info(
                     'ConnectionRefusedError: Failed to reconnect to kernel websocket - Is the kernel still running?'
                 )
 
@@ -124,7 +125,7 @@ class JupyterKernel:
             )
         )
         self.ws = await websocket_connect(ws_req)
-        logger.info('Connected to kernel websocket')
+        logging.info('Connected to kernel websocket')
 
         # Setup heartbeat
         if self.heartbeat_callback:
@@ -169,7 +170,7 @@ class JupyterKernel:
                 }
             )
         )
-        logger.info(f'Executed code in jupyter kernel:\n{res}')
+        logging.info(f'Executed code in jupyter kernel:\n{res}')
 
         outputs = []
 
@@ -186,7 +187,7 @@ class JupyterKernel:
                     continue
 
                 if os.environ.get('DEBUG'):
-                    logger.info(
+                    logging.info(
                         f"MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg['content']}"
                     )
 
@@ -215,7 +216,7 @@ class JupyterKernel:
                 method='POST',
                 body=json_encode({'kernel_id': self.kernel_id}),
             )
-            logger.info(f'Kernel interrupted: {interrupt_response}')
+            logging.info(f'Kernel interrupted: {interrupt_response}')
 
         try:
             execution_done = await asyncio.wait_for(wait_for_messages(), timeout)
@@ -232,7 +233,7 @@ class JupyterKernel:
         ret = strip_ansi(ret)
 
         if os.environ.get('DEBUG'):
-            logger.info(f'OUTPUT:\n{ret}')
+            logging.info(f'OUTPUT:\n{ret}')
         return ret
 
     async def shutdown_async(self):
