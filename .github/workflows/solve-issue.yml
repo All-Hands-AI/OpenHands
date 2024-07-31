@@ -40,7 +40,7 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         export PATH="/github/home/.local/bin:$PATH"
-        poetry install --without evaluation
+        poetry install --without evaluation,llama-index
         poetry run playwright install --with-deps chromium
 
 
