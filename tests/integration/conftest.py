@@ -4,6 +4,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread
@@ -227,7 +228,9 @@ def http_server():
     thread = Thread(target=server.serve_forever)
     thread.setDaemon(True)
     thread.start()
+    time.sleep(1)
 
+    print('HTTP server started...')
     yield server
 
     # Stop the server
