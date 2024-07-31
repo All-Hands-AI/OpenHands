@@ -86,6 +86,11 @@ class EventStreamRuntime(Runtime):
         # AND the ones in env vars!
         await super().ainit(env_vars)
 
+        logger.info(
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
+        )
+        logger.info(f'Container initialized with env vars: {env_vars}')
+
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
         try:
