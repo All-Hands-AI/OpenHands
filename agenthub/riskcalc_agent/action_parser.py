@@ -25,12 +25,12 @@ class RiskCalcResponseParser(ResponseParser):
         # Need pay attention to the item order in self.action_parsers
         super().__init__()
         self.action_parsers = [
-            CodeActActionParserFinish(),
-            CodeActActionParserCmdRun(),
-            CodeActActionParserIPythonRunCell(),
-            CodeActActionParserAgentDelegate(),
+            RiskCalcActionParserFinish(),
+            RiskCalcActionParserCmdRun(),
+            RiskCalcActionParserIPythonRunCell(),
+            RiskCalcActionParserAgentDelegate(),
         ]
-        self.default_parser = CodeActActionParserMessage()
+        self.default_parser = RiskCalcActionParserMessage()
 
     def parse(self, response) -> Action:
         action_str = self.parse_response(response)
@@ -52,7 +52,7 @@ class RiskCalcResponseParser(ResponseParser):
         return self.default_parser.parse(action_str)
 
 
-class CodeActActionParserFinish(ActionParser):
+class RiskCalcActionParserFinish(ActionParser):
     """
     Parser action:
         - AgentFinishAction() - end the interaction
@@ -75,7 +75,7 @@ class CodeActActionParserFinish(ActionParser):
         return AgentFinishAction(thought=thought)
 
 
-class CodeActActionParserCmdRun(ActionParser):
+class RiskCalcActionParserCmdRun(ActionParser):
     """
     Parser action:
         - CmdRunAction(command) - bash command to run
@@ -105,7 +105,7 @@ class CodeActActionParserCmdRun(ActionParser):
         return CmdRunAction(command=command_group, thought=thought)
 
 
-class CodeActActionParserIPythonRunCell(ActionParser):
+class RiskCalcActionParserIPythonRunCell(ActionParser):
     """
     Parser action:
         - IPythonRunCellAction(code) - IPython code to run
@@ -136,7 +136,7 @@ class CodeActActionParserIPythonRunCell(ActionParser):
         )
 
 
-class CodeActActionParserAgentDelegate(ActionParser):
+class RiskCalcActionParserAgentDelegate(ActionParser):
     """
     Parser action:
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
@@ -163,7 +163,7 @@ class CodeActActionParserAgentDelegate(ActionParser):
         return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
 
 
-class CodeActActionParserMessage(ActionParser):
+class RiskCalcActionParserMessage(ActionParser):
     """
     Parser action:
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
