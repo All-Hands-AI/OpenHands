@@ -108,7 +108,6 @@ class Runtime:
         self,
         runtime_tools: list[RuntimeTool],
         runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-        is_async: bool = True,
     ) -> None:
         # TODO: deprecate this method when we move to the new EventStreamRuntime
         raise NotImplementedError('This method is not implemented in the base class.')

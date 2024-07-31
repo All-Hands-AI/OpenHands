@@ -122,7 +122,6 @@ async def run_controller(
     if isinstance(runtime, ServerRuntime):
         runtime.init_runtime_tools(
             controller.agent.runtime_tools,
-            is_async=False,
             runtime_tools_config=runtime_tools_config,
         )
         # browser eval specific

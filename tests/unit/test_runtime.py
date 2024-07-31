@@ -140,7 +140,6 @@ async def _load_runtime(
 
         runtime.init_runtime_tools(
             [RuntimeTool.BROWSER],
-            is_async=False,
             runtime_tools_config={},
         )
     else:
