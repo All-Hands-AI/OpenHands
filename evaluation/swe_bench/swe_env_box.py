@@ -146,8 +146,8 @@ class SWEBenchSSHBox(DockerSSHBox):
     @classmethod
     def get_box_for_instance(
         cls,
-        instance,
         config: AppConfig,
+        instance,
         workspace_dir_name=None,
         skip_workspace_mount: bool = True,
         workspace_mount_path: str | None = None,
