@@ -56,6 +56,11 @@ mkdir -p $WORKSPACE_BASE
 # use environmental variable if exists, otherwise use "ssh"
 SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"  # can be server or eventstream
+# TODO: set this as default after ServerRuntime is deprecated
+if [ "$TEST_RUNTIME" == "eventstream" ]; then
+    SANDBOX_CONTAINER_IMAGE="ubuntu:22.04"
+fi
+
 PERSIST_SANDBOX=false
 MAX_ITERATIONS=15
 echo "SANDBOX_BOX_TYPE: $SANDBOX_BOX_TYPE"
@@ -70,7 +75,7 @@ agents=(
   "CodeActSWEAgent"
 )
 tasks=(
-  # "Fix typos in bad.txt."
+  "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
   "Write a git commit message for the current staging area."
@@ -78,7 +83,7 @@ tasks=(
   "Browse localhost:8000, and tell me the ultimate answer to life."
 )
 test_names=(
-  # "test_edits"
+  "test_edits"
   "test_write_simple_script"
   "test_ipython"
   "test_simple_task_rejection"
@@ -113,6 +118,7 @@ run_test() {
     MAX_ITERATIONS=$MAX_ITERATIONS \
     DEFAULT_AGENT=$agent \
     TEST_RUNTIME="$TEST_RUNTIME" \
+    SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -185,6 +191,7 @@ regenerate_without_llm() {
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
       TEST_RUNTIME="$TEST_RUNTIME" \
+      SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
       poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
   set +x
 }
@@ -213,6 +220,7 @@ regenerate_with_llm() {
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
       DEFAULT_AGENT=$agent \
       RUNTIME="$TEST_RUNTIME" \
+      SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
       poetry run python "$PROJECT_ROOT/opendevin/core/main.py" \
       -i $MAX_ITERATIONS \
       -t "$task Do not ask me for confirmation at any point." \

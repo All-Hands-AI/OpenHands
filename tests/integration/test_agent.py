@@ -34,10 +34,6 @@ CONFIG = AppConfig(
 )
 load_from_env(CONFIG, os.environ)
 
-# TODO: set this as default after ServerRuntime is deprecated
-if CONFIG.runtime == 'eventstream':
-    CONFIG.sandbox.container_image = 'ubuntu:22.04'
-
 print('\nPaths used:')
 print(f'workspace_base: {CONFIG.workspace_base}')
 print(f'workspace_mount_path: {CONFIG.workspace_mount_path}')
