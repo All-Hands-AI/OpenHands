@@ -2,11 +2,11 @@
 
 import asyncio
 import os
+import shutil
 import time
 from unittest.mock import patch
 
 import pytest
-from pytest import TempPathFactory
 
 from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.logger import opendevin_logger as logger
@@ -40,9 +40,21 @@ def print_method_name(request):
     yield
 
 
+# this does NOT clean up the folder after every test!
+# @pytest.fixture
+# def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+#     return str(tmp_path_factory.mktemp('test_runtime'))
+
+
 @pytest.fixture
-def temp_dir(tmp_path_factory: TempPathFactory) -> str:
-    return str(tmp_path_factory.mktemp('test_runtime'))
+def temp_dir(tmp_path):
+    test_dir = tmp_path / 'test_runtime'
+    test_dir.mkdir()
+    yield str(test_dir)
+    try:
+        shutil.rmtree(test_dir, ignore_errors=True)
+    except Exception:
+        pass
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
