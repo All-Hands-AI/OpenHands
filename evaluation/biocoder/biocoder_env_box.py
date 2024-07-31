@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from datasets import load_dataset
 
-from opendevin.core.config import config
+from opendevin.core.config import load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import (
@@ -15,6 +15,8 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
     SWEAgentCommandsRequirement,
 )
+
+config = load_app_config()
 
 BIOCODER_BENCH_CONTAINER_IMAGE = 'public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0'
 
@@ -217,7 +219,7 @@ class BiocoderSSHBox(DockerSSHBox):
             config.workspace_mount_path = workspace_base
 
             # linting python after editing helps LLM fix indentations
-            config.enable_auto_lint = True
+            config.sandbox.enable_auto_lint = True
 
             # create folder for transferring files back/forth
             biocoder_cache_folder = 'biocoder_cache'
@@ -268,7 +270,7 @@ class BiocoderSSHBox(DockerSSHBox):
                 f.write(json.dumps(testcase_json, indent=4))
 
             # linting python after editing helps LLM fix indentations
-            config.enable_auto_lint = True
+            config.sandbox.enable_auto_lint = True
 
             sandbox = cls(
                 container_image=BIOCODER_BENCH_CONTAINER_IMAGE,

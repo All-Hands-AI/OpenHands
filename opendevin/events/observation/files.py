@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class FileReadObservation(Observation):
-    """
-    This data class represents the content of a file.
-    """
+    """This data class represents the content of a file."""
 
     path: str
     observation: str = ObservationType.READ
@@ -21,9 +19,7 @@ class FileReadObservation(Observation):
 
 @dataclass
 class FileWriteObservation(Observation):
-    """
-    This data class represents a file write operation
-    """
+    """This data class represents a file write operation"""
 
     path: str
     observation: str = ObservationType.WRITE

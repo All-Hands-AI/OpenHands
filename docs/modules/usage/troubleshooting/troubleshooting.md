@@ -34,7 +34,7 @@ If you're running on Windows and having trouble, check out our [guide for Window
 **Symptoms**
 
 ```bash
-Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information.
+Error creating controller. Please check Docker is running and visit `https://docs.all-hands.dev/modules/usage/troubleshooting` for more debugging information.
 ```
 
 ```bash

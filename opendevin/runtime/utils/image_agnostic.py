@@ -1,5 +1,4 @@
-"""
-This module contains functions for building and managing the agnostic sandbox image.
+"""This module contains functions for building and managing the agnostic sandbox image.
 
 This WILL BE DEPRECATED when EventStreamRuntime is fully implemented and adopted.
 """
@@ -12,8 +11,7 @@ from opendevin.core.logger import opendevin_logger as logger
 
 
 def generate_dockerfile(base_image: str) -> str:
-    """
-    Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
+    """Generate the Dockerfile content for the agnostic sandbox image based on user-provided base image.
 
     NOTE: This is only tested on debian yet.
     """

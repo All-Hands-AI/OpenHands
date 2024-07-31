@@ -35,7 +35,6 @@ class PluginMixin:
 
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
-
         if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
             return
 
@@ -83,13 +82,14 @@ class PluginMixin:
                         raise RuntimeError(
                             f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output.strip()}'
                         )
-                    logger.info(f'Plugin {requirement.name} initialized successfully')
+                    logger.debug(f'Output: {total_output.strip()}')
                 else:
                     if exit_code != 0:
                         raise RuntimeError(
                             f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
                         )
-                    logger.info(f'Plugin {requirement.name} initialized successfully.')
+                    logger.debug(f'Output: {output}')
+                logger.info(f'Plugin {requirement.name} initialized successfully')
         else:
             logger.info('Skipping plugin initialization in the sandbox')
 

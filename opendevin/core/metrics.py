@@ -1,6 +1,5 @@
 class Metrics:
-    """
-    Metrics class can record various metrics during running and evaluation.
+    """Metrics class can record various metrics during running and evaluation.
     Currently, we define the following metrics:
         accumulated_cost: the total cost (USD $) of the current LLM.
     """
@@ -29,16 +28,16 @@ class Metrics:
         self._accumulated_cost += value
         self._costs.append(value)
 
+    def merge(self, other: 'Metrics') -> None:
+        self._accumulated_cost += other.accumulated_cost
+        self._costs += other._costs
+
     def get(self):
-        """
-        Return the metrics in a dictionary.
-        """
+        """Return the metrics in a dictionary."""
         return {'accumulated_cost': self._accumulated_cost, 'costs': self._costs}
 
     def log(self):
-        """
-        Log the metrics.
-        """
+        """Log the metrics."""
         metrics = self.get()
         logs = ''
         for key, value in metrics.items():

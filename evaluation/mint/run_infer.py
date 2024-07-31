@@ -11,13 +11,12 @@ from evaluation.swe_bench.swe_env_box import DockerSSHBox
 from evaluation.utils.shared import (
     EvalMetadata,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
@@ -27,6 +26,8 @@ from .datatypes import TaskState
 from .env import SimplifiedEnv
 from .prompts import ToolPromptTemplate
 from .tasks import Task
+
+config = load_app_config()
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, int]):
@@ -55,7 +56,6 @@ def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response_mint,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -101,7 +101,15 @@ def process_instance(
 
     # use a session id for concurrent processing
     sid = instance.task_id + '_' + str(os.getpid())
-    sandbox = DockerSSHBox(sid=sid)
+    sandbox = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=False,
+        workspace_mount_path=config.workspace_mount_path,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=config.run_as_devin,
+        sid=sid,
+    )
 
     requirements_host_src = 'evaluation/mint/requirements.txt'
     requirements_sandbox_dest = '/opendevin/plugins/mint/requirements.txt'
@@ -145,6 +153,7 @@ def process_instance(
             agent,
             instruction,
             max_iterations=metadata.max_iterations,
+            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
             sid=sid,

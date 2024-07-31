@@ -61,42 +61,6 @@ _CodeActAgent使用`gpt-4-turbo-2024-04-09`执行数据科学任务（线性回�
 [] 支持Web浏览
 [] 完成CodeAct agent提交Github PR的工作流程
 
-## Monologue Agent
-
-### 描述
-
-Monologue Agent利用长短期记忆来完成任务。
-长期记忆存储为LongTermMemory对象，模型使用它来搜索过去的示例。
-短期记忆存储为Monologue对象，模型可以根据需要进行压缩。
-
-### 动作
-
-`Action`,
-`NullAction`,
-`CmdRunAction`,
-`FileWriteAction`,
-`FileReadAction`,
-`BrowseURLAction`,
-`GithubPushAction`,
-`AgentThinkAction`
-
-### 观测
-
-`Observation`,
-`NullObservation`,
-`CmdOutputObservation`,
-`FileReadObservation`,
-`BrowserOutputObservation`
-
-### 方法
-
-| 方法           | 描述                                                                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `__init__`     | 使用长期记忆和内部独白初始化Agent                                                                                                            |
-| `_add_event`   | 将事件附加到Agent的独白中，如独白过长自动与摘要一起压缩                                                                                    |
-| `_initialize`  | 使用`INITIAL_THOUGHTS`列表为agent提供其能力的上下文以及如何导航`/workspace`                                                                 |
-| `step`         | 通过添加最近的动作和观测修改当前状态，然后提示模型考虑其接下来的动作。                                                                     |
-
 ## Planner Agent
 
 ### 描述

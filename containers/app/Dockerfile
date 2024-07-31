@@ -1,5 +1,5 @@
 ARG OPEN_DEVIN_BUILD_VERSION=dev
-FROM node:21.7.2-bookworm-slim as frontend-builder
+FROM node:21.7.2-bookworm-slim AS frontend-builder
 
 WORKDIR /app
 
@@ -10,10 +10,10 @@ RUN npm ci
 COPY ./frontend ./
 RUN npm run make-i18n && npm run build
 
-FROM python:3.12.3-slim as backend-builder
+FROM python:3.12.3-slim AS backend-builder
 
 WORKDIR /app
-ENV PYTHONPATH '/app'
+ENV PYTHONPATH='/app'
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -26,9 +26,9 @@ RUN apt-get update -y \
 
 COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
-RUN poetry install --without evaluation --no-root && rm -rf $POETRY_CACHE_DIR
+RUN export POETRY_CACHE_DIR && poetry install --without evaluation --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM python:3.12.3-slim as runtime
+FROM python:3.12.3-slim AS runtime
 
 WORKDIR /app
 

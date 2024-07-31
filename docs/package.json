@@ -24,13 +24,13 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.2.1",
-    "react-use": "^17.5.0"
+    "react-use": "^17.5.1"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.4.0",
     "@docusaurus/tsconfig": "^3.4.0",
     "@docusaurus/types": "^3.4.0",
-    "typescript": "~5.5.3"
+    "typescript": "~5.5.4"
   },
   "browserslist": {
     "production": [

@@ -7,9 +7,7 @@ from .observation import Observation
 
 @dataclass
 class SuccessObservation(Observation):
-    """
-    This data class represents the result of a successful action.
-    """
+    """This data class represents the result of a successful action."""
 
     observation: str = ObservationType.SUCCESS
 

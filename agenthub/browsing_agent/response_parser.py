@@ -37,9 +37,8 @@ class BrowsingResponseParser(ResponseParser):
 
 
 class BrowsingActionParserMessage(ActionParser):
-    """
-    Parser action:
-        - BrowseInteractiveAction(browser_actions) - unexpected response format, message back to user
+    """Parser action:
+    - BrowseInteractiveAction(browser_actions) - unexpected response format, message back to user
     """
 
     def __init__(
@@ -60,9 +59,8 @@ class BrowsingActionParserMessage(ActionParser):
 
 
 class BrowsingActionParserBrowseInteractive(ActionParser):
-    """
-    Parser action:
-        - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
+    """Parser action:
+    - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
     """
 
     def __init__(

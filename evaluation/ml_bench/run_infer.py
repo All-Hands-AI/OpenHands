@@ -1,5 +1,4 @@
-"""
-Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
+"""Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
 Large Language Models (LLMs) in leveraging existing functions in open-source libraries for
 machine learning tasks. The benchmark is introduced in the paper "ML-Bench: Evaluating Large
 Language Models for Code Generation in Repository-Level Machine Learning Tasks"
@@ -26,22 +25,22 @@ from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
     make_metadata,
-    monologue_user_response,
     prepare_dataset,
     run_evaluation,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
+config = load_app_config()
+
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -68,7 +67,7 @@ ID2CONDA = {
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
+    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
@@ -113,7 +112,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
         # Create a sandbox, using the instance ID and PID as the session ID to avoid conflicts
         sid = str(instance['id']) + '_' + str(os.getpid())
-        sandbox = DockerSSHBox(sid=sid)
+        sandbox = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            run_as_devin=config.run_as_devin,
+            sid=sid,
+        )
 
         # Set up the task environment
         sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
@@ -153,6 +160,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
                 agent,
                 instruction,
                 max_iterations=metadata.max_iterations,
+                max_budget_per_task=config.max_budget_per_task,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),

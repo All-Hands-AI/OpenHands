@@ -1,13 +1,13 @@
 import asyncio
-import json
 import threading
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.utils import json
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
-from opendevin.storage import FileStore, get_file_store
+from opendevin.storage import FileStore
 
 from .event import Event, EventSource
 
@@ -29,15 +29,15 @@ class EventStream:
     _lock: threading.Lock
     _file_store: FileStore
 
-    def __init__(self, sid: str):
+    def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
-        self._file_store = get_file_store()
+        self._file_store = file_store
         self._subscribers = {}
         self._cur_id = 0
         self._lock = threading.Lock()
         self._reinitialize_from_file_store()
 
-    def _reinitialize_from_file_store(self):
+    def _reinitialize_from_file_store(self) -> None:
         try:
             events = self._file_store.list(f'sessions/{self.sid}/events')
         except FileNotFoundError:
