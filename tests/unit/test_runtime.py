@@ -37,6 +37,7 @@ def print_method_name(request):
     print('\n########################################################################')
     print(f'Running test: {request.node.name}')
     print('########################################################################')
+    yield
 
 
 @pytest.fixture
@@ -48,18 +49,23 @@ TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
 PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 
-# This assures that all tests run together for each runtime, not alternating between them,
-# which caused them to fail previously.
-@pytest.fixture(scope='module')
-def box_class(request):
-    time.sleep(1)
+# Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
+def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
-        return EventStreamRuntime
+        return [EventStreamRuntime]
     elif runtime.lower() == 'server':
-        return ServerRuntime
+        return [ServerRuntime]
     else:
-        return pytest.param([EventStreamRuntime, ServerRuntime])
+        return [EventStreamRuntime, ServerRuntime]
+
+
+# This assures that all tests run together per runtime, not alternating between them,
+# which cause errors (especially outside GitHub actions).
+@pytest.fixture(scope='module', params=get_box_classes())
+def box_class(request):
+    time.sleep(2)
+    return request.param
 
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
@@ -129,6 +135,7 @@ async def _load_runtime(
             container_image=cur_container_image,
         )
         await runtime.ainit()
+
     elif box_class == ServerRuntime:
         runtime = ServerRuntime(
             config=config, event_stream=event_stream, sid=sid, plugins=plugins
