@@ -123,9 +123,8 @@ def get_console_handler():
     return console_handler
 
 
-def get_file_handler(log_dir=None):
+def get_file_handler(log_dir):
     """Returns a file handler for logging."""
-    log_dir = os.path.join(os.getcwd(), 'logs') if log_dir is None else log_dir
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
@@ -159,16 +158,21 @@ sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
+LOG_DIR = os.path.join(
+    # parent dir of opendevin/core (i.e., root of the repo)
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    'logs',
+)
 if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
-opendevin_logger.addHandler(get_file_handler())
+    # default log to project root
+    opendevin_logger.info('DEBUG logging is enabled. Logging to %s', LOG_DIR)
+opendevin_logger.addHandler(get_file_handler(LOG_DIR))
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
-opendevin_logger.debug(
-    'Logging to %s', os.path.join(os.getcwd(), 'logs', 'opendevin.log')
-)
+
 
 # Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True
@@ -194,7 +198,7 @@ class LlmFileHandler(logging.FileHandler):
             self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
         else:
             self.session = 'default'
-        self.log_directory = os.path.join(os.getcwd(), 'logs', 'llm', self.session)
+        self.log_directory = os.path.join(LOG_DIR, 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
         if not DEBUG:
             # Clear the log directory if not in debug mode
