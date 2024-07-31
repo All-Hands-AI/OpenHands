@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
@@ -13,7 +13,7 @@ class CmdRunAction(Action):
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
-    security_risk: Optional[ActionSecurityRisk] = None
+    security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:
@@ -34,7 +34,7 @@ class IPythonRunCellAction(Action):
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
-    security_risk: Optional[ActionSecurityRisk] = None
+    security_risk: ActionSecurityRisk | None = None
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
 
     def __str__(self) -> str:

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from opendevin.core.schema import ActionType
 
@@ -10,7 +9,7 @@ class MessageAction(Action):
     content: str
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
-    security_risk: Optional[ActionSecurityRisk] = None
+    security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:
