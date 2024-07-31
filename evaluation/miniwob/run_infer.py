@@ -33,7 +33,14 @@ docker_ssh_box: DockerSSHBox | None = None
 def get_sandbox():
     global docker_ssh_box
     if docker_ssh_box is None:
-        docker_ssh_box = DockerSSHBox()
+        docker_ssh_box = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            run_as_devin=config.run_as_devin,
+        )
     return docker_ssh_box
 
 
