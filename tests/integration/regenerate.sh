@@ -164,7 +164,7 @@ cleanup() {
   echo "Cleaning up before exit..."
   if [ -n "$HTTP_SERVER_PID" ]; then
     echo "Killing HTTP server..."
-    kill $HTTP_SERVER_PID
+    kill $HTTP_SERVER_PID || true
     unset HTTP_SERVER_PID
   fi
   [ -f $TMP_FILE ] && rm $TMP_FILE
@@ -230,6 +230,7 @@ regenerate_with_llm() {
   mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
   mv logs/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
+  kill $HTTP_SERVER_PID || true
 }
 
 ##############################################################
