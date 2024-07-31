@@ -52,7 +52,7 @@ llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.5.5"
-mypy = "1.11.0"
+mypy = "1.11.1"
 pre-commit = "3.8.0"
 
 [tool.poetry.group.test.dependencies]
@@ -84,6 +84,7 @@ PyPDF2 = "*"
 python-pptx = "*"
 pylatexenc = "*"
 opencv-python = "*"
+
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
