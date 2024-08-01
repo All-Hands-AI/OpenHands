@@ -247,7 +247,8 @@ class RuntimeClient:
                 'JupyterRequirement not found. Unable to run IPython action.'
             )
 
-    def get_working_directory(self):
+    def _get_working_directory(self):
+        # NOTE: this is part of initialization, so we hard code the timeout
         result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
             raise RuntimeError('Failed to get working directory')
@@ -262,7 +263,7 @@ class RuntimeClient:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.get_working_directory()
+        working_dir = self._get_working_directory()
         filepath = self._resolve_path(action.path, working_dir)
         try:
             with open(filepath, 'r', encoding='utf-8') as file:
@@ -282,7 +283,7 @@ class RuntimeClient:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.get_working_directory()
+        working_dir = self._get_working_directory()
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
