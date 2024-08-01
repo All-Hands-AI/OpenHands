@@ -24,7 +24,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
@@ -492,6 +492,27 @@ def select_file(file: str, request: Request):
             content={'error': error_msg},
         )
     return {'code': content}
+
+
+@app.get('/api/files/{file_path:path}')
+def get_file(file_path: str, request: Request):
+    """Retrieve the content of a specified file."""
+    try:
+        content = request.state.session.agent_session.runtime.file_store.read(file_path)
+    except Exception as e:
+        logger.error(f'Error opening file {file_path}: {e}', exc_info=False)
+        error_msg = f'Error opening file: {e}'
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
+
+    # write the file to a temp file
+    # FIXME: there's definitely a better way to do this
+    with open('/tmp/opendevin-temp-file', 'wb') as f:
+        f.write(str.encode(content))
+
+    return FileResponse('/tmp/opendevin-temp-file')
 
 
 def sanitize_filename(filename):
