@@ -173,7 +173,13 @@ class CodeActSWEAgent(Agent):
 
             # add regular message
             if message:
-                messages.append(message)
+                # handle error if the message is the SAME role as the previous message
+                # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
+                # there should not have two consecutive messages from the same role
+                if messages and messages[-1]['role'] == message['role']:
+                    messages[-1]['content'] += '\n\n' + message['content']
+                else:
+                    messages.append(message)
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints

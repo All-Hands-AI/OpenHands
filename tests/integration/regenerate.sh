@@ -34,8 +34,8 @@ fi
 export SCRIPT_DIR=$(get_script_dir)
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
-WORKSPACE_MOUNT_PATH=$(realpath "${WORKSPACE_MOUNT_PATH}/_test_workspace")
-WORKSPACE_BASE=$(realpath "${WORKSPACE_BASE}/_test_workspace")
+WORKSPACE_MOUNT_PATH=$(realpath "${WORKSPACE_MOUNT_PATH}")/_test_workspace
+WORKSPACE_BASE=$(realpath "${WORKSPACE_BASE}")/_test_workspace
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
 echo "Current working directory: $(pwd)"
