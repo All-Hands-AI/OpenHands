@@ -98,25 +98,27 @@ class LLM:
         if self.config.drop_params:
             litellm.drop_params = self.config.drop_params
 
+        # Set up config attributes with default values to prevent AttributeError
+        self.config.api_version = getattr(self.config, 'api_version', None)
+        self.config.custom_llm_provider = getattr(
+            self.config, 'custom_llm_provider', None
+        )
+        self.config.max_output_tokens = getattr(self.config, 'max_output_tokens', None)
+        self.config.timeout = getattr(self.config, 'timeout', None)
+        self.config.temperature = getattr(self.config, 'temperature', 0.0)
+        self.config.top_p = getattr(self.config, 'top_p', 0.9)
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
             api_key=self.config.api_key,
             base_url=self.config.base_url,
-            api_version=self.config.api_version
-            if hasattr(self.config, 'api_version')
-            else None,
-            custom_llm_provider=self.config.custom_llm_provider
-            if hasattr(self.config, 'custom_llm_provider')
-            else None,
-            max_tokens=self.config.max_output_tokens
-            if hasattr(self.config, 'max_output_tokens')
-            else None,
-            timeout=self.config.timeout if hasattr(self.config, 'timeout') else None,
-            temperature=self.config.temperature
-            if hasattr(self.config, 'temperature')
-            else None,
-            top_p=self.config.top_p if hasattr(self.config, 'top_p') else None,
+            api_version=self.config.api_version,
+            custom_llm_provider=self.config.custom_llm_provider,
+            max_tokens=self.config.max_output_tokens,
+            timeout=self.config.timeout,
+            temperature=self.config.temperature,
+            top_p=self.config.top_p,
         )
 
         completion_unwrapped = self._completion
@@ -196,20 +198,12 @@ class LLM:
             model=self.config.model,
             api_key=self.config.api_key,
             base_url=self.config.base_url,
-            api_version=self.config.api_version
-            if hasattr(self.config, 'api_version')
-            else None,
-            custom_llm_provider=self.config.custom_llm_provider
-            if hasattr(self.config, 'custom_llm_provider')
-            else None,
-            max_tokens=self.config.max_output_tokens
-            if hasattr(self.config, 'max_output_tokens')
-            else None,
-            timeout=self.config.timeout if hasattr(self.config, 'timeout') else None,
-            temperature=self.config.temperature
-            if hasattr(self.config, 'temperature')
-            else None,
-            top_p=self.config.top_p if hasattr(self.config, 'top_p') else None,
+            api_version=self.config.api_version,
+            custom_llm_provider=self.config.custom_llm_provider,
+            max_tokens=self.config.max_output_tokens,
+            timeout=self.config.timeout,
+            temperature=self.config.temperature,
+            top_p=self.config.top_p,
             drop_params=True,
         )
 
@@ -277,8 +271,10 @@ class LLM:
 
             except UserCancelledError:
                 logger.info('LLM request cancelled by user.')
+                raise
             except OpenAIError as e:
                 logger.error(f'OpenAIError occurred:\n{e}')
+                raise
             except (
                 RateLimitError,
                 APIConnectionError,
@@ -315,8 +311,8 @@ class LLM:
             ),
             after=attempt_on_error,
         )
-        async def async_completion_stream_wrapper(*args, **kwargs):
-            """Async wrapper for the litellm acompletion function."""
+        async def async_acompletion_stream_wrapper(*args, **kwargs):
+            """Async wrapper for the litellm acompletion with streaming function."""
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -350,10 +346,13 @@ class LLM:
                     self._post_completion(chunk)
 
                     yield chunk
+
             except UserCancelledError:
                 logger.info('LLM request cancelled by user.')
+                raise
             except OpenAIError as e:
                 logger.error(f'OpenAIError occurred:\n{e}')
+                raise
             except (
                 RateLimitError,
                 APIConnectionError,
@@ -368,7 +367,7 @@ class LLM:
                     await asyncio.sleep(0.1)
 
         self._async_completion = async_completion_wrapper  # type: ignore
-        self._async_streaming_completion = async_completion_stream_wrapper  # type: ignore
+        self._async_streaming_completion = async_acompletion_stream_wrapper  # type: ignore
 
     async def _call_acompletion(self, *args, **kwargs):
         return await litellm.acompletion(*args, **kwargs)

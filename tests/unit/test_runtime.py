@@ -48,13 +48,14 @@ def print_method_name(request):
 
 @pytest.fixture
 def temp_dir(tmp_path):
+    time.sleep(2)
     test_dir = tmp_path / 'test_runtime'
     test_dir.mkdir()
     yield str(test_dir)
     try:
         shutil.rmtree(test_dir, ignore_errors=True)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f'Error cleaning up test directory: {e}')
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
@@ -82,26 +83,14 @@ def box_class(request):
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
 # since `EventStreamRuntime` supports running as an arbitrary user.
-# Prevent duplicate executions of tests that don't require run_as_devin.
-@pytest.fixture(scope='module')
-def run_as_devin():
-    return False  # default value for tests that don't care
-
-
 @pytest.fixture(scope='module', params=[True, False])
-def parameterized_run_as_devin(request):
+def run_as_devin(request):
     time.sleep(1)
     return request.param
 
 
-# Prevent duplicate executions of tests that don't require enable_auto_lint.
-@pytest.fixture(scope='module')
-def enable_auto_lint():
-    return False  # default value for tests that don't care
-
-
 @pytest.fixture(scope='module', params=[True, False])
-def parameterized_enable_auto_lint(request):
+def enable_auto_lint(request):
     time.sleep(1)
     return request.param
 
