@@ -224,11 +224,14 @@ class EventStreamRuntime(Runtime):
 
             session = await self._ensure_session()
             await self._wait_until_alive()
+
+            timeout = action.timeout if action.timeout else self.config.sandbox.timeout
+
             try:
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=self.config.sandbox.timeout,
+                    timeout=timeout,
                 ) as response:
                     if response.status == 200:
                         output = await response.json()

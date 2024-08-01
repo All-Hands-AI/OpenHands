@@ -10,7 +10,6 @@ from .action import Action, ActionConfirmationStatus
 class CmdRunAction(Action):
     command: str
     thought: str = ''
-    timeout: int = 120
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
@@ -31,7 +30,6 @@ class CmdRunAction(Action):
 class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
-    timeout: int = 120
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED

@@ -142,6 +142,10 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
+            # set timeout to default if not set
+            if event.timeout is None:
+                event.timeout = self.config.sandbox.timeout
+
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT

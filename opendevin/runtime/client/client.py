@@ -177,7 +177,7 @@ class RuntimeClient:
     def _execute_bash(
         self,
         command: str,
-        timeout: int,
+        timeout: int | None,
         keep_prompt: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
@@ -205,6 +205,9 @@ class RuntimeClient:
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
+            assert (
+                action.timeout is not None
+            ), f'Timeout argument is required for CmdRunAction: {action}'
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
