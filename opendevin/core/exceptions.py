@@ -67,3 +67,8 @@ class LLMNoActionError(Exception):
 class LLMResponseError(Exception):
     def __init__(self, message='Failed to retrieve action from LLM response'):
         super().__init__(message)
+
+
+class UserCancelledError(Exception):
+    def __init__(self, message='User cancelled the request'):
+        super().__init__(message)
