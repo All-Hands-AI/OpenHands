@@ -67,12 +67,11 @@ def process_instance(
         f'NOTE: You should copy the "query" as is into the <execute_browse> tag. DO NOT change ANYTHING in the query.'
     )
 
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
         run_controller(
             config=config,
             task_str=instruction,
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
             agent=agent,
             sid=env_id,
         )
