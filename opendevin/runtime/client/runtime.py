@@ -261,6 +261,7 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
+            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
     async def run_action(self, action: Action, timeout: int = 600) -> Observation:
         async with self.action_semaphore:
