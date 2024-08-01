@@ -110,8 +110,6 @@ function FileExplorer() {
     try {
       const fileList = await listFiles("/");
       setFiles(fileList);
-      if (fileList.length === 0) {
-      }
     } catch (error) {
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
     }
