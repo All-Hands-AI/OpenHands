@@ -11,7 +11,7 @@ import tenacity
 
 from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream
+from opendevin.events import EventStream
 from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -21,7 +21,6 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.action.action import Action
-from opendevin.events.event import Event
 from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
@@ -69,7 +68,6 @@ class EventStreamRuntime(Runtime):
         )
         self.container_name = self.container_name_prefix + self.instance_id
 
-        self.plugins = plugins if plugins is not None else []
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
@@ -90,6 +88,11 @@ class EventStreamRuntime(Runtime):
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
         await super().ainit(env_vars)
+
+        logger.info(
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
+        )
+        logger.info(f'Container initialized with env vars: {env_vars}')
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -115,9 +118,11 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Starting container with image: {self.container_image} and name: {self.container_name}'
             )
-            if plugins is None:
-                plugins = []
-            plugin_names = ' '.join([plugin.name for plugin in plugins])
+            plugin_arg = ''
+            if plugins is not None and len(plugins) > 0:
+                plugin_arg = (
+                    f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+                )
 
             network_mode: str | None = None
             port_mapping: dict[str, int] | None = None
@@ -144,7 +149,7 @@ class EventStreamRuntime(Runtime):
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
-                    f'--plugins {plugin_names} '
+                    f'{plugin_arg}'
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
                     f'--user-id {self.config.sandbox.user_id}'
                 ),
@@ -257,17 +262,11 @@ class EventStreamRuntime(Runtime):
             if recursive:
                 os.unlink(temp_zip_path)
 
-    async def on_event(self, event: Event) -> None:
-        logger.info(f'EventStreamRuntime: on_event triggered: {event}')
-        if isinstance(event, Action):
-            logger.info(event, extra={'msg_type': 'ACTION'})
-            observation = await self.run_action(event)
-            observation._cause = event.id  # type: ignore[attr-defined]
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-            source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
+    async def run_action(self, action: Action) -> Observation:
+        # set timeout to default if not set
+        if action.timeout is None:
+            action.timeout = self.config.sandbox.timeout
 
-    async def run_action(self, action: Action, timeout: int = 600) -> Observation:
         async with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
@@ -281,11 +280,14 @@ class EventStreamRuntime(Runtime):
 
             session = await self._ensure_session()
             await self._wait_until_alive()
+
+            assert action.timeout is not None
+
             try:
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=timeout,
+                    timeout=action.timeout,
                 ) as response:
                     if response.status == 200:
                         output = await response.json()

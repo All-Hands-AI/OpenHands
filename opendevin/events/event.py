@@ -39,3 +39,13 @@ class Event:
         if hasattr(self, '_cause'):
             return self._cause  # type: ignore[attr-defined]
         return None
+
+    @property
+    def timeout(self) -> int | None:
+        if hasattr(self, '_timeout'):
+            return self._timeout  # type: ignore[attr-defined]
+        return None
+
+    @timeout.setter
+    def timeout(self, value: int | None) -> None:
+        self._timeout = value

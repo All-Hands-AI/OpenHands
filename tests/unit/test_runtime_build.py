@@ -55,7 +55,7 @@ def test_generate_dockerfile_scratch():
     assert 'apt-get update' in dockerfile_content
     assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
     assert (
-        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y'
+        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
         in dockerfile_content
     )
 
@@ -79,7 +79,7 @@ def test_generate_dockerfile_skip_init():
     # These commands SHOULD NOT include in the dockerfile if skip_init is True
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
     assert (
-        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y'
+        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
         not in dockerfile_content
     )
 

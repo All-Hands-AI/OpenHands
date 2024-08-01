@@ -212,6 +212,7 @@ class DockerSSHBox(Sandbox):
         super().__init__(config)
 
     def setup_user(self):
+        time.sleep(2)
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
         exit_code, logs = self.container.exec_run(
@@ -326,6 +327,7 @@ class DockerSSHBox(Sandbox):
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
     @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
     def __ssh_login(self):
+        time.sleep(2)
         try:
             self.ssh = pxssh.pxssh(
                 echo=False,
@@ -354,7 +356,7 @@ class DockerSSHBox(Sandbox):
             raise e
 
     def start_ssh_session(self):
-        time.sleep(1)
+        time.sleep(3)
         self.__ssh_login()
         assert self.ssh is not None
 

@@ -47,7 +47,7 @@ llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.2.0"
+torch = "2.2.2"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
@@ -74,6 +74,7 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -108,6 +109,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

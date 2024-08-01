@@ -1,0 +1,5 @@
+The `hello.sh` script has been created. Let's verify its content and make it executable.
+
+First, let's check the content:
+<execute_bash>
+cat hello.sh

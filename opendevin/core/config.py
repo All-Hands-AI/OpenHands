@@ -396,6 +396,11 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
                 value = env_or_toml_dict[env_var_name]
+
+                # skip empty config values (fall back to default)
+                if not value:
+                    continue
+
                 try:
                     # if it's an optional type, get the non-None type
                     if get_origin(field_type) is UnionType:
