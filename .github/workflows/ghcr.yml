@@ -60,9 +60,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}
           restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}-
+            ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}
 
       - name: Build and export image
         id: build
@@ -124,9 +124,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}
           restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}-
+            ${{ runner.os }}-buildx-${{ matrix.image }}-${{ matrix.platform }}
 
       - name: Install poetry via pipx
         run: pipx install poetry
