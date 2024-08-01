@@ -112,7 +112,7 @@ def process_instance(
     )
 
     requirements_host_src = 'evaluation/mint/requirements.txt'
-    requirements_sandbox_dest = '/opendevin/plugins/mint/requirements.txt'
+    requirements_sandbox_dest = '/opendevin/plugins/mint/'
     sandbox.copy_to(
         host_src=requirements_host_src,
         sandbox_dest=requirements_sandbox_dest,
