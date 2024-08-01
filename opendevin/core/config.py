@@ -227,10 +227,11 @@ class AppConfig(metaclass=Singleton):
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
+    # TODO: clean up workspace path after the removal of ServerRuntime
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str = (
+    workspace_mount_path: str | None = (
         UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
-    )
+    )  # when set to None, do not mount the workspace
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -534,7 +535,7 @@ def finalize_config(cfg: AppConfig):
     cfg.workspace_base = os.path.abspath(cfg.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if cfg.sandbox.box_type == 'local':
+    if cfg.sandbox.box_type == 'local' and cfg.workspace_mount_path is not None:
         cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
