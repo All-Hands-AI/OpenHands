@@ -1,7 +1,7 @@
 import asyncio
 import os
 import sys
-from typing import Callable, Type
+from typing import Awaitable, Callable, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
@@ -21,7 +21,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
-from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.storage import get_file_store
 
@@ -44,7 +44,8 @@ async def run_controller(
     max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
-    sandbox: Sandbox | None = None,
+    initialize_runtime_fn: Callable[[Runtime], Awaitable[None]] | None = None,
+    complete_runtime_fn: Callable[[Runtime], Awaitable[dict]] | None = None,
     agent: Agent | None = None,
     runtime_tools_config: dict | None = None,
     sid: str | None = None,
@@ -60,7 +61,8 @@ async def run_controller(
         max_budget_per_task: The maximum budget per task.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
-        sandbox: (will be deprecated) An optional sandbox to run the agent in.
+        initialize_runtime_fn: An optional function that receives the runtime and initializes it by running any setup code.
+        complete_runtime_fn: An optional function that receives the runtime and completes it by running any cleanup code.
         agent: An optional agent to run.
         runtime_tools_config: (will be deprecated) The runtime tools config.
         sid: The session id.
@@ -106,17 +108,11 @@ async def run_controller(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    extra_kwargs = {}
-    if isinstance(runtime_cls, ServerRuntime):
-        extra_kwargs['sandbox'] = sandbox
-        # TODO: deprecate this and accept runtime as a parameter instead
-
     logger.info(f'Initializing runtime: {runtime_cls}')
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
         plugins=controller.agent.sandbox_plugins,
-        **extra_kwargs,
     )
     await runtime.ainit()
     if isinstance(runtime, ServerRuntime):
@@ -136,6 +132,11 @@ async def run_controller(
                 task_str = f.read()
                 logger.info(f'Dynamic Eval task: {task_str}')
     # TODO: Implement this for EventStream Runtime
+
+    # Initialize the runtime with user-specified function
+    if initialize_runtime_fn:
+        logger.info('Initializing runtime using user-specified function ...')
+        await initialize_runtime_fn(runtime)
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
@@ -179,8 +180,17 @@ async def run_controller(
 
     # close when done
     await controller.close()
+    state = controller.get_state()
+
+    # Complete the runtime
+    if complete_runtime_fn:
+        logger.info('Completing runtime using user-specified function ...')
+        complete_fn_return = await complete_runtime_fn(runtime)
+        logger.info(f'Runtime completion function returned: {complete_fn_return}')
+        state.complete_runtime_fn_return = complete_fn_return
     await runtime.close()
-    return controller.get_state()
+
+    return state
 
 
 if __name__ == '__main__':
