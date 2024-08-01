@@ -196,6 +196,7 @@ ten actions--more happened before that.
     "args": {
       "command": "bash hello.sh",
       "thought": "",
+      "timeout": 120,
       "is_confirmed": "confirmed"
     }
   },
