@@ -85,6 +85,7 @@ def test_cmd_run_action_serialization_deserialization():
             'command': 'echo "Hello world"',
             'thought': '',
             'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+            'timeout': 120,
         },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
