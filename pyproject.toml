@@ -40,7 +40,6 @@ google-cloud-aiplatform = "*"
 grep-ast = "0.3.2"
 tree-sitter = "0.21.3"
 bashlex = "^0.18"
-pip = "^24.2"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
