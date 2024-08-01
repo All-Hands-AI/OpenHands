@@ -83,10 +83,12 @@ function GifEditor(): JSX.Element {
           secondChild={
             <>
               <h1>Gif Editor</h1>
-              { imageContent && (<img src={imageContent} alt="dance" />) }
+              { imageContent && (
+                <img src={imageContent} alt="dance" className="max-h-full max-w-full" />
+              ) }
             </>
           }
-          secondClassName="flex flex-col overflow-hidden grow min-w-[500px]"
+          secondClassName="grow"
         />
       </div>
       <Controls setSettingOpen={onSettingsModalOpen} />
