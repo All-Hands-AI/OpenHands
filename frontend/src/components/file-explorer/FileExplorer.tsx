@@ -110,9 +110,6 @@ function FileExplorer() {
     try {
       const fileList = await listFiles("/");
       setFiles(fileList);
-      if (fileList.length === 0) {
-        toast.info(t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE));
-      }
     } catch (error) {
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
     }
@@ -188,10 +185,6 @@ function FileExplorer() {
     };
   }, []);
 
-  if (!files.length) {
-    return null;
-  }
-
   return (
     <div className="relative h-full">
       {isDragging && (
@@ -219,19 +212,17 @@ function FileExplorer() {
           isHidden ? "w-12" : "w-60",
         )}
       >
-        <div className="flex flex-col relative h-full p-2">
+        <div className="flex flex-col relative h-full px-3 py-2">
           <div className="sticky top-0 bg-neutral-800 z-10">
             <div
               className={twMerge(
-                "flex items-center mt-2 mb-1 p-2",
+                "flex items-center",
                 isHidden ? "justify-center" : "justify-between",
               )}
             >
               {!isHidden && (
-                <div className="ml-1 text-neutral-300 font-bold text-sm">
-                  <div className="ml-1 text-neutral-300 font-bold text-sm">
-                    {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
-                  </div>
+                <div className="text-neutral-300 font-bold text-sm">
+                  {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
                 </div>
               )}
               <ExplorerActions
