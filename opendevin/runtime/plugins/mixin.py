@@ -62,7 +62,9 @@ class PluginMixin:
 
                 # Execute the bash script
                 abs_path_to_bash_script = os.path.join(
-                    requirement.sandbox_dest, requirement.bash_script_path
+                    requirement.sandbox_dest,
+                    requirement.name,
+                    requirement.bash_script_path,
                 )
                 logger.info(
                     f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
