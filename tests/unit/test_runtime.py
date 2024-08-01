@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import tempfile
 import time
 from unittest.mock import patch
 
@@ -937,3 +938,155 @@ async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)
+
+
+def _create_test_file(host_temp_dir):
+    # Single file
+    with open(os.path.join(host_temp_dir, 'test_file.txt'), 'w') as f:
+        f.write('Hello, World!')
+
+
+@pytest.mark.asyncio
+async def test_copy_single_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_file.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+def _create_test_dir_with_files(host_temp_dir):
+    os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file1.txt'), 'w') as f:
+        f.write('File 1 content')
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file2.txt'), 'w') as f:
+        f.write('File 2 content')
+
+
+@pytest.mark.asyncio
+async def test_copy_directory_recursively(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        # We need a separate directory, since temp_dir is mounted to /workspace
+        _create_test_dir_with_files(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_dir'), '/workspace', recursive=True
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_dir' in obs.content
+    assert 'file1.txt' not in obs.content
+    assert 'file2.txt' not in obs.content
+
+    action = CmdRunAction(command='ls -alh /workspace/test_dir')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'file1.txt' in obs.content
+    assert 'file2.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_dir/file1.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'File 1 content' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_copy_to_non_existent_directory(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace/new_dir'
+        )
+
+    action = CmdRunAction(command='cat /workspace/new_dir/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_overwrite_existing_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # touch a file in /workspace
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' not in obs.content
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_copy_non_existent_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with pytest.raises(FileNotFoundError):
+        await runtime.copy_to(
+            os.path.join(temp_dir, 'non_existent_file.txt'),
+            '/workspace/should_not_exist.txt',
+        )
+
+    action = CmdRunAction(command='ls /workspace/should_not_exist.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code != 0  # File should not exist

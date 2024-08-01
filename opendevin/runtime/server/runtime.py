@@ -121,6 +121,9 @@ class ServerRuntime(Runtime):
                     'Failed to start browser environment, web browsing functionality will not work'
                 )
 
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        self.sandbox.copy_to(host_src, sandbox_dest, recursive)
+
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command)
 

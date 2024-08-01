@@ -1,6 +1,9 @@
 import asyncio
+import os
+import tempfile
 import uuid
-from typing import Optional
+from typing import Any, Optional
+from zipfile import ZipFile
 
 import aiohttp
 import docker
@@ -204,6 +207,55 @@ class EventStreamRuntime(Runtime):
                 pass
         if close_client:
             self.docker_client.close()
+
+    async def copy_to(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ) -> dict[str, Any]:
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
+        session = await self._ensure_session()
+        await self._wait_until_alive()
+        try:
+            if recursive:
+                # For recursive copy, create a zip file
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_zip:
+                    temp_zip_path = temp_zip.name
+
+                with ZipFile(temp_zip_path, 'w') as zipf:
+                    for root, _, files in os.walk(host_src):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(
+                                file_path, os.path.dirname(host_src)
+                            )
+                            zipf.write(file_path, arcname)
+
+                upload_data = {'file': open(temp_zip_path, 'rb')}
+            else:
+                # For single file copy
+                upload_data = {'file': open(host_src, 'rb')}
+
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+
+            async with session.post(
+                f'{self.api_url}/upload_file', data=upload_data, params=params
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    error_message = await response.text()
+                    raise Exception(f'Copy operation failed: {error_message}')
+
+        except asyncio.TimeoutError:
+            raise TimeoutError('Copy operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'Copy operation failed: {str(e)}')
+        finally:
+            if recursive:
+                os.unlink(temp_zip_path)
 
     async def on_event(self, event: Event) -> None:
         logger.info(f'EventStreamRuntime: on_event triggered: {event}')
