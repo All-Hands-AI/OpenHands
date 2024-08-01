@@ -8,11 +8,11 @@ import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
-import "./App.css";
-import AgentControlBar from "./components/AgentControlBar";
-import AgentStatusBar from "./components/AgentStatusBar";
-import VolumeIcon from "./components/VolumeIcon";
-import Terminal from "./components/terminal/Terminal";
+import "./Main.css";
+import AgentControlBar from "#/components/AgentControlBar";
+import AgentStatusBar from "#/components/AgentStatusBar";
+import VolumeIcon from "#/components/VolumeIcon";
+import Terminal from "#/components/terminal/Terminal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { settingsAreUpToDate } from "#/services/settings";
@@ -47,7 +47,7 @@ function Controls({ setSettingOpen }: Props): JSX.Element {
 // React.StrictMode will cause double rendering, use this to prevent it
 let initOnce = false;
 
-function App(): JSX.Element {
+function Main(): JSX.Element {
   const {
     isOpen: settingsModalIsOpen,
     onOpen: onSettingsModalOpen,
@@ -113,4 +113,4 @@ function App(): JSX.Element {
   );
 }
 
-export default App;
+export default Main;
