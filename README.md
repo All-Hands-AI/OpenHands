@@ -66,7 +66,7 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name opendevin-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin
+    ghcr.io/opendevin/opendevin:0.8
 ```
 
 > [!NOTE]
@@ -141,12 +141,12 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 
 ```
 @misc{opendevin,
-      title={{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}}, 
+      title={{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
       author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
       year={2024},
       eprint={2407.16741},
       archivePrefix={arXiv},
       primaryClass={cs.SE},
-      url={https://arxiv.org/abs/2407.16741}, 
+      url={https://arxiv.org/abs/2407.16741},
 }
 ```
