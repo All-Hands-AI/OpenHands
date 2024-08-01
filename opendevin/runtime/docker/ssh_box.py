@@ -497,7 +497,8 @@ class DockerSSHBox(Sandbox):
 
             with open(tar_filename, 'rb') as f:
                 data = f.read()
-            self.container.put_archive(os.path.dirname(sandbox_dest), data)
+
+            self.container.put_archive(sandbox_dest, data)
 
     def start_docker_container(self):
         try:
