@@ -498,7 +498,9 @@ def select_file(file: str, request: Request):
 def get_file(file_path: str, request: Request):
     """Retrieve the content of a specified file."""
     try:
-        content = request.state.session.agent_session.runtime.file_store.read(file_path)
+        content = request.state.session.agent_session.runtime.file_store.read_bytes(
+            file_path
+        )
     except Exception as e:
         logger.error(f'Error opening file {file_path}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
@@ -510,7 +512,7 @@ def get_file(file_path: str, request: Request):
     # write the file to a temp file
     # FIXME: there's definitely a better way to do this
     with open('/tmp/opendevin-temp-file', 'wb') as f:
-        f.write(str.encode(content))
+        f.write(content)
 
     return FileResponse('/tmp/opendevin-temp-file')
 

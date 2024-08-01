@@ -11,6 +11,10 @@ class FileStore:
         pass
 
     @abstractmethod
+    def read_bytes(self, path: str) -> bytes:
+        pass
+
+    @abstractmethod
     def list(self, path: str) -> list[str]:
         pass
 

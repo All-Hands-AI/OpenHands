@@ -19,6 +19,9 @@ class InMemoryFileStore(FileStore):
             raise FileNotFoundError(path)
         return self.files[path]
 
+    def read_bytes(self, path: str) -> bytes:
+        return self.read(path).encode()
+
     def list(self, path: str) -> list[str]:
         files = []
         for file in self.files:

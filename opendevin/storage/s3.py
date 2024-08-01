@@ -18,7 +18,10 @@ class S3FileStore(FileStore):
         self.client.put_object(self.bucket, path, contents)
 
     def read(self, path: str) -> str:
-        return self.client.get_object(self.bucket, path).data.decode('utf-8')
+        return self.read_bytes(path).decode('utf-8')
+
+    def read_bytes(self, path: str) -> bytes:
+        return self.client.get_object(self.bucket, path).data
 
     def list(self, path: str) -> list[str]:
         return [obj.object_name for obj in self.client.list_objects(self.bucket, path)]

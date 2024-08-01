@@ -30,6 +30,11 @@ class LocalFileStore(FileStore):
         with open(full_path, 'r') as f:
             return f.read()
 
+    def read_bytes(self, path: str) -> bytes:
+        full_path = self.get_full_path(path)
+        with open(full_path, 'rb') as f:
+            return f.read()
+
     def list(self, path: str) -> list[str]:
         full_path = self.get_full_path(path)
         files = [os.path.join(path, f) for f in os.listdir(full_path)]

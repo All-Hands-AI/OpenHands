@@ -11,6 +11,9 @@ class E2BFileStore(FileStore):
     def read(self, path: str) -> str:
         return self.filesystem.read(path)
 
+    def read_bytes(self, path: str) -> bytes:
+        return self.filesystem.read(path).encode()
+
     def list(self, path: str) -> list[str]:
         return self.filesystem.list(path)
 
