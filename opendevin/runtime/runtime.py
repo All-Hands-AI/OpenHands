@@ -177,9 +177,7 @@ class Runtime:
         return observation
 
     @abstractmethod
-    async def copy_to(
-        self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> Observation:
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
