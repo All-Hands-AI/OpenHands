@@ -8,7 +8,6 @@ import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
-import "./Main.css";
 import AgentControlBar from "#/components/AgentControlBar";
 import AgentStatusBar from "#/components/AgentStatusBar";
 import VolumeIcon from "#/components/VolumeIcon";
