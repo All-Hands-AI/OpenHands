@@ -99,18 +99,7 @@ class LLM:
             litellm.drop_params = self.config.drop_params
 
         # Set up config attributes with default values to prevent AttributeError
-        self.config.api_version = getattr(self.config, 'api_version', None)
-        self.config.custom_llm_provider = getattr(
-            self.config, 'custom_llm_provider', None
-        )
-        self.config.max_output_tokens = getattr(self.config, 'max_output_tokens', None)
-        self.config.timeout = getattr(self.config, 'timeout', None)
-        self.config.temperature = getattr(self.config, 'temperature', 0.0)
-        self.config.top_p = getattr(self.config, 'top_p', 0.9)
-        self.config.num_retries = getattr(config, 'num_retries', 3)
-        self.config.retry_multiplier = getattr(config, 'retry_multiplier', 1.5)
-        self.config.retry_min_wait = getattr(config, 'retry_min_wait', 1)
-        self.config.retry_max_wait = getattr(config, 'retry_max_wait', 10)
+        LLMConfig.set_missing_attributes(self.config)
 
         self._completion = partial(
             litellm_completion,
