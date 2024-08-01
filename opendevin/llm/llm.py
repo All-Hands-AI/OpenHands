@@ -107,6 +107,10 @@ class LLM:
         self.config.timeout = getattr(self.config, 'timeout', None)
         self.config.temperature = getattr(self.config, 'temperature', 0.0)
         self.config.top_p = getattr(self.config, 'top_p', 0.9)
+        self.config.num_retries = getattr(config, 'num_retries', 3)
+        self.config.retry_multiplier = getattr(config, 'retry_multiplier', 1.5)
+        self.config.retry_min_wait = getattr(config, 'retry_min_wait', 1)
+        self.config.retry_max_wait = getattr(config, 'retry_max_wait', 10)
 
         self._completion = partial(
             litellm_completion,
@@ -130,24 +134,13 @@ class LLM:
             )
             return None
 
-        num_retries = config.num_retries if hasattr(config, 'num_retries') else 3
-        retry_multiplier = (
-            config.retry_multiplier if hasattr(config, 'retry_multiplier') else 1.5
-        )
-        retry_min_wait = (
-            config.retry_min_wait if hasattr(config, 'retry_min_wait') else 0.1
-        )
-        retry_max_wait = (
-            config.retry_max_wait if hasattr(config, 'retry_max_wait') else 10
-        )
-
         @retry(
             reraise=True,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(self.config.num_retries),
             wait=wait_random_exponential(
-                multiplier=retry_multiplier,
-                min=retry_min_wait,
-                max=retry_max_wait,
+                multiplier=self.config.retry_multiplier,
+                min=self.config.retry_min_wait,
+                max=self.config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
@@ -211,11 +204,11 @@ class LLM:
 
         @retry(
             reraise=True,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(self.config.num_retries),
             wait=wait_random_exponential(
-                multiplier=retry_multiplier,
-                min=retry_min_wait,
-                max=retry_max_wait,
+                multiplier=self.config.retry_multiplier,
+                min=self.config.retry_min_wait,
+                max=self.config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
@@ -294,11 +287,11 @@ class LLM:
 
         @retry(
             reraise=True,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(self.config.num_retries),
             wait=wait_random_exponential(
-                multiplier=retry_multiplier,
-                min=retry_min_wait,
-                max=retry_max_wait,
+                multiplier=self.config.retry_multiplier,
+                min=self.config.retry_min_wait,
+                max=self.config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
