@@ -59,6 +59,9 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
 
+        # Set up config attributes with default values to prevent AttributeError
+        LLMConfig.set_missing_attributes(self.config)
+
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
@@ -73,7 +76,7 @@ class LLM:
             logger.warning(f'Could not get model info for {config.model}:\n{e}')
 
         # Set the max tokens in an LM-specific way if not set
-        if not hasattr(config, 'max_input_tokens') or config.max_input_tokens is None:
+        if self.config.max_input_tokens is None:
             if (
                 self.model_info is not None
                 and 'max_input_tokens' in self.model_info
@@ -84,7 +87,7 @@ class LLM:
                 # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
 
-        if not hasattr(config, 'max_output_tokens') or config.max_output_tokens is None:
+        if self.config.max_output_tokens is None:
             if (
                 self.model_info is not None
                 and 'max_output_tokens' in self.model_info
@@ -97,9 +100,6 @@ class LLM:
 
         if self.config.drop_params:
             litellm.drop_params = self.config.drop_params
-
-        # Set up config attributes with default values to prevent AttributeError
-        LLMConfig.set_missing_attributes(self.config)
 
         self._completion = partial(
             litellm_completion,
