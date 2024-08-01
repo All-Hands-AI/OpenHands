@@ -210,7 +210,7 @@ class EventStreamRuntime(Runtime):
         if close_client:
             self.docker_client.close()
 
-    async def run_action(self, action: Action, timeout: int = 600) -> Observation:
+    async def run_action(self, action: Action) -> Observation:
         async with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
@@ -228,7 +228,7 @@ class EventStreamRuntime(Runtime):
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=timeout,
+                    timeout=self.config.sandbox.timeout,
                 ) as response:
                     if response.status == 200:
                         output = await response.json()

@@ -177,8 +177,8 @@ class RuntimeClient:
     def _execute_bash(
         self,
         command: str,
+        timeout: int,
         keep_prompt: bool = True,
-        timeout: int = 300,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
@@ -208,7 +208,7 @@ class RuntimeClient:
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                output, exit_code = self._execute_bash(command)
+                output, exit_code = self._execute_bash(command, timeout=action.timeout)
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
                     # we need to add the command to the previous output,
@@ -248,7 +248,7 @@ class RuntimeClient:
             )
 
     def get_working_directory(self):
-        result, exit_code = self._execute_bash('pwd', keep_prompt=False)
+        result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
             raise RuntimeError('Failed to get working directory')
         return result.strip()

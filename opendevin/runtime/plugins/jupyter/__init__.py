@@ -76,7 +76,7 @@ class JupyterPlugin(Plugin):
 
         if not self.kernel.initialized:
             await self.kernel.initialize()
-        output = await self.kernel.execute(action.code)
+        output = await self.kernel.execute(action.code, timeout=action.timeout)
         return IPythonRunCellObservation(
             content=output,
             code=action.code,
