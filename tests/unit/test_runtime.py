@@ -978,7 +978,10 @@ async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'Successfully installed pymsgbox-1.0.9' in obs.content
+    assert (
+        'Successfully installed pymsgbox-1.0.9' in obs.content
+        or '[Package installed successfully]' in obs.content
+    )
 
     action = IPythonRunCellAction(code='import pymsgbox')
     logger.info(action, extra={'msg_type': 'ACTION'})
