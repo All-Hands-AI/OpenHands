@@ -262,7 +262,11 @@ class EventStreamRuntime(Runtime):
             if recursive:
                 os.unlink(temp_zip_path)
 
-    async def run_action(self, action: Action, timeout: int = 600) -> Observation:
+    async def run_action(self, action: Action) -> Observation:
+        # set timeout to default if not set
+        if action.timeout is None:
+            action.timeout = self.config.sandbox.timeout
+
         async with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
@@ -277,13 +281,13 @@ class EventStreamRuntime(Runtime):
             session = await self._ensure_session()
             await self._wait_until_alive()
 
-            timeout = action.timeout if action.timeout else self.config.sandbox.timeout
+            assert action.timeout is not None
 
             try:
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=timeout,
+                    timeout=action.timeout,
                 ) as response:
                     if response.status == 200:
                         output = await response.json()
