@@ -456,6 +456,9 @@ class DockerSSHBox(Sandbox):
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
         # mkdir -p sandbox_dest if it doesn't exist
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
@@ -494,7 +497,8 @@ class DockerSSHBox(Sandbox):
 
             with open(tar_filename, 'rb') as f:
                 data = f.read()
-            self.container.put_archive(os.path.dirname(sandbox_dest), data)
+
+            self.container.put_archive(sandbox_dest, data)
 
     def start_docker_container(self):
         try:
