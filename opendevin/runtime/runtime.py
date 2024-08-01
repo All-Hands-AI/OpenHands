@@ -145,7 +145,7 @@ class Runtime:
             # set timeout to default if not set
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
-
+            assert event.timeout is not None
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
