@@ -7,6 +7,7 @@ export async function request(
   url: string,
   options: RequestInit = {},
   disableToast: boolean = false,
+  responseType: string = "json",
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
   const onFail = (msg: string) => {
@@ -21,7 +22,7 @@ export async function request(
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, options, disableToast));
+        resolve(request(url, options, disableToast, responseType));
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   }
@@ -49,9 +50,10 @@ export async function request(
   }
 
   try {
-    return await (response && response.json());
+    return await (response && response[responseType]());
   } catch (e) {
-    onFail(`Error parsing JSON from ${url}`);
+    console.log(e);
+    onFail(`Error parsing data as ${responseType} from ${url}`);
   }
   return null;
 }

@@ -4,7 +4,8 @@ import "./index.css";
 import { Provider } from "react-redux";
 import { NextUIProvider } from "@nextui-org/react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Main from "./pages/Main";
+import Main from "#/pages/Main";
+import GifEditor from "#/pages/GifEditor";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
@@ -19,6 +20,7 @@ root.render(
         <Router>
           <Routes>
             <Route path="/" element={<Main />} />
+            <Route path="/ui/gif-editor" element={<GifEditor />} />
             {/* Add more routes here */}
           </Routes>
         </Router>

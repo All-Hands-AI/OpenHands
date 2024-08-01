@@ -10,6 +10,11 @@ export async function selectFile(file: string): Promise<string> {
   return data.code as string;
 }
 
+export async function readFile(file: string): Promise<any> {
+  const data = await request(`/api/files/${file}`, {}, false, "blob");
+  return data;
+}
+
 interface UploadResult {
   message: string;
   uploadedFiles: string[];
