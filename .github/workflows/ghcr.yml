@@ -214,15 +214,17 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
 
-      - name: Pull Docker images and run runtime tests
+      - name: Download Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.runtime_type == 'eventstream' && 'od_runtime' || 'sandbox' }}-docker-image-amd64
+          path: /tmp/
+
+      - name: Load Docker image and run runtime tests
         run: |
-          if [ "${{ matrix.runtime_type }}" == "eventstream" ]; then
-            image_name="ghcr.io/${{ github.repository_owner }}/od_runtime:latest"
-          else
-            image_name="ghcr.io/${{ github.repository_owner }}/sandbox:latest"
-          fi
-          docker pull $image_name
-          echo "Pulled Docker image: $image_name"
+          image_file="/tmp/${{ matrix.runtime_type == 'eventstream' && 'od_runtime' || 'sandbox' }}_image_amd64.tar"
+          image_name=$(docker load -i $image_file | sed -n 's/^Loaded image: //p')
+          echo "Loaded Docker image: $image_name"
           TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_runtime.py
 
       - name: Upload coverage to Codecov
@@ -256,13 +258,19 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
 
-      - name: Pull sandbox Docker image and run integration tests
+      - name: Download sandbox Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: sandbox-docker-image-amd64
+          path: /tmp/
+
+      - name: Load sandbox Docker image and run integration tests
         env:
           SANDBOX_BOX_TYPE: ${{ matrix.sandbox }}
         run: |
-          image_name="ghcr.io/${{ github.repository_owner }}/sandbox:latest"
-          docker pull $image_name
-          echo "Pulled Docker image: $image_name"
+          image_file="/tmp/sandbox_image_amd64.tar"
+          image_name=$(docker load -i $image_file | sed -n 's/^Loaded image: //p')
+          echo "Loaded Docker image: $image_name"
           SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
