@@ -21,7 +21,6 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.action.action import Action
-from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
@@ -262,16 +261,6 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-
-    async def on_event(self, event: Event) -> None:
-        logger.info(f'EventStreamRuntime: on_event triggered: {event}')
-        if isinstance(event, Action):
-            logger.info(event, extra={'msg_type': 'ACTION'})
-            observation = await self.run_action(event)
-            observation._cause = event.id  # type: ignore[attr-defined]
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-            source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action, timeout: int = 600) -> Observation:
         async with self.action_semaphore:
