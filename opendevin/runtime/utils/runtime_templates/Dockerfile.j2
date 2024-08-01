@@ -56,7 +56,7 @@ RUN mv /opendevin/{{ source_code_dirname }} /opendevin/code
 # 3. Clear poetry, apt, mamba caches
 RUN cd /opendevin/code && \
     /opendevin/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
-    /opendevin/miniforge3/bin/mamba run -n base poetry install --no-interaction --no-root && \
+    /opendevin/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root && \
     apt-get update && \
     /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
     /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \

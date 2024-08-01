@@ -25,7 +25,7 @@ from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
-    RejectObservation,
+    UserRejectObservation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
@@ -170,7 +170,7 @@ class Runtime:
             hasattr(action, 'is_confirmed')
             and action.is_confirmed == ActionConfirmationStatus.REJECTED
         ):
-            return RejectObservation(
+            return UserRejectObservation(
                 'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = await getattr(self, action_type)(action)

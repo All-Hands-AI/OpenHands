@@ -70,7 +70,7 @@ jobs:
           cache: "poetry"
 
       - name: Install Python dependencies using Poetry
-        run: poetry install
+        run: poetry install --without evaluation,llama-index
 
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
@@ -153,7 +153,7 @@ jobs:
           cache: "poetry"
 
       - name: Install Python dependencies using Poetry
-        run: poetry install --without evaluation
+        run: poetry install --without evaluation,llama-index
 
       - name: Build Environment
         run: make build
