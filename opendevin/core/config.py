@@ -111,6 +111,12 @@ class LLMConfig:
                 ret[k] = '******' if v else None
         return ret
 
+    def set_missing_attributes(self):
+        """Set any missing attributes to their default values."""
+        for field_name, field_obj in self.__dataclass_fields__.items():
+            if not hasattr(self, field_name):
+                setattr(self, field_name, field_obj.default)
+
 
 @dataclass
 class AgentConfig:
