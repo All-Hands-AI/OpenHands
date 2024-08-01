@@ -2491,13 +2491,13 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "grep-ast"
-version = "0.3.2"
+version = "0.3.3"
 description = "A tool to grep through the AST of a source file"
 optional = false
 python-versions = "*"
 files = [
-    {file = "grep_ast-0.3.2-py3-none-any.whl", hash = "sha256:b7ceb84743983c3f4f5bca82f3374534cd9dbd759792d0dedf5648fedbb6f3fc"},
-    {file = "grep_ast-0.3.2.tar.gz", hash = "sha256:d53bc7d25dfefafe77643fec189ab38e3cbd839d546c070a950ebedad82ee164"},
+    {file = "grep_ast-0.3.3-py3-none-any.whl", hash = "sha256:515cb889bffefefa26c4ab1377b9a75b3fc678aa5fa02bf9aa4f8f20999a83ad"},
+    {file = "grep_ast-0.3.3.tar.gz", hash = "sha256:42b8887d57301dc55634368f8d549e9c49c913dafb4d19c9b54c3ddb604fccf4"},
 ]
 
 [package.dependencies]
@@ -9120,4 +9120,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "a8e9f00b33076e7525b20eef1312ef98746c7bc7fa0f43bb3b68877d3dbe4ae0"
+content-hash = "1a27bcc3e0448356d0d224f17e020131e38ec7d8ae31bff8680dcafde3d89bde"
