@@ -11,7 +11,7 @@ class AgentSkillsRequirement(PluginRequirement):
     host_src: str = os.path.dirname(
         os.path.abspath(__file__)
     )  # The directory of this file (opendevin/runtime/plugins/agent_skills)
-    sandbox_dest: str = '/opendevin/plugins/agent_skills'
+    sandbox_dest: str = '/opendevin/plugins/'
     bash_script_path: str = 'setup.sh'
     documentation: str = DOCUMENTATION
 
