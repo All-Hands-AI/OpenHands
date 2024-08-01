@@ -211,6 +211,9 @@ class EventStreamRuntime(Runtime):
     async def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ) -> dict[str, Any]:
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
         session = await self._ensure_session()
         await self._wait_until_alive()
         try:

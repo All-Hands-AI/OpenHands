@@ -1078,7 +1078,7 @@ async def test_overwrite_existing_file(temp_dir, box_class):
 async def test_copy_non_existent_file(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(FileNotFoundError):
         await runtime.copy_to(
             os.path.join(temp_dir, 'non_existent_file.txt'),
             '/workspace/should_not_exist.txt',
