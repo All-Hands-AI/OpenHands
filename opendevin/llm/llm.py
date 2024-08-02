@@ -59,6 +59,9 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
 
+        # Set up config attributes with default values to prevent AttributeError
+        LLMConfig.set_missing_attributes(self.config)
+
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
@@ -73,7 +76,7 @@ class LLM:
             logger.warning(f'Could not get model info for {config.model}:\n{e}')
 
         # Set the max tokens in an LM-specific way if not set
-        if not hasattr(config, 'max_input_tokens') or config.max_input_tokens is None:
+        if self.config.max_input_tokens is None:
             if (
                 self.model_info is not None
                 and 'max_input_tokens' in self.model_info
@@ -84,7 +87,7 @@ class LLM:
                 # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
 
-        if not hasattr(config, 'max_output_tokens') or config.max_output_tokens is None:
+        if self.config.max_output_tokens is None:
             if (
                 self.model_info is not None
                 and 'max_output_tokens' in self.model_info
@@ -130,24 +133,13 @@ class LLM:
             )
             return None
 
-        num_retries = config.num_retries if hasattr(config, 'num_retries') else 3
-        retry_multiplier = (
-            config.retry_multiplier if hasattr(config, 'retry_multiplier') else 1.5
-        )
-        retry_min_wait = (
-            config.retry_min_wait if hasattr(config, 'retry_min_wait') else 0.1
-        )
-        retry_max_wait = (
-            config.retry_max_wait if hasattr(config, 'retry_max_wait') else 10
-        )
-
         @retry(
             reraise=True,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(self.config.num_retries),
             wait=wait_random_exponential(
-                multiplier=retry_multiplier,
-                min=retry_min_wait,
-                max=retry_max_wait,
+                multiplier=self.config.retry_multiplier,
+                min=self.config.retry_min_wait,
+                max=self.config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
@@ -211,11 +203,11 @@ class LLM:
 
         @retry(
             reraise=True,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(self.config.num_retries),
             wait=wait_random_exponential(
-                multiplier=retry_multiplier,
-                min=retry_min_wait,
-                max=retry_max_wait,
+                multiplier=self.config.retry_multiplier,
+                min=self.config.retry_min_wait,
+                max=self.config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (
@@ -294,11 +286,11 @@ class LLM:
 
         @retry(
             reraise=True,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(self.config.num_retries),
             wait=wait_random_exponential(
-                multiplier=retry_multiplier,
-                min=retry_min_wait,
-                max=retry_max_wait,
+                multiplier=self.config.retry_multiplier,
+                min=self.config.retry_min_wait,
+                max=self.config.retry_max_wait,
             ),
             retry=retry_if_exception_type(
                 (

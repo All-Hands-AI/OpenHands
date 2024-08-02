@@ -1,0 +1,4 @@
+Sure, I'll create the `hello.sh` script for you.
+
+<execute_bash>
+echo 'echo "hello"' > hello.sh

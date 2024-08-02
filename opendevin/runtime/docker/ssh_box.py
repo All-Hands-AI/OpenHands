@@ -437,6 +437,7 @@ class DockerSSHBox(Sandbox):
 
     async def _setup_user(self):
         logger.info('Setting up user')
+        await asyncio.sleep(2)
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
         result = await self.container_exec_run(
@@ -594,6 +595,7 @@ class DockerSSHBox(Sandbox):
     )
     async def _setup_ssh(self):
         try:
+            await asyncio.sleep(2)
             await self.wait_for_ssh_ready()
             await asyncio.sleep(2)
             await self._ssh_login()
@@ -651,11 +653,13 @@ class DockerSSHBox(Sandbox):
         raise RuntimeError('SSH service failed to start in time')
 
     async def start_ssh_session(self):
+        await asyncio.sleep(2)
         logger.info('Starting SSH session')
         assert self.ssh is not None, 'SSH session is not initialized'
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.send_line("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
+
         # cd to workspace
         self.send_line(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
@@ -877,6 +881,9 @@ class DockerSSHBox(Sandbox):
     async def copy_to_async(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ):
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
         # mkdir -p sandbox_dest if it doesn't exist
         exit_code, logs = await self.container_exec_run(  # type: ignore
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
@@ -915,6 +922,7 @@ class DockerSSHBox(Sandbox):
 
             with open(tar_filename, 'rb') as f:
                 data = f.read()
+
             await self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
     async def start_docker_container(self):
@@ -1042,7 +1050,7 @@ class DockerSSHBox(Sandbox):
                 # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
                 logger.warning(
                     (
-                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
+                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.\n'
                         'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
                     )
                 )

@@ -2,11 +2,12 @@
 
 import asyncio
 import os
-import shutil
+import tempfile
 import time
 from unittest.mock import patch
 
 import pytest
+from pytest import TempPathFactory
 
 from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.logger import opendevin_logger as logger
@@ -40,22 +41,21 @@ def print_method_name(request):
     yield
 
 
-# this does NOT clean up the folder after every test!
-# @pytest.fixture
-# def temp_dir(tmp_path_factory: TempPathFactory) -> str:
-#     return str(tmp_path_factory.mktemp('test_runtime'))
-
-
 @pytest.fixture
-def temp_dir(tmp_path):
-    time.sleep(2)
-    test_dir = tmp_path / 'test_runtime'
-    test_dir.mkdir()
-    yield str(test_dir)
-    try:
-        shutil.rmtree(test_dir, ignore_errors=True)
-    except Exception as e:
-        print(f'Error cleaning up test directory: {e}')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_runtime'))
+
+
+# @pytest.fixture
+# def temp_dir(tmp_path):
+#     time.sleep(2)
+#     test_dir = tmp_path / 'test_runtime'
+#     test_dir.mkdir()
+#     yield str(test_dir)
+#     try:
+#         shutil.rmtree(test_dir, ignore_errors=True)
+#     except Exception as e:
+#         print(f'Error cleaning up test directory: {e}')
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
@@ -160,7 +160,6 @@ async def _load_runtime(
 
         runtime.init_runtime_tools(
             [RuntimeTool.BROWSER],
-            is_async=False,
             runtime_tools_config={},
         )
     else:
@@ -950,3 +949,211 @@ async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_bash_python_version(temp_dir, box_class):
+    """Make sure Python is available in bash."""
+
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='which python')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='python --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    # Should not error out
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+
+    # It should error out since pymsgbox is not installed
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert "ModuleNotFoundError: No module named 'pymsgbox'" in obs.content
+
+    # Install pymsgbox in Jupyter
+    action = IPythonRunCellAction(code='%pip install pymsgbox==1.0.9')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert (
+        'Successfully installed pymsgbox-1.0.9' in obs.content
+        or '[Package installed successfully]' in obs.content
+    )
+
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # import should not error out
+    assert obs.content.strip() == '[Code executed successfully with no output]'
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+def _create_test_file(host_temp_dir):
+    # Single file
+    with open(os.path.join(host_temp_dir, 'test_file.txt'), 'w') as f:
+        f.write('Hello, World!')
+
+
+@pytest.mark.asyncio
+async def test_copy_single_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_file.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+def _create_test_dir_with_files(host_temp_dir):
+    os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file1.txt'), 'w') as f:
+        f.write('File 1 content')
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file2.txt'), 'w') as f:
+        f.write('File 2 content')
+
+
+@pytest.mark.asyncio
+async def test_copy_directory_recursively(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        # We need a separate directory, since temp_dir is mounted to /workspace
+        _create_test_dir_with_files(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_dir'), '/workspace', recursive=True
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_dir' in obs.content
+    assert 'file1.txt' not in obs.content
+    assert 'file2.txt' not in obs.content
+
+    action = CmdRunAction(command='ls -alh /workspace/test_dir')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'file1.txt' in obs.content
+    assert 'file2.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_dir/file1.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'File 1 content' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_copy_to_non_existent_directory(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace/new_dir'
+        )
+
+    action = CmdRunAction(command='cat /workspace/new_dir/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_overwrite_existing_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # touch a file in /workspace
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' not in obs.content
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_copy_non_existent_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with pytest.raises(FileNotFoundError):
+        await runtime.copy_to(
+            os.path.join(temp_dir, 'non_existent_file.txt'),
+            '/workspace/should_not_exist.txt',
+        )
+
+    action = CmdRunAction(command='ls /workspace/should_not_exist.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code != 0  # File should not exist

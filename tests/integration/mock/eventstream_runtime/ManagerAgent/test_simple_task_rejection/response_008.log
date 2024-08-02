@@ -1,0 +1,10 @@
+```json
+{
+  "action": "reject",
+  "args": {
+    "outputs": {
+      "reason": "CommitWriterAgent failed because the repository is not valid. No other agents can resolve this issue."
+    }
+  }
+}
+```
