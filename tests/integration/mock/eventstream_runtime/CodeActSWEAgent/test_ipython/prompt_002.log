@@ -589,6 +589,10 @@ NOW, LET'S START!
 
 ----------
 
+Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
+
+----------
+
 Understood. I will create a text file named `test.txt` in the `/workspace` directory and write "hello world" to it.
 <execute_ipython>
 with open('/workspace/test.txt', 'w') as file:
