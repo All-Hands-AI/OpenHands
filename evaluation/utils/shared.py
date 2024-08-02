@@ -187,9 +187,9 @@ def run_evaluation(
         output = future.result() if use_multiprocessing else future
 
         pbar.set_description(f'Instance {output[id_column]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
         logger.info(
-            f'Finished evaluation for instance {output[id_column]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output[id_column]}: {output["test_result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
