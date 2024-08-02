@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import multiprocessing as mp
 import os
 import pathlib
@@ -10,10 +9,10 @@ from concurrent.futures import ProcessPoolExecutor
 
 from tqdm import tqdm
 
+from evaluation.utils.shared import reset_logger_for_multiprocessing
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_controller
 from opendevin.events.action import MessageAction
@@ -77,29 +76,13 @@ def process_instance(agent, question_id, question, metadata, reset_logger: bool 
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
         config.workspace_mount_path = workspace_mount_path
 
-        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-        eval_output_dir = metadata['eval_output_dir']
+        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
-            # Set up logger
-            log_file = os.path.join(
-                eval_output_dir, 'logs', f'instance_{question_id}.log'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            # add back the console handler to print ONE line
-            logger.addHandler(get_console_handler())
-            logger.info(
-                f'Starting evaluation for instance {question_id}.\nLOG:   tail -f {log_file}'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(
-                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            )
-            logger.addHandler(file_handler)
+            log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+            reset_logger_for_multiprocessing(logger, question_id, log_dir)
+        else:
+            logger.info(f'Starting evaluation for instance {question_id}.')
+
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
         # Prepare instruction
@@ -338,6 +321,7 @@ if __name__ == '__main__':
             cleanup()
 
         output_fp.close()
+
         total_correct = 0
         total_hallucination = 0
         output = []

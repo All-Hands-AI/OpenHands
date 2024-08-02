@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 import os
 import pathlib
 import re
@@ -17,12 +16,12 @@ from evaluation.utils.shared import (
     EvalMetadata,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
-from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_controller
 from opendevin.events.action import MessageAction
@@ -146,32 +145,14 @@ def process_instance(
     database_path = os.path.join(instance.db_id, f'{instance.db_id}.sqlite')
 
     # use session id for concurrent evaluation
-    sid = instance.task_id.replace('/', '__')
+    instance_id = instance.task_id.replace('/', '__')
 
     # Set up the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            metadata.eval_output_dir,
-            'logs',
-            f'instance_{sid}.log',
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {instance.task_id}.\nLOG:   tail -f {log_file}'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance_id, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance_id}.')
 
     logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
@@ -192,12 +173,12 @@ def process_instance(
         result = execute_sql(db_path, sql)
         print(result)
     """
-    path = os.path.join(config.workspace_mount_path, f'{sid}.py')
+    path = os.path.join(config.workspace_mount_path, f'{instance_id}.py')
     instruction = (
         f'You are a SQL expert and need to complete the following text-to-SQL tasks.'
         f'\n\n{instance.instruction}\n\n'
         'Please write the SQL in one line without line breaks.'
-        f'And write a new python file named {sid}.py to call the SQL you wrote.'
+        f'And write a new python file named {instance_id}.py to call the SQL you wrote.'
         'You need to follow the code template below:'
         f'\n\n{statements}\n\n'
         'Environment has been set up for you to start working.'
@@ -220,7 +201,7 @@ def process_instance(
                 agent.__class__.__name__
             ],
             agent=agent,
-            sid=sid,
+            sid=instance_id,
         )
     )
 

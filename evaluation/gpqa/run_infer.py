@@ -17,7 +17,6 @@ TODOs:
 """
 
 import asyncio
-import logging
 import os
 import pathlib
 import random
@@ -32,12 +31,12 @@ from evaluation.utils.shared import (
     codeact_user_response,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_controller
 from opendevin.events.action import Action, AgentFinishAction, MessageAction
@@ -169,28 +168,10 @@ def process_instance(
 
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
-            # Set up logger
-            log_file = os.path.join(
-                metadata.eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            # add back the console handler to print ONE line
-            logger.addHandler(get_console_handler())
-            logger.info(
-                f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(
-                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            )
-            logger.addHandler(file_handler)
+            log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+            reset_logger_for_multiprocessing(logger, instance['task_id'], log_dir)
         else:
-            logger.info(f'Starting evaluation for instance {instance.instance_id}.')
+            logger.info(f'Starting evaluation for instance {instance["task_id"]}.')
 
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
