@@ -13,17 +13,41 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    parse_arguments,
+)
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_controller
-from opendevin.llm.llm import LLM
-
-config = load_app_config()
 
 # Only CodeActAgent can delegate to BrowsingAgent
 SUPPORTED_AGENT_CLS = {'CodeActAgent'}
+
+
+def get_config(
+    metadata: EvalMetadata,
+) -> AppConfig:
+    assert (
+        metadata.max_iterations == 1
+    ), 'max_iterations must be 1 for browsing delegation evaluation.'
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='ubuntu:22.04',
+            enable_auto_lint=False,
+            use_host_network=False,
+        ),
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
 
 
 def process_instance(
@@ -31,9 +55,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
-
+    config = get_config(metadata)
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
@@ -48,20 +70,13 @@ def process_instance(
         f'NOTE: You should copy the "query" as is into the <execute_browse> tag. DO NOT change ANYTHING in the query.'
     )
 
-    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
         run_controller(
             config=config,
             task_str=instruction,
-            agent=agent,
             sid=instance.instance_id,
         )
     )
-
-    # ======= Attempt to evaluate the agent's environment impact =======
-
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
         raise ValueError('State should not be None.')
@@ -120,8 +135,13 @@ if __name__ == '__main__':
     dataset = dataset['train'].to_pandas()
     assert dataset.columns.tolist() == ['instance_id', 'instruction']
     id_column = 'instance_id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
-    logger.info(f'Config for evaluation: {config}')
+
+    llm_config = None
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
@@ -131,6 +151,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
     )
+
     if metadata.agent_class not in SUPPORTED_AGENT_CLS:
         raise ValueError(
             f'Agent class {metadata.agent_class} not supported with AgentDelegation.'
