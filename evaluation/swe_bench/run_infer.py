@@ -307,6 +307,13 @@ async def complete_runtime_fn(
     assert obs.exit_code == 0
 
     git_patch = obs.content.strip()
+    # remove the last line that starts with root@
+    git_patch_lines = git_patch.split('\r\n')
+    assert (
+        'root@' in git_patch_lines[-1]
+    ), f'Expect the last line to start with root@ for EventStreamRuntime: {git_patch_lines[-1]}'
+    git_patch_lines = git_patch_lines[:-1]
+    git_patch = '\r\n'.join(git_patch_lines)
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
