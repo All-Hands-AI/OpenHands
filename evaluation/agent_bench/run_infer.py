@@ -91,9 +91,7 @@ async def initialize_runtime_fn(
             )
 
         logger.info(f'Running init script: {script_name}')
-        action = CmdRunAction(
-            command=f'ls -alh . && chmod +x ./{script_name} && ./{script_name}'
-        )
+        action = CmdRunAction(command=f'chmod +x ./{script_name} && ./{script_name}')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = await runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -128,10 +126,9 @@ async def complete_runtime_fn(
                 '/workspace',
             )
             logger.info(f'Running get agent result cmd: {script_name}')
-            # _, agent_answer = sandbox.execute(script_path)
 
         action = CmdRunAction(
-            command=f'ls -alh . && chmod +x ./{script_name} && ./{script_name}',
+            command=f'chmod +x ./{script_name} && ./{script_name}',
             keep_prompt=False,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -159,7 +156,7 @@ async def complete_runtime_fn(
             logger.info(f'Running get ground truth cmd: {script_name}')
 
             action = CmdRunAction(
-                command=f'ls -alh . && chmod +x ./{script_name} && ./{script_name}',
+                command=f'chmod +x ./{script_name} && ./{script_name}',
                 keep_prompt=False,
             )
             logger.info(action, extra={'msg_type': 'ACTION'})
