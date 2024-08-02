@@ -159,6 +159,15 @@ async def initialize_runtime_fn(
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
+    # Set instance id
+    action = CmdRunAction(
+        command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
+    )
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
     if USE_INSTANCE_IMAGE:
         # inject the init script
         script_dir = os.path.dirname(__file__)
@@ -169,7 +178,7 @@ async def initialize_runtime_fn(
         instance['test_cmd'] = f"{test_type} {' '.join(instance['test_directives'])}"
 
         action = CmdRunAction(
-            command=f"""echo "export TEST_command='{instance["test_cmd"]}'" >> ~/.bashrc"""
+            command=f"""echo "export TEST_CMD='{instance["test_cmd"]}'" >> ~/.bashrc"""
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = await runtime.run_action(action)
@@ -204,9 +213,13 @@ async def initialize_runtime_fn(
             str(os.path.join(script_dir, 'scripts/setup/instance_swe_entry.sh')),
             '/swe_util/',
         )
+        action = CmdRunAction(command='cat ~/.bashrc')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
 
-        # inject the instance swe entry
-        action = CmdRunAction(command='source /swe_util/swe_entry.sh')
+        action = CmdRunAction(command='source ~/.bashrc')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = await runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

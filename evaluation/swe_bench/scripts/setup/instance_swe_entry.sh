@@ -45,7 +45,11 @@ echo "$item" | jq -r '.patch' > $SWE_TASK_DIR/gold.patch
 echo "$item" | jq 'del(.test_patch, .patch)' > $SWE_TASK_DIR/instance.json
 
 # Clear the workspace
-rm -rf /workspace/*
+if [ -d /workspace ]; then
+    rm -rf /workspace/*
+else
+    mkdir /workspace
+fi
 # Copy repo to workspace
 if [ -d /workspace/$WORKSPACE_NAME ]; then
     rm -rf /workspace/$WORKSPACE_NAME
