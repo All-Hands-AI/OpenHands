@@ -223,5 +223,5 @@ if __name__ == '__main__':
         output_file,
         args.eval_num_workers,
         process_instance,
-        'text',
+        id_column='instance_id',
     )
