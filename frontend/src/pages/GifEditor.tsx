@@ -18,6 +18,13 @@ import { readFile } from "#/services/fileService";
 // React.StrictMode will cause double rendering, use this to prevent it
 let initOnce = false;
 
+const PROMPT_CONTEXT = `
+You're current job is to create an animated gif. You MUST do this by writing a python
+script called generate_gif.py. This file MUST create a gif file called dance.gif in the
+current directory. Every time you modify the script, you MUST re-run the script to regenerate
+the gif. generate_gif.py may already exist, in which case you should modify it.
+`
+
 function GifEditor(): JSX.Element {
   /* FIXME: all the below is duplicated from Main.tsx, should be refactored */
   const {
@@ -43,7 +50,7 @@ function GifEditor(): JSX.Element {
      * } else if (getToken()) {
       onLoadPreviousSessionModalOpen();*/
     } else {
-      Session.startNewSession();
+      Session.startNewSession({prompt_context: PROMPT_CONTEXT});
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

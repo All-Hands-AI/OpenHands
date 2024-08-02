@@ -32,26 +32,27 @@ class Session {
 
   private static _disconnecting = false;
 
-  public static restoreOrStartNewSession() {
+  public static restoreOrStartNewSession(extraArgs: object = {}) {
     if (Session.isConnected()) {
       Session.disconnect();
     }
-    Session._connect();
+    Session._connect(extraArgs);
   }
 
-  public static startNewSession() {
+  public static startNewSession(extraArgs: object = {}) {
     clearToken();
-    Session.restoreOrStartNewSession();
+    Session.restoreOrStartNewSession(extraArgs);
   }
 
-  private static _initializeAgent = () => {
+  private static _initializeAgent = (extraArgs: object = {}) => {
     const settings = getSettings();
-    const event = { action: ActionType.INIT, args: settings };
+    const args = { ...settings, ...extraArgs };
+    const event = { action: ActionType.INIT, args };
     const eventString = JSON.stringify(event);
     Session.send(eventString);
   };
 
-  private static _connect(): void {
+  private static _connect(extraArgs: object = {}): void {
     if (Session.isConnected()) return;
     Session._connecting = true;
 
@@ -65,10 +66,10 @@ class Session {
       }
     }
     Session._socket = new WebSocket(wsURL);
-    Session._setupSocket();
+    Session._setupSocket(extraArgs);
   }
 
-  private static _setupSocket(): void {
+  private static _setupSocket(extraArgs: object = {}): void {
     if (!Session._socket) {
       throw new Error(
         translate(I18nKey.SESSION$SOCKET_NOT_INITIALIZED_ERROR_MESSAGE),
@@ -77,7 +78,7 @@ class Session {
     Session._socket.onopen = (e) => {
       toast.success("ws", translate(I18nKey.SESSION$SERVER_CONNECTED_MESSAGE));
       Session._connecting = false;
-      Session._initializeAgent();
+      Session._initializeAgent(extraArgs);
       Session.callbacks.open?.forEach((callback) => {
         callback(e);
       });
