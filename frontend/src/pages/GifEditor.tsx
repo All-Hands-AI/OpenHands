@@ -20,7 +20,7 @@ let initOnce = false;
 
 const PROMPT_CONTEXT = `
 You're current job is to create an animated gif. You MUST do this by writing a python
-script called generate_gif.py. This file MUST create a gif file called dance.gif in the
+script called generate_gif.py. This file MUST create a gif file called animation.gif in the
 current directory. Every time you modify the script, you MUST re-run the script to regenerate
 the gif. generate_gif.py may already exist, in which case you should modify it.
 `
@@ -69,7 +69,7 @@ function GifEditor(): JSX.Element {
   }
 
   useEffect(() => {
-    readFile("dance.gif").then((file) => {
+    readFile("animation.gif").then((file) => {
       return blobToBase64(file);
     }).then((base64) => {
       setImageContent(base64);
