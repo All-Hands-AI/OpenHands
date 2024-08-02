@@ -170,6 +170,7 @@ evaluation/swe_bench/eval_workspace*
 evaluation/SWE-bench/data
 evaluation/webarena/scripts/webarena_env.sh
 evaluation/bird/data
+evaluation/gaia/data
 
 # frontend
 

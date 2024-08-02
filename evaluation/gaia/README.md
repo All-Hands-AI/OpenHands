@@ -2,9 +2,9 @@
 
 This folder contains evaluation harness for evaluating agents on the [GAIA benchmark](https://arxiv.org/abs/2311.12983).
 
-## Configure OpenDevin and your LLM
+## Setup Environment and LLM Configuration
 
-Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Run the evaluation
 We are using the GAIA dataset hosted on [Hugging Face](https://huggingface.co/datasets/gaia-benchmark/GAIA).
