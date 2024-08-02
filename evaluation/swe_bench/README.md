@@ -6,36 +6,13 @@ This folder contains the evaluation harness that we built on top of the original
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](#setup-environment), [configure LLM config](#configure-opendevin-and-your-llm), and [pull docker](#opendevin-swe-bench-instance-level-docker-support).
+1. Environment setup: [install python environment](../README.md#development-environment), [configure LLM config](../README.md#configure-opendevin-and-your-llm), and [pull docker](#opendevin-swe-bench-instance-level-docker-support).
 2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
 3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
 
+## Setup Environment and LLM Configuration
 
-## Setup Environment
-
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to set up a local development environment for OpenDevin.
-
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace. You can copy from `config.template.toml` if it is easier for you.
-
-Add the configuration for your LLM:
-
-```toml
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview_llm]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model_llm]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
-
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## OpenDevin SWE-Bench Instance-level Docker Support
 
