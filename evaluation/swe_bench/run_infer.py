@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 import os
 import tempfile
@@ -127,13 +128,13 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
+        run_as_devin=False,
         runtime='eventstream',
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             container_image=container_image,
             enable_auto_lint=True,
-            run_as_devin=False,
             use_host_network=False,
         ),
         # do not mount workspace
@@ -152,6 +153,9 @@ async def initialize_runtime_fn(
 
     This function is called before the runtime is used to run the agent.
     """
+    logger.info('-' * 30)
+    logger.info('BEGIN Runtime Initialization Fn')
+    logger.info('-' * 30)
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
@@ -163,17 +167,24 @@ async def initialize_runtime_fn(
         test_type = MAP_REPO_TO_TEST_FRAMEWORK[instance['repo']][instance['version']]
         instance['test_directives'] = get_test_directives(instance)
         instance['test_cmd'] = f"{test_type} {' '.join(instance['test_directives'])}"
-        obs = await runtime.run(
-            CmdRunAction(
-                cmd=f"""echo "export TEST_CMD='{instance["test_cmd"]}'" >> ~/.bashrc"""
-            )
+
+        action = CmdRunAction(
+            command=f"""echo "export TEST_command='{instance["test_cmd"]}'" >> ~/.bashrc"""
         )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0, f'Failed to set TEST_CMD in ~/.bashrc: {obs.content}'
 
         # inject the instance info
-        obs = await runtime.run(
-            CmdRunAction(cmd='mkdir -p /swe_util/eval_data/instances')
-        )
+        action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert (
+            obs.exit_code == 0
+        ), f'Failed to create /swe_util/eval_data/instances: {obs.content}'
+
         swe_instance_json_name = 'swe-bench-instance.json'
         with tempfile.TemporaryDirectory() as temp_dir:
             # Construct the full path for the desired file name within the temporary directory
@@ -186,10 +197,7 @@ async def initialize_runtime_fn(
                     json.dump([instance], f)
 
             # Copy the file to the desired location
-            obs = await runtime.copy_to(
-                temp_file_path, '/swe_util/eval_data/instances/'
-            )
-            assert obs.exit_code == 0
+            await runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
 
         # inject the instance swe entry
         await runtime.copy_to(
@@ -198,31 +206,49 @@ async def initialize_runtime_fn(
         )
 
         # inject the instance swe entry
-        obs = await runtime.run(CmdRunAction(cmd='source /swe_util/swe_entry.sh'))
+        action = CmdRunAction(command='source /swe_util/swe_entry.sh')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
-        obs = await runtime.run(
-            CmdRunAction(cmd='source /swe_util/instance_swe_entry.sh')
-        )
+        action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
     else:
-        obs = await runtime.run(CmdRunAction(cmd='source /swe_util/swe_entry.sh'))
+        action = CmdRunAction(command='source /swe_util/swe_entry.sh')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.exit_code == 0
         ), f'Failed to source /swe_util/swe_entry.sh: {obs.content}'
 
-    obs = await runtime.run(CmdRunAction(cmd=f'cd /workspace/{workspace_dir_name}'))
+    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    obs = await runtime.run(CmdRunAction(cmd='git reset --hard'))
+    action = CmdRunAction(command='git reset --hard')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    obs = await runtime.run(
-        CmdRunAction(
-            cmd='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
-        )
+    action = CmdRunAction(
+        command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
     )
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
+
+    logger.info('-' * 30)
+    logger.info('END Runtime Initialization Fn')
+    logger.info('-' * 30)
 
 
 async def complete_runtime_fn(
@@ -235,24 +261,43 @@ async def complete_runtime_fn(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
+    logger.info('-' * 30)
+    logger.info('BEGIN Runtime Completion Fn')
+    logger.info('-' * 30)
     obs: CmdOutputObservation
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
 
-    obs = await runtime.run(CmdRunAction(cmd=f'cd /workspace/{workspace_dir_name}'))
+    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    obs = await runtime.run(CmdRunAction(cmd='git config --global core.pager ""'))
+    action = CmdRunAction(command='git config --global core.pager ""')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    obs = await runtime.run(CmdRunAction(cmd='git add -A'))
+    action = CmdRunAction(command='git add -A')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    obs = await runtime.run(
-        CmdRunAction(cmd=f'git diff --no-color --cached {instance["base_commit"]}')
+    action = CmdRunAction(
+        command=f'git diff --no-color --cached {instance["base_commit"]}'
     )
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     git_patch = obs.content.strip()
+
+    logger.info('-' * 30)
+    logger.info('END Runtime Completion Fn')
+    logger.info('-' * 30)
     return {'git_patch': git_patch}
 
 
@@ -281,6 +326,12 @@ def process_instance(
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 metadata.agent_class
             ],
+            initialize_runtime_fn=functools.partial(
+                initialize_runtime_fn, instance=instance
+            ),
+            complete_runtime_fn=functools.partial(
+                complete_runtime_fn, instance=instance
+            ),
             sid=instance.instance_id,
         )
     )
