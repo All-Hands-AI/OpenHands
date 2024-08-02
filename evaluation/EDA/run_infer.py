@@ -149,7 +149,7 @@ def process_instance(
     # Save the output
     output = {
         'instance_id': instance_id,
-        'instance': instance,
+        'instance': instance.to_dict(),
         'instruction': instruction,
         'metadata': metadata.model_dump(),
         'history': histories,
