@@ -90,6 +90,7 @@ class SelfDiscoveryAgent(Agent):
         return None
 
     def advance_self_discovery_step(self, action: Action):
+        # only move to next step if not browsing or user ask
         if not (
             (
                 isinstance(action, AgentDelegateAction)
