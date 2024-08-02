@@ -30,7 +30,7 @@ from opendevin.core.config import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_controller
-from opendevin.events.action import CmdRunAction, MessageAction
+from opendevin.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
 
@@ -162,7 +162,6 @@ async def complete_runtime_fn(
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = await runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-            assert obs.exit_code == 0
             final_ans = obs.content
 
     logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
@@ -244,13 +243,19 @@ def process_instance(
 
         # retrieve the last agent message or thought
         for event in state.history.get_events(reverse=True):
-            if isinstance(event, MessageAction) and event.source == 'agent':
-                raw_ans = event.content
-            elif isinstance(event, CmdRunAction) and event.source == 'agent':
-                raw_ans = event.thought
+            if event.source == 'agent':
+                if isinstance(event, AgentFinishAction):
+                    raw_ans = event.thought
+                    break
+                elif isinstance(event, MessageAction):
+                    raw_ans = event.content
+                    break
+                elif isinstance(event, CmdRunAction):
+                    raw_ans = event.thought
+                    break
 
         # parse the answer for a solution tag
-        agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)
+        agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans, re.DOTALL)
         if len(agent_answer) == 0:
             logger.warning(f'Failed to parse model answer: {raw_ans}')
             agent_answer = raw_ans
