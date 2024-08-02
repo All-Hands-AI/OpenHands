@@ -197,7 +197,7 @@ class CodeActSWEAgent(Agent):
                 )
             )
             # add a reminder to the prompt
-            reminder_text = '\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
             if latest_user_message_text:
                 latest_user_message_text.text = (
