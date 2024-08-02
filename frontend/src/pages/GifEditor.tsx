@@ -13,7 +13,7 @@ import Terminal from "#/components/terminal/Terminal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { settingsAreUpToDate } from "#/services/settings";
-import { readFile } from "#/services/fileService";
+import { request } from "#/services/api";
 
 // React.StrictMode will cause double rendering, use this to prevent it
 let initOnce = false;
@@ -21,8 +21,12 @@ let initOnce = false;
 const PROMPT_CONTEXT = `
 You're current job is to create an animated gif. You MUST do this by writing a python
 script called generate_gif.py. This file MUST create a gif file called animation.gif in the
-current directory. Every time you modify the script, you MUST re-run the script to regenerate
-the gif. generate_gif.py may already exist, in which case you should modify it.
+current directory. generate_gif.py may already exist, in which case you should modify it.
+
+Every time you modify the script, you MUST re-run the script to regenerate the gif.
+Don't do anything else after you run the script--the user will see the gif automatically.
+
+You should use the Pillow library. If it's not installed, install it with \`python3 -m pip install --upgrade Pillow\`
 `
 
 function GifEditor(): JSX.Element {
@@ -68,14 +72,19 @@ function GifEditor(): JSX.Element {
     });
   }
 
+  async function refreshAnimation() {
+    let blob = null;
+    try {
+      blob = await request(`/api/files/animation.gif`, {}, true, "blob");
+    } catch (err) {
+      return;
+    }
+    const base64 = await blobToBase64(blob);
+    setImageContent(base64);
+  }
+
   useEffect(() => {
-    readFile("animation.gif").then((file) => {
-      return blobToBase64(file);
-    }).then((base64) => {
-      setImageContent(base64);
-    }).catch((err) => {
-      console.log(err);
-    });
+    refreshAnimation();
   }, [curAgentState]);
 
   return (
