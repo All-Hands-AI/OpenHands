@@ -57,19 +57,3 @@ class Message(BaseModel):
                 content.extend(item.model_dump())
 
         return {'role': self.role, 'content': content}
-
-
-# text_content1: Content = TextContent(text='This is a text message')
-# image_content1 = ImageContent(
-#     image_urls=['http://example.com/image1.png', 'http://example.com/image2.png']
-# )
-
-# text_content2 = TextContent(text='This is a text message')
-# image_content2 = ImageContent(
-#     image_urls=['http://example.com/image3.png', 'http://example.com/image4.png']
-# )
-
-# message = Message(
-#     role='user', content=[text_content1, image_content1, text_content2, image_content2]
-# )
-# print(message.serialize_model())
