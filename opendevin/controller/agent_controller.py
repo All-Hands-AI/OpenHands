@@ -51,6 +51,7 @@ class AgentController:
     event_stream: EventStream
     state: State
     confirmation_mode: bool
+    prompt_context: str
     agent_to_llm_config: dict[str, LLMConfig]
     agent_task: Optional[asyncio.Task] = None
     parent: 'AgentController | None' = None
@@ -65,6 +66,7 @@ class AgentController:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         sid: str = 'default',
+        prompt_context: str | None = None,
         confirmation_mode: bool = False,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -98,6 +100,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
+            prompt_context=prompt_context,
             max_iterations=max_iterations,
             confirmation_mode=confirmation_mode,
         )
@@ -435,6 +438,7 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
+        prompt_context: str | None,
         max_iterations: int,
         confirmation_mode: bool = False,
     ):
@@ -443,6 +447,7 @@ class AgentController:
         if state is None:
             self.state = State(
                 inputs={},
+                prompt_context=prompt_context,
                 max_iterations=max_iterations,
                 confirmation_mode=confirmation_mode,
             )

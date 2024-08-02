@@ -38,6 +38,7 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         confirmation_mode: bool,
+        prompt_context: str | None,
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -55,6 +56,7 @@ class AgentSession:
         await self._create_controller(
             agent,
             confirmation_mode,
+            prompt_context,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
@@ -90,6 +92,7 @@ class AgentSession:
         self,
         agent: Agent,
         confirmation_mode: bool,
+        prompt_context: str | None,
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -116,6 +119,7 @@ class AgentSession:
             sid=self.sid,
             event_stream=self.event_stream,
             agent=agent,
+            prompt_context=prompt_context,
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
@@ -127,7 +131,7 @@ class AgentSession:
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
             self.controller.set_initial_state(
-                agent_state, max_iterations, confirmation_mode
+                agent_state, prompt_context, max_iterations, confirmation_mode
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:

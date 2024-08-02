@@ -108,6 +108,7 @@ class Session:
                 config=self.config,
                 agent=agent,
                 confirmation_mode=confirmation_mode,
+                prompt_context=args.get('prompt_context', ''),
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),

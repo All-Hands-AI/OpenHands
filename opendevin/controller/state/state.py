@@ -89,6 +89,8 @@ class State:
     # max number of iterations for the current task
     max_iterations: int = 100
     confirmation_mode: bool = False
+    # additional context for the current environment, which should be added to all prompts. E.g. "you're on an ubuntu machine with python 3.11 installed"
+    prompt_context: str | None = None
     history: ShortTermHistory = field(default_factory=ShortTermHistory)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)

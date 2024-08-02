@@ -35,11 +35,18 @@ ENABLE_GITHUB = True
 
 
 # FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
-def get_system_message() -> str:
+def get_system_message(prompt_context: str | None) -> str:
+    if not prompt_context:
+        prompt_context = ''
+    msg = SYSTEM_PREFIX
     if ENABLE_GITHUB:
-        return f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-    else:
-        return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+        msg += f'\n{GITHUB_MESSAGE}'
+
+    msg += f'\n\n{COMMAND_DOCS}'
+    if prompt_context:
+        msg += f'\n\n{prompt_context}'
+    msg += f'\n\n{SYSTEM_SUFFIX}'
+    return msg
 
 
 def get_in_context_example() -> str:
@@ -93,7 +100,6 @@ class CodeActAgent(Agent):
     ]
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
-    system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
 
     action_parser = CodeActResponseParser()
@@ -206,8 +212,9 @@ class CodeActAgent(Agent):
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[dict[str, str]]:
+        system_message: str = get_system_message(state.prompt_context)
         messages = [
-            {'role': 'system', 'content': self.system_message},
+            {'role': 'system', 'content': system_message},
             {'role': 'user', 'content': self.in_context_example},
         ]
 
