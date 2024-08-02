@@ -7,6 +7,7 @@ Implements evaluation of agents on BioCoder from the BioCoder benchmark introduc
 Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## BioCoder Docker Image
+
 In the opendevin branch of the Biocoder repository, we have slightly modified our original Docker image to work with the OpenDevin environment. In the Docker image are testing scripts (`/testing/start_test_opendevin.py` and aux files in `/testing_files/`) to assist with evaluation. Additionally, we have installed all dependencies, including OpenJDK, mamba (with Python 3.6), and many system libraries. Notably, we have **not** packaged all repositories into the image, so they are downloaded at runtime.
 
 **Before first execution, pull our Docker image with the following command**
@@ -37,12 +38,12 @@ to `CodeActAgent`.
 - `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By default it infers all instances.
 
 Let's say you'd like to run 1 instance using `eval_gpt4_1106_eval_gpt4o_2024_05_13preview` and CodeActAgent
-with OpenDevin version 0.6.2, then your command would be:
+with current OpenDevin version, then your command would be:
 
 ## Examples
 
 ```bash
-./evaluation/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 0.6.2 CodeActAgent 1
+./evaluation/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 HEAD CodeActAgent 1
 ```
 
 ## Reference
