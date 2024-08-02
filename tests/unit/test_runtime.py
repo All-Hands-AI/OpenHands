@@ -912,6 +912,72 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
     await asyncio.sleep(1)
 
 
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
+    """Make sure that cd in bash also update the current working directory in ipython.
+
+    Handle special case where the pwd is provided as "~", which should be expanded using os.path.expanduser
+    on the client side.
+    """
+
+    runtime = await _load_runtime(
+        temp_dir,
+        box_class,
+        run_as_devin=False,
+    )
+
+    action = CmdRunAction(command='cd ~')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='mkdir test && ls -la')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /root/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+    ).strip().split('\n')
+
+    action = CmdRunAction(command='cd test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # This should create a file in the current working directory
+    # i.e., /workspace/test/hello.py instead of /workspace/hello.py
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /root/test/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+    ).strip().split('\n')
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
 @pytest.mark.skipif(
     TEST_RUNTIME.lower() == 'eventstream',
     reason='Skip this if we want to test EventStreamRuntime',
