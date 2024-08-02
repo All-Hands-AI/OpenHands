@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import os
 import tempfile
 import uuid
@@ -49,6 +50,7 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         container_image: str | None = None,
     ):
+        self.config = copy.deepcopy(config)
         super().__init__(
             config, event_stream, sid, plugins
         )  # will initialize the event stream
@@ -139,22 +141,24 @@ class EventStreamRuntime(Runtime):
                 env_vars['DEBUG'] = 'true'
             if mount_dir is not None:
                 volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+                logger.info(f'Mount dir: {sandbox_workspace_dir}')
             else:
                 logger.warn(
-                    'Mount dir is not set, will not mount the workspace directory to the container.'
+                    'Mount dir is not set, will not mount the workspace directory to the container!'
                 )
                 volumes = None
+
+            logger.info(f'run_as_devin: `{self.config.run_as_devin}`')
 
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
-                    f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base '
-                    'PYTHONUNBUFFERED=1 poetry run '
-                    f'python -u -m opendevin.runtime.client.client {self._port} '
-                    f'--working-dir {sandbox_workspace_dir} '
-                    f'{plugin_arg}'
-                    f'--username {"opendevin" if self.config.run_as_devin else "root"} '
-                    f'--user-id {self.config.sandbox.user_id}'
+                    f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base poetry run'
+                    f' python -u -m opendevin.runtime.client.client {self._port}'
+                    f' --working-dir {sandbox_workspace_dir}'
+                    f' {plugin_arg}'
+                    f' --username {"opendevin" if self.config.run_as_devin else "root"}'
+                    f' --user-id {self.config.sandbox.user_id}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
@@ -177,26 +181,25 @@ class EventStreamRuntime(Runtime):
             raise e
 
     async def _ensure_session(self):
+        await asyncio.sleep(1)
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
         return self.session
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=4, max=600),
+        wait=tenacity.wait_exponential(multiplier=2, min=4, max=60),
     )
     async def _wait_until_alive(self):
+        logger.info('Reconnecting session')
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
                     return
                 else:
-                    logger.error(
-                        f'Action execution API is not alive. Response: {response}'
-                    )
-                    raise RuntimeError(
-                        f'Action execution API is not alive. Response: {response}'
-                    )
+                    msg = f'Action execution API is not alive. Response: {response}'
+                    logger.error(msg)
+                    raise RuntimeError(msg)
 
     @property
     def sandbox_workspace_dir(self):
@@ -285,11 +288,11 @@ class EventStreamRuntime(Runtime):
                     f'Action {action_type} is not supported in the current runtime.'
                 )
 
+            logger.info('Awaiting session')
             session = await self._ensure_session()
             await self._wait_until_alive()
 
-            assert action.timeout is not None
-
+            logger.info('Executing command')
             try:
                 async with session.post(
                     f'{self.api_url}/execute_action',

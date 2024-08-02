@@ -81,7 +81,7 @@ class ServerRuntime(Runtime):
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         # init sandbox plugins
-        await self.sandbox.init_plugins(self.plugins)
+        await self.sandbox.init_plugins_async(self.plugins)
 
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
