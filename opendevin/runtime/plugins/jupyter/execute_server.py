@@ -7,6 +7,7 @@ import re
 from uuid import uuid4
 
 import tornado
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tornado.escape import json_decode, json_encode, url_escape
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.ioloop import PeriodicCallback
@@ -134,13 +135,18 @@ class JupyterKernel:
         )
         self.heartbeat_callback.start()
 
+    @retry(
+        retry=retry_if_exception_type(ConnectionRefusedError),
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+    )
     async def execute(self, code, timeout=120):
         if not self.ws:
             await self._connect()
 
         msg_id = uuid4().hex
         assert self.ws is not None
-        self.ws.write_message(
+        res = await self.ws.write_message(
             json_encode(
                 {
                     'header': {
@@ -164,6 +170,7 @@ class JupyterKernel:
                 }
             )
         )
+        logging.info(f'Executed code in jupyter kernel:\n{res}')
 
         outputs = []
 

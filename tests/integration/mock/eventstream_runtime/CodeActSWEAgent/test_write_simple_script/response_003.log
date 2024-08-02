@@ -1,0 +1,5 @@
+The content of `hello.sh` is correct. Now, let's make the script executable and run it to ensure it works as expected.
+
+<execute_bash>
+chmod +x hello.sh
+./hello.sh

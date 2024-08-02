@@ -2491,13 +2491,13 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "grep-ast"
-version = "0.3.2"
+version = "0.3.3"
 description = "A tool to grep through the AST of a source file"
 optional = false
 python-versions = "*"
 files = [
-    {file = "grep_ast-0.3.2-py3-none-any.whl", hash = "sha256:b7ceb84743983c3f4f5bca82f3374534cd9dbd759792d0dedf5648fedbb6f3fc"},
-    {file = "grep_ast-0.3.2.tar.gz", hash = "sha256:d53bc7d25dfefafe77643fec189ab38e3cbd839d546c070a950ebedad82ee164"},
+    {file = "grep_ast-0.3.3-py3-none-any.whl", hash = "sha256:515cb889bffefefa26c4ab1377b9a75b3fc678aa5fa02bf9aa4f8f20999a83ad"},
+    {file = "grep_ast-0.3.3.tar.gz", hash = "sha256:42b8887d57301dc55634368f8d549e9c49c913dafb4d19c9b54c3ddb604fccf4"},
 ]
 
 [package.dependencies]
@@ -3509,13 +3509,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.42.5"
+version = "1.42.7"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.42.5-py3-none-any.whl", hash = "sha256:c8c2f9e40b5aa1c2dcfcac9adb854b8ac22ce2112825d742d8fce516d26e9a65"},
-    {file = "litellm-1.42.5.tar.gz", hash = "sha256:64ea24040751009e70e816e9340c5c82717d9a309f4480e5ece9f3f67328e04e"},
+    {file = "litellm-1.42.7-py3-none-any.whl", hash = "sha256:1f1bc373c7b453c7c449d2fdfffe2719a7b2a343ccb779d585a5d8eac4204a89"},
+    {file = "litellm-1.42.7.tar.gz", hash = "sha256:fc040b7d5d0b24f975094a8fd200c5a39bdbea57c794f01c264c2f29dbe90315"},
 ]
 
 [package.dependencies]
@@ -3677,13 +3677,13 @@ sentence-transformers = ">=2.6.1"
 
 [[package]]
 name = "llama-index-embeddings-ollama"
-version = "0.1.2"
+version = "0.1.3"
 description = "llama-index embeddings ollama integration"
 optional = false
-python-versions = ">=3.8.1,<4.0"
+python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_ollama-0.1.2-py3-none-any.whl", hash = "sha256:ac7afabfa1134059af351b021e05e256bf86dd15e5176ffa5ab0305bcf03b33f"},
-    {file = "llama_index_embeddings_ollama-0.1.2.tar.gz", hash = "sha256:a9e0809bddd2e4ad888f249519edc7e3d339c74e4e03fc5a40c3060dc41d47a9"},
+    {file = "llama_index_embeddings_ollama-0.1.3-py3-none-any.whl", hash = "sha256:b960a8c744e2e56ce1fd75a34753614fed3ad81558570ae9958b90b9062afb6a"},
+    {file = "llama_index_embeddings_ollama-0.1.3.tar.gz", hash = "sha256:4bd1dd3230c9be04cfa45b28c3a8066e46c1654d4360fcbecdc1718ac9013eca"},
 ]
 
 [package.dependencies]
@@ -5562,13 +5562,13 @@ xmp = ["defusedxml"]
 
 [[package]]
 name = "pip"
-version = "24.1.1"
+version = "24.2"
 description = "The PyPA recommended tool for installing Python packages."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pip-24.1.1-py3-none-any.whl", hash = "sha256:efca15145a95e95c00608afeab66311d40bfb73bb2266a855befd705e6bb15a0"},
-    {file = "pip-24.1.1.tar.gz", hash = "sha256:5aa64f65e1952733ee0a9a9b1f52496ebdb3f3077cc46f80a16d983b58d1180a"},
+    {file = "pip-24.2-py3-none-any.whl", hash = "sha256:2cd581cf58ab7fcfca4ce8efa6dcacd0de5bf8d0a3eb9ec927e07405f4d9e2a2"},
+    {file = "pip-24.2.tar.gz", hash = "sha256:5b5e490b5e9cb275c879595064adce9ebd31b854e3e803740b72f9ccf34a45b8"},
 ]
 
 [[package]]
@@ -6135,13 +6135,13 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyjwt"
-version = "2.8.0"
+version = "2.9.0"
 description = "JSON Web Token implementation in Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "PyJWT-2.8.0-py3-none-any.whl", hash = "sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320"},
-    {file = "PyJWT-2.8.0.tar.gz", hash = "sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de"},
+    {file = "PyJWT-2.9.0-py3-none-any.whl", hash = "sha256:3b02fb0f44517787776cf48f2ae25d8e14f300e6d7545a4315cee571a415e850"},
+    {file = "pyjwt-2.9.0.tar.gz", hash = "sha256:7e1e5b56cc735432a7369cbfa0efe50fa113ebecdc04ae6922deba8b84582d0c"},
 ]
 
 [package.dependencies]
@@ -6149,8 +6149,8 @@ cryptography = {version = ">=3.4.0", optional = true, markers = "extra == \"cryp
 
 [package.extras]
 crypto = ["cryptography (>=3.4.0)"]
-dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
-docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx", "sphinx-rtd-theme", "zope.interface"]
+docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
@@ -7564,7 +7564,7 @@ files = [
 
 [[package]]
 name = "swebench"
-version = "2.0.2"
+version = "2.0.12"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
 python-versions = ">=3.8"
@@ -7583,12 +7583,16 @@ python-dotenv = "*"
 requests = "*"
 rich = "*"
 tqdm = "*"
+unidiff = "*"
+
+[package.extras]
+inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tenacity", "tiktoken", "torch", "transformers", "triton"]
 
 [package.source]
 type = "git"
 url = "https://github.com/OpenDevin/SWE-bench.git"
 reference = "HEAD"
-resolved_reference = "4498af933679c518df6d1f8485864f72afc21500"
+resolved_reference = "c2b3cefd4a5af0b248966a773650a39046072975"
 
 [[package]]
 name = "sympy"
@@ -7892,36 +7896,36 @@ files = [
 
 [[package]]
 name = "torch"
-version = "2.2.0"
+version = "2.2.2"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "torch-2.2.0-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:d366158d6503a3447e67f8c0ad1328d54e6c181d88572d688a625fac61b13a97"},
-    {file = "torch-2.2.0-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:707f2f80402981e9f90d0038d7d481678586251e6642a7a6ef67fc93511cb446"},
-    {file = "torch-2.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:15c8f0a105c66b28496092fca1520346082e734095f8eaf47b5786bac24b8a31"},
-    {file = "torch-2.2.0-cp310-none-macosx_10_9_x86_64.whl", hash = "sha256:0ca4df4b728515ad009b79f5107b00bcb2c63dc202d991412b9eb3b6a4f24349"},
-    {file = "torch-2.2.0-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:3d3eea2d5969b9a1c9401429ca79efc668120314d443d3463edc3289d7f003c7"},
-    {file = "torch-2.2.0-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:0d1c580e379c0d48f0f0a08ea28d8e373295aa254de4f9ad0631f9ed8bc04c24"},
-    {file = "torch-2.2.0-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:9328e3c1ce628a281d2707526b4d1080eae7c4afab4f81cea75bde1f9441dc78"},
-    {file = "torch-2.2.0-cp311-cp311-win_amd64.whl", hash = "sha256:03c8e660907ac1b8ee07f6d929c4e15cd95be2fb764368799cca02c725a212b8"},
-    {file = "torch-2.2.0-cp311-none-macosx_10_9_x86_64.whl", hash = "sha256:da0cefe7f84ece3e3b56c11c773b59d1cb2c0fd83ddf6b5f7f1fd1a987b15c3e"},
-    {file = "torch-2.2.0-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:f81d23227034221a4a4ff8ef24cc6cec7901edd98d9e64e32822778ff01be85e"},
-    {file = "torch-2.2.0-cp312-cp312-manylinux1_x86_64.whl", hash = "sha256:dcbfb2192ac41ca93c756ebe9e2af29df0a4c14ee0e7a0dd78f82c67a63d91d4"},
-    {file = "torch-2.2.0-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:9eeb42971619e24392c9088b5b6d387d896e267889d41d267b1fec334f5227c5"},
-    {file = "torch-2.2.0-cp312-cp312-win_amd64.whl", hash = "sha256:c718b2ca69a6cac28baa36d86d8c0ec708b102cebd1ceb1b6488e404cd9be1d1"},
-    {file = "torch-2.2.0-cp312-none-macosx_10_9_x86_64.whl", hash = "sha256:f11d18fceb4f9ecb1ac680dde7c463c120ed29056225d75469c19637e9f98d12"},
-    {file = "torch-2.2.0-cp312-none-macosx_11_0_arm64.whl", hash = "sha256:ee1da852bfd4a7e674135a446d6074c2da7194c1b08549e31eae0b3138c6b4d2"},
-    {file = "torch-2.2.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:0d819399819d0862268ac531cf12a501c253007df4f9e6709ede8a0148f1a7b8"},
-    {file = "torch-2.2.0-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:08f53ccc38c49d839bc703ea1b20769cc8a429e0c4b20b56921a9f64949bf325"},
-    {file = "torch-2.2.0-cp38-cp38-win_amd64.whl", hash = "sha256:93bffe3779965a71dab25fc29787538c37c5d54298fd2f2369e372b6fb137d41"},
-    {file = "torch-2.2.0-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:c17ec323da778efe8dad49d8fb534381479ca37af1bfc58efdbb8607a9d263a3"},
-    {file = "torch-2.2.0-cp38-none-macosx_11_0_arm64.whl", hash = "sha256:c02685118008834e878f676f81eab3a952b7936fa31f474ef8a5ff4b5c78b36d"},
-    {file = "torch-2.2.0-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:d9f39d6f53cec240a0e3baa82cb697593340f9d4554cee6d3d6ca07925c2fac0"},
-    {file = "torch-2.2.0-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:51770c065206250dc1222ea7c0eff3f88ab317d3e931cca2aee461b85fbc2472"},
-    {file = "torch-2.2.0-cp39-cp39-win_amd64.whl", hash = "sha256:008e4c6ad703de55af760c73bf937ecdd61a109f9b08f2bbb9c17e7c7017f194"},
-    {file = "torch-2.2.0-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:de8680472dd14e316f42ceef2a18a301461a9058cd6e99a1f1b20f78f11412f1"},
-    {file = "torch-2.2.0-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:99e1dcecb488e3fd25bcaac56e48cdb3539842904bdc8588b0b255fde03a254c"},
+    {file = "torch-2.2.2-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:bc889d311a855dd2dfd164daf8cc903a6b7273a747189cebafdd89106e4ad585"},
+    {file = "torch-2.2.2-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:15dffa4cc3261fa73d02f0ed25f5fa49ecc9e12bf1ae0a4c1e7a88bbfaad9030"},
+    {file = "torch-2.2.2-cp310-cp310-win_amd64.whl", hash = "sha256:11e8fe261233aeabd67696d6b993eeb0896faa175c6b41b9a6c9f0334bdad1c5"},
+    {file = "torch-2.2.2-cp310-none-macosx_10_9_x86_64.whl", hash = "sha256:b2e2200b245bd9f263a0d41b6a2dab69c4aca635a01b30cca78064b0ef5b109e"},
+    {file = "torch-2.2.2-cp310-none-macosx_11_0_arm64.whl", hash = "sha256:877b3e6593b5e00b35bbe111b7057464e76a7dd186a287280d941b564b0563c2"},
+    {file = "torch-2.2.2-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:ad4c03b786e074f46606f4151c0a1e3740268bcf29fbd2fdf6666d66341c1dcb"},
+    {file = "torch-2.2.2-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:32827fa1fbe5da8851686256b4cd94cc7b11be962862c2293811c94eea9457bf"},
+    {file = "torch-2.2.2-cp311-cp311-win_amd64.whl", hash = "sha256:f9ef0a648310435511e76905f9b89612e45ef2c8b023bee294f5e6f7e73a3e7c"},
+    {file = "torch-2.2.2-cp311-none-macosx_10_9_x86_64.whl", hash = "sha256:95b9b44f3bcebd8b6cd8d37ec802048c872d9c567ba52c894bba90863a439059"},
+    {file = "torch-2.2.2-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:49aa4126ede714c5aeef7ae92969b4b0bbe67f19665106463c39f22e0a1860d1"},
+    {file = "torch-2.2.2-cp312-cp312-manylinux1_x86_64.whl", hash = "sha256:cf12cdb66c9c940227ad647bc9cf5dba7e8640772ae10dfe7569a0c1e2a28aca"},
+    {file = "torch-2.2.2-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:89ddac2a8c1fb6569b90890955de0c34e1724f87431cacff4c1979b5f769203c"},
+    {file = "torch-2.2.2-cp312-cp312-win_amd64.whl", hash = "sha256:451331406b760f4b1ab298ddd536486ab3cfb1312614cfe0532133535be60bea"},
+    {file = "torch-2.2.2-cp312-none-macosx_10_9_x86_64.whl", hash = "sha256:eb4d6e9d3663e26cd27dc3ad266b34445a16b54908e74725adb241aa56987533"},
+    {file = "torch-2.2.2-cp312-none-macosx_11_0_arm64.whl", hash = "sha256:bf9558da7d2bf7463390b3b2a61a6a3dbb0b45b161ee1dd5ec640bf579d479fc"},
+    {file = "torch-2.2.2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:cd2bf7697c9e95fb5d97cc1d525486d8cf11a084c6af1345c2c2c22a6b0029d0"},
+    {file = "torch-2.2.2-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:b421448d194496e1114d87a8b8d6506bce949544e513742b097e2ab8f7efef32"},
+    {file = "torch-2.2.2-cp38-cp38-win_amd64.whl", hash = "sha256:3dbcd563a9b792161640c0cffe17e3270d85e8f4243b1f1ed19cca43d28d235b"},
+    {file = "torch-2.2.2-cp38-none-macosx_10_9_x86_64.whl", hash = "sha256:31f4310210e7dda49f1fb52b0ec9e59382cfcb938693f6d5378f25b43d7c1d29"},
+    {file = "torch-2.2.2-cp38-none-macosx_11_0_arm64.whl", hash = "sha256:c795feb7e8ce2e0ef63f75f8e1ab52e7fd5e1a4d7d0c31367ade1e3de35c9e95"},
+    {file = "torch-2.2.2-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:a6e5770d68158d07456bfcb5318b173886f579fdfbf747543901ce718ea94782"},
+    {file = "torch-2.2.2-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:67dcd726edff108e2cd6c51ff0e416fd260c869904de95750e80051358680d24"},
+    {file = "torch-2.2.2-cp39-cp39-win_amd64.whl", hash = "sha256:539d5ef6c4ce15bd3bd47a7b4a6e7c10d49d4d21c0baaa87c7d2ef8698632dfb"},
+    {file = "torch-2.2.2-cp39-none-macosx_10_9_x86_64.whl", hash = "sha256:dff696de90d6f6d1e8200e9892861fd4677306d0ef604cb18f2134186f719f82"},
+    {file = "torch-2.2.2-cp39-none-macosx_11_0_arm64.whl", hash = "sha256:3a4dd910663fd7a124c056c878a52c2b0be4a5a424188058fe97109d4436ee42"},
 ]
 
 [package.dependencies]
@@ -7941,7 +7945,7 @@ nvidia-cusparse-cu12 = {version = "12.1.0.106", markers = "platform_system == \"
 nvidia-nccl-cu12 = {version = "2.19.3", markers = "platform_system == \"Linux\" and platform_machine == \"x86_64\""}
 nvidia-nvtx-cu12 = {version = "12.1.105", markers = "platform_system == \"Linux\" and platform_machine == \"x86_64\""}
 sympy = "*"
-triton = {version = "2.2.0", markers = "platform_system == \"Linux\" and platform_machine == \"x86_64\""}
+triton = {version = "2.2.0", markers = "platform_system == \"Linux\" and platform_machine == \"x86_64\" and python_version < \"3.12\""}
 typing-extensions = ">=4.8.0"
 
 [package.extras]
@@ -8298,6 +8302,17 @@ files = [
 ]
 
 [[package]]
+name = "unidiff"
+version = "0.7.5"
+description = "Unified diff parsing/metadata extraction library."
+optional = false
+python-versions = "*"
+files = [
+    {file = "unidiff-0.7.5-py2.py3-none-any.whl", hash = "sha256:c93bf2265cc1ba2a520e415ab05da587370bc2a3ae9e0414329f54f0c2fc09e8"},
+    {file = "unidiff-0.7.5.tar.gz", hash = "sha256:2e5f0162052248946b9f0970a40e9e124236bf86c82b70821143a6fc1dea2574"},
+]
+
+[[package]]
 name = "uri-template"
 version = "1.3.0"
 description = "RFC 6570 URI Template Processor"
@@ -8341,13 +8356,13 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "uvicorn"
-version = "0.30.3"
+version = "0.30.4"
 description = "The lightning-fast ASGI server."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "uvicorn-0.30.3-py3-none-any.whl", hash = "sha256:94a3608da0e530cea8f69683aa4126364ac18e3826b6630d1a65f4638aade503"},
-    {file = "uvicorn-0.30.3.tar.gz", hash = "sha256:0d114d0831ff1adbf231d358cbf42f17333413042552a624ea6a9b4c33dcfd81"},
+    {file = "uvicorn-0.30.4-py3-none-any.whl", hash = "sha256:06b00e3087e58c6865c284143c0c42f810b32ff4f265ab19d08c566f74a08728"},
+    {file = "uvicorn-0.30.4.tar.gz", hash = "sha256:00db9a9e3711a5fa59866e2b02fac69d8dc70ce0814aaec9a66d1d9e5c832a30"},
 ]
 
 [package.dependencies]
@@ -9120,4 +9135,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "32cc742bb22ad1a92dcaac2417832d2904d102555b44efa9596376713b628f5f"
+content-hash = "1a27bcc3e0448356d0d224f17e020131e38ec7d8ae31bff8680dcafde3d89bde"

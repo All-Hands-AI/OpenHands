@@ -13,12 +13,14 @@ import argparse
 import asyncio
 import os
 import re
+import shutil
 import subprocess
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from uvicorn import run
 
@@ -90,13 +92,7 @@ class RuntimeClient:
         # AFTER ServerRuntime is deprecated
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code=(
-                        'import sys\n'
-                        'sys.path.insert(0, "/opendevin/code/opendevin/runtime/plugins/agent_skills")\n'
-                        'from agentskills import *'
-                    )
-                )
+                IPythonRunCellAction(code='from agentskills import *')
             )
             logger.info(f'AgentSkills initialized: {obs}')
 
@@ -117,7 +113,7 @@ class RuntimeClient:
         output = subprocess.run(
             (
                 f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -g root -G sudo -u {user_id} {username}'
+                f'-g root -G sudo -u {user_id} {username}'
             ),
             shell=True,
             capture_output=True,
@@ -183,8 +179,8 @@ class RuntimeClient:
     def _execute_bash(
         self,
         command: str,
+        timeout: int | None,
         keep_prompt: bool = True,
-        timeout: int = 300,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         self.shell.sendline(command)
@@ -211,10 +207,13 @@ class RuntimeClient:
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
+            assert (
+                action.timeout is not None
+            ), f'Timeout argument is required for CmdRunAction: {action}'
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                output, exit_code = self._execute_bash(command)
+                output, exit_code = self._execute_bash(command, timeout=action.timeout)
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
                     # we need to add the command to the previous output,
@@ -253,8 +252,9 @@ class RuntimeClient:
                 'JupyterRequirement not found. Unable to run IPython action.'
             )
 
-    def get_working_directory(self):
-        result, exit_code = self._execute_bash('pwd', keep_prompt=False)
+    def _get_working_directory(self):
+        # NOTE: this is part of initialization, so we hard code the timeout
+        result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
             raise RuntimeError('Failed to get working directory')
         return result.strip()
@@ -268,7 +268,7 @@ class RuntimeClient:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.get_working_directory()
+        working_dir = self._get_working_directory()
         filepath = self._resolve_path(action.path, working_dir)
         try:
             with open(filepath, 'r', encoding='utf-8') as file:
@@ -288,14 +288,21 @@ class RuntimeClient:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.get_working_directory()
+        working_dir = self._get_working_directory()
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
         try:
             if not os.path.exists(os.path.dirname(filepath)):
                 os.makedirs(os.path.dirname(filepath))
-            mode = 'w' if not os.path.exists(filepath) else 'r+'
+
+            file_exists = os.path.exists(filepath)
+            if file_exists:
+                file_stat = os.stat(filepath)
+            else:
+                file_stat = None
+
+            mode = 'w' if not file_exists else 'r+'
             try:
                 with open(filepath, mode, encoding='utf-8') as file:
                     if mode != 'w':
@@ -309,6 +316,18 @@ class RuntimeClient:
                     file.seek(0)
                     file.writelines(new_file)
                     file.truncate()
+
+                # Handle file permissions
+                if file_exists:
+                    assert file_stat is not None
+                    # restore the original file permissions if the file already exists
+                    os.chmod(filepath, file_stat.st_mode)
+                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+                else:
+                    # set the new file permissions if the file is new
+                    os.chmod(filepath, 0o644)
+                    os.chown(filepath, self.user_id, self.user_id)
+
             except FileNotFoundError:
                 return ErrorObservation(f'File not found: {filepath}')
             except IsADirectoryError:
@@ -333,22 +352,6 @@ class RuntimeClient:
         self.shell.close()
         self.browser.close()
 
-
-# def test_run_commond():
-#     client = RuntimeClient()
-#     command = CmdRunAction(command='ls -l')
-#     obs = client.run_action(command)
-#     print(obs)
-
-# def test_shell(message):
-#     shell = pexpect.spawn('/bin/bash', encoding='utf-8')
-#     shell.expect(r'[$#] ')
-#     print(f'Received command: {message}')
-#     shell.sendline(message)
-#     shell.expect(r'[$#] ')
-#     output = shell.before.strip().split('\r\n', 1)[1].strip()
-#     print(f'Output: {output}')
-#     shell.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -405,6 +408,60 @@ if __name__ == '__main__':
             return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error processing command: {str(e)}')
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post('/upload_file')
+    async def upload_file(
+        file: UploadFile, destination: str = '/', recursive: bool = False
+    ):
+        assert client is not None
+
+        try:
+            # Ensure the destination directory exists
+            if not os.path.isabs(destination):
+                raise HTTPException(
+                    status_code=400, detail='Destination must be an absolute path'
+                )
+
+            full_dest_path = destination
+            if not os.path.exists(full_dest_path):
+                os.makedirs(full_dest_path, exist_ok=True)
+
+            if recursive:
+                # For recursive uploads, we expect a zip file
+                if not file.filename.endswith('.zip'):
+                    raise HTTPException(
+                        status_code=400, detail='Recursive uploads must be zip files'
+                    )
+
+                zip_path = os.path.join(full_dest_path, file.filename)
+                with open(zip_path, 'wb') as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+
+                # Extract the zip file
+                shutil.unpack_archive(zip_path, full_dest_path)
+                os.remove(zip_path)  # Remove the zip file after extraction
+
+                logger.info(
+                    f'Uploaded file {file.filename} and extracted to {destination}'
+                )
+            else:
+                # For single file uploads
+                file_path = os.path.join(full_dest_path, file.filename)
+                with open(file_path, 'wb') as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                logger.info(f'Uploaded file {file.filename} to {destination}')
+
+            return JSONResponse(
+                content={
+                    'filename': file.filename,
+                    'destination': destination,
+                    'recursive': recursive,
+                },
+                status_code=200,
+            )
+
+        except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/alive')

@@ -1,6 +1,9 @@
 import asyncio
+import os
+import tempfile
 import uuid
-from typing import Optional
+from typing import Any, Optional
+from zipfile import ZipFile
 
 import aiohttp
 import docker
@@ -8,7 +11,7 @@ import tenacity
 
 from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream
+from opendevin.events import EventStream
 from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -18,7 +21,6 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.action.action import Action
-from opendevin.events.event import Event
 from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
@@ -66,7 +68,6 @@ class EventStreamRuntime(Runtime):
         )
         self.container_name = self.container_name_prefix + self.instance_id
 
-        self.plugins = plugins if plugins is not None else []
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
@@ -87,6 +88,11 @@ class EventStreamRuntime(Runtime):
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
         await super().ainit(env_vars)
+
+        logger.info(
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
+        )
+        logger.info(f'Container initialized with env vars: {env_vars}')
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -112,9 +118,11 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Starting container with image: {self.container_image} and name: {self.container_name}'
             )
-            if plugins is None:
-                plugins = []
-            plugin_names = ' '.join([plugin.name for plugin in plugins])
+            plugin_arg = ''
+            if plugins is not None and len(plugins) > 0:
+                plugin_arg = (
+                    f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+                )
 
             network_mode: str | None = None
             port_mapping: dict[str, int] | None = None
@@ -141,7 +149,7 @@ class EventStreamRuntime(Runtime):
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
-                    f'--plugins {plugin_names} '
+                    f'{plugin_arg}'
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
                     f'--user-id {self.config.sandbox.user_id}'
                 ),
@@ -205,17 +213,60 @@ class EventStreamRuntime(Runtime):
         if close_client:
             self.docker_client.close()
 
-    async def on_event(self, event: Event) -> None:
-        logger.info(f'EventStreamRuntime: on_event triggered: {event}')
-        if isinstance(event, Action):
-            logger.info(event, extra={'msg_type': 'ACTION'})
-            observation = await self.run_action(event)
-            observation._cause = event.id  # type: ignore[attr-defined]
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-            source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
+    async def copy_to(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ) -> dict[str, Any]:
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
 
-    async def run_action(self, action: Action, timeout: int = 600) -> Observation:
+        session = await self._ensure_session()
+        await self._wait_until_alive()
+        try:
+            if recursive:
+                # For recursive copy, create a zip file
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_zip:
+                    temp_zip_path = temp_zip.name
+
+                with ZipFile(temp_zip_path, 'w') as zipf:
+                    for root, _, files in os.walk(host_src):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(
+                                file_path, os.path.dirname(host_src)
+                            )
+                            zipf.write(file_path, arcname)
+
+                upload_data = {'file': open(temp_zip_path, 'rb')}
+            else:
+                # For single file copy
+                upload_data = {'file': open(host_src, 'rb')}
+
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+
+            async with session.post(
+                f'{self.api_url}/upload_file', data=upload_data, params=params
+            ) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    error_message = await response.text()
+                    raise Exception(f'Copy operation failed: {error_message}')
+
+        except asyncio.TimeoutError:
+            raise TimeoutError('Copy operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'Copy operation failed: {str(e)}')
+        finally:
+            if recursive:
+                os.unlink(temp_zip_path)
+
+    async def run_action(self, action: Action) -> Observation:
+        # set timeout to default if not set
+        if action.timeout is None:
+            action.timeout = self.config.sandbox.timeout
+
         async with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
@@ -229,11 +280,14 @@ class EventStreamRuntime(Runtime):
 
             session = await self._ensure_session()
             await self._wait_until_alive()
+
+            assert action.timeout is not None
+
             try:
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=timeout,
+                    timeout=action.timeout,
                 ) as response:
                     if response.status == 200:
                         output = await response.json()

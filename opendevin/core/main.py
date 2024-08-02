@@ -7,7 +7,12 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
+from opendevin.core.config import (
+    AppConfig,
+    get_llm_config_arg,
+    load_app_config,
+    parse_arguments,
+)
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
@@ -17,9 +22,8 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.storage import get_file_store
-
-config = load_app_config()
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -33,14 +37,13 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def run_agent_controller(
-    agent: Agent,
+async def run_controller(
+    config: AppConfig,
     task_str: str,
-    max_iterations: int,
-    max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
     sandbox: Sandbox | None = None,
+    agent: Agent | None = None,
     runtime_tools_config: dict | None = None,
     sid: str | None = None,
     headless_mode: bool = True,
@@ -49,12 +52,23 @@ async def run_agent_controller(
     It's only used when you launch opendevin backend directly via cmdline.
 
     Args:
+        config: The app config.
         task_str: The task to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
-        sandbox: An optional sandbox to run the agent in.
+        sandbox: (will be deprecated) An optional sandbox to run the agent in.
+        agent: An optional agent to run.
+        runtime_tools_config: (will be deprecated) The runtime tools config.
+        sid: The session id.
         headless_mode: Whether the agent is run in headless mode.
     """
+    # Create the agent
+    if agent is None:
+        agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+        agent = agent_cls(
+            llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
+        )
+
     # Logging
     logger.info(
         f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
@@ -77,8 +91,8 @@ async def run_agent_controller(
     # init controller with this initial state
     controller = AgentController(
         agent=agent,
-        max_iterations=max_iterations,
-        max_budget_per_task=max_budget_per_task,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
@@ -87,28 +101,36 @@ async def run_agent_controller(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
+    extra_kwargs = {}
+    if isinstance(runtime_cls, ServerRuntime):
+        extra_kwargs['sandbox'] = sandbox
+        # TODO: deprecate this and accept runtime as a parameter instead
+
+    logger.info(f'Initializing runtime: {runtime_cls}')
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
-        sandbox=sandbox,
         plugins=controller.agent.sandbox_plugins,
+        **extra_kwargs,
     )
     await runtime.ainit()
-    runtime.init_runtime_tools(
-        controller.agent.runtime_tools,
-        is_async=False,
-        runtime_tools_config=runtime_tools_config,
-    )
-
-    # browser eval specific
-    # TODO: move to a better place
-    if runtime.browser and runtime.browser.eval_dir:
-        logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
-        with open(
-            os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
-        ) as f:
-            task_str = f.read()
-            logger.info(f'Dynamic Eval task: {task_str}')
+    if isinstance(runtime, ServerRuntime):
+        runtime.init_runtime_tools(
+            controller.agent.runtime_tools,
+            runtime_tools_config=runtime_tools_config,
+        )
+        # browser eval specific
+        # NOTE: This will be deprecated when we move to the new runtime
+        if runtime.browser and runtime.browser.eval_dir:
+            logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
+            with open(
+                os.path.join(runtime.browser.eval_dir, 'goal.txt'),
+                'r',
+                encoding='utf-8',
+            ) as f:
+                task_str = f.read()
+                logger.info(f'Dynamic Eval task: {task_str}')
+    # TODO: Implement this for EventStream Runtime
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
@@ -169,30 +191,30 @@ if __name__ == '__main__':
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
+    # Load the app config
+    # this will load config from config.toml in the current directory
+    # as well as from the environment variables
+    config = load_app_config()
+
     # Override default LLM configs ([llm] section in config.toml)
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
-    llm = LLM(config=config.get_llm_config_from_agent(args.agent_cls))
 
-    # Create the agent
-    AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
-    agent = AgentCls(llm=llm)
+    # Set default agent
+    config.default_agent = args.agent_cls
 
     # if max budget per task is not sent on the command line, use the config value
-    max_budget_per_task = (
-        args.max_budget_per_task
-        if args.max_budget_per_task
-        else config.max_budget_per_task
-    )
+    if args.max_budget_per_task is not None:
+        config.max_budget_per_task = args.max_budget_per_task
+    if args.max_iterations is not None:
+        config.max_iterations = args.max_iterations
 
     asyncio.run(
-        run_agent_controller(
-            agent=agent,
+        run_controller(
+            config=config,
             task_str=task_str,
-            max_iterations=args.max_iterations,
-            max_budget_per_task=args.max_budget_per_task,
         )
     )

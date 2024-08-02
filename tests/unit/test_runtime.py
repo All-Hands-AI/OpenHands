@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import tempfile
 import time
 from unittest.mock import patch
 
@@ -37,6 +38,7 @@ def print_method_name(request):
     print('\n########################################################################')
     print(f'Running test: {request.node.name}')
     print('########################################################################')
+    yield
 
 
 @pytest.fixture
@@ -48,18 +50,23 @@ TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
 PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 
-# This assures that all tests run together for each runtime, not alternating between them,
-# which caused them to fail previously.
-@pytest.fixture(scope='module')
-def box_class(request):
-    time.sleep(1)
+# Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
+def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
-        return EventStreamRuntime
+        return [EventStreamRuntime]
     elif runtime.lower() == 'server':
-        return ServerRuntime
+        return [ServerRuntime]
     else:
-        return pytest.param([EventStreamRuntime, ServerRuntime])
+        return [EventStreamRuntime, ServerRuntime]
+
+
+# This assures that all tests run together per runtime, not alternating between them,
+# which cause errors (especially outside GitHub actions).
+@pytest.fixture(scope='module', params=get_box_classes())
+def box_class(request):
+    time.sleep(2)
+    return request.param
 
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
@@ -129,6 +136,7 @@ async def _load_runtime(
             container_image=cur_container_image,
         )
         await runtime.ainit()
+
     elif box_class == ServerRuntime:
         runtime = ServerRuntime(
             config=config, event_stream=event_stream, sid=sid, plugins=plugins
@@ -140,7 +148,6 @@ async def _load_runtime(
 
         runtime.init_runtime_tools(
             [RuntimeTool.BROWSER],
-            is_async=False,
             runtime_tools_config={},
         )
     else:
@@ -930,3 +937,211 @@ async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_bash_python_version(temp_dir, box_class):
+    """Make sure Python is available in bash."""
+
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='which python')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='python --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    # Should not error out
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+
+    # It should error out since pymsgbox is not installed
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert "ModuleNotFoundError: No module named 'pymsgbox'" in obs.content
+
+    # Install pymsgbox in Jupyter
+    action = IPythonRunCellAction(code='%pip install pymsgbox==1.0.9')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert (
+        'Successfully installed pymsgbox-1.0.9' in obs.content
+        or '[Package installed successfully]' in obs.content
+    )
+
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # import should not error out
+    assert obs.content.strip() == '[Code executed successfully with no output]'
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+def _create_test_file(host_temp_dir):
+    # Single file
+    with open(os.path.join(host_temp_dir, 'test_file.txt'), 'w') as f:
+        f.write('Hello, World!')
+
+
+@pytest.mark.asyncio
+async def test_copy_single_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_file.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+def _create_test_dir_with_files(host_temp_dir):
+    os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file1.txt'), 'w') as f:
+        f.write('File 1 content')
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file2.txt'), 'w') as f:
+        f.write('File 2 content')
+
+
+@pytest.mark.asyncio
+async def test_copy_directory_recursively(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        # We need a separate directory, since temp_dir is mounted to /workspace
+        _create_test_dir_with_files(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_dir'), '/workspace', recursive=True
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_dir' in obs.content
+    assert 'file1.txt' not in obs.content
+    assert 'file2.txt' not in obs.content
+
+    action = CmdRunAction(command='ls -alh /workspace/test_dir')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'file1.txt' in obs.content
+    assert 'file2.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_dir/file1.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'File 1 content' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_copy_to_non_existent_directory(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace/new_dir'
+        )
+
+    action = CmdRunAction(command='cat /workspace/new_dir/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_overwrite_existing_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # touch a file in /workspace
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' not in obs.content
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+
+@pytest.mark.asyncio
+async def test_copy_non_existent_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with pytest.raises(FileNotFoundError):
+        await runtime.copy_to(
+            os.path.join(temp_dir, 'non_existent_file.txt'),
+            '/workspace/should_not_exist.txt',
+        )
+
+    action = CmdRunAction(command='ls /workspace/should_not_exist.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code != 0  # File should not exist

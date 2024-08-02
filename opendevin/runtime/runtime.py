@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream, EventStreamSubscriber
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -65,7 +65,7 @@ class Runtime:
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self.plugins = plugins if plugins is not None else []
+        self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
 
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
@@ -108,7 +108,6 @@ class Runtime:
         self,
         runtime_tools: list[RuntimeTool],
         runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-        is_async: bool = True,
     ) -> None:
         # TODO: deprecate this method when we move to the new EventStreamRuntime
         raise NotImplementedError('This method is not implemented in the base class.')
@@ -143,9 +142,14 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
+            # set timeout to default if not set
+            if event.timeout is None:
+                event.timeout = self.config.sandbox.timeout
+            assert event.timeout is not None
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
-            self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
+            source = event.source if event.source else EventSource.AGENT
+            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -175,6 +179,10 @@ class Runtime:
             )
         observation = await getattr(self, action_type)(action)
         return observation
+
+    @abstractmethod
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
     # Implement these methods in the subclass

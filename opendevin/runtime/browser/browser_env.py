@@ -4,7 +4,6 @@ import io
 import json
 import multiprocessing
 import os
-import threading
 import time
 import uuid
 
@@ -12,6 +11,7 @@ import browsergym.core  # noqa F401 (we register the openended task as a gym env
 import gymnasium as gym
 import html2text
 import numpy as np
+import tenacity
 from browsergym.utils.obs import flatten_dom_to_str
 from PIL import Image
 
@@ -22,7 +22,6 @@ from opendevin.core.logger import opendevin_logger as logger
 class BrowserEnv:
     def __init__(
         self,
-        is_async: bool = True,
         browsergym_eval: str = '',
         browsergym_eval_save_dir: str = '',
     ):
@@ -44,9 +43,6 @@ class BrowserEnv:
         # Initialize browser environment process
         multiprocessing.set_start_method('spawn', force=True)
         self.browser_side, self.agent_side = multiprocessing.Pipe()
-        self.process = multiprocessing.Process(
-            target=self.browser_process,
-        )
 
         try:
             self.original_cwd = os.getcwd()
@@ -57,10 +53,7 @@ class BrowserEnv:
             self.original_cwd = '/tmp'
             os.chdir('/tmp')
 
-        if is_async:
-            threading.Thread(target=self.init_browser).start()
-        else:
-            self.init_browser()
+        self.init_browser()
         atexit.register(self.close)
 
     def get_html_text_converter(self):
@@ -74,6 +67,11 @@ class BrowserEnv:
         html_text_converter.body_width = 0
         return html_text_converter
 
+    @tenacity.retry(
+        wait=tenacity.wait_fixed(1),
+        stop=tenacity.stop_after_attempt(5),
+        retry=tenacity.retry_if_exception_type(BrowserInitException),
+    )
     def init_browser(self):
         logger.info('Starting browser env...')
 
@@ -88,6 +86,7 @@ class BrowserEnv:
             logger.debug('Changed to /tmp directory as fallback')
 
         try:
+            self.process = multiprocessing.Process(target=self.browser_process)
             self.process.start()
         except Exception as e:
             logger.error(f'Failed to start browser process: {e}')

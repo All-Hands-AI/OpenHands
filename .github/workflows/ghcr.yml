@@ -273,13 +273,69 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true TEST_RUNTIME=server ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  runtime_integration_tests_on_linux:
+    name: Runtime Integration Tests on Linux
+    runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime]
+    env:
+      PERSIST_SANDBOX: "false"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+        # server is tested in a separate workflow
+        runtime_type: ["eventstream"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: make install-python-dependencies
+
+      - name: Download Runtime Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: od_runtime-docker-image-amd64
+          path: /tmp/
+
+
+      - name: Load runtime image and run integration tests
+        run: |
+          # Load the Docker image and capture the output
+          if [ "${{ matrix.runtime_type }}" == "eventstream" ]; then
+            output=$(docker load -i /tmp/od_runtime_image_amd64.tar)
+          else
+            echo "No Runtime Docker image to load"
+            exit 1
+          fi
+
+          # Extract the first image name from the output
+          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
+
+          # Print the full name of the image
+          echo "Loaded Docker image: $image_name"
+
+          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   ghcr_push:
     runs-on: ubuntu-latest

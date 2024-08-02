@@ -18,7 +18,7 @@ from opendevin.controller.state.state import State
 from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_agent_controller
+from opendevin.core.main import run_controller
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.tools import RuntimeTool
@@ -33,7 +33,14 @@ docker_ssh_box: DockerSSHBox | None = None
 def get_sandbox():
     global docker_ssh_box
     if docker_ssh_box is None:
-        docker_ssh_box = DockerSSHBox()
+        docker_ssh_box = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            run_as_devin=config.run_as_devin,
+        )
     return docker_ssh_box
 
 
@@ -78,13 +85,13 @@ def process_instance(
         }
     }
 
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
-        run_agent_controller(
-            agent,
-            'PLACEHOLDER_GOAL',
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
+        run_controller(
+            config=config,
+            task_str='PLACEHOLDER_GOAL',
             runtime_tools_config=runtime_tools_config,
+            agent=agent,
             sandbox=get_sandbox(),
             sid=env_id,
         )
