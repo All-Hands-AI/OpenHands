@@ -12,6 +12,7 @@ from swebench.harness.constants import MAP_REPO_TO_TEST_FRAMEWORK
 from swebench.harness.utils import get_test_directives
 
 import agenthub
+from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
     EvalMetadata,
     codeact_user_response,
@@ -32,8 +33,6 @@ from opendevin.core.main import run_controller
 from opendevin.events.action import CmdRunAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
-
-from .prompt import CODEACT_SWE_PROMPT
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -273,7 +272,8 @@ async def complete_runtime_fn(
     assert obs.exit_code == 0
 
     action = CmdRunAction(
-        command=f'git diff --no-color --cached {instance["base_commit"]}'
+        command=f'git diff --no-color --cached {instance["base_commit"]}',
+        keep_prompt=False,
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
@@ -281,13 +281,6 @@ async def complete_runtime_fn(
     assert obs.exit_code == 0
 
     git_patch = obs.content.strip()
-    # remove the last line that starts with root@
-    git_patch_lines = git_patch.split('\r\n')
-    assert (
-        'root@' in git_patch_lines[-1]
-    ), f'Expect the last line to start with root@ for EventStreamRuntime: {git_patch_lines[-1]}'
-    git_patch_lines = git_patch_lines[:-1]
-    git_patch = '\r\n'.join(git_patch_lines)
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
