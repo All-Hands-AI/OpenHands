@@ -174,6 +174,7 @@ def run_evaluation(
     process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
     id_column: str,
 ):
+    use_multiprocessing = num_workers > 1
     logger.info(
         f'Evaluation started with Agent {metadata.agent_class}, '
         f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.'
@@ -183,7 +184,8 @@ def run_evaluation(
 
     def update_progress(future):
         pbar.update(1)
-        output = future.result()
+        output = future.result() if use_multiprocessing else future
+
         pbar.set_description(f'Instance {output[id_column]}')
         pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
@@ -193,8 +195,9 @@ def run_evaluation(
         output_fp.flush()
 
     try:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
+        if use_multiprocessing:
+            with ProcessPoolExecutor(num_workers) as executor:
+                futures = []
             for _, instance in dataset.iterrows():
                 future = executor.submit(
                     process_instance_func,
@@ -205,8 +208,15 @@ def run_evaluation(
                 future.add_done_callback(update_progress)
                 futures.append(future)
 
-            for future in futures:
-                future.result()
+                for future in futures:
+                    future.result()
+        # Use plain for loop for single process for easier debugging
+        else:
+            assert num_workers == 1
+            for _, instance in dataset.iterrows():
+                output = process_instance_func(instance, metadata, False)
+                update_progress(output)
+
     except KeyboardInterrupt:
         print('KeyboardInterrupt received. Cleaning up...')
         cleanup()
