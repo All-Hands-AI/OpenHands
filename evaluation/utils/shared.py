@@ -40,6 +40,24 @@ class EvalMetadata(BaseModel):
         return json.dumps(dumped_dict)
 
 
+class EvalOutput(BaseModel):
+    # NOTE: User-specified
+    instance_id: str
+    instruction: str
+    # output of the evaluation
+    # store anything that is needed for the score calculation
+    test_result: dict[str, Any]
+
+    # Interaction info
+    metadata: EvalMetadata
+    history: list[tuple[dict[str, Any], dict[str, Any]]]
+    metrics: dict[str, Any]
+    error: str | None = None
+
+    # Optionally save the input test instance
+    instance: dict[str, Any] | None = None
+
+
 def codeact_user_response(
     state: State,
     encapsulate_solution: bool = False,
@@ -171,8 +189,7 @@ def run_evaluation(
     metadata: EvalMetadata,
     output_file: str,
     num_workers: int,
-    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
-    id_column: str,
+    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], EvalOutput],
 ):
     use_multiprocessing = num_workers > 1
     logger.info(
@@ -184,14 +201,14 @@ def run_evaluation(
 
     def update_progress(future):
         pbar.update(1)
-        output = future.result() if use_multiprocessing else future
+        output: EvalOutput = future.result() if use_multiprocessing else future
 
-        pbar.set_description(f'Instance {output[id_column]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
+        pbar.set_description(f'Instance {output.instance_id}')
+        pbar.set_postfix_str(f'Test Result: {output.test_result}')
         logger.info(
-            f'Finished evaluation for instance {output[id_column]}: {output["test_result"]}'
+            f'Finished evaluation for instance {output.instance_id}: {output.test_result}'
         )
-        output_fp.write(json.dumps(output) + '\n')
+        output_fp.write(json.dumps(output.model_dump()) + '\n')
         output_fp.flush()
 
     try:

@@ -65,7 +65,7 @@ mkdir -p $SWE_TASK_DIR/reset_testbed_log_dir
 
 REPO_PATH=/workspace/$WORKSPACE_NAME
 echo "Repo Path: $REPO_PATH"
-echo "Test Command: $TEST_CMD"
+# echo "Test Command: $TEST_CMD"
 echo "export REPO_PATH=\"$REPO_PATH\"" >> ~/.bashrc
 # echo "export TEST_CMD=\"$TEST_CMD\"" >> ~/.bashrc
 

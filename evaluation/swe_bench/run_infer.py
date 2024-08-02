@@ -8,13 +8,12 @@ from typing import Any
 import pandas as pd
 import toml
 from datasets import load_dataset
-from swebench.harness.constants import MAP_REPO_TO_TEST_FRAMEWORK
-from swebench.harness.utils import get_test_directives
 
 import agenthub
 from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     codeact_user_response,
     make_metadata,
     prepare_dataset,
@@ -109,6 +108,8 @@ def get_config(
             container_image=container_image,
             enable_auto_lint=True,
             use_host_network=False,
+            # always make sure we are using the latest source code
+            update_source_code=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -144,19 +145,6 @@ async def initialize_runtime_fn(
     if USE_INSTANCE_IMAGE:
         # inject the init script
         script_dir = os.path.dirname(__file__)
-
-        # inject test command
-        test_type = MAP_REPO_TO_TEST_FRAMEWORK[instance['repo']][instance['version']]
-        instance['test_directives'] = get_test_directives(instance)
-        instance['test_cmd'] = f"{test_type} {' '.join(instance['test_directives'])}"
-
-        action = CmdRunAction(
-            command=f"""echo "export TEST_CMD='{instance["test_cmd"]}'" >> ~/.bashrc"""
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert obs.exit_code == 0, f'Failed to set TEST_CMD in ~/.bashrc: {obs.content}'
 
         # inject the instance info
         action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
@@ -292,7 +280,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
+) -> EvalOutput:
     config = get_config(instance, metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
@@ -333,7 +321,9 @@ def process_instance(
     # ======= Attempt to evaluate the agent's edits =======
     # we use eval_infer.sh to evaluate the agent's edits, not here
     # because the agent may alter the environment / testcases
-    test_result = {}
+    test_result = {
+        'git_patch': git_patch,
+    }
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
@@ -347,17 +337,16 @@ def process_instance(
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
-    output = {
-        'instance_id': instance.instance_id,
-        'swe_instance': instance.to_dict(),  # SWE Bench specific
-        'instruction': instruction,
-        'git_patch': git_patch,  # SWE Bench specific
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': test_result,
-    }
+    output = EvalOutput(
+        instance_id=instance.instance_id,
+        instruction=instruction,
+        instance=instance.to_dict(),  # SWE Bench specific
+        test_result=test_result,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+    )
     return output
 
 
@@ -416,10 +405,5 @@ if __name__ == '__main__':
         swe_bench_tests, output_file, args.eval_n_limit, id_column
     )
     run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )
