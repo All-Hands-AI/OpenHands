@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -78,6 +79,7 @@ def get_config(
             container_image='ubuntu:22.04',
             enable_auto_lint=True,
             use_host_network=False,
+            update_source_code=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -354,7 +356,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
+) -> EvalOutput:
     config = get_config(metadata)
     # use session id for concurrent evaluation
     instance_id = instance.task_id.replace('/', '__')
@@ -435,15 +437,15 @@ def process_instance(
     histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
-    output = {
-        'task_id': instance.task_id,
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': test_result,
-    }
+    output = EvalOutput(
+        instance_id=instance.task_id,
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result=test_result,
+    )
     return output
 
 
@@ -471,10 +473,5 @@ if __name__ == '__main__':
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
 
     run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

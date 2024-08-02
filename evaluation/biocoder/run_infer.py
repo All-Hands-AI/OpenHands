@@ -11,6 +11,7 @@ from datasets import load_dataset
 from evaluation.biocoder.utils import BiocoderData
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     codeact_user_response,
     make_metadata,
     prepare_dataset,
@@ -64,6 +65,7 @@ def get_config(
             container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
             enable_auto_lint=True,
             use_host_network=False,
+            update_source_code=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -240,7 +242,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
+) -> EvalOutput:
     config = get_config(metadata)
     instance = BiocoderData(**instance)
     print(instance)
@@ -304,19 +306,19 @@ def process_instance(
     # remove when it becomes unnecessary
     histories = state.history.compatibility_for_eval_history_pairs()
 
-    # Save the output
-    output = {
-        'test_case_id': instance.test_case_id,
-        'biocoder_instance': instance.to_dict(),
-        'instruction': instruction,
-        'generated': test_result['metadata']['1_copy_change_code'],
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': test_result,
-    }
+    test_result['generated'] = test_result['metadata']['1_copy_change_code']
 
+    # Save the output
+    output = EvalOutput(
+        instance_id=instance.test_case_id,
+        instance=instance.to_dict(),
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result=test_result,
+    )
     return output
 
 
@@ -348,10 +350,5 @@ if __name__ == '__main__':
     )
 
     run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

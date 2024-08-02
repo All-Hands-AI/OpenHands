@@ -8,6 +8,7 @@ from datasets import load_dataset
 
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -42,6 +43,7 @@ def get_config(
             container_image='ubuntu:22.04',
             enable_auto_lint=False,
             use_host_network=False,
+            update_source_code=True,
         ),
         workspace_base=None,
         workspace_mount_path=None,
@@ -54,7 +56,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
+) -> EvalOutput:
     config = get_config(metadata)
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -111,20 +113,19 @@ def process_instance(
             result['is_exact_match'] = is_exact_match
 
     # Save the output
-    output = {
-        'instance_id': instance.instance_id,
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': {
+    output = EvalOutput(
+        instance_id=instance.instance_id,
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
             'query': instance.instruction,
             'action': last_delegate_action,
             'result': result,
         },
-    }
-
+    )
     return output
 
 
@@ -165,5 +166,4 @@ if __name__ == '__main__':
         output_file,
         args.eval_num_workers,
         process_instance,
-        id_column,
     )

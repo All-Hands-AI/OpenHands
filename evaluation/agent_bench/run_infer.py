@@ -16,6 +16,7 @@ from evaluation.agent_bench.helper import (
 )
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -47,6 +48,7 @@ def get_config(
             container_image='ubuntu:22.04',
             enable_auto_lint=True,
             use_host_network=False,
+            update_source_code=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -175,7 +177,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
+) -> EvalOutput:
     config = get_config(metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
@@ -276,21 +278,21 @@ def process_instance(
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
-    output = {
-        'instance_id': instance.instance_id,
-        'instance': instance.to_dict(),
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': {
+    output = EvalOutput(
+        instance_id=instance.instance_id,
+        instance=instance.to_dict(),
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
             'agent_answer': agent_answer,
             'final_answer': final_ans,
             'check_method': comparison_method,
             'result': test_result,
         },
-    }
+    )
     return output
 
 
@@ -321,10 +323,5 @@ if __name__ == '__main__':
     )
 
     run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

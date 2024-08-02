@@ -7,6 +7,7 @@ from datasets import load_dataset
 from evaluation.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -77,7 +78,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
+) -> EvalOutput:
     config = get_config(metadata)
     instance_id = instance['text'].strip()
 
@@ -147,21 +148,20 @@ def process_instance(
     histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
-    output = {
-        'instance_id': instance_id,
-        'instance': instance.to_dict(),
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': {
+    output = EvalOutput(
+        instance_id=instance_id,
+        instance=instance.to_dict(),
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
             'success': test_result,
             'final_message': final_message,
             'ground_truth': instance['text'],
         },
-    }
-
+    )
     return output
 
 
@@ -223,5 +223,4 @@ if __name__ == '__main__':
         output_file,
         args.eval_num_workers,
         process_instance,
-        id_column='instance_id',
     )
