@@ -85,12 +85,11 @@ def process_instance(
         }
     }
 
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
         run_controller(
             config=config,
             task_str='PLACEHOLDER_GOAL',
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
             runtime_tools_config=runtime_tools_config,
             agent=agent,
             sandbox=get_sandbox(),
