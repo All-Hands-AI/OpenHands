@@ -25,7 +25,7 @@ Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 
 SYSTEM_SUFFIX = """Let the following principles guide your response.
 - Before responding read all information carefully.
-- Use only information that's explicitly stated by the user. You MUST NOT assume anything that is not confirmed by the user. To receive the user's confirmation or ask the user for clarirification, you must respond by <execute_ask> your ask </execute_ask>.
+- Use only information that's explicitly stated by the user. You MUST NOT assume anything that is not confirmed by the user. To ask the user for clarirification, you must respond by <execute_ask> your ask </execute_ask>.
 - Responses should be concise.
 """
 
@@ -84,7 +84,10 @@ SELECT_PROMPT = SELECT_PREFIX + RESEASONING_MODULES
 ADAPT_PROMPT = """Rephrase and specify each previously selected reasoning module so that it better helps solving the question.
 """
 
-IMPLEMENT_PROMPT = """Implement a reasoning structure for your team members to follow step-by-step and arrive at correct answers.
+IMPLEMENT_PROMPT = """Implement a reasoning structure for your team members to follow step-by-step and arrive at correct answers by replying with
+<execute_plan>
+Your implementation
+</execute_plan>.
 """
 
 IMPLEMENT_EXAMPLES = """Example 1 TODO CONTINUE HERE
