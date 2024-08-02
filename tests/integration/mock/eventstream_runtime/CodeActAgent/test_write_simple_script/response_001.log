@@ -1,0 +1,7 @@
+Sure! I will create a shell script named `hello.sh` that prints "hello".
+
+Let's start by creating the file and adding the necessary content.
+
+<execute_bash>
+echo -e '#!/bin/bash\n\necho "hello"' > hello.sh
+chmod +x hello.sh

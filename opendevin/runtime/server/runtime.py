@@ -107,7 +107,6 @@ class ServerRuntime(Runtime):
         self,
         runtime_tools: list[RuntimeTool],
         runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-        is_async: bool = True,
     ) -> None:
         # if browser in runtime_tools, init it
         if RuntimeTool.BROWSER in runtime_tools:
@@ -115,7 +114,7 @@ class ServerRuntime(Runtime):
                 runtime_tools_config = {}
             browser_env_config = runtime_tools_config.get(RuntimeTool.BROWSER, {})
             try:
-                self.browser = BrowserEnv(is_async=is_async, **browser_env_config)
+                self.browser = BrowserEnv(**browser_env_config)
             except BrowserInitException:
                 logger.warn(
                     'Failed to start browser environment, web browsing functionality will not work'

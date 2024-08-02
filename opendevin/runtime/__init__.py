@@ -10,7 +10,7 @@ def get_runtime_cls(name: str):
         from .server.runtime import ServerRuntime
 
         return ServerRuntime
-    elif name == 'client':
+    elif name == 'eventstream':
         from .client.runtime import EventStreamRuntime
 
         return EventStreamRuntime

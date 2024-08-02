@@ -1,0 +1,10 @@
+```json
+{
+  "action": "modify_task",
+  "args": {
+    "task_id": "0",
+    "state": "verified",
+    "thought": "All subtasks for writing the shell script 'hello.sh' that prints 'hello' have been completed successfully. The script has been verified to work as expected."
+  }
+}
+```

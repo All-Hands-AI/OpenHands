@@ -111,6 +111,12 @@ class LLMConfig:
                 ret[k] = '******' if v else None
         return ret
 
+    def set_missing_attributes(self):
+        """Set any missing attributes to their default values."""
+        for field_name, field_obj in self.__dataclass_fields__.items():
+            if not hasattr(self, field_name):
+                setattr(self, field_name, field_obj.default)
+
 
 @dataclass
 class AgentConfig:
@@ -390,6 +396,11 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
                 value = env_or_toml_dict[env_var_name]
+
+                # skip empty config values (fall back to default)
+                if not value:
+                    continue
+
                 try:
                     # if it's an optional type, get the non-None type
                     if get_origin(field_type) is UnionType:

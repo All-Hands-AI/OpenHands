@@ -148,7 +148,6 @@ async def _load_runtime(
 
         runtime.init_runtime_tools(
             [RuntimeTool.BROWSER],
-            is_async=False,
             runtime_tools_config={},
         )
     else:
@@ -936,6 +935,62 @@ async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
         container_image=container_image,
     )
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_bash_python_version(temp_dir, box_class):
+    """Make sure Python is available in bash."""
+
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='which python')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='python --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    # Should not error out
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+
+    # It should error out since pymsgbox is not installed
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert "ModuleNotFoundError: No module named 'pymsgbox'" in obs.content
+
+    # Install pymsgbox in Jupyter
+    action = IPythonRunCellAction(code='%pip install pymsgbox==1.0.9')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert (
+        'Successfully installed pymsgbox-1.0.9' in obs.content
+        or '[Package installed successfully]' in obs.content
+    )
+
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # import should not error out
+    assert obs.content.strip() == '[Code executed successfully with no output]'
+
     await runtime.close()
     await asyncio.sleep(1)
 
