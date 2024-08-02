@@ -249,10 +249,6 @@ class EventStreamRuntime(Runtime):
                 f'{self.api_url}/upload_file', data=upload_data, params=params
             ) as response:
                 if response.status == 200:
-                    output = await response.json()
-                    logger.info(
-                        f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}: {output}'
-                    )
                     return
                 else:
                     error_message = await response.text()
