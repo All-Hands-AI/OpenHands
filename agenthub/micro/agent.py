@@ -2,7 +2,7 @@ from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import ImageContent, Message, TextContent
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.core.utils import json
 from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict

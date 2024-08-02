@@ -7,7 +7,7 @@ from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.Message import Message, TextContent
+from opendevin.core.message import Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentFinishAction,

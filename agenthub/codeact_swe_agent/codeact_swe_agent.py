@@ -7,7 +7,7 @@ from agenthub.codeact_swe_agent.prompt import (
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import ImageContent, Message, TextContent
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -196,9 +196,15 @@ class CodeActSWEAgent(Agent):
                     if isinstance(t, TextContent)
                 )
             )
+            # add a reminder to the prompt
+            reminder_text = '\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
-        # add a reminder to the prompt
-        if latest_user_message_text:
-            latest_user_message_text.text = f'{latest_user_message_text.text}\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            if latest_user_message_text:
+                latest_user_message_text.text = (
+                    latest_user_message_text.text + reminder_text
+                )
+            else:
+                latest_user_message_text = TextContent(text=reminder_text)
+                latest_user_message.content.append(latest_user_message_text)
 
         return messages

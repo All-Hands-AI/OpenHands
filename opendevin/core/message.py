@@ -44,7 +44,7 @@ class Message(BaseModel):
 
     @property
     def contains_image(self) -> bool:
-        return bool(self.image_urls and len(self.image_urls) > 0)
+        return any(isinstance(content, ImageContent) for content in self.content)
 
     @model_serializer
     def serialize_model(self) -> dict:

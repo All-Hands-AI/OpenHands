@@ -1,7 +1,7 @@
 from agenthub.planner_agent.response_parser import PlannerResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.Message import ImageContent, Message, TextContent
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.events.action import Action, AgentFinishAction
 from opendevin.llm.llm import LLM
 from opendevin.runtime.tools import RuntimeTool
