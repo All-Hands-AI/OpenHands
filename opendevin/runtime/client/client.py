@@ -213,7 +213,11 @@ class RuntimeClient:
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                output, exit_code = self._execute_bash(command, timeout=action.timeout)
+                output, exit_code = self._execute_bash(
+                    command,
+                    timeout=action.timeout,
+                    keep_prompt=action.keep_prompt,
+                )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
                     # we need to add the command to the previous output,
