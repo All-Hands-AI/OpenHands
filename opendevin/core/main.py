@@ -40,8 +40,6 @@ def read_task_from_stdin() -> str:
 async def run_controller(
     config: AppConfig,
     task_str: str,
-    max_iterations: int | None = None,
-    max_budget_per_task: float | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
     initialize_runtime_fn: Callable[[Runtime], Awaitable[None]] | None = None,
@@ -74,7 +72,6 @@ async def run_controller(
         agent = agent_cls(
             llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
         )
-    max_iterations = max_iterations or config.max_iterations
 
     # Logging
     logger.info(
@@ -98,8 +95,8 @@ async def run_controller(
     # init controller with this initial state
     controller = AgentController(
         agent=agent,
-        max_iterations=max_iterations,
-        max_budget_per_task=max_budget_per_task,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
@@ -222,17 +219,14 @@ if __name__ == '__main__':
     config.default_agent = args.agent_cls
 
     # if max budget per task is not sent on the command line, use the config value
-    max_budget_per_task = (
-        args.max_budget_per_task
-        if args.max_budget_per_task
-        else config.max_budget_per_task
-    )
+    if args.max_budget_per_task is not None:
+        config.max_budget_per_task = args.max_budget_per_task
+    if args.max_iterations is not None:
+        config.max_iterations = args.max_iterations
 
     asyncio.run(
         run_controller(
             config=config,
             task_str=task_str,
-            max_iterations=args.max_iterations,
-            max_budget_per_task=args.max_budget_per_task,
         )
     )

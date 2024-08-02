@@ -148,12 +148,11 @@ def process_instance(
         },
     )
 
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
         run_controller(
             config=config,
             task_str=instruction,
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
             fake_user_response_fn=fake_user_response_fn,
             agent=agent,
             sandbox=sandbox,

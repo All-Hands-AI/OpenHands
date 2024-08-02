@@ -16,6 +16,7 @@ FROM {{ base_image }}
 RUN apt-get update && \
     apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
     apt-get clean \
+    && ln -s /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python if not already installed

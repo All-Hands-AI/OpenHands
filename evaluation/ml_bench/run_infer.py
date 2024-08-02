@@ -155,12 +155,11 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
         # Run the agent
+        config.max_iterations = metadata.max_iterations
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
                 task_str=instruction,
-                max_iterations=metadata.max_iterations,
-                max_budget_per_task=config.max_budget_per_task,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),

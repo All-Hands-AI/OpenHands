@@ -226,12 +226,11 @@ Ok now its time to start solving the question. Good luck!
 """
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        config.max_iterations = metadata.max_iterations
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
                 task_str=instruction,
-                max_iterations=metadata.max_iterations,
-                max_budget_per_task=config.max_budget_per_task,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),
