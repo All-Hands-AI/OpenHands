@@ -208,7 +208,7 @@ def process_instance(
     # Save the output
     output = EvalOutput(
         instance_id=instance['task_id'],
-        instance=instance,
+        instance=instance.to_dict(),
         instruction=instance['Question'],
         metadata=metadata,
         history=histories,
