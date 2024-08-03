@@ -64,7 +64,12 @@ class RuntimeClient:
     """
 
     def __init__(
-        self, plugins_to_load: list[Plugin], work_dir: str, username: str, user_id: int
+        self,
+        plugins_to_load: list[Plugin],
+        work_dir: str,
+        username: str,
+        user_id: int,
+        browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self.username = username
@@ -74,7 +79,7 @@ class RuntimeClient:
         self._init_bash_shell(self.pwd, self.username)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.browser = BrowserEnv()
+        self.browser = BrowserEnv(browsergym_eval_env)
 
     async def ainit(self):
         for plugin in self.plugins_to_load:
@@ -362,6 +367,12 @@ if __name__ == '__main__':
         '--username', type=str, help='User to run as', default='opendevin'
     )
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
+    parser.add_argument(
+        '--browsergym-eval-env',
+        type=str,
+        help='BrowserGym environment used for browser evaluation',
+        default=None,
+    )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -382,6 +393,7 @@ if __name__ == '__main__':
             work_dir=args.working_dir,
             username=args.username,
             user_id=args.user_id,
+            browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
         yield
