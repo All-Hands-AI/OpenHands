@@ -8,12 +8,6 @@ import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
 
-interface Message {
-  sender: "user" | "assistant";
-  content: string;
-  imageUrls: string[];
-}
-
 interface MessageProps {
   message: Message;
   isLastMessage?: boolean;
