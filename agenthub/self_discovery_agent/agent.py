@@ -17,7 +17,7 @@ from .action_parser import SelfDiscoverResponseParser
 from .prompt import SYSTEM_MESSAGE, get_prompt
 
 
-class SelfDiscoveryStep(Enum):
+class SelfDiscoverStep(Enum):
     PRE_STEP = 0
     SELECT = 1
     ADAPT = 2
@@ -26,10 +26,10 @@ class SelfDiscoveryStep(Enum):
     FINISHED = 5
 
 
-class SelfDiscoveryAgent(Agent):
+class SelfDiscoverAgent(Agent):
     VERSION = '0.1'
     """
-    This agent implements a Self Discovery Agent after https://arxiv.org/abs/2402.03620.
+    This agent implements a Self Discover Agent after https://arxiv.org/abs/2402.03620.
 
     It generates a plan, which is then sent to the CodeActAgent to execute.
     To derive the plan so it has the option to use the BrowsingAgent and may also ask questions to the user.
@@ -48,8 +48,8 @@ class SelfDiscoveryAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        self.current_step: SelfDiscoveryStep = SelfDiscoveryStep.SELECT
-        self.prev_step: SelfDiscoveryStep = SelfDiscoveryStep.PRE_STEP
+        self.current_step: SelfDiscoverStep = SelfDiscoverStep.SELECT
+        self.prev_step: SelfDiscoverStep = SelfDiscoverStep.PRE_STEP
 
         super().__init__(llm)
         self.reset()
@@ -98,14 +98,14 @@ class SelfDiscoveryAgent(Agent):
             )
             or (isinstance(action, MessageAction) and action.wait_for_response)
         ):
-            self.current_step = SelfDiscoveryStep(self.current_step.value + 1)
+            self.current_step = SelfDiscoverStep(self.current_step.value + 1)
 
     def reset(self) -> None:
         """
         Resets the Agent.
         """
-        self.current_step = SelfDiscoveryStep.SELECT
-        self.prev_step = SelfDiscoveryStep.PRE_STEP
+        self.current_step = SelfDiscoverStep.SELECT
+        self.prev_step = SelfDiscoverStep.PRE_STEP
         super().reset()
 
     def step(self, state: State) -> Action:

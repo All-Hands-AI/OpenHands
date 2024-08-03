@@ -1,5 +1,5 @@
 from opendevin.controller.agent import Agent
 
-from .agent import SelfDiscoveryAgent
+from .agent import SelfDiscoverAgent
 
-Agent.register('SelfDiscoveryAgent', SelfDiscoveryAgent)
+Agent.register('SelfDiscoverAgent', SelfDiscoverAgent)
