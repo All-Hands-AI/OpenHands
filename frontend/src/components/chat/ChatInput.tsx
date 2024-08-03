@@ -58,7 +58,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   };
 
   const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
   const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
