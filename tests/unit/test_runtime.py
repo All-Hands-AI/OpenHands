@@ -61,7 +61,7 @@ def get_box_classes():
     elif runtime.lower() == 'server':
         return [ServerRuntime]
     else:
-        return [ServerRuntime, EventStreamRuntime]
+        return [EventStreamRuntime, ServerRuntime]
 
 
 # This assures that all tests run together per runtime, not alternating between them,
