@@ -154,6 +154,11 @@ class SandboxConfig(metaclass=Singleton):
         initialize_plugins: Whether to initialize plugins.
         update_source_code: Whether to update the source code in the EventStreamRuntime.
             Used for development of EventStreamRuntime.
+        od_runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
+            This will be rendered into the end of the Dockerfile that builds the runtime image.
+            It can contains any valid shell commands (e.g., pip install numpy).
+            The path to the interpreter is available as $OD_INTERPRETER_PATH,
+            which can be used to install dependencies for the OD-specific Python interpreter.
     """
 
     box_type: str = 'ssh'
@@ -170,6 +175,7 @@ class SandboxConfig(metaclass=Singleton):
     use_host_network: bool = False
     initialize_plugins: bool = True
     update_source_code: bool = False
+    od_runtime_extra_deps: str = ''
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
