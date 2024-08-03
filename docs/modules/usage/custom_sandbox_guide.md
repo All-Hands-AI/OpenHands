@@ -141,4 +141,4 @@ If you see an error about a port being in use or unavailable, try deleting all r
 
 ## Discuss
 
-For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
+For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
