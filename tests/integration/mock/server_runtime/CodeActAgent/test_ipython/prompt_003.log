@@ -428,4 +428,4 @@ OBSERVATION:
 Content of /workspace/test.txt: hello world
 
 
-ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>
+ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>.

@@ -410,4 +410,4 @@ Sure! Let me browse the server's homepage at http://localhost:8000 to find the u
 OBSERVATION:
 {'content': 'The answer to life, the universe, and everything is: OpenDevin is all you need!'}
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>.

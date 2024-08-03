@@ -84,6 +84,7 @@ ten actions--more happened before that.
     "action": "message",
     "args": {
       "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+      "images_urls": null,
       "wait_for_response": false
     }
   },

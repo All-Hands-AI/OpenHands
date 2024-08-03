@@ -622,4 +622,4 @@ echo "hello"
 opendevin@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 
-ENVIRONMENT REMINDER: You have 12 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>.

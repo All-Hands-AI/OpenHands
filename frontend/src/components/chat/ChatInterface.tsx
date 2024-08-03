@@ -66,14 +66,14 @@ function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const handleSendMessage = (content: string) => {
-    dispatch(addUserMessage(content));
-    sendChatMessage(content);
+  const handleSendMessage = (content: string, imageUrls: string[]) => {
+    dispatch(addUserMessage({ content, imageUrls }));
+    sendChatMessage(content, imageUrls);
   };
 
   const { t } = useTranslation();
   const handleSendContinueMsg = () => {
-    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
+    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE), []);
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
