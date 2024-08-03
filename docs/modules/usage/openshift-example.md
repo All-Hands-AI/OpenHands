@@ -290,13 +290,13 @@ RUN mkdir -p /opt/workspace_base && chown -R 1000:1000 /opt/workspace_base
 # Verify Git installation
 RUN git --version
 ```
-   
+
 2. Mount a shared development directory "i.e. one hosted in EC2 instance" to the POD:
    This can be also done by sharing the developement directory to the worker node through a sharing software (NFS), then creating a pv and pvc as described above to access that directory.
 
-3. Not all Agents working! Just tested CoderAgent with an openai API key and produced results. 
-   
+3. Not all Agents working! Just tested CoderAgent with an openai API key and produced results.
+
 
 ## Discuss
 
-For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
+For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
