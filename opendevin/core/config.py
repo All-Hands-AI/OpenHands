@@ -186,10 +186,9 @@ class SandboxConfig(metaclass=Singleton):
     use_host_network: bool = False
     initialize_plugins: bool = True
     update_source_code: bool = False
-    od_runtime_extra_deps: str = ''
     browsergym_eval_env: str | None = None
     od_runtime_extra_deps: str = ''
-    od_runtime_startup_env_vars: dict[str, str] = {}
+    od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
