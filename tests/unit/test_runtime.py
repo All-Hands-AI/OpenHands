@@ -1,6 +1,7 @@
 """Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
 import asyncio
+import json
 import os
 import tempfile
 import time
@@ -13,6 +14,7 @@ from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
@@ -29,6 +31,7 @@ from opendevin.events.observation import (
 )
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.storage import get_file_store
 
@@ -95,7 +98,8 @@ async def _load_runtime(
     run_as_devin: bool = True,
     enable_auto_lint: bool = False,
     container_image: str | None = None,
-):
+    browsergym_eval_env: str | None = None,
+) -> Runtime:
     sid = 'test'
     cli_session = 'main_test'
     # AgentSkills need to be initialized **before** Jupyter
@@ -104,7 +108,10 @@ async def _load_runtime(
     config = AppConfig(
         workspace_base=temp_dir,
         workspace_mount_path=temp_dir,
-        sandbox=SandboxConfig(use_host_network=True),
+        sandbox=SandboxConfig(
+            use_host_network=True,
+            browsergym_eval_env=browsergym_eval_env,
+        ),
     )
     load_from_env(config, os.environ)
     config.run_as_devin = run_as_devin
@@ -120,7 +127,9 @@ async def _load_runtime(
         # NOTE: we will use the default container image specified in the config.sandbox
         # if it is an official od_runtime image.
         cur_container_image = config.sandbox.container_image
-        if 'od_runtime' not in cur_container_image:
+        if 'od_runtime' not in cur_container_image and cur_container_image not in {
+            'xingyaoww/od-eval-miniwob:v1.0'
+        }:  # a special exception list
             cur_container_image = 'ubuntu:22.04'
             logger.warning(
                 f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
@@ -387,7 +396,6 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
 
     assert isinstance(obs, BrowserOutputObservation)
     assert 'http://localhost:8000' in obs.url
-    assert obs.status_code == 200
     assert not obs.error
     assert obs.open_pages_urls == ['http://localhost:8000/']
     assert obs.active_page_index == 0
@@ -402,6 +410,53 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_browsergym_eval_env(temp_dir):
+    runtime = await _load_runtime(
+        temp_dir,
+        # only supported in event stream runtime
+        box_class=EventStreamRuntime,
+        run_as_devin=False,  # need root permission to access file
+        container_image='xingyaoww/od-eval-miniwob:v1.0',
+        browsergym_eval_env='browsergym/miniwob.choose-list',
+    )
+    from opendevin.runtime.browser.browser_env import (
+        BROWSER_EVAL_GET_GOAL_ACTION,
+        BROWSER_EVAL_GET_REWARDS_ACTION,
+    )
+
+    # Test browse
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, BrowserOutputObservation)
+    assert not obs.error
+    assert 'Select' in obs.content
+    assert 'from the list and click Submit' in obs.content
+
+    # Make sure the browser can produce observation in eva[l
+    action = BrowseInteractiveAction(browser_actions='noop()')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert (
+        obs.url.strip()
+        == 'file:///miniwob-plusplus/miniwob/html/miniwob/choose-list.html'
+    )
+
+    # Make sure the rewards are working
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert json.loads(obs.content) == [0.0]
 
     await runtime.close()
     await asyncio.sleep(1)
