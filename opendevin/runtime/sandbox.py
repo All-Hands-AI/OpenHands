@@ -27,6 +27,10 @@ class Sandbox(ABC, PluginMixin):
                     self._initialization_complete.set()
         await self._initialization_complete.wait()
 
+    async def ainit(self):
+        # not used by all runtimes
+        pass
+
     async def _setup_environment(self):
         if isinstance(self.config.env, dict):
             self._env = self.config.env.copy()

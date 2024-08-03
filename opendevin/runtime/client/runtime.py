@@ -292,7 +292,6 @@ class EventStreamRuntime(Runtime):
             session = await self._ensure_session()
             await self._wait_until_alive()
 
-            logger.info('Executing command')
             try:
                 logger.info('Executing command')
                 async with session.post(

@@ -212,9 +212,14 @@ class DockerSSHBox(Sandbox):
         if not self._sshbox_init_complete.is_set():
             async with self._initialization_lock:
                 if not self._sshbox_init_complete.is_set():
-                    logger.info(
-                        'SSHBox is running as opendevin user with USER_ID=1000 in the sandbox'
-                    )
+                    if self.run_as_devin:
+                        logger.info(
+                            'SSHBox is running as opendevin user with USER_ID=1000 in the sandbox'
+                        )
+                    else:
+                        logger.info(
+                            'SSHBox is running as root user with USER_ID=0 in the sandbox'
+                        )
                     try:
                         await self._setup_docker_client()
                         await asyncio.sleep(1)
@@ -436,7 +441,8 @@ class DockerSSHBox(Sandbox):
         time.sleep(1)
 
     async def _setup_user(self):
-        logger.info('Setting up user')
+        username = 'opendevin' if self.run_as_devin else 'root'
+        logger.info(f'Setting up user {username}')
         await asyncio.sleep(2)
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
@@ -541,6 +547,13 @@ class DockerSSHBox(Sandbox):
                 logger.warning(
                     f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {self.sandbox_workspace_dir=} is mounted by the app docker container.'
                 )
+
+            # Add a check to ensure the user was created successfully
+            exit_code, logs = await self.container_exec_run(
+                ['/bin/bash', '-c', 'id opendevin'],
+            )
+            if exit_code != 0:
+                raise RuntimeError(f'Failed to create or verify opendevin user: {logs}')
         else:
             exit_code, logs = await self.container_exec_run(
                 # change password for root
@@ -553,13 +566,6 @@ class DockerSSHBox(Sandbox):
         exit_code, logs = await self.container_exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
         )
-
-        # Add a check to ensure the user was created successfully
-        exit_code, logs = await self.container_exec_run(
-            ['/bin/bash', '-c', 'id opendevin'],
-        )
-        if exit_code != 0:
-            raise RuntimeError(f'Failed to create or verify opendevin user: {logs}')
 
         logger.info('User setup in sandbox completed')
 
@@ -707,25 +713,6 @@ class DockerSSHBox(Sandbox):
                 codec_errors='replace',
             )
             assert self.ssh is not None
-
-            # Add this block before creating the container
-            # try:
-            #     await self.docker_client.images.get(self.container_image)
-            # except DockerError as img_error:
-            #     if img_error.status == 404:
-            #         logger.warning(
-            #             f'Image {self.container_image} not found. Attempting to pull...'
-            #         )
-            #         try:
-            #             await self.docker_client.images.pull(self.container_image)
-            #             logger.info(f'Successfully pulled image {self.container_image}')
-            #         except DockerError as pull_error:
-            #             logger.error(
-            #                 f'Failed to pull image {self.container_image}: {pull_error}'
-            #             )
-            #             raise
-            #     else:
-            #         raise
 
             logger.info(f' -> Logging in to {self.ssh_hostname}...')
             self.ssh.login(
