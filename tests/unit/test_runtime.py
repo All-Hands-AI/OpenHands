@@ -141,6 +141,9 @@ async def _load_runtime(
         runtime = ServerRuntime(
             config=config, event_stream=event_stream, sid=sid, plugins=plugins
         )
+        assert (
+            runtime.sandbox.run_as_devin == run_as_devin
+        ), f'run_as_devin in sandbox should be {run_as_devin}'
         await runtime.ainit()
         from opendevin.runtime.tools import (
             RuntimeTool,  # deprecate this after ServerRuntime is deprecated

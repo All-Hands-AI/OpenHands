@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Optional
 
 from opendevin.core.config import AppConfig
@@ -43,6 +44,7 @@ class ServerRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         sandbox: Sandbox | None = None,
     ):
+        self.config = copy.deepcopy(config)
         super().__init__(config, event_stream, sid, plugins)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
