@@ -172,6 +172,7 @@ evaluation/webarena/scripts/webarena_env.sh
 evaluation/bird/data
 evaluation/gaia/data
 evaluation/gorilla/data
+evaluation/toolqa/data
 
 # frontend
 

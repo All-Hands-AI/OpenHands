@@ -119,3 +119,4 @@ evaluate = "*"
 swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
+gdown = "*"
