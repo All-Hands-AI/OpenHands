@@ -844,6 +844,9 @@ async def test_ipython_simple(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.content.strip() == '1'
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 async def _test_ipython_agentskills_fileop_pwd_impl(
     runtime: ServerRuntime | EventStreamRuntime, enable_auto_lint: bool
@@ -953,6 +956,9 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
+
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
@@ -1148,6 +1154,9 @@ async def test_copy_single_file(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 def _create_test_dir_with_files(host_temp_dir):
     os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
@@ -1195,6 +1204,9 @@ async def test_copy_directory_recursively(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'File 1 content' in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio
 async def test_copy_to_non_existent_directory(temp_dir, box_class):
@@ -1213,6 +1225,9 @@ async def test_copy_to_non_existent_directory(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
@@ -1249,6 +1264,9 @@ async def test_overwrite_existing_file(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio
 async def test_copy_non_existent_file(temp_dir, box_class):
@@ -1266,3 +1284,33 @@ async def test_copy_non_existent_file(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code != 0  # File should not exist
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_keep_prompt(temp_dir):
+    # only EventStreamRuntime supports keep_prompt
+    runtime = await _load_runtime(
+        temp_dir, box_class=EventStreamRuntime, run_as_devin=False
+    )
+
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'root@' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt', keep_prompt=False)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'root@' not in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
