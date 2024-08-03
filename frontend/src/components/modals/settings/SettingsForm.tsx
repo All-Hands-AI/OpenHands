@@ -33,17 +33,10 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
+  const [isAgentSelectEnabled, setIsAgentSelectEnabled] = React.useState(false);
 
   return (
     <>
-      <AutocompleteCombobox
-        ariaLabel="agent"
-        items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT}
-        onChange={onAgentChange}
-        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
-        disabled={disabled}
-      />
       <AutocompleteCombobox
         ariaLabel="model"
         items={models.map((model) => ({ value: model, label: model }))}
@@ -88,6 +81,23 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
+      <AutocompleteCombobox
+        ariaLabel="agent"
+        items={agents.map((agent) => ({ value: agent, label: agent }))}
+        defaultKey={settings.AGENT}
+        onChange={onAgentChange}
+        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
+        disabled={disabled || !isAgentSelectEnabled}
+      />
+      <Switch
+        defaultSelected={false}
+        isSelected={isAgentSelectEnabled}
+        onValueChange={setIsAgentSelectEnabled}
+        aria-label="enableagentselect"
+        data-testid="enableagentselect"
+      >
+        {t(I18nKey.SETTINGS$AGENT_SELECT_ENABLED)}
+      </Switch>
       <Switch
         aria-label="confirmationmode"
         data-testid="confirmationmode"

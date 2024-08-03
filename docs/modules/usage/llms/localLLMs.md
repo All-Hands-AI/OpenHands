@@ -172,9 +172,9 @@ docker run \
     -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e LLM_MODEL="openai/lmstudio"
+    -e LLM_MODEL="openai/lmstudio" \
     -e LLM_BASE_URL="http://host.docker.internal:1234/v1" \
-    -e CUSTOM_LLM_PROVIDER="openai"
+    -e CUSTOM_LLM_PROVIDER="openai" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \

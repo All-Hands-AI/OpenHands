@@ -22,13 +22,15 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_agent_controller
+from opendevin.core.main import run_controller
 from opendevin.events.action import CmdRunAction, MessageAction
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
+
+config = load_app_config()
 
 
 def process_instance(
@@ -97,7 +99,14 @@ def process_instance(
     # create sandbox and run the agent
     # =============================================
 
-    sandbox = DockerSSHBox()
+    sandbox = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=False,
+        workspace_mount_path=config.workspace_mount_path,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=config.run_as_devin,
+    )
     sandbox.execute(f'cd {inst_id}')
 
     init_cmd = instance.init
@@ -111,13 +120,13 @@ def process_instance(
         logger.info(f'Init script result: {init_res}')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
-        run_agent_controller(
-            agent,
-            instruction,
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
+        run_controller(
+            config=config,
+            task_str=instruction,
             fake_user_response_fn=FAKE_RESPONSES[agent.__class__.__name__],
+            agent=agent,
             sandbox=sandbox,
             sid=inst_id,
         )

@@ -16,16 +16,18 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_agent_controller
+from opendevin.core.main import run_controller
 from opendevin.llm.llm import LLM
 
 from .datatypes import TaskState
 from .env import SimplifiedEnv
 from .prompts import ToolPromptTemplate
 from .tasks import Task
+
+config = load_app_config()
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, int]):
@@ -99,10 +101,18 @@ def process_instance(
 
     # use a session id for concurrent processing
     sid = instance.task_id + '_' + str(os.getpid())
-    sandbox = DockerSSHBox(sid=sid)
+    sandbox = DockerSSHBox(
+        config=config.sandbox,
+        persist_sandbox=False,
+        workspace_mount_path=config.workspace_mount_path,
+        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+        cache_dir=config.cache_dir,
+        run_as_devin=config.run_as_devin,
+        sid=sid,
+    )
 
     requirements_host_src = 'evaluation/mint/requirements.txt'
-    requirements_sandbox_dest = '/opendevin/plugins/mint/requirements.txt'
+    requirements_sandbox_dest = '/opendevin/plugins/mint/'
     sandbox.copy_to(
         host_src=requirements_host_src,
         sandbox_dest=requirements_sandbox_dest,
@@ -138,13 +148,13 @@ def process_instance(
         },
     )
 
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
-        run_agent_controller(
-            agent,
-            instruction,
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
+        run_controller(
+            config=config,
+            task_str=instruction,
             fake_user_response_fn=fake_user_response_fn,
+            agent=agent,
             sandbox=sandbox,
             sid=sid,
         )

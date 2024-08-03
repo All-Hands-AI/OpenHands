@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from opendevin.core.config import SandboxConfig, config
+from opendevin.core.config import AppConfig
 from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
@@ -25,7 +25,7 @@ from opendevin.runtime import (
     Sandbox,
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
-from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage.local import LocalFileStore
@@ -34,53 +34,68 @@ from ..browser import browse
 from .files import read_file, write_file
 
 
-def create_sandbox(sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
-    if box_type == 'local':
-        return LocalBox(config=config.sandbox, workspace_base=config.workspace_base)
-    elif box_type == 'ssh':
-        return DockerSSHBox(
-            config=config.sandbox,
-            persist_sandbox=config.persist_sandbox,
-            workspace_mount_path=config.workspace_mount_path,
-            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
-            cache_dir=config.cache_dir,
-            run_as_devin=config.run_as_devin,
-            ssh_hostname=config.ssh_hostname,
-            ssh_password=config.ssh_password,
-            ssh_port=config.ssh_port,
-            sid=sid,
-        )
-    elif box_type == 'e2b':
-        return E2BBox(
-            config=config.sandbox,
-            e2b_api_key=config.e2b_api_key,
-        )
-    else:
-        raise ValueError(f'Invalid sandbox type: {box_type}')
-
-
 class ServerRuntime(Runtime):
     def __init__(
         self,
-        sandbox_config: SandboxConfig,
+        config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
+        plugins: list[PluginRequirement] | None = None,
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(sandbox_config, event_stream, sid)
+        super().__init__(config, event_stream, sid, plugins)
         self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox.box_type)
+            self.sandbox = self.create_sandbox(sid, config.sandbox.box_type)
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
 
+    def create_sandbox(self, sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
+        if box_type == 'local':
+            return LocalBox(
+                config=self.config.sandbox, workspace_base=self.config.workspace_base
+            )
+        elif box_type == 'ssh':
+            return DockerSSHBox(
+                config=self.config.sandbox,
+                persist_sandbox=self.config.persist_sandbox,
+                workspace_mount_path=self.config.workspace_mount_path,
+                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
+                cache_dir=self.config.cache_dir,
+                run_as_devin=self.config.run_as_devin,
+                ssh_hostname=self.config.ssh_hostname,
+                ssh_password=self.config.ssh_password,
+                ssh_port=self.config.ssh_port,
+                sid=sid,
+            )
+        elif box_type == 'e2b':
+            return E2BBox(
+                config=self.config.sandbox,
+                e2b_api_key=self.config.e2b_api_key,
+            )
+        else:
+            raise ValueError(f'Invalid sandbox type: {box_type}')
+
     async def ainit(self, env_vars: dict[str, str] | None = None):
+        # init sandbox plugins
+        self.sandbox.init_plugins(self.plugins)
+
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
         await super().ainit(env_vars)
+
+        if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
+            obs = await self.run_ipython(
+                IPythonRunCellAction(
+                    code=f'import os; os.chdir("{self.config.workspace_mount_path_in_sandbox}")'
+                )
+            )
+            logger.info(
+                f'Switch to working directory {self.config.workspace_mount_path_in_sandbox} in IPython. Output: {obs.content}'
+            )
 
     async def close(self):
         if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
@@ -88,14 +103,10 @@ class ServerRuntime(Runtime):
         if hasattr(self, 'browser') and self.browser is not None:
             self.browser.close()
 
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        self.sandbox.init_plugins(plugins)
-
     def init_runtime_tools(
         self,
         runtime_tools: list[RuntimeTool],
         runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-        is_async: bool = True,
     ) -> None:
         # if browser in runtime_tools, init it
         if RuntimeTool.BROWSER in runtime_tools:
@@ -103,18 +114,21 @@ class ServerRuntime(Runtime):
                 runtime_tools_config = {}
             browser_env_config = runtime_tools_config.get(RuntimeTool.BROWSER, {})
             try:
-                self.browser = BrowserEnv(is_async=is_async, **browser_env_config)
+                self.browser = BrowserEnv(**browser_env_config)
             except BrowserInitException:
                 logger.warn(
                     'Failed to start browser environment, web browsing functionality will not work'
                 )
+
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        self.sandbox.copy_to(host_src, sandbox_dest, recursive)
 
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         self._run_command(
-            ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
+            f"cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n{action.code}\nEOL"
         )
 
         # run the code
@@ -177,8 +191,8 @@ class ServerRuntime(Runtime):
         return await read_file(
             action.path,
             working_dir,
-            config.workspace_base,
-            config.workspace_mount_path_in_sandbox,
+            self.config.workspace_base,
+            self.config.workspace_mount_path_in_sandbox,
             action.start,
             action.end,
         )
@@ -189,8 +203,8 @@ class ServerRuntime(Runtime):
         return await write_file(
             action.path,
             working_dir,
-            config.workspace_base,
-            config.workspace_mount_path_in_sandbox,
+            self.config.workspace_base,
+            self.config.workspace_mount_path_in_sandbox,
             action.content,
             action.start,
             action.end,

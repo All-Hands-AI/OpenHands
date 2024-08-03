@@ -6,7 +6,7 @@ from .observation import Observation
 
 
 @dataclass
-class RejectObservation(Observation):
+class UserRejectObservation(Observation):
     """This data class represents the result of a successful action."""
 
     observation: str = ObservationType.USER_REJECTED

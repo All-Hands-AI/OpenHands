@@ -36,10 +36,11 @@ The folder is organised as follows:
 ├── README.md
 ├── conftest.py
 ├── mock
-│   ├── [AgentName]
-│   │   └── [TestName]
-│   │       ├── prompt_*.log
-│   │       ├── response_*.log
+    ├── [RuntimeType]
+│   |   ├── [AgentName]
+│   │       └── [TestName]
+│   │           ├── prompt_*.log
+│   │           ├── response_*.log
 └── [TestFiles].py
 ```
 
@@ -52,10 +53,17 @@ of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 ## Run Integration Tests
 
 Take a look at `ghcr.yml` (in the `.github/workflow` folder) to learn
-how integration tests are launched in a CI environment. You can also simply run:
+how integration tests are launched in a CI environment.
+
+We currently have two runtime: `ServerRuntime` and `EventStreamRuntime`, each having their own sets of integration test prompts.
+
+You can run:
 
 ```bash
-TEST_ONLY=true ./tests/integration/regenerate.sh
+# for server runtime
+TEST_RUNTIME=server TEST_ONLY=true ./tests/integration/regenerate.sh
+# for event stream
+SANDBOX_UPDATE_SOURCE_CODE=True TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
 ```
 
 to run all integration tests until the first failure occurs.
@@ -75,7 +83,8 @@ When you make changes to an agent's prompt, the integration tests will fail. You
 by running the following command from OpenDevin's project root directory:
 
 ```bash
-./tests/integration/regenerate.sh
+TEST_RUNTIME=server ./tests/integration/regenerate.sh
+SANDBOX_UPDATE_SOURCE_CODE=True TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
 ```
 
 Please note that this will:

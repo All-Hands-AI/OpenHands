@@ -61,6 +61,8 @@ def event_to_dict(event: 'Event') -> dict:
         props.pop(key, None)
     if 'action' in d:
         d['args'] = props
+        if event.timeout is not None:
+            d['timeout'] = event.timeout
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
         d['extras'] = props

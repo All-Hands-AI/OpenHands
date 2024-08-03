@@ -21,7 +21,7 @@ function CustomFooter() {
           <Translate id="footer.community">Community</Translate>
         </div>
         <div className="footer-icons">
-          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA" target="_blank" rel="noopener noreferrer">
+          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw" target="_blank" rel="noopener noreferrer">
             <FaSlack />
           </a>
           <a href="https://discord.gg/ESHStjSjD4" target="_blank" rel="noopener noreferrer">

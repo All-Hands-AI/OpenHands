@@ -1,4 +1,4 @@
-name: Build Publish and Test Docker Image
+name: Build Publish and Test Runtime Image
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -77,14 +77,47 @@ jobs:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
 
-  test-for-sandbox:
-    name: Test for Sandbox
+  ghcr_build_runtime:
     runs-on: ubuntu-latest
-    needs: ghcr_build
-    env:
-      PERSIST_SANDBOX: "false"
+
+    outputs:
+      tags: ${{ steps.capture-tags.outputs.tags }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        image: ["od_runtime"]
+        base_image: ["ubuntu:22.04"]
+        platform: ["amd64", "arm64"]
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Install poetry via pipx
         run: pipx install poetry
@@ -98,16 +131,89 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
 
-      - name: Download sandbox Docker image
+      - name: Create source distribution and Dockerfile
+        run: poetry run python3 opendevin/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image }} --build_folder containers/runtime
+
+      - name: Build and export image
+        id: build
+        run: ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
+
+      - name: Capture tags
+        id: capture-tags
+        run: |
+          tags=$(cat tags.txt)
+          echo "tags=$tags"
+          echo "tags=$tags" >> $GITHUB_OUTPUT
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
+
+  test_runtime:
+    name: Test Runtime
+    runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime, ghcr_build]
+    env:
+      PERSIST_SANDBOX: "false"
+
+    strategy:
+      matrix:
+        runtime_type: ["eventstream", "server"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # when set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "poetry"
+
+      - name: Install Python dependencies using Poetry
+        run: make install-python-dependencies
+
+      - name: Download Runtime Docker image
+        if: matrix.runtime_type == 'eventstream'
+        uses: actions/download-artifact@v4
+        with:
+          name: od_runtime-docker-image-amd64
+          path: /tmp/
+
+      - name: Download Sandbox Docker image
+        if: matrix.runtime_type == 'server'
         uses: actions/download-artifact@v4
         with:
           name: sandbox-docker-image-amd64
           path: /tmp/
 
-      - name: Load sandbox image and run sandbox tests
+      - name: Load Runtime image and run runtime tests
         run: |
           # Load the Docker image and capture the output
-          output=$(docker load -i /tmp/sandbox_image_amd64.tar)
+          if [ "${{ matrix.runtime_type }}" == "eventstream" ]; then
+            output=$(docker load -i /tmp/od_runtime_image_amd64.tar)
+          else
+            output=$(docker load -i /tmp/sandbox_image_amd64.tar)
+          fi
 
           # Extract the first image name from the output
           image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
@@ -115,14 +221,14 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
+          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_runtime.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  integration-tests-on-linux:
+  integration_tests_on_linux:
     name: Integration Tests on Linux
     runs-on: ubuntu-latest
     needs: ghcr_build
@@ -167,7 +273,64 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true TEST_RUNTIME=server ./tests/integration/regenerate.sh
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  runtime_integration_tests_on_linux:
+    name: Runtime Integration Tests on Linux
+    runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime]
+    env:
+      PERSIST_SANDBOX: "false"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+        # server is tested in a separate workflow
+        runtime_type: ["eventstream"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: make install-python-dependencies
+
+      - name: Download Runtime Docker image
+        uses: actions/download-artifact@v4
+        with:
+          name: od_runtime-docker-image-amd64
+          path: /tmp/
+
+
+      - name: Load runtime image and run integration tests
+        run: |
+          # Load the Docker image and capture the output
+          if [ "${{ matrix.runtime_type }}" == "eventstream" ]; then
+            output=$(docker load -i /tmp/od_runtime_image_amd64.tar)
+          else
+            echo "No Runtime Docker image to load"
+            exit 1
+          fi
+
+          # Extract the first image name from the output
+          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
+
+          # Print the full name of the image
+          echo "Loaded Docker image: $image_name"
+
+          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -177,7 +340,7 @@ jobs:
   ghcr_push:
     runs-on: ubuntu-latest
     # don't push if integration tests or sandbox tests fail
-    needs: [ghcr_build, integration-tests-on-linux, test-for-sandbox]
+    needs: [ghcr_build, test_runtime, integration_tests_on_linux]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
 
     env:
@@ -223,6 +386,78 @@ jobs:
             docker push $image_name:${tag}_${{ matrix.platform }}
           done
 
+  ghcr_push_runtime:
+    runs-on: ubuntu-latest
+    # don't push if runtime tests fail
+    needs: [ghcr_build_runtime, test_runtime, integration_tests_on_linux]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+
+    env:
+      tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        image: ["od_runtime"]
+        platform: ["amd64", "arm64"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
+          path: /tmp/${{ matrix.platform }}
+
+      - name: List downloaded files
+        run: |
+          ls -la /tmp/${{ matrix.platform }}
+          file /tmp/${{ matrix.platform }}/*
+
+      - name: Load images and push to registry
+        run: |
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar ./${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          if ! loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
+            echo "Failed to load Docker image"
+            exit 1
+          fi
+          echo "loaded image = $loaded_image"
+          tags=$(echo ${tags} | tr ' ' '\n')
+          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
+          echo "image name = $image_name"
+          for tag in $tags; do
+            echo "tag = $tag"
+            if [ -n "$image_name" ]; then
+              docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
+              docker push $image_name:${tag}_${{ matrix.platform }}
+            else
+              echo "Skipping tag and push due to empty image_name"
+            fi
+          done
+
   create_manifest:
     runs-on: ubuntu-latest
     needs: [ghcr_build, ghcr_push]
@@ -234,6 +469,45 @@ jobs:
     strategy:
       matrix:
         image: ["sandbox", "opendevin"]
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-platform manifest
+        run: |
+          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
+          echo "image name = $image_name"
+          tags=$(echo ${tags} | tr ' ' '\n')
+          for tag in $tags; do
+            echo 'tag = $tag'
+            docker buildx imagetools create --tag $image_name:$tag \
+              $image_name:${tag}_amd64 \
+              $image_name:${tag}_arm64
+          done
+
+  create_manifest_runtime:
+    runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime, ghcr_push_runtime]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+
+    env:
+      tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
+
+    strategy:
+      matrix:
+        image: ["od_runtime"]
 
     permissions:
       contents: read

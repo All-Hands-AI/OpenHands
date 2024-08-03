@@ -19,11 +19,13 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, parse_arguments
+from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_agent_controller
+from opendevin.core.main import run_controller
 from opendevin.llm.llm import LLM
+
+config = load_app_config()
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false') == 'true'
@@ -209,6 +211,7 @@ def process_instance(
     # You can omit this if you don't need to setup specialized sandbox
     workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
     sandbox = SWEBenchSSHBox.get_box_for_instance(
+        config,
         instance,
         workspace_dir_name,
         workspace_mount_path=workspace_mount_path,
@@ -277,15 +280,15 @@ IMPORTANT TIPS:
     instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
-        run_agent_controller(
-            agent,
-            instruction,
-            max_iterations=metadata.max_iterations,
-            max_budget_per_task=config.max_budget_per_task,
+        run_controller(
+            config=config,
+            task_str=instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 agent.__class__.__name__
             ],
+            agent=agent,
             sandbox=sandbox,
             sid=instance.instance_id,
         )

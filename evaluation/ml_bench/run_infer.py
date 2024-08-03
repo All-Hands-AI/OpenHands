@@ -30,12 +30,14 @@ from evaluation.utils.shared import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_agent_controller
+from opendevin.core.main import run_controller
 from opendevin.llm.llm import LLM
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
+
+config = load_app_config()
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -110,7 +112,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
         # Create a sandbox, using the instance ID and PID as the session ID to avoid conflicts
         sid = str(instance['id']) + '_' + str(os.getpid())
-        sandbox = DockerSSHBox(sid=sid)
+        sandbox = DockerSSHBox(
+            config=config.sandbox,
+            persist_sandbox=False,
+            workspace_mount_path=config.workspace_mount_path,
+            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
+            cache_dir=config.cache_dir,
+            run_as_devin=config.run_as_devin,
+            sid=sid,
+        )
 
         # Set up the task environment
         sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
@@ -145,15 +155,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
 
         # Run the agent
+        config.max_iterations = metadata.max_iterations
         state: State | None = asyncio.run(
-            run_agent_controller(
-                agent,
-                instruction,
-                max_iterations=metadata.max_iterations,
-                max_budget_per_task=config.max_budget_per_task,
+            run_controller(
+                config=config,
+                task_str=instruction,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent.__class__.__name__
                 ),
+                agent=agent,
                 sandbox=sandbox,
                 sid=sid,
             )

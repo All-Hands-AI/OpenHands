@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
+from pytest import TempPathFactory
 
 from agenthub.micro.registry import all_microagents
 from opendevin.controller.agent import Agent
@@ -12,11 +13,18 @@ from opendevin.events import EventSource
 from opendevin.events.action import MessageAction
 from opendevin.events.stream import EventStream
 from opendevin.memory.history import ShortTermHistory
+from opendevin.storage import get_file_store
 
 
 @pytest.fixture
-def event_stream():
-    event_stream = EventStream('asdf')
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_micro_agents'))
+
+
+@pytest.fixture
+def event_stream(temp_dir):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('asdf', file_store)
     yield event_stream
 
     # clear after each test

@@ -2,6 +2,7 @@ import logging
 from unittest.mock import Mock, patch
 
 import pytest
+from pytest import TempPathFactory
 
 from opendevin.controller.agent_controller import AgentController
 from opendevin.controller.state.state import State
@@ -17,6 +18,7 @@ from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.error import ErrorObservation
 from opendevin.events.stream import EventSource, EventStream
 from opendevin.memory.history import ShortTermHistory
+from opendevin.storage import get_file_store
 
 
 def collect_events(stream):
@@ -27,10 +29,15 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 @pytest.fixture
-def event_stream():
-    event_stream = EventStream('asdf')
-    yield event_stream
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_is_stuck'))
 
+
+@pytest.fixture
+def event_stream(temp_dir):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('asdf', file_store)
+    yield event_stream
     # clear after each test
     event_stream.clear()
 
