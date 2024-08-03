@@ -15,6 +15,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
 
   const [message, setMessage] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
+  // This is true when the user is typing in an IME (e.g., Chinese, Japanese)
   const [isComposing, setIsComposing] = React.useState(false);
 
   const convertImageToBase64 = (file: File): Promise<string> =>
