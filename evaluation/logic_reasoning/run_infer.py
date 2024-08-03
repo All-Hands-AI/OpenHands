@@ -50,10 +50,11 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='xingyaoww/od_logic_reasoning:latest',
+            container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
             update_source_code=True,
+            od_runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
         ),
         # do not mount workspace
         workspace_base=None,
@@ -190,9 +191,9 @@ def process_instance(
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance['id'], log_dir)
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance["id"]}.')
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
     instance_logic_programs = instance['raw_logic_programs'][0].strip()
     instruction = (
@@ -205,7 +206,7 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # use a session id for concurrent evaluation
-    sid = instance['id']
+    sid = instance['instance_id']
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     config.max_iterations = metadata.max_iterations
@@ -257,7 +258,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance['id'],
+        instance_id=instance['instance_id'],
         instruction=instruction,
         metadata=metadata,
         history=histories,
@@ -284,11 +285,11 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    id_column = 'id'
     dataset_name = args.dataset
     data_split = args.data_split
     dataset = load_dataset(f'renma/{dataset_name}')
     dataset_df = dataset[data_split].to_pandas()
+    dataset_df.rename(columns={'id': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -305,7 +306,9 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit, id_column)
+    instances = prepare_dataset(
+        dataset_df, output_file, args.eval_n_limit, id_column='instance_id'
+    )
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
     )
