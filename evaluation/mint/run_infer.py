@@ -102,7 +102,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='ubuntu:22.04',
+            container_image='xingyaoww/od-eval-mint:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
             update_source_code=True,
@@ -260,9 +260,7 @@ if __name__ == '__main__':
         )
         logger.info(f'Loaded MINT - {subset} subset')
         _df = _cur_dataset.to_pandas().rename(columns={'id': 'instance_id'})
-        _df['instance_id'] = _df['instance_id'].apply(
-            lambda subset, x: f'{subset}-{x}', subset=subset
-        )
+        _df['instance_id'] = _df['instance_id'].apply(lambda x: f'{subset}/{x}')  # noqa
         _df['in_context_example'] = in_context_example
         dataset_dfs.append(_df)
         logger.info(f'Loaded {len(_df)} instances for subset: {subset}')
