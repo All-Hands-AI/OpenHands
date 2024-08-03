@@ -73,7 +73,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
       }
     });
     if (pastedFiles.length > 0) {
-      setFiles([...files, ...pastedFiles]);
+      setFiles((prevFiles) => [...prevFiles, ...pastedFiles]);
       event.preventDefault();
     }
   };
