@@ -161,6 +161,10 @@ class SandboxConfig(metaclass=Singleton):
             It can contains any valid shell commands (e.g., pip install numpy).
             The path to the interpreter is available as $OD_INTERPRETER_PATH,
             which can be used to install dependencies for the OD-specific Python interpreter.
+        od_runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
+            This is a dictionary of key-value pairs.
+            This is useful for setting environment variables that are needed by the runtime.
+            For example, for specifying the base url of website for browsergym evaluation.
     """
 
     box_type: str = 'ssh'
@@ -179,6 +183,7 @@ class SandboxConfig(metaclass=Singleton):
     update_source_code: bool = False
     browsergym_eval_env: str | None = None
     od_runtime_extra_deps: str = ''
+    od_runtime_startup_env_vars: dict[str, str] = {}
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
