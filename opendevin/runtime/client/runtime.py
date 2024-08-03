@@ -147,6 +147,12 @@ class EventStreamRuntime(Runtime):
 
             logger.info(f'run_as_devin: `{self.config.run_as_devin}`')
 
+            if self.config.sandbox.browsergym_eval_env is not None:
+                browsergym_arg = (
+                    f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
+                )
+            else:
+                browsergym_arg = ''
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -156,7 +162,8 @@ class EventStreamRuntime(Runtime):
                     f'--working-dir {sandbox_workspace_dir} '
                     f'{plugin_arg}'
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
-                    f'--user-id {self.config.sandbox.user_id}'
+                    f'--user-id {self.config.sandbox.user_id} '
+                    f'{browsergym_arg}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
