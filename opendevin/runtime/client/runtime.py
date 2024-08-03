@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import os
 import tempfile
 import uuid
@@ -50,7 +49,6 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         container_image: str | None = None,
     ):
-        self.config = copy.deepcopy(config)
         super().__init__(
             config, event_stream, sid, plugins
         )  # will initialize the event stream
@@ -72,6 +70,9 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+        logger.info(
+            f'EventStreamRuntime `{sid}` __init__ run_as_devin: {self.config.run_as_devin}'
+        )
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         self.container_image = build_runtime_image(
@@ -145,7 +146,7 @@ class EventStreamRuntime(Runtime):
                 )
                 volumes = None
 
-            logger.info(f'run_as_devin: `{self.config.run_as_devin}`')
+            logger.info(f'_init_container run_as_devin: {self.config.run_as_devin}')
 
             container = self.docker_client.containers.run(
                 self.container_image,
