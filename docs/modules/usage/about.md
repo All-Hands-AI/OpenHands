@@ -31,7 +31,7 @@ For details, please check [this document](https://github.com/OpenDevin/OpenDevin
 
 We have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
 
-- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA)
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw)
 - [Discord server](https://discord.gg/ESHStjSjD4)
 
 If you would love to contribute, feel free to join our community. Let's simplify software engineering together!
