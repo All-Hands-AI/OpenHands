@@ -154,6 +154,9 @@ class SandboxConfig(metaclass=Singleton):
         initialize_plugins: Whether to initialize plugins.
         update_source_code: Whether to update the source code in the EventStreamRuntime.
             Used for development of EventStreamRuntime.
+        browsergym_eval_env: The BrowserGym environment to use for evaluation.
+            Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
+
     """
 
     box_type: str = 'ssh'
@@ -170,6 +173,7 @@ class SandboxConfig(metaclass=Singleton):
     use_host_network: bool = False
     initialize_plugins: bool = True
     update_source_code: bool = False
+    browsergym_eval_env: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
