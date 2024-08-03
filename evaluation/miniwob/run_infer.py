@@ -93,7 +93,6 @@ async def initialize_runtime_fn(
 
 async def complete_runtime_fn(
     runtime: Runtime,
-    instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
 
@@ -111,7 +110,7 @@ async def complete_runtime_fn(
 
     logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
     return {
-        'rewards': json.loads(obs.content)['rewards'],
+        'rewards': json.loads(obs.content),
     }
 
 
@@ -137,6 +136,7 @@ def process_instance(
                 'task_str'
             ],  # take output from initialize_runtime_fn
             initialize_runtime_fn=initialize_runtime_fn,
+            complete_runtime_fn=complete_runtime_fn,
             sid=env_id,
         )
     )
@@ -158,8 +158,9 @@ def process_instance(
             instruction = event.content
             break
 
-    rewards = state.complete_runtime_fn_return['rewards']
-    reward = max(rewards)
+    return_val = state.complete_runtime_fn_return
+    logger.info(f'Return value from complete_runtime_fn: {return_val}')
+    reward = max(return_val['rewards'])
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
