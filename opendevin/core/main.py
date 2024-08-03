@@ -39,10 +39,11 @@ def read_task_from_stdin() -> str:
 
 async def run_controller(
     config: AppConfig,
-    task_str: str,
+    task_str: str | None = None,
+    task_str_fn: Callable[[dict], str] | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
-    initialize_runtime_fn: Callable[[Runtime], Awaitable[None]] | None = None,
+    initialize_runtime_fn: Callable[[Runtime], Awaitable[None | dict]] | None = None,
     complete_runtime_fn: Callable[[Runtime], Awaitable[dict]] | None = None,
     agent: Agent | None = None,
     runtime_tools_config: dict | None = None,
@@ -54,7 +55,8 @@ async def run_controller(
 
     Args:
         config: The app config.
-        task_str: The task to run.
+        task_str: The task to run. It can be a string. Either task_str or task_str_fn should be provided.
+        task_str_fn: A function that takes a dict (from the output of the initialize_runtime_fn) and returns a string.
         max_iterations: The maximum number of iterations to run.
         max_budget_per_task: The maximum budget per task.
         exit_on_message: quit if agent asks for a message from user (optional)
@@ -66,17 +68,15 @@ async def run_controller(
         sid: The session id.
         headless_mode: Whether the agent is run in headless mode.
     """
+    if task_str is None and task_str_fn is None:
+        raise ValueError('One of task_str or task_str_fn should be provided.')
+
     # Create the agent
     if agent is None:
         agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
         agent = agent_cls(
             llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
         )
-
-    # Logging
-    logger.info(
-        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
-    )
 
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -131,9 +131,27 @@ async def run_controller(
     # TODO: Implement this for EventStream Runtime
 
     # Initialize the runtime with user-specified function
+    if task_str_fn is not None:
+        assert (
+            initialize_runtime_fn is not None
+        ), 'initialize_runtime_fn cannot be None when task_str_fn is provided.'
+
     if initialize_runtime_fn:
         logger.info('Initializing runtime using user-specified function ...')
-        await initialize_runtime_fn(runtime)
+        ret = await initialize_runtime_fn(runtime)
+
+        if task_str_fn is not None:
+            if not isinstance(ret, dict):
+                raise ValueError(
+                    '`initialize_runtime_fn` must return a dict when `task_str_fn` is provided.'
+                )
+            task_str = task_str_fn(ret)
+
+    assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
+    # Logging
+    logger.info(
+        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
+    )
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
