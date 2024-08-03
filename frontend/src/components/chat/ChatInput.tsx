@@ -53,7 +53,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      setFiles([...files, ...Array.from(event.target.files)]);
+      setFiles((prev) => [...prev, ...Array.from(event.target.files!)]);
     }
   };
 
