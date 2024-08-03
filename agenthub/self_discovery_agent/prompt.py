@@ -1,4 +1,4 @@
-from .agent import SelfDiscoveryStep
+from .agent import SelfDiscoverStep
 
 PAIRED_IMPLEMENT_DEMONSTRATION = """
  {
@@ -95,16 +95,16 @@ IMPLEMENT_EXAMPLES = """Example 1 TODO CONTINUE HERE
 
 
 def get_prompt(
-    previous_step: SelfDiscoveryStep, current_step: SelfDiscoveryStep
+    previous_step: SelfDiscoverStep, current_step: SelfDiscoverStep
 ) -> dict[str, str] | None:
     if previous_step == current_step:
         return None
 
-    if current_step == SelfDiscoveryStep.SELECT:
+    if current_step == SelfDiscoverStep.SELECT:
         content = SELECT_PROMPT
-    elif current_step == SelfDiscoveryStep.ADAPT:
+    elif current_step == SelfDiscoverStep.ADAPT:
         content = ADAPT_PROMPT
-    elif current_step == SelfDiscoveryStep.IMPLEMENT:
+    elif current_step == SelfDiscoverStep.IMPLEMENT:
         content = IMPLEMENT_PROMPT
     else:
         content = ''
