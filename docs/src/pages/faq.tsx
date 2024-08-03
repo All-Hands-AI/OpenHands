@@ -10,7 +10,7 @@ export default function FAQ() {
     <a href="https://discord.gg/mBuDGRzzES" target="_blank">Discord</a>
   );
   const slackLink = (
-    <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA" target="_blank">Slack</a>
+    <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw" target="_blank">Slack</a>
   );
 
   return (

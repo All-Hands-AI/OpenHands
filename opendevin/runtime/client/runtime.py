@@ -294,6 +294,7 @@ class EventStreamRuntime(Runtime):
 
             logger.info('Executing command')
             try:
+                logger.info('Executing command')
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
