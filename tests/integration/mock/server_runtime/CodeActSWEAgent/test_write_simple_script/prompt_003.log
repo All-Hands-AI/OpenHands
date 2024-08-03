@@ -587,6 +587,8 @@ exit
 
 NOW, LET'S START!
 
+----------
+
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 ----------
@@ -615,4 +617,4 @@ OBSERVATION:
 echo "hello"
 [Command -1 finished with exit code 0]
 
-ENVIRONMENT REMINDER: You have 12 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>.

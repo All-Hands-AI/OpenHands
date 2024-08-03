@@ -207,7 +207,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Send a message:
         ```json
-        {"action": "message", "args": {"content": "Hello, how are you?"}}
+        {"action": "message", "args": {"content": "Hello, how are you?", "images_urls": ["base64_url1", "base64_url2"]}}
         ```
     - Write contents to a file:
         ```json

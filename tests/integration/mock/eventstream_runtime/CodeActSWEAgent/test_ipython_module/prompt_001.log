@@ -587,6 +587,8 @@ exit
 
 NOW, LET'S START!
 
+----------
+
 Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 14 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 14 turns left to complete the task. When finished reply with <finish></finish>.

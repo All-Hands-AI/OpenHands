@@ -77,6 +77,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d.pop('cause', None)
     d.pop('timestamp', None)
     d.pop('message', None)
+    d.pop('images_urls', None)
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
     if isinstance(event, Observation) and 'content' in d:

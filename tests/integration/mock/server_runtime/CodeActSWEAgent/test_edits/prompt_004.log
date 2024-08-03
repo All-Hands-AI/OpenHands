@@ -587,6 +587,8 @@ exit
 
 NOW, LET'S START!
 
+----------
+
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
@@ -664,4 +666,4 @@ OBSERVATION:
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 
-ENVIRONMENT REMINDER: You have 11 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 11 turns left to complete the task. When finished reply with <finish></finish>.
