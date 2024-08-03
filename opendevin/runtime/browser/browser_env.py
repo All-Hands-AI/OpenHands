@@ -72,9 +72,9 @@ class BrowserEnv:
             assert self.browsergym_eval_env is not None
             logger.info('Initializing browser env for web browsing evaluation.')
             if 'webarena' in self.browsergym_eval_env:
-                pass  # register webarena tasks as gym environments
+                import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
             elif 'miniwob' in self.browsergym_eval_env:
-                pass  # register miniwob tasks as gym environments
+                import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
             else:
                 raise ValueError(
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
