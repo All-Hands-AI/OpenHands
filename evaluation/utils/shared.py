@@ -57,6 +57,13 @@ class EvalOutput(BaseModel):
     # Optionally save the input test instance
     instance: dict[str, Any] | None = None
 
+    def model_dump_json(self, *args, **kwargs):
+        dumped = super().model_dump_json(*args, **kwargs)
+        dumped_dict = json.loads(dumped)
+        # Apply custom serialization for metadata (to avoid leaking sensitive information)
+        dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
+        return json.dumps(dumped_dict)
+
 
 def codeact_user_response(
     state: State,
