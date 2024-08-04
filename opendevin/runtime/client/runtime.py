@@ -144,8 +144,6 @@ class EventStreamRuntime(Runtime):
                 )
                 volumes = None
 
-            logger.info(f'_init_container run_as_devin: {self.config.run_as_devin}')
-
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
                     f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
