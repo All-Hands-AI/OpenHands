@@ -11,21 +11,10 @@ on:
     tags:
       - '*'
   pull_request:
-    paths:
-      - '.github/workflows/**'
-      - 'agenthub/**'
-      - 'containers/**'
-      - 'dev_config/**'
-      - 'evaluation/**'
-      - 'opendevin/**'
-      - 'tests/**'
-      - 'Makefile'
-      - 'poetry.lock'
-      - 'pyproject.toml'
-      - 'pytest.ini'
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - 'frontend/**'
   workflow_dispatch:
     inputs:
       reason:
