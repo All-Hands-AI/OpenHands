@@ -16,6 +16,7 @@ on:
       - 'agenthub/**'
       - 'containers/**'
       - 'dev_config/**'
+      - 'evaluation/**'
       - 'opendevin/**'
       - 'tests/**'
       - 'Makefile'
