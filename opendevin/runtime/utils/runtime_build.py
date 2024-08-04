@@ -63,7 +63,10 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
 
 
 def _generate_dockerfile(
-    base_image: str, source_code_dirname: str, skip_init: bool = False
+    base_image: str,
+    source_code_dirname: str,
+    skip_init: bool = False,
+    extra_deps: str | None = None,
 ) -> str:
     """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image."""
     env = Environment(
@@ -76,6 +79,7 @@ def _generate_dockerfile(
         base_image=base_image,
         source_code_dirname=source_code_dirname,
         skip_init=skip_init,
+        extra_deps=extra_deps if extra_deps is not None else '',
     )
     return dockerfile_content
 
@@ -84,11 +88,15 @@ def prep_docker_build_folder(
     dir_path: str,
     base_image: str,
     skip_init: bool = False,
+    extra_deps: str | None = None,
 ):
     """Prepares the docker build folder by copying the source code and generating the Dockerfile."""
     source_code_dirname = _put_source_code_to_dir(dir_path)
     dockerfile_content = _generate_dockerfile(
-        base_image, source_code_dirname, skip_init=skip_init
+        base_image,
+        source_code_dirname,
+        skip_init=skip_init,
+        extra_deps=extra_deps,
     )
     logger.info(
         (
@@ -106,6 +114,7 @@ def _build_sandbox_image(
     target_image_name: str,
     docker_client: docker.DockerClient,
     skip_init: bool = False,
+    extra_deps: str | None = None,
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -115,7 +124,9 @@ def _build_sandbox_image(
                 )
             else:
                 logger.info(f'Building agnostic sandbox image: {target_image_name}')
-            prep_docker_build_folder(temp_dir, base_image, skip_init=skip_init)
+            prep_docker_build_folder(
+                temp_dir, base_image, skip_init=skip_init, extra_deps=extra_deps
+            )
             api_client = docker_client.api
             build_logs = api_client.build(
                 path=temp_dir,
@@ -185,6 +196,8 @@ def build_runtime_image(
     docker_client: docker.DockerClient,
     update_source_code: bool = False,
     save_to_local_store: bool = False,  # New parameter to control saving to local store
+    extra_deps: str
+    | None = None,  # whether to install extra dependencies inside the image
 ) -> str:
     """Build the runtime image for the OpenDevin runtime.
 
@@ -247,7 +260,13 @@ def build_runtime_image(
     if not skip_init:
         logger.info(f'Building image [{new_image_name}] from scratch')
 
-    _build_sandbox_image(base_image, new_image_name, docker_client, skip_init=skip_init)
+    _build_sandbox_image(
+        base_image,
+        new_image_name,
+        docker_client,
+        skip_init=skip_init,
+        extra_deps=extra_deps,
+    )
 
     # Only for development: allow to save image as archive:
     if not image_exists and save_to_local_store:

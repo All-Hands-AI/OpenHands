@@ -161,6 +161,7 @@ def test_build_runtime_image_from_scratch(mock_docker_client, mock_build_sandbox
         f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11',
         mock_docker_client,
         skip_init=False,
+        extra_deps=None,
     )
 
 
@@ -200,4 +201,5 @@ def test_build_runtime_image_exist_with_update_source(
         f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_debian_tag_11',
         mock_docker_client,
         skip_init=True,
+        extra_deps=None,
     )
