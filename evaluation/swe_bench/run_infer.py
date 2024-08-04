@@ -110,6 +110,8 @@ def get_config(
             use_host_network=False,
             # always make sure we are using the latest source code
             update_source_code=True,
+            # large enough timeout, since some testcases take very long to run
+            timeout=1200,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -263,6 +265,7 @@ async def complete_runtime_fn(
         command=f'git diff --no-color --cached {instance["base_commit"]}',
         keep_prompt=False,
     )
+    action.timeout = 300
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
