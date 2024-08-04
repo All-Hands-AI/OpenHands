@@ -41,7 +41,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[{"source": "agent", "action": "run", "args": {"command": "ls", "thought": "", "is_confirmed": "confirmed"}}, {"source": "agent", "observation": "run", "content": "bad.txt", "extras": {"command_id": -1, "command": "ls", "exit_code": 0}}]
+[{"source": "agent", "action": "run", "args": {"command": "ls", "thought": "", "keep_prompt": true, "is_confirmed": "confirmed"}}, {"source": "agent", "observation": "run", "content": "bad.txt", "extras": {"command_id": -1, "command": "ls", "exit_code": 0}}]
 
 ## Format
 Your response MUST be in JSON format. It must be an object, and it must contain two fields:

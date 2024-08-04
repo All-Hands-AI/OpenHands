@@ -844,6 +844,9 @@ async def test_ipython_simple(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.content.strip() == '1'
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 async def _test_ipython_agentskills_fileop_pwd_impl(
     runtime: ServerRuntime | EventStreamRuntime, enable_auto_lint: bool
@@ -954,6 +957,9 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio
 async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
@@ -963,6 +969,72 @@ async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_l
         temp_dir, box_class, enable_auto_lint=enable_auto_lint
     )
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
+    """Make sure that cd in bash also update the current working directory in ipython.
+
+    Handle special case where the pwd is provided as "~", which should be expanded using os.path.expanduser
+    on the client side.
+    """
+
+    runtime = await _load_runtime(
+        temp_dir,
+        box_class,
+        run_as_devin=False,
+    )
+
+    action = CmdRunAction(command='cd ~')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='mkdir test && ls -la')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /root/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+    ).strip().split('\n')
+
+    action = CmdRunAction(command='cd test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # This should create a file in the current working directory
+    # i.e., /workspace/test/hello.py instead of /workspace/hello.py
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /root/test/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+    ).strip().split('\n')
+
     await runtime.close()
     await asyncio.sleep(1)
 
@@ -1082,6 +1154,9 @@ async def test_copy_single_file(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 def _create_test_dir_with_files(host_temp_dir):
     os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
@@ -1129,6 +1204,9 @@ async def test_copy_directory_recursively(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'File 1 content' in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio
 async def test_copy_to_non_existent_directory(temp_dir, box_class):
@@ -1147,6 +1225,9 @@ async def test_copy_to_non_existent_directory(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
 @pytest.mark.asyncio
@@ -1183,6 +1264,9 @@ async def test_overwrite_existing_file(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
+    await runtime.close()
+    await asyncio.sleep(1)
+
 
 @pytest.mark.asyncio
 async def test_copy_non_existent_file(temp_dir, box_class):
@@ -1200,3 +1284,33 @@ async def test_copy_non_existent_file(temp_dir, box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code != 0  # File should not exist
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_keep_prompt(temp_dir):
+    # only EventStreamRuntime supports keep_prompt
+    runtime = await _load_runtime(
+        temp_dir, box_class=EventStreamRuntime, run_as_devin=False
+    )
+
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'root@' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt', keep_prompt=False)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'root@' not in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)

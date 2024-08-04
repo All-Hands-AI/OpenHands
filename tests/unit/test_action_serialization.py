@@ -86,6 +86,7 @@ def test_cmd_run_action_serialization_deserialization():
         'args': {
             'command': 'echo "Hello world"',
             'thought': '',
+            'keep_prompt': True,
             'is_confirmed': ActionConfirmationStatus.CONFIRMED,
         },
     }
