@@ -156,7 +156,7 @@ class SandboxConfig(metaclass=Singleton):
             Used for development of EventStreamRuntime.
         od_runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
-            It can contains any valid shell commands (e.g., pip install numpy).
+            It can contain any valid shell commands (e.g., pip install numpy).
             The path to the interpreter is available as $OD_INTERPRETER_PATH,
             which can be used to install dependencies for the OD-specific Python interpreter.
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
@@ -187,7 +187,7 @@ class SandboxConfig(metaclass=Singleton):
     initialize_plugins: bool = True
     update_source_code: bool = False
     browsergym_eval_env: str | None = None
-    od_runtime_extra_deps: str = ''
+    od_runtime_extra_deps: str | None = None
     od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
 
     def defaults_to_dict(self) -> dict:

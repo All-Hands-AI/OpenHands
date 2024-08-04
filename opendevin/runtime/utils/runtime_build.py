@@ -66,7 +66,7 @@ def _generate_dockerfile(
     base_image: str,
     source_code_dirname: str,
     skip_init: bool = False,
-    extra_deps: str = '',
+    extra_deps: str | None = None,
 ) -> str:
     """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image."""
     env = Environment(
@@ -79,7 +79,7 @@ def _generate_dockerfile(
         base_image=base_image,
         source_code_dirname=source_code_dirname,
         skip_init=skip_init,
-        extra_deps=extra_deps,
+        extra_deps=extra_deps if extra_deps is not None else '',
     )
     return dockerfile_content
 
@@ -88,7 +88,7 @@ def prep_docker_build_folder(
     dir_path: str,
     base_image: str,
     skip_init: bool = False,
-    extra_deps: str = '',
+    extra_deps: str | None = None,
 ):
     """Prepares the docker build folder by copying the source code and generating the Dockerfile."""
     source_code_dirname = _put_source_code_to_dir(dir_path)
@@ -114,7 +114,7 @@ def _build_sandbox_image(
     target_image_name: str,
     docker_client: docker.DockerClient,
     skip_init: bool = False,
-    extra_deps: str = '',
+    extra_deps: str | None = None,
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -196,7 +196,8 @@ def build_runtime_image(
     docker_client: docker.DockerClient,
     update_source_code: bool = False,
     save_to_local_store: bool = False,  # New parameter to control saving to local store
-    extra_deps: str = '',  # whether to install extra dependencies inside the image
+    extra_deps: str
+    | None = None,  # whether to install extra dependencies inside the image
 ) -> str:
     """Build the runtime image for the OpenDevin runtime.
 
