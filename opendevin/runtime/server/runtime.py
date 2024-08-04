@@ -52,7 +52,7 @@ class ServerRuntime(Runtime):
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
-        logger.info(
+        logger.debug(
             f'ServerRuntime {sid} __init__ run_as_devin = {self.config.run_as_devin}'
         )
 

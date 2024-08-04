@@ -70,7 +70,7 @@ class Runtime:
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close_sync)
-        logger.info(
+        logger.debug(
             f'Runtime `{sid}` __init__ run_as_devin = {self.config.run_as_devin}'
         )
 

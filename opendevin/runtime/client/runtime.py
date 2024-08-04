@@ -70,7 +70,7 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
-        logger.info(
+        logger.debug(
             f'EventStreamRuntime `{sid}` __init__ run_as_devin: {self.config.run_as_devin}'
         )
 
