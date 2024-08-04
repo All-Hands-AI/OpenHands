@@ -12,6 +12,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    APIError,
     ContentPolicyViolationError,
     InternalServerError,
     OpenAIError,
@@ -133,6 +134,7 @@ class LLM:
             ),
             retry=retry_if_exception_type(
                 (
+                    APIError,
                     RateLimitError,
                     APIConnectionError,
                     ServiceUnavailableError,
