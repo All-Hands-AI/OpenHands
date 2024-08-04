@@ -52,6 +52,7 @@ class ServerRuntime(Runtime):
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
+        logger.debug(f'ServerRuntime `{sid}` config:\n{self.config}')
 
     def create_sandbox(self, sid: str = 'default', box_type: str = 'ssh') -> Sandbox:
         if box_type == 'local':
