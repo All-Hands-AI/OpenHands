@@ -15,6 +15,7 @@ on:
       - '**.md'
       - 'docs/**'
       - 'frontend/**'
+      - 'evaluation/**'
   workflow_dispatch:
     inputs:
       reason:
