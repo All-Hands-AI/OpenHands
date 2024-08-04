@@ -222,9 +222,6 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     # Prepare the task instruction
     instruction = (
         f'Please complete the Machine Learning task in the following repository: {repo_name}\n\n'
-        # f'The task is: {instance["task"]}\n\n'
-        # NOTE: 'task' does not exist as a field, change to 'type' for now. Need to double check w/ authors
-        f'The task is: {instance["type"]}\n\n'
         f'{instance["instruction"]}\n\n'
         'You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n'
         f'You can find the task repo at: {task_path}\n\n'
