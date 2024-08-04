@@ -68,9 +68,11 @@ class SelfDiscoverActionParserExecutePlan(ActionParser):
             self.plan_command is not None
         ), 'self.delegate_command should not be None when parse is called'
         thought = action_str.replace(self.plan_command.group(0), '').strip()
-        plan = self.plan_command.group(1).strip()
-        task = f'{thought}. Execute the following plan:\n{plan}'
-        return AgentDelegateAction(agent='CodeActAgent', inputs={'task': task})
+        task = self.plan_command.group(1).strip()
+        formatted_thought = thought + f'\n\n{task}'
+        return AgentDelegateAction(
+            agent='CodeActAgent', inputs={'task': task}, thought=formatted_thought
+        )
 
 
 class SelfDiscoverActionParserBrowserAgent(ActionParser):

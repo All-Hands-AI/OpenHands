@@ -1,5 +1,3 @@
-from .agent import SelfDiscoverStep
-
 PAIRED_IMPLEMENT_DEMONSTRATION = """
  {
   "Type and color of each item":
@@ -12,7 +10,7 @@ PAIRED_IMPLEMENT_DEMONSTRATION = """
 """
 
 ROLE_DESCRIPTION = """You are a seasoned manager at a Fortune 500 company with a team of capable software engineers.
-Your duty is to plan the user given task for your team."""
+Your duty is to plan the user given task for your team. You must only plan and must not code yourself."""
 
 INTERACTION_SKILL = """You are working with a curious user that needs your help. You can directly interact with the user by replying with
 <execute_ask> and </execute_ask>. For example, <execute_ask> Are my assumptions correct? </execute_ask>.
@@ -25,15 +23,17 @@ Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 
 SYSTEM_SUFFIX = """Let the following principles guide your response.
 - Before responding read all information carefully.
-- Use only information that's explicitly stated by the user. You MUST NOT assume anything that is not confirmed by the user. To ask the user for clarirification, you must respond by <execute_ask> your ask </execute_ask>.
 - Responses should be concise.
 """
 
+# - Use only information that's explicitly stated by the user. You MUST NOT assume anything that is not confirmed by the user. To ask the user for clarirification, you must respond by <execute_ask> your ask </execute_ask>.
 
-SYSTEM_MESSAGE = ROLE_DESCRIPTION + INTERACTION_SKILL + BROWSING_SKILL + SYSTEM_SUFFIX
+
+# SYSTEM_MESSAGE = ROLE_DESCRIPTION + INTERACTION_SKILL + BROWSING_SKILL + SYSTEM_SUFFIX
+SYSTEM_MESSAGE = ROLE_DESCRIPTION + SYSTEM_SUFFIX
 
 
-SELECT_PREFIX = """Select several reasoning moduls that are crucial to solve the question above.
+SELECT_PREFIX = """Select several reasoning moduls that are crucial to solve the user's task.
 """
 
 RESEASONING_MODULES = """The following reasoning modules are at your disposal.
@@ -81,7 +81,7 @@ Note that the order of these reasoning models is arbitrary.
 
 SELECT_PROMPT = SELECT_PREFIX + RESEASONING_MODULES
 
-ADAPT_PROMPT = """Rephrase and specify each previously selected reasoning module so that it better helps solving the question.
+ADAPT_PROMPT = """Rephrase and specify each previously selected reasoning module so that it better helps solving the user's task.
 """
 
 IMPLEMENT_PROMPT = """Implement a reasoning structure for your team members to follow step-by-step and arrive at correct answers by replying with
@@ -92,23 +92,3 @@ Your implementation
 
 IMPLEMENT_EXAMPLES = """Example 1 TODO CONTINUE HERE
 """
-
-
-def get_prompt(
-    previous_step: SelfDiscoverStep, current_step: SelfDiscoverStep
-) -> dict[str, str] | None:
-    if previous_step == current_step:
-        return None
-
-    if current_step == SelfDiscoverStep.SELECT:
-        content = SELECT_PROMPT
-    elif current_step == SelfDiscoverStep.ADAPT:
-        content = ADAPT_PROMPT
-    elif current_step == SelfDiscoverStep.IMPLEMENT:
-        content = IMPLEMENT_PROMPT
-    else:
-        content = ''
-    return {
-        'role': 'user',
-        'content': content,
-    }

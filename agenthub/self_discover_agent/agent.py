@@ -1,5 +1,4 @@
-from enum import Enum
-
+from agenthub.codeact_agent import CodeActAgent
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
@@ -12,18 +11,13 @@ from opendevin.events.observation import AgentDelegateObservation
 from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
+from opendevin.runtime.plugins import PluginRequirement
 
 from .action_parser import SelfDiscoverResponseParser
-from .prompt import SYSTEM_MESSAGE, get_prompt
-
-
-class SelfDiscoverStep(Enum):
-    PRE_STEP = 0
-    SELECT = 1
-    ADAPT = 2
-    IMPLEMENT = 3
-    SOLVE = 4
-    FINISHED = 5
+from .prompt import (
+    SYSTEM_MESSAGE,
+)
+from .state_machine import SelfDiscoverStateMachine
 
 
 class SelfDiscoverAgent(Agent):
@@ -37,6 +31,7 @@ class SelfDiscoverAgent(Agent):
     """
 
     action_parser = SelfDiscoverResponseParser()
+    sandbox_plugins: list[PluginRequirement] = CodeActAgent.sandbox_plugins
 
     def __init__(
         self,
@@ -48,11 +43,19 @@ class SelfDiscoverAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        self.current_step: SelfDiscoverStep = SelfDiscoverStep.SELECT
-        self.prev_step: SelfDiscoverStep = SelfDiscoverStep.PRE_STEP
-
+        self.self_discovery_state_machine: SelfDiscoverStateMachine = (
+            SelfDiscoverStateMachine()
+        )
         super().__init__(llm)
         self.reset()
+
+    def reset(self) -> None:
+        """
+        Resets the Agent.
+        """
+        # self.has_advanced = True
+        self.self_discovery_state_machine.reset()
+        super().reset()
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, AgentDelegateAction):
@@ -89,24 +92,25 @@ class SelfDiscoverAgent(Agent):
             return {'role': 'user', 'content': content}
         return None
 
-    def advance_self_discovery_step(self, action: Action):
-        # only move to next step if not browsing or user ask
-        if not (
-            (
-                isinstance(action, AgentDelegateAction)
-                and action.agent == 'BrowsingAgent'
-            )
-            or (isinstance(action, MessageAction) and action.wait_for_response)
-        ):
-            self.current_step = SelfDiscoverStep(self.current_step.value + 1)
+    def get_messages(self, state: State) -> list[dict[str, str]]:
+        messages = [
+            {'role': 'system', 'content': SYSTEM_MESSAGE},
+        ]
 
-    def reset(self) -> None:
-        """
-        Resets the Agent.
-        """
-        self.current_step = SelfDiscoverStep.SELECT
-        self.prev_step = SelfDiscoverStep.PRE_STEP
-        super().reset()
+        for event in state.history.get_events():
+            # create a regular message from an event
+            if isinstance(event, Action):
+                message = self.get_action_message(event)
+            elif isinstance(event, Observation):
+                message = self.get_observation_message(event)
+            else:
+                raise ValueError(f'Unknown event type: {type(event)}')
+
+            # add regular message
+            if message:
+                messages.append(message)
+
+        return messages
 
     def step(self, state: State) -> Action:
         """
@@ -127,11 +131,21 @@ class SelfDiscoverAgent(Agent):
 
         # Finish when plan as been executed by CodeActAgent
         if isinstance(state.history.get_last_action(), AgentFinishAction):
+            self.self_discovery_state_machine.reset()
             return AgentFinishAction()
 
-        # add self discobvery prompt to messages
-        if self_discovery_message := get_prompt(self.prev_step, self.current_step):
-            messages.append(self_discovery_message)
+        # add self discover prompt to messages
+        # if self.has_advanced:
+        if prompt := self.self_discovery_state_machine.get_prompt():
+            messages.append(prompt)
+
+        # print(f"self.has_advanced: {self.has_advanced}\n")
+
+        print(f'messages:\n{messages}\n')
+
+        print(
+            f'current step:\n{self.self_discovery_state_machine.current_state}. \n\n previous step:\n{self.self_discovery_state_machine.prev_state}'
+        )
 
         response = self.llm.completion(
             messages=messages,
@@ -143,27 +157,5 @@ class SelfDiscoverAgent(Agent):
             temperature=0.0,
         )
         action = self.action_parser.parse(response)
-
-        self.prev_step = self.current_step
-        self.current_step = self.advance_self_discovery_step(action)
+        self.self_discovery_state_machine.transition(action)
         return action
-
-    def get_messages(self, state: State) -> list[dict[str, str]]:
-        messages = [
-            {'role': 'system', 'content': SYSTEM_MESSAGE},
-        ]
-
-        for event in state.history.get_events():
-            # create a regular message from an event
-            if isinstance(event, Action):
-                message = self.get_action_message(event)
-            elif isinstance(event, Observation):
-                message = self.get_observation_message(event)
-            else:
-                raise ValueError(f'Unknown event type: {type(event)}')
-
-            # add regular message
-            if message:
-                messages.append(message)
-
-        return messages

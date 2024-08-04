@@ -171,6 +171,7 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
+        print(f'CodeActAgent messages: {messages}\n')
 
         response = self.llm.completion(
             messages=[message.model_dump() for message in messages],
@@ -194,6 +195,11 @@ class CodeActAgent(Agent):
                 content=[TextContent(text=self.prompt_manager.initial_user_message)],
             ),
         ]
+
+        if 'task' in state.inputs:
+            messages.append(
+                Message(role='user', content=[TextContent(text=state.inputs['task'])]),
+            )
 
         for event in state.history.get_events():
             # create a regular message from an event
