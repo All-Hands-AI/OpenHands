@@ -1,5 +1,4 @@
 import os
-import tarfile
 from importlib.metadata import version
 from unittest.mock import MagicMock, patch
 
@@ -13,6 +12,7 @@ from opendevin.runtime.utils.runtime_build import (
     _put_source_code_to_dir,
     build_runtime_image,
     get_new_image_name,
+    prep_docker_build_folder,
 )
 
 OD_VERSION = f'od_v{_get_package_version()}'
@@ -24,23 +24,45 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime_build'))
 
 
-def test_put_source_code_to_dir(temp_dir):
-    folder_name = _put_source_code_to_dir(temp_dir)
-
-    # assert there is a file called 'project.tar.gz' in the temp_dir
-    assert os.path.exists(os.path.join(temp_dir, 'project.tar.gz'))
-
-    # untar the file
-    with tarfile.open(os.path.join(temp_dir, 'project.tar.gz'), 'r:gz') as tar:
-        tar.extractall(path=temp_dir)
+def _check_source_code_in_dir(temp_dir):
+    # assert there is a folder called 'code' in the temp_dir
+    code_dir = os.path.join(temp_dir, 'code')
+    assert os.path.exists(code_dir)
+    assert os.path.isdir(code_dir)
 
     # check the source file is the same as the current code base
-    assert os.path.exists(os.path.join(temp_dir, folder_name, 'pyproject.toml'))
+    assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
+
     # make sure the version from the pyproject.toml is the same as the current version
-    with open(os.path.join(temp_dir, folder_name, 'pyproject.toml'), 'r') as f:
+    with open(os.path.join(code_dir, 'pyproject.toml'), 'r') as f:
         pyproject = toml.load(f)
+
     _pyproject_version = pyproject['tool']['poetry']['version']
     assert _pyproject_version == version('opendevin')
+
+
+def test_put_source_code_to_dir(temp_dir):
+    _put_source_code_to_dir(temp_dir)
+    _check_source_code_in_dir(temp_dir)
+
+
+def test_docker_build_folder(temp_dir):
+    prep_docker_build_folder(
+        temp_dir,
+        base_image='ubuntu:22.04',
+        skip_init=False,
+    )
+
+    # check the source code is in the folder
+    _check_source_code_in_dir(temp_dir)
+
+    # Now check dockerfile is in the folder
+    dockerfile_path = os.path.join(temp_dir, 'Dockerfile')
+    assert os.path.exists(dockerfile_path)
+    assert os.path.isfile(dockerfile_path)
+
+    # check the folder only contains the source code and the Dockerfile
+    assert set(os.listdir(temp_dir)) == {'code', 'Dockerfile'}
 
 
 def test_generate_dockerfile_scratch():

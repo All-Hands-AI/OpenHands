@@ -47,7 +47,8 @@ def _create_project_source_dist():
     return tarball_path
 
 
-def _put_source_code_to_dir(temp_dir: str) -> str:
+def _put_source_code_to_dir(temp_dir: str):
+    """Put the source code of OpenDevin to the temp_dir/code."""
     tarball_path = _create_project_source_dist()
     filename = os.path.basename(tarball_path)
     filename = filename.removesuffix('.tar.gz')
@@ -59,12 +60,18 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
     logger.info(
         f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
     )
-    return filename
+
+    # unzip the tarball
+    shutil.unpack_archive(os.path.join(temp_dir, 'project.tar.gz'), temp_dir)
+    # remove the tarball
+    os.remove(os.path.join(temp_dir, 'project.tar.gz'))
+    # rename the directory to the 'code'
+    os.rename(os.path.join(temp_dir, filename), os.path.join(temp_dir, 'code'))
+    logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
 
 
 def _generate_dockerfile(
     base_image: str,
-    source_code_dirname: str,
     skip_init: bool = False,
     extra_deps: str | None = None,
 ) -> str:
@@ -77,7 +84,6 @@ def _generate_dockerfile(
     template = env.get_template('Dockerfile.j2')
     dockerfile_content = template.render(
         base_image=base_image,
-        source_code_dirname=source_code_dirname,
         skip_init=skip_init,
         extra_deps=extra_deps if extra_deps is not None else '',
     )
@@ -91,10 +97,9 @@ def prep_docker_build_folder(
     extra_deps: str | None = None,
 ):
     """Prepares the docker build folder by copying the source code and generating the Dockerfile."""
-    source_code_dirname = _put_source_code_to_dir(dir_path)
+    _put_source_code_to_dir(dir_path)
     dockerfile_content = _generate_dockerfile(
         base_image,
-        source_code_dirname,
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
