@@ -262,6 +262,7 @@ async def complete_runtime_fn(
     assert obs.exit_code == 0
 
     n_retries = 0
+    git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
             command=f'git diff --no-color --cached {instance["base_commit"]}',
@@ -274,6 +275,7 @@ async def complete_runtime_fn(
         n_retries += 1
         if isinstance(obs, CmdOutputObservation):
             if obs.exit_code == 0:
+                git_patch = obs.content.strip()
                 break
             else:
                 logger.info('Failed to get git diff, retrying...')
@@ -283,8 +285,6 @@ async def complete_runtime_fn(
             await asyncio.sleep(10)
         else:
             raise ValueError(f'Unexpected observation type: {type(obs)}')
-
-    git_patch = obs.content.strip()
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
