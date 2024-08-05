@@ -2,6 +2,22 @@
 
 Given the impressive capabilities of OpenDevin and similar coding agents, ensuring robust security measures is essential to prevent unintended actions or security breaches. The SecurityAnalyzer framework provides a structured approach to monitor and analyze agent actions for potential security risks.
 
+To enable this feature: 
+* From the web interface
+    * Open Configuration (by clicking the gear icon in the bottom right)
+    * Select a Security Analyzer from the dropdown
+    * Save settings
+    * (to disable) repeat the same steps, but click the X in the Security Analyzer dropdown
+* From config.toml
+```toml
+[security]
+# Enable confirmation mode
+confirmation_mode = true
+# The security analyzer to use
+security_analyzer = "your-security-analyzer"
+```
+(to disable) remove the lines from config.toml
+
 ## SecurityAnalyzer Base Class
 
 The `SecurityAnalyzer` class (analyzer.py) is an abstract base class designed to listen to an event stream and analyze actions for security risks and eventually act before the action is executed. Below is a detailed explanation of its components and methods:
