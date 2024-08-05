@@ -70,6 +70,7 @@ class Runtime:
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close_sync)
+        logger.debug(f'Runtime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
         """

@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import os
 import tempfile
 import uuid
@@ -50,7 +49,6 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         container_image: str | None = None,
     ):
-        self.config = copy.deepcopy(config)
         super().__init__(
             config, event_stream, sid, plugins
         )  # will initialize the event stream
@@ -72,6 +70,7 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+        logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         if self.config.sandbox.od_runtime_extra_deps:
@@ -150,8 +149,6 @@ class EventStreamRuntime(Runtime):
                     'Mount dir is not set, will not mount the workspace directory to the container.'
                 )
                 volumes = None
-
-            logger.info(f'run_as_devin: `{self.config.run_as_devin}`')
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
