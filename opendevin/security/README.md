@@ -2,7 +2,7 @@
 
 Given the impressive capabilities of OpenDevin and similar coding agents, ensuring robust security measures is essential to prevent unintended actions or security breaches. The SecurityAnalyzer framework provides a structured approach to monitor and analyze agent actions for potential security risks.
 
-To enable this feature: 
+To enable this feature:
 * From the web interface
     * Open Configuration (by clicking the gear icon in the bottom right)
     * Select a Security Analyzer from the dropdown
