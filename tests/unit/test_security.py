@@ -219,6 +219,7 @@ def test_unsafe_bash_command(temp_dir: str):
                         name=ActionType.RUN,
                         arguments={
                             'command': 'ls',
+                            'keep_prompt': True,
                             'is_confirmed': ActionConfirmationStatus.CONFIRMED,
                         },
                     ),
