@@ -34,6 +34,13 @@ def _check_source_code_in_dir(temp_dir):
     # check the source file is the same as the current code base
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
+    assert not os.path.exists(os.path.join(code_dir, 'containers'))
+    assert not os.path.exists(os.path.join(code_dir, 'agenthub'))
+    assert not os.path.exists(os.path.join(code_dir, 'evaluation'))
+    assert not os.path.exists(os.path.join(code_dir, 'docs'))
+    assert not os.path.exists(os.path.join(code_dir, 'frontend'))
+    assert not os.path.exists(os.path.join(code_dir, 'tests'))
+
     # make sure the version from the pyproject.toml is the same as the current version
     with open(os.path.join(code_dir, 'pyproject.toml'), 'r') as f:
         pyproject = toml.load(f)
