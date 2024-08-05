@@ -111,7 +111,7 @@ def get_config(
             # always make sure we are using the latest source code
             update_source_code=True,
             # large enough timeout, since some testcases take very long to run
-            timeout=1200,
+            timeout=300,
         ),
         # do not mount workspace
         workspace_base=None,
