@@ -70,7 +70,7 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
-        logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
+        logger.info(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         if self.config.sandbox.od_runtime_extra_deps:

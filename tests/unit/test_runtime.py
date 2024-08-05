@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import sys
 import tempfile
 import time
 from unittest.mock import patch
@@ -41,7 +42,10 @@ def print_method_name(request):
     print('\n########################################################################')
     print(f'Running test: {request.node.name}')
     print('########################################################################')
+    sys.stdout.flush()
     yield
+    print(f'Finished test: {request.node.name}')
+    sys.stdout.flush()
 
 
 @pytest.fixture
@@ -966,12 +970,12 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
 @pytest.mark.selected
 @pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
+async def test_ipython_agentskills_fileop_pwd(
+    temp_dir, box_class, run_as_devin, enable_auto_lint
+):
     """Make sure that cd in bash also update the current working directory in ipython."""
 
-    runtime = await _load_runtime(
-        temp_dir, box_class, enable_auto_lint=enable_auto_lint
-    )
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin, enable_auto_lint)
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
     await runtime.close()
