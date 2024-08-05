@@ -1,13 +1,11 @@
-import asyncio
 import json as std_json
-import unittest.mock
 from typing import Union
 
 from jinja2 import BaseLoader, Environment
-from litellm.types.utils import ModelResponse
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.core.utils import json
 from opendevin.events.action import Action, AgentFinishAction
 from opendevin.events.serialization.action import action_from_dict
@@ -89,35 +87,24 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     @async_to_sync
-    def step(self, state: State):
-        return self.async_step(state)
+    def step(self, state: State) -> Action:
+        return self.async_step(state)  # type: ignore[return-value]
 
-    async def async_step(self, state: State) -> Action:
+    async def async_step(self, state: State):
+        last_user_message, last_image_urls = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
             history_to_json=self.history_to_json,
             delegates=self.delegates,
-            latest_user_message=state.get_current_user_intent(),
+            latest_user_message=last_user_message,
         )
-        messages = [{'content': prompt, 'role': 'user'}]
-
-        resp = self.llm.completion(messages=messages)
-
-        # Handle both real responses and mock responses in tests
-        if isinstance(resp, dict) and 'choices' in resp:
-            action_resp = resp['choices'][0]['message']['content']
-        elif isinstance(resp, unittest.mock.AsyncMock):
-            action_resp = resp.return_value['choices'][0]['message']['content']
-        elif isinstance(resp, str):
-            action_resp = resp
-        elif isinstance(resp, ModelResponse):
-            action_resp = resp.choices[0].message.content
-        elif asyncio.iscoroutine(resp):
-            action_resp = await resp
-        else:
-            raise TypeError(f'Unexpected response type: {type(resp)}')
-
+        content = [TextContent(text=prompt)]
+        if last_image_urls:
+            content.append(ImageContent(image_urls=last_image_urls))
+        message = Message(role='user', content=content)
+        resp = self.llm.completion(messages=[message.model_dump()])
+        action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action

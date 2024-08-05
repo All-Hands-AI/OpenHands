@@ -77,10 +77,12 @@ class Runtime:
             self.event_stream = event_stream
             self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
             self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
+
             self.config = copy.deepcopy(config)
             self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
             self.initialized = False
             atexit.register(self.close_sync)
+            logger.debug(f'Runtime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
         """

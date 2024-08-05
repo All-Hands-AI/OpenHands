@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import os
 import tempfile
 import uuid
@@ -50,7 +49,6 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         container_image: str | None = None,
     ):
-        self.config = copy.deepcopy(config)
         super().__init__(
             config, event_stream, sid, plugins
         )  # will initialize the event stream
@@ -72,8 +70,14 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+        logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
+        if self.config.sandbox.od_runtime_extra_deps:
+            logger.info(
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
+            )
+
         self.container_image = build_runtime_image(
             self.container_image,
             self.docker_client,
@@ -81,6 +85,7 @@ class EventStreamRuntime(Runtime):
             # inside the container. This is useful when you want to test/debug the
             # latest code in the runtime docker container.
             update_source_code=self.config.sandbox.update_source_code,
+            extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
@@ -148,17 +153,22 @@ class EventStreamRuntime(Runtime):
                 )
                 volumes = None
 
-            logger.info(f'run_as_devin: `{self.config.run_as_devin}`')
-
+            if self.config.sandbox.browsergym_eval_env is not None:
+                browsergym_arg = (
+                    f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
+                )
+            else:
+                browsergym_arg = ''
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
-                    f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base poetry run'
-                    f' python -u -m opendevin.runtime.client.client {self._port}'
-                    f' --working-dir {sandbox_workspace_dir}'
-                    f' {plugin_arg}'
-                    f' --username {"opendevin" if self.config.run_as_devin else "root"}'
-                    f' --user-id {self.config.sandbox.user_id}'
+                    f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base poetry run '
+                    f'python -u -m opendevin.runtime.client.client {self._port} '
+                    f'--working-dir {sandbox_workspace_dir} '
+                    f'{plugin_arg}'
+                    f'--username {"opendevin" if self.config.run_as_devin else "root"} '
+                    f'--user-id {self.config.sandbox.user_id} '
+                    f'{browsergym_arg}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,

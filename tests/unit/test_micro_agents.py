@@ -79,7 +79,7 @@ async def test_coder_agent_with_summary(event_stream: EventStream):
 
     mock_llm.completion.assert_called_once()
     _, kwargs = mock_llm.completion.call_args
-    prompt = kwargs['messages'][0]['content']
+    prompt = kwargs['messages'][0]['content'][0]['text']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" in prompt
 
@@ -112,7 +112,7 @@ async def test_coder_agent_without_summary(event_stream: EventStream):
 
     mock_llm.completion.assert_called_once()
     _, kwargs = mock_llm.completion.call_args
-    prompt = kwargs['messages'][0]['content']
+    prompt = kwargs['messages'][0]['content'][0]['text']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt
 

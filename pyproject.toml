@@ -42,6 +42,7 @@ tree-sitter = "0.21.3"
 bashlex = "^0.18"
 aiodocker = "*"
 pyjwt = "^2.9.0"
+dirhash = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

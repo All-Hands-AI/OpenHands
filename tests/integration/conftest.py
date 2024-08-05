@@ -175,7 +175,9 @@ def mock_completion(*args, test_name, **kwargs):
     messages = kwargs['messages']
     message_str = ''
     for message in messages:
-        message_str += message_separator + message['content']
+        for m in message['content']:
+            if m['type'] == 'text':
+                message_str += message_separator + m['text']
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':

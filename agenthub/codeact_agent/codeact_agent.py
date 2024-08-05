@@ -1,5 +1,3 @@
-import logging
-
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -10,6 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import AsyncAgent
 from opendevin.controller.state.state import State
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -34,8 +33,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
-# Initialize logger
-logger = logging.getLogger(__name__)
 
 
 # FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
@@ -129,7 +126,7 @@ class CodeActAgent(AsyncAgent):
             return action.thought
         return ''
 
-    def get_action_message(self, action: Action) -> dict[str, str] | None:
+    def get_action_message(self, action: Action) -> Message | None:
         if (
             isinstance(action, AgentDelegateAction)
             or isinstance(action, CmdRunAction)
@@ -137,39 +134,41 @@ class CodeActAgent(AsyncAgent):
             or isinstance(action, MessageAction)
             or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
-            return {
-                'role': 'user' if action.source == 'user' else 'assistant',
-                'content': self.action_to_str(action),
-            }
+            content = [TextContent(text=self.action_to_str(action))]
+
+            if isinstance(action, MessageAction) and action.images_urls:
+                content.append(ImageContent(image_urls=action.images_urls))
+
+            return Message(
+                role='user' if action.source == 'user' else 'assistant', content=content
+            )
         return None
 
-    def get_observation_message(self, obs: Observation) -> dict[str, str] | None:
+    def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            content = 'OBSERVATION:\n' + truncate_content(
-                obs.content, max_message_chars
-            )
-            content += (
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            return {'role': 'user', 'content': content}
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            content = 'OBSERVATION:\n' + obs.content
+            text = 'OBSERVATION:\n' + obs.content
             # replace base64 images with a placeholder
-            splitted = content.split('\n')
+            splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            content = '\n'.join(splitted)
-            content = truncate_content(content, max_message_chars)
-            return {'role': 'user', 'content': content}
+            text = '\n'.join(splitted)
+            text = truncate_content(text, max_message_chars)
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            content = 'OBSERVATION:\n' + truncate_content(
+            text = 'OBSERVATION:\n' + truncate_content(
                 str(obs.outputs), max_message_chars
             )
-            return {'role': 'user', 'content': content}
+            return Message(role='user', content=[TextContent(text=text)])
         return None
 
     def reset(self) -> None:
@@ -203,7 +202,7 @@ class CodeActAgent(AsyncAgent):
         return await self._common_step_logic_async(state, self.llm.completion, messages)
 
     def _common_step_logic_sync(
-        self, state: State, completion_func, messages: list[dict[str, str]]
+        self, state: State, completion_func, messages: list[Message]
     ) -> Action:
         """Common logic for the synchronous step method.
 
@@ -212,8 +211,9 @@ class CodeActAgent(AsyncAgent):
         :param messages: The prepared messages.
         :return: The resulting Action.
         """
+        # prepare what we want to send to the LLM
         response = completion_func(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -224,7 +224,7 @@ class CodeActAgent(AsyncAgent):
         return self.action_parser.parse(response)
 
     async def _common_step_logic_async(
-        self, state: State, completion_func, messages: list[dict[str, str]]
+        self, state: State, completion_func, messages: list[Message]
     ) -> Action:
         """Common logic for the asynchronous step method.
 
@@ -234,7 +234,7 @@ class CodeActAgent(AsyncAgent):
         :return: The resulting Action.
         """
         response = await completion_func(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -244,14 +244,14 @@ class CodeActAgent(AsyncAgent):
         )
         return self.action_parser.parse(response)
 
-    def _prepare_messages(self, state: State) -> tuple[list[dict[str, str]], bool]:
+    def _prepare_messages(self, state: State) -> tuple[list[Message], bool]:
         """Prepare the messages for the LLM completion and check for exit command.
 
         Returns:
         - A tuple containing the prepared messages and a boolean indicating if it's an exit command
         """
         # Prepare messages as before
-        messages: list[dict[str, str]] = self._get_messages(state)
+        messages: list[Message] = self._get_messages(state)
         is_exit = False
 
         # Check for exit command
@@ -261,10 +261,10 @@ class CodeActAgent(AsyncAgent):
 
         return messages, is_exit
 
-    def _get_messages(self, state: State) -> list[dict[str, str]]:
-        messages = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
+    def _get_messages(self, state: State) -> list[Message]:
+        messages: list[Message] = [
+            Message(role='system', content=[TextContent(text=self.system_message)]),
+            Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
         for event in state.history.get_events():
@@ -281,21 +281,41 @@ class CodeActAgent(AsyncAgent):
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
                 # there should not have two consecutive messages from the same role
-                if messages and messages[-1]['role'] == message['role']:
-                    messages[-1]['content'] += '\n\n' + message['content']
+                if messages and messages[-1].role == message.role:
+                    messages[-1].content.extend(message.content)
                 else:
                     messages.append(message)
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
+            (
+                m
+                for m in reversed(messages)
+                if m.role == 'user'
+                and any(isinstance(c, TextContent) for c in m.content)
+            ),
+            None,
         )
 
-        # add a reminder to the prompt
+        # Get the last user text inside content
         if latest_user_message:
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>'
+            latest_user_message_text = next(
+                (
+                    t
+                    for t in reversed(latest_user_message.content)
+                    if isinstance(t, TextContent)
+                )
             )
+            # add a reminder to the prompt
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+
+            if latest_user_message_text:
+                latest_user_message_text.text = (
+                    latest_user_message_text.text + reminder_text
+                )
+            else:
+                latest_user_message_text = TextContent(text=reminder_text)
+                latest_user_message.content.append(latest_user_message_text)
 
         return messages
