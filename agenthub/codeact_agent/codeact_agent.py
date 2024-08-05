@@ -8,6 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.exceptions import ContextWindowLimitExceededError
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -218,16 +219,19 @@ class CodeActAgent(Agent):
             # prepare what we want to send to the LLM
             messages: list[Message] = self._get_messages(state)
             print('No of tokens, ' + str(self.llm.get_token_count(messages)) + '\n')
-            response = self.llm.completion(
-                messages=messages,
-                stop=[
-                    '</execute_ipython>',
-                    '</execute_bash>',
-                    '</execute_browse>',
-                ],
-                temperature=0.0,
-                condense=True,
-            )
+            try:
+                response = self.llm.completion(
+                    messages=messages,
+                    stop=[
+                        '</execute_ipython>',
+                        '</execute_bash>',
+                        '</execute_browse>',
+                    ],
+                    temperature=0.0,
+                    condense=True,
+                )
+            except ContextWindowLimitExceededError:
+                response = None
             attempt += 1
 
         return self.action_parser.parse(response)
