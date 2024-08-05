@@ -64,7 +64,12 @@ class RuntimeClient:
     """
 
     def __init__(
-        self, plugins_to_load: list[Plugin], work_dir: str, username: str, user_id: int
+        self,
+        plugins_to_load: list[Plugin],
+        work_dir: str,
+        username: str,
+        user_id: int,
+        browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self.username = username
@@ -74,7 +79,7 @@ class RuntimeClient:
         self._init_bash_shell(self.pwd, self.username)
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.browser = BrowserEnv()
+        self.browser = BrowserEnv(browsergym_eval_env)
 
     async def ainit(self):
         for plugin in self.plugins_to_load:
@@ -165,8 +170,7 @@ class RuntimeClient:
             matched is not None
         ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
         username, hostname, working_dir = matched.groups()
-        self._prev_pwd = self.pwd
-        self.pwd = working_dir
+        self.pwd = os.path.expanduser(working_dir)
 
         # re-assemble the prompt
         prompt = f'{username}@{hostname}:{working_dir} '
@@ -187,8 +191,10 @@ class RuntimeClient:
         self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
         output = self.shell.before
+
+        bash_prompt = self._get_bash_prompt_and_update_pwd()
         if keep_prompt:
-            output += '\r\n' + self._get_bash_prompt_and_update_pwd()
+            output += '\r\n' + bash_prompt
         logger.debug(f'Command output: {output}')
 
         # Get exit code
@@ -213,7 +219,11 @@ class RuntimeClient:
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                output, exit_code = self._execute_bash(command, timeout=action.timeout)
+                output, exit_code = self._execute_bash(
+                    command,
+                    timeout=action.timeout,
+                    keep_prompt=action.keep_prompt,
+                )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
                     # we need to add the command to the previous output,
@@ -235,15 +245,19 @@ class RuntimeClient:
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
-
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            if not hasattr(self, '_prev_pwd') or self.pwd != self._prev_pwd:
-                reset_jupyter_pwd_code = (
-                    f'import os; os.environ["JUPYTER_PWD"] = "{self.pwd}"\n\n'
+            if self.pwd != getattr(self, '_jupyter_pwd', None):
+                logger.debug(
+                    f"{self.pwd} != {getattr(self, '_jupyter_pwd', None)} -> reset Jupyter PWD"
                 )
+                reset_jupyter_pwd_code = f'import os; os.environ["JUPYTER_PWD"] = os.path.abspath("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
-                _ = await _jupyter_plugin.run(_aux_action)
+                _reset_obs = await _jupyter_plugin.run(_aux_action)
+                logger.debug(
+                    f'Changed working directory in IPython to: {self.pwd}. Output: {_reset_obs}'
+                )
+                self._jupyter_pwd = self.pwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             return obs
@@ -362,6 +376,12 @@ if __name__ == '__main__':
         '--username', type=str, help='User to run as', default='opendevin'
     )
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
+    parser.add_argument(
+        '--browsergym-eval-env',
+        type=str,
+        help='BrowserGym environment used for browser evaluation',
+        default=None,
+    )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -382,6 +402,7 @@ if __name__ == '__main__':
             work_dir=args.working_dir,
             username=args.username,
             user_id=args.user_id,
+            browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
         yield

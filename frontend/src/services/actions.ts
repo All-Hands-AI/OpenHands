@@ -32,7 +32,9 @@ const messageActions = {
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
     if (message.source === "user") {
-      store.dispatch(addUserMessage(message.args.content));
+      store.dispatch(
+        addUserMessage({ content: message.args.content, imageUrls: [] }),
+      );
     } else {
       store.dispatch(addAssistantMessage(message.args.content));
     }

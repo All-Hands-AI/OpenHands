@@ -6,6 +6,7 @@ import tempfile
 
 import docker
 import toml
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import opendevin
@@ -47,7 +48,8 @@ def _create_project_source_dist():
     return tarball_path
 
 
-def _put_source_code_to_dir(temp_dir: str) -> str:
+def _put_source_code_to_dir(temp_dir: str):
+    """Put the source code of OpenDevin to the temp_dir/code."""
     tarball_path = _create_project_source_dist()
     filename = os.path.basename(tarball_path)
     filename = filename.removesuffix('.tar.gz')
@@ -59,11 +61,20 @@ def _put_source_code_to_dir(temp_dir: str) -> str:
     logger.info(
         f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
     )
-    return filename
+
+    # unzip the tarball
+    shutil.unpack_archive(os.path.join(temp_dir, 'project.tar.gz'), temp_dir)
+    # remove the tarball
+    os.remove(os.path.join(temp_dir, 'project.tar.gz'))
+    # rename the directory to the 'code'
+    os.rename(os.path.join(temp_dir, filename), os.path.join(temp_dir, 'code'))
+    logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
 
 
 def _generate_dockerfile(
-    base_image: str, source_code_dirname: str, skip_init: bool = False
+    base_image: str,
+    skip_init: bool = False,
+    extra_deps: str | None = None,
 ) -> str:
     """Generate the Dockerfile content for the eventstream runtime image based on user-provided base image."""
     env = Environment(
@@ -74,8 +85,8 @@ def _generate_dockerfile(
     template = env.get_template('Dockerfile.j2')
     dockerfile_content = template.render(
         base_image=base_image,
-        source_code_dirname=source_code_dirname,
         skip_init=skip_init,
+        extra_deps=extra_deps if extra_deps is not None else '',
     )
     return dockerfile_content
 
@@ -84,11 +95,17 @@ def prep_docker_build_folder(
     dir_path: str,
     base_image: str,
     skip_init: bool = False,
-):
-    """Prepares the docker build folder by copying the source code and generating the Dockerfile."""
-    source_code_dirname = _put_source_code_to_dir(dir_path)
+    extra_deps: str | None = None,
+) -> str:
+    """Prepares the docker build folder by copying the source code and generating the Dockerfile.
+
+    Return the MD5 hash of the directory.
+    """
+    _put_source_code_to_dir(dir_path)
     dockerfile_content = _generate_dockerfile(
-        base_image, source_code_dirname, skip_init=skip_init
+        base_image,
+        skip_init=skip_init,
+        extra_deps=extra_deps,
     )
     logger.info(
         (
@@ -100,13 +117,28 @@ def prep_docker_build_folder(
     with open(os.path.join(dir_path, 'Dockerfile'), 'w') as file:
         file.write(dockerfile_content)
 
+    hash = dirhash(dir_path, 'md5')
+    logger.info(
+        f'Input base image: {base_image}\n'
+        f'Skip init: {skip_init}\n'
+        f'Extra deps: {extra_deps}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
+    )
+    return hash
+
 
 def _build_sandbox_image(
     base_image: str,
     target_image_name: str,
     docker_client: docker.DockerClient,
     skip_init: bool = False,
-):
+    extra_deps: str | None = None,
+) -> str:
+    """Build the sandbox image and return the *hash* docker image name.
+
+    The hash is calculated based on the contents of the docker build folder (source code and Dockerfile). This is useful to help prevent rebuilding the image when the source code and Dockerfile are unchanged.
+    """
+    target_repo, target_image_tag = target_image_name.split(':')
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             if skip_init:
@@ -115,34 +147,62 @@ def _build_sandbox_image(
                 )
             else:
                 logger.info(f'Building agnostic sandbox image: {target_image_name}')
-            prep_docker_build_folder(temp_dir, base_image, skip_init=skip_init)
-            api_client = docker_client.api
-            build_logs = api_client.build(
-                path=temp_dir,
-                tag=target_image_name,
-                rm=True,
-                decode=True,
-                # do not use cache when skip_init is True (i.e., when we want to update the source code in the existing image)
-                nocache=skip_init,
-            )
 
-            if skip_init:
+            dir_hash = prep_docker_build_folder(
+                temp_dir, base_image, skip_init=skip_init, extra_deps=extra_deps
+            )
+            # Use dir_hash as an alternative tag for the image
+            # This is useful to help prevent rebuilding the image when the source code/Dockerfile is the same
+            target_image_hash_name = f'{target_repo}:{dir_hash}'
+
+            # Check if the hash image exists
+            if _check_image_exists(target_image_hash_name, docker_client):
+                logger.info(f'Image {target_image_hash_name} exists, skipping build.')
+            else:
                 logger.info(
-                    f'Rebuilding existing od_sandbox image [{target_image_name}] to update the source code.'
+                    f'Image {target_image_name} does not exist, neither does its hash {target_image_hash_name}.\n'
+                    'Building the image...'
                 )
-            for log in build_logs:
-                if 'stream' in log:
-                    print(log['stream'].strip())
-                elif 'error' in log:
-                    logger.error(log['error'].strip())
-                else:
-                    logger.info(str(log))
+
+                api_client = docker_client.api
+                build_logs = api_client.build(
+                    path=temp_dir,
+                    tag=target_image_hash_name,
+                    rm=True,
+                    decode=True,
+                    # do not use cache when skip_init is True (i.e., when we want to update the source code in the existing image)
+                    nocache=skip_init,
+                )
+
+                if skip_init:
+                    logger.info(
+                        f'Rebuilding existing od_sandbox image [{target_image_name}] to update the source code.'
+                    )
+                for log in build_logs:
+                    if 'stream' in log:
+                        print(log['stream'].strip())
+                    elif 'error' in log:
+                        logger.error(log['error'].strip())
+                    else:
+                        logger.info(str(log))
+
+                logger.info(f'Image {target_image_hash_name} build finished.')
+                image = docker_client.images.get(target_image_hash_name)
+                image.tag(target_repo, target_image_tag)
+                logger.info(
+                    f'Tagged image {target_image_hash_name} --> {target_image_name}'
+                )
 
         # check if the image is built successfully
-        image = docker_client.images.get(target_image_name)
+        image = docker_client.images.get(target_image_hash_name)
         if image is None:
-            raise RuntimeError(f'Build failed: Image {target_image_name} not found')
-        logger.info(f'Image {target_image_name} built successfully')
+            raise RuntimeError(
+                f'Build failed: Image {target_image_hash_name} / {target_image_name} not found'
+            )
+        logger.info(
+            f'Image {target_image_name} (hash: {target_image_hash_name}) built successfully'
+        )
+        return target_image_hash_name
     except docker.errors.BuildError as e:
         logger.error(f'Sandbox image build failed: {e}')
         raise e
@@ -172,6 +232,16 @@ def get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
 
 
 def _check_image_exists(image_name: str, docker_client: docker.DockerClient) -> bool:
+    """Check if the image exists in the registry (try to pull it first) AND in the local store.
+
+    image_name is f'{repo}:{tag}'
+    """
+    # Try to pull the new image from the registry
+    try:
+        docker_client.images.pull(image_name)
+    except Exception:
+        logger.info(f'Cannot pull image {image_name} directly')
+
     images = docker_client.images.list()
     if images:
         for image in images:
@@ -185,6 +255,8 @@ def build_runtime_image(
     docker_client: docker.DockerClient,
     update_source_code: bool = False,
     save_to_local_store: bool = False,  # New parameter to control saving to local store
+    extra_deps: str
+    | None = None,  # whether to install extra dependencies inside the image
 ) -> str:
     """Build the runtime image for the OpenDevin runtime.
 
@@ -204,12 +276,6 @@ def build_runtime_image(
             f'Invalid image name: {new_image_name}. Expected format "repository:tag".'
         )
 
-    # Try to pull the new image from the registry
-    try:
-        docker_client.images.pull(new_image_name)
-    except Exception:
-        logger.info(f'Cannot pull image {new_image_name} directly')
-
     # Detect if the sandbox image is built
     image_exists = _check_image_exists(new_image_name, docker_client)
     if image_exists:
@@ -222,6 +288,7 @@ def build_runtime_image(
         # If (1) Image exists & we are not updating the source code, we can reuse the existing production image
         logger.info('No image build done (not updating source code)')
         return new_image_name
+
     elif image_exists and update_source_code:
         # If (2) Image exists & we plan to update the source code (in dev mode), we need to rebuild the image
         # and give it a special name
@@ -231,6 +298,7 @@ def build_runtime_image(
         new_image_name = get_new_image_name(base_image, dev_mode=True)
 
         skip_init = True  # since we only need to update the source code
+
     else:
         # If (3) Image does not exist, we need to build it from scratch
         # e.g., ubuntu:latest -> od_runtime:ubuntu_tag_latest
@@ -247,7 +315,13 @@ def build_runtime_image(
     if not skip_init:
         logger.info(f'Building image [{new_image_name}] from scratch')
 
-    _build_sandbox_image(base_image, new_image_name, docker_client, skip_init=skip_init)
+    new_image_name = _build_sandbox_image(
+        base_image,
+        new_image_name,
+        docker_client,
+        skip_init=skip_init,
+        extra_deps=extra_deps,
+    )
 
     # Only for development: allow to save image as archive:
     if not image_exists and save_to_local_store:
@@ -280,15 +354,17 @@ if __name__ == '__main__':
             f'Will prepare a build folder by copying the source code and generating the Dockerfile: {build_folder}'
         )
         new_image_path = get_new_image_name(args.base_image)
-        prep_docker_build_folder(
+        dir_hash = prep_docker_build_folder(
             build_folder, args.base_image, skip_init=args.update_source_code
         )
         new_image_name, new_image_tag = new_image_path.split(':')
         with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
             file.write(
                 (
+                    f'\n'
                     f'DOCKER_IMAGE={new_image_name}\n'
                     f'DOCKER_IMAGE_TAG={new_image_tag}\n'
+                    f'DOCKER_IMAGE_HASH_TAG={dir_hash}\n'
                 )
             )
         logger.info(
