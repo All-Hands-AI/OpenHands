@@ -35,7 +35,6 @@ def _check_source_code_in_dir(temp_dir):
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
     # The source code should only include the `opendevin` folder, but not the other folders
-    assert os.path.exists(os.path.join(code_dir, 'opendevin'))
     assert set(os.listdir(code_dir)) == {
         'opendevin',
         'pyproject.toml',
@@ -44,6 +43,8 @@ def _check_source_code_in_dir(temp_dir):
         'README.md',
         'PKG-INFO',
     }
+    assert os.path.exists(os.path.join(code_dir, 'opendevin'))
+    assert os.path.isdir(os.path.join(code_dir, 'opendevin'))
 
     # make sure the version from the pyproject.toml is the same as the current version
     with open(os.path.join(code_dir, 'pyproject.toml'), 'r') as f:
