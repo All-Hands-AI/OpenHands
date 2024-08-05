@@ -226,9 +226,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        dataset, output_file, args.eval_n_limit, id_column='instance_id'
-    )
+    instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
     run_evaluation(
         instances,

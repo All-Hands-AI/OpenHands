@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     dataset = pd.DataFrame(
         {
-            'id': [
+            'instance_id': [
                 id
                 for id in gym.envs.registry.keys()
                 if id.startswith('browsergym/miniwob')
@@ -210,7 +210,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column='id')
+    instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance

@@ -135,7 +135,6 @@ if __name__ == '__main__':
     dataset = load_dataset('OpenDevin/eval-browsing-instructions')
     dataset = dataset['train'].to_pandas()
     assert dataset.columns.tolist() == ['instance_id', 'instruction']
-    id_column = 'instance_id'
 
     llm_config = None
     if args.llm_config:
@@ -159,7 +158,7 @@ if __name__ == '__main__':
         )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
+    instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
     run_evaluation(
         instances,
         metadata,

@@ -354,9 +354,7 @@ if __name__ == '__main__':
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    prepared_dataset = prepare_dataset(
-        gpqa_dataset, output_file, args.eval_n_limit, 'instance_id'
-    )
+    prepared_dataset = prepare_dataset(gpqa_dataset, output_file, args.eval_n_limit)
 
     run_evaluation(
         dataset=prepared_dataset,

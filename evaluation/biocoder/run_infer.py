@@ -323,11 +323,11 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    id_column = 'test_case_id'
     args = parse_arguments()
 
     dataset = load_dataset('lilbillbiscuit/biocoder_public')
     biocoder_tests = dataset['train'].to_pandas()
+    biocoder_tests.rename(columns={'test_case_id': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -345,9 +345,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        biocoder_tests, output_file, args.eval_n_limit, id_column
-    )
+    instances = prepare_dataset(biocoder_tests, output_file, args.eval_n_limit)
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance

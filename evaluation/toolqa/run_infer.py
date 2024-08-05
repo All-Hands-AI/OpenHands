@@ -201,8 +201,8 @@ if __name__ == '__main__':
         raise ValueError('Please choose from easy and hard for hardness.')
 
     toolqa_test = pd.DataFrame(get_data(dataset, hardness))
+    toolqa_test.rename(columns={'qid': 'instance_id'}, inplace=True)
 
-    id_column = 'qid'
     metadata = make_metadata(
         llm_config,
         f'toolqa-{args.dataset}-{args.hardness}',
@@ -211,12 +211,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit, id_column)
+    instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
     run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

@@ -284,9 +284,7 @@ if __name__ == '__main__':
         details={'max_propose_solution': args.max_propose_solution},
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        dataset_df, output_file, args.eval_n_limit, 'instance_id'
-    )
+    instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
     )

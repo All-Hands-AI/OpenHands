@@ -192,6 +192,7 @@ if __name__ == '__main__':
     eda_dataset = load_dataset(
         'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
     )
+    eda_dataset.rename(columns={'text': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -215,7 +216,7 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(
-        eda_dataset.to_pandas(), output_file, args.eval_n_limit, 'text'
+        eda_dataset.to_pandas(), output_file, args.eval_n_limit
     )
 
     run_evaluation(

@@ -283,6 +283,7 @@ if __name__ == '__main__':
         'bigcode/humanevalpack', 'python'
     )  # TODO: Support other languages
     hefix_tests = dataset['test'].to_pandas()
+    hefix_tests.rename(columns={'task_id': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -299,9 +300,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        hefix_tests, output_file, args.eval_n_limit, id_column='task_id'
-    )
+    instances = prepare_dataset(hefix_tests, output_file, args.eval_n_limit)
 
     run_evaluation(
         instances,

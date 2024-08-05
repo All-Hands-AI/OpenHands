@@ -390,8 +390,6 @@ if __name__ == '__main__':
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
     swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 
-    id_column = 'instance_id'
-
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
@@ -417,9 +415,7 @@ if __name__ == '__main__':
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        swe_bench_tests, output_file, args.eval_n_limit, id_column
-    )
+    instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
     )

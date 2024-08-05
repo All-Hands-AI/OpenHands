@@ -163,7 +163,11 @@ def make_metadata(
     return metadata
 
 
-def prepare_dataset(dataset: pd.DataFrame, output_file, eval_n_limit, id_column):
+def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
+    assert (
+        'instance_id' in dataset.columns
+    ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
     finished_ids = set()
     if os.path.exists(output_file):

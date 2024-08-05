@@ -297,7 +297,6 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    id_column = 'instance_id'
     args = parse_arguments()
     dataset = load_dataset('iFurySt/AgentBench')
     agent_bench_tests = dataset['osbench'].to_pandas()
@@ -318,9 +317,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        agent_bench_tests, output_file, args.eval_n_limit, id_column
-    )
+    instances = prepare_dataset(agent_bench_tests, output_file, args.eval_n_limit)
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance

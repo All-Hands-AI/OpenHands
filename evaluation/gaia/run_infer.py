@@ -257,12 +257,11 @@ if __name__ == '__main__':
         repo_type='dataset',
         local_dir=DATASET_CACHE_DIR,
     )
-    gaia_tests = dataset[metadata.data_split]
+    gaia_tests = dataset[metadata.data_split].to_pandas()
+    gaia_tests.rename(columns={'task_id': 'instance_id'}, inplace=True)
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    prepared_dataset = prepare_dataset(
-        gaia_tests.to_pandas(), output_file, args.eval_n_limit, 'task_id'
-    )
+    prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
 
     run_evaluation(
         dataset=prepared_dataset,

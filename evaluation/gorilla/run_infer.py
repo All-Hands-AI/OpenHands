@@ -154,6 +154,7 @@ if __name__ == '__main__':
         df = get_data_for_hub(hub)
         dfs.append(df)
     dataset_df = pd.concat(dfs)
+    dataset_df.rename(columns={'question_id': 'instance_id'}, inplace=True)
 
     metadata = make_metadata(
         llm_config=llm_config,
@@ -167,10 +168,7 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
 
     dataset = prepare_dataset(
-        dataset_df,
-        output_file=output_file,
-        eval_n_limit=args.eval_n_limit,
-        id_column='question_id',
+        dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit
     )
 
     run_evaluation(
