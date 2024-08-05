@@ -6343,18 +6343,19 @@ dev = ["atomicwrites (==1.4.1)", "attrs (==23.2.0)", "coverage (==7.4.1)", "hatc
 
 [[package]]
 name = "python-pptx"
-version = "0.6.23"
-description = "Generate and manipulate Open XML PowerPoint (.pptx) files"
+version = "1.0.0"
+description = "Create, read, and update PowerPoint 2007+ (.pptx) files."
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "python-pptx-0.6.23.tar.gz", hash = "sha256:587497ff28e779ab18dbb074f6d4052893c85dedc95ed75df319364f331fedee"},
-    {file = "python_pptx-0.6.23-py3-none-any.whl", hash = "sha256:dd0527194627a2b7cc05f3ba23ecaa2d9a0d5ac9b6193a28ed1b7a716f4217d4"},
+    {file = "python_pptx-1.0.0-py3-none-any.whl", hash = "sha256:e099cbcb370e97ae1cca2186ac757774a2c7bf1b5cb7e6ac3cb77061466713c5"},
+    {file = "python_pptx-1.0.0.tar.gz", hash = "sha256:5c0f9fbf564fccf825c03c8bb75af9245fbdfad75e2857d115f47fd94b65eae8"},
 ]
 
 [package.dependencies]
 lxml = ">=3.1.0"
 Pillow = ">=3.3.2"
+typing-extensions = ">=4.9.0"
 XlsxWriter = ">=0.5.7"
 
 [[package]]
