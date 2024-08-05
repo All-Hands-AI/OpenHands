@@ -30,6 +30,7 @@ from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.tools import RuntimeTool
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.runtime_build import build_runtime_image
 
@@ -350,3 +351,11 @@ class EventStreamRuntime(Runtime):
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
+
+    def init_runtime_tools(
+        self,
+        runtime_tools: list[RuntimeTool],
+        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
+    ) -> None:
+        # TODO: deprecate this method when we move to the new EventStreamRuntime
+        logger.warning('init_runtime_tools is not implemented in the runtime client.')
