@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import multiprocessing as mp
@@ -6,7 +7,7 @@ import pathlib
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import pandas as pd
 from pydantic import BaseModel
@@ -195,12 +196,14 @@ def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
     return pd.DataFrame(new_dataset)
 
 
-def run_evaluation(
+async def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata,
     output_file: str,
     num_workers: int,
-    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], EvalOutput],
+    process_instance_func: Callable[
+        [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
+    ],
 ):
     use_multiprocessing = num_workers > 1
     logger.info(
@@ -210,9 +213,9 @@ def run_evaluation(
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')
 
-    def update_progress(future):
+    async def update_progress(future):
         pbar.update(1)
-        output: EvalOutput = future.result() if use_multiprocessing else future
+        output: EvalOutput = await future if use_multiprocessing else future
 
         pbar.set_description(f'Instance {output.instance_id}')
         pbar.set_postfix_str(f'Test Result: {output.test_result}')
@@ -225,25 +228,25 @@ def run_evaluation(
     try:
         if use_multiprocessing:
             with ProcessPoolExecutor(num_workers) as executor:
+                loop = asyncio.get_event_loop()
                 futures = []
-            for _, instance in dataset.iterrows():
-                future = executor.submit(
-                    process_instance_func,
-                    instance,
-                    metadata,
-                    bool(num_workers > 1),
-                )
-                future.add_done_callback(update_progress)
-                futures.append(future)
+                for _, instance in dataset.iterrows():
+                    future = loop.run_in_executor(
+                        executor,
+                        process_instance_func,
+                        instance,
+                        metadata,
+                        bool(num_workers > 1),
+                    )
+                    futures.append(update_progress(future))
 
-                for future in futures:
-                    future.result()
+                await asyncio.gather(*futures)
         # Use plain for loop for single process for easier debugging
         else:
             assert num_workers == 1
             for _, instance in dataset.iterrows():
-                output = process_instance_func(instance, metadata, False)
-                update_progress(output)
+                output = await process_instance_func(instance, metadata, False)
+                await update_progress(output)
 
     except KeyboardInterrupt:
         print('KeyboardInterrupt received. Cleaning up...')
