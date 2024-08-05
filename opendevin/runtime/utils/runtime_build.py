@@ -354,15 +354,17 @@ if __name__ == '__main__':
             f'Will prepare a build folder by copying the source code and generating the Dockerfile: {build_folder}'
         )
         new_image_path = get_new_image_name(args.base_image)
-        prep_docker_build_folder(
+        dir_hash = prep_docker_build_folder(
             build_folder, args.base_image, skip_init=args.update_source_code
         )
         new_image_name, new_image_tag = new_image_path.split(':')
         with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
             file.write(
                 (
+                    f'\n'
                     f'DOCKER_IMAGE={new_image_name}\n'
                     f'DOCKER_IMAGE_TAG={new_image_tag}\n'
+                    f'DOCKER_IMAGE_HASH_TAG={dir_hash}\n'
                 )
             )
         logger.info(
