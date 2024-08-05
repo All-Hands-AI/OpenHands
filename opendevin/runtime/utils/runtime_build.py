@@ -119,7 +119,10 @@ def prep_docker_build_folder(
 
     hash = dirhash(dir_path, 'md5')
     logger.info(
-        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}'
+        f'Input base image: {base_image}\n'
+        f'Skip init: {skip_init}\n'
+        f'Extra deps: {extra_deps}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
     )
     return hash
 
