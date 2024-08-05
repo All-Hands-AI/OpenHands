@@ -81,6 +81,7 @@ jobs:
         with:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          retention-days: 14
 
   ghcr_build_runtime:
     runs-on: ubuntu-latest
@@ -155,6 +156,7 @@ jobs:
         with:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          retention-days: 14
 
   test_runtime:
     name: Test Runtime
