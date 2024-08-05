@@ -34,6 +34,8 @@ def _check_source_code_in_dir(temp_dir):
     # check the source file is the same as the current code base
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
+    # The source code should only include the `opendevin` folder, but not the other folders
+    assert os.path.exists(os.path.join(code_dir, 'opendevin'))
     assert not os.path.exists(os.path.join(code_dir, 'containers'))
     assert not os.path.exists(os.path.join(code_dir, 'agenthub'))
     assert not os.path.exists(os.path.join(code_dir, 'evaluation'))
