@@ -554,7 +554,7 @@ class DockerSSHBox(Sandbox):
 
     @property
     def volumes(self):
-        mount_volumns = {
+        mount_volumes = {
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
             self.cache_dir: {
                 'bind': (
@@ -564,11 +564,11 @@ class DockerSSHBox(Sandbox):
             },
         }
         if self.workspace_mount_path is not None:
-            mount_volumns[self.workspace_mount_path] = {
+            mount_volumes[self.workspace_mount_path] = {
                 'bind': self.sandbox_workspace_dir,
                 'mode': 'rw',
             }
-        return
+        return mount_volumes
 
     def restart_docker_container(self):
         try:
