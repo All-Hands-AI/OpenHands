@@ -30,7 +30,7 @@ from opendevin.core.config import (
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_controller
 from opendevin.events.action import CmdRunAction
-from opendevin.events.observation import CmdOutputObservation
+from opendevin.events.observation import CmdOutputObservation, ErrorObservation
 from opendevin.runtime.runtime import Runtime
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
@@ -261,15 +261,28 @@ async def complete_runtime_fn(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    action = CmdRunAction(
-        command=f'git diff --no-color --cached {instance["base_commit"]}',
-        keep_prompt=False,
-    )
-    action.timeout = 300
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
+    n_retries = 0
+    while n_retries < 5:
+        action = CmdRunAction(
+            command=f'git diff --no-color --cached {instance["base_commit"]}',
+            keep_prompt=False,
+        )
+        action.timeout = 600 + 100 * n_retries
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = await runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        n_retries += 1
+        if isinstance(obs, CmdOutputObservation):
+            if obs.exit_code == 0:
+                break
+            else:
+                logger.info('Failed to get git diff, retrying...')
+                await asyncio.sleep(10)
+        elif isinstance(obs, ErrorObservation):
+            logger.error(f'Error occurred: {obs.content}. Retrying...')
+            await asyncio.sleep(10)
+        else:
+            raise ValueError(f'Unexpected observation type: {type(obs)}')
 
     git_patch = obs.content.strip()
 
