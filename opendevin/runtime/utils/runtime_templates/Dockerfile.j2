@@ -45,7 +45,7 @@ RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y
 # START: Copy Project and Install/Update Dependencies
 # ================================================================
 RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi
-COPY ./code /opendevin
+COPY ./code /opendevin/code
 
 # Install/Update Dependencies
 # 1. Install pyproject.toml via poetry
