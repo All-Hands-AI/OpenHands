@@ -1,7 +1,8 @@
 import asyncio
 import os
 import sys
-from typing import Awaitable, Callable, Type
+import uuid
+from typing import Callable, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
@@ -37,84 +38,39 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def run_controller(
+async def create_runtime(
     config: AppConfig,
-    task_str: str | None = None,
-    task_str_fn: Callable[[dict], str] | None = None,
-    exit_on_message: bool = False,
-    fake_user_response_fn: Callable[[State | None], str] | None = None,
-    initialize_runtime_fn: Callable[[Runtime], Awaitable[None | dict]] | None = None,
-    complete_runtime_fn: Callable[[Runtime], Awaitable[dict]] | None = None,
-    agent: Agent | None = None,
-    runtime_tools_config: dict | None = None,
     sid: str | None = None,
-    headless_mode: bool = True,
-) -> State | None:
-    """Main coroutine to run the agent controller with task input flexibility.
-    It's only used when you launch opendevin backend directly via cmdline.
+    runtime_tools_config: dict | None = None,
+) -> Runtime:
+    """Create a runtime for the agent to run on.
 
-    Args:
-        config: The app config.
-        task_str: The task to run. It can be a string. Either task_str or task_str_fn should be provided.
-        task_str_fn: A function that takes a dict (from the output of the initialize_runtime_fn) and returns a string.
-        max_iterations: The maximum number of iterations to run.
-        max_budget_per_task: The maximum budget per task.
-        exit_on_message: quit if agent asks for a message from user (optional)
-        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
-        initialize_runtime_fn: An optional function that receives the runtime and initializes it by running any setup code.
-        complete_runtime_fn: An optional function that receives the runtime and completes it by running any cleanup code.
-        agent: An optional agent to run.
-        runtime_tools_config: (will be deprecated) The runtime tools config.
-        sid: The session id.
-        headless_mode: Whether the agent is run in headless mode.
+    config: The app config.
+    sid: The session id.
+    runtime_tools_config: (will be deprecated) The runtime tools config.
     """
-    if task_str is None and task_str_fn is None:
-        raise ValueError('One of task_str or task_str_fn should be provided.')
-
-    # Create the agent
-    if agent is None:
-        agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
-        agent = agent_cls(
-            llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
-        )
-
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session, file_store)
+    session_id = 'main' + ('_' + sid if sid else str(uuid.uuid4()))
+    event_stream = EventStream(session_id, file_store)
 
-    # restore cli session if enabled
-    initial_state = None
-    if config.enable_cli_session:
-        try:
-            logger.info('Restoring agent state from cli session')
-            initial_state = State.restore_from_session(cli_session, file_store)
-        except Exception as e:
-            print('Error restoring state', e)
-
-    # init controller with this initial state
-    controller = AgentController(
-        agent=agent,
-        max_iterations=config.max_iterations,
-        max_budget_per_task=config.max_budget_per_task,
-        agent_to_llm_config=config.get_agent_to_llm_config_map(),
-        event_stream=event_stream,
-        initial_state=initial_state,
-        headless_mode=headless_mode,
-    )
+    # agent class
+    agent_cls = agenthub.Agent.get_cls(config.default_agent)
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
     logger.info(f'Initializing runtime: {runtime_cls}')
-    runtime = runtime_cls(
+    runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
-        plugins=controller.agent.sandbox_plugins,
+        sid=session_id,
+        plugins=agent_cls.sandbox_plugins,
     )
     await runtime.ainit()
+
     if isinstance(runtime, ServerRuntime):
         runtime.init_runtime_tools(
-            controller.agent.runtime_tools,
+            agent_cls.runtime_tools,
             runtime_tools_config=runtime_tools_config,
         )
         # browser eval specific
@@ -128,29 +84,67 @@ async def run_controller(
             ) as f:
                 task_str = f.read()
                 logger.info(f'Dynamic Eval task: {task_str}')
-    # TODO: Implement this for EventStream Runtime
+    return runtime
 
-    # Initialize the runtime with user-specified function
-    if task_str_fn is not None:
-        assert (
-            initialize_runtime_fn is not None
-        ), 'initialize_runtime_fn cannot be None when task_str_fn is provided.'
 
-    if initialize_runtime_fn:
-        logger.info('Initializing runtime using user-specified function ...')
-        ret = await initialize_runtime_fn(runtime)
+async def run_controller(
+    config: AppConfig,
+    task_str: str,
+    runtime: Runtime | None = None,
+    agent: Agent | None = None,
+    exit_on_message: bool = False,
+    fake_user_response_fn: Callable[[State | None], str] | None = None,
+    headless_mode: bool = True,
+) -> State | None:
+    """Main coroutine to run the agent controller with task input flexibility.
+    It's only used when you launch opendevin backend directly via cmdline.
 
-        if task_str_fn is not None:
-            if not isinstance(ret, dict):
-                raise ValueError(
-                    '`initialize_runtime_fn` must return a dict when `task_str_fn` is provided.'
-                )
-            task_str = task_str_fn(ret)
+    Args:
+        config: The app config.
+        task_str: The task to run. It can be a string.
+        runtime: (optional) A runtime for the agent to run on.
+        agent: (optional) A agent to run.
+        exit_on_message: quit if agent asks for a message from user (optional)
+        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
+        headless_mode: Whether the agent is run in headless mode.
+    """
+    # Create the agent
+    if agent is None:
+        agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+        agent = agent_cls(
+            llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
+        )
+
+    if runtime is None:
+        runtime = await create_runtime(config)
+
+    event_stream = runtime.event_stream
+    # restore cli session if enabled
+    initial_state = None
+    if config.enable_cli_session:
+        try:
+            logger.info('Restoring agent state from cli session')
+            initial_state = State.restore_from_session(
+                event_stream.sid, event_stream.file_store
+            )
+        except Exception as e:
+            logger.info('Error restoring state', e)
+
+    # init controller with this initial state
+    controller = AgentController(
+        agent=agent,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
+        event_stream=event_stream,
+        initial_state=initial_state,
+        headless_mode=headless_mode,
+    )
 
     assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
     # Logging
     logger.info(
-        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
+        f'Agent Controller Initialized: Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
     )
 
     # start event is a MessageAction with the task, either resumed or new
@@ -191,19 +185,11 @@ async def run_controller(
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
-        end_state.save_to_session(cli_session, file_store)
+        end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
     # close when done
     await controller.close()
     state = controller.get_state()
-
-    # Complete the runtime
-    if complete_runtime_fn:
-        logger.info('Completing runtime using user-specified function ...')
-        complete_fn_return = await complete_runtime_fn(runtime)
-        logger.info(f'Runtime completion function returned: {complete_fn_return}')
-        state.complete_runtime_fn_return = complete_fn_return
-    await runtime.close()
 
     return state
 
