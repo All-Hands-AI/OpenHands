@@ -183,13 +183,13 @@ def patch_completion(monkeypatch, request):
     test_name = request.node.name
     # Mock LLM completion
     monkeypatch.setattr(
-        'opendevin.llm.llm.litellm_completion',
+        'opendevin.llm.basellm.litellm_completion',
         partial(mock_completion, test_name=test_name),
     )
 
     # Mock LLM completion cost (1 USD per conversation)
     monkeypatch.setattr(
-        'opendevin.llm.llm.litellm_completion_cost',
+        'opendevin.llm.basellm.litellm_completion_cost',
         lambda completion_response, **extra_kwargs: 1,
     )
 
