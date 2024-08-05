@@ -36,12 +36,14 @@ def _check_source_code_in_dir(temp_dir):
 
     # The source code should only include the `opendevin` folder, but not the other folders
     assert os.path.exists(os.path.join(code_dir, 'opendevin'))
-    assert not os.path.exists(os.path.join(code_dir, 'containers'))
-    assert not os.path.exists(os.path.join(code_dir, 'agenthub'))
-    assert not os.path.exists(os.path.join(code_dir, 'evaluation'))
-    assert not os.path.exists(os.path.join(code_dir, 'docs'))
-    assert not os.path.exists(os.path.join(code_dir, 'frontend'))
-    assert not os.path.exists(os.path.join(code_dir, 'tests'))
+    assert set(os.listdir(code_dir)) == {
+        'opendevin',
+        'pyproject.toml',
+        'poetry.lock',
+        'LICENSE',
+        'README.md',
+        'PKG-INFO',
+    }
 
     # make sure the version from the pyproject.toml is the same as the current version
     with open(os.path.join(code_dir, 'pyproject.toml'), 'r') as f:
