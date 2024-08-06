@@ -30,6 +30,7 @@ from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.tools import RuntimeTool
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.runtime_build import build_runtime_image
 
@@ -81,10 +82,6 @@ class EventStreamRuntime(Runtime):
         self.container_image = build_runtime_image(
             self.container_image,
             self.docker_client,
-            # NOTE: You can need set DEBUG=true to update the source code
-            # inside the container. This is useful when you want to test/debug the
-            # latest code in the runtime docker container.
-            update_source_code=self.config.sandbox.update_source_code,
             extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
@@ -229,7 +226,7 @@ class EventStreamRuntime(Runtime):
 
     async def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> dict[str, Any]:
+    ) -> None:
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
@@ -263,7 +260,7 @@ class EventStreamRuntime(Runtime):
                 f'{self.api_url}/upload_file', data=upload_data, params=params
             ) as response:
                 if response.status == 200:
-                    return await response.json()
+                    return
                 else:
                     error_message = await response.text()
                     raise Exception(f'Copy operation failed: {error_message}')
@@ -275,6 +272,7 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
+            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
     async def run_action(self, action: Action) -> Observation:
         # set timeout to default if not set
@@ -350,3 +348,11 @@ class EventStreamRuntime(Runtime):
         raise NotImplementedError(
             'This method is not implemented in the runtime client.'
         )
+
+    def init_runtime_tools(
+        self,
+        runtime_tools: list[RuntimeTool],
+        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
+    ) -> None:
+        # TODO: deprecate this method when we move to the new EventStreamRuntime
+        logger.warning('init_runtime_tools is not implemented in the runtime client.')

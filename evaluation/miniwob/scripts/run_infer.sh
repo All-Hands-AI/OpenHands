@@ -3,13 +3,9 @@ set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
 
-# configure miniwob website, change URL to yours
-export MINIWOB_URL="file:///home/fangzhex/miniwob-plusplus/miniwob/html/miniwob/"
-
 # configure browsing agent
 export USE_NAV="false"
 export USE_CONCISE_ANSWER="true"
-
 
 MODEL_CONFIG=$1
 COMMIT_HASH=$2
@@ -42,7 +38,7 @@ COMMAND="poetry run python evaluation/miniwob/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
   --max-chars 10000000 \
-  --eval-num-workers $NUM_WORKERS \
+  --eval-num-workers $NUM_WORKERS"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

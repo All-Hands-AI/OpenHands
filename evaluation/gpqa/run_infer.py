@@ -17,9 +17,7 @@ TODOs:
 """
 
 import asyncio
-import logging
 import os
-import pathlib
 import random
 import re
 from typing import Callable
@@ -29,28 +27,55 @@ from datasets import load_dataset
 
 from evaluation.utils.shared import (
     EvalMetadata,
-    codeact_user_response,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    get_parser,
+)
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
-from opendevin.events.action import Action, AgentFinishAction, MessageAction
+from opendevin.core.main import create_runtime, run_controller
+from opendevin.events.action import (
+    Action,
+    AgentFinishAction,
+    MessageAction,
+)
 from opendevin.events.observation import Observation
-from opendevin.llm.llm import LLM
-
-config = load_app_config()
 
 ACTION_FORMAT = """
 <<FINAL_ANSWER||
 <insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
 ||FINAL_ANSWER>>
 """.strip()
+
+
+def get_config(
+    metadata: EvalMetadata,
+) -> AppConfig:
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='ubuntu:22.04',
+            enable_auto_lint=True,
+            use_host_network=False,
+            update_source_code=True,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
 
 
 def gpqa_codeact_user_response(
@@ -68,11 +93,10 @@ def gpqa_codeact_user_response(
         '<execute_bash> exit </execute_bash>\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP TO SOLVE THIS TASK.\n'
     )
-
     return msg
 
 
-AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': codeact_user_response}
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': gpqa_codeact_user_response}
 
 AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': '\n\n SUPER IMPORTANT: When you think you have solved the question, first report it back to the user in the requested format. Only once that is done, in the next turn, please run the following command: <execute_bash> exit </execute_bash>.\n'
@@ -146,57 +170,23 @@ def convert_instance_dict(instance):
     return out_instance_dict
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
-    old_workspace_mount_path = config.workspace_mount_path
-    old_workspace_base = config.workspace_base
-    try:
-        workspace_mount_path = os.path.join(
-            config.workspace_mount_path, '_eval_workspace'
-        )
-        # create process-specific workspace dir
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+    config = get_config(metadata)
 
-        # reset workspace to config
-        config.workspace_base = workspace_mount_path
-        config.workspace_mount_path = workspace_mount_path
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+    if reset_logger:
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
-        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-        if reset_logger:
-            # Set up logger
-            log_file = os.path.join(
-                metadata.eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            # add back the console handler to print ONE line
-            logger.addHandler(get_console_handler())
-            logger.info(
-                f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(
-                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            )
-            logger.addHandler(file_handler)
-        else:
-            logger.info(f'Starting evaluation for instance {instance.instance_id}.')
-
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-        # ======= Run the agent on the instance =======
-        # Prepare instruction for the agent using suggested format in gpqa codebase
-        instruction = f"""
+    # ======= Run the agent on the instance =======
+    # Prepare instruction for the agent using suggested format in gpqa codebase
+    instruction = f"""
 What is the correct answer to this question:\n
 {instance['question']}\n
 
@@ -225,109 +215,98 @@ Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
 """
 
-        # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        config.max_iterations = metadata.max_iterations
-        state: State | None = asyncio.run(
-            run_controller(
-                config=config,
-                task_str=instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent.__class__.__name__
-                ),
-                agent=agent,
-                sid=f'gptq_{str(instance.instance_id)}',
-            )
-        )
-        assert state is not None, 'State should not be None.'
+    runtime = await create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
 
-        # ======= Attempt to evaluate the agent's edits =======
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+            metadata.agent_class
+        ),
+    )
+    assert state is not None, 'State should not be None.'
 
-        question_choices = {
-            'A': instance['choices'][0],
-            'B': instance['choices'][1],
-            'C': instance['choices'][2],
-            'D': instance['choices'][3],
-        }
-        # get the final message from the state history (default to empty if not found)
-        found_answers = {
-            'A': False,
-            'B': False,
-            'C': False,
-            'D': False,
-        }
-        for event in state.history.get_events(reverse=True):
-            if (
-                isinstance(event, AgentFinishAction)
-                and event.source != 'user'
-                and '<<FINAL_ANSWER||' in event.thought
-            ):
-                final_message = event.thought
-                break
-            elif (
-                isinstance(event, MessageAction)
-                and event.source != 'user'
-                and '<<FINAL_ANSWER||' in event.content
-            ):
-                final_message = event.content
-                break
-            elif isinstance(event, Observation):
-                for option, option_text in question_choices.items():
-                    if option_text in event.content:
-                        found_answers[option] = True
-            else:
-                final_message = None
+    # ======= Attempt to evaluate the agent's edits =======
 
-        found_options = [option for option, found in found_answers.items() if found]
+    question_choices = {
+        'A': instance['choices'][0],
+        'B': instance['choices'][1],
+        'C': instance['choices'][2],
+        'D': instance['choices'][3],
+    }
+    # get the final message from the state history (default to empty if not found)
+    found_answers = {
+        'A': False,
+        'B': False,
+        'C': False,
+        'D': False,
+    }
+    for event in state.history.get_events(reverse=True):
+        if (
+            isinstance(event, AgentFinishAction)
+            and event.source != 'user'
+            and '<<FINAL_ANSWER||' in event.thought
+        ):
+            final_message = event.thought
+            break
+        elif (
+            isinstance(event, MessageAction)
+            and event.source != 'user'
+            and '<<FINAL_ANSWER||' in event.content
+        ):
+            final_message = event.content
+            break
+        elif isinstance(event, Observation):
+            for option, option_text in question_choices.items():
+                if option_text in event.content:
+                    found_answers[option] = True
+        else:
+            final_message = None
+
+    found_options = [option for option, found in found_answers.items() if found]
+    logger.info('#############################################')
+    logger.info(f'Final message generated by the agent: {final_message}')
+    logger.info('#############################################')
+
+    # check if the model output matches the ground truth
+    test_result = compare_answers(final_message, instance.correct_solution)
+    if final_message is None and len(found_options) > 0:
+        _selected = random.choice(found_options)
+        # if the final message is None, then the agent did not report the answer in the correct format
+        # so we randomly select one of the found options and compare it with the correct solution
+        test_result = _selected == instance.correct_solution
         logger.info('#############################################')
-        logger.info(f'Final message generated by the agent: {final_message}')
-        logger.info('#############################################')
-
-        # check if the model output matches the ground truth
-        test_result = compare_answers(final_message, instance.correct_solution)
-        if final_message is None and len(found_options) > 0:
-            _selected = random.choice(found_options)
-            # if the final message is None, then the agent did not report the answer in the correct format
-            # so we randomly select one of the found options and compare it with the correct solution
-            test_result = _selected == instance.correct_solution
-            logger.info('#############################################')
-            logger.info('Agent did not report the answer in the correct format.')
-            logger.info(f'Found options: {found_options}')
-            logger.info(f'Selected option: {_selected}')
-            logger.info('#############################################')
-
-        logger.info('#############################################')
-        logger.info(f'Test result: {test_result}')
+        logger.info('Agent did not report the answer in the correct format.')
+        logger.info(f'Found options: {found_options}')
+        logger.info(f'Selected option: {_selected}')
         logger.info('#############################################')
 
-        # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-        if state is None:
-            raise ValueError('State should not be None.')
+    logger.info('#############################################')
+    logger.info(f'Test result: {test_result}')
+    logger.info('#############################################')
 
-        metrics = state.metrics.get() if state.metrics else None
+    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+    if state is None:
+        raise ValueError('State should not be None.')
 
-        # Save the output
-        output = {
-            'task_id': instance.task_id,
-            'instance_id': instance.instance_id,
-            'instruction': instruction,
-            'metadata': metadata.model_dump(),
-            'history': state.history.compatibility_for_eval_history_pairs(),
-            'metrics': metrics,
-            'error': state.last_error if state and state.last_error else None,
-            'test_result': {
-                'result': test_result,
-                'found_answers': found_answers,
-                'last_message': final_message,
-            },
-        }
+    metrics = state.metrics.get() if state.metrics else None
 
-    except Exception:
-        logger.error('Process instance failed')
-        raise
-    finally:
-        config.workspace_mount_path = old_workspace_mount_path
-        config.workspace_base = old_workspace_base
+    # Save the output
+    output = EvalOutput(
+        instance_id=str(instance.instance_id),
+        instruction=instruction,
+        metadata=metadata,
+        history=state.history.compatibility_for_eval_history_pairs(),
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
+            'result': test_result,
+            'found_answers': found_answers,
+            'last_message': final_message,
+        },
+    )
     return output
 
 
@@ -343,8 +322,11 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
-    logger.info(f'Config for evaluation: {config}')
+    llm_config = None
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
@@ -355,8 +337,6 @@ if __name__ == '__main__':
     gpqa_dataset = gpqa_dataset.to_pandas()
     # Add a new column 'instance_id' with the index
     gpqa_dataset['instance_id'] = gpqa_dataset.index
-    gpqa_dataset['task_id'] = gpqa_dataset.index
-    # gpqa_dataset = dataset['train'].to_pandas().sort_values(by='id').reset_index(drop=True)
 
     if args.agent_cls != 'CodeActAgent':
         raise ValueError(
@@ -374,15 +354,14 @@ if __name__ == '__main__':
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    prepared_dataset = prepare_dataset(
-        gpqa_dataset, output_file, args.eval_n_limit, 'task_id'
-    )
+    prepared_dataset = prepare_dataset(gpqa_dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        dataset=prepared_dataset,
-        metadata=metadata,
-        output_file=output_file,
-        num_workers=args.eval_num_workers,
-        process_instance_func=process_instance,
-        id_column='task_id',
+    asyncio.run(
+        run_evaluation(
+            dataset=prepared_dataset,
+            metadata=metadata,
+            output_file=output_file,
+            num_workers=args.eval_num_workers,
+            process_instance_func=process_instance,
+        )
     )

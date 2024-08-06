@@ -2,9 +2,10 @@
 
 This folder contains evaluation harness for evaluating agents on the Entity-deduction-Arena Benchmark, from the paper [Probing the Multi-turn Planning Capabilities of LLMs via 20 Question Games](https://arxiv.org/abs/2310.01468), presented in ACL 2024 main conference.
 
-## Configure OpenDevin and your LLM
+## Setup Environment and LLM Configuration
 
-Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+
 
 ## Start the evaluation
 

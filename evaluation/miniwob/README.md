@@ -2,52 +2,9 @@
 
 This folder contains evaluation for [MiniWoB++](https://miniwob.farama.org/) benchmark, powered by [BrowserGym](https://github.com/ServiceNow/BrowserGym) for easy evaluation of how well an agent capable of browsing can perform on synthetic web browsing tasks.
 
-## Setup OpenDevin Environment
+## Setup Environment and LLM Configuration
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace.
-
-Add the following configurations:
-
-```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-
-[sandbox]
-box_type = "ssh"
-timeout = 120
-
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
-
-## Setup MiniWoB++ Environment and Environment Variables of MiniWoB++
-MiniWoB++ requires you to set up websites containing a static website that is accessible via URL to the machine running the OpenDevin agents.
-
-- Clone miniwob (use a specific frozen commit for reproducibility)
-```sh
-git clone git@github.com:Farama-Foundation/miniwob-plusplus.git
-git -C "./miniwob-plusplus" reset --hard 7fd85d71a4b60325c6585396ec4f48377d049838
-```
-
-- Setup Miniwob URL (change `PATH_TO_MINIWOB_CLONED_REPO` here to the absolute path to your `miniwob-plusplus` folder) in `evaluation/miniwob/scripts/run_infer.sh`
-```sh
-export MINIWOB_URL="file://<PATH_TO_MINIWOB_CLONED_REPO>/miniwob/html/miniwob/"
-```
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Test if your environment works
 
@@ -56,7 +13,7 @@ Access with browser the above MiniWoB URLs and see if they load correctly.
 ## Run Evaluation
 
 ```sh
-bash evaluation/miniwob/scripts/run_infer.sh
+./evaluation/miniwob/scripts/run_infer.sh llm.claude-35-sonnet-eval
 ```
 
 Results will be in `evaluation/evaluation_outputs/outputs/miniwob/`
