@@ -25,7 +25,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
@@ -64,7 +64,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -107,7 +107,7 @@ async def initialize_runtime_fn(
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -117,9 +117,9 @@ def process_instance(
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance['task_id'], log_dir)
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance["task_id"]}.')
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
     if instance['file_name'] != '':
         extension_name = instance['file_name'].split('.')[-1]
@@ -142,20 +142,15 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
+    runtime = await create_runtime(config, sid=instance['instance_id'])
+    await initialize_runtime(runtime, instance)
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
-            initialize_runtime_fn=functools.partial(
-                initialize_runtime_fn, instance=instance
-            ),
-            sid=instance['task_id'],
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -207,7 +202,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance['task_id'],
+        instance_id=instance['instance_id'],
         instance=instance.to_dict(),
         instruction=instance['Question'],
         metadata=metadata,
@@ -263,10 +258,12 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        dataset=prepared_dataset,
-        metadata=metadata,
-        output_file=output_file,
-        num_workers=args.eval_num_workers,
-        process_instance_func=process_instance,
+    asyncio.run(
+        run_evaluation(
+            dataset=prepared_dataset,
+            metadata=metadata,
+            output_file=output_file,
+            num_workers=args.eval_num_workers,
+            process_instance_func=process_instance,
+        )
     )

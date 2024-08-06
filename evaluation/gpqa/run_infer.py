@@ -41,7 +41,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -170,7 +170,7 @@ def convert_instance_dict(instance):
     return out_instance_dict
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -215,15 +215,15 @@ Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
 """
 
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
-            sid=f'gptq_{str(instance.instance_id)}',
-        )
+    runtime = await create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
+
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+            metadata.agent_class
+        ),
     )
     assert state is not None, 'State should not be None.'
 
@@ -356,10 +356,12 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gpqa_dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        dataset=prepared_dataset,
-        metadata=metadata,
-        output_file=output_file,
-        num_workers=args.eval_num_workers,
-        process_instance_func=process_instance,
+    asyncio.run(
+        run_evaluation(
+            dataset=prepared_dataset,
+            metadata=metadata,
+            output_file=output_file,
+            num_workers=args.eval_num_workers,
+            process_instance_func=process_instance,
+        )
     )

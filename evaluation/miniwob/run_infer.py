@@ -23,7 +23,7 @@ from opendevin.core.config import (
     parse_arguments,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import (
     BrowseInteractiveAction,
     CmdRunAction,
@@ -63,9 +63,9 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
-) -> dict:
+) -> str:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -86,12 +86,10 @@ async def initialize_runtime_fn(
     goal = obs.content
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
-    return {
-        'task_str': goal,
-    }
+    return goal
 
 
-async def complete_runtime_fn(
+async def complete_runtime(
     runtime: Runtime,
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
@@ -114,7 +112,7 @@ async def complete_runtime_fn(
     }
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -129,15 +127,14 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {env_id}.')
 
+    runtime = await create_runtime(config, sid=env_id)
+    task_str = await initialize_runtime(runtime)
+
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str_fn=lambda x: x[
-                'task_str'
-            ],  # take output from initialize_runtime_fn
-            initialize_runtime_fn=initialize_runtime_fn,
-            complete_runtime_fn=complete_runtime_fn,
-            sid=env_id,
+            task_str=task_str,  # take output from initialize_runtime
+            runtime=runtime,
         )
     )
 
@@ -158,8 +155,8 @@ def process_instance(
             instruction = event.content
             break
 
-    return_val = state.complete_runtime_fn_return
-    logger.info(f'Return value from complete_runtime_fn: {return_val}')
+    return_val = await complete_runtime(runtime)
+    logger.info(f'Return value from complete_runtime: {return_val}')
     reward = max(return_val['rewards'])
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
@@ -212,6 +209,8 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class BiocoderData:
+    instance_id: str
     filePath: str
     numLines: int
     lineStart: int

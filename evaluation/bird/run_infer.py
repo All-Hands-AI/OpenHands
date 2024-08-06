@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import json
 import os
 import pathlib
@@ -30,7 +29,7 @@ from opendevin.core.config import (
     parse_arguments,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import CmdRunAction, MessageAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
@@ -221,7 +220,7 @@ def load_bird():
                 data = json.load(f)
                 for e in tqdm(data):
                     item = {
-                        'task_id': f'{len(processed_data)}',
+                        'instance_id': f'{len(processed_data)}',
                         'db_path': os.path.join(
                             database_path, e['db_id'], f"{e['db_id']}.sqlite"
                         ),
@@ -244,7 +243,7 @@ def load_bird():
     return bird_dataset
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -278,7 +277,7 @@ async def initialize_runtime_fn(
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime_fn(
+async def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -295,7 +294,7 @@ async def complete_runtime_fn(
     test_result = {'result': {}, 'metadata': {}}
 
     # Read the generated python file
-    instance_id = instance.task_id.replace('/', '__')
+    instance_id = instance.instance_id.replace('/', '__')
     path = os.path.join('/workspace', f'{instance_id}.py')
 
     action = CmdRunAction(
@@ -352,14 +351,14 @@ async def complete_runtime_fn(
     return test_result
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
     config = get_config(metadata)
     # use session id for concurrent evaluation
-    instance_id = instance.task_id.replace('/', '__')
+    instance_id = instance.instance_id.replace('/', '__')
 
     # Set up the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -404,26 +403,19 @@ def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
+    runtime = await create_runtime(config, sid=instance_id)
+    await initialize_runtime(runtime, instance)
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
-            initialize_runtime_fn=functools.partial(
-                initialize_runtime_fn, instance=instance
-            ),
-            complete_runtime_fn=functools.partial(
-                complete_runtime_fn, instance=instance
-            ),
-            sid=instance_id,
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
+        runtime=runtime,
     )
 
     # ======= Attempt to evaluate the agent's edits =======
-    test_result = state.complete_runtime_fn_return
+    test_result = await complete_runtime(runtime, instance)
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
@@ -438,7 +430,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance.task_id,
+        instance_id=instance.instance_id,
         instruction=instruction,
         metadata=metadata,
         history=histories,
@@ -472,6 +464,8 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

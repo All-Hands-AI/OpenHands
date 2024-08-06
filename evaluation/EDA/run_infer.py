@@ -21,7 +21,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 
 game = None
 
@@ -75,7 +75,7 @@ def get_config(
     return config
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -118,17 +118,13 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
+    runtime = await create_runtime(config, sid=instance['text'].strip())
 
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
-            sid=instance['text'].strip(),
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -219,10 +215,12 @@ if __name__ == '__main__':
         eda_dataset.to_pandas(), output_file, args.eval_n_limit
     )
 
-    run_evaluation(
-        prepared_dataset,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
+    asyncio.run(
+        run_evaluation(
+            prepared_dataset,
+            metadata,
+            output_file,
+            args.eval_num_workers,
+            process_instance,
+        )
     )

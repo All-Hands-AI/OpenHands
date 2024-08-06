@@ -22,7 +22,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -55,7 +55,7 @@ def get_config(
     return config
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -79,16 +79,14 @@ def process_instance(
     # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
-            sid=instance_id,
-        )
+    runtime = await create_runtime(config, sid=instance_id)
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+            metadata.agent_class
+        ),
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -171,12 +169,14 @@ if __name__ == '__main__':
         dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit
     )
 
-    run_evaluation(
-        dataset=dataset,
-        metadata=metadata,
-        output_file=output_file,
-        num_workers=args.eval_num_workers,
-        process_instance_func=process_instance,
+    asyncio.run(
+        run_evaluation(
+            dataset=dataset,
+            metadata=metadata,
+            output_file=output_file,
+            num_workers=args.eval_num_workers,
+            process_instance_func=process_instance,
+        )
     )
 
     # Read the output file and calculate the accuracy

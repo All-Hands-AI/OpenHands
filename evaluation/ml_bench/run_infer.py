@@ -13,8 +13,6 @@ TODOs:
 - Clean up the code and docker image used for evaluation.
 """
 
-import asyncio
-import functools
 import os
 from typing import Any
 
@@ -39,7 +37,7 @@ from opendevin.core.config import (
     load_app_config,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import CmdRunAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
@@ -95,7 +93,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -140,7 +138,7 @@ async def initialize_runtime_fn(
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime_fn(
+async def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -203,7 +201,9 @@ async def complete_runtime_fn(
     return outputs
 
 
-def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
+async def process_instance(
+    instance: Any, metadata: EvalMetadata, reset_logger: bool = True
+):
     config = get_config(metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
@@ -237,28 +237,22 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     )
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
+    runtime = await create_runtime(config, sid=sid)
+    await initialize_runtime(runtime, instance)
+
     # Run the agent
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
-            initialize_runtime_fn=functools.partial(
-                initialize_runtime_fn, instance=instance
-            ),
-            complete_runtime_fn=functools.partial(
-                complete_runtime_fn, instance=instance
-            ),
-            sid=sid,
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+            metadata.agent_class
+        ),
     )
     assert state is not None
     metrics = state.metrics.get() if state.metrics else {}
 
-    test_result = state.complete_runtime_fn_return
+    test_result = await complete_runtime(runtime)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

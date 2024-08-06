@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import os
 from typing import Any, Dict
@@ -26,7 +25,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import (
     CmdRunAction,
 )
@@ -116,7 +115,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(runtime: Runtime):
+async def initialize_runtime(runtime: Runtime):
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -138,7 +137,7 @@ async def initialize_runtime_fn(runtime: Runtime):
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-def process_instance(
+async def process_instance(
     instance: Any,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -175,15 +174,14 @@ def process_instance(
         },
     )
 
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=fake_user_response_fn,
-            initialize_runtime_fn=initialize_runtime_fn,
-            sid=instance.instance_id,
-        )
+    runtime = await create_runtime(config, sid=instance.instance_id)
+    await initialize_runtime(runtime)
+
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=fake_user_response_fn,
     )
 
     if state is None:

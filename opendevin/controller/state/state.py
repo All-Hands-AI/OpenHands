@@ -107,7 +107,6 @@ class State:
     start_id: int = -1
     end_id: int = -1
     almost_stuck: int = 0
-    complete_runtime_fn_return: dict[str, Any] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)

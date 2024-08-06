@@ -22,7 +22,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import CmdRunAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
@@ -58,7 +58,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(runtime: Runtime):
+async def initialize_runtime(runtime: Runtime):
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -82,7 +82,9 @@ async def initialize_runtime_fn(runtime: Runtime):
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
+async def process_instance(
+    instance: Any, metadata: EvalMetadata, reset_logger: bool = True
+):
     config = get_config(metadata)
 
     qid = instance.qid
@@ -103,18 +105,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
+    runtime = await create_runtime(config, sid=qid)
+    await initialize_runtime(runtime)
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
-            initialize_runtime_fn=initialize_runtime_fn,
-            sid=qid,
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -212,6 +211,8 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

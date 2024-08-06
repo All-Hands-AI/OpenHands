@@ -22,7 +22,7 @@ from opendevin.core.config import (
     parse_arguments,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 
 # Only CodeActAgent can delegate to BrowsingAgent
 SUPPORTED_AGENT_CLS = {'CodeActAgent'}
@@ -52,7 +52,7 @@ def get_config(
     return config
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -72,12 +72,12 @@ def process_instance(
         f'NOTE: You should copy the "query" as is into the <execute_browse> tag. DO NOT change ANYTHING in the query.'
     )
 
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            sid=instance.instance_id,
-        )
+    runtime = await create_runtime(config, sid=instance.instance_id)
+
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
     )
 
     if state is None:
@@ -159,10 +159,12 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
-    run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
+    asyncio.run(
+        run_evaluation(
+            instances,
+            metadata,
+            output_file,
+            args.eval_num_workers,
+            process_instance,
+        )
     )

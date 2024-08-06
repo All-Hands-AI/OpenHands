@@ -26,7 +26,7 @@ from opendevin.core.config import (
     parse_arguments,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import CmdRunAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
@@ -75,7 +75,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
     instance: BiocoderData,  # this argument is not required
 ):
@@ -162,7 +162,7 @@ async def initialize_runtime_fn(
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime_fn(
+async def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -238,7 +238,7 @@ async def complete_runtime_fn(
     return test_result
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -246,7 +246,7 @@ def process_instance(
     config = get_config(metadata)
     instance = BiocoderData(**instance)
     print(instance)
-    instance_id = f'{instance.repository}__{instance.test_case_id[:10]}'
+    instance_id = f'{instance.repository}__{instance.instance_id[:10]}'
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -276,30 +276,24 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # use a session id for concurrent evaluation
-    sid = instance.test_case_id.replace('/', '__')
+    sid = instance.instance_id.replace('/', '__')
+
+    runtime = await create_runtime(config, sid=sid)
+
+    await initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
-            initialize_runtime_fn=functools.partial(
-                initialize_runtime_fn, instance=instance
-            ),
-            complete_runtime_fn=functools.partial(
-                complete_runtime_fn, instance=instance
-            ),
-            sid=sid,
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
     )
 
     if state is None:
         raise ValueError('State should not be None.')
 
-    test_result = state.complete_runtime_fn_return
+    test_result = await complete_runtime(runtime, instance)
     metrics = state.metrics.get() if state.metrics else None
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -310,7 +304,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance.test_case_id,
+        instance_id=instance.instance_id,
         instance=instance.to_dict(),
         instruction=instruction,
         metadata=metadata,
@@ -327,7 +321,7 @@ if __name__ == '__main__':
 
     dataset = load_dataset('lilbillbiscuit/biocoder_public')
     biocoder_tests = dataset['train'].to_pandas()
-    biocoder_tests.rename(columns={'test_case_id': 'instance_id'}, inplace=True)
+    biocoder_tests['instance_id'] = biocoder_tests['test_case_id']
 
     llm_config = None
     if args.llm_config:
@@ -347,6 +341,8 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(biocoder_tests, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

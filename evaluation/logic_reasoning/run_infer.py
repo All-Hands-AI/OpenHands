@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import os
 
 import pandas as pd
@@ -22,7 +21,7 @@ from opendevin.core.config import (
     get_parser,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import (
     AgentFinishAction,
     CmdRunAction,
@@ -130,7 +129,7 @@ def get_test_result(
 CUR_EVAL_DIR = os.path.dirname(__file__)
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -181,7 +180,7 @@ with open(os.path.join(CUR_EVAL_DIR, 'instruction.txt'), 'r') as f:
     INSTRUCTION_TEMPLATE = f.read()
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -208,20 +207,18 @@ def process_instance(
     # use a session id for concurrent evaluation
     sid = instance['instance_id']
 
+    runtime = await create_runtime(config, sid=sid)
+    await initialize_runtime(runtime, instance)
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
         run_controller(
             config=config,
             task_str=instruction,
+            runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                 metadata.agent_class
             ),
-            initialize_runtime_fn=functools.partial(
-                initialize_runtime_fn,
-                instance=instance,
-            ),
-            sid=sid,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -307,6 +304,8 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import os
 import re
 import tempfile
@@ -30,7 +29,7 @@ from opendevin.core.config import (
     parse_arguments,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
+from opendevin.core.main import create_runtime, run_controller
 from opendevin.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
@@ -58,7 +57,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime_fn(
+async def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -102,7 +101,7 @@ async def initialize_runtime_fn(
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime_fn(
+async def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -173,7 +172,7 @@ async def complete_runtime_fn(
     }
 
 
-def process_instance(
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -211,20 +210,16 @@ def process_instance(
     # create sandbox and run the agent
     # =============================================
 
+    runtime: Runtime = await create_runtime(config, sid=instance.instance_id)
+
+    await initialize_runtime(runtime, instance=instance)
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
-            initialize_runtime_fn=functools.partial(
-                initialize_runtime_fn, instance=instance
-            ),
-            complete_runtime_fn=functools.partial(
-                complete_runtime_fn, instance=instance
-            ),
-            sid=instance.instance_id,
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
     )
     if state is None:
         raise ValueError('State should not be None.')
@@ -233,7 +228,7 @@ def process_instance(
     # result evaluation
     # =============================================
 
-    return_val = state.complete_runtime_fn_return
+    return_val = await complete_runtime(runtime, instance)
     agent_answer = return_val['agent_answer']
     final_ans = return_val['final_ans']
 
@@ -319,6 +314,8 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(agent_bench_tests, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )
