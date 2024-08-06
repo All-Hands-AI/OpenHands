@@ -557,31 +557,32 @@ crt = ["awscrt (==0.20.11)"]
 
 [[package]]
 name = "browsergym"
-version = "0.3.4"
+version = "0.4.2"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.3.4-py3-none-any.whl", hash = "sha256:ecc06a42a6b7541f9025fa9cdc208d48eb4a745283358524715447257fc80adc"},
-    {file = "browsergym-0.3.4.tar.gz", hash = "sha256:853937f29c3855577a5fbc038a4371e82e50e393f4bdfc458df222590470807c"},
+    {file = "browsergym-0.4.2-py3-none-any.whl", hash = "sha256:01c289fb39c9d374c1cadc477ebddb183c66996106293e30452ef9445df6eb9d"},
+    {file = "browsergym-0.4.2.tar.gz", hash = "sha256:137a3dc602325fee2dc28d322d73f18edacbbffcd96f9b827cea91477c4c11c8"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.3.4"
-browsergym-experiments = "0.3.4"
-browsergym-miniwob = "0.3.4"
-browsergym-webarena = "0.3.4"
+browsergym-core = "0.4.2"
+browsergym-experiments = "0.4.2"
+browsergym-miniwob = "0.4.2"
+browsergym-visualwebarena = "0.4.2"
+browsergym-webarena = "0.4.2"
 browsergym-workarena = "*"
 
 [[package]]
 name = "browsergym-core"
-version = "0.3.4"
+version = "0.4.2"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
-python-versions = ">3.7"
+python-versions = ">3.9"
 files = [
-    {file = "browsergym_core-0.3.4-py3-none-any.whl", hash = "sha256:1d7164b9afab613af6ae269fb811721738b09d5935df567cceba87dd1ecb4f23"},
-    {file = "browsergym_core-0.3.4.tar.gz", hash = "sha256:357d4cc61f2447983f9c5c0c262d5d6cca129e926ab576ec72f6b974bd1f7fd6"},
+    {file = "browsergym_core-0.4.2-py3-none-any.whl", hash = "sha256:1bcfdfc317bd9872dc75a63aff09ee63a23699b0a926c78e4a8efae635999c7c"},
+    {file = "browsergym_core-0.4.2.tar.gz", hash = "sha256:72bdd8e7bed37a422663f20f1adf1a061a1bdbc9ebd5902ae30ad72e00ee6b15"},
 ]
 
 [package.dependencies]
@@ -595,46 +596,62 @@ pyparsing = ">=3"
 
 [[package]]
 name = "browsergym-experiments"
-version = "0.3.4"
+version = "0.4.2"
 description = "Experimentation tools for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_experiments-0.3.4-py3-none-any.whl", hash = "sha256:d2e4a75b4a2e79f9300eb289c9b2432f07dee82622d384924972f4157069f3fe"},
-    {file = "browsergym_experiments-0.3.4.tar.gz", hash = "sha256:16309c6b2be59627ea90c7e36448eb897512bcef033cf481472879f4c5be317b"},
+    {file = "browsergym_experiments-0.4.2-py3-none-any.whl", hash = "sha256:9e9e225d3bd396a7d6e519e2a3d989b3022b9c5fa516167f3927bf5b02d751aa"},
+    {file = "browsergym_experiments-0.4.2.tar.gz", hash = "sha256:7ed99ca775c9a329d8eb839c662f59c86b4231f9ab90f43c1b718fa968f28026"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.3.4"
+browsergym-core = "0.4.2"
 tiktoken = ">=0.4"
 
 [[package]]
 name = "browsergym-miniwob"
-version = "0.3.4"
+version = "0.4.2"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.3.4-py3-none-any.whl", hash = "sha256:4de41ee146d6f0bcb2e49b0fb8fd49f519439bf44808aef6146f5ae00064062b"},
-    {file = "browsergym_miniwob-0.3.4.tar.gz", hash = "sha256:938d58a9882c4118e46160d303a9a6d93ac1a08288e81e2c6d5c768719f012fe"},
+    {file = "browsergym_miniwob-0.4.2-py3-none-any.whl", hash = "sha256:cf11a69ed233d57ec2e4882474a69de8e40d7029d78c97163e3b8abb5c0ef18e"},
+    {file = "browsergym_miniwob-0.4.2.tar.gz", hash = "sha256:48cca86612602863b029698df67b177c0061e68649203925a469b15c57a318bb"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.3.4"
+browsergym-core = "0.4.2"
+
+[[package]]
+name = "browsergym-visualwebarena"
+version = "0.4.2"
+description = "VisualWebArena benchmark for BrowserGym"
+optional = false
+python-versions = ">3.7"
+files = [
+    {file = "browsergym_visualwebarena-0.4.2-py3-none-any.whl", hash = "sha256:6ae32a8af553fa61934570eacfe01a745c2acccb4e474d1bdc3dec5c2ea7d732"},
+    {file = "browsergym_visualwebarena-0.4.2.tar.gz", hash = "sha256:b347f2cfbddfe0375c6aca6a503da43500b485407c457fcb34f6a16b8b9f165e"},
+]
+
+[package.dependencies]
+browsergym-core = "0.4.2"
+libvisualwebarena = "0.0.7"
+requests = "*"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.3.4"
+version = "0.4.2"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.3.4-py3-none-any.whl", hash = "sha256:fd9f9bb4cdf1e32d22e6cd525fd0c28adf9dda615e4dc614b677c25f675a9b73"},
-    {file = "browsergym_webarena-0.3.4.tar.gz", hash = "sha256:ba921a76223910d8842d0c9dd6d3393db14819f9a74c477289f0d2625bdd8feb"},
+    {file = "browsergym_webarena-0.4.2-py3-none-any.whl", hash = "sha256:b110535d5c87b90ce2f34a59423e8470e9bffa7776b4172c64497545be4450ba"},
+    {file = "browsergym_webarena-0.4.2.tar.gz", hash = "sha256:bfc341306fa0b40a9ec3775bf451a0912353336d09e99ab58f403ba9735c79dc"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.3.4"
+browsergym-core = "0.4.2"
 libwebarena = "0.0.3"
 
 [[package]]
@@ -2815,6 +2832,38 @@ files = [
 ]
 
 [[package]]
+name = "imageio"
+version = "2.34.2"
+description = "Library for reading and writing a wide range of image, video, scientific, and volumetric data formats."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "imageio-2.34.2-py3-none-any.whl", hash = "sha256:a0bb27ec9d5bab36a9f4835e51b21d2cb099e1f78451441f94687ff3404b79f8"},
+    {file = "imageio-2.34.2.tar.gz", hash = "sha256:5c0c0ee8faa018a1c42f649b90395dd4d3bb6187c09053a0cd6f1fdd51bbff5e"},
+]
+
+[package.dependencies]
+numpy = "*"
+pillow = ">=8.3.2"
+
+[package.extras]
+all-plugins = ["astropy", "av", "imageio-ffmpeg", "pillow-heif", "psutil", "tifffile"]
+all-plugins-pypy = ["av", "imageio-ffmpeg", "pillow-heif", "psutil", "tifffile"]
+build = ["wheel"]
+dev = ["black", "flake8", "fsspec[github]", "pytest", "pytest-cov"]
+docs = ["numpydoc", "pydata-sphinx-theme", "sphinx (<6)"]
+ffmpeg = ["imageio-ffmpeg", "psutil"]
+fits = ["astropy"]
+full = ["astropy", "av", "black", "flake8", "fsspec[github]", "gdal", "imageio-ffmpeg", "itk", "numpydoc", "pillow-heif", "psutil", "pydata-sphinx-theme", "pytest", "pytest-cov", "sphinx (<6)", "tifffile", "wheel"]
+gdal = ["gdal"]
+itk = ["itk"]
+linting = ["black", "flake8"]
+pillow-heif = ["pillow-heif"]
+pyav = ["av"]
+test = ["fsspec[github]", "pytest", "pytest-cov"]
+tifffile = ["tifffile"]
+
+[[package]]
 name = "importlib-metadata"
 version = "7.1.0"
 description = "Read metadata from Python packages"
@@ -3467,6 +3516,52 @@ websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
 
 [package.extras]
 adal = ["adal (>=1.0.2)"]
+
+[[package]]
+name = "lazy-loader"
+version = "0.4"
+description = "Makes it easy to load subpackages and functions on demand."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "lazy_loader-0.4-py3-none-any.whl", hash = "sha256:342aa8e14d543a154047afb4ba8ef17f5563baad3fc610d7b15b213b0f119efc"},
+    {file = "lazy_loader-0.4.tar.gz", hash = "sha256:47c75182589b91a4e1a85a136c074285a5ad4d9f39c63e0d7fb76391c4574cd1"},
+]
+
+[package.dependencies]
+packaging = "*"
+
+[package.extras]
+dev = ["changelist (==0.5)"]
+lint = ["pre-commit (==3.7.0)"]
+test = ["pytest (>=7.4)", "pytest-cov (>=4.1)"]
+
+[[package]]
+name = "libvisualwebarena"
+version = "0.0.7"
+description = "This is an unofficial, use-at-your-own risks port of the visualwebarena benchmark, for use as a standalone library package."
+optional = false
+python-versions = "<4,>=3.7"
+files = [
+    {file = "libvisualwebarena-0.0.7-py3-none-any.whl", hash = "sha256:20879c936c22e8c8f541b1d6422f84987a4367a8adb8b1cc54252ef816618006"},
+    {file = "libvisualwebarena-0.0.7.tar.gz", hash = "sha256:1f0b3dd90fa9445fb30ddab20df725c2c7461e7cf8d8fd06a5f6a6365f8dd7b9"},
+]
+
+[package.dependencies]
+aiolimiter = "*"
+beartype = "0.12.0"
+evaluate = "*"
+flask = "*"
+gymnasium = "*"
+nltk = "*"
+openai = ">=1"
+Pillow = "*"
+playwright = ">=1.32,<1.40"
+scikit-image = ">=0.16"
+text-generation = "*"
+tiktoken = "*"
+transformers = "*"
+types-tqdm = "*"
 
 [[package]]
 name = "libwebarena"
@@ -7134,6 +7229,54 @@ attrs = ">=18.0.0"
 pathspec = ">=0.10.1"
 
 [[package]]
+name = "scikit-image"
+version = "0.24.0"
+description = "Image processing in Python"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "scikit_image-0.24.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:cb3bc0264b6ab30b43c4179ee6156bc18b4861e78bb329dd8d16537b7bbf827a"},
+    {file = "scikit_image-0.24.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:9c7a52e20cdd760738da38564ba1fed7942b623c0317489af1a598a8dedf088b"},
+    {file = "scikit_image-0.24.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:93f46e6ce42e5409f4d09ce1b0c7f80dd7e4373bcec635b6348b63e3c886eac8"},
+    {file = "scikit_image-0.24.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:39ee0af13435c57351a3397eb379e72164ff85161923eec0c38849fecf1b4764"},
+    {file = "scikit_image-0.24.0-cp310-cp310-win_amd64.whl", hash = "sha256:7ac7913b028b8aa780ffae85922894a69e33d1c0bf270ea1774f382fe8bf95e7"},
+    {file = "scikit_image-0.24.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:272909e02a59cea3ed4aa03739bb88df2625daa809f633f40b5053cf09241831"},
+    {file = "scikit_image-0.24.0-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:190ebde80b4470fe8838764b9b15f232a964f1a20391663e31008d76f0c696f7"},
+    {file = "scikit_image-0.24.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:59c98cc695005faf2b79904e4663796c977af22586ddf1b12d6af2fa22842dc2"},
+    {file = "scikit_image-0.24.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fa27b3a0dbad807b966b8db2d78da734cb812ca4787f7fbb143764800ce2fa9c"},
+    {file = "scikit_image-0.24.0-cp311-cp311-win_amd64.whl", hash = "sha256:dacf591ac0c272a111181afad4b788a27fe70d213cfddd631d151cbc34f8ca2c"},
+    {file = "scikit_image-0.24.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:6fccceb54c9574590abcddc8caf6cefa57c13b5b8b4260ab3ff88ad8f3c252b3"},
+    {file = "scikit_image-0.24.0-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:ccc01e4760d655aab7601c1ba7aa4ddd8b46f494ac46ec9c268df6f33ccddf4c"},
+    {file = "scikit_image-0.24.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:18836a18d3a7b6aca5376a2d805f0045826bc6c9fc85331659c33b4813e0b563"},
+    {file = "scikit_image-0.24.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8579bda9c3f78cb3b3ed8b9425213c53a25fa7e994b7ac01f2440b395babf660"},
+    {file = "scikit_image-0.24.0-cp312-cp312-win_amd64.whl", hash = "sha256:82ab903afa60b2da1da2e6f0c8c65e7c8868c60a869464c41971da929b3e82bc"},
+    {file = "scikit_image-0.24.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:ef04360eda372ee5cd60aebe9be91258639c86ae2ea24093fb9182118008d009"},
+    {file = "scikit_image-0.24.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:e9aadb442360a7e76f0c5c9d105f79a83d6df0e01e431bd1d5757e2c5871a1f3"},
+    {file = "scikit_image-0.24.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5e37de6f4c1abcf794e13c258dc9b7d385d5be868441de11c180363824192ff7"},
+    {file = "scikit_image-0.24.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4688c18bd7ec33c08d7bf0fd19549be246d90d5f2c1d795a89986629af0a1e83"},
+    {file = "scikit_image-0.24.0-cp39-cp39-win_amd64.whl", hash = "sha256:56dab751d20b25d5d3985e95c9b4e975f55573554bd76b0aedf5875217c93e69"},
+    {file = "scikit_image-0.24.0.tar.gz", hash = "sha256:5d16efe95da8edbeb363e0c4157b99becbd650a60b77f6e3af5768b66cf007ab"},
+]
+
+[package.dependencies]
+imageio = ">=2.33"
+lazy-loader = ">=0.4"
+networkx = ">=2.8"
+numpy = ">=1.23"
+packaging = ">=21"
+pillow = ">=9.1"
+scipy = ">=1.9"
+tifffile = ">=2022.8.12"
+
+[package.extras]
+build = ["Cython (>=3.0.4)", "build", "meson-python (>=0.15)", "ninja", "numpy (>=2.0.0rc1)", "packaging (>=21)", "pythran", "setuptools (>=67)", "spin (==0.8)", "wheel"]
+data = ["pooch (>=1.6.0)"]
+developer = ["ipython", "pre-commit", "tomli"]
+docs = ["PyWavelets (>=1.1.1)", "dask[array] (>=2022.9.2)", "ipykernel", "ipywidgets", "kaleido", "matplotlib (>=3.6)", "myst-parser", "numpydoc (>=1.7)", "pandas (>=1.5)", "plotly (>=5.10)", "pooch (>=1.6)", "pydata-sphinx-theme (>=0.15.2)", "pytest-doctestplus", "pytest-runner", "scikit-learn (>=1.1)", "seaborn (>=0.11)", "sphinx (>=7.3)", "sphinx-copybutton", "sphinx-gallery (>=0.14)", "sphinx_design (>=0.5)", "tifffile (>=2022.8.12)"]
+optional = ["PyWavelets (>=1.1.1)", "SimpleITK", "astropy (>=5.0)", "cloudpickle (>=0.2.1)", "dask[array] (>=2021.1.0)", "matplotlib (>=3.6)", "pooch (>=1.6.0)", "pyamg", "scikit-learn (>=1.1)"]
+test = ["asv", "numpydoc (>=1.7)", "pooch (>=1.6.0)", "pytest (>=7.0)", "pytest-cov (>=2.11.0)", "pytest-doctestplus", "pytest-faulthandler", "pytest-localserver"]
+
+[[package]]
 name = "scikit-learn"
 version = "1.5.0"
 description = "A set of python modules for machine learning and data mining"
@@ -7700,6 +7843,27 @@ files = [
     {file = "threadpoolctl-3.5.0-py3-none-any.whl", hash = "sha256:56c1e26c150397e58c4926da8eeee87533b1e32bef131bd4bf6a2f45f3185467"},
     {file = "threadpoolctl-3.5.0.tar.gz", hash = "sha256:082433502dd922bf738de0d8bcc4fdcbf0979ff44c42bd40f5af8a282f6fa107"},
 ]
+
+[[package]]
+name = "tifffile"
+version = "2024.7.24"
+description = "Read and write TIFF files"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "tifffile-2024.7.24-py3-none-any.whl", hash = "sha256:f5cce1a915c37bc44ae4a792e3b42c07a30a3fa88406f5c6060a3de076487ed1"},
+    {file = "tifffile-2024.7.24.tar.gz", hash = "sha256:723456ebf2b4918878ae05a7b50fa366ff3b3a686293317eb7a0f294c3eea050"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[package.extras]
+all = ["defusedxml", "fsspec", "imagecodecs (>=2023.8.12)", "lxml", "matplotlib", "zarr"]
+codecs = ["imagecodecs (>=2023.8.12)"]
+plot = ["matplotlib"]
+xml = ["defusedxml", "lxml"]
+zarr = ["fsspec", "zarr"]
 
 [[package]]
 name = "tiktoken"
@@ -9149,4 +9313,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "f926bee4503d7b534d639442aec734cbaa5c54875eb5b63efba260f804985188"
+content-hash = "93d6f18d787e8da5cbbffdb23237710a50b85c188e843f8f97d33807cf4d3f72"
