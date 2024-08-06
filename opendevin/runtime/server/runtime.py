@@ -93,16 +93,16 @@ class ServerRuntime(Runtime):
         await self.sandbox.ainit()
 
         # init sandbox plugins
-        if self.plugins and len(self.plugins) > 0:
-            if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
-                obs = await self.run_ipython(
-                    IPythonRunCellAction(
-                        code=f'import os; os.chdir("{self.config.workspace_mount_path_in_sandbox}")'
-                    )
+        # if self.plugins and len(self.plugins) > 0:
+        if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
+            obs = await self.run_ipython(
+                IPythonRunCellAction(
+                    code=f'import os; os.chdir("{self.config.workspace_mount_path_in_sandbox}")'
                 )
-                logger.info(
-                    f'Switch to working directory {self.config.workspace_mount_path_in_sandbox} in IPython. Output: {obs.content}'
-                )
+            )
+            logger.info(
+                f'Switch to working directory {self.config.workspace_mount_path_in_sandbox} in IPython. Output: {obs.content}'
+            )
 
     async def close(self):
         if hasattr(self, '_is_external_sandbox') and not self._is_external_sandbox:
@@ -256,5 +256,3 @@ class ServerRuntime(Runtime):
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
-        except Exception as e:
-            return ErrorObservation(f'Command execution failed: {str(e)}')

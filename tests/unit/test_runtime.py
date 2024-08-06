@@ -40,11 +40,10 @@ from opendevin.storage import get_file_store
 @pytest.fixture(autouse=True)
 def print_method_name(request):
     print('\n########################################################################')
-    print(f'Running test: {request.node.name}')
-    print('########################################################################')
     sys.stdout.flush()
     yield
-    print(f'Finished test: {request.node.name}')
+    print(f'\nFinished test: {request.node.name}')
+    print('########################################################################')
     sys.stdout.flush()
 
 

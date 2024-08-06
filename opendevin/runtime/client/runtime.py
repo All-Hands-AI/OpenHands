@@ -112,8 +112,8 @@ class EventStreamRuntime(Runtime):
             raise ex
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+        stop=tenacity.stop_after_attempt(8),
+        wait=tenacity.wait_exponential(multiplier=1, min=10, max=60),
     )
     async def _init_container(
         self,
@@ -197,8 +197,8 @@ class EventStreamRuntime(Runtime):
         return self.session
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=4, max=60),
+        stop=tenacity.stop_after_attempt(8),
+        wait=tenacity.wait_exponential(multiplier=1, min=10, max=60),
     )
     async def _wait_until_alive(self):
         logger.info('Reconnecting session')
