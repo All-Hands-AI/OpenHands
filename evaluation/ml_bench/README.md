@@ -10,40 +10,9 @@ The task introduces new challenges for LLMs, such as comprehending long and lang
 
 For more details on the ML-Bench task and dataset, please refer to the paper: [ML-Bench: Evaluating Large Language Models for Code Generation in Repository-Level Machine Learning Tasks](https://arxiv.org/abs/2311.09835).
 
-## Setup Environment
+## Setup Environment and LLM Configuration
 
-Please follow the [OpenDevin setup guide](https://github.com/OpenDevin/OpenDevin/blob/main/docs/setup.md) to set up the local development environment for OpenDevin.
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace.
-
-Add the following configurations:
-
-```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-run_as_devin = false
-sandbox_container_image = "public.ecr.aws/i5g0m1f6/ml-bench" # Use the latest image from the ML-Bench repository
-
-[sandbox]
-enable_auto_lint = true
-
-
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on ML-Bench
 

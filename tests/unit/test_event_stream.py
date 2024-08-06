@@ -32,7 +32,7 @@ def test_stream_storage(temp_dir: str):
     event_stream = EventStream('abc', file_store)
     event_stream.add_event(NullObservation(''), EventSource.AGENT)
     assert len(collect_events(event_stream)) == 1
-    content = event_stream._file_store.read('sessions/abc/events/0.json')
+    content = event_stream.file_store.read('sessions/abc/events/0.json')
     assert content is not None
     data = json.loads(content)
     assert 'timestamp' in data

@@ -1,29 +1,31 @@
 import asyncio
-import logging
 import os
-import pathlib
 from typing import Any
 
 import pandas as pd
 
+from evaluation.toolqa.utils import encode_question, eval_answer, get_data
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     codeact_user_response,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    get_parser,
+)
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
-from opendevin.llm.llm import LLM
-
-from .utils import download_data, download_tools, encode_question, eval_answer, get_data
-
-config = load_app_config()
+from opendevin.core.main import create_runtime, run_controller
+from opendevin.events.action import CmdRunAction
+from opendevin.events.observation import CmdOutputObservation
+from opendevin.runtime.runtime import Runtime
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -34,59 +36,84 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
-    # create process-specific workspace dir
-    # we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    workspace_mount_path = config.workspace_mount_path
-    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+def get_config(
+    metadata: EvalMetadata,
+) -> AppConfig:
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='ubuntu:22.04',
+            enable_auto_lint=True,
+            use_host_network=False,
+            update_source_code=True,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
 
-    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-    eval_output_dir = metadata.eval_output_dir
+
+async def initialize_runtime(runtime: Runtime):
+    """Initialize the runtime for the agent.
+
+    This function is called before the runtime is used to run the agent.
+    """
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    obs: CmdOutputObservation
+
+    # Set instance id
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    await runtime.add_env_vars({'WOLFRAM_ALPHA_APPID': args.wolfram_alpha_appid})
+
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+
+
+async def process_instance(
+    instance: Any, metadata: EvalMetadata, reset_logger: bool = True
+):
+    config = get_config(metadata)
+
     qid = instance.qid
     question = instance.question
     answer = instance.answer
+
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        # Set up logger
-        log_file = os.path.join(eval_output_dir, 'logs', f'instance_{qid}.log')
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {qid}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
-    logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, qid, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {qid}.')
 
     # Prepare instruction
     instruction = encode_question(question)
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
-    # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
+    logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+
+    runtime = await create_runtime(config, sid=qid)
+    await initialize_runtime(runtime)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                agent.__class__.__name__
-            ],
-            agent=agent,
-            sid=qid,
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -110,17 +137,17 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
-    output = {
-        'qid': qid,
-        'text': model_answer_raw,
-        'correct': correct,
-        'answer_id': 'None',
-        'model_id': metadata.model_name,
-        'metadata': metadata,
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-    }
+    output = EvalOutput(
+        instance_id=qid,
+        test_result={
+            'model_answer_raw': model_answer_raw,
+            'correct': correct,
+        },
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+    )
     return output
 
 
@@ -145,8 +172,12 @@ if __name__ == '__main__':
         default='YOUR_WOLFRAMALPHA_APPID',
     )
     args, _ = parser.parse_known_args()
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
-    logger.info(f'Config for evaluation: {config}')
+
+    llm_config = None
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     dataset = ''
     hardness = ''
@@ -168,14 +199,9 @@ if __name__ == '__main__':
     if args.hardness not in ['easy', 'hard']:
         raise ValueError('Please choose from easy and hard for hardness.')
 
-    # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    workspace_mount_path = config.workspace_mount_path
-    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
     toolqa_test = pd.DataFrame(get_data(dataset, hardness))
-    toolqa_data_path = download_data(workspace_mount_path)
-    toolqa_tool_path = download_tools(workspace_mount_path, args.wolfram_alpha_appid)
+    toolqa_test.rename(columns={'qid': 'instance_id'}, inplace=True)
 
-    id_column = 'qid'
     metadata = make_metadata(
         llm_config,
         f'toolqa-{args.dataset}-{args.hardness}',
@@ -184,12 +210,9 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit, id_column)
-    run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+    instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

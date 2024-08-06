@@ -230,7 +230,7 @@ class EventStreamRuntime(Runtime):
 
     async def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> dict[str, Any]:
+    ) -> None:
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
@@ -264,7 +264,7 @@ class EventStreamRuntime(Runtime):
                 f'{self.api_url}/upload_file', data=upload_data, params=params
             ) as response:
                 if response.status == 200:
-                    return await response.json()
+                    return
                 else:
                     error_message = await response.text()
                     raise Exception(f'Copy operation failed: {error_message}')
@@ -276,6 +276,7 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
+            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
     async def run_action(self, action: Action) -> Observation:
         # set timeout to default if not set

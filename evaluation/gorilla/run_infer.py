@@ -1,59 +1,28 @@
 import asyncio
 import json
-import logging
-import multiprocessing as mp
 import os
-import pathlib
-import subprocess
-import time
-from concurrent.futures import ProcessPoolExecutor
 
-from tqdm import tqdm
+import pandas as pd
 
-from opendevin.controller.agent import Agent
+from evaluation.gorilla.utils import encode_question, get_data_for_hub
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    codeact_user_response,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+)
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    get_parser,
+)
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
-from opendevin.events.action import MessageAction
-from opendevin.llm.llm import LLM
-
-from .utils import encode_question, get_data
-
-config = load_app_config()
-
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
-
-def codeact_user_response(state: State) -> str:
-    msg = (
-        #'Please continue working on the task on whatever approach you think is suitable.\n'
-        'Please run the following command: <execute_bash> exit </execute_bash>.\n'
-        #'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
-    )
-
-    # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-    if state.history:
-        user_msgs = [
-            event
-            for event in state.history.get_events()
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
-        if len(user_msgs) > 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
-    return msg
-
+from opendevin.core.main import create_runtime, run_controller
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -64,105 +33,96 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(agent, question_id, question, metadata, reset_logger: bool = True):
-    # create process-specific workspace dir
-    # we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    old_workspace_mount_path = config.workspace_mount_path
-    try:
-        workspace_mount_path = os.path.join(
-            config.workspace_mount_path, '_eval_workspace'
-        )
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-        config.workspace_mount_path = workspace_mount_path
+def get_config(
+    metadata: EvalMetadata,
+) -> AppConfig:
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='ubuntu:22.04',
+            enable_auto_lint=True,
+            use_host_network=False,
+            update_source_code=True,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
 
-        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-        eval_output_dir = metadata['eval_output_dir']
-        if reset_logger:
-            # Set up logger
-            log_file = os.path.join(
-                eval_output_dir, 'logs', f'instance_{question_id}.log'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            # add back the console handler to print ONE line
-            logger.addHandler(get_console_handler())
-            logger.info(
-                f'Starting evaluation for instance {question_id}.\nLOG:   tail -f {log_file}'
-            )
-            # Remove all existing handlers from logger
-            for handler in logger.handlers[:]:
-                logger.removeHandler(handler)
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setFormatter(
-                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            )
-            logger.addHandler(file_handler)
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-        # Prepare instruction
-        instruction = encode_question(question, metadata['hub'])
-        instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        # NOTE: You can actually set slightly different instruction for different agents
-        instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
-        # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+async def process_instance(
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
+) -> EvalOutput:
+    config = get_config(metadata)
+    instance_id = instance['question_id']
+    question = instance['question']
 
-        # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        config.max_iterations = metadata.max_iterations
-        state: State | None = asyncio.run(
-            run_controller(
-                config=config,
-                task_str=instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent.__class__.__name__
-                ),
-                agent=agent,
-                sid=question_id,
-            )
-        )
-        # ======= Attempt to evaluate the agent's edits =======
-        # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+    if reset_logger:
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance_id, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance_id}.')
 
-        if state is None:
-            raise ValueError('State should not be None.')
+    # Prepare instruction
+    instruction = encode_question(question, instance['hub'])
+    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    # NOTE: You can actually set slightly different instruction for different agents
+    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
+    # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
-        # retrieve the last message from the agent
-        model_answer_raw = state.history.get_last_agent_message()
+    # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    runtime = await create_runtime(config, sid=instance_id)
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+            metadata.agent_class
+        ),
+    )
+    # ======= Attempt to evaluate the agent's edits =======
+    # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
-        # attempt to parse model_answer
-        _, _, ast_eval = get_data(metadata['hub'])
-        correct, hallucination = ast_eval(question_id, model_answer_raw)
-        metrics = state.metrics.get() if state.metrics else None
-        logger.info(
-            f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
-        )
+    if state is None:
+        raise ValueError('State should not be None.')
 
-        # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
-        # for compatibility with the existing output format, we can remake the pairs here
-        # remove when it becomes unnecessary
-        histories = state.history.compatibility_for_eval_history_pairs()
+    # retrieve the last message from the agent
+    model_answer_raw = state.history.get_last_agent_message()
 
-        # Save the output
-        output = {
-            'question_id': question_id,
+    # attempt to parse model_answer
+    ast_eval_fn = instance['ast_eval']
+    correct, hallucination = ast_eval_fn(instance_id, model_answer_raw)
+    metrics = state.metrics.get() if state.metrics else None
+    logger.info(
+        f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
+    )
+
+    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    histories = state.history.compatibility_for_eval_history_pairs()
+
+    output = EvalOutput(
+        instance_id=instance_id,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
             'text': model_answer_raw,
             'correct': correct,
             'hallucination': hallucination,
-            'answer_id': 'None',
-            'model_id': metadata['model_name'],
-            'metadata': metadata.model_dump(),
-            'history': histories,
-            'metrics': metrics,
-            'error': state.last_error if state and state.last_error else None,
-        }
-    except Exception:
-        logger.error('Process instance failed')
-        raise
-    finally:
-        config.workspace_mount_path = old_workspace_mount_path
+        },
+    )
     return output
 
 
@@ -175,188 +135,62 @@ if __name__ == '__main__':
         default='hf,torch,tf',
     )
     args, _ = parser.parse_known_args()
-    if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
 
-    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
-    # for details of how to set `llm_config`
+    llm_config = None
     if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
-    logger.info(f'Config for evaluation: {config}')
-    agent_class = args.agent_cls
-    assert (
-        agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
-    ), f'Unsupported agent class: {agent_class}'
-    model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
-    eval_note = ''
-    if args.eval_note is not None:
-        eval_note += '_N_' + args.eval_note
-    eval_output_dir = os.path.join(
-        args.eval_output_dir,
-        'gorilla',
-        agent_class,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note,
-    )
-    pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
-        parents=True, exist_ok=True
-    )
-    logger.info(f'Using evaluation output directory: {eval_output_dir}')
+        llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    hubs = []
-    if 'hf' in args.hubs:
-        hubs.append('hf')
-    if 'torch' in args.hubs or 'th' in args.hubs:
-        hubs.append('torch')
-    if 'tf' in args.hubs:
-        hubs.append('tf')
-    if hubs == []:
+    hubs = args.hubs.split(',')
+    if len(hubs) == 0:
         raise ValueError('Please choose at least one from hf, torch, and tf for hubs.')
 
+    dfs = []
     for hub in hubs:
         logger.info(f'Evaluating APIBench {hub} test')
-        questions, question_ids, ast_eval = get_data(hub)
+        df = get_data_for_hub(hub)
+        dfs.append(df)
+    dataset_df = pd.concat(dfs)
+    dataset_df.rename(columns={'question_id': 'instance_id'}, inplace=True)
 
-        # TEST METADATA
-        metadata = {
-            'hub': hub,
-            'agent_class': agent_class,
-            'model_name': model_name,
-            'max_iterations': max_iterations,
-            'eval_output_dir': eval_output_dir,
-            'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-            # get the commit id of current repo for reproduciblity
-            'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-            .decode('utf-8')
-            .strip(),
-        }
-        logger.info(f'Metadata: {metadata}')
-        with open(os.path.join(eval_output_dir, f'metadata_{hub}.json'), 'w') as f:
-            json.dump(metadata, f)
+    metadata = make_metadata(
+        llm_config=llm_config,
+        dataset_name=f'gorilla-{hub}',
+        agent_class=args.agent_cls,
+        max_iterations=args.max_iterations,
+        eval_note=args.eval_note,
+        eval_output_dir=args.eval_output_dir,
+        data_split=args.data_split,
+    )
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
 
-        # LIMIT EVALUATION
-        eval_n_limit = args.eval_n_limit
-        if eval_n_limit:
-            questions = questions[: (eval_n_limit // len(hubs))]
-            question_ids = question_ids[: (eval_n_limit // len(hubs))]
-            logger.info(
-                f'Limiting evaluation to a total of first {eval_n_limit} instances -> first {eval_n_limit//len(hubs)} instances per hub.'
-            )
-        output_file = os.path.join(eval_output_dir, f'output_{model_name}_{hub}.jsonl')
-        logger.info(f'Writing evaluation output to {output_file}')
-        finished_task_ids = set()
-        if os.path.exists(output_file):
-            with open(output_file, 'r') as f:
-                for line in f:
-                    data = json.loads(line)
-                    for i in range(len(question_ids)):
-                        if question_ids[i] == int(data['question_id']):
-                            finished_task_ids.add(data['question_id'])
-            logger.warning(
-                f'Output file {output_file} already exists. Loaded {len(finished_task_ids)} finished instances.'
-            )
-        output_fp = open(output_file, 'a')
-        logger.info(
-            f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
+    dataset = prepare_dataset(
+        dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit
+    )
+
+    asyncio.run(
+        run_evaluation(
+            dataset=dataset,
+            metadata=metadata,
+            output_file=output_file,
+            num_workers=args.eval_num_workers,
+            process_instance_func=process_instance,
         )
-        # =============================================
-        # filter out finished instances
-        new_questions = []
-        new_question_ids = []
-        for i in range(len(question_ids)):
-            if question_ids[i] in finished_task_ids:
-                logger.info(
-                    f'Skipping instance {question_ids[i]} as it is already finished.'
-                )
-                continue
-            new_questions.append(questions[i])
-            new_question_ids.append(question_ids[i])
+    )
 
-        finished_task_number = len(finished_task_ids)
-        questions = new_questions
-        question_ids = new_question_ids
-        logger.info(
-            f'Finished instances: {finished_task_number}, Remaining instances: {len(question_ids)}'
-        )
-        # =============================================
-        pbar = tqdm(total=len(question_ids))
-
-        # This function tracks the progress AND write the output to a JSONL file
-        def update_progress(future, pbar, output_fp, finished_task_ids):
-            pbar.update(1)
-            output = future.result()
-            pbar.set_description(f'Instance {output["question_id"]}')
-            pbar.set_postfix_str(f'Test Result: {output["correct"]}')
-            logger.info(
-                f'Finished evaluation for instance {output["question_id"]}: {output["correct"]}'
-            )
-            output_fp.write(json.dumps(output) + '\n')
-            output_fp.flush()
-            finished_task_ids.add(output['question_id'])
-
-        # Create the agent
-        agent = Agent.get_cls(agent_class)(llm=LLM(config.llm))
-
-        # This sets the multi-processing
-        num_workers = args.eval_num_workers
-        logger.info(f'Using {num_workers} workers for evaluation.')
-        try:
-            with ProcessPoolExecutor(num_workers) as executor:
-                futures = []
-                # This is how we perform multi-processing
-                for i in range(len(question_ids)):
-                    try:
-                        question_id = question_ids[i]
-                        question = questions[i]
-                        future = executor.submit(
-                            process_instance,
-                            agent,
-                            question_id,
-                            question,
-                            metadata,
-                            reset_logger=bool(num_workers > 1),
-                        )
-                        future.add_done_callback(
-                            update_progress, pbar, output_fp, finished_task_ids
-                        )
-                        futures.append(future)
-                    except Exception:
-                        continue
-
-                # Wait for all futures to complete
-                for future in futures:
-                    try:
-                        future.result()
-                    except Exception:
-                        continue
-        except KeyboardInterrupt:
-            logger.info('KeyboardInterrupt received. Cleaning up...')
-            cleanup()
-
-        output_fp.close()
-        total_correct = 0
-        total_hallucination = 0
-        output = []
-        with open(output_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                output.append(data)
-                if int(data['question_id']) in finished_task_ids:
-                    if str(data['correct']).lower() == 'true':
-                        total_correct += 1
-                    if str(data['hallucination']).lower() == 'true':
-                        total_hallucination += 1
-        # sort all output by question_id
-        output = sorted(output, key=lambda x: x['question_id'])
-        with open(output_file, 'w') as f:
-            for dat in output:
-                f.write(json.dumps(dat) + '\n')
-                f.flush()
-
-        logger.info(
-            f'Evaluation finished for {hub}. Total: {len(question_ids)+finished_task_number}; Correct: {total_correct}; Hallucination: {total_hallucination}. Accuracy: {total_correct / (len(question_ids)+finished_task_number)}'
-        )
+    # Read the output file and calculate the accuracy
+    total_correct = 0
+    total_hallucination = 0
+    output = []
+    with open(output_file, 'r') as f:
+        for line in f:
+            data = json.loads(line)
+            if data['test_result']['correct']:
+                total_correct += 1
+            if data['test_result']['hallucination']:
+                total_hallucination += 1
+            output.append(data)
+    logger.info(
+        f'Evaluation finished for {hub}. Total: {len(output)}; Correct: {total_correct}; Hallucination: {total_hallucination}. Accuracy: {total_correct / len(output)}'
+    )
