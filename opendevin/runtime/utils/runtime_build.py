@@ -396,7 +396,6 @@ if __name__ == '__main__':
             _runtime_image_repo, runtime_image_hash_tag = runtime_image_hash_name.split(
                 ':'
             )
-            assert runtime_image_hash_tag == runtime_image_tag
 
         # Move contents of temp_dir to build_folder
         shutil.copytree(temp_dir, build_folder)
