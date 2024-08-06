@@ -71,7 +71,7 @@ LOCAL_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 
 def get_data(dataset, hardness):
-    data_path = os.path.join(LOCAL_DATD_DIR, f'{dataset}-{hardness}.jsonl')
+    data_path = os.path.join(LOCAL_DATA_DIR, f'{dataset}-{hardness}.jsonl')
     if os.path.exists(data_path):
         print(f'Loading data from {data_path}')
         with open(data_path, 'r') as f:
