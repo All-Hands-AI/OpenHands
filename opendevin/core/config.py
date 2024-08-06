@@ -152,8 +152,6 @@ class SandboxConfig(metaclass=Singleton):
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
-        update_source_code: Whether to update the source code in the EventStreamRuntime.
-            Used for development of EventStreamRuntime.
         od_runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
@@ -180,7 +178,6 @@ class SandboxConfig(metaclass=Singleton):
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
-    update_source_code: bool = False
     od_runtime_extra_deps: str | None = None
     od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
