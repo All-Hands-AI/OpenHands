@@ -386,14 +386,23 @@ if __name__ == '__main__':
         runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(
             args.base_image
         )
-        runtime_image_hash_name = build_runtime_image(
-            args.base_image,
-            docker_client=docker.from_env(),
-            docker_build_folder=build_folder,
-            dry_run=True,
+        with tempfile.TemporaryDirectory() as temp_dir:
+            runtime_image_hash_name = build_runtime_image(
+                args.base_image,
+                docker_client=docker.from_env(),
+                docker_build_folder=temp_dir,
+                dry_run=True,
+            )
+            _runtime_image_repo, runtime_image_hash_tag = runtime_image_hash_name.split(
+                ':'
+            )
+            assert runtime_image_hash_tag == runtime_image_tag
+
+        # Move contents of temp_dir to build_folder
+        shutil.copytree(temp_dir, build_folder)
+        logger.info(
+            f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}'
         )
-        _runtime_image_repo, runtime_image_hash_tag = runtime_image_hash_name.split(':')
-        assert runtime_image_hash_tag == runtime_image_tag
 
         with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
             file.write(
