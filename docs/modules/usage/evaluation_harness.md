@@ -2,9 +2,7 @@
 sidebar_position: 6
 ---
 
-Here's a revised guideline to help people contribute to OpenDevin, incorporating the sections you've requested and using the provided files:
-
-# How to contribute to OpenDevin Evaluation Harness
+# 📈 How to contribute to OpenDevin Evaluation Harness
 
 This guide provides an overview of how to integrate your own evaluation benchmark into the OpenDevin framework.
 
