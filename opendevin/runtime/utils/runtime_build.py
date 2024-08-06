@@ -397,7 +397,7 @@ if __name__ == '__main__':
                 ':'
             )
             # Move contents of temp_dir to build_folder
-            shutil.copytree(temp_dir, build_folder)
+            shutil.copytree(temp_dir, build_folder, dirs_exist_ok=True)
         logger.info(
             f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}'
         )
