@@ -6343,13 +6343,13 @@ dev = ["atomicwrites (==1.4.1)", "attrs (==23.2.0)", "coverage (==7.4.1)", "hatc
 
 [[package]]
 name = "python-pptx"
-version = "1.0.0"
+version = "1.0.1"
 description = "Create, read, and update PowerPoint 2007+ (.pptx) files."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "python_pptx-1.0.0-py3-none-any.whl", hash = "sha256:e099cbcb370e97ae1cca2186ac757774a2c7bf1b5cb7e6ac3cb77061466713c5"},
-    {file = "python_pptx-1.0.0.tar.gz", hash = "sha256:5c0f9fbf564fccf825c03c8bb75af9245fbdfad75e2857d115f47fd94b65eae8"},
+    {file = "python_pptx-1.0.1-py3-none-any.whl", hash = "sha256:d8f7bee1bd568a9b6e9dd9ee595c07bcd5421a559d8eb625235c981c80654141"},
+    {file = "python_pptx-1.0.1.tar.gz", hash = "sha256:9f1e85234b93e189166d10230c4f8ac3b442d02a7ccda9afd05ff5e3be0b15a2"},
 ]
 
 [package.dependencies]
