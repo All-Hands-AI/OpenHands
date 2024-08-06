@@ -166,7 +166,7 @@ The OpenDevin Runtime supports a plugin system that allows for extending functio
 
 Check [an example of Jupyter plugin here](https://github.com/OpenDevin/OpenDevin/blob/9c44d94cef32e6426ebd8deeeb52963153b2348a/opendevin/runtime/plugins/jupyter/__init__.py#L30-L63) if you want to implement your own plugin.
 
-*More details about Plugin system is still under-construction - contributions welcomed!*
+*More details about the Plugin system are still under construction - contributions are welcomed!*
 
 Key aspects of the plugin system:
 
