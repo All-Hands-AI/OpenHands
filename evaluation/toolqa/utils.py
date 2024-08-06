@@ -67,7 +67,7 @@ def download_tools(dir, wolfram_alpha_appid='YOUR_WOLFRAMALPHA_APPID'):
         f.write(new_content)
 
 
-LOCAL_DATD_DIR = os.path.join(os.path.dirname(__file__), 'data')
+LOCAL_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
 
 def get_data(dataset, hardness):
