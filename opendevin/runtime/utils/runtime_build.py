@@ -333,7 +333,7 @@ def build_runtime_image(
                 f'Dry run: Skipping image build for [{generic_runtime_image_name}]'
             )
         if docker_build_folder is None:
-            os.rmdir(cur_docker_build_folder)
+            shutil.rmtree(cur_docker_build_folder)
 
     # 3. If the image is not found AND we cannot re-use the non-hash latest relavant image,
     # we will build it completely from scratch
@@ -364,7 +364,7 @@ def build_runtime_image(
             )
 
         if docker_build_folder is None:
-            os.rmdir(cur_docker_build_folder)
+            shutil.rmtree(cur_docker_build_folder)
 
     return f'{runtime_image_repo}:{from_scratch_hash}'
 
