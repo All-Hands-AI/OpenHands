@@ -303,9 +303,9 @@ def build_runtime_image(
             f'time for dependencies installation.\n'
         )
 
-        docker_build_folder = docker_build_folder or tempfile.TemporaryDirectory()  # type: ignore
+        cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
         _skip_init_hash = prep_docker_build_folder(
-            str(docker_build_folder),
+            cur_docker_build_folder,
             # we want to use the existing generic image as base
             # so that we can leverage existing dependencies already installed in the image
             base_image=generic_runtime_image_name,
@@ -318,7 +318,7 @@ def build_runtime_image(
 
         if not dry_run:
             _build_sandbox_image(
-                docker_folder=str(docker_build_folder),
+                docker_folder=cur_docker_build_folder,
                 docker_client=docker_client,
                 target_image_repo=runtime_image_repo,
                 # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
@@ -332,16 +332,15 @@ def build_runtime_image(
             logger.info(
                 f'Dry run: Skipping image build for [{generic_runtime_image_name}]'
             )
-
-        if isinstance(docker_build_folder, tempfile.TemporaryDirectory):
-            docker_build_folder.cleanup()  # type: ignore
+        if docker_build_folder is None:
+            os.rmdir(cur_docker_build_folder)
 
     # 3. If the image is not found AND we cannot re-use the non-hash latest relavant image,
     # we will build it completely from scratch
     else:
-        docker_build_folder = docker_build_folder or tempfile.TemporaryDirectory()  # type: ignore
+        cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
         _new_from_scratch_hash = prep_docker_build_folder(
-            str(docker_build_folder),
+            cur_docker_build_folder,
             base_image,
             skip_init=False,
             extra_deps=extra_deps,
@@ -352,7 +351,7 @@ def build_runtime_image(
 
         if not dry_run:
             _build_sandbox_image(
-                docker_folder=str(docker_build_folder),
+                docker_folder=cur_docker_build_folder,
                 docker_client=docker_client,
                 target_image_repo=runtime_image_repo,
                 # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
@@ -364,8 +363,8 @@ def build_runtime_image(
                 f'Dry run: Skipping image build for [{generic_runtime_image_name}]'
             )
 
-        if isinstance(docker_build_folder, tempfile.TemporaryDirectory):
-            docker_build_folder.cleanup()  # type: ignore
+        if docker_build_folder is None:
+            os.rmdir(cur_docker_build_folder)
 
     return f'{runtime_image_repo}:{from_scratch_hash}'
 
