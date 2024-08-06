@@ -12,29 +12,47 @@ all the preprocessing/evaluation/analysis scripts.
 
 ## Supported Benchmarks
 
+To learn more about how to integrate your benchmark into OpenDevin, check out [tutorial here](https://docs.all-hands.dev/modules/usage/evaluation_harness).
+
+### Software Engineering
+
 - SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
-- ML-Bench: [`evaluation/ml_bench`](./ml_bench)
 - HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
-- GAIA: [`evaluation/gaia`](./gaia)
-- Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
-- MINT: [`evaluation/mint`](./mint)
-- AgentBench: [`evaluation/agent_bench`](./agent_bench)
 - BIRD: [`evaluation/bird`](./bird)
-- LogicReasoning: [`evaluation/logic_reasoning`](./logic_reasoning)
+- BioCoder: [`evaluation/ml_bench`](./ml_bench)
+- ML-Bench: [`evaluation/ml_bench`](./ml_bench)
+- APIBench: [`evaluation/gorilla`](./gorilla/)
+- ToolQA: [`evaluation/toolqa`](./toolqa/)
 
-## Setup
+### Web Browsing
 
-### Development environment
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to set up a local development environment for OpenDevin.
+- WebArena: [`evaluation/webarena`](./webarena/)
+- MiniWob++: [`evaluation/miniwob`](./miniwob/)
 
-### Configure OpenDevin and your LLM
+### Misc. Assistance
 
-Create a `config.toml` file if it does not exist at the root of the workspace. You can copy from `config.template.toml` if it is easier for you.
+- GAIA: [`evaluation/gaia`](./gaia)
+- GPQA: [`evaluation/gpqa`](./gpqa)
+- AgentBench: [`evaluation/agent_bench`](./agent_bench)
+- MINT: [`evaluation/mint`](./mint)
+- Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
+- ProofWriter: [`evaluation/logic_reasoning`](./logic_reasoning)
 
-Add the configuration for your LLM:
+
+## Before everything begins: Setup Environment and LLM Configuration
+
+Please follow instruction [here](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup your local development environment and LLM.
+
+OpenDevin in development mode uses `config.toml` to keep track of most configurations.
+
+Here's an example configuration file you can use to define and use multiple LLMs:
 
 ```toml
-# TODO: Change these to the model you want to evaluate
+[llm]
+# IMPORTANT: add your API key here, and set the model to the one you want to evaluate
+model = "gpt-4o-2024-05-13"
+api_key = "sk-XXX"
+
 [llm.eval_gpt4_1106_preview_llm]
 model = "gpt-4-1106-preview"
 api_key = "XXX"
