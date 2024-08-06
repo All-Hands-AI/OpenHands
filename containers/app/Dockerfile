@@ -32,7 +32,7 @@ FROM python:3.12.3-slim AS runtime
 
 WORKDIR /app
 
-ARG OPEN_DEVIN_BUILD_VERSION #re-declare this!
+ARG OPEN_DEVIN_BUILD_VERSION #re-declare for this section
 
 ENV RUN_AS_DEVIN=true
 # A random number--we need this to be different from the user's UID on the host machine

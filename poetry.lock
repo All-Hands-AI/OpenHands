@@ -3485,13 +3485,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.42.9"
+version = "1.42.12"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.42.9-py3-none-any.whl", hash = "sha256:691a48f4b4ad2ca50a039ed7dfbf2ffb78bb4920cceac76b95494b196550c67b"},
-    {file = "litellm-1.42.9.tar.gz", hash = "sha256:95cda242723821094e8af05011421c9b19002d7111dd3d6c0634a0c0754424a4"},
+    {file = "litellm-1.42.12-py3-none-any.whl", hash = "sha256:63fa89457f70f21b522fc1be41e668c0492d1bc0949a50ec18542b3884517d40"},
+    {file = "litellm-1.42.12.tar.gz", hash = "sha256:63a1db91647ec5208a9e3282dd640c3a9e76cee788f6526105b52d312141d090"},
 ]
 
 [package.dependencies]
@@ -5044,13 +5044,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.37.2"
+version = "1.38.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.37.2-py3-none-any.whl", hash = "sha256:22dfcf48cd9ff1a6b1d8de09121261bc72315515a9faadad541be93a8bb1e961"},
-    {file = "openai-1.37.2.tar.gz", hash = "sha256:fd97cb235cfce0f7c902c64e58a5cd9fea19e7c180d9a4e2a2b8e533dbd9f424"},
+    {file = "openai-1.38.0-py3-none-any.whl", hash = "sha256:a19ef052f1676320f52183ae6f9775da6d888fbe3aec57886117163c095d9f7c"},
+    {file = "openai-1.38.0.tar.gz", hash = "sha256:30fb324bf452ecb1194ca7dbc64566a4d7aa054c6a5da857937ede7d517a220b"},
 ]
 
 [package.dependencies]
@@ -6361,18 +6361,19 @@ dev = ["atomicwrites (==1.4.1)", "attrs (==23.2.0)", "coverage (==7.4.1)", "hatc
 
 [[package]]
 name = "python-pptx"
-version = "0.6.23"
-description = "Generate and manipulate Open XML PowerPoint (.pptx) files"
+version = "1.0.0"
+description = "Create, read, and update PowerPoint 2007+ (.pptx) files."
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "python-pptx-0.6.23.tar.gz", hash = "sha256:587497ff28e779ab18dbb074f6d4052893c85dedc95ed75df319364f331fedee"},
-    {file = "python_pptx-0.6.23-py3-none-any.whl", hash = "sha256:dd0527194627a2b7cc05f3ba23ecaa2d9a0d5ac9b6193a28ed1b7a716f4217d4"},
+    {file = "python_pptx-1.0.0-py3-none-any.whl", hash = "sha256:e099cbcb370e97ae1cca2186ac757774a2c7bf1b5cb7e6ac3cb77061466713c5"},
+    {file = "python_pptx-1.0.0.tar.gz", hash = "sha256:5c0f9fbf564fccf825c03c8bb75af9245fbdfad75e2857d115f47fd94b65eae8"},
 ]
 
 [package.dependencies]
 lxml = ">=3.1.0"
 Pillow = ">=3.3.2"
+typing-extensions = ">=4.9.0"
 XlsxWriter = ">=0.5.7"
 
 [[package]]
