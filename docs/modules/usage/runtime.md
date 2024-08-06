@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 
-# OpenDevin EventStream Runtime
+# 📦 EventStream Runtime
 
 The OpenDevin EventStream Runtime is the core component that enables secure and flexible execution of AI agent's action.
 It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
