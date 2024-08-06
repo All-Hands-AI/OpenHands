@@ -141,8 +141,8 @@ def _build_sandbox_image(
     """Build the sandbox image.
 
     The image will be tagged as both:
-        - {target_image_repo}:{target_image_hash_tag}
-        - {target_image_repo}:{target_image_tag}
+        - target_image_repo:target_image_hash_tag
+        - target_image_repo:target_image_tag
 
     Args:
         docker_folder: str: the path to the docker build folder
@@ -242,26 +242,7 @@ def build_runtime_image(
 ) -> str:
     """Build the runtime image for the OpenDevin runtime.
 
-    The resulting image will be tagged as both:
-        - {target_image_repo}:{target_image_hash_tag}
-        - {target_image_repo}:{target_image_tag}
-
-    `target_image_hash_tag` is the hash of the docker build folder (containing source code and Dockerfile).
-        And same hash means the image is built from scratch with the *exact SAME source code* on the
-        exact Dockerfile (i.e., same base image name & version).
-
-    `target_image_tag` is the generic tag for the target image that's generic and resembles the "latest" tag
-        in the docker image naming convention for a particular {repo}:{tag} pair.
-        For example, od_runtime:ubuntu_tag_22.04 means the latest OpenDevin image built from scratch on top of
-        ubuntu:22.04.
-
-    The logic is as follows:
-    1. If the image exists with the same hash, we will reuse it as is.
-    2. If the exact hash is not found, we will FIRST try to re-build it from the latest image (e.g., od_runtime:ubuntu_tag_latest).
-    3. If the image is not found AND we cannot re-use the non-hash latest relavant image,
-       we will build it completely from scratch.
-
-    This is only used for **eventstream runtime**.
+    See https://docs.all-hands.dev/modules/usage/runtime for more details.
     """
     runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(base_image)
 
