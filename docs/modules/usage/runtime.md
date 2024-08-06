@@ -81,7 +81,7 @@ The role of the client is crucial:
 
 OpenDevin uses a sophisticated approach to build and manage runtime images. This process ensures efficiency, consistency, and flexibility in creating and maintaining Docker images for both production and development environments.
 
-Checkout [relavant code](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/utils/runtime_build.py) if you are interested in more details.
+Check out [relavant code](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/utils/runtime_build.py) if you are interested in more details.
 
 ### Image Tagging System
 
