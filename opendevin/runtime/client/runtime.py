@@ -82,10 +82,6 @@ class EventStreamRuntime(Runtime):
         self.container_image = build_runtime_image(
             self.container_image,
             self.docker_client,
-            # NOTE: You can need set DEBUG=true to update the source code
-            # inside the container. This is useful when you want to test/debug the
-            # latest code in the runtime docker container.
-            update_source_code=self.config.sandbox.update_source_code,
             extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
