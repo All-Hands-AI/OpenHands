@@ -8,7 +8,7 @@ The OpenDevin EventStream Runtime is the core component that enables secure and 
 It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
 
 
-## Why we need sandboxed runtime?
+## Why do we need a sandboxed runtime?
 
 OpenDevin needs to execute arbitrary code in a secure, isolated environment for several reasons:
 
