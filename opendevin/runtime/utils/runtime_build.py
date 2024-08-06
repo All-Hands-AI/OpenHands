@@ -268,7 +268,10 @@ def build_runtime_image(
     # Calculate the hash for the docker build folder (source code and Dockerfile)
     with tempfile.TemporaryDirectory() as temp_dir:
         from_scratch_hash = prep_docker_build_folder(
-            temp_dir, base_image=base_image, skip_init=False, extra_deps=extra_deps
+            temp_dir,
+            base_image=base_image,
+            skip_init=False,
+            extra_deps=extra_deps,
         )
 
     # hash image name, if the hash matches, it means the image is already
