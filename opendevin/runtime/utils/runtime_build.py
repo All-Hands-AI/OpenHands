@@ -171,7 +171,6 @@ def _build_sandbox_image(
                     rm=True,
                     decode=True,
                     # do not use cache when skip_init is True (i.e., when we want to update the source code in the existing image)
-                    nocache=skip_init,
                 )
 
                 if skip_init:
@@ -208,6 +207,9 @@ def _build_sandbox_image(
         raise e
 
 
+IMAGE_REPO = 'ghcr.io/opendevin/od_runtime'
+
+
 def get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
     if dev_mode:
         if 'od_runtime' not in base_image:
@@ -221,7 +223,7 @@ def get_new_image_name(base_image: str, dev_mode: bool = False) -> str:
         logger.info(f'Using existing od_runtime image [{base_image}]')
         return base_image
     else:
-        prefix = 'od_runtime'
+        prefix = IMAGE_REPO
         if ':' not in base_image:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')

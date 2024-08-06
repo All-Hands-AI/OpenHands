@@ -242,11 +242,7 @@ def test_build_runtime_image_from_scratch(mock_docker_client, temp_dir):
 
     # The build call should be called with the hash tag
     mock_docker_client.api.build.assert_called_once_with(
-        path=ANY,
-        tag=f'{RUNTIME_IMAGE_PREFIX}:{dir_hash}',
-        rm=True,
-        decode=True,
-        nocache=False,
+        path=ANY, tag=f'{RUNTIME_IMAGE_PREFIX}:{dir_hash}', rm=True, decode=True
     )
     # Then the hash tag should be tagged to the version
     mock_image.tag.assert_called_once_with(
@@ -295,11 +291,7 @@ def test_build_runtime_image_exist_with_update_source(mock_docker_client, temp_d
 
     # check the build call
     mock_docker_client.api.build.assert_called_once_with(
-        path=ANY,
-        tag=f'{RUNTIME_IMAGE_PREFIX}_dev:{dir_hash}',
-        rm=True,
-        decode=True,
-        nocache=True,
+        path=ANY, tag=f'{RUNTIME_IMAGE_PREFIX}_dev:{dir_hash}', rm=True, decode=True
     )
     # Then check the hash tag should be tagged to expected image tag
     mock_image.tag.assert_called_once_with(
