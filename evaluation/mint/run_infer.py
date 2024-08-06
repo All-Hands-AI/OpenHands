@@ -1,33 +1,36 @@
-import asyncio
 import functools
-import logging
 import os
-import pathlib
 from typing import Any, Dict
 
+import pandas as pd
 from datasets import load_dataset
 
-from evaluation.swe_bench.swe_env_box import DockerSSHBox
+from evaluation.mint.datatypes import TaskState
+from evaluation.mint.env import SimplifiedEnv
+from evaluation.mint.prompts import ToolPromptTemplate
+from evaluation.mint.tasks import Task
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    get_parser,
+)
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
-from opendevin.llm.llm import LLM
-
-from .datatypes import TaskState
-from .env import SimplifiedEnv
-from .prompts import ToolPromptTemplate
-from .tasks import Task
-
-config = load_app_config()
+from opendevin.core.main import create_runtime, run_controller
+from opendevin.events.action import (
+    CmdRunAction,
+)
+from opendevin.events.observation import CmdOutputObservation
+from opendevin.runtime.runtime import Runtime
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, int]):
@@ -42,7 +45,7 @@ def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, 
     last_action = state.history.get_last_action()
     result_state: TaskState = env.step(last_action.message or '')
 
-    state.task_state = result_state
+    state.extra_data['task_state'] = result_state
 
     if not result_state.latest_output:
         # Task is finished
@@ -62,85 +65,108 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': '\nIMPORTANT: When your answer is confirmed by the user to be correct, you can exit using the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
+with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), 'r') as f:
+    MINT_DEPENDENCIES = f.read().splitlines()
 
-def process_instance(
+
+def load_incontext_example(task_name: str, with_tool: bool = True):
+    assert with_tool, 'NOT with_tool is not supported yet'
+    subset = {
+        'gsm8k': 'reasoning',
+        'math': 'reasoning',
+        'mmlu': 'reasoning',
+        'theoremqa': 'reasoning',
+        'mbpp': 'mbpp',
+        'humaneval': 'humaneval',
+    }[task_name]
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            'tasks',
+            'in_context_examples',
+            subset,
+            'with_tool.txt',
+        ),
+        'r',
+    ) as f:
+        return f.read()
+
+
+def get_config(
+    metadata: EvalMetadata,
+) -> AppConfig:
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='xingyaoww/od-eval-mint:v1.0',
+            enable_auto_lint=True,
+            use_host_network=False,
+            update_source_code=True,
+            od_runtime_extra_deps=f'$OD_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}',
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
+
+
+async def initialize_runtime(runtime: Runtime):
+    """Initialize the runtime for the agent.
+
+    This function is called before the runtime is used to run the agent.
+    """
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    obs: CmdOutputObservation
+
+    # Set instance id
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+
+
+async def process_instance(
     instance: Any,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(metadata.llm_config))
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+    config = get_config(metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            metadata.eval_output_dir, 'logs', f'instance_{instance.task_id}.log'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {instance.task_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
-
-    logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-    # use a session id for concurrent processing
-    sid = instance.task_id + '_' + str(os.getpid())
-    sandbox = DockerSSHBox(
-        config=config.sandbox,
-        persist_sandbox=False,
-        workspace_mount_path=config.workspace_mount_path,
-        sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
-        cache_dir=config.cache_dir,
-        run_as_devin=config.run_as_devin,
-        sid=sid,
-    )
-
-    requirements_host_src = 'evaluation/mint/requirements.txt'
-    requirements_sandbox_dest = '/opendevin/plugins/mint/'
-    sandbox.copy_to(
-        host_src=requirements_host_src,
-        sandbox_dest=requirements_sandbox_dest,
-        recursive=False,
-    )
-    logger.info(
-        f'Copied files from [{requirements_host_src}] to [{requirements_sandbox_dest}] inside sandbox.'
-    )
-    exit_code, output = sandbox.execute(f'pip install -r {requirements_sandbox_dest}')
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     # Prepare instruction
     assert metadata.details is not None
     instruction = ToolPromptTemplate(use_tool=True)(
         max_total_steps=metadata.max_iterations,
         max_propose_solution=metadata.details['max_propose_solution'],
-        in_context_example=instance.in_context_example(
-            use_tool=True, with_feedback=False
-        ),
+        in_context_example=instance.in_context_example,
         task_prompt='Task:\n' + instance.prompt,
     )
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the concise RESULT inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
 
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
+    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     fake_user_response_fn = functools.partial(
-        AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[agent.__class__.__name__],
+        AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
         task=instance,
         task_config={
             'max_iterations': metadata.max_iterations,
@@ -148,24 +174,22 @@ def process_instance(
         },
     )
 
-    config.max_iterations = metadata.max_iterations
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=fake_user_response_fn,
-            agent=agent,
-            sandbox=sandbox,
-            sid=sid,
-        )
+    runtime = await create_runtime(config, sid=instance.instance_id)
+    await initialize_runtime(runtime)
+
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=fake_user_response_fn,
     )
 
     if state is None:
         raise ValueError('State should not be None.')
 
     task_state = None
-    if hasattr(state, 'task_state'):
-        task_state = state.task_state
+    if 'task_state' in state.extra_data:
+        task_state = state.extra_data['task_state']
         logger.info('Task state: ' + str(task_state.to_dict()))
 
     metrics = state.metrics.get() if state.metrics else None
@@ -176,30 +200,37 @@ def process_instance(
     histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
-    output = {
-        'id': instance.task_id,
-        'instance': instance.to_dict(),
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': task_state.success if task_state else False,
-    }
-
-    # Close the sandbox
-    sandbox.close()
-
+    output = EvalOutput(
+        instance_id=instance.instance_id,
+        instance=instance.to_dict(),
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
+            'success': task_state.success if task_state else False,
+        },
+    )
     return output
 
 
 if __name__ == '__main__':
     parser = get_parser()
 
+    SUBSETS = [
+        # Eurus subset: https://arxiv.org/abs/2404.02078
+        'math',
+        # 'gsm8k',
+        'mmlu',
+        'theoremqa',
+        'mbpp',
+        'humaneval',
+    ]
     parser.add_argument(
         '--subset',
-        default='math',
-        choices=['math', 'gsm8k', 'mmlu', 'theoremqa', 'mbpp', 'humaneval'],
+        default='all',
+        choices=SUBSETS + ['all'],
         type=str,
         help='subset of the dataset to be used',
     )
@@ -214,19 +245,36 @@ if __name__ == '__main__':
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    mint_dataset = load_dataset(
-        'ryanhoangt/xingyaoww-mint-bench', name=args.subset, split='test'
-    )
-    logger.info(f'Evaluating MINT - {args.subset} subset')
-    mint_tests = mint_dataset.to_pandas()
+    if args.subset == 'all':
+        subsets = SUBSETS
+    else:
+        subsets = [args.subset]
 
-    id_column = 'id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
-    logger.info(f'Config for evaluation: {config}')
+    dataset_dfs = []
+    for subset in subsets:
+        in_context_example = load_incontext_example(subset)
+        _cur_dataset = load_dataset(
+            'ryanhoangt/xingyaoww-mint-bench', name=subset, split='test'
+        )
+        logger.info(f'Loaded MINT - {subset} subset')
+        _df = _cur_dataset.to_pandas().rename(columns={'id': 'instance_id'})
+        _df['instance_id'] = _df['instance_id'].apply(lambda x: f'{subset}/{x}')  # noqa
+        _df['in_context_example'] = in_context_example
+        dataset_dfs.append(_df)
+        logger.info(f'Loaded {len(_df)} instances for subset: {subset}')
+
+    dataset_df = pd.concat(dataset_dfs)
+    logger.info(f'Loaded {len(dataset_df)} instances for subset: {subsets}')
+
+    llm_config = None
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        args.dataset_name,
+        f'MINT-{args.subset}',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
@@ -234,12 +282,7 @@ if __name__ == '__main__':
         details={'max_propose_solution': args.max_propose_solution},
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(mint_dataset, output_file, args.eval_n_limit, id_column)
+    instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
     run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

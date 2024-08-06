@@ -187,23 +187,37 @@ class RuntimeClient:
         keep_prompt: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
-        self.shell.sendline(command)
-        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+        try:
+            self.shell.sendline(command)
+            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
-        output = self.shell.before
+            output = self.shell.before
 
-        bash_prompt = self._get_bash_prompt_and_update_pwd()
-        if keep_prompt:
-            output += '\r\n' + bash_prompt
-        logger.debug(f'Command output: {output}')
+            # Get exit code
+            self.shell.sendline('echo $?')
+            logger.debug(f'Executing command for exit code: {command}')
+            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+            _exit_code_output = self.shell.before
+            logger.debug(f'Exit code Output: {_exit_code_output}')
+            exit_code = int(_exit_code_output.strip().split()[0])
 
-        # Get exit code
-        self.shell.sendline('echo $?')
-        logger.debug(f'Executing command for exit code: {command}')
-        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-        _exit_code_output = self.shell.before
-        logger.debug(f'Exit code Output: {_exit_code_output}')
-        exit_code = int(_exit_code_output.strip().split()[0])
+        except pexpect.TIMEOUT as e:
+            self.shell.sendintr()  # send SIGINT to the shell
+            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+            output = self.shell.before
+            output += (
+                '\r\n\r\n'
+                + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
+            )
+            exit_code = 130  # SIGINT
+            logger.error(f'Failed to execute command: {command}. Error: {e}')
+
+        finally:
+            bash_prompt = self._get_bash_prompt_and_update_pwd()
+            if keep_prompt:
+                output += '\r\n' + bash_prompt
+            logger.debug(f'Command output: {output}')
+
         return output, exit_code
 
     async def run_action(self, action) -> Observation:

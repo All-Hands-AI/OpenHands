@@ -28,7 +28,6 @@ from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.tools import RuntimeTool
-from opendevin.storage.local import LocalFileStore
 
 from ..browser import browse
 from .files import read_file, write_file
@@ -44,7 +43,6 @@ class ServerRuntime(Runtime):
         sandbox: Sandbox | None = None,
     ):
         super().__init__(config, event_stream, sid, plugins)
-        self.file_store = LocalFileStore(config.workspace_base)
         if sandbox is None:
             self.sandbox = self.create_sandbox(sid, config.sandbox.box_type)
             self._is_external_sandbox = False
@@ -187,7 +185,6 @@ class ServerRuntime(Runtime):
         return IPythonRunCellObservation(content=output, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
-        # TODO: use self.file_store
         working_dir = self.sandbox.get_working_directory()
         return await read_file(
             action.path,
@@ -199,7 +196,6 @@ class ServerRuntime(Runtime):
         )
 
     async def write(self, action: FileWriteAction) -> Observation:
-        # TODO: use self.file_store
         working_dir = self.sandbox.get_working_directory()
         return await write_file(
             action.path,

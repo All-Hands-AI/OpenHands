@@ -1,30 +1,27 @@
 import asyncio
-import logging
 import os
 
 import pandas as pd
-
-# import huggingface_hub
 from datasets import load_dataset
 
 from evaluation.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.agent import Agent
-
-# from evaluation.EDA.scorer import question_scorer
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
-from opendevin.core.logger import get_console_handler
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    get_parser,
+)
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
-from opendevin.llm.llm import LLM
-
-config = load_app_config()
+from opendevin.core.main import create_runtime, run_controller
 
 game = None
 
@@ -56,39 +53,45 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(
+def get_config(
+    metadata: EvalMetadata,
+) -> AppConfig:
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='ubuntu:22.04',
+            enable_auto_lint=False,
+            use_host_network=False,
+            update_source_code=True,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
+
+
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
-    # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
+) -> EvalOutput:
+    config = get_config(metadata)
+    instance_id = instance['text'].strip()
+
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-    eval_output_dir = metadata.eval_output_dir
     if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance["text"].strip()}.log'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {instance["text"].strip()}.\nLOG:   tail -f {log_file}'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance_id, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance_id}.')
 
     # Prepare instruction
-    _game_class = {'things': Q20Game, 'celebs': Q20GameCelebrity}
+    _game_class = {'eda-things': Q20Game, 'eda-celebs': Q20GameCelebrity}
 
     guesser_kargs = {
         'max_new_tokens': 64,
@@ -112,24 +115,16 @@ def process_instance(
 
     instruction = f'{game.first_user_utterance}'
     logger.info(f'Instruction: {instruction}')
-
-    # instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[agent.__class__.__name__]
+    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    config.max_iterations = metadata.max_iterations
+    runtime = await create_runtime(config, sid=instance['text'].strip())
 
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            task_str=instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                agent.__class__.__name__
-            ],
-            agent=agent,
-            sid=instance['text'].strip(),
-        )
+    state: State | None = await run_controller(
+        config=config,
+        task_str=instruction,
+        runtime=runtime,
+        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -150,21 +145,20 @@ def process_instance(
     histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
-    output = {
-        'instance_id': instance['text'].strip(),
-        'instance': instance,
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': {
+    output = EvalOutput(
+        instance_id=instance_id,
+        instance=instance.to_dict(),
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
             'success': test_result,
             'final_message': final_message,
             'ground_truth': instance['text'],
         },
-    }
-
+    )
     return output
 
 
@@ -191,12 +185,16 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
-    logger.info(f'Config for evaluation: {config}')
-
     eda_dataset = load_dataset(
         'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
     )
+    eda_dataset.rename(columns={'text': 'instance_id'}, inplace=True)
+
+    llm_config = None
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
@@ -214,16 +212,15 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(
-        eda_dataset.to_pandas(), output_file, args.eval_n_limit, 'text'
+        eda_dataset.to_pandas(), output_file, args.eval_n_limit
     )
 
-    agent = Agent.get_cls(args.agent_cls)(llm=LLM(config.llm))
-
-    run_evaluation(
-        prepared_dataset,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        'text',
+    asyncio.run(
+        run_evaluation(
+            prepared_dataset,
+            metadata,
+            output_file,
+            args.eval_num_workers,
+            process_instance,
+        )
     )

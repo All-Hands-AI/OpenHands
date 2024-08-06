@@ -45,9 +45,16 @@ def process_git_patch(patch):
 
 
 def convert_row_to_swebench_format(row):
+    if 'git_patch' in row:
+        model_patch = row['git_patch']
+    elif 'test_result' in row and 'git_patch' in row['test_result']:
+        model_patch = row['test_result']['git_patch']
+    else:
+        raise ValueError(f'Row {row} does not have a git_patch')
+
     return {
         'instance_id': row['instance_id'],
-        'model_patch': process_git_patch(row['git_patch']),
+        'model_patch': process_git_patch(model_patch),
         'model_name_or_path': model_name,
     }
 

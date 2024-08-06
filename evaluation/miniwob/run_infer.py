@@ -1,7 +1,7 @@
 import asyncio
 import json
-import logging
 import os
+from typing import Any
 
 import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
 import gymnasium as gym
@@ -9,91 +9,132 @@ import pandas as pd
 
 from evaluation.utils.shared import (
     EvalMetadata,
+    EvalOutput,
     make_metadata,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
-from opendevin.core.logger import get_console_handler
+from opendevin.core.config import (
+    AppConfig,
+    SandboxConfig,
+    get_llm_config_arg,
+    parse_arguments,
+)
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import run_controller
-from opendevin.llm.llm import LLM
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
-from opendevin.runtime.tools import RuntimeTool
-
-config = load_app_config()
+from opendevin.core.main import create_runtime, run_controller
+from opendevin.events.action import (
+    BrowseInteractiveAction,
+    CmdRunAction,
+    MessageAction,
+)
+from opendevin.events.observation import CmdOutputObservation
+from opendevin.runtime.browser.browser_env import (
+    BROWSER_EVAL_GET_GOAL_ACTION,
+    BROWSER_EVAL_GET_REWARDS_ACTION,
+)
+from opendevin.runtime.runtime import Runtime
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
-docker_ssh_box: DockerSSHBox | None = None
+
+def get_config(
+    metadata: EvalMetadata,
+    env_id: str,
+) -> AppConfig:
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_devin=False,
+        runtime='eventstream',
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            container_image='xingyaoww/od-eval-miniwob:v1.0',
+            enable_auto_lint=True,
+            use_host_network=False,
+            update_source_code=True,
+            browsergym_eval_env=env_id,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
 
 
-def get_sandbox():
-    global docker_ssh_box
-    if docker_ssh_box is None:
-        docker_ssh_box = DockerSSHBox(
-            config=config.sandbox,
-            persist_sandbox=False,
-            workspace_mount_path=config.workspace_mount_path,
-            sandbox_workspace_dir=config.workspace_mount_path_in_sandbox,
-            cache_dir=config.cache_dir,
-            run_as_devin=config.run_as_devin,
-        )
-    return docker_ssh_box
+async def initialize_runtime(
+    runtime: Runtime,
+) -> str:
+    """Initialize the runtime for the agent.
+
+    This function is called before the runtime is used to run the agent.
+    """
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    obs: CmdOutputObservation
+
+    # Set instance id
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    goal = obs.content
+
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    return goal
 
 
-def process_instance(
+async def complete_runtime(
+    runtime: Runtime,
+) -> dict[str, Any]:
+    """Complete the runtime for the agent.
+
+    This function is called before the runtime is used to run the agent.
+    If you need to do something in the sandbox to get the correctness metric after
+    the agent has run, modify this function.
+    """
+    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    obs: CmdOutputObservation
+
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    return {
+        'rewards': json.loads(obs.content),
+    }
+
+
+async def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
-):
-    # Create the agent
-    agent = Agent.get_cls(metadata.agent_class)(llm=LLM(config=metadata.llm_config))
+) -> EvalOutput:
     env_id = instance.id
+    config = get_config(metadata, env_id)
+
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            metadata.eval_output_dir, 'logs', f'instance_{env_id}.log'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {env_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, env_id, log_dir)
     else:
         logger.info(f'Starting evaluation for instance {env_id}.')
 
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime_tools_config = {
-        RuntimeTool.BROWSER: {
-            'browsergym_eval': env_id,
-            'browsergym_eval_save_dir': metadata.eval_output_dir,
-        }
-    }
+    runtime = await create_runtime(config, sid=env_id)
+    task_str = await initialize_runtime(runtime)
 
-    config.max_iterations = metadata.max_iterations
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str='PLACEHOLDER_GOAL',
-            runtime_tools_config=runtime_tools_config,
-            agent=agent,
-            sandbox=get_sandbox(),
-            sid=env_id,
+            task_str=task_str,  # take output from initialize_runtime
+            runtime=runtime,
         )
     )
 
@@ -106,18 +147,17 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     metrics = state.metrics.get() if state.metrics else None
-    browsergym_eval_dir = os.path.join(metadata.eval_output_dir, env_id.split('/')[1])
-    # read goal
-    with open(
-        os.path.join(browsergym_eval_dir, 'goal.txt'), 'r', encoding='utf-8'
-    ) as f:
-        instruction = f.read()
-    # read reward
-    with open(
-        os.path.join(browsergym_eval_dir, 'rewards.json'), 'r', encoding='utf-8'
-    ) as f:
-        rewards = json.load(f)
-        reward = max(rewards)
+
+    # Instruction is the first message from the USER
+    instruction = ''
+    for event in state.history.get_events():
+        if isinstance(event, MessageAction):
+            instruction = event.content
+            break
+
+    return_val = await complete_runtime(runtime)
+    logger.info(f'Return value from complete_runtime: {return_val}')
+    reward = max(return_val['rewards'])
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -125,16 +165,17 @@ def process_instance(
     histories = state.history.compatibility_for_eval_history_pairs()
 
     # Save the output
-    output = {
-        'instance_id': env_id,
-        'instruction': instruction,
-        'metadata': metadata.model_dump(),
-        'history': histories,
-        'metrics': metrics,
-        'error': state.last_error if state and state.last_error else None,
-        'test_result': reward,
-    }
-
+    output = EvalOutput(
+        instance_id=env_id,
+        instruction=instruction,
+        metadata=metadata,
+        history=histories,
+        metrics=metrics,
+        error=state.last_error if state and state.last_error else None,
+        test_result={
+            'reward': reward,
+        },
+    )
     return output
 
 
@@ -143,7 +184,7 @@ if __name__ == '__main__':
 
     dataset = pd.DataFrame(
         {
-            'id': [
+            'instance_id': [
                 id
                 for id in gym.envs.registry.keys()
                 if id.startswith('browsergym/miniwob')
@@ -151,26 +192,25 @@ if __name__ == '__main__':
         }
     )
 
-    id_column = 'id'
-    llm_config = get_llm_config_arg(args.llm_config) if args.llm_config else config.llm
-    logger.info(f'Config for evaluation: {config}')
+    llm_config = None
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is None:
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        args.dataset_name,
+        'miniwob',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(dataset, output_file, args.eval_n_limit, id_column)
-    _ = get_sandbox()  # Initialize the sandbox
-    run_evaluation(
-        instances,
-        metadata,
-        output_file,
-        args.eval_num_workers,
-        process_instance,
-        id_column,
+    instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
+
+    asyncio.run(
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
     )

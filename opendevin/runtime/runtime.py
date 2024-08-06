@@ -30,7 +30,6 @@ from opendevin.events.observation import (
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
-from opendevin.storage import FileStore
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -52,7 +51,6 @@ class Runtime:
     """
 
     sid: str
-    file_store: FileStore
     DEFAULT_ENV_VARS: dict[str, str]
 
     def __init__(

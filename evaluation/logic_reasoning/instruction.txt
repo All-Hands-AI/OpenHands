@@ -3,12 +3,12 @@ you can interact with an interactive Python (Jupyter Notebook) environment and r
 In this task, you need to use the code in [[logic_inference_path.py]] to help you. Specifically, you first need to instantiate a **LogicInferenceEngine** class and use the **safe_execute_program** method to prove the **logic programs**. You should receive *answer*, *flag*, *error_message* from the output.
 
 An example would be look like this:
-    <execute_ipython>
-    import sys
-    sys.path.append(workspace_mount_path)
-    engine = LogicInferenceEngine(dataset_name, workspace_mount_path)
-    answer, flag, error_message = engine.safe_execute_program(logic_programs)
-    </execute_ipython>
+<execute_ipython>
+import sys
+sys.path.append('/workspace')
+engine = LogicInferenceEngine()
+answer, flag, error_message = engine.safe_execute_program(logic_programs)
+</execute_ipython>
 
 Please send the *answer* variable through message.
 
