@@ -1,3 +1,4 @@
+# Workflow that uses the DummyAgent to run a simple task
 name: Run E2E test with dummy agent
 
 concurrency:
@@ -11,7 +12,7 @@ on:
   pull_request:
 
 env:
-  PERSIST_SANDBOX : "false"
+  PERSIST_SANDBOX : 'false'
 
 jobs:
   test:
