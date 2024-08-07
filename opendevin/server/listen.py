@@ -384,9 +384,7 @@ def list_files(request: Request, path: str = '/'):
 
     try:
         # Get the full path of the requested directory
-        full_path = (
-            request.state.session.agent_session.runtime.file_store.get_full_path(path)
-        )
+        full_path = request.state.session.agent_session.file_store.get_full_path(path)
 
         # Check if the directory exists
         if not os.path.exists(full_path) or not os.path.isdir(full_path):

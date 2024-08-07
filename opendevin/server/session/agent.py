@@ -22,6 +22,7 @@ class AgentSession:
 
     sid: str
     event_stream: EventStream
+    file_store: FileStore
     controller: Optional[AgentController] = None
     runtime: Optional[Runtime] = None
     _closed: bool = False
