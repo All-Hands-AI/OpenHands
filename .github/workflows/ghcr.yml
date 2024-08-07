@@ -144,7 +144,7 @@ jobs:
     needs: [ghcr_build_runtime, ghcr_build]
     strategy:
       matrix:
-        runtime_type: ['eventstream', 'server']
+        runtime_type: ['eventstream']
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
