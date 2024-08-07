@@ -83,7 +83,6 @@ def get_config(
             container_image='public.ecr.aws/i5g0m1f6/ml-bench',
             enable_auto_lint=True,
             use_host_network=False,
-            update_source_code=True,
         ),
         # do not mount workspace
         workspace_base=None,

@@ -63,7 +63,7 @@ You can run:
 # for server runtime
 TEST_RUNTIME=server TEST_ONLY=true ./tests/integration/regenerate.sh
 # for event stream
-SANDBOX_UPDATE_SOURCE_CODE=True TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
+TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
 ```
 
 to run all integration tests until the first failure occurs.
@@ -84,7 +84,7 @@ by running the following command from OpenDevin's project root directory:
 
 ```bash
 TEST_RUNTIME=server ./tests/integration/regenerate.sh
-SANDBOX_UPDATE_SOURCE_CODE=True TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
+TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
 ```
 
 Please note that this will:
