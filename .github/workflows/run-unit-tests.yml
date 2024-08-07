@@ -1,3 +1,4 @@
+# Workflow that runs frontend and python unit tests
 name: Run Unit Tests
 
 concurrency:
@@ -19,59 +20,50 @@ env:
   PERSIST_SANDBOX : "false"
 
 jobs:
+  # Run frontend unit tests
   fe-test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [20]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
-
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  # Run python unit tests on macOS
   test-on-macos:
     name: Test on macOS
     runs-on: macos-12
     env:
-      INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: '1' # Set to '0' to skip Docker installation
     strategy:
       matrix:
-        python-version: ["3.11"]
-
+        python-version: ['3.11']
     steps:
       - uses: actions/checkout@v4
-
       - name: Install poetry via pipx
         run: pipx install poetry
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-
+          cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
-
       - name: Install & Start Docker
         if: env.INSTALL_DOCKER == '1'
         run: |
@@ -120,47 +112,39 @@ jobs:
           # For testcontainers to find the Colima socket
           # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
           sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
-
       - name: Build Environment
         run: make build
-
       - name: Run Tests
         run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox.py and not test_runtime.py"
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Run python unit tests on Linux
   test-on-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
     env:
-      INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
       matrix:
-        python-version: ["3.11"]
-
+        python-version: ['3.11']
     steps:
       - uses: actions/checkout@v4
-
       - name: Install poetry via pipx
         run: pipx install poetry
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-
+          cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
-
       - name: Build Environment
         run: make build
-
       - name: Run Tests
         run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox.py and not test_runtime.py"
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:

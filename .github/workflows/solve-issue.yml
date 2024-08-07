@@ -1,3 +1,4 @@
+# Workflow that uses OpenDevin to resolve a GitHub issue. Issue must be labeled 'solve-this'
 name: Use OpenDevin to Resolve GitHub Issue
 
 on:
@@ -17,14 +18,11 @@ jobs:
       image: ghcr.io/opendevin/opendevin
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
-
     steps:
     - name: install git, github cli
       run: apt-get install -y git gh
-
     - name: Checkout Repository
       uses: actions/checkout@v4
-
     - name: Write Task File
       env:
         ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -35,15 +33,12 @@ jobs:
         echo "" >> task.txt
         echo "BODY:" >> task.txt
         echo "${ISSUE_BODY}" >> task.txt
-
     - name: Set up environment
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         export PATH="/github/home/.local/bin:$PATH"
         poetry install --without evaluation,llama-index
         poetry run playwright install --with-deps chromium
-
-
     - name: Run OpenDevin
       env:
         ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -58,7 +53,6 @@ jobs:
         export PYTHONPATH=$(pwd):$PYTHONPATH
         WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE poetry run python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
-
     - name: Setup Git, Create Branch, and Commit Changes
       run: |
         # Setup Git configuration
@@ -84,7 +78,6 @@ jobs:
 
         # Push changes
         git push --set-upstream origin $BRANCH_NAME
-
     - name: Fetch Default Branch
       env:
         GH_TOKEN: ${{ github.token }}
@@ -93,7 +86,6 @@ jobs:
         DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
         echo "Default branch is $DEFAULT_BRANCH"
         echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
-
     - name: Generate PR
       env:
         GH_TOKEN: ${{ github.token }}

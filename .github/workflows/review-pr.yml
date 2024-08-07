@@ -1,3 +1,4 @@
+# Workflow that uses OpenDevin to review a pull request. PR must be labeled 'review-this'
 name: Use OpenDevin to Review Pull Request
 
 on:
@@ -22,16 +23,13 @@ jobs:
       run: |
         sudo apt-get install -y git gh
         git config --global --add safe.directory $PWD
-
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.base.ref }} # check out the target branch
-
     - name: Download Diff
       run: |
         curl -O "${{ github.event.pull_request.diff_url }}" -L
-
     - name: Write Task File
       run: |
         echo "Your coworker wants to apply a pull request to this project." > task.txt
@@ -45,14 +43,12 @@ jobs:
         echo "${{ github.event.pull_request.body }}" >> task.txt
         echo "" >> task.txt
         echo "Diff file is: ${{ github.event.pull_request.number }}.diff" >> task.txt
-
     - name: Set up environment
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         export PATH="/github/home/.local/bin:$PATH"
         poetry install --without evaluation,llama-index
         poetry run playwright install --with-deps chromium
-
     - name: Run OpenDevin
       env:
         LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
@@ -67,7 +63,6 @@ jobs:
         export WORKSPACE_BASE=$GITHUB_WORKSPACE
         echo -e "/exit\n" | poetry run python opendevin/core/main.py -i 50 -f task.txt
         rm task.txt
-
     - name: Check if review file is non-empty
       id: check_file
       run: |
@@ -76,7 +71,6 @@ jobs:
           echo "non_empty=true" >> $GITHUB_OUTPUT
         fi
       shell: bash
-
     - name: Create PR review if file is non-empty
       env:
         GH_TOKEN: ${{ github.token }}
