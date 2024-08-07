@@ -598,7 +598,7 @@ if __name__ == '__main__':
 
             # Filter entries using PathSpec
             filtered_entries = [
-                entry
+                os.path.join(full_path, entry)
                 for entry in entries
                 if not spec.match_file(os.path.relpath(entry, str(full_path)))
             ]

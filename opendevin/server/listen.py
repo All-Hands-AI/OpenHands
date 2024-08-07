@@ -32,11 +32,17 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import LLMConfig, load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState  # Add this import
-from opendevin.events.action import ChangeAgentStateAction, FileReadAction, NullAction
+from opendevin.events.action import (
+    ChangeAgentStateAction,
+    FileReadAction,
+    FileWriteAction,
+    NullAction,
+)
 from opendevin.events.observation import (
     AgentStateChangedObservation,
     ErrorObservation,
     FileReadObservation,
+    FileWriteObservation,
     NullObservation,
 )
 from opendevin.events.serialization import event_to_dict
@@ -399,6 +405,7 @@ async def select_file(file: str, request: Request):
 
     Args:
         file (str): The path of the file to be retrieved.
+            Expect path to be absolute inside the runtime.
         request (Request): The incoming request object.
 
     Returns:
@@ -410,8 +417,13 @@ async def select_file(file: str, request: Request):
     runtime: Runtime = request.state.session.agent_session.runtime
 
     # convert file to an absolute path inside the runtime
-    filepath = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
-    read_action = FileReadAction(filepath)
+    if not os.path.isabs(file):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error': 'File path must be absolute'},
+        )
+
+    read_action = FileReadAction(file)
     observation = await runtime.run_action(read_action)
 
     if isinstance(observation, FileReadObservation):
@@ -648,13 +660,32 @@ async def save_file(request: Request):
         if not file_path or content is None:
             raise HTTPException(status_code=400, detail='Missing filePath or content')
 
-        # Save the file to the agent's runtime file store
-        request.state.session.agent_session.runtime.file_store.write(file_path, content)
+        # Make sure file_path is abs
+        if not os.path.isabs(file_path):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={'error': 'File path must be absolute'},
+            )
 
-        # Return a success response
-        return JSONResponse(
-            status_code=200, content={'message': 'File saved successfully'}
-        )
+        # Save the file to the agent's runtime file store
+        runtime: Runtime = request.state.session.agent_session.runtime
+        write_action = FileWriteAction(file_path, content)
+        observation = await runtime.run_action(write_action)
+
+        if isinstance(observation, FileWriteObservation):
+            return JSONResponse(
+                status_code=200, content={'message': 'File saved successfully'}
+            )
+        elif isinstance(observation, ErrorObservation):
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Failed to save file: {observation}'},
+            )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Unexpected observation: {observation}'},
+            )
     except Exception as e:
         # Log the error and return a 500 response
         logger.error(f'Error saving file: {e}', exc_info=True)
