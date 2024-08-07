@@ -89,7 +89,6 @@ def get_config(
             container_image='ubuntu:22.04',
             enable_auto_lint=True,
             use_host_network=False,
-            update_source_code=True,
         ),
         # do not mount workspace
         workspace_base=None,

@@ -3,10 +3,6 @@ This is the main file for the runtime client.
 It is responsible for executing actions received from OpenDevin backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
-
-If you already have pre-build docker image yet you changed the code in this file OR dependencies, you need to rebuild the docker image to update the source code.
-
-You should add SANDBOX_UPDATE_SOURCE_CODE=True to any `python XXX.py` command you run to update the source code.
 """
 
 import argparse
