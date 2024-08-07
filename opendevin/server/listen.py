@@ -389,7 +389,7 @@ async def list_files(request: Request, path: str | None = None):
 
 
 @app.get('/api/select-file')
-def select_file(file: str, request: Request):
+async def select_file(file: str, request: Request):
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -412,7 +412,7 @@ def select_file(file: str, request: Request):
     # convert file to an absolute path inside the runtime
     filepath = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(filepath)
-    observation = runtime.run_action(read_action)
+    observation = await runtime.run_action(read_action)
 
     if isinstance(observation, FileReadObservation):
         content = observation.content

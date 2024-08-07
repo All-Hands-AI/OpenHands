@@ -615,6 +615,9 @@ if __name__ == '__main__':
                 if os.path.exists(full_entry_path):
                     is_dir = os.path.isdir(full_entry_path)
                     if is_dir:
+                        # add trailing slash to directories
+                        # required by FE to differentiate directories and files
+                        entry = entry.rstrip('/') + '/'
                         directories.append(entry)
                     else:
                         files.append(entry)

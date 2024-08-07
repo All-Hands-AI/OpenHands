@@ -108,7 +108,7 @@ function FileExplorer() {
     }
     dispatch(setRefreshID(Math.random()));
     try {
-      const fileList = await listFiles("/");
+      const fileList = await listFiles();
       setFiles(fileList);
     } catch (error) {
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
