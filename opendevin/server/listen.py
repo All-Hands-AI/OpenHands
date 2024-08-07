@@ -416,13 +416,13 @@ def select_file(file: str, request: Request):
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
+        return {'code': content}
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}', exc_info=False)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
         )
-    return {'code': content}
 
 
 def sanitize_filename(filename):

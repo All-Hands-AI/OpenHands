@@ -356,7 +356,7 @@ class EventStreamRuntime(Runtime):
                 data['path'] = path
 
             async with session.post(
-                f'{self.api_url}/list_files', data=data
+                f'{self.api_url}/list_files', json=data
             ) as response:
                 if response.status == 200:
                     response_json = await response.json()
