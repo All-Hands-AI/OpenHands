@@ -338,12 +338,3 @@ class EventStreamRuntime(Runtime):
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
-
-    ############################################################################
-    # Keep the same with other runtimes
-    ############################################################################
-
-    def get_working_directory(self):
-        raise NotImplementedError(
-            'This method is not implemented in the runtime client.'
-        )
