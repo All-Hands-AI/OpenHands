@@ -257,7 +257,6 @@ class AppConfig(metaclass=Singleton):
     e2b_api_key: str = ''
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
     jwt_secret: str = uuid.uuid4().hex
