@@ -514,7 +514,7 @@ if __name__ == '__main__':
     # File-specific operations for UI
     # ================================
 
-    @app.get('/list_files')
+    @app.post('/list_files')
     async def list_files(request: Request):
         """List files in the specified path.
 
