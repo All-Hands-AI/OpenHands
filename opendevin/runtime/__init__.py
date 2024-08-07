@@ -6,11 +6,7 @@ from .sandbox import Sandbox
 
 def get_runtime_cls(name: str):
     # Local imports to avoid circular imports
-    if name == 'server':
-        from .server.runtime import ServerRuntime
-
-        return ServerRuntime
-    elif name == 'eventstream':
+    if name == 'eventstream':
         from .client.runtime import EventStreamRuntime
 
         return EventStreamRuntime

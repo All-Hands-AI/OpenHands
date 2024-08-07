@@ -55,8 +55,6 @@ of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 Take a look at `ghcr.yml` (in the `.github/workflow` folder) to learn
 how integration tests are launched in a CI environment.
 
-We currently have two runtime: `ServerRuntime` and `EventStreamRuntime`, each having their own sets of integration test prompts.
-
 You can run:
 
 ```bash
