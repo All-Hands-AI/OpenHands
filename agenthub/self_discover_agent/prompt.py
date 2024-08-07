@@ -1,3 +1,5 @@
+from .state_machine import SelfDiscoverState
+
 PAIRED_IMPLEMENT_DEMONSTRATION = """
  {
   "Type and color of each item":
@@ -23,6 +25,7 @@ Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 
 SYSTEM_SUFFIX = """Let the following principles guide your response:
 - Before responding read all information carefully.
+- Take time to think.
 - Responses should be concise.
 - Use only information that's explicitly stated by the user.
 """
@@ -34,7 +37,7 @@ SYSTEM_SUFFIX = """Let the following principles guide your response:
 SYSTEM_MESSAGE = ROLE_DESCRIPTION + SYSTEM_SUFFIX
 
 
-RESEASONING_MODULES_LIST = [
+RESEASONING_MODULE_LIST = [
     'How could I devise an experiment to help solve that problem?',
     'Make a list of ideas for solving this problem, and apply them one by one to the problem to see if any progress can be made.',
     'How could I measure progress on this problem?',
@@ -76,37 +79,182 @@ RESEASONING_MODULES_LIST = [
     'Let’s make a step by step plan and implement it with good notion and explanation.',
 ]
 
-SELECT_PROMPT = """Select several reasoning moduls that are crucial to solve the following task.
+SELECT_PROMPT = """Select several reasoning moduls that are crucial to solve the task provided by the user.
 
 ## Task
-{task}
+Recall from above the task: {task}
 
-## Reasoning modules list
-{RESEASONING_MODULES}
+## Reasoning modules list (0-based indexing)
+{RESEASONING_MODULE_LIST}
 
 ## Constraints
-Select at most 5 task-relevant reasoning modules.
+Select between 3 and 5 task-relevant reasoning modules.
 
 Your response MUST be in JSON format. It must be an object with the field "reasoning_modules",
 which contains the indeces of selected reasoning modules. For example, for selecting reasoning modules
 "How could I devise an experiment to help solve that problem?" and "How could I measure progress on this problem?",
 you would reply with
 
-{
-  "reasoning_modules": [0, 2]
-}
+{{
+  "selected_reasoning_modules": [0, 2]
+}}
 
 You MUST NOT include any other text besides the JSON response.
 """
 
-ADAPT_PROMPT = """Rephrase and specify each previously selected reasoning module so that it better helps solving the user's task.
+ADAPT_PROMPT = """Rephrase and specify each previously selected reasoning module so that it better helps solving the task.
+
+## Task
+Recall from above the task is as follows: {task}
+
+## Constraints
+Your response MUST be in JSON format. It must be an object with the field "adapted_reasoning_modules", which contains a list of key-value pairs describing the adapted reasoning modules.
+The key represents a title for the adapted reasoning module.
+For example,
+
+{{
+  "adapted_reasoning_modules": [
+    {{"Title adapted reasoning module X": "Description adapted reasoning module X"}},
+    {{"Title adapted reasoning module Y": "Description adapted reasoning module Y"}},
+    ]
+}}
+
+The list must be in the same order as the list of previously selected reasoning modules.
+Each adapted reasoning module must be a separate key-value pair item in the list.
+You MUST NOT include any other text besides the JSON response.
 """
 
-IMPLEMENT_PROMPT = """Implement a reasoning structure for your team members to follow step-by-step and arrive at correct answers by replying with
-<execute_plan>
-Your implementation
-</execute_plan>.
+ADAPT_EXAMPLE = """
+## Example
+USER:
+This SVG path element <path d="M 55.57,80.69 L 57.38,65.80 M 57.38,65.80 L 48.90,57.46 M 48.90,57.46 L 45.58,47.78 M 45.58,47.78 L 53.25,36.07 L 66.29,48.90 L 78.69,61.09 L 55.57,80.69"/> draws a:
+(A) circle (B) heptagon (C) hexagon (D) kite (E) line (F) octagon (G) pentagon(H) rectangle (I) sector (J) triangle
+
+ASSISTANT:
+To solve the given task I selected the following candidate reasoning modules:
+- Critical Thinking: This style involves analyzing the problem from different perspectives, questioning assumptions, and evaluating the evidence or information available. It focuses on logical reasoning, evidence-based decision-making, and identifying potential biases or flaws in thinking.
+- How can I break down this problem into smaller, more manageable parts?
+
+USER:
+Rephrase and specify each previously selected reasoning module so that it better helps solving the task.
+
+## Task
+Recall from above the task is as follows: This SVG path element <path d="M 55.57,80.69 L 57.38,65.80 M 57.38,65.80 L 48.90,57.46 M 48.90,57.46 L 45.58,47.78 M 45.58,47.78 L 53.25,36.07 L 66.29,48.90 L 78.69,61.09 L 55.57,80.69"/> draws a:
+(A) circle (B) heptagon (C) hexagon (D) kite (E) line (F) octagon (G) pentagon(H) rectangle (I) sector (J) triangle
+
+## Constraints
+Your response MUST be in JSON format. It must be an object with the field "adapted_reasoning_modules", which contains a list of key-value pairs describing the adapted reasoning modules.
+The key represents a title for the adapted reasoning module.
+For example,
+
+{{
+  "adapted_reasoning_modules": [
+    {{"Title adapted reasoning module X": "Description adapted reasoning module X"}},
+    {{"Title adapted reasoning module Y": "Description adapted reasoning module Y"}},
+    ]
+}}
+
+The list must be in the same order as the list of previously selected reasoning modules.
+Each adapted reasoning module must be a separate key-value pair item in the list.
+You MUST NOT include any other text besides the JSON response.
+
+ASSISTANT:
+{
+  "adapted_reasoning_modules": [
+    {
+      "Critical Thinking: Analyzing SVG Path Element": "This style involves analyzing the SVG path element from different perspectives, questioning assumptions about its shape, and evaluating the coordinates and lines described. It focuses on logical reasoning, evidence-based decision-making, and identifying potential biases or flaws in interpreting the shape."
+    },
+    {
+      "Breaking Down the SVG Path into Parts": "How can I break down this SVG path element into smaller, more manageable parts? Identify and analyze each segment described in the path data, understand how they connect, and deduce the overall shape they form by systematically examining each line and vertex."
+    }
+  ]
+}
 """
 
-IMPLEMENT_EXAMPLES = """Example 1 TODO CONTINUE HERE
+
+IMPLEMENT_PROMPT = """Based on the adapted reasoning modules implement a reasoning structure for your team members to follow step-by-step and arrive at the correct answer.
+
+## Task
+Recall from above the task: {task}
+
+## Constraints
+Do not solve the actual task yourself. Instead, you must plan the task by deriving a step-by-step reasoning structure, which guides your team to the correct answer.
+Your response MUST be in JSON format. It must be an object with the field "reasoning_structure", which contains key-value pairs that represent the step-by-by plan.
 """
+
+
+IMPLEMENT_EXAMPLE = """
+## Example
+USER:
+This SVG path element <path d="M 55.57,80.69 L 57.38,65.80 M 57.38,65.80 L 48.90,57.46 M 48.90,57.46 L 45.58,47.78 M 45.58,47.78 L 53.25,36.07 L 66.29,48.90 L 78.69,61.09 L 55.57,80.69"/> draws a:
+(A) circle (B) heptagon (C) hexagon (D) kite (E) line (F) octagon (G) pentagon(H) rectangle (I) sector (J) triangle
+
+ASSISTANT:
+To solve the given task I selected the following candidate reasoning modules:
+- Critical Thinking: This style involves analyzing the problem from different perspectives, questioning assumptions, and evaluating the evidence or information available. It focuses on logical reasoning, evidence-based decision-making, and identifying potential biases or flaws in thinking.
+- How can I break down this problem into smaller, more manageable parts?
+
+ASSISTANT:
+I have adapted the selected candidate reasoning modules to the given task as follows
+- Critical Thinking: Analyzing SVG Path Element: This style involves analyzing the SVG path element from different perspectives, questioning assumptions about its shape, and evaluating the coordinates and lines described. It focuses on logical reasoning, evidence-based decision-making, and identifying potential biases or flaws in interpreting the shape."
+- Breaking Down the SVG Path into Parts: How can I break down this SVG path element into smaller, more manageable parts? Identify and analyze each segment described in the path data, understand how they connect, and deduce the overall shape they form by systematically examining each line and vertex.
+
+
+USER:
+Based on the adapted reasoning modules implement a reasoning structure for your team members to follow step-by-step and arrive at the correct answer.
+
+## Task
+Recall from above the task: This SVG path element <path d="M 55.57,80.69 L 57.38,65.80 M 57.38,65.80 L 48.90,57.46 M 48.90,57.46 L 45.58,47.78 M 45.58,47.78 L 53.25,36.07 L 66.29,48.90 L 78.69,61.09 L 55.57,80.69"/> draws a:
+(A) circle (B) heptagon (C) hexagon (D) kite (E) line (F) octagon (G) pentagon(H) rectangle (I) sector (J) triangle
+
+
+## Constraints
+Do not solve the actual task yourself. Instead, you must plan the task by deriving a step-by-step reasoning structure, which guides your team to the correct answer.
+Your response MUST be in JSON format. It must be an object with the field "reasoning_structure", which contains key-value pairs that represent the step-by-by plan.
+
+ASSISTANT:
+{
+  "reasoning_structure": {
+    "Step 1: Analyze the SVG Path Element": {
+      "Step 1.1: Review the SVG Path Data": "Examine the coordinates and line segments defined in the SVG path element.",
+      "Step 1.2: Identify the Start and End Points": "Note the starting point and the ending point of the path to understand the sequence of drawing."
+    },
+    "Step 2: Break Down the SVG Path into Parts": {
+      "Step 2.1: Divide the Path into Segments": {
+        "Step 2.1.1: Segment 1": "Analyze the coordinates and direction of the first line segment.",
+        "Step 2.1.2: Segment 2": "Analyze the coordinates and direction of the second line segment.",
+        "Step 2.1.3: Segment 3": "Analyze the coordinates and direction of the third line segment.",
+        "Step 2.1.4: Continue until all segments are analyzed": "Proceed with analyzing each segment sequentially."
+      }
+    },
+    "Step 3: Evaluate the Connections": {
+      "Step 3.1: Determine the Connections Between Segments": "Check how each segment connects to the next one.",
+      "Step 3.2: Identify Closed Shapes or Open Paths": "Determine if the segments form a closed shape or an open path."
+    },
+    "Step 4: Deduce the Overall Shape": {
+      "Step 4.1: Compile the Analyzed Segments": "Combine the information from all segments to understand the overall structure.",
+      "Step 4.2: Match with Given Options": "Compare the deduced shape with the provided options (circle, heptagon, etc.) and identify the closest match."
+    }
+  }
+}
+
+
+"""
+
+
+def get_prompt(task: str, current_state: SelfDiscoverState) -> dict[str, str] | None:
+    if current_state == SelfDiscoverState.SELECT:
+        content = SELECT_PROMPT.format(
+            task=task, RESEASONING_MODULE_LIST=RESEASONING_MODULE_LIST
+        )
+    elif current_state == SelfDiscoverState.ADAPT:
+        content = ADAPT_PROMPT.format(task=task)
+    elif current_state == SelfDiscoverState.IMPLEMENT:
+        content = IMPLEMENT_PROMPT
+    else:
+        return None
+
+    return {
+        'role': 'user',
+        'content': content,
+    }

@@ -16,6 +16,7 @@ from opendevin.runtime.plugins import PluginRequirement
 from .action_parser import SelfDiscoverResponseParser
 from .prompt import (
     SYSTEM_MESSAGE,
+    get_prompt,
 )
 from .state_machine import SelfDiscoverStateMachine
 
@@ -43,7 +44,7 @@ class SelfDiscoverAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        self.self_discovery_state_machine: SelfDiscoverStateMachine = (
+        self.self_discover_state_machine: SelfDiscoverStateMachine = (
             SelfDiscoverStateMachine()
         )
         super().__init__(llm)
@@ -54,14 +55,12 @@ class SelfDiscoverAgent(Agent):
         Resets the Agent.
         """
         # self.has_advanced = True
-        self.self_discovery_state_machine.reset()
+        self.self_discover_state_machine.reset()
         super().reset()
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, AgentDelegateAction):
-            if action.agent == 'BrowsingAgent':
-                return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
-            elif action.agent == 'CodeActAgent':
+            if action.agent == 'CodeActAgent':
                 return f'{action.thought}\n<execute_plan>\n{action.inputs["task"]}\n</execute_plan>'
             else:
                 raise ValueError(f'Unknown delegate: {action.agent}')
@@ -131,21 +130,23 @@ class SelfDiscoverAgent(Agent):
 
         # Finish when plan as been executed by CodeActAgent
         if isinstance(state.history.get_last_action(), AgentFinishAction):
-            self.self_discovery_state_machine.reset()
+            self.self_discover_state_machine.reset()
             return AgentFinishAction()
 
         # add self discover prompt to messages
         # if self.has_advanced:
-        if prompt := self.self_discovery_state_machine.get_prompt():
+        task = state.get_current_user_intent()
+        sdstate = self.self_discover_state_machine.current_state
+        if prompt := get_prompt(task, sdstate):
             messages.append(prompt)
 
         # print(f"self.has_advanced: {self.has_advanced}\n")
 
-        print(f'messages:\n{messages}\n')
+        # print(f'messages:\n{messages}\n')
 
-        print(
-            f'current step:\n{self.self_discovery_state_machine.current_state}. \n\n previous step:\n{self.self_discovery_state_machine.prev_state}'
-        )
+        # print(
+        #     f'current step:\n{self.self_discover_state_machine.current_state}. \n\n previous step:\n{self.self_discover_state_machine.prev_state}'
+        # )
 
         response = self.llm.completion(
             messages=messages,
@@ -157,5 +158,5 @@ class SelfDiscoverAgent(Agent):
             temperature=0.0,
         )
         action = self.action_parser.parse(response)
-        self.self_discovery_state_machine.transition(action)
+        self.self_discover_state_machine.transition(action)
         return action

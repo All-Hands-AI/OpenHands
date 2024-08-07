@@ -6,18 +6,18 @@ from opendevin.events.action import (
     MessageAction,
 )
 
-from .prompt import (
-    ADAPT_PROMPT,
-    IMPLEMENT_PROMPT,
-    SELECT_PROMPT,
-)
+# from .prompt import (
+#     ADAPT_PROMPT,
+#     IMPLEMENT_PROMPT,
+#     SELECT_PROMPT,
+# )
 
 
 class SelfDiscoverState(Enum):
     SELECT = 0
     ADAPT = 1
     IMPLEMENT = 2
-    SOLVE = 3
+    DELEGATE = 3
 
 
 class SelfDiscoverStateMachine:
@@ -39,20 +39,5 @@ class SelfDiscoverStateMachine:
             )
             or (isinstance(action, MessageAction) and action.wait_for_response)
         ):
-            if self.current_state != SelfDiscoverState.SOLVE:
+            if self.current_state != SelfDiscoverState.DELEGATE:
                 self.current_state = SelfDiscoverState(self.current_state.value + 1)
-
-    def get_prompt(self) -> dict[str, str] | None:
-        if self.current_state == SelfDiscoverState.SELECT:
-            content = SELECT_PROMPT
-        elif self.current_state == SelfDiscoverState.ADAPT:
-            content = ADAPT_PROMPT
-        elif self.current_state == SelfDiscoverState.IMPLEMENT:
-            content = IMPLEMENT_PROMPT
-        else:
-            return None
-
-        return {
-            'role': 'user',
-            'content': content,
-        }

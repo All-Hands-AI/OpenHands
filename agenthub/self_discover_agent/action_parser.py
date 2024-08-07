@@ -1,19 +1,33 @@
 import re
 
 from opendevin.controller.action_parser import ActionParser, ResponseParser
+from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     MessageAction,
 )
 
+from .prompt import RESEASONING_MODULE_LIST
+
+
+def dict_to_bullet_points(d: dict, indent: int = 0):
+    bullet_points = ''
+    for key, value in d.items():
+        bullet_points += '  ' * indent + f'- {key}\n'
+        if isinstance(value, dict):
+            bullet_points += dict_to_bullet_points(value, indent + 1)
+        else:
+            bullet_points += '  ' * (indent + 1) + f'- {value}\n'
+    return bullet_points
+
 
 class SelfDiscoverResponseParser(ResponseParser):
     """
     Parser action:
         - AgentDelegateAction(agent, inputs) - delegate action to BrowserAgent for browsing or CodeActAgent for plan execution
-        - MessageAction(content) - Message action for user interaction
-        - MessageAction(content) - Message action to advance to next step of self discovery
+        - MessageAction(content) - Message action for user interaction if 'wait_for_response' == True
+        - MessageAction(content) - Message action to advance to next self discovery state if 'wait_for_response' == False
     """
 
     def __init__(self):
@@ -114,12 +128,34 @@ class SelfDiscoverActionParserAdvance(ActionParser):
         pass
 
     def check_condition(self, action_str: str) -> bool:
-        # We assume the LLM is GOOD enough that when it returns pure natural language
+        # We assume the LLM is GOOD enough that when it returns JSON/pure natural language
         # we can go to the next step of the self discovery
         return True
 
     def parse(self, action_str: str) -> Action:
-        return MessageAction(content=action_str)
+        action_dict = json.loads(action_str)
+
+        if (
+            'selected_reasoning_modules' in action_dict
+            and action_dict['selected_reasoning_modules']
+        ):
+            content = 'To solve the given task I selected the following candidate reasoning modules:\n\n'
+            # content += "<ul>" + "\n".join([f"<li>{RESEASONING_MODULE_LIST[i]}</li>" for i in action_dict["selected_reasoning_modules"]]) + "</ul>"
+            content += '\n'.join(
+                f'* {RESEASONING_MODULE_LIST[i]}'
+                for i in action_dict['selected_reasoning_modules']
+            )
+        elif (
+            'adapted_reasoning_modules' in action_dict
+            and action_dict['adapted_reasoning_modules']
+        ):
+            content = 'I have adapted the selected candidate reasoning modules to the given task as follows:\n'
+            print(action_dict['adapted_reasoning_modules'])
+            # content += dict_to_bullet_points(action_dict["adapted_reasoning_modules"])
+        else:
+            content = ''
+        # content = action_str
+        return MessageAction(content=content)
 
 
 class SelfDiscoverActionParserAskUser(ActionParser):
