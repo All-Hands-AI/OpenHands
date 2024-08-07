@@ -14,7 +14,7 @@ from opendevin.runtime import Sandbox
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 
-from .files import insert_lines, read_lines
+from ..utils.files import insert_lines, read_lines
 from .filestore import E2BFileStore
 from .sandbox import E2BSandbox
 
