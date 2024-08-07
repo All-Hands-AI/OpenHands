@@ -1,4 +1,6 @@
+# Workflow that cleans up outdated and old workflows to prevent out of disk issues
 name: Delete old workflow runs
+
 on:
   workflow_dispatch:
     inputs:
@@ -27,11 +29,11 @@ on:
       delete_run_by_conclusion_pattern:
         description: 'Remove runs based on conclusion: action_required, cancelled, failure, skipped, success'
         required: true
-        default: "ALL"
+        default: 'ALL'
         type: choice
         options:
-          - "ALL"
-          - "Unsuccessful: action_required,cancelled,failure,skipped"
+          - 'ALL'
+          - 'Unsuccessful: action_required,cancelled,failure,skipped'
           - action_required
           - cancelled
           - failure
