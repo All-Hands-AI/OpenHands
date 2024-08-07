@@ -357,7 +357,7 @@ async def get_agents():
 
 
 @app.get('/api/list-files')
-def list_files(request: Request, path: str | None = None):
+async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -384,7 +384,8 @@ def list_files(request: Request, path: str | None = None):
             content={'error': 'Runtime not yet initialized'},
         )
     runtime: Runtime = request.state.session.agent_session.runtime
-    return runtime.list_files(path)
+    file_list = await runtime.list_files(path)
+    return file_list
 
 
 @app.get('/api/select-file')
