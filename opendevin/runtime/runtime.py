@@ -166,12 +166,8 @@ class Runtime:
         observation = await getattr(self, action_type)(action)
         return observation
 
-    @abstractmethod
-    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        raise NotImplementedError('This method is not implemented in the base class.')
-
     # ====================================================================
-    # Implement these methods in the subclass
+    # Action execution
     # ====================================================================
 
     @abstractmethod
@@ -197,3 +193,19 @@ class Runtime:
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
+
+    # ====================================================================
+    # File operations
+    # ====================================================================
+
+    @abstractmethod
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    async def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the sandbox.
+
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+        raise NotImplementedError('This method is not implemented in the base class.')

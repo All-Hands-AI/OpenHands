@@ -1,11 +1,10 @@
 import os
 import re
+import tempfile
 import uuid
 import warnings
 
 import requests
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 from opendevin.storage import get_file_store
@@ -33,13 +32,16 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import LLMConfig, load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState  # Add this import
-from opendevin.events.action import ChangeAgentStateAction, NullAction
+from opendevin.events.action import ChangeAgentStateAction, FileReadAction, NullAction
 from opendevin.events.observation import (
     AgentStateChangedObservation,
+    ErrorObservation,
+    FileReadObservation,
     NullObservation,
 )
 from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
+from opendevin.runtime.runtime import Runtime
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import SessionManager
 
@@ -355,7 +357,7 @@ async def get_agents():
 
 
 @app.get('/api/list-files')
-def list_files(request: Request, path: str = '/'):
+def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -368,7 +370,7 @@ def list_files(request: Request, path: str = '/'):
 
     Args:
         request (Request): The incoming request object.
-        path (str, optional): The path to list files from. Defaults to '/'.
+        path (str, optional): The path to list files from. Defaults to None.
 
     Returns:
         list: A list of file names in the specified path.
@@ -381,84 +383,8 @@ def list_files(request: Request, path: str = '/'):
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
-
-    try:
-        # Get the full path of the requested directory
-        full_path = request.state.session.agent_session.file_store.get_full_path(path)
-
-        # Check if the directory exists
-        if not os.path.exists(full_path) or not os.path.isdir(full_path):
-            return []
-
-        # Check if .gitignore exists
-        gitignore_path = os.path.join(full_path, '.gitignore')
-        if os.path.exists(gitignore_path):
-            # Use PathSpec to parse .gitignore
-            with open(gitignore_path, 'r') as f:
-                spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
-        else:
-            # Fallback to default exclude list if .gitignore doesn't exist
-            default_exclude = [
-                '.git',
-                '.DS_Store',
-                '.svn',
-                '.hg',
-                '.idea',
-                '.vscode',
-                '.settings',
-                '.pytest_cache',
-                '__pycache__',
-                'node_modules',
-                'vendor',
-                'build',
-                'dist',
-                'bin',
-                'logs',
-                'log',
-                'tmp',
-                'temp',
-                'coverage',
-                'venv',
-                'env',
-            ]
-            spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
-
-        entries = request.state.session.agent_session.runtime.file_store.list(path)
-
-        # Filter entries using PathSpec
-        filtered_entries = [
-            entry
-            for entry in entries
-            if not spec.match_file(os.path.relpath(entry, str(full_path)))
-        ]
-
-        # Separate directories and files
-        directories = []
-        files = []
-        for entry in filtered_entries:
-            # Remove leading slash and any parent directory components
-            entry_relative = entry.lstrip('/').split('/')[-1]
-
-            # Construct the full path by joining the base path with the relative entry path
-            full_entry_path = os.path.join(full_path, entry_relative)
-            if os.path.exists(full_entry_path):
-                is_dir = os.path.isdir(full_entry_path)
-                if is_dir:
-                    directories.append(entry)
-                else:
-                    files.append(entry)
-
-        # Sort directories and files separately
-        directories.sort(key=lambda s: s.lower())
-        files.sort(key=lambda s: s.lower())
-
-        # Combine sorted directories and files
-        sorted_entries = directories + files
-        return sorted_entries
-
-    except Exception as e:
-        logger.error(f'Error listing files: {e}', exc_info=True)
-        return []
+    runtime: Runtime = request.state.session.agent_session.runtime
+    return runtime.list_files(path)
 
 
 @app.get('/api/select-file')
@@ -480,14 +406,20 @@ def select_file(file: str, request: Request):
     Raises:
         HTTPException: If there's an error opening the file.
     """
-    try:
-        content = request.state.session.agent_session.runtime.file_store.read(file)
-    except Exception as e:
-        logger.error(f'Error opening file {file}: {e}', exc_info=False)
-        error_msg = f'Error opening file: {e}'
+    runtime: Runtime = request.state.session.agent_session.runtime
+
+    # convert file to an absolute path inside the runtime
+    filepath = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
+    read_action = FileReadAction(filepath)
+    observation = runtime.run_action(read_action)
+
+    if isinstance(observation, FileReadObservation):
+        content = observation.content
+    elif isinstance(observation, ErrorObservation):
+        logger.error(f'Error opening file {file}: {observation}', exc_info=False)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': error_msg},
+            content={'error': f'Error opening file: {observation}'},
         )
     return {'code': content}
 
@@ -550,9 +482,17 @@ async def upload_file(request: Request, files: list[UploadFile]):
                 )
                 continue
 
-            request.state.session.agent_session.runtime.file_store.write(
-                safe_filename, file_contents
-            )
+            # copy the file to the runtime
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_file_path = os.path.join(tmp_dir, safe_filename)
+                with open(tmp_file_path, 'wb') as tmp_file:
+                    tmp_file.write(file_contents)
+                    tmp_file.flush()
+
+                runtime: Runtime = request.state.session.agent_session.runtime
+                await runtime.copy_to(
+                    tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
+                )
             uploaded_files.append(safe_filename)
 
         response_content = {
