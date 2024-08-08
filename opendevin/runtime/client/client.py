@@ -87,6 +87,11 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
+        self._initial_pwd = work_dir
+
+    @property
+    def initial_pwd(self):
+        return self._initial_pwd
 
     @property
     def initial_pwd(self):
