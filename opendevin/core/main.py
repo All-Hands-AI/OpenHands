@@ -1,6 +1,6 @@
 import asyncio
-import os
 import sys
+import uuid
 from typing import Callable, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
@@ -21,8 +21,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
-from opendevin.runtime.sandbox import Sandbox
-from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.runtime.runtime import Runtime
 from opendevin.storage import get_file_store
 
 
@@ -37,15 +36,46 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
+async def create_runtime(
+    config: AppConfig,
+    sid: str | None = None,
+    runtime_tools_config: dict | None = None,
+) -> Runtime:
+    """Create a runtime for the agent to run on.
+
+    config: The app config.
+    sid: The session id.
+    runtime_tools_config: (will be deprecated) The runtime tools config.
+    """
+    # set up the event stream
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    session_id = 'main' + ('_' + sid if sid else str(uuid.uuid4()))
+    event_stream = EventStream(session_id, file_store)
+
+    # agent class
+    agent_cls = agenthub.Agent.get_cls(config.default_agent)
+
+    # runtime and tools
+    runtime_cls = get_runtime_cls(config.runtime)
+    logger.info(f'Initializing runtime: {runtime_cls}')
+    runtime: Runtime = runtime_cls(
+        config=config,
+        event_stream=event_stream,
+        sid=session_id,
+        plugins=agent_cls.sandbox_plugins,
+    )
+    await runtime.ainit()
+
+    return runtime
+
+
 async def run_controller(
     config: AppConfig,
     task_str: str,
+    runtime: Runtime | None = None,
+    agent: Agent | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: Callable[[State | None], str] | None = None,
-    sandbox: Sandbox | None = None,
-    agent: Agent | None = None,
-    runtime_tools_config: dict | None = None,
-    sid: str | None = None,
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
@@ -53,13 +83,11 @@ async def run_controller(
 
     Args:
         config: The app config.
-        task_str: The task to run.
+        task_str: The task to run. It can be a string.
+        runtime: (optional) A runtime for the agent to run on.
+        agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
-        sandbox: (will be deprecated) An optional sandbox to run the agent in.
-        agent: An optional agent to run.
-        runtime_tools_config: (will be deprecated) The runtime tools config.
-        sid: The session id.
         headless_mode: Whether the agent is run in headless mode.
     """
     # Create the agent
@@ -69,24 +97,20 @@ async def run_controller(
             llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
         )
 
-    # Logging
-    logger.info(
-        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
-    )
+    if runtime is None:
+        runtime = await create_runtime(config)
 
-    # set up the event stream
-    file_store = get_file_store(config.file_store, config.file_store_path)
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session, file_store)
-
+    event_stream = runtime.event_stream
     # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
         try:
             logger.info('Restoring agent state from cli session')
-            initial_state = State.restore_from_session(cli_session, file_store)
+            initial_state = State.restore_from_session(
+                event_stream.sid, event_stream.file_store
+            )
         except Exception as e:
-            print('Error restoring state', e)
+            logger.info('Error restoring state', e)
 
     # init controller with this initial state
     controller = AgentController(
@@ -99,38 +123,11 @@ async def run_controller(
         headless_mode=headless_mode,
     )
 
-    # runtime and tools
-    runtime_cls = get_runtime_cls(config.runtime)
-    extra_kwargs = {}
-    if isinstance(runtime_cls, ServerRuntime):
-        extra_kwargs['sandbox'] = sandbox
-        # TODO: deprecate this and accept runtime as a parameter instead
-
-    logger.info(f'Initializing runtime: {runtime_cls}')
-    runtime = runtime_cls(
-        config=config,
-        event_stream=event_stream,
-        plugins=controller.agent.sandbox_plugins,
-        **extra_kwargs,
+    assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
+    # Logging
+    logger.info(
+        f'Agent Controller Initialized: Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
     )
-    await runtime.ainit()
-    if isinstance(runtime, ServerRuntime):
-        runtime.init_runtime_tools(
-            controller.agent.runtime_tools,
-            runtime_tools_config=runtime_tools_config,
-        )
-        # browser eval specific
-        # NOTE: This will be deprecated when we move to the new runtime
-        if runtime.browser and runtime.browser.eval_dir:
-            logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
-            with open(
-                os.path.join(runtime.browser.eval_dir, 'goal.txt'),
-                'r',
-                encoding='utf-8',
-            ) as f:
-                task_str = f.read()
-                logger.info(f'Dynamic Eval task: {task_str}')
-    # TODO: Implement this for EventStream Runtime
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
@@ -170,12 +167,13 @@ async def run_controller(
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
-        end_state.save_to_session(cli_session, file_store)
+        end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
     # close when done
     await controller.close()
-    await runtime.close()
-    return controller.get_state()
+    state = controller.get_state()
+
+    return state
 
 
 if __name__ == '__main__':

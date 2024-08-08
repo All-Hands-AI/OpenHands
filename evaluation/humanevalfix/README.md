@@ -1,39 +1,10 @@
 # HumanEvalFix Evaluation with OpenDevin
 
-Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in [OctoPack: Instruction Tuning Code Large Language Models](https://arxiv.org/abs/2308.07124). Please see [here](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py) for the reference implementation used in the paper.
+Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in [OctoPack: Instruction Tuning Code Large Language Models](https://arxiv.org/abs/2308.07124). Please see [here](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py) for the reference implementation used in the paper. Currently only `python` evaluation is supported.
 
-## Setup Environment
+## Setup Environment and LLM Configuration
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
-
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace.
-
-Add the following configurations:
-
-```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-
-[sandbox]
-enable_auto_lint = true
-
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on HumanEvalFix
 

@@ -29,15 +29,16 @@ COMMAND="poetry run python ./evaluation/mint/run_infer.py \
     --llm-config $MODEL_CONFIG \
     --max-iterations 5 \
     --max-propose-solution 2 \
-    --eval-num-workers $NUM_WORKERS \
+    --eval-num-workers $NUM_WORKERS
+"
 
 if [ -n "$SUBSET" ]; then
   echo "SUBSET: $SUBSET"
   COMMAND="$COMMAND --subset $SUBSET"
 # otherwise default to use the math subset
 else
-  echo "SUBSET: math"
-  COMMAND="$COMMAND --subset math"
+  echo "SUBSET: all"
+  COMMAND="$COMMAND --subset all"
 fi
 
 if [ -n "$EVAL_LIMIT" ]; then

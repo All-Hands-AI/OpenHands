@@ -191,9 +191,9 @@ class PykeProgram:
 
 
 class LogicInferenceEngine:
-    def __init__(self, dataset_name, workspace_mount_path):
-        self.dataset_name = dataset_name
-        self.workspace_mount_path = workspace_mount_path
+    def __init__(self):
+        self.dataset_name = os.environ.get('DATASET_NAME', 'ProofWriter')
+        self.workspace_mount_path = '/workspace'
 
     def random_backup(self):
         if self.dataset_name == 'ProntoQA':

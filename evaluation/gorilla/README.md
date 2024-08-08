@@ -2,20 +2,16 @@
 
 This folder contains evaluation harness we built on top of the original [Gorilla APIBench](https://github.com/ShishirPatil/gorilla) ([paper](https://arxiv.org/pdf/2305.15334)).
 
-## Setup Environment
+## Setup Environment and LLM Configuration
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local development environment for OpenDevin.
-
-## Configure OpenDevin and your LLM
-
-Run `make setup-config` to set up the `config.toml` file if it does not exist at the root of the workspace.
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on APIBench Instances
 
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-bash evaluation/gorilla/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [hubs]
+./evaluation/gorilla/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [hubs]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
@@ -39,5 +35,5 @@ Note: in order to use `eval_limit`, you must also set `agent`; in order to use `
 For example,
 
 ```bash
-bash evaluation/gorilla/scripts/run_infer.sh llm 0.6.2 CodeActAgent 10 th
+./evaluation/gorilla/scripts/run_infer.sh llm 0.6.2 CodeActAgent 10 th
 ```

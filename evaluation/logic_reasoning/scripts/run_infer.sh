@@ -3,8 +3,8 @@ set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
 
-DATASET=$1
-MODEL_CONFIG=$2
+MODEL_CONFIG=$1
+DATASET=$2
 COMMIT_HASH=$3
 EVAL_LIMIT=$4
 AGENT=$5
@@ -21,6 +21,11 @@ checkout_eval_branch
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
+fi
+
+if [ -z "$DATASET" ]; then
+  echo "Dataset not specified, use default ProofWriter"
+  DATASET="ProofWriter"
 fi
 
 get_agent_version

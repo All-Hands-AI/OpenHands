@@ -55,8 +55,6 @@ workspace_base = "./workspace"
 # Path to rewrite the workspace mount path to
 #workspace_mount_rewrite = ""
 
-# Persist the sandbox
-persist_sandbox = false
 
 # Run as devin
 #run_as_devin = true

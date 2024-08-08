@@ -14,7 +14,7 @@ def try_parse_answer(act) -> str | None:
         raw_ans = act.thought
     else:
         return None
-    agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)
+    agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans, re.DOTALL)
     if not agent_answer:
         return None
     return agent_answer[0].strip()

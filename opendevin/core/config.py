@@ -185,23 +185,22 @@ class SandboxConfig(metaclass=Singleton):
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
-        update_source_code: Whether to update the source code in the EventStreamRuntime.
-            Used for development of EventStreamRuntime.
         od_runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
             The path to the interpreter is available as $OD_INTERPRETER_PATH,
             which can be used to install dependencies for the OD-specific Python interpreter.
+        od_runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
+            This is a dictionary of key-value pairs.
+            This is useful for setting environment variables that are needed by the runtime.
+            For example, for specifying the base url of website for browsergym evaluation.
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
-
     """
 
     box_type: str = 'ssh'
-    container_image: str = 'ghcr.io/opendevin/sandbox' + (
-        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
-        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
-        else ':main'
+    container_image: str = (
+        'ubuntu:22.04'  # default to ubuntu:22.04 for eventstream runtime
     )
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
@@ -210,8 +209,8 @@ class SandboxConfig(metaclass=Singleton):
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
-    update_source_code: bool = False
     od_runtime_extra_deps: str | None = None
+    od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
 
     def defaults_to_dict(self) -> dict:
@@ -274,13 +273,14 @@ class AppConfig(metaclass=Singleton):
     default_agent: str = _DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
-    runtime: str = 'server'
+    runtime: str = 'eventstream'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
+    # TODO: clean up workspace path after the removal of ServerRuntime
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str = (
+    workspace_mount_path: str | None = (
         UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
-    )
+    )  # when set to None, do not mount the workspace
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -290,7 +290,6 @@ class AppConfig(metaclass=Singleton):
     e2b_api_key: str = ''
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
     jwt_secret: str = uuid.uuid4().hex
@@ -583,7 +582,7 @@ def finalize_config(cfg: AppConfig):
     cfg.workspace_base = os.path.abspath(cfg.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if cfg.sandbox.box_type == 'local':
+    if cfg.sandbox.box_type == 'local' and cfg.workspace_mount_path is not None:
         cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
