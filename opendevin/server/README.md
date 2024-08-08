@@ -6,8 +6,8 @@ This is a WebSocket server that executes tasks using an agent.
 
 - [Initialize the frontend code](../../frontend/README.md)
 - Install Python 3.12 (`brew install python` for those using homebrew)
-- Install pipx: (`brew install pipx` followed by `pipx ensurepath` for those using homebrew)
-- Install poetry: (`pipx install poetry` for those using homebrew)
+- Install pipx: (`brew install pipx` followed by `pipx ensurepath`)
+- Install poetry: (`pipx install poetry`)
 
 ## Install
 
