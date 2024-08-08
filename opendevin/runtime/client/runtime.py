@@ -204,7 +204,7 @@ class EventStreamRuntime(Runtime):
             + '-' * 30
             + f'\n{_logs}'
             + '\n'
-            + '-' * 60
+            + '-' * 90
         )
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
