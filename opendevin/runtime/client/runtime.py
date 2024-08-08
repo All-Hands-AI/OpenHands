@@ -192,6 +192,9 @@ class EventStreamRuntime(Runtime):
     )
     async def _wait_until_alive(self):
         logger.info('Reconnecting session')
+        container = self.docker_client.containers.get(self.container_name)
+        # print logs
+        logger.info(f'Container logs:\n {container.logs(tail=10).decode("utf-8")}')
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
