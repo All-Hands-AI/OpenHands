@@ -22,7 +22,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.action.action import Action
 from opendevin.events.observation import (
-    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -97,8 +96,6 @@ class EventStreamRuntime(Runtime):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         logger.info(f'Container initialized with env vars: {env_vars}')
-
-        await self._init_git_config()
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -182,16 +179,6 @@ class EventStreamRuntime(Runtime):
             logger.exception(e)
             await self.close(close_client=False)
             raise e
-
-    async def _init_git_config(self):
-        action = CmdRunAction(
-            'git config --global user.name "opendevin" && '
-            'git config --global user.email "opendevin@all-hands.dev"'
-        )
-        logger.info(f'Setting git config: {action}')
-        obs: Observation = await self.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0, f'Failed to set git config: {obs}'
 
     async def _ensure_session(self):
         await asyncio.sleep(1)
