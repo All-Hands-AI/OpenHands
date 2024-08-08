@@ -182,7 +182,7 @@ class RuntimeClient:
             )
             assert obs.exit_code == 0
 
-    logger.info('Bash init commands completed')
+        logger.info('Bash init commands completed')
 
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
