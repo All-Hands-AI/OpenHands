@@ -38,7 +38,6 @@ ENV RUN_AS_DEVIN=true
 # A random number--we need this to be different from the user's UID on the host machine
 ENV OPENDEVIN_USER_ID=42420
 ENV USE_HOST_NETWORK=false
-ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
