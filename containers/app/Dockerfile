@@ -72,6 +72,7 @@ COPY --chown=opendevin:app --chmod=777 ./opendevin/runtime/plugins ./opendevin/r
 COPY --chown=opendevin:app --chmod=770 ./agenthub ./agenthub
 COPY --chown=opendevin:app --chmod=770 ./pyproject.toml ./pyproject.toml
 COPY --chown=opendevin:app --chmod=770 ./poetry.lock ./poetry.lock
+COPY --chown=opendevin:app --chmod=770 ./README.md ./README.md
 
 RUN python opendevin/core/download.py # No-op to download assets
 RUN chown -R opendevin:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script
