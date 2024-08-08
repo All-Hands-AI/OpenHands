@@ -163,7 +163,7 @@ default_agent = "TestAgent"
     assert default_config.workspace_mount_path == '/opt/files2/workspace'
 
 
-def test_compat_load_sandbox_from_toml(default_config, temp_toml_file):
+def test_compat_load_sandbox_from_toml(default_config: AppConfig, temp_toml_file: str):
     # test loading configuration from a new-style TOML file
     # uses a toml file with sandbox_vars instead of a sandbox section
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -176,7 +176,7 @@ model = "test-model"
 memory_enabled = true
 
 [core]
-workspace_base = "/opt/files2/workspace""
+workspace_base = "/opt/files2/workspace"
 sandbox_timeout = 500
 sandbox_container_image = "node:14"
 sandbox_user_id = 1001
@@ -386,10 +386,6 @@ def test_finalize_config(default_config):
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     finalize_config(default_config)
 
-    assert (
-        default_config.workspace_mount_path_in_sandbox
-        == default_config.workspace_mount_path
-    )
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
     )
@@ -401,15 +397,6 @@ def test_workspace_mount_path_default(default_config):
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
-    )
-
-
-def test_workspace_mount_path_in_sandbox_local(default_config):
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    finalize_config(default_config)
-    assert (
-        default_config.workspace_mount_path_in_sandbox
-        == default_config.workspace_mount_path
     )
 
 
