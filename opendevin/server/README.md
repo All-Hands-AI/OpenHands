@@ -2,14 +2,27 @@
 
 This is a WebSocket server that executes tasks using an agent.
 
+## Recommended Prerequisites
+
+- [Initialize the frontend code](../../frontend/README.md)
+- Install Python 3.12 (`brew install python` for those using homebrew)
+- Install pipx: (`brew install pipx` followed by `pipx ensurepath` for those using homebrew)
+- Install poetry: (`pipx install poetry` for those using homebrew)
+
 ## Install
 
-Follow the instructions in the base README.md to install dependencies and set up.
+First build a distribution of the frontend code:
+```
+cd frontend
+npm install
+npm run build
+cd ..
+```
 
 ## Start the Server
 
 ```sh
-uvicorn opendevin.server.listen:app --reload --port 3000
+poetry run uvicorn opendevin.server.listen:app --reload --port 3000
 ```
 
 ## Test the Server
