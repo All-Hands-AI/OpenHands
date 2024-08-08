@@ -166,10 +166,8 @@ class SandboxConfig(metaclass=Singleton):
     """
 
     box_type: str = 'ssh'
-    container_image: str = 'ghcr.io/opendevin/sandbox' + (
-        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
-        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
-        else ':main'
+    container_image: str = (
+        'ubuntu:22.04'  # default to ubuntu:22.04 for eventstream runtime
     )
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
@@ -241,7 +239,7 @@ class AppConfig(metaclass=Singleton):
     agents: dict = field(default_factory=dict)
     default_agent: str = _DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
-    runtime: str = 'server'
+    runtime: str = 'eventstream'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     # TODO: clean up workspace path after the removal of ServerRuntime
@@ -259,7 +257,6 @@ class AppConfig(metaclass=Singleton):
     e2b_api_key: str = ''
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
     jwt_secret: str = uuid.uuid4().hex

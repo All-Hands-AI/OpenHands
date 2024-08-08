@@ -107,8 +107,6 @@ def get_config(
             container_image=container_image,
             enable_auto_lint=True,
             use_host_network=False,
-            # always make sure we are using the latest source code
-            update_source_code=True,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
         ),

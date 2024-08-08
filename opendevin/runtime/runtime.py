@@ -4,7 +4,6 @@ import copy
 import json
 import os
 from abc import abstractmethod
-from typing import Any, Optional
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
@@ -29,7 +28,6 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
-from opendevin.runtime.tools import RuntimeTool
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -51,6 +49,7 @@ class Runtime:
     """
 
     sid: str
+    config: AppConfig
     DEFAULT_ENV_VARS: dict[str, str]
 
     def __init__(
@@ -98,18 +97,6 @@ class Runtime:
                 loop.create_task(self.close())
             else:
                 loop.run_until_complete(self.close())
-
-    # ====================================================================
-    # Methods we plan to deprecate when we move to new EventStreamRuntime
-    # ====================================================================
-
-    def init_runtime_tools(
-        self,
-        runtime_tools: list[RuntimeTool],
-        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-    ) -> None:
-        # TODO: deprecate this method when we move to the new EventStreamRuntime
-        raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
 
@@ -179,12 +166,8 @@ class Runtime:
         observation = await getattr(self, action_type)(action)
         return observation
 
-    @abstractmethod
-    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        raise NotImplementedError('This method is not implemented in the base class.')
-
     # ====================================================================
-    # Implement these methods in the subclass
+    # Action execution
     # ====================================================================
 
     @abstractmethod
@@ -210,3 +193,19 @@ class Runtime:
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
+
+    # ====================================================================
+    # File operations
+    # ====================================================================
+
+    @abstractmethod
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    async def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the sandbox.
+
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+        raise NotImplementedError('This method is not implemented in the base class.')

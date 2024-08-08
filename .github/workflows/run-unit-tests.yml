@@ -16,8 +16,6 @@ on:
       - 'evaluation/**'
   pull_request:
 
-env:
-  PERSIST_SANDBOX : "false"
 
 jobs:
   # Run frontend unit tests

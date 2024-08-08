@@ -25,7 +25,7 @@ on:
         default: ''
 
 jobs:
-  # Builds the OpenDevin and sandbox Docker images
+  # Builds the OpenDevin Docker images
   ghcr_build:
     runs-on: ubuntu-latest
     outputs:
@@ -35,7 +35,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['sandbox', 'opendevin']
+        image: ['opendevin']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout
@@ -123,7 +123,18 @@ jobs:
         run: poetry run python3 opendevin/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image }} --build_folder containers/runtime
       - name: Build and export image
         id: build
-        run: ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
+        run: |
+          if [ -f 'containers/runtime/Dockerfile' ]; then
+            echo 'Dockerfile detected, building runtime image...'
+            ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
+          else
+            echo 'No Dockerfile detected which means an exact image is already built. Pulling the image and saving it to a tar file...'
+            source containers/runtime/config.sh
+            echo '$DOCKER_IMAGE_TAG $DOCKER_IMAGE_HASH_TAG' >> tags.txt
+            echo "Pulling image $DOCKER_IMAGE/$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar"
+            docker pull $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
+            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          fi
       - name: Capture tags
         id: capture-tags
         run: |
@@ -142,11 +153,9 @@ jobs:
     name: Test Runtime
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime, ghcr_build]
-    env:
-      PERSIST_SANDBOX: 'false'
     strategy:
       matrix:
-        runtime_type: ['eventstream', 'server']
+        runtime_type: ['eventstream']
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -204,60 +213,11 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # Run integration tests with the sandbox Docker images
-  integration_tests_on_linux:
-    name: Integration Tests on Linux
-    runs-on: ubuntu-latest
-    needs: ghcr_build
-    env:
-      PERSIST_SANDBOX: "false"
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.11']
-        sandbox: ['ssh', 'local']
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies
-      - name: Download sandbox Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: sandbox-docker-image-amd64
-          path: /tmp/
-      - name: Load sandbox image and run integration tests
-        env:
-          SANDBOX_BOX_TYPE: ${{ matrix.sandbox }}
-        run: |
-          # Load the Docker image and capture the output
-          output=$(docker load -i /tmp/sandbox_image_amd64.tar)
-
-          # Extract the first image name from the output
-          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
-
-          # Print the full name of the image
-          echo "Loaded Docker image: $image_name"
-
-          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true TEST_RUNTIME=server ./tests/integration/regenerate.sh
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
   # Run integration tests with the eventstream runtime Docker image
   runtime_integration_tests_on_linux:
     name: Runtime Integration Tests on Linux
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime]
-    env:
-      PERSIST_SANDBOX: 'false'
     strategy:
       fail-fast: false
       matrix:
@@ -305,7 +265,7 @@ jobs:
   # Push the OpenDevin and sandbox Docker images to the ghcr.io repository
   ghcr_push:
     runs-on: ubuntu-latest
-    needs: [ghcr_build, test_runtime, integration_tests_on_linux]
+    needs: [ghcr_build]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     env:
       tags: ${{ needs.ghcr_build.outputs.tags }}
@@ -314,7 +274,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['sandbox', 'opendevin']
+        image: ['opendevin']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout code
@@ -347,7 +307,7 @@ jobs:
   # Push the runtime Docker images to the ghcr.io repository
   ghcr_push_runtime:
     runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, test_runtime, integration_tests_on_linux]
+    needs: [ghcr_build_runtime, test_runtime, runtime_integration_tests_on_linux]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     env:
       tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
@@ -416,7 +376,7 @@ jobs:
       tags: ${{ needs.ghcr_build.outputs.tags }}
     strategy:
       matrix:
-        image: ['sandbox', 'opendevin']
+        image: ['opendevin']
     permissions:
       contents: read
       packages: write
