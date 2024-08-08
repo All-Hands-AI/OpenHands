@@ -158,8 +158,6 @@ spec:
     env:
     - name: SANDBOX_USER_ID
       value: "1000"
-    - name: SANDBOX_BOX_TYPE
-      value: 'local'
     - name: WORKSPACE_MOUNT_PATH
       value: "/opt/workspace_base"
     volumeMounts:
