@@ -11,18 +11,19 @@ This is a WebSocket server that executes tasks using an agent.
 
 ## Install
 
-First build a distribution of the frontend code:
+First build a distribution of the frontend code (From the project root directory):
 ```
 cd frontend
 npm install
 npm run build
 cd ..
 ```
+Next run `poetry shell` (So you don't have to repeat `poetry run`)
 
 ## Start the Server
 
 ```sh
-poetry run uvicorn opendevin.server.listen:app --reload --port 3000
+uvicorn opendevin.server.listen:app --reload --port 3000
 ```
 
 ## Test the Server
