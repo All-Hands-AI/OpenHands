@@ -373,7 +373,6 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 
     load_from_toml(default_config)
     load_from_env(default_config, os.environ)
-    default_config.ssh_password = None  # prevent leak
     default_config.jwt_secret = None  # prevent leak
     for llm in default_config.llms.values():
         llm.api_key = None  # prevent leak
@@ -490,14 +489,11 @@ def test_api_keys_repr_str():
         agents={'agent': agent_config},
         e2b_api_key='my_e2b_api_key',
         jwt_secret='my_jwt_secret',
-        ssh_password='my_ssh_password',
     )
     assert "e2b_api_key='******'" in repr(app_config)
     assert "e2b_api_key='******'" in str(app_config)
     assert "jwt_secret='******'" in repr(app_config)
     assert "jwt_secret='******'" in str(app_config)
-    assert "ssh_password='******'" in repr(app_config)
-    assert "ssh_password='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention

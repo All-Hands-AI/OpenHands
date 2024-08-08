@@ -324,7 +324,6 @@ class AppConfig(metaclass=Singleton):
                 'e2b_api_key',
                 'github_token',
                 'jwt_secret',
-                'ssh_password',
             ]:
                 attr_value = '******' if attr_value else None
 
