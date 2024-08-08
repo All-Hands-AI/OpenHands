@@ -197,7 +197,15 @@ class EventStreamRuntime(Runtime):
         _logs = container.logs(tail=10).decode('utf-8').split('\n')
         # add indent
         _logs = '\n'.join([f'    |{log}' for log in _logs])
-        logger.info('-' * 40 + f'Container logs:\n{_logs}' + '-' * 40)
+        logger.info(
+            '\n'
+            + '-' * 30
+            + 'Container logs (last 10 lines):'
+            + '-' * 30
+            + f'\n{_logs}'
+            + '\n'
+            + '-' * 60
+        )
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
