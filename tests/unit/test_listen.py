@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 from opendevin.core.config import AppConfig
 
 
@@ -18,7 +19,7 @@ class MockStaticFiles:
 with patch('opendevin.server.session.SessionManager', MockSessionManager), patch(
     'fastapi.staticfiles.StaticFiles', MockStaticFiles
 ):
-    from opendevin.server.listen import load_file_upload_config
+    from opendevin.server.listen import is_extension_allowed, load_file_upload_config
 
 
 def test_load_file_upload_config():
@@ -42,32 +43,36 @@ def test_load_file_upload_config_invalid_max_size():
         file_uploads_allowed_extensions=[],
     )
     with patch('opendevin.server.listen.config', config):
-
         max_size, restrict_types, allowed_extensions = load_file_upload_config()
 
         assert max_size == 0  # Should default to 0 when invalid
         assert restrict_types is False
         assert allowed_extensions == ['.*']  # Should default to '.*' when empty
 
-from opendevin.server.listen import is_extension_allowed
 
 def test_is_extension_allowed():
-    with patch('opendevin.server.listen.RESTRICT_FILE_TYPES', True),          patch('opendevin.server.listen.ALLOWED_EXTENSIONS', ['.txt', '.pdf']):
-        assert is_extension_allowed('file.txt') == True
-        assert is_extension_allowed('file.pdf') == True
-        assert is_extension_allowed('file.doc') == False
-        assert is_extension_allowed('file') == False
+    with patch('opendevin.server.listen.RESTRICT_FILE_TYPES', True), patch(
+        'opendevin.server.listen.ALLOWED_EXTENSIONS', ['.txt', '.pdf']
+    ):
+        assert is_extension_allowed('file.txt')
+        assert is_extension_allowed('file.pdf')
+        assert not is_extension_allowed('file.doc')
+        assert not is_extension_allowed('file')
+
 
 def test_is_extension_allowed_no_restrictions():
     with patch('opendevin.server.listen.RESTRICT_FILE_TYPES', False):
-        assert is_extension_allowed('file.txt') == True
-        assert is_extension_allowed('file.pdf') == True
-        assert is_extension_allowed('file.doc') == True
-        assert is_extension_allowed('file') == True
+        assert is_extension_allowed('file.txt')
+        assert is_extension_allowed('file.pdf')
+        assert is_extension_allowed('file.doc')
+        assert is_extension_allowed('file')
+
 
 def test_is_extension_allowed_wildcard():
-    with patch('opendevin.server.listen.RESTRICT_FILE_TYPES', True),          patch('opendevin.server.listen.ALLOWED_EXTENSIONS', ['.*']):
-        assert is_extension_allowed('file.txt') == True
-        assert is_extension_allowed('file.pdf') == True
-        assert is_extension_allowed('file.doc') == True
-        assert is_extension_allowed('file') == True
+    with patch('opendevin.server.listen.RESTRICT_FILE_TYPES', True), patch(
+        'opendevin.server.listen.ALLOWED_EXTENSIONS', ['.*']
+    ):
+        assert is_extension_allowed('file.txt')
+        assert is_extension_allowed('file.pdf')
+        assert is_extension_allowed('file.doc')
+        assert is_extension_allowed('file')
