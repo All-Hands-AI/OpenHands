@@ -93,10 +93,6 @@ class RuntimeClient:
     def initial_pwd(self):
         return self._initial_pwd
 
-    @property
-    def initial_pwd(self):
-        return self._initial_pwd
-
     async def ainit(self):
         for plugin in self.plugins_to_load:
             await plugin.initialize(self.username)
