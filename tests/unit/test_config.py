@@ -386,10 +386,6 @@ def test_finalize_config(default_config):
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     finalize_config(default_config)
 
-    assert (
-        default_config.workspace_mount_path_in_sandbox
-        == default_config.workspace_mount_path
-    )
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
     )
@@ -401,15 +397,6 @@ def test_workspace_mount_path_default(default_config):
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
-    )
-
-
-def test_workspace_mount_path_in_sandbox_local(default_config):
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    finalize_config(default_config)
-    assert (
-        default_config.workspace_mount_path_in_sandbox
-        == default_config.workspace_mount_path
     )
 
 
