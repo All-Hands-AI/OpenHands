@@ -123,7 +123,18 @@ jobs:
         run: poetry run python3 opendevin/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image }} --build_folder containers/runtime
       - name: Build and export image
         id: build
-        run: ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
+        run: |
+          if [ -f 'containers/runtime/Dockerfile' ]; then
+            echo 'Dockerfile detected, building runtime image...'
+            ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
+          else
+            echo 'No Dockerfile detected which means an exact image is already built. Pulling the image and saving it to a tar file...'
+            source containers/runtime/config.sh
+            echo '$DOCKER_IMAGE_TAG $DOCKER_IMAGE_HASH_TAG' >> tags.txt
+            echo "Pulling image $DOCKER_IMAGE/$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar"
+            docker pull $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
+            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
+          fi
       - name: Capture tags
         id: capture-tags
         run: |
