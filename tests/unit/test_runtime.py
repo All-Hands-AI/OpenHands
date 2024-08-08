@@ -1265,9 +1265,12 @@ async def test_keep_prompt(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_git_operation(temp_dir, box_class):
+async def test_git_operation(box_class):
+    # do not mount workspace, since workspace mount by tests will be owned by root
+    # while the user_id we get via os.getuid() is different from root
+    # which causes permission issues
     runtime = await _load_runtime(
-        temp_dir,
+        temp_dir=None,
         box_class=box_class,
         # Need to use non-root user to expose issues
         run_as_devin=True,
