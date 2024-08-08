@@ -3566,13 +3566,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.43.1"
+version = "1.43.3"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.43.1-py3-none-any.whl", hash = "sha256:57a3ce38889782f014f371cd794a1cad4e7d9b97412d75ff8b051bc8fc4f4e4d"},
-    {file = "litellm-1.43.1.tar.gz", hash = "sha256:f7132938b6e2120e40b01b2210087ca05c51f2f90cebf33495adb53e7f9aaaab"},
+    {file = "litellm-1.43.3-py3-none-any.whl", hash = "sha256:b626df5da48b794be4d1888eaecfe941d68a081bfeab50531e5395e32d0e7894"},
+    {file = "litellm-1.43.3.tar.gz", hash = "sha256:b139fd3965cc1fdf98746dac67ce1f57f72c247083174ee8f1f46ed86fafdffc"},
 ]
 
 [package.dependencies]
@@ -3581,7 +3581,7 @@ click = "*"
 importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
 jsonschema = ">=4.22.0,<5.0.0"
-openai = ">=1.27.0"
+openai = ">=1.40.0"
 pydantic = ">=2.0.0,<3.0.0"
 python-dotenv = ">=0.2.0"
 requests = ">=2.31.0,<3.0.0"
