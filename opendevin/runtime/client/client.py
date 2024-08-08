@@ -58,9 +58,9 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    "alias git='git --no-pager'",
     'git config --global user.name "opendevin"',
     'git config --global user.email "opendevin@all-hands.dev"',
+    "alias git='git --no-pager'",
 ]
 
 
@@ -170,14 +170,18 @@ class RuntimeClient:
         )
 
     async def _init_bash_commands(self):
+        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
+            action.timeout = 300
             logger.debug(f'Executing init command: {command}')
-            obs: CmdOutputObservation = await self.run(action=action)
+            obs: CmdOutputObservation = await self.run(action)
             logger.debug(
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
+
+    logger.info('Bash init commands completed')
 
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
