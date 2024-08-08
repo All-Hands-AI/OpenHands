@@ -1,3 +1,4 @@
+# Workflow that builds and deploys the documentation website
 name: Deploy Docs to GitHub Pages
 
 on:
@@ -11,6 +12,7 @@ on:
       - main
 
 jobs:
+  # Build the documentation website
   build:
     name: Build Docusaurus
     runs-on: ubuntu-latest
@@ -27,23 +29,23 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-
+          python-version: '3.11'
       - name: Generate Python Docs
         run: rm -rf docs/modules/python && pip install pydoc-markdown && pydoc-markdown
       - name: Install dependencies
         run: cd docs && npm ci
       - name: Build website
         run: cd docs && npm run build
-
       - name: Upload Build Artifact
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/build
 
+  # Deploy the documentation website
   deploy:
     name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.repository == 'OpenDevin/OpenDevin'
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
@@ -54,7 +56,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

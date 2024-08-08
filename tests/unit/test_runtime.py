@@ -32,7 +32,6 @@ from opendevin.events.observation import (
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.storage import get_file_store
 
 
@@ -58,10 +57,8 @@ def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
-    elif runtime.lower() == 'server':
-        return [ServerRuntime]
     else:
-        return [EventStreamRuntime, ServerRuntime]
+        return [EventStreamRuntime]
 
 
 # This assures that all tests run together per runtime, not alternating between them,
@@ -146,19 +143,6 @@ async def _load_runtime(
         )
         await runtime.ainit()
 
-    elif box_class == ServerRuntime:
-        runtime = ServerRuntime(
-            config=config, event_stream=event_stream, sid=sid, plugins=plugins
-        )
-        await runtime.ainit()
-        from opendevin.runtime.tools import (
-            RuntimeTool,  # deprecate this after ServerRuntime is deprecated
-        )
-
-        runtime.init_runtime_tools(
-            [RuntimeTool.BROWSER],
-            runtime_tools_config={},
-        )
     else:
         raise ValueError(f'Invalid box class: {box_class}')
     await asyncio.sleep(1)
@@ -335,11 +319,8 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == ''
-    if box_class == ServerRuntime:
-        assert obs.path == 'hello.sh'
-    else:
-        # event stream runtime will always use absolute path
-        assert obs.path == '/workspace/hello.sh'
+    # event stream runtime will always use absolute path
+    assert obs.path == '/workspace/hello.sh'
 
     # Test read file (file should exist)
     action_read = FileReadAction(path='hello.sh')
@@ -351,10 +332,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == 'echo "Hello, World!"\n'
-    if box_class == ServerRuntime:
-        assert obs.path == 'hello.sh'
-    else:
-        assert obs.path == '/workspace/hello.sh'
+    assert obs.path == '/workspace/hello.sh'
 
     # clean up
     action = CmdRunAction(command='rm -rf hello.sh')
@@ -571,14 +549,8 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    if box_class == ServerRuntime:
-        # the extra PS2 '>' is NOT handled by the ServerRuntime
-        assert 'hello\r\nworld' in obs.content
-        assert '>' in obs.content
-        assert obs.content.count('>') == 1
-    else:
-        assert 'hello\r\nworld' in obs.content
-        assert '>' not in obs.content
+    assert 'hello\r\nworld' in obs.content
+    assert '>' not in obs.content
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -849,7 +821,7 @@ async def test_ipython_simple(temp_dir, box_class):
 
 
 async def _test_ipython_agentskills_fileop_pwd_impl(
-    runtime: ServerRuntime | EventStreamRuntime, enable_auto_lint: bool
+    runtime: EventStreamRuntime, enable_auto_lint: bool
 ):
     # remove everything in /workspace
     action = CmdRunAction(command='rm -rf /workspace/*')
@@ -1037,35 +1009,6 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
     ).strip().split('\n')
-
-    await runtime.close()
-    await asyncio.sleep(1)
-
-
-@pytest.mark.skipif(
-    os.environ.get('TEST_IN_CI', 'false').lower() == 'true',
-    # FIXME: There's some weird issue with the CI environment.
-    reason='Skip this if in CI.',
-)
-@pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
-    temp_dir, box_class, run_as_devin, enable_auto_lint, container_image
-):
-    """Make sure that cd in bash also updates the current working directory in iPython."""
-
-    # NOTE: we only test for ServerRuntime, since EventStreamRuntime
-    # is image agnostic by design.
-    if box_class != 'server':
-        pytest.skip('Skip this if box_class is not server')
-
-    runtime = await _load_runtime(
-        temp_dir,
-        box_class,
-        run_as_devin,
-        enable_auto_lint=enable_auto_lint,
-        container_image=container_image,
-    )
-    await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -1316,6 +1259,84 @@ async def test_keep_prompt(temp_dir):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     assert 'root@' not in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_git_operation(temp_dir, box_class):
+    runtime = await _load_runtime(
+        temp_dir,
+        box_class=box_class,
+        # Need to use non-root user to expose issues
+        run_as_devin=True,
+    )
+
+    # this will happen if permission of runtime is not properly configured
+    # fatal: detected dubious ownership in repository at '/workspace'
+
+    # check the ownership of the current directory
+    action = CmdRunAction(command='ls -alh .')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    # drwx--S--- 2 opendevin root   64 Aug  7 23:32 .
+    # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
+    for line in obs.content.split('\r\n'):
+        if ' ..' in line:
+            # parent directory should be owned by root
+            assert 'root' in line
+            assert 'opendevin' not in line
+        elif ' .' in line:
+            # current directory should be owned by opendevin
+            # and its group should be root
+            assert 'opendevin' in line
+            assert 'root' in line
+
+    # make sure all git operations are allowed
+    action = CmdRunAction(command='git init')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # create a file
+    action = CmdRunAction(command='echo "hello" > test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git add
+    action = CmdRunAction(command='git add test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git diff
+    action = CmdRunAction(command='git diff')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git commit
+    action = CmdRunAction(command='git commit -m "test commit"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    await runtime.close()
 
     await runtime.close()
     await asyncio.sleep(1)

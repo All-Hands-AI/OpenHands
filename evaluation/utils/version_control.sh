@@ -1,13 +1,11 @@
 checkout_eval_branch() {
     if [ -z "$COMMIT_HASH" ]; then
         echo "Commit hash not specified, use current git commit"
-        build_sandbox
         return 0
     fi
 
     if git diff --quiet $COMMIT_HASH HEAD; then
         echo "The given hash is equivalent to the current HEAD"
-        build_sandbox
         return 0
     fi
 
@@ -30,14 +28,8 @@ checkout_eval_branch() {
     # Trap the EXIT signal to checkout original branch
     trap checkout_original_branch EXIT
 
-    build_sandbox
 }
 
-build_sandbox() {
-    echo "Build sandbox locally"
-    docker build -t eval-sandbox -f containers/sandbox/Dockerfile /tmp
-    export SANDBOX_CONTAINER_IMAGE="eval-sandbox"
-}
 
 checkout_original_branch() {
     if [ -z "$current_branch" ]; then

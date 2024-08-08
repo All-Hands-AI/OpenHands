@@ -1,23 +1,23 @@
 import os
 import tempfile
 from importlib.metadata import version
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 import toml
 from pytest import TempPathFactory
 
 from opendevin.runtime.utils.runtime_build import (
+    RUNTIME_IMAGE_REPO,
     _generate_dockerfile,
     _get_package_version,
     _put_source_code_to_dir,
     build_runtime_image,
-    get_new_image_name,
+    get_runtime_image_repo_and_tag,
     prep_docker_build_folder,
 )
 
 OD_VERSION = f'od_v{_get_package_version()}'
-RUNTIME_IMAGE_PREFIX = 'od_runtime'
 
 
 @pytest.fixture
@@ -170,69 +170,40 @@ def test_generate_dockerfile_skip_init():
     )
 
 
-def test_get_new_image_name_eventstream():
+def test_get_runtime_image_repo_and_tag_eventstream():
     base_image = 'debian:11'
-    new_image_name = get_new_image_name(base_image)
-    assert new_image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
+    img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
+    assert (
+        img_repo == f'{RUNTIME_IMAGE_REPO}'
+        and img_tag == f'{OD_VERSION}_image_debian_tag_11'
+    )
 
     base_image = 'ubuntu:22.04'
-    new_image_name = get_new_image_name(base_image)
+    img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        new_image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_22.04'
+        img_repo == f'{RUNTIME_IMAGE_REPO}'
+        and img_tag == f'{OD_VERSION}_image_ubuntu_tag_22.04'
     )
 
     base_image = 'ubuntu'
-    new_image_name = get_new_image_name(base_image)
+    img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        new_image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_latest'
+        img_repo == f'{RUNTIME_IMAGE_REPO}'
+        and img_tag == f'{OD_VERSION}_image_ubuntu_tag_latest'
     )
-
-
-def test_get_new_image_name_eventstream_dev_mode():
-    base_image = f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
-    new_image_name = get_new_image_name(base_image, dev_mode=True)
-    assert (
-        new_image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_debian_tag_11'
-    )
-
-    base_image = f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_22.04'
-    new_image_name = get_new_image_name(base_image, dev_mode=True)
-    assert (
-        new_image_name
-        == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_ubuntu_tag_22.04'
-    )
-
-    base_image = f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_ubuntu_tag_latest'
-    new_image_name = get_new_image_name(base_image, dev_mode=True)
-    assert (
-        new_image_name
-        == f'{RUNTIME_IMAGE_PREFIX}_dev:{OD_VERSION}_image_ubuntu_tag_latest'
-    )
-
-
-def test_get_new_image_name_eventstream_dev_invalid_base_image():
-    with pytest.raises(ValueError):
-        base_image = 'debian:11'
-        get_new_image_name(base_image, dev_mode=True)
-
-    with pytest.raises(ValueError):
-        base_image = 'ubuntu:22.04'
-        get_new_image_name(base_image, dev_mode=True)
-
-    with pytest.raises(ValueError):
-        base_image = 'ubuntu:latest'
-        get_new_image_name(base_image, dev_mode=True)
 
 
 @patch('opendevin.runtime.utils.runtime_build.docker.DockerClient')
 def test_build_runtime_image_from_scratch(mock_docker_client, temp_dir):
     base_image = 'debian:11'
+
     mock_docker_client.images.list.return_value = []
+
     # for image.tag(target_repo, target_image_tag)
     mock_image = MagicMock()
     mock_docker_client.images.get.return_value = mock_image
 
-    dir_hash = prep_docker_build_folder(
+    from_scratch_hash = prep_docker_build_folder(
         temp_dir,
         base_image,
         skip_init=False,
@@ -242,67 +213,82 @@ def test_build_runtime_image_from_scratch(mock_docker_client, temp_dir):
 
     # The build call should be called with the hash tag
     mock_docker_client.api.build.assert_called_once_with(
-        path=ANY,
-        tag=f'{RUNTIME_IMAGE_PREFIX}:{dir_hash}',
-        rm=True,
-        decode=True,
-        nocache=False,
+        path=ANY, tag=f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}', rm=True, decode=True
     )
     # Then the hash tag should be tagged to the version
     mock_image.tag.assert_called_once_with(
-        f'{RUNTIME_IMAGE_PREFIX}', f'{OD_VERSION}_image_debian_tag_11'
+        f'{RUNTIME_IMAGE_REPO}', f'{OD_VERSION}_image_debian_tag_11'
     )
-    assert image_name == f'{RUNTIME_IMAGE_PREFIX}:{dir_hash}'
+    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
 
 
 @patch('opendevin.runtime.utils.runtime_build.docker.DockerClient')
-def test_build_runtime_image_exist_no_update_source(mock_docker_client):
+def test_build_runtime_image_exact_hash_exist(mock_docker_client, temp_dir):
     base_image = 'debian:11'
+
+    from_scratch_hash = prep_docker_build_folder(
+        temp_dir,
+        base_image,
+        skip_init=False,
+    )
+
     mock_docker_client.images.list.return_value = [
-        MagicMock(tags=[f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'])
+        MagicMock(tags=[f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'])
     ]
 
     image_name = build_runtime_image(base_image, mock_docker_client)
-    assert image_name == f'{RUNTIME_IMAGE_PREFIX}:{OD_VERSION}_image_debian_tag_11'
-
+    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
     mock_docker_client.api.build.assert_not_called()
 
 
+@patch('opendevin.runtime.utils.runtime_build._build_sandbox_image')
 @patch('opendevin.runtime.utils.runtime_build.docker.DockerClient')
-def test_build_runtime_image_exist_with_update_source(mock_docker_client, temp_dir):
+def test_build_runtime_image_exact_hash_not_exist(
+    mock_docker_client, mock_build_sandbox_image, temp_dir
+):
     base_image = 'debian:11'
-    expected_new_image_tag = f'{OD_VERSION}_image_debian_tag_11'
-    od_runtime_base_image = f'{RUNTIME_IMAGE_PREFIX}:{expected_new_image_tag}'
+    repo, latest_image_tag = get_runtime_image_repo_and_tag(base_image)
+    latest_image_name = f'{repo}:{latest_image_tag}'
 
-    mock_docker_client.images.list.return_value = [
-        MagicMock(tags=[od_runtime_base_image])
-    ]
-    # for image.tag(target_repo, target_image_tag)
-    mock_image = MagicMock()
-    mock_docker_client.images.get.return_value = mock_image
-
-    # call the function to get the dir_hash to calculate the new image name
-    dir_hash = prep_docker_build_folder(
+    from_scratch_hash = prep_docker_build_folder(
         temp_dir,
-        od_runtime_base_image,
-        skip_init=True,
+        base_image,
+        skip_init=False,
     )
+    with tempfile.TemporaryDirectory() as temp_dir_2:
+        non_from_scratch_hash = prep_docker_build_folder(
+            temp_dir_2,
+            base_image,
+            skip_init=True,
+        )
 
-    # actual call to build the image
-    image_name = build_runtime_image(
-        base_image, mock_docker_client, update_source_code=True
-    )
+    # latest image exists BUT not the exact hash
+    mock_docker_client.images.list.return_value = [MagicMock(tags=[latest_image_name])]
 
-    # check the build call
-    mock_docker_client.api.build.assert_called_once_with(
-        path=ANY,
-        tag=f'{RUNTIME_IMAGE_PREFIX}_dev:{dir_hash}',
-        rm=True,
-        decode=True,
-        nocache=True,
-    )
-    # Then check the hash tag should be tagged to expected image tag
-    mock_image.tag.assert_called_once_with(
-        f'{RUNTIME_IMAGE_PREFIX}_dev', expected_new_image_tag
-    )
-    assert image_name == f'{RUNTIME_IMAGE_PREFIX}_dev:{dir_hash}'
+    with patch(
+        'opendevin.runtime.utils.runtime_build.prep_docker_build_folder'
+    ) as mock_prep_docker_build_folder:
+        mock_prep_docker_build_folder.side_effect = [
+            from_scratch_hash,
+            non_from_scratch_hash,
+        ]
+
+        image_name = build_runtime_image(base_image, mock_docker_client)
+
+        mock_prep_docker_build_folder.assert_has_calls(
+            [
+                call(ANY, base_image=base_image, skip_init=False, extra_deps=None),
+                call(
+                    ANY, base_image=latest_image_name, skip_init=True, extra_deps=None
+                ),
+            ]
+        )
+
+        mock_build_sandbox_image.assert_called_once_with(
+            docker_folder=ANY,
+            docker_client=mock_docker_client,
+            target_image_repo=repo,
+            target_image_hash_tag=from_scratch_hash,
+            target_image_tag=latest_image_tag,
+        )
+        assert image_name == f'{repo}:{from_scratch_hash}'
