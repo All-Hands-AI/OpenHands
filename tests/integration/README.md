@@ -48,14 +48,11 @@ where `conftest.py` defines the infrastructure needed to load real-world LLM pro
 and responses for mocking purpose. Prompts and responses generated during real runs
 of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 
-**Note:** Set PERSIST_SANDBOX=false to use a clean sandbox for each test.
 
 ## Run Integration Tests
 
 Take a look at `ghcr.yml` (in the `.github/workflow` folder) to learn
 how integration tests are launched in a CI environment.
-
-We currently have two runtime: `ServerRuntime` and `EventStreamRuntime`, each having their own sets of integration test prompts.
 
 You can run:
 

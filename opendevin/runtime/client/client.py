@@ -17,6 +17,8 @@ from pathlib import Path
 import pexpect
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel
 from uvicorn import run
 
@@ -46,8 +48,8 @@ from opendevin.runtime.plugins import (
     JupyterPlugin,
     Plugin,
 )
-from opendevin.runtime.server.files import insert_lines, read_lines
 from opendevin.runtime.utils import split_bash_commands
+from opendevin.runtime.utils.files import insert_lines, read_lines
 
 
 class ActionRequest(BaseModel):
@@ -76,6 +78,11 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
+        self._initial_pwd = work_dir
+
+    @property
+    def initial_pwd(self):
+        return self._initial_pwd
 
     async def ainit(self):
         for plugin in self.plugins_to_load:
@@ -498,6 +505,130 @@ if __name__ == '__main__':
     @app.get('/alive')
     async def alive():
         return {'status': 'ok'}
+
+    # ================================
+    # File-specific operations for UI
+    # ================================
+
+    @app.post('/list_files')
+    async def list_files(request: Request):
+        """List files in the specified path.
+
+        This function retrieves a list of files from the agent's runtime file store,
+        excluding certain system and hidden files/directories.
+
+        To list files:
+        ```sh
+        curl http://localhost:3000/api/list-files
+        ```
+
+        Args:
+            request (Request): The incoming request object.
+            path (str, optional): The path to list files from. Defaults to '/'.
+
+        Returns:
+            list: A list of file names in the specified path.
+
+        Raises:
+            HTTPException: If there's an error listing the files.
+        """
+        assert client is not None
+
+        # get request as dict
+        request_dict = await request.json()
+        path = request_dict.get('path', None)
+
+        # Get the full path of the requested directory
+        if path is None:
+            full_path = client.initial_pwd
+        elif os.path.isabs(path):
+            full_path = path
+        else:
+            full_path = os.path.join(client.initial_pwd, path)
+
+        if not os.path.exists(full_path):
+            return JSONResponse(
+                content={'error': f'Directory {full_path} does not exist'},
+                status_code=400,
+            )
+
+        try:
+            # Check if the directory exists
+            if not os.path.exists(full_path) or not os.path.isdir(full_path):
+                return []
+
+            # Check if .gitignore exists
+            gitignore_path = os.path.join(full_path, '.gitignore')
+            if os.path.exists(gitignore_path):
+                # Use PathSpec to parse .gitignore
+                with open(gitignore_path, 'r') as f:
+                    spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
+            else:
+                # Fallback to default exclude list if .gitignore doesn't exist
+                default_exclude = [
+                    '.git',
+                    '.DS_Store',
+                    '.svn',
+                    '.hg',
+                    '.idea',
+                    '.vscode',
+                    '.settings',
+                    '.pytest_cache',
+                    '__pycache__',
+                    'node_modules',
+                    'vendor',
+                    'build',
+                    'dist',
+                    'bin',
+                    'logs',
+                    'log',
+                    'tmp',
+                    'temp',
+                    'coverage',
+                    'venv',
+                    'env',
+                ]
+                spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
+
+            entries = os.listdir(full_path)
+
+            # Filter entries using PathSpec
+            filtered_entries = [
+                os.path.join(full_path, entry)
+                for entry in entries
+                if not spec.match_file(os.path.relpath(entry, str(full_path)))
+            ]
+
+            # Separate directories and files
+            directories = []
+            files = []
+            for entry in filtered_entries:
+                # Remove leading slash and any parent directory components
+                entry_relative = entry.lstrip('/').split('/')[-1]
+
+                # Construct the full path by joining the base path with the relative entry path
+                full_entry_path = os.path.join(full_path, entry_relative)
+                if os.path.exists(full_entry_path):
+                    is_dir = os.path.isdir(full_entry_path)
+                    if is_dir:
+                        # add trailing slash to directories
+                        # required by FE to differentiate directories and files
+                        entry = entry.rstrip('/') + '/'
+                        directories.append(entry)
+                    else:
+                        files.append(entry)
+
+            # Sort directories and files separately
+            directories.sort(key=lambda s: s.lower())
+            files.sort(key=lambda s: s.lower())
+
+            # Combine sorted directories and files
+            sorted_entries = directories + files
+            return sorted_entries
+
+        except Exception as e:
+            logger.error(f'Error listing files: {e}', exc_info=True)
+            return []
 
     logger.info(f'Starting action execution API on port {args.port}')
     print(f'Starting action execution API on port {args.port}')

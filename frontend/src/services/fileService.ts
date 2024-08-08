@@ -67,10 +67,14 @@ export async function uploadFiles(files: FileList): Promise<UploadResult> {
   };
 }
 
-export async function listFiles(path: string = "/"): Promise<string[]> {
-  const data = await request(
-    `/api/list-files?path=${encodeURIComponent(path)}`,
-  );
+export async function listFiles(
+  path: string | undefined = undefined,
+): Promise<string[]> {
+  let url = "/api/list-files";
+  if (path) {
+    url = `/api/list-files?path=${encodeURIComponent(path)}`;
+  }
+  const data = await request(url);
   if (!Array.isArray(data)) {
     throw new Error("Invalid response format: data is not an array");
   }

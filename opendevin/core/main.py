@@ -1,5 +1,4 @@
 import asyncio
-import os
 import sys
 import uuid
 from typing import Callable, Type
@@ -23,7 +22,6 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.storage import get_file_store
 
 
@@ -68,22 +66,6 @@ async def create_runtime(
     )
     await runtime.ainit()
 
-    if isinstance(runtime, ServerRuntime):
-        runtime.init_runtime_tools(
-            agent_cls.runtime_tools,
-            runtime_tools_config=runtime_tools_config,
-        )
-        # browser eval specific
-        # NOTE: This will be deprecated when we move to the new runtime
-        if runtime.browser and runtime.browser.eval_dir:
-            logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
-            with open(
-                os.path.join(runtime.browser.eval_dir, 'goal.txt'),
-                'r',
-                encoding='utf-8',
-            ) as f:
-                task_str = f.read()
-                logger.info(f'Dynamic Eval task: {task_str}')
     return runtime
 
 

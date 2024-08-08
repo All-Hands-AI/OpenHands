@@ -378,7 +378,7 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
     assert (
         defaults_after_updates['sandbox']['container_image']['default']
-        == 'ghcr.io/opendevin/sandbox:main'
+        == 'ubuntu:22.04'
     )
     assert defaults_after_updates == initial_defaults
 
