@@ -53,7 +53,7 @@ class EventStreamRuntime(Runtime):
             config, event_stream, sid, plugins
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
-        self.api_url = f'http://localhost:{self._port}'
+        self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
 
         self.instance_id = (
