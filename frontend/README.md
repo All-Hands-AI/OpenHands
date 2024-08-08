@@ -1,6 +1,6 @@
 # Getting Started with the OpenDevin Frontend
 
-The frontend code can be run using the docker image defined in the [Main README](../README.md) as a backend
+The frontend code can be run against the docker image defined in the [Main README](../README.md) as a backend
 
 ## Prerequisites
 
