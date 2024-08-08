@@ -128,14 +128,19 @@ class RuntimeClient:
             raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
         logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
-        # Add user and change ownership of the initial working directory
+        # Add user and change ownership of the initial working directory if it doesn't exist
+        command = (
+            f'useradd -rm -d /home/{username} -s /bin/bash '
+            f'-g root -G sudo -u {user_id} {username}'
+        )
+
+        if not os.path.exists(self.initial_pwd):
+            command += f' && mkdir -p {self.initial_pwd}'
+            command += f' && chown -R {username}:root {self.initial_pwd}'
+            command += f' && chmod g+s {self.initial_pwd}'
+
         output = subprocess.run(
-            (
-                f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -u {user_id} {username} &&'
-                f'chown -R {username}:root {self.initial_pwd} && '
-                f'chmod g+s {self.initial_pwd}'
-            ),
+            command,
             shell=True,
             capture_output=True,
         )
@@ -381,11 +386,11 @@ class RuntimeClient:
                     assert file_stat is not None
                     # restore the original file permissions if the file already exists
                     os.chmod(filepath, file_stat.st_mode)
-                    os.chown(filepath, file_stat.st_uid, ROOT_GID)
+                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
                 else:
                     # set the new file permissions if the file is new
                     os.chmod(filepath, 0o644)
-                    os.chown(filepath, self.user_id, ROOT_GID)
+                    os.chown(filepath, self.user_id, self.user_id)
 
             except FileNotFoundError:
                 return ErrorObservation(f'File not found: {filepath}')
