@@ -25,6 +25,13 @@ RUN if [ ! -e /usr/bin/python ]; then \
     ln -s /usr/bin/python3 /usr/bin/python; \
 fi
 
+# Install pip if not already installed
+RUN if [ ! -e /usr/bin/pip ]; then \
+    apt-get update && \
+    apt-get install -y python3-pip && \
+    ln -s /usr/bin/pip3 /usr/bin/pip; \
+fi
+
 # Create necessary directories
 RUN mkdir -p /opendevin && \
     mkdir -p /opendevin/logs && \
