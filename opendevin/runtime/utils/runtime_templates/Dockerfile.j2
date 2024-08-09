@@ -14,15 +14,21 @@ FROM {{ base_image }}
 
 # Install necessary packages and clean up in one layer
 RUN apt-get update && \
-    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins && \
-    apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python if not already installed
+RUN if [ ! -e /usr/bin/python ]; then \
+    apt-get update && \
+    apt-get install -y python3 && \
+    ln -s /usr/bin/python3 /usr/bin/python; \
+fi
 
 # Create necessary directories
 RUN mkdir -p /opendevin && \
     mkdir -p /opendevin/logs && \
-    mkdir -p /opendevin/poetry && \
-    chmod 777 -R /opendevin
+    mkdir -p /opendevin/poetry
 
 ENV POETRY_VIRTUALENVS_PATH=/opendevin/poetry
 
@@ -35,8 +41,7 @@ RUN if [ ! -d /opendevin/miniforge3 ]; then \
     fi
 
 # Install Python and Poetry
-RUN /opendevin/miniforge3/bin/mamba install python=3.11 -y
-RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y
+RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y
 # ================================================================
 # END: Build Runtime Image from Scratch
 # ================================================================
@@ -45,10 +50,8 @@ RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry -y
 # ================================================================
 # START: Copy Project and Install/Update Dependencies
 # ================================================================
-COPY project.tar.gz /opendevin
 RUN if [ -d /opendevin/code ]; then rm -rf /opendevin/code; fi
-RUN cd /opendevin && tar -xzvf project.tar.gz && rm project.tar.gz
-RUN mv /opendevin/{{ source_code_dirname }} /opendevin/code
+COPY ./code /opendevin/code
 
 # Install/Update Dependencies
 # 1. Install pyproject.toml via poetry
@@ -60,7 +63,10 @@ RUN cd /opendevin/code && \
     apt-get update && \
     /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
     /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
+    export OD_INTERPRETER_PATH=$(/opendevin/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
+    {{ extra_deps }} {% if extra_deps %} && {% endif %} \
     /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
+    {% if not skip_init %}chmod -R g+rws /opendevin/poetry && {% endif %} \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /opendevin/miniforge3/bin/mamba clean --all
 

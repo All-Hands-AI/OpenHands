@@ -115,7 +115,9 @@ def get_hint(latest_action_id: str) -> str:
     return hints.get(latest_action_id, '')
 
 
-def get_prompt(state: State, max_message_chars: int) -> str:
+def get_prompt_and_images(
+    state: State, max_message_chars: int
+) -> tuple[str, list[str]]:
     """Gets the prompt for the planner agent.
 
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
@@ -161,16 +163,16 @@ def get_prompt(state: State, max_message_chars: int) -> str:
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
     # the last relevant user message (the task)
-    task = state.get_current_user_intent()
+    message, image_urls = state.get_current_user_intent()
 
     # finally, fill in the prompt
     return prompt % {
-        'task': task,
+        'task': message,
         'plan': plan_str,
         'history': history_str,
         'hint': hint,
         'plan_status': plan_status,
-    }
+    }, image_urls
 
 
 def parse_response(response: str) -> Action:

@@ -4,11 +4,10 @@ import copy
 import json
 import os
 from abc import abstractmethod
-from typing import Any, Optional
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream, EventStreamSubscriber
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -29,8 +28,6 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
-from opendevin.runtime.tools import RuntimeTool
-from opendevin.storage import FileStore
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -52,7 +49,7 @@ class Runtime:
     """
 
     sid: str
-    file_store: FileStore
+    config: AppConfig
     DEFAULT_ENV_VARS: dict[str, str]
 
     def __init__(
@@ -65,11 +62,12 @@ class Runtime:
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        self.plugins = plugins if plugins is not None else []
+        self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
 
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close_sync)
+        logger.debug(f'Runtime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
         """
@@ -101,19 +99,6 @@ class Runtime:
                 loop.run_until_complete(self.close())
 
     # ====================================================================
-    # Methods we plan to deprecate when we move to new EventStreamRuntime
-    # ====================================================================
-
-    def init_runtime_tools(
-        self,
-        runtime_tools: list[RuntimeTool],
-        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-        is_async: bool = True,
-    ) -> None:
-        # TODO: deprecate this method when we move to the new EventStreamRuntime
-        raise NotImplementedError('This method is not implemented in the base class.')
-
-    # ====================================================================
 
     async def add_env_vars(self, env_vars: dict[str, str]) -> None:
         # Add env vars to the IPython shell (if Jupyter is used)
@@ -143,9 +128,14 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
+            # set timeout to default if not set
+            if event.timeout is None:
+                event.timeout = self.config.sandbox.timeout
+            assert event.timeout is not None
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
-            self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
+            source = event.source if event.source else EventSource.AGENT
+            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -177,7 +167,7 @@ class Runtime:
         return observation
 
     # ====================================================================
-    # Implement these methods in the subclass
+    # Action execution
     # ====================================================================
 
     @abstractmethod
@@ -203,3 +193,19 @@ class Runtime:
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
+
+    # ====================================================================
+    # File operations
+    # ====================================================================
+
+    @abstractmethod
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    async def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the sandbox.
+
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+        raise NotImplementedError('This method is not implemented in the base class.')

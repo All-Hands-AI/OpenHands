@@ -1,131 +1,78 @@
 # SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
 
-This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We created [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly built on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
+This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
 **UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
-## Setup Environment
+The evaluation consists of three steps:
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to set up a local development environment for OpenDevin.
+1. Environment setup: [install python environment](../README.md#development-environment), [configure LLM config](../README.md#configure-opendevin-and-your-llm), and [pull docker](#opendevin-swe-bench-instance-level-docker-support).
+2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
+3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
 
-## OpenDevin SWE-Bench Docker Image
+## Setup Environment and LLM Configuration
 
-In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for efficient evaluation.
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
-**We pack everything you need for SWE-Bench inference into one, gigantic, docker image.** To use it:
+## OpenDevin SWE-Bench Instance-level Docker Support
 
-```bash
-docker pull ghcr.io/opendevin/eval-swe-bench:full-v1.2.1
-```
+OpenDevin now support using the [official evaluation docker](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md) for both **[inference](#run-inference-on-swe-bench-instances) and [evaluation](#evaluate-generated-patches)**.
+This is now the default behavior.
 
-The Docker image contains several important directories:
+### Download Docker Images
 
-- `/swe_util/OD-SWE-bench`: root directory for the OD-SWE-bench repository
-- `/swe_util/eval_data`: directory to eval data
-  - `/swe_util/eval_data/eval_logs/`: evaluation logs
-  - `/swe_util/eval_data/eval_temp/`: temporary folder for the evaluation process
-  - `/swe_util/eval_data/instances/`: swe-bench raw instances
-  - `/swe_util/eval_data/outputs/`: model or agent outputs
-  - `/swe_util/eval_data/testbed_logs/`: logs for testbed building
-  - `/swe_util/eval_data/testbeds/`: directory for all testbeds
-- `/swe_util/miniforge3/`: directory for miniforge3
-
-To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md).
-
-NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straightforward.
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace.
-
-Add the following configurations:
-
-```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-
-[sandbox]
-box_type = "ssh"
-timeout = 120
-
-run_as_devin = false
-max_budget_per_task = 4 # 4 USD
-
-[sandbox]
-# SWEBench eval specific
-use_host_network = false
-enable_auto_lint = true
-
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview_llm]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model_llm]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
-
-## Test if your environment works
-
-Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench:full-v1.2`
-docker image. Then run this python script:
+**(Recommended for reproducibility)** If you have extra local space (e.g., 100GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared by running:
 
 ```bash
-# export USE_INSTANCE_IMAGE=true # if you want to test support for instance-level docker images
-poetry run python evaluation/swe_bench/swe_env_box.py
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
 ```
 
-If you get to the interactive shell successfully, it means your environment works!
-If you see an error, please make sure your `config.toml` contains all
-`SWEBench eval specific` settings as shown in the previous section.
+If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
+
+```bash
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
+```
 
 ## Run Inference on SWE-Bench Instances
 
+Make sure your Docker daemon is running, and you have pulled the [instance-level docker image](#opendevin-swe-bench-instance-level-docker-support).
+
 ```bash
 ./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 300
 ```
 
-where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
+where `model_config` is mandatory, and the rest are optional.
 
-`model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+- `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
-
-`git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
+- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
 like to evaluate. It could also be a release tag like `0.6.2`.
-
-`agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+- `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
-
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
-
-`max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
+- `max_iter`, e.g. `20`, is the maximum number of iterations for the agent to run. By
 default, it is set to 30.
-
-`num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
+- `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
 default, it is set to 1.
 
 There are also two optional environment variables you can set.
 ```
-export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Ignore this if you are not sure.
-export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images
+export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Default to false. Ignore this if you are not sure.
+export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images. Default to true
 ```
 
-Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview_llm` and CodeActAgent,
+Let's say you'd like to run 10 instances using `llm.eval_gpt4_1106_preview` and CodeActAgent,
 
 then your command would be:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview_llm HEAD CodeActAgent 10
+./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
 ```
+
+### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
 create a `config.toml` under `./evaluation/swe_bench/` folder, and put a list
@@ -146,22 +93,12 @@ With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patc
 
 **This evaluation is performed using the official dockerized evaluation announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
-If you want to evaluate existing results, you should first run this to clone existing outputs
+> If you want to evaluate existing results, you should first run this to clone existing outputs
+>```bash
+>git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
+>```
 
-```bash
-git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
-```
-
-If you have extra local space (e.g., 500GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared to speed up the evaluation by running:
-
-```bash
-evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
-```
-
-If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
-```bash
-evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
-```
+NOTE, you should have already pulled the instance-level OR env-level docker images following [this section](#opendevin-swe-bench-instance-level-docker-support).
 
 Then you can run the following:
 
@@ -171,13 +108,13 @@ Then you can run the following:
 ./evaluation/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
-PS: You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
+> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
 The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
 
 - `README.md`: a report showing what are the instances that passed, failed, etc.
 - `report.json`: a JSON file that contains keys like `"resolved_ids"` pointing to instance IDs that are resolved by the agent.
-- `eval_outputs/`: a directory of test logs
+- `logs/`: a directory of test logs
 
 ## Visualize Results
 
@@ -189,9 +126,10 @@ git clone https://huggingface.co/spaces/OpenDevin/evaluation
 
 **(optional) setup streamlit environment with conda**:
 ```bash
+cd evaluation
 conda create -n streamlit python=3.10
 conda activate streamlit
-pip install streamlit altair st_pages
+pip install -r requirements.txt
 ```
 
 **run the visualizer**:

@@ -27,8 +27,8 @@ if [ -z "$MAX_ITER" ]; then
 fi
 
 if [ -z "$USE_INSTANCE_IMAGE" ]; then
-  echo "USE_INSTANCE_IMAGE not specified, use default false"
-  USE_INSTANCE_IMAGE=false
+  echo "USE_INSTANCE_IMAGE not specified, use default true"
+  USE_INSTANCE_IMAGE=true
 fi
 
 export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE

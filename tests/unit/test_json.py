@@ -17,6 +17,7 @@ def test_event_serialization_deserialization():
         'message': 'This is a test.',
         'args': {
             'content': 'This is a test.',
+            'images_urls': None,
             'wait_for_response': False,
         },
     }
@@ -37,6 +38,7 @@ def test_array_serialization_deserialization():
             'message': 'This is a test.',
             'args': {
                 'content': 'This is a test.',
+                'images_urls': None,
                 'wait_for_response': False,
             },
         }

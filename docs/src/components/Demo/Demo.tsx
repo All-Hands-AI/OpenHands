@@ -6,7 +6,7 @@ export function Demo() {
 
   return (
     <div
-      style={{ paddingBottom: "30px", paddingTop: "20px", textAlign: "center" }}
+      style={{ paddingBottom: "10px", paddingTop: "10px", textAlign: "center" }}
     >
       <video
         playsInline
