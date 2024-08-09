@@ -35,14 +35,14 @@ export function Container({
     if (mouseDownPosition == null || !firstRef.current) {
       return undefined;
     }
-    const getCurrentSize = (e: MouseEvent) => {
+    const getCurrentSizeFromEvent = (e: MouseEvent) => {
       const position =
         orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
       return currentSize + position - mouseDownPosition;
     };
     const onMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      const firstSize = getCurrentSize(e);
+      const firstSize = getCurrentSizeFromEvent(e);
       const { current } = firstRef;
       if (current) {
         if (orientation === Orientation.HORIZONTAL) {
@@ -54,7 +54,7 @@ export function Container({
     };
     const onMouseUp = (e: MouseEvent) => {
       e.preventDefault();
-      setCurrentSize(getCurrentSize(e));
+      setCurrentSize(getCurrentSizeFromEvent(e));
       setMouseDownPosition(null);
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
@@ -74,6 +74,13 @@ export function Container({
     setMouseDownPosition(position);
   };
 
+  const getStyleForFirst = () => {
+    if (orientation === Orientation.HORIZONTAL) {
+      return { width: `${currentSize}px` };
+    }
+    return { height: `${currentSize}px` };
+  };
+
   return (
     <div
       className={twMerge(
@@ -81,7 +88,7 @@ export function Container({
         className,
       )}
     >
-      <div ref={firstRef} className={firstClassName}>
+      <div ref={firstRef} className={firstClassName} style={getStyleForFirst()}>
         {firstChild}
       </div>
       <div
