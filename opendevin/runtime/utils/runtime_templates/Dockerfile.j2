@@ -74,11 +74,7 @@ RUN cd /opendevin/code && \
     /opendevin/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
     {% if not skip_init %}chmod -R g+rws /opendevin/poetry && {% endif %} \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    /opendevin/miniforge3/bin/mamba clean --all && \
-    # These lines shall activate the environment for future use
-    POETRY_ENV_PATH=$(/opendevin/miniforge3/bin/mamba run -n base poetry env info --path) && \
-    echo "source $POETRY_ENV_PATH/bin/activate" >> /etc/bash.bashrc && \
-    echo "export PATH=$POETRY_ENV_PATH/bin:$PATH" >> /etc/bash.bashrc
+    /opendevin/miniforge3/bin/mamba clean --all
 
 # ================================================================
 # END: Copy Project and Install/Update Dependencies
