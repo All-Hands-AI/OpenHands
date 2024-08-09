@@ -83,7 +83,9 @@ def enable_auto_lint(request):
     return request.param
 
 
-@pytest.fixture(scope='module', params=['python:3.11-bookworm', 'debian:11'])
+@pytest.fixture(
+    scope='module', params=['nikolaik/python-nodejs:python3.11-nodejs22', 'debian:11']
+)
 def container_image(request):
     time.sleep(1)
     return request.param
@@ -127,7 +129,7 @@ async def _load_runtime(
         if 'od_runtime' not in cur_container_image and cur_container_image not in {
             'xingyaoww/od-eval-miniwob:v1.0'
         }:  # a special exception list
-            cur_container_image = 'python:3.11-bookworm'
+            cur_container_image = 'nikolaik/python-nodejs:python3.11-nodejs22'
             logger.warning(
                 f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
             )

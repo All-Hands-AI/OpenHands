@@ -358,7 +358,7 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
     assert (
         defaults_after_updates['sandbox']['container_image']['default']
-        == 'python:3.11-bookworm'
+        == 'nikolaik/python-nodejs:python3.11-nodejs22'
     )
     assert defaults_after_updates == initial_defaults
 

@@ -360,7 +360,9 @@ def build_runtime_image(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base_image', type=str, default='python:3.11-bookworm')
+    parser.add_argument(
+        '--base_image', type=str, default='nikolaik/python-nodejs:python3.11-nodejs22'
+    )
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
     args = parser.parse_args()
