@@ -28,8 +28,7 @@ fi
 # Install pip if not already installed
 RUN if [ ! -e /usr/bin/pip ]; then \
     apt-get update && \
-    apt-get install -y python3-pip && \
-    ln -s /usr/bin/pip3 /usr/bin/pip; \
+    apt-get install -y python3-pip
 fi
 
 # Create necessary directories
