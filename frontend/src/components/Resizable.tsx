@@ -1,9 +1,22 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { CSSProperties, useEffect, useRef, useState } from "react";
+import {
+  VscChevronDown,
+  VscChevronLeft,
+  VscChevronRight,
+  VscChevronUp,
+} from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
+import IconButton from "./IconButton";
 
 export enum Orientation {
   HORIZONTAL = "horizontal",
   VERTICAL = "vertical",
+}
+
+enum Collapse {
+  COLLAPSED = "collapsed",
+  SPLIT = "split",
+  FILLED = "filled",
 }
 
 type ContainerProps = {
@@ -28,14 +41,16 @@ export function Container({
   const [firstSize, setFirstSize] = useState<number>(initialSize);
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
   const firstRef = useRef<HTMLDivElement>(null);
+  const secondRef = useRef<HTMLDivElement>(null);
+  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
+  const isHorizontal = orientation === Orientation.HORIZONTAL;
 
   useEffect(() => {
     if (dividerPosition == null || !firstRef.current) {
       return undefined;
     }
     const getFirstSizeFromEvent = (e: MouseEvent) => {
-      const position =
-        orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
+      const position = isHorizontal ? e.clientX : e.clientY;
       return firstSize + position - dividerPosition;
     };
     const onMouseMove = (e: MouseEvent) => {
@@ -43,7 +58,7 @@ export function Container({
       const newFirstSize = getFirstSizeFromEvent(e);
       const { current } = firstRef;
       if (current) {
-        if (orientation === Orientation.HORIZONTAL) {
+        if (isHorizontal) {
           current.style.width = `${newFirstSize}px`;
         } else {
           current.style.height = `${newFirstSize}px`;
@@ -52,6 +67,12 @@ export function Container({
     };
     const onMouseUp = (e: MouseEvent) => {
       e.preventDefault();
+      if (firstRef.current) {
+        firstRef.current.style.transition = "";
+      }
+      if (secondRef.current) {
+        secondRef.current.style.transition = "";
+      }
       setFirstSize(getFirstSizeFromEvent(e));
       setDividerPosition(null);
       document.removeEventListener("mousemove", onMouseMove);
@@ -67,33 +88,104 @@ export function Container({
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    const position =
-      orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
+    if (firstRef.current) {
+      firstRef.current.style.transition = "none";
+    }
+    if (secondRef.current) {
+      secondRef.current.style.transition = "none";
+    }
+    const position = isHorizontal ? e.clientX : e.clientY;
     setDividerPosition(position);
   };
 
   const getStyleForFirst = () => {
-    if (orientation === Orientation.HORIZONTAL) {
-      return { width: `${firstSize}px` };
+    const style: CSSProperties = { overflow: "hidden" };
+    if (collapse === Collapse.COLLAPSED) {
+      style.opacity = 0;
+      style.width = 0;
+      style.minWidth = 0;
+      style.height = 0;
+      style.minHeight = 0;
+    } else if (collapse === Collapse.SPLIT) {
+      const firstSizePx = `${firstSize}px`;
+      if (isHorizontal) {
+        style.width = firstSizePx;
+        style.minWidth = firstSizePx;
+      } else {
+        style.height = firstSizePx;
+        style.minHeight = firstSizePx;
+      }
+    } else {
+      style.flexGrow = 1;
     }
-    return { height: `${firstSize}px` };
+    return style;
+  };
+
+  const getStyleForSecond = () => {
+    const style: CSSProperties = { overflow: "hidden" };
+    if (collapse === Collapse.FILLED) {
+      style.opacity = 0;
+      style.width = 0;
+      style.minWidth = 0;
+      style.height = 0;
+      style.minHeight = 0;
+    } else if (collapse === Collapse.SPLIT) {
+      style.flexGrow = 1;
+    } else {
+      style.flexGrow = 1;
+    }
+    return style;
+  };
+
+  const onCollapse = () => {
+    if (collapse === Collapse.SPLIT) {
+      setCollapse(Collapse.COLLAPSED);
+    } else if (collapse === Collapse.FILLED) {
+      setCollapse(Collapse.SPLIT);
+    }
+  };
+
+  const onExpand = () => {
+    if (collapse === Collapse.COLLAPSED) {
+      setCollapse(Collapse.SPLIT);
+    } else if (collapse === Collapse.SPLIT) {
+      setCollapse(Collapse.FILLED);
+    }
   };
 
   return (
     <div
-      className={twMerge(
-        `flex ${orientation === Orientation.HORIZONTAL ? "" : "flex-col"}`,
-        className,
-      )}
+      className={twMerge(`flex ${isHorizontal ? "" : "flex-col"}`, className)}
     >
-      <div ref={firstRef} className={firstClassName} style={getStyleForFirst()}>
+      <div
+        ref={firstRef}
+        className={twMerge(firstClassName, "transition-all ease-soft-spring")}
+        style={getStyleForFirst()}
+      >
         {firstChild}
       </div>
       <div
-        className={`${orientation === Orientation.VERTICAL ? "cursor-ns-resize h-3" : "cursor-ew-resize w-3"} shrink-0`}
-        onMouseDown={onMouseDown}
-      />
-      <div className={twMerge(secondClassName, "flex-1")}>{secondChild}</div>
+        className={`${isHorizontal ? "cursor-ew-resize w-3 flex-col" : "cursor-ns-resize h-3 flex-row"} shrink-0 flex justify-center items-center`}
+        onMouseDown={collapse === Collapse.SPLIT ? onMouseDown : undefined}
+      >
+        <IconButton
+          icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
+          ariaLabel="Collapse"
+          onClick={onCollapse}
+        />
+        <IconButton
+          icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
+          ariaLabel="Expand"
+          onClick={onExpand}
+        />
+      </div>
+      <div
+        ref={secondRef}
+        className={twMerge(secondClassName, "transition-all ease-soft-spring")}
+        style={getStyleForSecond()}
+      >
+        {secondChild}
+      </div>
     </div>
   );
 }
