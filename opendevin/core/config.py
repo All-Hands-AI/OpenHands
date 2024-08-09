@@ -145,7 +145,7 @@ class SandboxConfig(metaclass=Singleton):
     """Configuration for the sandbox.
 
     Attributes:
-        box_type: The type of sandbox to use. Options are: ssh, e2b, local.
+        api_hostname: The hostname for the EventStream Runtime API.
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
@@ -165,7 +165,7 @@ class SandboxConfig(metaclass=Singleton):
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
     """
 
-    box_type: str = 'ssh'
+    api_hostname: str = 'localhost'
     container_image: str = (
         'ubuntu:22.04'  # default to ubuntu:22.04 for eventstream runtime
     )
@@ -226,7 +226,6 @@ class AppConfig(metaclass=Singleton):
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
-        ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
         debug: Whether to enable debugging.
         enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
@@ -255,10 +254,7 @@ class AppConfig(metaclass=Singleton):
     max_iterations: int = _MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
-    ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    ssh_port: int = 63710
-    ssh_password: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
     enable_cli_session: bool = False
@@ -330,7 +326,6 @@ class AppConfig(metaclass=Singleton):
                 'e2b_api_key',
                 'github_token',
                 'jwt_secret',
-                'ssh_password',
             ]:
                 attr_value = '******' if attr_value else None
 
@@ -426,11 +421,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
-    if 'SANDBOX_TYPE' in env_or_toml_dict:
-        logger.opendevin_logger.error(
-            'SANDBOX_TYPE is deprecated. Please use SANDBOX_BOX_TYPE instead.'
-        )
-        env_or_toml_dict['SANDBOX_BOX_TYPE'] = env_or_toml_dict.pop('SANDBOX_TYPE')
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
 
@@ -520,8 +510,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
         for key in keys_to_migrate:
             new_key = key.replace('sandbox_', '')
-            if new_key == 'type':
-                new_key = 'box_type'
             if new_key in sandbox_config.__annotations__:
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
@@ -547,10 +535,6 @@ def finalize_config(cfg: AppConfig):
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
         cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
     cfg.workspace_base = os.path.abspath(cfg.workspace_base)
-
-    # In local there is no sandbox, the workspace will have the same pwd as the host
-    if cfg.sandbox.box_type == 'local' and cfg.workspace_mount_path is not None:
-        cfg.workspace_mount_path_in_sandbox = cfg.workspace_mount_path
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?

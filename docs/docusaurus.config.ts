@@ -4,7 +4,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
   title: "OpenDevin",
-  tagline: "Code Less, Make More",
+  tagline: "An Open Platform for AI Software Developers as Generalist Agents",
   favicon: "img/logo.png",
 
   // Set the production url of your site here
@@ -81,7 +81,6 @@ const config: Config = {
           position: "left",
           label: "Codebase",
         },
-        { to: "/faq", label: "FAQ", position: "left" },
         {
           href: "https://github.com/OpenDevin/OpenDevin",
           label: "GitHub",

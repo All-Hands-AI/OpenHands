@@ -55,22 +55,11 @@ workspace_base = "./workspace"
 # Path to rewrite the workspace mount path to
 #workspace_mount_rewrite = ""
 
-
 # Run as devin
 #run_as_devin = true
 
 # Runtime environment
-#runtime = "server"
-
-# SSH hostname for the sandbox
-#ssh_hostname = "localhost"
-
-# SSH password for the sandbox
-#ssh_password = ""
-
-# SSH port for the sandbox
-#ssh_port = 63710
-
+#runtime = "eventstream"
 
 # Name of the default agent
 #default_agent = "CodeActAgent"
@@ -180,9 +169,6 @@ llm_config = 'gpt3'
 [sandbox]
 # Sandbox timeout in seconds
 #timeout = 120
-
-# Sandbox type (ssh, e2b, local)
-#box_type = "ssh"
 
 # Sandbox user ID
 #user_id = 1000
