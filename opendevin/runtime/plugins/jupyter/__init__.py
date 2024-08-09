@@ -14,10 +14,6 @@ from .execute_server import JupyterKernel
 @dataclass
 class JupyterRequirement(PluginRequirement):
     name: str = 'jupyter'
-    # ================================================================
-    # Plugin methods, which will ONLY be used in the runtime client
-    # running inside docker
-    # ================================================================
 
 
 class JupyterPlugin(Plugin):
