@@ -83,7 +83,7 @@ jobs:
     strategy:
       matrix:
         image: ['od_runtime']
-        base_image: ['nikolaik/python-nodejs:python3.11-nodejs22']
+        base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout

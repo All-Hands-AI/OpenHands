@@ -89,7 +89,11 @@ def container_image(request):
     env_image = os.environ.get('SANDBOX_CONTAINER_IMAGE')
     if env_image:
         return [env_image]
-    return ['nikolaik/python-nodejs:python3.11-nodejs22']
+    return [
+        'nikolaik/python-nodejs:python3.11-nodejs22',
+        'python:3.11-bookworm',
+        'node:22-bookworm',
+    ]
 
 
 async def _load_runtime(
@@ -1316,8 +1320,11 @@ async def test_git_operation(box_class):
 @pytest.mark.asyncio
 async def test_bash_python_version(temp_dir, box_class, container_image):
     """Make sure Python is available in bash."""
-    if container_image != 'python:3.11-bookworm':
-        pytest.skip('This test is only for python:3.11-bookworm image')
+    if container_image not in [
+        'python:3.11-bookworm',
+        'nikolaik/python-nodejs:python3.11-nodejs22',
+    ]:
+        pytest.skip('This test is only for python-related images')
 
     runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
 
@@ -1348,8 +1355,11 @@ async def test_bash_python_version(temp_dir, box_class, container_image):
 @pytest.mark.asyncio
 async def test_nodejs_22_version(temp_dir, box_class, container_image):
     """Make sure Node.js is available in bash."""
-    if container_image != 'node:22-bookworm':
-        pytest.skip('This test is only for node:22-bookworm image')
+    if container_image not in [
+        'node:22-bookworm',
+        'nikolaik/python-nodejs:python3.11-nodejs22',
+    ]:
+        pytest.skip('This test is only for nodejs-related images')
 
     runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
 
