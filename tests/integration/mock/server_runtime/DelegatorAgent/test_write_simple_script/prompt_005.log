@@ -41,7 +41,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[{"source": "agent", "action": "write", "args": {"path": "hello.sh", "content": "#!/bin/bash\n\n# Print hello\necho 'hello'", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "write", "content": "", "extras": {"path": "hello.sh"}}, {"source": "agent", "action": "run", "args": {"command": "chmod +x hello.sh", "thought": "", "is_confirmed": "confirmed"}}, {"source": "agent", "observation": "run", "content": "", "extras": {"command_id": -1, "command": "chmod +x hello.sh", "exit_code": 0}}]
+[{"source": "agent", "action": "write", "args": {"path": "hello.sh", "content": "#!/bin/bash\n\n# Print hello\necho 'hello'", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "write", "content": "", "extras": {"path": "hello.sh"}}, {"source": "agent", "action": "run", "args": {"command": "chmod +x hello.sh", "thought": "", "keep_prompt": true, "is_confirmed": "confirmed"}}, {"source": "agent", "observation": "run", "content": "", "extras": {"command_id": -1, "command": "chmod +x hello.sh", "exit_code": 0}}]
 
 ## Format
 Your response MUST be in JSON format. It must be an object, and it must contain two fields:

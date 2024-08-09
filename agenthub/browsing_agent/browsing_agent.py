@@ -7,6 +7,7 @@ from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.message import Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -136,7 +137,7 @@ class BrowsingAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages = []
+        messages: list[Message] = []
         prev_actions = []
         cur_axtree_txt = ''
         error_prefix = ''
@@ -191,20 +192,23 @@ class BrowsingAgent(Agent):
                 )
                 return MessageAction('Error encountered when browsing.')
 
-        if (goal := state.get_current_user_intent()) is None:
+        goal, _ = state.get_current_user_intent()
+
+        if goal is None:
             goal = state.inputs['task']
+
         system_msg = get_system_message(
             goal,
             self.action_space.describe(with_long_description=False, with_examples=True),
         )
 
-        messages.append({'role': 'system', 'content': system_msg})
+        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
 
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
-        messages.append({'role': 'user', 'content': prompt})
+        messages.append(Message(role='user', content=[TextContent(text=prompt)]))
         logger.debug(prompt)
         response = self.llm.completion(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             temperature=0.0,
             stop=[')```', ')\n```'],
         )

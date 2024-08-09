@@ -56,16 +56,13 @@ cd "$PROJECT_ROOT" || exit 1
 mkdir -p $WORKSPACE_BASE
 
 # use environmental variable if exists, otherwise use "ssh"
-SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"  # can be server or eventstream
 # TODO: set this as default after ServerRuntime is deprecated
 if [ "$TEST_RUNTIME" == "eventstream" ] && [ -z "$SANDBOX_CONTAINER_IMAGE" ]; then
   SANDBOX_CONTAINER_IMAGE="ubuntu:22.04"
 fi
 
-PERSIST_SANDBOX=false
 MAX_ITERATIONS=15
-echo "SANDBOX_BOX_TYPE: $SANDBOX_BOX_TYPE"
 echo "TEST_RUNTIME: $TEST_RUNTIME"
 
 agents=(
@@ -113,8 +110,6 @@ run_test() {
 
   env SCRIPT_DIR="$SCRIPT_DIR" \
     PROJECT_ROOT="$PROJECT_ROOT" \
-    SANDBOX_BOX_TYPE="$SANDBOX_BOX_TYPE" \
-    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     MAX_ITERATIONS=$MAX_ITERATIONS \
@@ -185,8 +180,6 @@ regenerate_without_llm() {
   set -x
   env SCRIPT_DIR="$SCRIPT_DIR" \
       PROJECT_ROOT="$PROJECT_ROOT" \
-      SANDBOX_BOX_TYPE="$SANDBOX_BOX_TYPE" \
-      PERSIST_SANDBOX=$PERSIST_SANDBOX \
       WORKSPACE_BASE=$WORKSPACE_BASE \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
       MAX_ITERATIONS=$MAX_ITERATIONS \
@@ -216,8 +209,6 @@ regenerate_with_llm() {
     env SCRIPT_DIR="$SCRIPT_DIR" \
       PROJECT_ROOT="$PROJECT_ROOT" \
       DEBUG=true \
-      SANDBOX_BOX_TYPE="$SANDBOX_BOX_TYPE" \
-      PERSIST_SANDBOX=$PERSIST_SANDBOX \
       WORKSPACE_BASE=$WORKSPACE_BASE \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
       DEFAULT_AGENT=$agent \

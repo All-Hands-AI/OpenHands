@@ -1,3 +1,4 @@
+# Workflow that runs lint on the frontend and python code
 name: Lint
 
 concurrency:
@@ -11,27 +12,26 @@ on:
   pull_request:
 
 jobs:
+  # Run lint on the frontend code
   lint-frontend:
     name: Lint frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Install Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Install dependencies
         run: |
           cd frontend
           npm install --frozen-lockfile
-
       - name: Lint
         run: |
           cd frontend
           npm run lint
 
+  # Run lint on the python code
   lint-python:
     name: Lint python
     runs-on: ubuntu-latest

@@ -1,12 +1,13 @@
+import asyncio
 import json
+import logging
 import multiprocessing as mp
 import os
 import pathlib
 import subprocess
 import time
-from asyncio.log import logger
 from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import pandas as pd
 from pydantic import BaseModel
@@ -14,6 +15,8 @@ from tqdm import tqdm
 
 from opendevin.controller.state.state import State
 from opendevin.core.config import LLMConfig
+from opendevin.core.logger import get_console_handler
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import Action
 from opendevin.events.action.message import MessageAction
 
@@ -35,6 +38,31 @@ class EvalMetadata(BaseModel):
         logger.debug(f'Dumped metadata: {dumped_dict}')
         # avoid leaking sensitive information
         dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        return json.dumps(dumped_dict)
+
+
+class EvalOutput(BaseModel):
+    # NOTE: User-specified
+    instance_id: str
+    instruction: str
+    # output of the evaluation
+    # store anything that is needed for the score calculation
+    test_result: dict[str, Any]
+
+    # Interaction info
+    metadata: EvalMetadata
+    history: list[tuple[dict[str, Any], dict[str, Any]]]
+    metrics: dict[str, Any]
+    error: str | None = None
+
+    # Optionally save the input test instance
+    instance: dict[str, Any] | None = None
+
+    def model_dump_json(self, *args, **kwargs):
+        dumped = super().model_dump_json(*args, **kwargs)
+        dumped_dict = json.loads(dumped)
+        # Apply custom serialization for metadata (to avoid leaking sensitive information)
+        dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
 
 
@@ -136,7 +164,11 @@ def make_metadata(
     return metadata
 
 
-def prepare_dataset(dataset: pd.DataFrame, output_file, eval_n_limit, id_column):
+def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
+    assert (
+        'instance_id' in dataset.columns
+    ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
     finished_ids = set()
     if os.path.exists(output_file):
@@ -164,14 +196,16 @@ def prepare_dataset(dataset: pd.DataFrame, output_file, eval_n_limit, id_column)
     return pd.DataFrame(new_dataset)
 
 
-def run_evaluation(
+async def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata,
     output_file: str,
     num_workers: int,
-    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Any],
-    id_column: str,
+    process_instance_func: Callable[
+        [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
+    ],
 ):
+    use_multiprocessing = num_workers > 1
     logger.info(
         f'Evaluation started with Agent {metadata.agent_class}, '
         f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.'
@@ -179,35 +213,77 @@ def run_evaluation(
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')
 
-    def update_progress(future):
+    async def update_progress(future):
         pbar.update(1)
-        output = future.result()
-        pbar.set_description(f'Instance {output[id_column]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        output: EvalOutput = await future if use_multiprocessing else future
+
+        pbar.set_description(f'Instance {output.instance_id}')
+        pbar.set_postfix_str(f'Test Result: {output.test_result}')
         logger.info(
-            f'Finished evaluation for instance {output[id_column]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output.instance_id}: {output.test_result}'
         )
-        output_fp.write(json.dumps(output) + '\n')
+        output_fp.write(json.dumps(output.model_dump()) + '\n')
         output_fp.flush()
 
     try:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
-            for _, instance in dataset.iterrows():
-                future = executor.submit(
-                    process_instance_func,
-                    instance,
-                    metadata,
-                    bool(num_workers > 1),
-                )
-                future.add_done_callback(update_progress)
-                futures.append(future)
+        if use_multiprocessing:
+            with ProcessPoolExecutor(num_workers) as executor:
+                loop = asyncio.get_event_loop()
+                futures = []
+                for _, instance in dataset.iterrows():
+                    future = loop.run_in_executor(
+                        executor,
+                        process_instance_func,
+                        instance,
+                        metadata,
+                        bool(num_workers > 1),
+                    )
+                    futures.append(update_progress(future))
 
-            for future in futures:
-                future.result()
+                await asyncio.gather(*futures)
+        # Use plain for loop for single process for easier debugging
+        else:
+            assert num_workers == 1
+            for _, instance in dataset.iterrows():
+                output = await process_instance_func(instance, metadata, False)
+                await update_progress(output)
+
     except KeyboardInterrupt:
         print('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
     logger.info('Evaluation finished.')
+
+
+def reset_logger_for_multiprocessing(
+    logger: logging.Logger, instance_id: str, log_dir: str
+):
+    """Reset the logger for multiprocessing.
+
+    Save logs to a separate file for each process, instead of trying to write to the
+    same file/console from multiple processes.
+    """
+    # Set up logger
+    log_file = os.path.join(
+        log_dir,
+        f'instance_{instance_id}.log',
+    )
+    # Remove all existing handlers from logger
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    # add back the console handler to print ONE line
+    logger.addHandler(get_console_handler())
+    logger.info(
+        f'Starting evaluation for instance {instance_id}.\n'
+        f'Hint: run "tail -f {log_file}" to see live logs in a separate shell'
+    )
+    # Remove all existing handlers from logger
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(
+        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    )
+    logger.addHandler(file_handler)

@@ -2,43 +2,14 @@
 
 Implements evaluation of agents on BIRD introduced in [Can LLM Already Serve as A Database Interface? A BIg Bench for Large-Scale Database Grounded Text-to-SQLs](https://arxiv.org/abs/2305.03111). Please see [here](https://bird-bench.github.io/) for the reference implementation used in the paper.
 
-## Setup Environment
+## Setup Environment and LLM Configuration
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
-
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace.
-
-Add the following configurations:
-
-```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-ssh_hostname = "localhost"
-
-[sandbox]
-enable_auto_lint = true
-
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on Bird
 
 ```bash
-./evaluation/bird/scripts/run_infer.sh eval_gpt4_1106_preview [model_config] [git-version]
+./evaluation/bird/scripts/run_infer.sh [model_config] [git-version]
 ```
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your

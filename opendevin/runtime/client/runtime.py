@@ -1,9 +1,8 @@
 import asyncio
-import copy
 import os
 import tempfile
 import uuid
-from typing import Any, Optional
+from typing import Optional
 from zipfile import ZipFile
 
 import aiohttp
@@ -50,12 +49,11 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         container_image: str | None = None,
     ):
-        self.config = copy.deepcopy(config)
         super().__init__(
             config, event_stream, sid, plugins
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
-        self.api_url = f'http://localhost:{self._port}'
+        self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
 
         self.instance_id = (
@@ -72,15 +70,18 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+        logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
+        if self.config.sandbox.od_runtime_extra_deps:
+            logger.info(
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
+            )
+
         self.container_image = build_runtime_image(
             self.container_image,
             self.docker_client,
-            # NOTE: You can need set DEBUG=true to update the source code
-            # inside the container. This is useful when you want to test/debug the
-            # latest code in the runtime docker container.
-            update_source_code=self.config.sandbox.update_source_code,
+            extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
@@ -145,8 +146,12 @@ class EventStreamRuntime(Runtime):
                 )
                 volumes = None
 
-            logger.info(f'run_as_devin: `{self.config.run_as_devin}`')
-
+            if self.config.sandbox.browsergym_eval_env is not None:
+                browsergym_arg = (
+                    f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
+                )
+            else:
+                browsergym_arg = ''
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -156,7 +161,8 @@ class EventStreamRuntime(Runtime):
                     f'--working-dir {sandbox_workspace_dir} '
                     f'{plugin_arg}'
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
-                    f'--user-id {self.config.sandbox.user_id}'
+                    f'--user-id {self.config.sandbox.user_id} '
+                    f'{browsergym_arg}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
@@ -186,6 +192,20 @@ class EventStreamRuntime(Runtime):
     )
     async def _wait_until_alive(self):
         logger.info('Reconnecting session')
+        container = self.docker_client.containers.get(self.container_name)
+        # print logs
+        _logs = container.logs(tail=10).decode('utf-8').split('\n')
+        # add indent
+        _logs = '\n'.join([f'    |{log}' for log in _logs])
+        logger.info(
+            '\n'
+            + '-' * 30
+            + 'Container logs (last 10 lines):'
+            + '-' * 30
+            + f'\n{_logs}'
+            + '\n'
+            + '-' * 90
+        )
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
@@ -216,55 +236,6 @@ class EventStreamRuntime(Runtime):
                 pass
         if close_client:
             self.docker_client.close()
-
-    async def copy_to(
-        self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> dict[str, Any]:
-        if not os.path.exists(host_src):
-            raise FileNotFoundError(f'Source file {host_src} does not exist')
-
-        session = await self._ensure_session()
-        await self._wait_until_alive()
-        try:
-            if recursive:
-                # For recursive copy, create a zip file
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_zip:
-                    temp_zip_path = temp_zip.name
-
-                with ZipFile(temp_zip_path, 'w') as zipf:
-                    for root, _, files in os.walk(host_src):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(
-                                file_path, os.path.dirname(host_src)
-                            )
-                            zipf.write(file_path, arcname)
-
-                upload_data = {'file': open(temp_zip_path, 'rb')}
-            else:
-                # For single file copy
-                upload_data = {'file': open(host_src, 'rb')}
-
-            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
-
-            async with session.post(
-                f'{self.api_url}/upload_file', data=upload_data, params=params
-            ) as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    error_message = await response.text()
-                    raise Exception(f'Copy operation failed: {error_message}')
-
-        except asyncio.TimeoutError:
-            raise TimeoutError('Copy operation timed out')
-        except Exception as e:
-            raise RuntimeError(f'Copy operation failed: {str(e)}')
-        finally:
-            if recursive:
-                os.unlink(temp_zip_path)
 
     async def run_action(self, action: Action) -> Observation:
         # set timeout to default if not set
@@ -332,11 +303,83 @@ class EventStreamRuntime(Runtime):
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
 
-    ############################################################################
-    # Keep the same with other runtimes
-    ############################################################################
+    # ====================================================================
+    # Implement these methods (for file operations) in the subclass
+    # ====================================================================
 
-    def get_working_directory(self):
-        raise NotImplementedError(
-            'This method is not implemented in the runtime client.'
-        )
+    async def copy_to(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ) -> None:
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
+        session = await self._ensure_session()
+        await self._wait_until_alive()
+        try:
+            if recursive:
+                # For recursive copy, create a zip file
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_zip:
+                    temp_zip_path = temp_zip.name
+
+                with ZipFile(temp_zip_path, 'w') as zipf:
+                    for root, _, files in os.walk(host_src):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(
+                                file_path, os.path.dirname(host_src)
+                            )
+                            zipf.write(file_path, arcname)
+
+                upload_data = {'file': open(temp_zip_path, 'rb')}
+            else:
+                # For single file copy
+                upload_data = {'file': open(host_src, 'rb')}
+
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+
+            async with session.post(
+                f'{self.api_url}/upload_file', data=upload_data, params=params
+            ) as response:
+                if response.status == 200:
+                    return
+                else:
+                    error_message = await response.text()
+                    raise Exception(f'Copy operation failed: {error_message}')
+
+        except asyncio.TimeoutError:
+            raise TimeoutError('Copy operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'Copy operation failed: {str(e)}')
+        finally:
+            if recursive:
+                os.unlink(temp_zip_path)
+            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+
+    async def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the sandbox.
+
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+        session = await self._ensure_session()
+        await self._wait_until_alive()
+        try:
+            data = {}
+            if path is not None:
+                data['path'] = path
+
+            async with session.post(
+                f'{self.api_url}/list_files', json=data
+            ) as response:
+                if response.status == 200:
+                    response_json = await response.json()
+                    assert isinstance(response_json, list)
+                    return response_json
+                else:
+                    error_message = await response.text()
+                    raise Exception(f'List files operation failed: {error_message}')
+        except asyncio.TimeoutError:
+            raise TimeoutError('List files operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'List files operation failed: {str(e)}')

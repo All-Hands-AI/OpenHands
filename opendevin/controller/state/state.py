@@ -2,6 +2,7 @@ import base64
 import pickle
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 from opendevin.controller.state.task import RootTask
 from opendevin.core.logger import opendevin_logger as logger
@@ -106,6 +107,9 @@ class State:
     start_id: int = -1
     end_id: int = -1
     almost_stuck: int = 0
+    # NOTE: This will never be used by the controller, but it can be used by different
+    # evaluation tasks to store extra data needed to track the progress/state of the task.
+    extra_data: dict[str, Any] = field(default_factory=dict)
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
@@ -167,13 +171,15 @@ class State:
         # remove the restored data from the state if any
 
     def get_current_user_intent(self):
-        """Returns the latest user message that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
+        """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
+        last_user_message_image_urls: list[str] | None = []
         for event in self.history.get_events(reverse=True):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
+                last_user_message_image_urls = event.images_urls
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
                     return last_user_message
 
-        return last_user_message
+        return last_user_message, last_user_message_image_urls

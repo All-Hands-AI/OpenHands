@@ -48,14 +48,11 @@ where `conftest.py` defines the infrastructure needed to load real-world LLM pro
 and responses for mocking purpose. Prompts and responses generated during real runs
 of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 
-**Note:** Set PERSIST_SANDBOX=false to use a clean sandbox for each test.
 
 ## Run Integration Tests
 
 Take a look at `ghcr.yml` (in the `.github/workflow` folder) to learn
 how integration tests are launched in a CI environment.
-
-We currently have two runtime: `ServerRuntime` and `EventStreamRuntime`, each having their own sets of integration test prompts.
 
 You can run:
 
@@ -63,7 +60,7 @@ You can run:
 # for server runtime
 TEST_RUNTIME=server TEST_ONLY=true ./tests/integration/regenerate.sh
 # for event stream
-SANDBOX_UPDATE_SOURCE_CODE=True TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
+TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
 ```
 
 to run all integration tests until the first failure occurs.
@@ -84,7 +81,7 @@ by running the following command from OpenDevin's project root directory:
 
 ```bash
 TEST_RUNTIME=server ./tests/integration/regenerate.sh
-SANDBOX_UPDATE_SOURCE_CODE=True TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
+TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
 ```
 
 Please note that this will:
