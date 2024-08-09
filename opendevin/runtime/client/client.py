@@ -56,6 +56,14 @@ class ActionRequest(BaseModel):
     action: dict
 
 
+ROOT_GID = 0
+INIT_COMMANDS = [
+    'git config --global user.name "opendevin"',
+    'git config --global user.email "opendevin@all-hands.dev"',
+    "alias git='git --no-pager'",
+]
+
+
 class RuntimeClient:
     """RuntimeClient is running inside docker sandbox.
     It is responsible for executing actions received from OpenDevin backend and producing observations.
@@ -73,6 +81,7 @@ class RuntimeClient:
         self.username = username
         self.user_id = user_id
         self.pwd = work_dir  # current PWD
+        self._initial_pwd = work_dir
         self._init_user(self.username, self.user_id)
         self._init_bash_shell(self.pwd, self.username)
         self.lock = asyncio.Lock()
@@ -104,6 +113,8 @@ class RuntimeClient:
             )
             logger.info(f'AgentSkills initialized: {obs}')
 
+        await self._init_bash_commands()
+
     def _init_user(self, username: str, user_id: int) -> None:
         """Create user if not exists."""
         # Skip root since it is already created
@@ -117,12 +128,19 @@ class RuntimeClient:
             raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
         logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
-        # Add user
+        # Add user and change ownership of the initial working directory if it doesn't exist
+        command = (
+            f'useradd -rm -d /home/{username} -s /bin/bash '
+            f'-g root -G sudo -u {user_id} {username}'
+        )
+
+        if not os.path.exists(self.initial_pwd):
+            command += f' && mkdir -p {self.initial_pwd}'
+            command += f' && chown -R {username}:root {self.initial_pwd}'
+            command += f' && chmod g+s {self.initial_pwd}'
+
         output = subprocess.run(
-            (
-                f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -u {user_id} {username}'
-            ),
+            command,
             shell=True,
             capture_output=True,
         )
@@ -130,6 +148,7 @@ class RuntimeClient:
             raise RuntimeError(
                 f'Failed to create user {username}: {output.stderr.decode()}'
             )
+
         logger.debug(
             f'Added user {username} successfully. Output: [{output.stdout.decode()}]'
         )
@@ -155,6 +174,20 @@ class RuntimeClient:
         logger.debug(
             f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
         )
+
+    async def _init_bash_commands(self):
+        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        for command in INIT_COMMANDS:
+            action = CmdRunAction(command=command)
+            action.timeout = 300
+            logger.debug(f'Executing init command: {command}')
+            obs: CmdOutputObservation = await self.run(action)
+            logger.debug(
+                f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
+            )
+            assert obs.exit_code == 0
+
+        logger.info('Bash init commands completed')
 
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after

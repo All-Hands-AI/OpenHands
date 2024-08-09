@@ -1262,3 +1262,84 @@ async def test_keep_prompt(temp_dir):
 
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_git_operation(box_class):
+    # do not mount workspace, since workspace mount by tests will be owned by root
+    # while the user_id we get via os.getuid() is different from root
+    # which causes permission issues
+    runtime = await _load_runtime(
+        temp_dir=None,
+        box_class=box_class,
+        # Need to use non-root user to expose issues
+        run_as_devin=True,
+    )
+
+    # this will happen if permission of runtime is not properly configured
+    # fatal: detected dubious ownership in repository at '/workspace'
+
+    # check the ownership of the current directory
+    action = CmdRunAction(command='ls -alh .')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    # drwx--S--- 2 opendevin root   64 Aug  7 23:32 .
+    # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
+    for line in obs.content.split('\r\n'):
+        if ' ..' in line:
+            # parent directory should be owned by root
+            assert 'root' in line
+            assert 'opendevin' not in line
+        elif ' .' in line:
+            # current directory should be owned by opendevin
+            # and its group should be root
+            assert 'opendevin' in line
+            assert 'root' in line
+
+    # make sure all git operations are allowed
+    action = CmdRunAction(command='git init')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # create a file
+    action = CmdRunAction(command='echo "hello" > test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git add
+    action = CmdRunAction(command='git add test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git diff
+    action = CmdRunAction(command='git diff')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git commit
+    action = CmdRunAction(command='git commit -m "test commit"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    await runtime.close()
+
+    await runtime.close()
+    await asyncio.sleep(1)
