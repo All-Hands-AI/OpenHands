@@ -182,7 +182,8 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
         img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_python-nodejs_tag_python3.11-nodejs22'
+        and img_tag
+        == f'{OD_VERSION}_image_nikolaik___python-nodejs_tag_python3.11-nodejs22'
     )
 
     base_image = 'ubuntu'
