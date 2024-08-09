@@ -25,49 +25,58 @@ export function Container({
   orientation,
   initialSize,
 }: ContainerProps): JSX.Element {
-  const [firstSize, setFirstSize] = useState<number | undefined>(initialSize);
-  const [dividerPosition, setDividerPosition] = useState<undefined | number>(
-    undefined,
-  );
+  const [firstSize, setFirstSize] = useState<number>(initialSize);
+  const [dividerPosition, setDividerPosition] = useState<number | null>(null);
   const firstRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (firstRef.current !== null) {
-      if (orientation === Orientation.HORIZONTAL) {
-        firstRef.current.style.width = `${firstSize}px`;
-      } else {
-        firstRef.current.style.height = `${firstSize}px`;
-      }
+    if (dividerPosition == null || !firstRef.current) {
+      return undefined;
     }
-  }, [firstSize, orientation]);
-
-  const onMouseMove = (e: MouseEvent) => {
-    e.preventDefault();
-    if (firstSize && dividerPosition) {
-      if (orientation === Orientation.HORIZONTAL) {
-        const newLeftWidth = firstSize + e.clientX - dividerPosition;
-        setDividerPosition(e.clientX);
-        setFirstSize(newLeftWidth);
-      } else {
-        const newTopHeight = firstSize + e.clientY - dividerPosition;
-        setDividerPosition(e.clientY);
-        setFirstSize(newTopHeight);
+    const getFirstSizeFromEvent = (e: MouseEvent) => {
+      const position =
+        orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
+      return firstSize + position - dividerPosition;
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const newFirstSize = getFirstSizeFromEvent(e);
+      const { current } = firstRef;
+      if (current) {
+        if (orientation === Orientation.HORIZONTAL) {
+          current.style.width = `${newFirstSize}px`;
+        } else {
+          current.style.height = `${newFirstSize}px`;
+        }
       }
-    }
-  };
-
-  const onMouseUp = () => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
-  };
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
+      setFirstSize(getFirstSizeFromEvent(e));
+      setDividerPosition(null);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [dividerPosition, firstSize, orientation]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    setDividerPosition(
-      orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY,
-    );
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const position =
+      orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
+    setDividerPosition(position);
+  };
+
+  const getStyleForFirst = () => {
+    if (orientation === Orientation.HORIZONTAL) {
+      return { width: `${firstSize}px` };
+    }
+    return { height: `${firstSize}px` };
   };
 
   return (
@@ -77,7 +86,7 @@ export function Container({
         className,
       )}
     >
-      <div ref={firstRef} className={firstClassName}>
+      <div ref={firstRef} className={firstClassName} style={getStyleForFirst()}>
         {firstChild}
       </div>
       <div
