@@ -1033,6 +1033,13 @@ async def test_bash_python_version(temp_dir, box_class):
     assert obs.exit_code == 0
     # Should not error out
 
+    action = CmdRunAction(command='pip --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    # Should not error out
+
     await runtime.close()
     await asyncio.sleep(1)
 
