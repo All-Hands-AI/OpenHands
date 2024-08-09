@@ -48,7 +48,7 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime'))
 
 
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
 PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 
@@ -58,7 +58,7 @@ def get_box_classes():
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
     else:
-        return [EventStreamRuntime]
+        raise ValueError(f'Invalid runtime: {runtime}')
 
 
 # This assures that all tests run together per runtime, not alternating between them,
@@ -83,10 +83,13 @@ def enable_auto_lint(request):
     return request.param
 
 
-@pytest.fixture(scope='module', params=['python:3.11-bookworm', 'node:22-bookworm'])
+@pytest.fixture(scope='module')
 def container_image(request):
     time.sleep(1)
-    return request.param
+    env_image = os.environ.get('SANDBOX_CONTAINER_IMAGE')
+    if env_image:
+        return [env_image]
+    return ['nikolaik/python-nodejs:python3.11-nodejs22']
 
 
 async def _load_runtime(
