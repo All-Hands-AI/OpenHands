@@ -83,7 +83,7 @@ def enable_auto_lint(request):
     return request.param
 
 
-@pytest.fixture(scope='module', params=['python:3.11-bookworm', 'debian:11'])
+@pytest.fixture(scope='module', params=['python:3.11-bookworm', 'node:22-bookworm'])
 def container_image(request):
     time.sleep(1)
     return request.param
@@ -120,31 +120,14 @@ async def _load_runtime(
     if container_image is not None:
         config.sandbox.container_image = container_image
 
-    if box_class == EventStreamRuntime:
-        # NOTE: we will use the default container image specified in the config.sandbox
-        # if it is an official od_runtime image.
-        cur_container_image = config.sandbox.container_image
-        if 'od_runtime' not in cur_container_image and cur_container_image not in {
-            'xingyaoww/od-eval-miniwob:v1.0'
-        }:  # a special exception list
-            cur_container_image = 'python:3.11-bookworm'
-            logger.warning(
-                f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
-            )
-
-        runtime = EventStreamRuntime(
-            config=config,
-            event_stream=event_stream,
-            sid=sid,
-            plugins=plugins,
-            # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
-            # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
-            container_image=cur_container_image,
-        )
-        await runtime.ainit()
-
-    else:
-        raise ValueError(f'Invalid box class: {box_class}')
+    runtime = box_class(
+        config=config,
+        event_stream=event_stream,
+        sid=sid,
+        plugins=plugins,
+        container_image=container_image,
+    )
+    await runtime.ainit()
     await asyncio.sleep(1)
     return runtime
 
@@ -1015,36 +998,6 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_bash_python_version(temp_dir, box_class):
-    """Make sure Python is available in bash."""
-
-    runtime = await _load_runtime(temp_dir, box_class)
-
-    action = CmdRunAction(command='which python')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-
-    action = CmdRunAction(command='python --version')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-    # Should not error out
-
-    action = CmdRunAction(command='pip --version')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-    # Should not error out
-
-    await runtime.close()
-    await asyncio.sleep(1)
-
-
-@pytest.mark.asyncio
 async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
     """Make sure that cd in bash also update the current working directory in ipython."""
     runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
@@ -1347,6 +1300,62 @@ async def test_git_operation(box_class):
     assert obs.exit_code == 0
 
     await runtime.close()
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+# ============================================================================================================================
+# Image-specific tests
+# ============================================================================================================================
+
+
+@pytest.mark.asyncio
+async def test_bash_python_version(temp_dir, box_class, container_image):
+    """Make sure Python is available in bash."""
+    if container_image != 'python:3.11-bookworm':
+        pytest.skip('This test is only for python:3.11-bookworm image')
+
+    runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
+
+    action = CmdRunAction(command='which python')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='python --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'Python 3.11' in obs.content  # Check for specific version
+
+    action = CmdRunAction(command='pip --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'pip' in obs.content  # Check that pip is available
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_nodejs_22_version(temp_dir, box_class, container_image):
+    """Make sure Node.js is available in bash."""
+    if container_image != 'node:22-bookworm':
+        pytest.skip('This test is only for node:22-bookworm image')
+
+    runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
+
+    action = CmdRunAction(command='node --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'v22' in obs.content  # Check for specific version
 
     await runtime.close()
     await asyncio.sleep(1)
