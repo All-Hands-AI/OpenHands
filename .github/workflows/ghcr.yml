@@ -161,6 +161,8 @@ jobs:
     needs: [ghcr_build_runtime, ghcr_build]
     strategy:
       matrix:
+        image: ['od_runtime']
+        platform: ['amd64']
         runtime_type: ['eventstream']
         first_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.first_tags) }}
     steps:
@@ -186,7 +188,7 @@ jobs:
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: od_runtime-${{ matrix.first_tag }}-docker-image-amd64
+          name: ${{ matrix.image }}-${{ matrix.first_tag }}-docker-image-${{ matrix.platform }}
           path: /tmp/
       - name: Load Runtime image and run runtime tests
         run: |
@@ -220,7 +222,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11']
+        image: ['od_runtime']
+        platform: ['amd64']
         runtime_type: ['eventstream']
         first_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.first_tags) }}
     steps:
@@ -230,14 +233,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.11'
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: od_runtime-${{ matrix.first_tag }}-docker-image-amd64
+          name: ${{ matrix.image }}-${{ matrix.first_tag }}-docker-image-${{ matrix.platform }}
           path: /tmp/
       - name: Load runtime image and run integration tests
         run: |
