@@ -77,6 +77,18 @@ function ChatMessage({
         </button>
       )}
       <Markdown components={{ code }}>{message.content}</Markdown>
+      {message.imageUrls.length > 0 && (
+        <div className="flex space-x-2 mt-2">
+          {message.imageUrls.map((url, index) => (
+            <img
+              key={index}
+              src={url}
+              alt={`upload preview ${index}`}
+              className="w-24 h-24 object-contain rounded bg-white"
+            />
+          ))}
+        </div>
+      )}
       {isLastMessage &&
         message.sender === "assistant" &&
         awaitingUserConfirmation && <ConfirmationButtons />}

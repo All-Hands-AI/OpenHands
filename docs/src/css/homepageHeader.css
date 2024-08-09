@@ -1,36 +1,47 @@
 /* homepageHeader.css */
 
 .homepage-header {
-    height: 100vh;
-    color: white;
-    background: linear-gradient(to top, #64748b, #000000);
-  }
-  
-  .header-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-    padding: 24px;
-    font-weight: 300;
-    width: 100%;
-  }
-  
+  height: 800px;
+  color: white;
+  background: linear-gradient(to top, #64748b, #000000);
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  font-weight: 300;
+  width: 100%;
+}
+
+.header-title {
+  font-size: 3rem;
+}
+
+@media (min-width: 768px) {
   .header-title {
-    font-size: 3rem;
+    font-size: 4rem;
   }
-  
-  @media (min-width: 768px) {
-    .header-title {
-      font-size: 5rem;
-    }
-  }
-  
-  .header-subtitle {
-    font-size: 1.25rem;
-  }
-  
-  .header-buttons {
-    margin-top: 24px;
-  }
-  
+}
+
+.header-subtitle {
+  font-size: 1.5rem;
+}
+
+.header-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 680px;
+}
+
+.header-links a {
+  display: inline-block;
+  transition: transform 0.2s ease-in-out;
+}
+
+.header-links a:hover {
+  transform: translateY(-2px);
+}

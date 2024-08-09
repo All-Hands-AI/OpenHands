@@ -5,30 +5,9 @@ Some of OpenDevin's agent supports agent delegation action, for example, CodeAct
 This evaluation tests whether CodeActAgent can correctly delegate the instruction from WebArena and MiniWob benchmark to the BrowsingAgent.
 If so, the browsing performance upper-bound of CodeActAgent will be the performance of BrowsingAgent.
 
+## Setup Environment and LLM Configuration
 
-## Setup Environment
-
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to set up a local development environment for OpenDevin.
-
-## Configure OpenDevin and your LLM
-
-Create a `config.toml` file if it does not exist at the root of the workspace.
-
-Add the following configurations:
-
-```toml
-# TODO: Change these to the model you want to evaluate
-[llm.eval_gpt4_1106_preview_llm]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[llm.eval_some_openai_compatible_model_llm]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
-```
+Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference
 

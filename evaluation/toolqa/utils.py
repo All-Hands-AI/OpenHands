@@ -4,11 +4,12 @@ import re
 import string
 import zipfile
 
-import gdown
 import requests
 
 
 def download_data(dir):
+    import gdown
+
     data_path = os.path.join(dir, 'data/external_corpus')
     if os.path.exists(data_path):
         return data_path
@@ -19,6 +20,7 @@ def download_data(dir):
         zip_ref.extractall(os.path.join(dir, 'data'))
     if os.path.exists(zip_path):
         os.remove(zip_path)
+    print(f'Data saved to {data_path}')
     return data_path
 
 
@@ -42,6 +44,7 @@ def download_tools(dir, wolfram_alpha_appid='YOUR_WOLFRAMALPHA_APPID'):
         output_file = os.path.join(tool_path, tool.split('/')[1])
         with open(output_file, 'wb') as f:
             f.write(response.content)
+        print(f'Tool saved to {output_file}')
     with open(os.path.join(tool_path, 'calculator.py'), 'r') as f:
         content = f.read()
     new_content = content.replace('YOUR_WOLFRAMALPHA_APPID', wolfram_alpha_appid)
@@ -64,14 +67,29 @@ def download_tools(dir, wolfram_alpha_appid='YOUR_WOLFRAMALPHA_APPID'):
         f.write(new_content)
 
 
+LOCAL_DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
+
 def get_data(dataset, hardness):
-    data = []
-    url = f'https://raw.githubusercontent.com/night-chen/ToolQA/main/data/questions/{hardness}/{dataset}-{hardness}.jsonl'
-    url = requests.get(url)
-    if url.status_code == 200:
-        lines = url.text.splitlines()
-        for line in lines:
-            data.append(json.loads(line))
+    data_path = os.path.join(LOCAL_DATA_DIR, f'{dataset}-{hardness}.jsonl')
+    if os.path.exists(data_path):
+        print(f'Loading data from {data_path}')
+        with open(data_path, 'r') as f:
+            return json.load(f)
+    else:
+        print(
+            f'Downloading data from https://raw.githubusercontent.com/night-chen/ToolQA/main/data/questions/{hardness}/{dataset}-{hardness}.jsonl'
+        )
+        data = []
+        url = f'https://raw.githubusercontent.com/night-chen/ToolQA/main/data/questions/{hardness}/{dataset}-{hardness}.jsonl'
+        url = requests.get(url)
+        if url.status_code == 200:
+            lines = url.text.splitlines()
+            for line in lines:
+                data.append(json.loads(line))
+            with open(data_path, 'w') as f:
+                json.dump(data, f)
+        print(f'Data saved to {data_path}')
     return data
 
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opendevin"
-version = "0.8.1"
+version = "0.8.3"
 description = "OpenDevin: Code Less, Make More"
 authors = ["OpenDevin"]
 license = "MIT"
@@ -34,25 +34,29 @@ minio = "^7.2.7"
 gevent = "^24.2.1"
 pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
-zope-interface = "6.4.post2"
+zope-interface = "7.0.1"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
-grep-ast = "0.3.2"
+grep-ast = "0.3.3"
 tree-sitter = "0.21.3"
+bashlex = "^0.18"
+pyjwt = "^2.9.0"
+dirhash = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.2.0"
+torch = "2.2.2"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.5.5"
-mypy = "1.11.0"
-pre-commit = "3.7.1"
+ruff = "0.5.7"
+mypy = "1.11.1"
+pre-commit = "3.8.0"
+build = "*"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -72,6 +76,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -82,6 +87,7 @@ PyPDF2 = "*"
 python-pptx = "*"
 pylatexenc = "*"
 opencv-python = "*"
+
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
@@ -105,9 +111,13 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
+func_timeout = "*"
+sympy = "*"
+gdown = "*"

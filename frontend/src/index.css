@@ -40,3 +40,12 @@ code {
   padding: 0;
   background-color: inherit;
 }
+
+.markdown-body {
+  white-space: pre-wrap; /* Handles line breaks */
+}
+
+.markdown-body ul {
+  list-style-type: disc; /* Handles bullet points */
+  margin-left: 20px;
+}

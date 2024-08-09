@@ -41,7 +41,6 @@ Créez un fichier ```config.toml``` dans le répertoire OpenDevin et entrez ces 
 ```toml
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="image_personnalisée"
 ```
@@ -92,7 +91,6 @@ Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que O
 ```toml
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="image_personnalisée"
 sandbox_user_id="1001"
@@ -104,4 +102,4 @@ Si vous voyez un message d'erreur indiquant que le port est utilisé ou indispon
 
 ## Discuter
 
-Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!
+Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!

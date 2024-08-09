@@ -1,15 +1,13 @@
 from typing import Optional
 
-from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import AppConfig, LLMConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.stream import EventStream
-from opendevin.runtime import DockerSSHBox, get_runtime_cls
+from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.storage.files import FileStore
 
 
@@ -22,6 +20,7 @@ class AgentSession:
 
     sid: str
     event_stream: EventStream
+    file_store: FileStore
     controller: Optional[AgentController] = None
     runtime: Optional[Runtime] = None
     _closed: bool = False
@@ -51,7 +50,7 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_runtime(runtime_name, config)
+        await self._create_runtime(runtime_name, config, agent)
         await self._create_controller(
             agent,
             confirmation_mode,
@@ -71,7 +70,7 @@ class AgentSession:
             await self.runtime.close()
         self._closed = True
 
-    async def _create_runtime(self, runtime_name: str, config: AppConfig):
+    async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
         """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
@@ -79,7 +78,10 @@ class AgentSession:
         logger.info(f'Using runtime: {runtime_name}')
         runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(
-            config=config, event_stream=self.event_stream, sid=self.sid
+            config=config,
+            event_stream=self.event_stream,
+            sid=self.sid,
+            plugins=agent.sandbox_plugins,
         )
         await self.runtime.ainit()
 
@@ -98,17 +100,6 @@ class AgentSession:
             raise Exception('Runtime must be initialized before the agent controller')
 
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
-        if isinstance(agent, CodeActAgent):
-            if not self.runtime or not (
-                isinstance(self.runtime, ServerRuntime)
-                and isinstance(self.runtime.sandbox, DockerSSHBox)
-            ):
-                logger.warning(
-                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
-                    ' LocalBox will not work properly.'
-                )
-        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
-        self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(
             sid=self.sid,

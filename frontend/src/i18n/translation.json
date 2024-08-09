@@ -649,6 +649,11 @@
     "zh-CN": "发送消息",
     "de": "Nachricht senden"
   },
+  "CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE": {
+    "en": "Upload image",
+    "zh-CN": "上传图片",
+    "de": "Bild hochladen"
+  },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-CN": "你好！我是 OpenDevin，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
@@ -720,6 +725,9 @@
     "en": "Awaits for user confirmation before executing code.",
     "de": "Wartet auf die Bestätigung des Benutzers, bevor der Code ausgeführt wird.",
     "zh-CN": "在执行代码之前等待用户确认。"
+  },
+  "SETTINGS$AGENT_SELECT_ENABLED": {
+    "en": "Enable Agent Selection - Advanced Users"
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",

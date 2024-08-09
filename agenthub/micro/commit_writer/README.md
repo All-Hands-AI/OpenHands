@@ -3,7 +3,7 @@
 CommitWriterAgent can help write git commit message. Example:
 
 ```bash
-WORKSPACE_MOUNT_PATH="`PWD`" SANDBOX_BOX_TYPE="ssh" \
+WORKSPACE_MOUNT_PATH="`PWD`" \
   poetry run python opendevin/core/main.py -t "dummy task" -c CommitWriterAgent -d ./
 ```
 

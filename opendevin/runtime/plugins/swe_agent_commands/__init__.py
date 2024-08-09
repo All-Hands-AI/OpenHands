@@ -35,7 +35,7 @@ DEFAULT_DOCUMENTATION = ''.join(
 class SWEAgentCommandsRequirement(PluginRequirement):
     name: str = 'swe_agent_commands'
     host_src: str = os.path.dirname(os.path.abspath(__file__))
-    sandbox_dest: str = '/opendevin/plugins/swe_agent_commands'
+    sandbox_dest: str = '/opendevin/plugins/'
     bash_script_path: str = 'setup_default.sh'
 
     scripts_filepaths: list[str | None] = field(

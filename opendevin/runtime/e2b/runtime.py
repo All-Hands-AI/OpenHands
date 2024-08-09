@@ -11,22 +11,26 @@ from opendevin.events.observation import (
 )
 from opendevin.events.stream import EventStream
 from opendevin.runtime import Sandbox
-from opendevin.runtime.server.files import insert_lines, read_lines
-from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.runtime import Runtime
 
+from ..utils.files import insert_lines, read_lines
 from .filestore import E2BFileStore
 from .sandbox import E2BSandbox
 
 
-class E2BRuntime(ServerRuntime):
+class E2BRuntime(Runtime):
     def __init__(
         self,
         config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
+        plugins: list[PluginRequirement] | None = None,
         sandbox: Sandbox | None = None,
     ):
-        super().__init__(config, event_stream, sid, sandbox)
+        super().__init__(config, event_stream, sid, plugins)
+        if sandbox is None:
+            self.sandbox = E2BSandbox()
         if not isinstance(self.sandbox, E2BSandbox):
             raise ValueError('E2BRuntime requires an E2BSandbox')
         self.file_store = E2BFileStore(self.sandbox.filesystem)

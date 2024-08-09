@@ -4,11 +4,10 @@ import copy
 import json
 import os
 from abc import abstractmethod
-from typing import Any, Optional
 
 from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream, EventStreamSubscriber
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -25,21 +24,19 @@ from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
-    RejectObservation,
+    UserRejectObservation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.plugins import PluginRequirement
-from opendevin.runtime.tools import RuntimeTool
-from opendevin.storage import FileStore
+from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
 
 
-def _default_env_vars(config: SandboxConfig) -> dict[str, str]:
+def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     ret = {}
     for key in os.environ:
         if key.startswith('SANDBOX_ENV_'):
             sandbox_key = key.removeprefix('SANDBOX_ENV_')
             ret[sandbox_key] = os.environ[key]
-    if config.enable_auto_lint:
+    if sandbox_config.enable_auto_lint:
         ret['ENABLE_AUTO_LINT'] = 'true'
     return ret
 
@@ -52,7 +49,7 @@ class Runtime:
     """
 
     sid: str
-    file_store: FileStore
+    config: AppConfig
     DEFAULT_ENV_VARS: dict[str, str]
 
     def __init__(
@@ -60,13 +57,17 @@ class Runtime:
         config: AppConfig,
         event_stream: EventStream,
         sid: str = 'default',
+        plugins: list[PluginRequirement] | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
+
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close_sync)
+        logger.debug(f'Runtime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
         """
@@ -98,25 +99,19 @@ class Runtime:
                 loop.run_until_complete(self.close())
 
     # ====================================================================
-    # Methods we plan to deprecate when we move to new EventStreamRuntime
-    # ====================================================================
-
-    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
-        # TODO: deprecate this method when we move to the new EventStreamRuntime
-        raise NotImplementedError('This method is not implemented in the base class.')
-
-    def init_runtime_tools(
-        self,
-        runtime_tools: list[RuntimeTool],
-        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
-        is_async: bool = True,
-    ) -> None:
-        # TODO: deprecate this method when we move to the new EventStreamRuntime
-        raise NotImplementedError('This method is not implemented in the base class.')
-
-    # ====================================================================
 
     async def add_env_vars(self, env_vars: dict[str, str]) -> None:
+        # Add env vars to the IPython shell (if Jupyter is used)
+        if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
+            code = 'import os\n'
+            for key, value in env_vars.items():
+                # Note: json.dumps gives us nice escaping for free
+                code += f'os.environ["{key}"] = {json.dumps(value)}\n'
+            code += '\n'
+            obs = await self.run_ipython(IPythonRunCellAction(code))
+            logger.info(f'Added env vars to IPython: code={code}, obs={obs}')
+
+        # Add env vars to the Bash shell
         cmd = ''
         for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
@@ -125,7 +120,7 @@ class Runtime:
             return
         cmd = cmd.strip()
         logger.debug(f'Adding env var: {cmd}')
-        obs: Observation = await self.run(CmdRunAction(cmd))
+        obs = await self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
                 f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
@@ -133,9 +128,14 @@ class Runtime:
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
+            # set timeout to default if not set
+            if event.timeout is None:
+                event.timeout = self.config.sandbox.timeout
+            assert event.timeout is not None
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
-            self.event_stream.add_event(observation, event.source)  # type: ignore[arg-type]
+            source = event.source if event.source else EventSource.AGENT
+            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     async def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -160,15 +160,14 @@ class Runtime:
             hasattr(action, 'is_confirmed')
             and action.is_confirmed == ActionConfirmationStatus.REJECTED
         ):
-            return RejectObservation(
+            return UserRejectObservation(
                 'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = await getattr(self, action_type)(action)
-        observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
     # ====================================================================
-    # Implement these methods in the subclass
+    # Action execution
     # ====================================================================
 
     @abstractmethod
@@ -194,3 +193,19 @@ class Runtime:
     @abstractmethod
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
+
+    # ====================================================================
+    # File operations
+    # ====================================================================
+
+    @abstractmethod
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    async def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the sandbox.
+
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+        raise NotImplementedError('This method is not implemented in the base class.')

@@ -7,6 +7,7 @@ from agenthub.codeact_swe_agent.prompt import (
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -84,40 +85,43 @@ class CodeActSWEAgent(Agent):
             return action.content
         return ''
 
-    def get_action_message(self, action: Action) -> dict[str, str] | None:
+    def get_action_message(self, action: Action) -> Message | None:
         if (
             isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
         ):
-            return {
-                'role': 'user' if action.source == 'user' else 'assistant',
-                'content': self.action_to_str(action),
-            }
+            content = [TextContent(text=self.action_to_str(action))]
+
+            if isinstance(action, MessageAction) and action.images_urls:
+                content.append(ImageContent(image_urls=action.images_urls))
+
+            return Message(
+                role='user' if action.source == 'user' else 'assistant', content=content
+            )
+
         return None
 
-    def get_observation_message(self, obs: Observation) -> dict[str, str] | None:
+    def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            content = 'OBSERVATION:\n' + truncate_content(
-                obs.content, max_message_chars
-            )
-            content += (
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            return {'role': 'user', 'content': content}
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            content = 'OBSERVATION:\n' + obs.content
+            text = 'OBSERVATION:\n' + obs.content
             # replace base64 images with a placeholder
-            splitted = content.split('\n')
+            splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            content = '\n'.join(splitted)
-            content = truncate_content(content, max_message_chars)
-            return {'role': 'user', 'content': content}
+            text = '\n'.join(splitted)
+            text = truncate_content(text, max_message_chars)
+            return Message(role='user', content=[TextContent(text=text)])
         return None
 
     def reset(self) -> None:
@@ -143,10 +147,10 @@ class CodeActSWEAgent(Agent):
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
-        messages: list[dict[str, str]] = self._get_messages(state)
+        messages: list[Message] = self._get_messages(state)
 
         response = self.llm.completion(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -156,10 +160,10 @@ class CodeActSWEAgent(Agent):
 
         return self.response_parser.parse(response)
 
-    def _get_messages(self, state: State) -> list[dict[str, str]]:
-        messages = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
+    def _get_messages(self, state: State) -> list[Message]:
+        messages: list[Message] = [
+            Message(role='system', content=[TextContent(text=self.system_message)]),
+            Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
         for event in state.history.get_events():
@@ -173,18 +177,38 @@ class CodeActSWEAgent(Agent):
 
             # add regular message
             if message:
-                messages.append(message)
+                # handle error if the message is the SAME role as the previous message
+                # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
+                # there should not have two consecutive messages from the same role
+                if messages and messages[-1].role == message.role:
+                    messages[-1].content.extend(message.content)
+                else:
+                    messages.append(message)
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
+            (m for m in reversed(messages) if m.role == 'user'), None
         )
 
-        # add a reminder to the prompt
+        # Get the last user text inside content
         if latest_user_message:
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+            latest_user_message_text = next(
+                (
+                    t
+                    for t in reversed(latest_user_message.content)
+                    if isinstance(t, TextContent)
+                )
             )
+            # add a reminder to the prompt
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+
+            if latest_user_message_text:
+                latest_user_message_text.text = (
+                    latest_user_message_text.text + reminder_text
+                )
+            else:
+                latest_user_message_text = TextContent(text=reminder_text)
+                latest_user_message.content.append(latest_user_message_text)
 
         return messages
