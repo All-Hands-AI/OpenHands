@@ -70,7 +70,6 @@ Create a `config.toml` file in the OpenDevin directory and enter these contents:
 ```toml
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="custom_image"
 ```
@@ -129,7 +128,6 @@ If you see this error in the console output it is because OpenDevin is trying to
 ```toml
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="custom_image"
 sandbox_user_id="1001"
