@@ -12,11 +12,6 @@ on:
     tags:
       - '*'
   pull_request:
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'frontend/**'
-      - 'evaluation/**'
   workflow_dispatch:
     inputs:
       reason:
