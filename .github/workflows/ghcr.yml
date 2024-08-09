@@ -133,7 +133,7 @@ jobs:
             first_tag=$DOCKER_IMAGE_TAG
             echo "Pulling image $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}-${first_tag}-docker-image-${{ matrix.platform }}.tar"
             docker pull $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
-            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${first_tag}_image_${{ matrix.platform }}.tar
+            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}-${first_tag}-docker-image-${{ matrix.platform }}.tar
           fi
           echo "first_tag=${first_tag}" >> $GITHUB_OUTPUT
       - name: Capture tags
@@ -151,7 +151,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.image }}-${{ steps.build.outputs.first_tag }}-docker-image-${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ steps.build.outputs.first_tag }}_image_${{ matrix.platform }}.tar
+          path: /tmp/${{ matrix.image }}-${{ steps.build.outputs.first_tag }}-docker-image-${{ matrix.platform }}.tar
           retention-days: 14
 
   # Run unit tests with the EventStream and Server runtime Docker images
@@ -296,8 +296,8 @@ jobs:
           path: /tmp/${{ matrix.platform }}
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar .
+          loaded_image=$(docker load -i ${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
           echo "loaded image = $loaded_image"
           tags=$(echo ${tags} | tr ' ' '\n')
           image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
@@ -353,8 +353,13 @@ jobs:
           file /tmp/${{ matrix.platform }}/*
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_${{ matrix.first_tag }}_image_${{ matrix.platform }}.tar ./${{ matrix.image }}_image_${{ matrix.platform }}.tar
-          if ! loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
+          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}-${{ matrix.first_tag }}-docker-image-${{ matrix.platform }}.tar" | head -n 1)
+          if [ -z "$image_file" ]; then
+            echo "No matching image file found"
+            exit 1
+          fi
+          echo "Loading image from file: $image_file"
+          if ! loaded_image=$(docker load -i "$image_file" | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
             echo "Failed to load Docker image"
             exit 1
           fi
