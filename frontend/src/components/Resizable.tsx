@@ -25,49 +25,53 @@ export function Container({
   orientation,
   initialSize,
 }: ContainerProps): JSX.Element {
-  const [firstSize, setFirstSize] = useState<number | undefined>(initialSize);
-  const [dividerPosition, setDividerPosition] = useState<undefined | number>(
-    undefined,
+  const [currentSize, setCurrentSize] = useState<number>(initialSize);
+  const [mouseDownPosition, setMouseDownPosition] = useState<number | null>(
+    null,
   );
   const firstRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (firstRef.current !== null) {
-      if (orientation === Orientation.HORIZONTAL) {
-        firstRef.current.style.width = `${firstSize}px`;
-      } else {
-        firstRef.current.style.height = `${firstSize}px`;
-      }
+    if (mouseDownPosition == null || !firstRef.current) {
+      return undefined;
     }
-  }, [firstSize, orientation]);
-
-  const onMouseMove = (e: MouseEvent) => {
-    e.preventDefault();
-    if (firstSize && dividerPosition) {
-      if (orientation === Orientation.HORIZONTAL) {
-        const newLeftWidth = firstSize + e.clientX - dividerPosition;
-        setDividerPosition(e.clientX);
-        setFirstSize(newLeftWidth);
-      } else {
-        const newTopHeight = firstSize + e.clientY - dividerPosition;
-        setDividerPosition(e.clientY);
-        setFirstSize(newTopHeight);
+    const getCurrentSize = (e: MouseEvent) => {
+      const position =
+        orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
+      return currentSize + position - mouseDownPosition;
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const firstSize = getCurrentSize(e);
+      const { current } = firstRef;
+      if (current) {
+        if (orientation === Orientation.HORIZONTAL) {
+          current.style.width = `${firstSize}px`;
+        } else {
+          current.style.height = `${firstSize}px`;
+        }
       }
-    }
-  };
-
-  const onMouseUp = () => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
-  };
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
+      setCurrentSize(getCurrentSize(e));
+      setMouseDownPosition(null);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [mouseDownPosition, currentSize, orientation]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    setDividerPosition(
-      orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY,
-    );
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const position =
+      orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY;
+    setMouseDownPosition(position);
   };
 
   return (
