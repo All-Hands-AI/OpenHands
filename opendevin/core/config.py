@@ -145,6 +145,7 @@ class SandboxConfig(metaclass=Singleton):
     """Configuration for the sandbox.
 
     Attributes:
+        api_hostname: The hostname for the EventStream Runtime API.
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
@@ -164,6 +165,7 @@ class SandboxConfig(metaclass=Singleton):
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
     """
 
+    api_hostname: str = 'localhost'
     container_image: str = (
         'ubuntu:22.04'  # default to ubuntu:22.04 for eventstream runtime
     )
