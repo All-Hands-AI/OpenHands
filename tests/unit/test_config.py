@@ -358,7 +358,7 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
     assert (
         defaults_after_updates['sandbox']['container_image']['default']
-        == 'ubuntu:22.04'
+        == 'python:3.11-bookworm'
     )
     assert defaults_after_updates == initial_defaults
 

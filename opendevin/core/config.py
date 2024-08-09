@@ -166,9 +166,7 @@ class SandboxConfig(metaclass=Singleton):
     """
 
     api_hostname: str = 'localhost'
-    container_image: str = (
-        'ubuntu:22.04'  # default to ubuntu:22.04 for eventstream runtime
-    )
+    container_image: str = 'python:3.11-bookworm'  # default to python:3.11-bookworm for eventstream runtime
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
     enable_auto_lint: bool = (

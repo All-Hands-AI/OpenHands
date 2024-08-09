@@ -23,7 +23,7 @@ def test_get_new_image_name_legacy():
     new_image_name = _get_new_image_name(base_image)
     assert new_image_name == 'od_sandbox:debian__11'
 
-    base_image = 'ubuntu:22.04'
+    base_image = 'python:3.11-bookworm'
     new_image_name = _get_new_image_name(base_image)
     assert new_image_name == 'od_sandbox:ubuntu__22.04'
 
