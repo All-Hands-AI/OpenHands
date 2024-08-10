@@ -1,4 +1,3 @@
-import os
 import subprocess
 import time
 from dataclasses import dataclass
@@ -15,16 +14,6 @@ from .execute_server import JupyterKernel
 @dataclass
 class JupyterRequirement(PluginRequirement):
     name: str = 'jupyter'
-    host_src: str = os.path.dirname(
-        os.path.abspath(__file__)
-    )  # The directory of this file (opendevin/runtime/plugins/jupyter)
-    sandbox_dest: str = '/opendevin/plugins/'
-    bash_script_path: str = 'setup.sh'
-
-    # ================================================================
-    # Plugin methods, which will ONLY be used in the runtime client
-    # running inside docker
-    # ================================================================
 
 
 class JupyterPlugin(Plugin):

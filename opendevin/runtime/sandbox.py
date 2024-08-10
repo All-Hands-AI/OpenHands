@@ -3,10 +3,9 @@ from abc import ABC, abstractmethod
 
 from opendevin.core.config import SandboxConfig
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.plugins.mixin import PluginMixin
 
 
-class Sandbox(ABC, PluginMixin):
+class Sandbox(ABC):
     _env: dict[str, str] = {}
     is_initial_session: bool = True
 
