@@ -18,7 +18,7 @@ function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
     );
   }
   return (
-    <div className="w-full overflow-x-auto h-full pt-[4px]">
+    <div className="w-full h-full pt-[4px]">
       {files.map((file) => (
         <TreeNode key={file} path={file} defaultOpen={defaultOpen} />
       ))}
