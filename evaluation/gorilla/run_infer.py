@@ -3,6 +3,7 @@ import json
 import os
 
 import pandas as pd
+import requests
 
 from evaluation.gorilla.utils import encode_question, get_data_for_hub
 from evaluation.utils.shared import (
@@ -167,9 +168,18 @@ if __name__ == '__main__':
     dataset = prepare_dataset(
         dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit
     )
-    url = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-scripts/codebleu/parser/my-languages.so'
-    response = requests.get(url)
-    with open('evaluation/gorilla/my-languages.so','wb') as f: f.write(response.content)
+
+    file_path = os.path.join(
+        os.path.dirname(__file__), 'evaluation/gorilla/my-languages.so'
+    )
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        url = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-scripts/codebleu/parser/my-languages.so'
+        response = requests.get(url)
+        with open(file_path, 'wb') as f:
+            f.write(response.content)
+    else:
+        print('File already exists, skipping download.')
 
     asyncio.run(
         run_evaluation(
