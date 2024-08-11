@@ -169,9 +169,7 @@ if __name__ == '__main__':
         dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit
     )
 
-    file_path = os.path.join(
-        os.path.dirname(__file__), 'my-languages.so'
-    )
+    file_path = os.path.join(os.path.dirname(__file__), 'my-languages.so')
     # Check if the file exists
     if not os.path.exists(file_path):
         url = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-scripts/codebleu/parser/my-languages.so'
