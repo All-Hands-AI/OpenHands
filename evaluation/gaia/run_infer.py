@@ -10,6 +10,7 @@ import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
 
+from agenthub.gptswarm_agent.gptswarm_agent import GPTSwarm
 from evaluation.gaia.scorer import question_scorer
 from evaluation.utils.shared import (
     EvalMetadata,
@@ -31,10 +32,23 @@ from opendevin.llm.llm import LLM
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
 
+HUGGINGFACE_TOKEN = os.getenv('HUGGINGFACE_TOKEN') or (
+    open(os.path.expanduser('~/.huggingface/token')).read().strip()
+    if os.path.exists(os.path.expanduser('~/.huggingface/token'))
+    else input('Please enter your Hugging Face token: ').strip()
+)
+
+
+def gptswarm_user_response(state: State) -> str:
+    # NOTE: For the AI assistant, state-based design may introduce more uncertainties.
+    # TODO: It is stateless now. Find a way to make it stateful.
+    print('Not implemented.')
+
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': partial(codeact_user_response, encapsulate_solution=True),
     'MonologueAgent': monologue_user_response,
+    'GPTSwarmAgent': gptswarm_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -46,6 +60,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
+    single_agent: bool = False,
 ):
     # Create the agent
     agent = Agent.get_cls(metadata.agent_class)(llm=LLM(llm_config=metadata.llm_config))
@@ -170,17 +185,102 @@ def process_instance(
         # remove when it becomes unnecessary
         histories = state.history.compatibility_for_eval_history_pairs()
 
+        # Prepare instruction
+        instruction = f"{instance['Question']}\n"
+        logger.info(f'Instruction: {instruction}')
+        if dest_file:
+            instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
+
+        # TODO: Need further improve for new V1.1 version and drop if-else.
+        if agent.__class__.__name__ == 'GPTSwarmAgent':
+            if dest_file:
+                inputs = [{'task': instruction, 'files': [dest_file]}]
+            else:
+                inputs = [{'task': instruction}]
+
+            model_name = metadata['model_name']
+            gptswarm_agent = GPTSwarm(llm=LLM(), model_name=model_name)
+            if single_agent:
+                model_answer_raw = asyncio.run(gptswarm_agent.run(inputs))
+            else:
+                model_answer_raw = asyncio.run(gptswarm_agent.swarm_run(inputs))
+
+            model_answer = model_answer_raw[-1].split('FINAL ANSWER: ')[-1]
+
+        else:
+            instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+            instruction += 'For example: The answer to the question is <solution> 42 </solution>.\n'
+            # NOTE: You can actually set slightly different instruction for different agents
+            instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent.__class__.__name__, '')
+            logger.info(
+                f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'}
+            )
+
+            # Here's how you can run the agent (similar to the `main` function) and get the final task state
+            state: State | None = asyncio.run(
+                run_agent_controller(
+                    agent,
+                    instruction,
+                    max_iterations=metadata.max_iterations,
+                    fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                        agent.__class__.__name__
+                    ],
+                    sid=instance['text'].strip(),
+                )
+            )
+            # ======= Attempt to evaluate the agent's edits =======
+            # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+            # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+
+            if state is None:
+                raise ValueError('State should not be None.')
+
+            model_answer_raw = ''
+            for act, _ in reversed(state.history):
+                if isinstance(act, CmdRunAction) and act.source == 'agent':
+                    model_answer_raw = act.thought
+                    break
+                elif isinstance(act, MessageAction) and act.source == 'agent':
+                    model_answer_raw = act.content
+                    break
+
+            # attempt to parse model_answer
+            model_answer = re.findall(r'<solution>(.*?)</solution>', model_answer_raw)
+            if len(model_answer) == 0:
+                logger.warning(f'Failed to parse model answer: {model_answer_raw}')
+                model_answer = model_answer_raw
+            else:
+                model_answer = model_answer[0]
+
+        logger.info(
+            f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}'
+        )
+        score = question_scorer(
+            model_answer=model_answer, ground_truth=instance['Final answer']
+        )
+        test_result = {
+            'score': score,
+            'model_answer_raw': model_answer_raw,
+            'model_answer': model_answer,
+            'ground_truth': instance['Final answer'],
+        }
+
         # Save the output
         output = {
             'instance_id': instance['task_id'],
             'instance': instance,
             'instruction': instance['Question'],
-            'metadata': metadata.model_dump(),
+            'metadata': metadata,
             'history': histories,
+            # [
+            #     (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+            # ],
+            'error': state.error if state and state.error else None,
             'metrics': metrics,
-            'error': state.last_error if state and state.last_error else None,
             'test_result': test_result,
         }
+
     except Exception:
         logger.error('Process instance failed')
         raise

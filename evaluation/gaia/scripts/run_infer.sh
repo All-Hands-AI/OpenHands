@@ -17,8 +17,8 @@ fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
-  echo "Agent not specified, use default CodeActAgent"
-  AGENT="CodeActAgent"
+  echo "Agent not specified, use default GPTSwarmAgent"
+  AGENT="GPTSwarmAgent"
 fi
 
 get_agent_version
@@ -38,12 +38,8 @@ echo "LEVELS: $LEVELS"
 COMMAND="poetry run python ./evaluation/gaia/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 30 \
   --level $LEVELS \
-  --data-split validation \
-  --max-chars 10000000 \
-  --eval-num-workers $NUM_WORKERS \
-  --eval-note ${AGENT_VERSION}_${LEVELS}"
+  --data-split validation"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
