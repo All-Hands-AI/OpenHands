@@ -10,8 +10,6 @@ from e2b.sandbox.exception import (
 
 from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import CancellableStream
-
 
 class E2BBox:
     closed = False
@@ -65,8 +63,8 @@ class E2BBox:
         return tar_filename
 
     def execute(
-        self, cmd: str, stream: bool = False, timeout: int | None = None
-    ) -> tuple[int, str | CancellableStream]:
+        self, cmd: str, timeout: int | None = None
+    ) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.config.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
