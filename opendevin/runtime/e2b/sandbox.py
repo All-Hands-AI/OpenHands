@@ -1,5 +1,6 @@
 import os
 import tarfile
+import copy
 from glob import glob
 
 from e2b import Sandbox as E2BSandbox
@@ -9,13 +10,12 @@ from e2b.sandbox.exception import (
 
 from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import CancellableStream
-from opendevin.runtime.sandbox import Sandbox
 
-
-class E2BBox(Sandbox):
+class E2BBox:
     closed = False
     _cwd: str = '/home/user'
+    _env: dict[str, str] = {}
+    is_initial_session: bool = True
 
     def __init__(
         self,
@@ -23,7 +23,8 @@ class E2BBox(Sandbox):
         e2b_api_key: str,
         template: str = 'open-devin',
     ):
-        super().__init__(config)
+        self.config = copy.deepcopy(config)
+        self.initialize_plugins: bool = config.initialize_plugins
         self.sandbox = E2BSandbox(
             api_key=e2b_api_key,
             template=template,
@@ -62,8 +63,8 @@ class E2BBox(Sandbox):
         return tar_filename
 
     def execute(
-        self, cmd: str, stream: bool = False, timeout: int | None = None
-    ) -> tuple[int, str | CancellableStream]:
+        self, cmd: str, timeout: int | None = None
+    ) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.config.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:

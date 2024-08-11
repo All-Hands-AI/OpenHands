@@ -10,7 +10,6 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.events.stream import EventStream
-from opendevin.runtime import Sandbox
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 
@@ -26,7 +25,7 @@ class E2BRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
-        sandbox: Sandbox | None = None,
+        sandbox: E2BSandbox | None = None,
     ):
         super().__init__(config, event_stream, sid, plugins)
         if sandbox is None:
