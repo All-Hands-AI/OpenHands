@@ -1,5 +1,4 @@
 from .e2b.sandbox import E2BBox
-from .sandbox import Sandbox
 
 
 def get_runtime_cls(name: str):
