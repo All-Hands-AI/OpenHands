@@ -170,7 +170,7 @@ if __name__ == '__main__':
     )
 
     file_path = os.path.join(
-        os.path.dirname(__file__), 'evaluation/gorilla/my-languages.so'
+        os.path.dirname(__file__), 'my-languages.so'
     )
     # Check if the file exists
     if not os.path.exists(file_path):
