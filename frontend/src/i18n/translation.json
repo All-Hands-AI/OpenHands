@@ -567,6 +567,21 @@
     "de": "Agent ist auf einen Fehler gelaufen.",
     "zh-CN": "智能体遇到错误"
   },
+  "CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE": {
+    "en": "Agent is awaiting user confirmation for the pending action.",
+    "de": "Agent wartet auf die Bestätigung des Benutzers für die ausstehende Aktion.",
+    "zh-CN": "代理正在等待用户确认待处理的操作。"
+  },
+  "CHAT_INTERFACE$AGENT_ACTION_USER_CONFIRMED_MESSAGE": {
+    "en": "Agent action has been confirmed!",
+    "de": "Die Aktion des Agenten wurde bestätigt!",
+    "zh-CN": "代理操作已确认！"
+  },
+  "CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE": {
+    "en": "Agent action has been rejected!",
+    "de": "Die Aktion des Agenten wurde abgelehnt!",
+    "zh-CN": "代理操作已被拒绝！"
+  },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Message assistant...",
     "zh-CN": "给助理发消息",
@@ -585,6 +600,21 @@
     "en": "Continue",
     "zh-CN": "继续",
     "de": "Fortfahren"
+  },
+  "CHAT_INTERFACE$USER_ASK_CONFIRMATION": {
+    "en": "Do you want to continue with this action?",
+    "de": "Möchten Sie mit dieser Aktion fortfahren?",
+    "zh-CN": "您要继续此操作吗？"
+  },
+  "CHAT_INTERFACE$USER_CONFIRMED": {
+    "en": "Confirm the requested action",
+    "de": "Bestätigen Sie die angeforderte Aktion",
+    "zh-CN": "确认请求的操作"
+  },
+  "CHAT_INTERFACE$USER_REJECTED": {
+    "en": "Reject the requested action",
+    "de": "Lehnen Sie die angeforderte Aktion ab",
+    "zh-CN": "拒绝请求的操作"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -680,6 +710,16 @@
     "zh-CN": "输入您的 API key",
     "zh-TW": "輸入您的 API 金鑰。",
     "de": "Modell API Schlüssel."
+  },
+  "SETTINGS$CONFIRMATION_MODE": {
+    "en": "Enable Confirmation Mode",
+    "de": "Bestätigungsmodus aktivieren",
+    "zh-CN": "启用确认模式"
+  },
+  "SETTINGS$CONFIRMATION_MODE_TOOLTIP": {
+    "en": "Awaits for user confirmation before executing code.",
+    "de": "Wartet auf die Bestätigung des Benutzers, bevor der Code ausgeführt wird.",
+    "zh-CN": "在执行代码之前等待用户确认。"
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 import re
@@ -28,14 +27,6 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import run_agent_controller
 from opendevin.events.action import MessageAction
 from opendevin.llm.llm import LLM
-
-
-def cleanup():
-    logger.info('Cleaning up child processes...')
-    for process in mp.active_children():
-        logger.info(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
 
 
 def codeact_user_response(state: State) -> str:

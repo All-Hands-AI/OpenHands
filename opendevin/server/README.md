@@ -62,8 +62,6 @@ This list may grow over time.
   * `command` - the command to run
 * `browse` - opens a web page.
   * `url` - the URL to open
-* `recall` - searches long-term memory
-  * `query` - the query to search for
 * `think` - Allows the agent to make a plan, set a goal, or record thoughts
   * `thought` - the thought to record
 * `finish` - agent signals that the task is completed
@@ -87,6 +85,4 @@ This list may grow over time.
 * `run` - the output of a command
   * `command` - the command run
   * `exit_code` - the exit code of the command
-* `recall` - the result of a search
-  * `query` - the query searched for
 * `chat` - a message from the user

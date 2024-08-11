@@ -38,9 +38,9 @@ But when running `docker run`, you'll need to add a few more arguments:
 -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
 ```
 
-LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI. 
+LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI.
 
-For example:
+Example:
 
 ```bash
 # The directory you want OpenDevin to modify. MUST be an absolute path!
@@ -53,6 +53,7 @@ docker run \
     -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_API_KEY="ollama" \
     -e LLM_BASE_URL="http://host.docker.internal:11434" \
+    -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -68,12 +69,16 @@ Use the instructions in [Development.md](https://github.com/OpenDevin/OpenDevin/
 Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
 
 ```
-LLM_MODEL="ollama/codellama:7b"
-LLM_API_KEY="ollama"
-LLM_EMBEDDING_MODEL="local"
-LLM_BASE_URL="http://localhost:11434"
-WORKSPACE_BASE="./workspace"
-WORKSPACE_DIR="$(pwd)/workspace"
+[core]
+workspace_base="./workspace"
+
+[llm]
+model="ollama/codellama:7b"
+api_key="ollama"
+embedding_model="local"
+base_url="http://localhost:11434"
+ollama_base_url="http://localhost:11434"
+
 ```
 
 Replace `LLM_MODEL` of your choice if you need to.
@@ -141,4 +146,63 @@ Finally test that ollama is accessible from within the container
 ollama list # get list of installed models
 docker ps # get list of running docker containers, for most accurate test choose the open devin sandbox container.
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
+```
+
+
+# Local LLM with LM Studio
+
+Steps to set up LM Studio:
+1. Open LM Studio
+2. Go to the Local Server tab.
+3. Click the "Start Server" button.
+4. Select the model you want to use from the dropdown.
+
+
+Set the following configs:
+```bash
+LLM_MODEL="openai/lmstudio"
+LLM_BASE_URL="http://localhost:1234/v1"
+CUSTOM_LLM_PROVIDER="openai"
+```
+
+### Docker
+
+```bash
+docker run \
+    -it \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e LLM_MODEL="openai/lmstudio"
+    -e LLM_BASE_URL="http://host.docker.internal:1234/v1" \
+    -e CUSTOM_LLM_PROVIDER="openai"
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    ghcr.io/opendevin/opendevin:main
+```
+
+You should now be able to connect to `http://localhost:3000/`
+
+In the development environment, you can set the following configs in the `config.toml` file:
+
+```
+[core]
+workspace_base="./workspace"
+
+[llm]
+model="openai/lmstudio"
+base_url="http://localhost:1234/v1"
+custom_llm_provider="openai"
+```
+
+Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
+
+# Note:
+
+For WSL, run the following commands in cmd to set up the networking mode to mirrored:
+
+```
+python -c  "print('[wsl2]\nnetworkingMode=mirrored',file=open(r'%UserProfile%\.wslconfig','w'))"
+wsl --shutdown
 ```

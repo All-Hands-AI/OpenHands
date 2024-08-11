@@ -7,7 +7,6 @@ from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -18,7 +17,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
-    AgentRecallObservation,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -92,12 +90,6 @@ class DummyAgent(Agent):
                 ],
             },
             {
-                'action': AgentRecallAction(query='who am I?'),
-                'observations': [
-                    AgentRecallObservation('', memories=['I am a computer.']),
-                ],
-            },
-            {
                 'action': BrowseURLAction(url='https://google.com'),
                 'observations': [
                     # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
@@ -152,6 +144,3 @@ class DummyAgent(Agent):
                         hist_obs == expected_obs
                     ), f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
-
-    def search_memory(self, query: str) -> list[str]:
-        return ['I am a computer.']

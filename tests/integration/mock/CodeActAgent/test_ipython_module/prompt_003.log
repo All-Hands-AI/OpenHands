@@ -54,11 +54,11 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-edit_file(file_name: str, to_replace: str, new_content: str) -> None:
+edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
     Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
-    `edit_file` will only replace the *first* matching occurrences.
+    `edit_file_by_replace` will only replace the *first* matching occurrences.
     For example, given a file "/workspace/example.txt" with the following content:
     ```
     line 1
@@ -67,7 +67,7 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
     EDITING: If you want to replace the second occurrence of "line 2", you can make `to_replace` unique:
-    edit_file(
+    edit_file_by_replace(
     '/workspace/example.txt',
     to_replace='line 2
     line 3',
@@ -83,7 +83,7 @@ edit_file(file_name: str, to_replace: str, new_content: str) -> None:
     line 3
     ```
     REMOVAL: If you want to remove "line 2" and "line 3", you can set `new_content` to an empty string:
-    edit_file(
+    edit_file_by_replace(
     '/workspace/example.txt',
     to_replace='line 2
     line 3',
@@ -110,6 +110,14 @@ insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     line 2
     line 3
     ```
+    Args:
+    file_name: str: The name of the file to edit.
+    line_number: int: The line number (starting from 1) to insert the content after.
+    content: str: The content to insert.
+
+append_file(file_name: str, content: str) -> None:
+    Append content to the given file.
+    It appends text `content` to the end of the specified file.
     Args:
     file_name: str: The name of the file to edit.
     line_number: int: The line number (starting from 1) to insert the content after.
@@ -153,7 +161,7 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-Please note that THE `edit_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
+Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
@@ -180,7 +188,9 @@ create_file('app.py')
 USER:
 OBSERVATION:
 [File: /workspace/app.py (1 lines total)]
+(this is the beginning of the file)
 1|
+(this is the end of the file)
 [File app.py created.]
 
 ASSISTANT:
@@ -206,6 +216,7 @@ insert_content_at_line(
 
 USER:
 OBSERVATION:
+(this is the beginning of the file)
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -216,8 +227,8 @@ OBSERVATION:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
-11|
-[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+(this is the end of the file)
+[File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
 I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
@@ -326,7 +337,8 @@ open_file('app.py')
 </execute_ipython>
 
 USER:
-[File: /workspace/app.py (11 lines total)]
+[File: /workspace/app.py (10 lines total)]
+(this is the beginning of the file)
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -337,12 +349,12 @@ USER:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
-11|
+(this is the end of the file)
 
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file(
+edit_file_by_replace(
   'app.py',
   to_replace="    return str(numbers)",
   new_content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'",
@@ -351,7 +363,8 @@ edit_file(
 
 USER:
 Observation:
-[File: /workspace/app.py (11 lines total after edit)]
+[File: /workspace/app.py (10 lines total after edit)]
+(this is the beginning of the file)
 1|from flask import Flask
 2|app = Flask(__name__)
 3|
@@ -362,8 +375,8 @@ Observation:
 8|
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
-11|
-[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+(this is the end of the file)
+[File updated (edited at line 7). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
 Running the updated file:

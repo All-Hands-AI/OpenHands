@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 
@@ -28,15 +27,6 @@ from opendevin.core.main import run_agent_controller
 from opendevin.llm.llm import LLM
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
-
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
-
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,

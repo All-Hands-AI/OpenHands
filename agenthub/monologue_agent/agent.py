@@ -8,7 +8,6 @@ from opendevin.core.exceptions import AgentNoInstructionError
 from opendevin.core.schema import ActionType
 from opendevin.events.action import (
     Action,
-    AgentRecallAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
@@ -17,7 +16,6 @@ from opendevin.events.action import (
     NullAction,
 )
 from opendevin.events.observation import (
-    AgentRecallObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
     FileReadObservation,
@@ -103,8 +101,6 @@ class MonologueAgent(Agent):
                     )
                 elif previous_action == ActionType.READ:
                     observation = FileReadObservation(content=thought, path='')
-                elif previous_action == ActionType.RECALL:
-                    observation = AgentRecallObservation(content=thought, memories=[])
                 elif previous_action == ActionType.BROWSE:
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
@@ -128,10 +124,6 @@ class MonologueAgent(Agent):
                     path = thought.split('READ ')[1]
                     action = FileReadAction(path=path)
                     previous_action = ActionType.READ
-                elif thought.startswith('RECALL'):
-                    query = thought.split('RECALL ')[1]
-                    action = AgentRecallAction(query=query)
-                    previous_action = ActionType.RECALL
                 elif thought.startswith('BROWSE'):
                     url = thought.split('BROWSE ')[1]
                     action = BrowseURLAction(url=url)
@@ -191,21 +183,6 @@ class MonologueAgent(Agent):
         action = self.response_parser.parse(resp)
         self.latest_action = action
         return action
-
-    def search_memory(self, query: str) -> list[str]:
-        """
-        Uses VectorIndexRetriever to find related memories within the long term memory.
-        Uses search to produce top 10 results.
-
-        Parameters:
-        - The query that we want to find related memories for
-
-        Returns:
-        - A list of top 10 text results that matched the query
-        """
-        if self.memory is None:
-            return []
-        return self.memory.search(query)
 
     def reset(self) -> None:
         super().reset()

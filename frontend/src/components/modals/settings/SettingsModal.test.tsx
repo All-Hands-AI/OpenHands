@@ -27,12 +27,14 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
+    CONFIRMATION_MODE: true,
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "",
+    CONFIRMATION_MODE: false,
   }),
   settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),
@@ -107,6 +109,7 @@ describe("SettingsModal", () => {
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
+      CONFIRMATION_MODE: true,
     };
 
     it("should save the settings", async () => {
@@ -196,7 +199,7 @@ describe("SettingsModal", () => {
         await userEvent.click(saveButton);
       });
 
-      expect(toastSpy).toHaveBeenCalledTimes(2);
+      expect(toastSpy).toHaveBeenCalledTimes(3);
     });
 
     it("should change the language", async () => {

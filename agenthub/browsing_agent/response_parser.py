@@ -20,7 +20,10 @@ class BrowsingResponseParser(ResponseParser):
         return self.parse_action(action_str)
 
     def parse_response(self, response) -> str:
-        action_str = response['choices'][0]['message']['content'].strip()
+        action_str = response['choices'][0]['message']['content']
+        if action_str is None:
+            return ''
+        action_str = action_str.strip()
         if not action_str.endswith('```'):
             action_str = action_str + ')```'
         logger.info(action_str)

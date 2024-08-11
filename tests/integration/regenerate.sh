@@ -5,6 +5,12 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
+# unset environmental variables that might disturb testing
+unset OPENAI_API_KEY
+unset SANDBOX_ENV_OPENAI_API_KEY
+unset OPENAI_BASE_URL
+unset OPENAI_MODEL
+
 TMP_FILE="${TMP_FILE:-tmp.log}"
 
 if [ -z $WORKSPACE_MOUNT_PATH ]; then

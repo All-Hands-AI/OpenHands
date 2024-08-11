@@ -33,7 +33,6 @@ Here is a list of available Actions, which can be returned by `agent.step()`:
 - [`FileReadAction`](../opendevin/events/action/files.py) - Reads the content of a file
 - [`FileWriteAction`](../opendevin/events/action/files.py) - Writes new content to a file
 - [`BrowseURLAction`](../opendevin/events/action/browse.py) - Gets the content of a URL
-- [`AgentRecallAction`](../opendevin/events/action/agent.py) - Searches memory (e.g. a vector database)
 - [`AddTaskAction`](../opendevin/events/action/tasks.py) - Adds a subtask to the plan
 - [`ModifyTaskAction`](../opendevin/events/action/tasks.py) - Changes the state of a subtask.
 - [`AgentFinishAction`](../opendevin/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
@@ -54,7 +53,6 @@ Here is a list of available Observations:
 - [`BrowserOutputObservation`](../opendevin/events/observation/browse.py)
 - [`FileReadObservation`](../opendevin/events/observation/files.py)
 - [`FileWriteObservation`](../opendevin/events/observation/files.py)
-- [`AgentRecallObservation`](../opendevin/events/observation/recall.py)
 - [`ErrorObservation`](../opendevin/events/observation/error.py)
 - [`SuccessObservation`](../opendevin/events/observation/success.py)
 
@@ -72,14 +70,3 @@ def step(self, state: "State") -> "Action"
 
 `step` moves the agent forward one step towards its goal. This probably means
 sending a prompt to the LLM, then parsing the response into an `Action`.
-
-### `search_memory`
-
-```
-def search_memory(self, query: str) -> list[str]:
-```
-
-`search_memory` should return a list of events that match the query. This will be used
-for the `recall` action.
-
-You can optionally just return `[]` for this method, meaning the agent has no long-term memory.

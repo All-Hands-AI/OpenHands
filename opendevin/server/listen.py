@@ -217,7 +217,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": ""}}
+        {"action": "run", "args": {"command": "ls -l", "thought": "", "is_confirmed": "confirmed"}}
         ```
     - Run an IPython command:
         ```json
@@ -226,10 +226,6 @@ async def websocket_endpoint(websocket: WebSocket):
     - Open a web page:
         ```json
         {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
-        ```
-    - Search long-term memory:
-        ```json
-        {"action": "recall", "args": {"query": "past projects"}}
         ```
     - Add a task to the root_task:
         ```json

@@ -261,11 +261,3 @@ jobs:
               $image_name:${tag}_amd64 \
               $image_name:${tag}_arm64
           done
-
-  # FIXME: an admin needs to mark this as non-mandatory, and then we can remove it
-  docker_build_success:
-    name: Docker Build Success
-    runs-on: ubuntu-latest
-    needs: ghcr_build
-    steps:
-    - run: echo Done!

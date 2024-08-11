@@ -266,8 +266,10 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
         '[File: /workspace/hello.py (1 lines total)]\r\n'
+        '(this is the beginning of the file)\r\n'
         '1|\r\n'
-        '[File hello.py created.]'
+        '(this is the end of the file)\r\n'
+        '[File hello.py created.]\r\n'
     ).strip().split('\r\n')
 
     exit_code, output = box.execute('cd test')
@@ -279,8 +281,10 @@ def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
         '[File: /workspace/test/hello.py (1 lines total)]\r\n'
+        '(this is the beginning of the file)\r\n'
         '1|\r\n'
-        '[File hello.py created.]'
+        '(this is the end of the file)\r\n'
+        '[File hello.py created.]\r\n'
     ).strip().split('\r\n')
 
     if config.enable_auto_lint:
@@ -297,13 +301,16 @@ ERRORS:
 hello.py:1:3: E999 IndentationError: unexpected indent
 [This is how your edit would have looked if applied]
 -------------------------------------------------
+(this is the beginning of the file)
 1|  print("hello world")
-2|
+(this is the end of the file)
 -------------------------------------------------
 
 [This is the original code before your edit]
 -------------------------------------------------
+(this is the beginning of the file)
 1|
+(this is the end of the file)
 -------------------------------------------------
 Your changes have NOT been applied. Please fix your edit command and try again.
 You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
@@ -319,10 +326,11 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
     assert output.strip().split('\r\n') == (
         """
-[File: /workspace/test/hello.py (2 lines total after edit)]
+[File: /workspace/test/hello.py (1 lines total after edit)]
+(this is the beginning of the file)
 1|print("hello world")
-2|
-[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+(this is the end of the file)
+[File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 """
     ).strip().split('\n')
 

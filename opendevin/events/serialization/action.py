@@ -3,7 +3,6 @@ from opendevin.events.action.action import Action
 from opendevin.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     ChangeAgentStateAction,
 )
@@ -25,7 +24,6 @@ actions = (
     BrowseInteractiveAction,
     FileReadAction,
     FileWriteAction,
-    AgentRecallAction,
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,

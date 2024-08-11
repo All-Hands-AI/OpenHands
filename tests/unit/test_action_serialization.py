@@ -3,7 +3,6 @@ from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -13,6 +12,7 @@ from opendevin.events.action import (
     MessageAction,
     ModifyTaskAction,
 )
+from opendevin.events.action.action import ActionConfirmationStatus
 from opendevin.events.serialization import (
     event_from_dict,
     event_to_dict,
@@ -69,14 +69,6 @@ def test_message_action_serialization_deserialization():
     serialization_deserialization(original_action_dict, MessageAction)
 
 
-def test_agent_recall_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'recall',
-        'args': {'query': 'Test query.', 'thought': ''},
-    }
-    serialization_deserialization(original_action_dict, AgentRecallAction)
-
-
 def test_agent_finish_action_serialization_deserialization():
     original_action_dict = {'action': 'finish', 'args': {'outputs': {}, 'thought': ''}}
     serialization_deserialization(original_action_dict, AgentFinishAction)
@@ -90,7 +82,11 @@ def test_agent_reject_action_serialization_deserialization():
 def test_cmd_run_action_serialization_deserialization():
     original_action_dict = {
         'action': 'run',
-        'args': {'command': 'echo "Hello world"', 'thought': ''},
+        'args': {
+            'command': 'echo "Hello world"',
+            'thought': '',
+            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+        },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
 

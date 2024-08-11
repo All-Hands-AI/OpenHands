@@ -64,7 +64,7 @@ echo "JupyterKernelGateway started with PID: $JUPYTER_GATEWAY_PID"
 # Start the jupyter_server
 export JUPYTER_EXEC_SERVER_PORT=$(find_free_port 30000 40000)
 echo "export JUPYTER_EXEC_SERVER_PORT=$JUPYTER_EXEC_SERVER_PORT" >> ~/.bashrc
-$OPENDEVIN_PYTHON_INTERPRETER /opendevin/plugins/jupyter/execute_server > /opendevin/logs/jupyter_execute_server.log 2>&1 &
+$OPENDEVIN_PYTHON_INTERPRETER /opendevin/plugins/jupyter/execute_server.py > /opendevin/logs/jupyter_execute_server.log 2>&1 &
 export JUPYTER_EXEC_SERVER_PID=$!
 echo "export JUPYTER_EXEC_SERVER_PID=$JUPYTER_EXEC_SERVER_PID" >> ~/.bashrc
 echo "Execution server started with PID: $JUPYTER_EXEC_SERVER_PID"

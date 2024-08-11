@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import multiprocessing as mp
 import os
 
 import pandas as pd
@@ -27,14 +26,6 @@ from opendevin.core.main import run_agent_controller
 from opendevin.llm.llm import LLM
 
 game = None
-
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
 
 
 def codeact_user_response_eda(state: State) -> str:
