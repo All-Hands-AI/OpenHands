@@ -11,10 +11,11 @@ interface TitleProps {
   name: string;
   type: "folder" | "file";
   isOpen: boolean;
+  isUnsaved: boolean;
   onClick: () => void;
 }
 
-function Title({ name, type, isOpen, onClick }: TitleProps) {
+function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
   return (
     <div
       onClick={onClick}
@@ -24,7 +25,10 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
         {type === "folder" && <FolderIcon isOpen={isOpen} />}
         {type === "file" && <FileIcon filename={name} />}
       </div>
-      <div className="flex-grow">{name}</div>
+      <div className="flex-grow">
+        {name}
+        {isUnsaved && "*"}
+      </div>
     </div>
   );
 }
@@ -32,14 +36,19 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
 interface TreeNodeProps {
   path: string;
   defaultOpen?: boolean;
-  isUnsaved: boolean;
 }
 
-function TreeNode({ path, defaultOpen = false, isUnsaved }: TreeNodeProps) {
+function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
+  const unsavedEdits = useSelector(
+    (state: RootState) => state.code.unsavedEdits,
+  );
+  const isUnsaved = !!unsavedEdits.find(
+    (unsavedEdit) => unsavedEdit.path === path,
+  );
 
   const dispatch = useDispatch();
 
@@ -92,7 +101,7 @@ function TreeNode({ path, defaultOpen = false, isUnsaved }: TreeNodeProps) {
       {isOpen && children && (
         <div className="ml-5">
           {children.map((child, index) => (
-            <TreeNode key={index} path={`${child}`} isUnsaved={isUnsaved} />
+            <TreeNode key={index} path={`${child}`} />
           ))}
         </div>
       )}
