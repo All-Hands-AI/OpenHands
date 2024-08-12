@@ -310,7 +310,8 @@ class RuntimeClient:
                 self._jupyter_pwd = self.pwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
-            obs.content += f'\n\n[Jupyter current working directory: {self.pwd}]'
+            obs.content = obs.content.rstrip()
+            obs.content += f'\n[Jupyter current working directory: {self.pwd}]'
             return obs
         else:
             raise RuntimeError(
