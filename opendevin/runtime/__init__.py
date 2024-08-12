@@ -17,6 +17,5 @@ def get_runtime_cls(name: str):
 
 __all__ = [
     'E2BBox',
-    'Sandbox',
     'get_runtime_cls',
 ]
