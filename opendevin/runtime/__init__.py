@@ -16,9 +16,7 @@ def get_runtime_cls(name: str):
 
 
 __all__ = [
-    'DockerSSHBox',
     'E2BBox',
-    'LocalBox',
     'Sandbox',
     'get_runtime_cls',
 ]
