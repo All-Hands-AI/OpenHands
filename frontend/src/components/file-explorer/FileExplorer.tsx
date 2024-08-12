@@ -17,6 +17,7 @@ import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
+import { listUnsavedFileNames } from "#/services/unsavedFileContentService";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -91,6 +92,9 @@ function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
+  const [unsavedFiles, setUnsavedFiles] = React.useState<Set<string>>(
+    new Set(),
+  );
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
@@ -109,7 +113,9 @@ function FileExplorer() {
     dispatch(setRefreshID(Math.random()));
     try {
       const fileList = await listFiles();
+      const unsavedFileList = await listUnsavedFileNames();
       setFiles(fileList);
+      setUnsavedFiles(new Set(unsavedFileList));
     } catch (error) {
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
     }
@@ -235,7 +241,7 @@ function FileExplorer() {
           </div>
           <div className="overflow-auto flex-grow">
             <div style={{ display: isHidden ? "none" : "block" }}>
-              <ExplorerTree files={files} />
+              <ExplorerTree files={files} unsavedFiles={unsavedFiles} />
             </div>
           </div>
         </div>

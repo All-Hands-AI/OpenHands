@@ -12,6 +12,10 @@ import { setCode } from "#/state/codeSlice";
 import toast from "#/utils/toast";
 import { saveFile } from "#/services/fileService";
 import AgentState from "#/types/AgentState";
+import {
+  deleteUnsavedFileContent,
+  upsertUnsavedFileContent,
+} from "#/services/unsavedFileContentService";
 
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
@@ -50,6 +54,13 @@ function CodeEditor(): JSX.Element {
 
   useEffect(() => {
     setHasUnsavedChanges(code !== lastSavedContent);
+    if (code === lastSavedContent) {
+      console.log("delete_unsaved_file_content", activeFilepath);
+      deleteUnsavedFileContent(activeFilepath);
+    } else {
+      console.log("upsert_unsaved_file_content", activeFilepath);
+      upsertUnsavedFileContent(activeFilepath, code);
+    }
   }, [code, lastSavedContent]);
 
   const handleEditorChange = useCallback(
