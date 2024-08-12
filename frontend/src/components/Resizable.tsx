@@ -55,13 +55,15 @@ export function Container({
     };
     const onMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      const newFirstSize = getFirstSizeFromEvent(e);
+      const newFirstSize = `${getFirstSizeFromEvent(e)}px`;
       const { current } = firstRef;
       if (current) {
         if (isHorizontal) {
-          current.style.width = `${newFirstSize}px`;
+          current.style.width = newFirstSize;
+          current.style.minWidth = newFirstSize;
         } else {
-          current.style.height = `${newFirstSize}px`;
+          current.style.height = newFirstSize;
+          current.style.minHeight = newFirstSize;
         }
       }
     };
@@ -140,16 +142,16 @@ export function Container({
   const onCollapse = () => {
     if (collapse === Collapse.SPLIT) {
       setCollapse(Collapse.COLLAPSED);
-    } else if (collapse === Collapse.FILLED) {
+    } else {
       setCollapse(Collapse.SPLIT);
     }
   };
 
   const onExpand = () => {
-    if (collapse === Collapse.COLLAPSED) {
-      setCollapse(Collapse.SPLIT);
-    } else if (collapse === Collapse.SPLIT) {
+    if (collapse === Collapse.SPLIT) {
       setCollapse(Collapse.FILLED);
+    } else {
+      setCollapse(Collapse.SPLIT);
     }
   };
 
