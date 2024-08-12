@@ -345,8 +345,8 @@ jobs:
       - name: Download Docker images
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ matrix.first_tag }}_${{ matrix.platform }}
-          path: /tmp/${{ matrix.platform }}
+          name: ${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.first_tag }}
+          path: /tmp/${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.first_tag }}.tar
       - name: List downloaded files
         run: |
           ls -la /tmp/${{ matrix.platform }}
