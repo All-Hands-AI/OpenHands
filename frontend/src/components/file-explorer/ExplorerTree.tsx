@@ -5,15 +5,10 @@ import { I18nKey } from "#/i18n/declaration";
 
 interface ExplorerTreeProps {
   files: string[];
-  unsavedFiles: Set<string>;
   defaultOpen?: boolean;
 }
 
-function ExplorerTree({
-  files,
-  unsavedFiles,
-  defaultOpen = false,
-}: ExplorerTreeProps) {
+function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
   const { t } = useTranslation();
   if (files.length === 0) {
     return (
@@ -23,14 +18,9 @@ function ExplorerTree({
     );
   }
   return (
-    <div className="w-full h-full pt-[4px]" style={{background: "#BADA55"}}>
+    <div className="w-full h-full pt-[4px]">
       {files.map((file) => (
-        <TreeNode
-          key={file}
-          path={file}
-          defaultOpen={defaultOpen}
-          isUnsaved={unsavedFiles.has(file)}
-        />
+        <TreeNode key={file} path={file} defaultOpen={defaultOpen} />
       ))}
     </div>
   );

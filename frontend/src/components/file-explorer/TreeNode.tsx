@@ -11,11 +11,10 @@ interface TitleProps {
   name: string;
   type: "folder" | "file";
   isOpen: boolean;
-  isUnsaved: boolean;
   onClick: () => void;
 }
 
-function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
+function Title({ name, type, isOpen, onClick }: TitleProps) {
   return (
     <div
       onClick={onClick}
@@ -25,10 +24,7 @@ function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
         {type === "folder" && <FolderIcon isOpen={isOpen} />}
         {type === "file" && <FileIcon filename={name} />}
       </div>
-      <div className="flex-grow">
-        {name}
-        {isUnsaved ? "*" : ""}
-      </div>
+      <div className="flex-grow">{name}</div>
     </div>
   );
 }
