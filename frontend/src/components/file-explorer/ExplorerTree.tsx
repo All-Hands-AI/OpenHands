@@ -23,7 +23,7 @@ function ExplorerTree({
     );
   }
   return (
-    <div className="w-full h-full pt-[4px]">
+    <div className="w-full h-full pt-[4px]" style={{background: "#BADA55"}}>
       {files.map((file) => (
         <TreeNode
           key={file}
