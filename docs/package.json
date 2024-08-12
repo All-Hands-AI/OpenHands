@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "^3.4.0",
-    "@docusaurus/plugin-content-pages": "^3.4.0",
+    "@docusaurus/plugin-content-pages": "^3.5.1",
     "@docusaurus/preset-classic": "^3.4.0",
     "@docusaurus/theme-mermaid": "^3.4.0",
     "@mdx-js/react": "^3.0.0",
