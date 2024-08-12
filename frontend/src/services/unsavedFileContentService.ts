@@ -1,3 +1,7 @@
+/**
+ * Service for saving the content of unsaved files in local storage.
+ */
+
 const ENTITY_NAME = "UnsavedFileContent";
 const DB_VERSION = 1;
 
@@ -86,10 +90,15 @@ export function getUnsavedFileContent(key: string): Promise<string | null> {
   return new Promise((resolve, reject) => {
     getObjectStore().then((objectStore) => {
       const request = objectStore.get(key);
-      request.onerror = () => resolve(null);
+      request.onerror = reject;
       request.onsuccess = () => {
-        const { content } = request.result;
-        resolve(content);
+        const { result } = request;
+        if (result) {
+          const { content } = result;
+          resolve(content);
+        } else {
+          resolve(null);
+        }
       };
     }, reject);
   });
