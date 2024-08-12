@@ -83,19 +83,19 @@ function App(): JSX.Element {
           className="grow h-full min-h-0 min-w-0 px-3 pt-3"
           initialSize={500}
           firstChild={<ChatInterface />}
-          firstClassName="min-w-[500px] rounded-xl overflow-hidden border border-neutral-600"
+          firstClassName="rounded-xl overflow-hidden border border-neutral-600"
           secondChild={
             <Container
               orientation={Orientation.VERTICAL}
-              className="grow h-full min-h-0 min-w-0"
+              className="h-full min-h-0 min-w-0"
               initialSize={window.innerHeight - 300}
               firstChild={<Workspace />}
-              firstClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
+              firstClassName="rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
               secondChild={<Terminal />}
-              secondClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800"
+              secondClassName="rounded-xl border border-neutral-600 bg-neutral-800"
             />
           }
-          secondClassName="flex flex-col overflow-hidden grow min-w-[500px]"
+          secondClassName="flex flex-col overflow-hidden"
         />
       </div>
       <Controls setSettingOpen={onSettingsModalOpen} />
