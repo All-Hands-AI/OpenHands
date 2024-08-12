@@ -156,9 +156,7 @@ export function Container({
   };
 
   return (
-    <div
-      className={twMerge("flex", isHorizontal && "flex-col", className)}
-    >
+    <div className={twMerge("flex", !isHorizontal && "flex-col", className)}>
       <div
         ref={firstRef}
         className={twMerge(firstClassName, "transition-all ease-soft-spring")}
