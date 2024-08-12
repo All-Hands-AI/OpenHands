@@ -825,7 +825,7 @@ async def test_ipython_simple(temp_dir, box_class):
     obs = await runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == '1'
+    assert obs.content.strip() == '1\n[Jupyter current working directory: /workspace]'
 
     await runtime.close()
     await asyncio.sleep(1)
