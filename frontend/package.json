@@ -30,7 +30,7 @@
     "react-markdown": "^9.0.1",
     "react-redux": "^9.1.2",
     "react-syntax-highlighter": "^15.5.0",
-    "tailwind-merge": "^2.4.0",
+    "tailwind-merge": "^2.5.1",
     "vite": "^5.4.0",
     "web-vitals": "^3.5.2"
   },
@@ -63,7 +63,7 @@
     "@testing-library/jest-dom": "^6.4.8",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
-    "@types/node": "^22.1.0",
+    "@types/node": "^22.2.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@types/react-highlight": "^0.12.8",
