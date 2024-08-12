@@ -28,7 +28,7 @@
     "react-use": "^17.5.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.4.0",
+    "@docusaurus/module-type-aliases": "^3.5.1",
     "@docusaurus/tsconfig": "^3.4.0",
     "@docusaurus/types": "^3.4.0",
     "typescript": "~5.5.4"
