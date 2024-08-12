@@ -157,7 +157,7 @@ export function Container({
 
   return (
     <div
-      className={twMerge(`flex ${isHorizontal ? "" : "flex-col"}`, className)}
+      className={twMerge("flex", isHorizontal && "flex-col", className)}
     >
       <div
         ref={firstRef}
