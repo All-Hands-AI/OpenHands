@@ -38,7 +38,7 @@ Open Hands 是一个社区驱动的项目，我们欢迎每个人的贡献。无
 
 🐚 **少写代码，用 Open Hands 做更多的事情。**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Open Hands/Open Hands&type=Date)](https://star-history.com/#Open Hands/Open Hands&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date)](https://star-history.com/#All-Hands-AI/OpenHands&Date)
 
 ## 🛠️ 技术选型
 

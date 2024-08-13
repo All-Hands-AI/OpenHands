@@ -154,7 +154,7 @@ metadata:
 spec:
   containers:
   - name: openhands-app-2024
-    image: ghcr.io/openhands/openhands:0.7.1
+    image: ghcr.io/All-Hands-AI/OpenHands:0.7.1
     env:
     - name: SANDBOX_USER_ID
       value: "1000"
@@ -204,11 +204,11 @@ LAST SEEN   TYPE     REASON                   OBJECT                            
 23s         Normal   ExternalProvisioning     persistentvolumeclaim/docker-pvc      waiting for a volume to be created, either by external provisioner "csi.hetzner.cloud" or manually created by system administrator
 27s         Normal   Provisioning             persistentvolumeclaim/docker-pvc      External provisioner is provisioning volume for claim "openhands/docker-pvc"
 17s         Normal   ProvisioningSucceeded    persistentvolumeclaim/docker-pvc      Successfully provisioned volume pvc-2b1d223a-1c8f-4990-8e3d-68061a9ae252
-16s         Normal   Scheduled                pod/openhands-app-2024                Successfully assigned openhands/openhands-app-2024 to worker1.hub.internal.blakane.com
+16s         Normal   Scheduled                pod/openhands-app-2024                Successfully assigned All-Hands-AI/OpenHands-app-2024 to worker1.hub.internal.blakane.com
 9s          Normal   SuccessfulAttachVolume   pod/openhands-app-2024                AttachVolume.Attach succeeded for volume "pvc-2b1d223a-1c8f-4990-8e3d-68061a9ae252"
 9s          Normal   SuccessfulAttachVolume   pod/openhands-app-2024                AttachVolume.Attach succeeded for volume "pvc-31f15b25-faad-4665-a25f-201a530379af"
 6s          Normal   AddedInterface           pod/openhands-app-2024                Add eth0 [10.128.2.48/23] from openshift-sdn
-6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/openhands/openhands:0.7.1" already present on machine
+6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/All-Hands-AI/OpenHands:0.7.1" already present on machine
 6s          Normal   Created                  pod/openhands-app-2024                Created container openhands-app-2024
 6s          Normal   Started                  pod/openhands-app-2024                Started container openhands-app-2024
 6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/openhands/sandbox:main" already present on machine
@@ -277,7 +277,7 @@ Some of the challenages that would be needed to improve:
 Example below: "to be tested!"
 
 ```dockerfile
-FROM ghcr.io/openhands/openhands:0.7.1
+FROM ghcr.io/All-Hands-AI/OpenHands:0.7.1
 
 # Install Git
 RUN apt-get update && apt-get install -y git

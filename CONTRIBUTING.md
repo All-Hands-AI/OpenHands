@@ -39,7 +39,7 @@ Add the original repository as upstream:
 
 ```shell
 cd Open Hands
-git remote add upstream git@github.com:Open Hands/Open Hands.git
+git remote add upstream git@github.com:All-Hands-AI/OpenHands.git
 ```
 
 Verify that the remote is set:
@@ -80,7 +80,7 @@ git push origin my_branch
 * On GitHub, go to the page of your forked repository, and create a Pull Request:
    - Click on `Branches`
    - Click on the `...` beside your branch and click on `New pull request`
-   - Set `base repository` to `Open Hands/Open Hands`
+   - Set `base repository` to `All-Hands-AI/OpenHands`
    - Set `base` to `main`
    - Click `Create pull request`
 

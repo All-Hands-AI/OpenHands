@@ -38,7 +38,7 @@ If you would love to contribute, feel free to join our community. Let's simplify
 
 🐚 **Code less, make more with Open Hands.**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Open Hands/Open Hands&type=Date)](https://star-history.com/#Open Hands/Open Hands&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date)](https://star-history.com/#All-Hands-AI/OpenHands&Date)
 
 ## 🛠️ Built With
 

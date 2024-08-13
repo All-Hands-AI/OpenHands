@@ -16,7 +16,7 @@ jobs:
   build:
     name: Build Docusaurus
     runs-on: ubuntu-latest
-    if: github.repository == 'Open Hands/Open Hands'
+    if: github.repository == 'All-Hands-AI/OpenHands'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,7 +47,7 @@ jobs:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' && github.repository == 'Open Hands/Open Hands'
+    if: github.ref == 'refs/heads/main' && github.repository == 'All-Hands-AI/OpenHands'
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write # to deploy to Pages

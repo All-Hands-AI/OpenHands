@@ -53,7 +53,7 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/openhands/openhands:main
+    ghcr.io/All-Hands-AI/OpenHands:main
 ```
 
 现在您应该可以连接到 `http://localhost:3000/`

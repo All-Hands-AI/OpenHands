@@ -18,15 +18,15 @@
 -->
 
 <div align="center">
-  <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/openhands/openhands?style=for-the-badge&color=blue" alt="Contributors"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/network/members"><img src="https://img.shields.io/github/forks/openhands/openhands?style=for-the-badge&color=blue" alt="Forks"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/openhands/openhands?style=for-the-badge&color=blue" alt="Stargazers"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/issues"><img src="https://img.shields.io/github/issues/openhands/openhands?style=for-the-badge&color=blue" alt="Issues"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/openhands/openhands?style=for-the-badge&color=blue" alt="MIT License"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/network/members"><img src="https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Forks"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/issues"><img src="https://img.shields.io/github/issues/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Issues"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <br/>
   <a href="https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
-  <a href="https://codecov.io/github/openhands/openhands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/openhands/openhands?style=for-the-badge"></a>
+  <a href="https://codecov.io/github/All-Hands-AI/OpenHands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge"></a>
 </div>
 
 <!-- PROJECT LOGO -->
@@ -66,13 +66,13 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/openhands/openhands:0.8
+    ghcr.io/All-Hands-AI/OpenHands:0.8
 ```
 
 > [!NOTE]
 > By default, this command pulls the `latest` tag, which represents the most recent release of Open Hands. You have other options as well:
-> - For a specific release version, use `ghcr.io/openhands/openhands:<Open Hands_version>` (replace <Open Hands_version> with the desired version number).
-> - For the most up-to-date development version, use `ghcr.io/openhands/openhands:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
+> - For a specific release version, use `ghcr.io/All-Hands-AI/OpenHands:<Open Hands_version>` (replace <Open Hands_version> with the desired version number).
+> - For the most up-to-date development version, use `ghcr.io/All-Hands-AI/OpenHands:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
 >
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
@@ -117,8 +117,8 @@ Let's make software engineering better together!
 ## 📈 Progress
 
 <p align="center">
-  <a href="https://star-history.com/#Open Hands/Open Hands&Date">
-    <img src="https://api.star-history.com/svg?repos=Open Hands/Open Hands&type=Date" width="500" alt="Star History Chart">
+  <a href="https://star-history.com/#All-Hands-AI/OpenHands&Date">
+    <img src="https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date" width="500" alt="Star History Chart">
   </a>
 </p>
 
@@ -126,15 +126,15 @@ Let's make software engineering better together!
 
 Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
 
-[contributors-shield]: https://img.shields.io/github/contributors/openhands/openhands?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge
 [contributors-url]: https://github.com/All-Hands-AI/OpenHands/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/openhands/openhands?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge
 [forks-url]: https://github.com/All-Hands-AI/OpenHands/network/members
-[stars-shield]: https://img.shields.io/github/stars/openhands/openhands?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge
 [stars-url]: https://github.com/All-Hands-AI/OpenHands/stargazers
-[issues-shield]: https://img.shields.io/github/issues/openhands/openhands?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/All-Hands-AI/OpenHands?style=for-the-badge
 [issues-url]: https://github.com/All-Hands-AI/OpenHands/issues
-[license-shield]: https://img.shields.io/github/license/openhands/openhands?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge
 [license-url]: https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE
 
 ## 📚 Cite
