@@ -22,7 +22,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.action.action import Action
 from opendevin.events.observation import (
-    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -54,7 +53,7 @@ class EventStreamRuntime(Runtime):
             config, event_stream, sid, plugins
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
-        self.api_url = f'http://localhost:{self._port}'
+        self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
         self.session: Optional[aiohttp.ClientSession] = None
 
         self.instance_id = (
@@ -97,8 +96,6 @@ class EventStreamRuntime(Runtime):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         logger.info(f'Container initialized with env vars: {env_vars}')
-
-        await self._init_git_config()
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -183,16 +180,6 @@ class EventStreamRuntime(Runtime):
             await self.close(close_client=False)
             raise e
 
-    async def _init_git_config(self):
-        action = CmdRunAction(
-            'git config --global user.name "opendevin" && '
-            'git config --global user.email "opendevin@all-hands.dev"'
-        )
-        logger.info(f'Setting git config: {action}')
-        obs: Observation = await self.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0, f'Failed to set git config: {obs}'
-
     async def _ensure_session(self):
         await asyncio.sleep(1)
         if self.session is None or self.session.closed:
@@ -205,6 +192,20 @@ class EventStreamRuntime(Runtime):
     )
     async def _wait_until_alive(self):
         logger.info('Reconnecting session')
+        container = self.docker_client.containers.get(self.container_name)
+        # print logs
+        _logs = container.logs(tail=10).decode('utf-8').split('\n')
+        # add indent
+        _logs = '\n'.join([f'    |{log}' for log in _logs])
+        logger.info(
+            '\n'
+            + '-' * 30
+            + 'Container logs (last 10 lines):'
+            + '-' * 30
+            + f'\n{_logs}'
+            + '\n'
+            + '-' * 90
+        )
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:

@@ -40,7 +40,6 @@ docker build -t custom_image .
 ```
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="custom_image"
 ```
@@ -92,7 +91,6 @@ dockerfile_content = (
 ```
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="custom_image"
 sandbox_user_id="1001"

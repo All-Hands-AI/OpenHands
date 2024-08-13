@@ -41,7 +41,6 @@ Créez un fichier ```config.toml``` dans le répertoire OpenDevin et entrez ces 
 ```toml
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="image_personnalisée"
 ```
@@ -92,7 +91,6 @@ Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que O
 ```toml
 [core]
 workspace_base="./workspace"
-persist_sandbox=false
 run_as_devin=true
 sandbox_container_image="image_personnalisée"
 sandbox_user_id="1001"

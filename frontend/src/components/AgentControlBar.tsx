@@ -8,6 +8,7 @@ import { changeAgentState } from "#/services/agentStateService";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
+import Session from "#/services/session";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
@@ -83,6 +84,7 @@ function AgentControlBar() {
     }
 
     if (action === AgentState.STOPPED) {
+      Session._history = [];
       store.dispatch(clearMessages());
     } else {
       setIsLoading(true);
