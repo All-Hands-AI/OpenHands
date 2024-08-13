@@ -1,6 +1,6 @@
+import copy
 import os
 import tarfile
-import copy
 from glob import glob
 
 from e2b import Sandbox as E2BSandbox
@@ -10,6 +10,7 @@ from e2b.sandbox.exception import (
 
 from openhands.core.config import SandboxConfig
 from openhands.core.logger import openhands_logger as logger
+
 
 class E2BBox:
     closed = False
@@ -21,7 +22,7 @@ class E2BBox:
         self,
         config: SandboxConfig,
         e2b_api_key: str,
-        template: str = 'open-devin',
+        template: str = 'openhands',
     ):
         self.config = copy.deepcopy(config)
         self.initialize_plugins: bool = config.initialize_plugins
@@ -62,9 +63,7 @@ class E2BBox:
                 tar.add(host_src, arcname=srcname)
         return tar_filename
 
-    def execute(
-        self, cmd: str, timeout: int | None = None
-    ) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.config.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:

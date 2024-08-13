@@ -36,7 +36,7 @@ ARG OPEN_DEVIN_BUILD_VERSION #re-declare for this section
 
 ENV RUN_AS_DEVIN=true
 # A random number--we need this to be different from the user's UID on the host machine
-ENV OPENDEVIN_USER_ID=42420
+ENV OPENHANDS_USER_ID=42420
 ENV SANDBOX_API_HOSTNAME=host.docker.internal
 ENV USE_HOST_NETWORK=false
 ENV WORKSPACE_BASE=/opt/workspace_base
@@ -52,7 +52,7 @@ RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
 RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
 RUN groupadd app
-RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash openhands && \
+RUN useradd -l -m -u $OPENHANDS_USER_ID -s /bin/bash openhands && \
     usermod -aG app openhands && \
     usermod -aG sudo openhands && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers

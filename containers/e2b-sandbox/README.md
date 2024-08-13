@@ -11,5 +11,5 @@
 
 1. Build the sandbox
   ```sh
-  e2b template build --dockerfile ./Dockerfile --name "open-devin"
+  e2b template build --dockerfile ./Dockerfile --name "openhands"
   ```

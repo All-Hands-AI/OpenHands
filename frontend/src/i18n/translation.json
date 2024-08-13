@@ -209,7 +209,7 @@
     "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
-  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
+  "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
     "zh-CN": "OpenHands 工作区目录",
     "de": "OpenHands Arbeitsverzeichnis",
@@ -223,7 +223,7 @@
     "fr": "Répertoire de l'espace de travail OpenHands",
     "tr": "OpenHands çalışma alanı dizini"
   },
-  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
+  "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
     "zh-CN": "默认：./workspace",
     "de": "Standard: ./workspace",
