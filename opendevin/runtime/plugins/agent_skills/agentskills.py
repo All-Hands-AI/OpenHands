@@ -17,7 +17,6 @@ Functions:
 """
 
 import base64
-import functools
 import os
 import re
 import shutil
@@ -73,52 +72,6 @@ def _get_openai_client():
 
 
 # ==================================================================================================
-
-
-# Define the decorator using the functionality of UpdatePwd
-def update_pwd_decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
-        try:
-            old_pwd = os.getcwd()
-        except FileNotFoundError:
-            import json
-            import subprocess
-
-            print(
-                f'DEBUGGING Environment variables: {json.dumps(dict(os.environ), indent=2)}'
-            )
-            print(f'DEBUGGING User ID: {os.getuid()}, Group ID: {os.getgid()}')
-
-            out = subprocess.run(['pwd'], capture_output=True)
-            old_pwd = out.stdout.decode('utf-8').strip()
-            os.chdir(old_pwd)
-            print(f'DEBUGGING Change to working directory: {old_pwd}')
-
-            import tempfile
-
-            try:
-                tempfile.TemporaryFile(dir=old_pwd)
-                print(f'DEBUGGING Directory {old_pwd} is writable')
-            except Exception as e:
-                print(f'DEBUGGING Directory {old_pwd} is not writable: {str(e)}')
-
-            # ls -alh
-            out = subprocess.run(['ls', '-alh', old_pwd], capture_output=True)
-            print(
-                f'DEBUGGING OLD working directory contents: {out.stdout.decode("utf-8")}'
-            )
-            print(f'DEBUGGING Target JUPYTER pwd: {jupyter_pwd}')
-
-        if jupyter_pwd:
-            os.chdir(jupyter_pwd)
-        try:
-            return func(*args, **kwargs)
-        finally:
-            os.chdir(old_pwd)
-
-    return wrapper
 
 
 def _is_valid_filename(file_name) -> bool:
@@ -240,7 +193,6 @@ def _cur_file_header(current_file, total_lines) -> str:
     return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'
 
 
-@update_pwd_decorator
 def open_file(
     path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
@@ -277,7 +229,6 @@ def open_file(
     print(output)
 
 
-@update_pwd_decorator
 def goto_line(line_number: int) -> None:
     """Moves the window to show the specified line number.
 
@@ -299,7 +250,6 @@ def goto_line(line_number: int) -> None:
     print(output)
 
 
-@update_pwd_decorator
 def scroll_down() -> None:
     """Moves the window down by 100 lines.
 
@@ -317,7 +267,6 @@ def scroll_down() -> None:
     print(output)
 
 
-@update_pwd_decorator
 def scroll_up() -> None:
     """Moves the window up by 100 lines.
 
@@ -335,7 +284,6 @@ def scroll_up() -> None:
     print(output)
 
 
-@update_pwd_decorator
 def create_file(filename: str) -> None:
     """Creates and opens a new file with the given name.
 
@@ -647,7 +595,6 @@ def _edit_file_impl(
     return ret_str
 
 
-@update_pwd_decorator
 def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
     """Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
 
@@ -749,7 +696,6 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     print(ret_str)
 
 
-@update_pwd_decorator
 def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
     """Insert content at the given line number in a file.
     This will NOT modify the content of the lines before OR after the given line number.
@@ -784,7 +730,6 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
     print(ret_str)
 
 
-@update_pwd_decorator
 def append_file(file_name: str, content: str) -> None:
     """Append content to the given file.
     It appends text `content` to the end of the specified file.
@@ -805,7 +750,6 @@ def append_file(file_name: str, content: str) -> None:
     print(ret_str)
 
 
-@update_pwd_decorator
 def search_dir(search_term: str, dir_path: str = './') -> None:
     """Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
 
@@ -845,7 +789,6 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
-@update_pwd_decorator
 def search_file(search_term: str, file_path: Optional[str] = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
@@ -878,7 +821,6 @@ def search_file(search_term: str, file_path: Optional[str] = None) -> None:
         print(f'[No matches found for "{search_term}" in {file_path}]')
 
 
-@update_pwd_decorator
 def find_file(file_name: str, dir_path: str = './') -> None:
     """Finds all files with the given name in the specified directory.
 
@@ -904,7 +846,6 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
-@update_pwd_decorator
 def parse_pdf(file_path: str) -> None:
     """Parses the content of a PDF file and prints it.
 
@@ -923,7 +864,6 @@ def parse_pdf(file_path: str) -> None:
     print(text.strip())
 
 
-@update_pwd_decorator
 def parse_docx(file_path: str) -> None:
     """Parses the content of a DOCX file and prints it.
 
@@ -938,7 +878,6 @@ def parse_docx(file_path: str) -> None:
     print(text)
 
 
-@update_pwd_decorator
 def parse_latex(file_path: str) -> None:
     """Parses the content of a LaTex file and prints it.
 
@@ -991,7 +930,6 @@ def _prepare_image_messages(task: str, base64_image: str):
     ]
 
 
-@update_pwd_decorator
 def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     """Parses the content of an audio file and prints it.
 
@@ -1012,7 +950,6 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
         print(f'Error transcribing audio file: {e}')
 
 
-@update_pwd_decorator
 def parse_image(
     file_path: str, task: str = 'Describe this image as detail as possible.'
 ) -> None:
@@ -1038,7 +975,6 @@ def parse_image(
         print(f'Error with the request: {error}')
 
 
-@update_pwd_decorator
 def parse_video(
     file_path: str,
     task: str = 'Describe this image as detail as possible.',
@@ -1086,7 +1022,6 @@ def parse_video(
             print(f'Error with the request: {error}')
 
 
-@update_pwd_decorator
 def parse_pptx(file_path: str) -> None:
     """Parses the content of a pptx file and prints it.
 
