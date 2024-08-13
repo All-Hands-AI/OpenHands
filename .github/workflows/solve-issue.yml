@@ -15,7 +15,7 @@ jobs:
     if: github.event.label.name == 'solve-this'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/All-Hands-AI/OpenHands
+      image: ghcr.io/all-hands-ai/openhands
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
     steps:

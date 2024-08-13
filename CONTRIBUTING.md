@@ -38,7 +38,7 @@ Set the official repository as your [upstream](https://www.atlassian.com/git/tut
 Add the original repository as upstream:
 
 ```shell
-cd Open Hands
+cd openhands
 git remote add upstream git@github.com:All-Hands-AI/OpenHands.git
 ```
 

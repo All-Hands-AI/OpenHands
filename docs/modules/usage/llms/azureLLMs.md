@@ -28,7 +28,7 @@ docker run -it \
 -p 3000:3000 \
 --add-host host.docker.internal:host-gateway \
 --name openhands-app-$(date +%Y%m%d%H%M%S) \
-ghcr.io/All-Hands-AI/OpenHands
+ghcr.io/all-hands-ai/openhands
 ```
 
 You can set the LLM_MODEL and LLM_API_KEY in the Open Hands UI itself.
