@@ -20,6 +20,9 @@ updates:
       docusaurus:
         patterns:
           - "*docusaurus*"
+      eslint:
+        patterns:
+          - "*eslint*"
 
   - package-ecosystem: "npm"
     directory: "/docs"
@@ -30,3 +33,6 @@ updates:
       docusaurus:
         patterns:
           - "*docusaurus*"
+      eslint:
+        patterns:
+          - "*eslint*"
