@@ -12,8 +12,8 @@ const config: Config = {
   baseUrl: "/",
 
   // GitHub pages deployment config.
-  organizationName: "Open Hands",
-  projectName: "Open Hands",
+  organizationName: "All-Hands-AI",
+  projectName: "OpenHands",
   trailingSlash: false,
 
   onBrokenLinks: "throw",

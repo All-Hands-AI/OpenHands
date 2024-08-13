@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # ✅ Providing Feedback
 
-When using Open Hands, you will undoubtably encounter cases where things work well, and others where they don't. We encourage you to provide feedback when you use Open Hands to help give feedback to the development team, and perhaps more importantly, create an open corpus of coding agent training examples -- Share-Open Hands!
+When using Open Hands, you will undoubtably encounter cases where things work well, and others where they don't. We encourage you to provide feedback when you use Open Hands to help give feedback to the development team, and perhaps more importantly, create an open corpus of coding agent training examples -- Share Open Hands!
 
 ## 📝 How to Provide Feedback
 
