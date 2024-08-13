@@ -34,22 +34,6 @@ def mock_event_stream():
     return MagicMock(spec=EventStream)
 
 
-@pytest.fixture
-async def agent_controller(mock_agent, mock_event_stream):
-    return AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    # try:
-    #     yield controller
-    # finally:
-    #     await controller.close()
-
-
 @pytest.mark.asyncio
 async def test_set_agent_state(mock_agent, mock_event_stream):
     controller = AgentController(
