@@ -5,23 +5,28 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 20
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/frontend" # Location of package manifests
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 20
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/docs" # Location of package manifests
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 20
 
-groups:
-  docusaurus:
-    patterns:
-    - "*docusaurus*"
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 20
+    groups:
+      docusaurus:
+        patterns:
+          - "*docusaurus*"
+
+  - package-ecosystem: "npm"
+    directory: "/docs"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 20
+    groups:
+      docusaurus:
+        patterns:
+          - "*docusaurus*"
