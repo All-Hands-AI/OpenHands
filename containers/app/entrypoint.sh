@@ -20,7 +20,7 @@ fi
 
 if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
   echo "Running OpenHands as root"
-  export RUN_AS_DEVIN=false
+  export RUN_AS_OPENHANDS=false
   mkdir -p /root/.cache/ms-playwright/
   if [ -d "/home/openhands/.cache/ms-playwright/" ]; then
     mv /home/openhands/.cache/ms-playwright/ /root/.cache/

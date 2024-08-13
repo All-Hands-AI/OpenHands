@@ -70,7 +70,7 @@ Create a `config.toml` file in the OpenHands directory and enter these contents:
 ```toml
 [core]
 workspace_base="./workspace"
-run_as_devin=true
+run_as_openhands=true
 sandbox_container_image="custom_image"
 ```
 
@@ -128,7 +128,7 @@ If you see this error in the console output it is because OpenHands is trying to
 ```toml
 [core]
 workspace_base="./workspace"
-run_as_devin=true
+run_as_openhands=true
 sandbox_container_image="custom_image"
 sandbox_user_id="1001"
 ```

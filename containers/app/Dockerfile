@@ -1,4 +1,4 @@
-ARG OPEN_DEVIN_BUILD_VERSION=dev
+ARG OPEN_OPENHANDS_BUILD_VERSION=dev
 FROM node:21.7.2-bookworm-slim AS frontend-builder
 
 WORKDIR /app
@@ -32,15 +32,15 @@ FROM python:3.12.3-slim AS runtime
 
 WORKDIR /app
 
-ARG OPEN_DEVIN_BUILD_VERSION #re-declare for this section
+ARG OPEN_OPENHANDS_BUILD_VERSION #re-declare for this section
 
-ENV RUN_AS_DEVIN=true
+ENV RUN_AS_OPENHANDS=true
 # A random number--we need this to be different from the user's UID on the host machine
 ENV OPENHANDS_USER_ID=42420
 ENV SANDBOX_API_HOSTNAME=host.docker.internal
 ENV USE_HOST_NETWORK=false
 ENV WORKSPACE_BASE=/opt/workspace_base
-ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
+ENV OPEN_OPENHANDS_BUILD_VERSION=$OPEN_OPENHANDS_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \

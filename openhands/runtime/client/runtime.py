@@ -160,7 +160,7 @@ class EventStreamRuntime(Runtime):
                     f'python -u -m openhands.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
                     f'{plugin_arg}'
-                    f'--username {"openhands" if self.config.run_as_devin else "root"} '
+                    f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                     f'--user-id {self.config.sandbox.user_id} '
                     f'{browsergym_arg}'
                 ),

@@ -50,7 +50,7 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(

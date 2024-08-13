@@ -58,7 +58,7 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -212,7 +212,7 @@ async def complete_runtime(
     assert obs.exit_code == 0
 
     action = CmdRunAction(
-        command='/home/devin/mambaforge/bin/mamba run -n test python3 /testing/start_test_openhands.py'
+        command='/home/openhands/mambaforge/bin/mamba run -n test python3 /testing/start_test_openhands.py'
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)

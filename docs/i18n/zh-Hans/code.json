@@ -86,15 +86,15 @@
     "message": "OpenHands与Devin有何不同？",
     "description": "Devin Section Title"
   },
-  "faq.section.devin.linkText": {
+  "faq.section.openhands.linkText": {
     "message": "Devin",
     "description": "Devin Link Text"
   },
-  "faq.section.devin.description": {
+  "faq.section.openhands.description": {
     "message": "是由Cognition Inc.开发的商业产品，它最初为OpenHands提供了灵感。它们都旨在擅长解决软件工程任务，但您可以下载、使用和修改OpenHands，而Devin只能通过Cognition网站进行访问。此外，OpenHands已超越最初的灵感，并成为一个面向代理开发者的社区驱动生态系统，在这里我们欢迎您加入并",
     "description": "Devin Description"
   },
-  "faq.section.devin.contribute": {
+  "faq.section.openhands.contribute": {
     "message": "贡献",
     "description": "Contribute Link"
   },

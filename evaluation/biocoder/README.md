@@ -1,4 +1,4 @@
-# BioCoder Evaluation with Opendevin
+# BioCoder Evaluation with OpenHands
 
 Implements evaluation of agents on BioCoder from the BioCoder benchmark introduced in [BioCoder: A Benchmark for Bioinformatics Code Generation with Large Language Models](https://arxiv.org/abs/2308.16458). Please see [here](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py) for the reference implementation used in the paper.
 
@@ -15,7 +15,7 @@ In the openhands branch of the Biocoder repository, we have slightly modified ou
 docker pull public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0
 ```
 
-To reproduce this image, please see the Dockerfile_Opendevin in the `biocoder` repository.
+To reproduce this image, please see the Dockerfile_Openopenhands in the `biocoder` repository.
 
 ## Start the evaluation
 
