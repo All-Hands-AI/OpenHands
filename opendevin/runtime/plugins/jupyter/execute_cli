@@ -1,4 +1,0 @@
-#!/bin/bash
-# Run the Python script with the specified interpreter
-export JUPYTER_PWD=$(pwd)
-$OPENDEVIN_PYTHON_INTERPRETER /opendevin/plugins/jupyter/execute_cli.py

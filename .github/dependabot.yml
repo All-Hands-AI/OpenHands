@@ -20,3 +20,8 @@ updates:
     schedule:
       interval: "daily"
     open-pull-requests-limit: 20
+
+groups:
+  docusaurus:
+    patterns:
+    - "*docusaurus*"
