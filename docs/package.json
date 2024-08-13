@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.5.1",
-    "@docusaurus/tsconfig": "^3.4.0",
+    "@docusaurus/tsconfig": "^3.5.1",
     "@docusaurus/types": "^3.5.1",
     "typescript": "~5.5.4"
   },
