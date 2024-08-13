@@ -29,12 +29,6 @@ def mock_agent():
     return MagicMock(spec=Agent)
 
 
-# @pytest.fixture
-# def event_stream(temp_dir):
-#     file_store = get_file_store('local', temp_dir)
-#     return EventStream(sid='test', file_store=file_store)
-
-
 @pytest.fixture
 def mock_event_stream():
     return MagicMock(spec=EventStream)
