@@ -2,7 +2,8 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export interface UnsavedEdit {
   path: string;
-  content: string;
+  savedContent: string;
+  unsavedContent: string;
 }
 
 export const initialState = {
@@ -26,15 +27,15 @@ export const codeSlice = createSlice({
       state.refreshID = action.payload;
     },
     addOrUpdateUnsavedEdit: (state, action) => {
-      const { path, content } = action.payload;
+      const { path, unsavedContent, savedContent } = action.payload;
       const newUnsavedEdits = state.unsavedEdits.filter(
         (unsavedEdit) => unsavedEdit.path !== path,
       );
-      newUnsavedEdits.push({ path, content });
+      newUnsavedEdits.push({ path, savedContent, unsavedContent });
       state.unsavedEdits = newUnsavedEdits;
     },
     removeUnsavedEdit: (state, action) => {
-      const { path } = action.payload;
+      const path = action.payload;
       state.unsavedEdits = state.unsavedEdits.filter(
         (unsavedEdit) => unsavedEdit.path !== path,
       );

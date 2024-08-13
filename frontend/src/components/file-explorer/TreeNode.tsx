@@ -5,7 +5,11 @@ import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { listFiles, selectFile } from "#/services/fileService";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
+import {
+  setCode,
+  setActiveFilepath,
+  addOrUpdateUnsavedEdit,
+} from "#/state/codeSlice";
 
 interface TitleProps {
   name: string;
@@ -46,9 +50,8 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const unsavedEdits = useSelector(
     (state: RootState) => state.code.unsavedEdits,
   );
-  const isUnsaved = !!unsavedEdits.find(
-    (unsavedEdit) => unsavedEdit.path === path,
-  );
+  const unsavedEdit = unsavedEdits.find((u) => u.path === path);
+  const isUnsaved = unsavedEdit?.savedContent !== unsavedEdit?.unsavedContent;
 
   const dispatch = useDispatch();
 
@@ -77,8 +80,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      const newCode = await selectFile(path);
-      dispatch(setCode(newCode));
+      let newUnsavedEdit = unsavedEdits.find((u) => u.path === path);
+      if (!newUnsavedEdit) {
+        const code = await selectFile(path);
+        newUnsavedEdit = { path, savedContent: code, unsavedContent: code };
+      }
+      dispatch(addOrUpdateUnsavedEdit(newUnsavedEdit));
+      dispatch(setCode(newUnsavedEdit.unsavedContent));
       dispatch(setActiveFilepath(path));
     }
   };
