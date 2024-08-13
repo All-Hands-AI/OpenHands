@@ -15,7 +15,7 @@ NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts
 ### Setup Eval Workspace (Util + Data)
 
 Setup your eval workspace by:
-1. Clone Open Hands SWE-Bench [fork](https://github.com/Open Hands/OD-SWE-bench.git)
+1. Clone Open Hands SWE-Bench [fork](https://github.com/All-Hands-AI/OD-SWE-bench.git)
 2. Prepare SWE-Bench data
 
 Run the following command to do the above two steps. The results will be saved to `evaluation/SWE-bench/eval_workspace`.
