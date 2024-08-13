@@ -301,7 +301,7 @@ class RuntimeClient:
                 logger.debug(
                     f"{self.pwd} != {getattr(self, '_jupyter_pwd', None)} -> reset Jupyter PWD"
                 )
-                reset_jupyter_pwd_code = f'import os; os.environ["JUPYTER_PWD"] = os.path.abspath("{self.pwd}")'
+                reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
                 _reset_obs = await _jupyter_plugin.run(_aux_action)
                 logger.debug(
@@ -310,6 +310,8 @@ class RuntimeClient:
                 self._jupyter_pwd = self.pwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
+            obs.content = obs.content.rstrip()
+            obs.content += f'\n[Jupyter current working directory: {self.pwd}]'
             return obs
         else:
             raise RuntimeError(
