@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-# Makefile for Open Hands project
+# Makefile for OpenHands project
 
 # Variables
 DOCKER_IMAGE = ghcr.io/openhands/sandbox:main
@@ -289,11 +289,11 @@ help:
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
 	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
-	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for Open Hands by providing LLM API key,"
+	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenHands by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
-	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the Open Hands project."
-	@echo "  $(GREEN)start-frontend$(RESET)      - Start the frontend server for the Open Hands project."
-	@echo "  $(GREEN)run$(RESET)                 - Run the Open Hands application, starting both backend and frontend servers."
+	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenHands project."
+	@echo "  $(GREEN)start-frontend$(RESET)      - Start the frontend server for the OpenHands project."
+	@echo "  $(GREEN)run$(RESET)                 - Run the OpenHands application, starting both backend and frontend servers."
 	@echo "                        Backend Log file will be stored in the 'logs' directory."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 

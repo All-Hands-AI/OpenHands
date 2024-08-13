@@ -32,25 +32,25 @@
 <!-- PROJECT LOGO -->
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
-  <h1 align="center">Open Hands: Code Less, Make More</h1>
-  <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-Open Hands-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
+  <h1 align="center">OpenHands: Code Less, Make More</h1>
+  <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenHands-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper-%20on%20Arxiv-red?logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
   <br/>
-  <a href="https://huggingface.co/spaces/Open Hands/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark"></a>
+  <a href="https://huggingface.co/spaces/OpenHands/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark"></a>
 </div>
 <hr>
 
-Welcome to Open Hands, a platform for autonomous software engineers, powered by AI and LLMs.
+Welcome to OpenHands, a platform for autonomous software engineers, powered by AI and LLMs.
 
-Open Hands agents collaborate with human developers to write code, fix bugs, and ship features.
+OpenHands agents collaborate with human developers to write code, fix bugs, and ship features.
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ⚡ Getting Started
-Open Hands works best with Docker version 26.0.0+ (Docker Desktop 4.31.0+).
+OpenHands works best with Docker version 26.0.0+ (Docker Desktop 4.31.0+).
 You must be using Linux, Mac OS, or WSL on Windows.
 
-To start Open Hands in a docker container, run the following commands in your terminal:
+To start OpenHands in a docker container, run the following commands in your terminal:
 
 > [!WARNING]
 > When you run the following command, files in `./workspace` may be modified or deleted.
@@ -70,16 +70,16 @@ docker run -it \
 ```
 
 > [!NOTE]
-> By default, this command pulls the `latest` tag, which represents the most recent release of Open Hands. You have other options as well:
-> - For a specific release version, use `ghcr.io/all-hands-ai/openhands:<Open Hands_version>` (replace <Open Hands_version> with the desired version number).
+> By default, this command pulls the `latest` tag, which represents the most recent release of OpenHands. You have other options as well:
+> - For a specific release version, use `ghcr.io/all-hands-ai/openhands:<OpenHands_version>` (replace <OpenHands_version> with the desired version number).
 > - For the most up-to-date development version, use `ghcr.io/all-hands-ai/openhands:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
 >
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
-You'll find Open Hands running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have Open Hands operate on your code, place it in `./workspace`.
-Open Hands will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
+You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenHands operate on your code, place it in `./workspace`.
+OpenHands will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
 
-Upon opening Open Hands, you must select the appropriate `Model` and enter the `API Key` within the settings that should pop up automatically. These can be set at any time by selecting
+Upon opening OpenHands, you must select the appropriate `Model` and enter the `API Key` within the settings that should pop up automatically. These can be set at any time by selecting
 the `Settings` button (gear icon) in the UI. If the required `Model` does not exist in the list, you can manually enter it in the text box.
 
 For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
@@ -88,7 +88,7 @@ Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-h
 
 ## 🚀 Documentation
 
-To learn more about the project, and for tips on using Open Hands,
+To learn more about the project, and for tips on using OpenHands,
 **check out our [documentation](https://docs.all-hands.dev/modules/usage/intro)**.
 
 There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
@@ -96,19 +96,19 @@ troubleshooting resources, and advanced configuration options.
 
 ## 🤝 How to Contribute
 
-Open Hands is a community-driven project, and we welcome contributions from everyone.
+OpenHands is a community-driven project, and we welcome contributions from everyone.
 Whether you're a developer, a researcher, or simply enthusiastic about advancing the field of
 software engineering with AI, there are many ways to get involved:
 
 - **Code Contributions:** Help us develop new agents, core functionality, the frontend and other interfaces, or sandboxing solutions.
 - **Research and Evaluation:** Contribute to our understanding of LLMs in software engineering, participate in evaluating the models, or suggest improvements.
-- **Feedback and Testing:** Use the Open Hands toolset, report bugs, suggest features, or provide feedback on usability.
+- **Feedback and Testing:** Use the OpenHands toolset, report bugs, suggest features, or provide feedback on usability.
 
 For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
-Whether you're a developer, a researcher, or simply enthusiastic about Open Hands, we'd love to have you in our community.
+Whether you're a developer, a researcher, or simply enthusiastic about OpenHands, we'd love to have you in our community.
 Let's make software engineering better together!
 
 - [Slack workspace](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) - Here we talk about research, architecture, and future development.
@@ -141,7 +141,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 
 ```
 @misc{openhands,
-      title={{Open Hands: An Open Platform for AI Software Developers as Generalist Agents}},
+      title={{OpenHands: An Open Platform for AI Software Developers as Generalist Agents}},
       author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
       year={2024},
       eprint={2407.16741},

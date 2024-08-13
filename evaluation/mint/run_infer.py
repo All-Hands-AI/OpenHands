@@ -243,7 +243,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to Open Hands's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     if args.subset == 'all':
         subsets = SUBSETS
     else:

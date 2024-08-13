@@ -1,14 +1,14 @@
 # 💿 Comment Créer un Soutien Docker sur Mesure
 
-Le sandbox par défaut Open Hands est équipé d'une configuration ubuntu minimaliste. Votre cas d'utilisation pourrait nécessiter des logiciels installés par défaut. Cet article vous enseignera comment réaliser cela en utilisant une image docker personnalisée.
+Le sandbox par défaut OpenHands est équipé d'une configuration ubuntu minimaliste. Votre cas d'utilisation pourrait nécessiter des logiciels installés par défaut. Cet article vous enseignera comment réaliser cela en utilisant une image docker personnalisée.
 
 ## Configuration
 
-Assurez-vous de pouvoir utiliser Open Hands en suivant la documentation [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+Assurez-vous de pouvoir utiliser OpenHands en suivant la documentation [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
 ## Créer Votre Image Docker
 
-Ensuite, vous devez créer votre image docker personnalisée qui doit être basée sur debian/ubuntu. Par exemple, si nous souhaitons que Open Hands ait accès au "node" binaire, nous utiliserions ce Dockerfile:
+Ensuite, vous devez créer votre image docker personnalisée qui doit être basée sur debian/ubuntu. Par exemple, si nous souhaitons que OpenHands ait accès au "node" binaire, nous utiliserions ce Dockerfile:
 
 ```bash
 # Commencez avec l'image ubuntu la plus récente
@@ -29,14 +29,14 @@ docker build -t image_personnalisée .
 
 Cela produira une nouvelle image appelée ```image_personnalisée``` qui sera disponible dans Docker Engine.
 
-> Remarque: Dans la configuration décrite ici, Open Hands va fonctionner en tant que utilisateur "openhands" à l'intérieur du sandbox et donc tous les packages installés via le Dockerfile seront disponibles pour tous les utilisateurs sur le système, pas seulement root.
+> Remarque: Dans la configuration décrite ici, OpenHands va fonctionner en tant que utilisateur "openhands" à l'intérieur du sandbox et donc tous les packages installés via le Dockerfile seront disponibles pour tous les utilisateurs sur le système, pas seulement root.
 >
 > L'installation avec apt-get ci-dessus installe nodejs pour tous les utilisateurs.
 
 ## Spécifiez votre image personnalisée dans le fichier config.toml
 
-La configuration Open Hands se fait via le fichier de niveau supérieur ```config.toml``` .
-Créez un fichier ```config.toml``` dans le répertoire Open Hands et entrez ces contenus:
+La configuration OpenHands se fait via le fichier de niveau supérieur ```config.toml``` .
+Créez un fichier ```config.toml``` dans le répertoire OpenHands et entrez ces contenus:
 
 ```toml
 [core]
@@ -49,7 +49,7 @@ sandbox_container_image="image_personnalisée"
 
 ## Exécution
 
-Exécutez Open Hands en exécutant ```make run``` dans le répertoire racine.
+Exécutez OpenHands en exécutant ```make run``` dans le répertoire racine.
 
 Naviguez vers ```localhost:3001``` et vérifiez si vos dépendances souhaitées sont disponibles.
 
@@ -65,7 +65,7 @@ En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox_contai
 
 Lorsqu'une image personnalisée est utilisée pour la première fois, elle ne sera pas trouvée et donc elle sera construite (à l'exécution ultérieure, l'image construite sera trouvée et renvoyée).
 
-L'image personnalisée est construite avec [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), qui crée un fichier docker en utilisant votre image personnalisée comme base et configure ensuite l'environnement pour Open Hands, comme ceci:
+L'image personnalisée est construite avec [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), qui crée un fichier docker en utilisant votre image personnalisée comme base et configure ensuite l'environnement pour OpenHands, comme ceci:
 
 ```python
 dockerfile_content = (
@@ -86,7 +86,7 @@ dockerfile_content = (
 ## Dépannage / Erreurs
 
 ### Erreur: ```useradd: UID 1000 est non unique```
-Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que Open Hands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ sandbox_user_id dans le fichier config.toml en une valeur différente:
+Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que OpenHands essaie de créer le utilisateur openhands dans le sandbox avec un ID d'utilisateur de 1000, cependant cet ID d'utilisateur est déjà utilisé dans l'image (pour une raison inconnue). Pour résoudre ce problème, changez la valeur du champ sandbox_user_id dans le fichier config.toml en une valeur différente:
 
 ```toml
 [core]

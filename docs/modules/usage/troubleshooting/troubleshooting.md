@@ -43,7 +43,7 @@ docker.errors.DockerException: Error while fetching server API version: ('Connec
 
 **Details**
 
-Open Hands uses a Docker container to do its work safely, without potentially breaking your machine.
+OpenHands uses a Docker container to do its work safely, without potentially breaking your machine.
 
 **Workarounds**
 
@@ -67,7 +67,7 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 
 **Details**
 
-By default, Open Hands connects to a running container using SSH. On some machines,
+By default, OpenHands connects to a running container using SSH. On some machines,
 especially Windows, this seems to fail.
 
 **Workarounds**
@@ -95,7 +95,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 [GitHub Issues](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
-This usually happens with *local* LLM setups, when Open Hands can't connect to the LLM server.
+This usually happens with *local* LLM setups, when OpenHands can't connect to the LLM server.
 See our guide for [local LLMs](llms/localLLMs) for more information.
 
 **Workarounds**
@@ -190,19 +190,19 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 **Symptoms**
 
-Open Hands usually asks whether to resume or start a new session when opening the UI.
+OpenHands usually asks whether to resume or start a new session when opening the UI.
 But clicking "Resume" still starts a fresh new chat.
 
 **Details**
 
 With a standard installation as of today session data is stored in memory.
-Currently, if Open Hands's service is restarted, previous sessions become
+Currently, if OpenHands's service is restarted, previous sessions become
 invalid (a new secret is generated) and thus not recoverable.
 
 **Workarounds**
 
 * Change configuration to make sessions persistent by editing the `config.toml`
-file (in Open Hands's root folder) by specifying a `file_store` and an
+file (in OpenHands's root folder) by specifying a `file_store` and an
 absolute `file_store_path`:
 
 ```toml

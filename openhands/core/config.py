@@ -203,7 +203,7 @@ class SandboxConfig(metaclass=Singleton):
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
     enable_auto_lint: bool = (
-        False  # once enabled, Open Hands would lint files after editing
+        False  # once enabled, OpenHands would lint files after editing
     )
     use_host_network: bool = False
     initialize_plugins: bool = True

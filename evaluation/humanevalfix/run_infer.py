@@ -270,7 +270,7 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to Open Hands's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(
         'bigcode/humanevalpack', 'python'
     )  # TODO: Support other languages

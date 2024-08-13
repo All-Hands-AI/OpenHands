@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-echo "Starting Open Hands..."
+echo "Starting OpenHands..."
 if [[ $NO_SETUP == "true" ]]; then
   echo "Skipping setup, running as $(whoami)"
   "$@"
@@ -9,7 +9,7 @@ if [[ $NO_SETUP == "true" ]]; then
 fi
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "The Open Hands entrypoint.sh must run as root"
+  echo "The OpenHands entrypoint.sh must run as root"
   exit 1
 fi
 
@@ -19,7 +19,7 @@ if [ -z "$SANDBOX_USER_ID" ]; then
 fi
 
 if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
-  echo "Running Open Hands as root"
+  echo "Running OpenHands as root"
   export RUN_AS_DEVIN=false
   mkdir -p /root/.cache/ms-playwright/
   if [ -d "/home/openhands/.cache/ms-playwright/" ]; then

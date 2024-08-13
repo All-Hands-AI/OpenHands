@@ -1,6 +1,6 @@
 # Notes pour les utilisateurs de Windows et WSL
 
-Open Hands ne supporte Windows que via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+OpenHands ne supporte Windows que via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 Veuillez vous assurer de lancer toutes les commandes à l'intérieur de votre terminal WSL.
 
 ## Dépannage
@@ -12,8 +12,8 @@ Docker doit également avoir l'option d'intégration WSL activée.
 
 ### Recommandation : Ne pas exécuter en tant qu'utilisateur root
 
-Pour des raisons de sécurité, il est fortement recommandé de ne pas exécuter Open Hands en tant qu'utilisateur root, mais en tant qu'utilisateur avec un UID non nul.
-De plus, les sandboxes persistants ne seront pas pris en charge lors de l'exécution en tant que root et un message approprié pourrait apparaître lors du démarrage d'Open Hands.
+Pour des raisons de sécurité, il est fortement recommandé de ne pas exécuter OpenHands en tant qu'utilisateur root, mais en tant qu'utilisateur avec un UID non nul.
+De plus, les sandboxes persistants ne seront pas pris en charge lors de l'exécution en tant que root et un message approprié pourrait apparaître lors du démarrage d'OpenHands.
 
 Références :
 

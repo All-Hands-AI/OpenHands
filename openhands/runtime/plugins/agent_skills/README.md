@@ -1,6 +1,6 @@
-# Open Hands Skill Sets
+# OpenHands Skill Sets
 
-This folder implements a skill/tool set `agentskills` for Open Hands.
+This folder implements a skill/tool set `agentskills` for OpenHands.
 
 It is intended to be used by the agent **inside sandbox**.
 The skill set will be exposed as a `pip` package that can be installed as a plugin inside the sandbox.

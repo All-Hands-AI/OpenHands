@@ -220,7 +220,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Write contents to a file:
         ```json
-        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, Open Hands?"}}
+        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenHands?"}}
         ```
     - Read the contents of a file:
         ```json

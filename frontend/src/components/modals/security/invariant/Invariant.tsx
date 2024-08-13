@@ -281,7 +281,7 @@ function SecurityInvariant(): JSX.Element {
           <b>Invariant Analyzer</b>
         </div>
         <p className="text-[0.6rem]">
-          Invariant Analyzer continuously monitors your Open Hands agent for
+          Invariant Analyzer continuously monitors your OpenHands agent for
           security issues.{" "}
           <a
             className="underline"

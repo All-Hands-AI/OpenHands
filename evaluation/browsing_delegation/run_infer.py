@@ -131,7 +131,7 @@ async def process_instance(
 if __name__ == '__main__':
     args = parse_arguments()
 
-    dataset = load_dataset('Open Hands/eval-browsing-instructions')
+    dataset = load_dataset('OpenHands/eval-browsing-instructions')
     dataset = dataset['train'].to_pandas()
     assert dataset.columns.tolist() == ['instance_id', 'instruction']
 

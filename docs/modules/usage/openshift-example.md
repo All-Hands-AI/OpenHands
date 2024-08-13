@@ -2,12 +2,12 @@
 sidebar_position: 6
 ---
 
-# 💿 How to use Open Hands in OpenShift/K8S
+# 💿 How to use OpenHands in OpenShift/K8S
 
 There are different ways and scenarios that you can do, we're just mentioning one example here:
 1. Create a PV "as a cluster admin" to map workspace_base data and docker directory to the pod through the worker node.
 2. Create a PVC to be able to mount those PVs to the POD
-3. Create a POD which contains two containers; the Open Hands and Sandbox containers.
+3. Create a POD which contains two containers; the OpenHands and Sandbox containers.
 
 ## Steps to follow the above example.
 
@@ -263,7 +263,7 @@ External Traffic Policy:  Cluster
 Events:                   <none>
 ```
 
-6. Connect to Open Hands UI, configure the Agent, then test:
+6. Connect to OpenHands UI, configure the Agent, then test:
 
 ![image](https://github.com/user-attachments/assets/12f94804-a0c7-4744-b873-e003c9caf40e)
 

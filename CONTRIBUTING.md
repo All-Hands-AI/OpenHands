@@ -1,16 +1,16 @@
 # Contributing
 
-Thanks for your interest in contributing to Open Hands! We welcome and appreciate contributions.
+Thanks for your interest in contributing to OpenHands! We welcome and appreciate contributions.
 
 ## How Can I Contribute?
 
 There are many ways that you can contribute:
 
-1. **Download and use** Open Hands, and send [issues](https://github.com/All-Hands-AI/OpenHands/issues) when you encounter something that isn't working or a feature that you'd like to see.
+1. **Download and use** OpenHands, and send [issues](https://github.com/All-Hands-AI/OpenHands/issues) when you encounter something that isn't working or a feature that you'd like to see.
 2. **Send feedback** after each session by [clicking the thumbs-up thumbs-down buttons](https://docs.all-hands.dev/modules/usage/feedback), so we can see where things are working and failing, and also build an open dataset for training code agents.
 3. **Improve the Codebase** by sending PRs (see details below). In particular, we have some [good first issue](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) issues that may be ones to start on.
 
-## Understanding Open Hands's CodeBase
+## Understanding OpenHands's CodeBase
 
 To understand the codebase, please refer to the README in each module:
 - [frontend](./frontend/README.md)
@@ -22,14 +22,14 @@ To understand the codebase, please refer to the README in each module:
 When you write code, it is also good to write tests. Please navigate to the `tests` folder to see existing test suites.
 At the moment, we have two kinds of tests: `unit` and `integration`. Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
 
-## Sending Pull Requests to Open Hands
+## Sending Pull Requests to OpenHands
 
 ### 1. Fork the Official Repository
-Fork the [Open Hands repository](https://github.com/All-Hands-AI/OpenHands) into your own account.
+Fork the [OpenHands repository](https://github.com/All-Hands-AI/OpenHands) into your own account.
 Clone your own forked repository into your local environment:
 
 ```shell
-git clone git@github.com:<YOUR-USERNAME>/Open Hands.git
+git clone git@github.com:<YOUR-USERNAME>/OpenHands.git
 ```
 
 ### 2. Configure Git
@@ -84,9 +84,9 @@ git push origin my_branch
    - Set `base` to `main`
    - Click `Create pull request`
 
-The PR should appear in [Open Hands PRs](https://github.com/All-Hands-AI/OpenHands/pulls).
+The PR should appear in [OpenHands PRs](https://github.com/All-Hands-AI/OpenHands/pulls).
 
-Then the Open Hands team will review your code.
+Then the OpenHands team will review your code.
 
 ## PR Rules
 

@@ -2,11 +2,11 @@
 
 ## Completion
 
-Open Hands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure)
+OpenHands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure)
 
 ### Azure openai configs
 
-When running the Open Hands Docker image, you'll need to set the following environment variables using `-e`:
+When running the OpenHands Docker image, you'll need to set the following environment variables using `-e`:
 
 ```
 LLM_BASE_URL="<azure-api-base-url>"          # e.g. "https://openai-gpt-4-test-v-1.openai.azure.com/"
@@ -31,7 +31,7 @@ docker run -it \
 ghcr.io/all-hands-ai/openhands
 ```
 
-You can set the LLM_MODEL and LLM_API_KEY in the Open Hands UI itself.
+You can set the LLM_MODEL and LLM_API_KEY in the OpenHands UI itself.
 
 :::note
 You can find your ChatGPT deployment name on the deployments page in Azure. It could be the same with the chat model name (e.g. 'GPT4-1106-preview'), by default or initially set, but it doesn't have to be the same. Run openhands, and when you load it in the browser, go to Settings and set model as above: "azure/&lt;your-actual-gpt-deployment-name&gt;". If it's not in the list, enter your own text and save it.
@@ -39,14 +39,14 @@ You can find your ChatGPT deployment name on the deployments page in Azure. It c
 
 ## Embeddings
 
-Open Hands uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)
+OpenHands uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)
 
 ### Azure openai configs
 
 The model used for Azure OpenAI embeddings is "text-embedding-ada-002".
 You need the correct deployment name for this model in your Azure account.
 
-When running Open Hands in Docker, set the following environment variables using `-e`:
+When running OpenHands in Docker, set the following environment variables using `-e`:
 
 ```
 LLM_EMBEDDING_MODEL="azureopenai"

@@ -1,6 +1,6 @@
 # Windows 和 WSL 用户须知
 
-Open Hands 仅支持通过 [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 在 Windows 上运行。
+OpenHands 仅支持通过 [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 在 Windows 上运行。
 请确保在 WSL 终端内运行所有命令。
 
 ## 故障排除
@@ -12,8 +12,8 @@ Docker 还需要启用 WSL 集成选项。
 
 ### 建议：不要以 root 用户身份运行
 
-出于安全原因，非常建议不要以 root 用户身份运行 Open Hands，而是使用 UID 非零的用户身份运行。
-此外，当以 root 身份运行时，不支持持久化沙箱，并且在启动 Open Hands 时可能会出现相应消息。
+出于安全原因，非常建议不要以 root 用户身份运行 OpenHands，而是使用 UID 非零的用户身份运行。
+此外，当以 root 身份运行时，不支持持久化沙箱，并且在启动 OpenHands 时可能会出现相应消息。
 
 参考资料：
 

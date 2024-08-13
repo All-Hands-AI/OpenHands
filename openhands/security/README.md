@@ -1,6 +1,6 @@
 # Security
 
-Given the impressive capabilities of Open Hands and similar coding agents, ensuring robust security measures is essential to prevent unintended actions or security breaches. The SecurityAnalyzer framework provides a structured approach to monitor and analyze agent actions for potential security risks.
+Given the impressive capabilities of OpenHands and similar coding agents, ensuring robust security measures is essential to prevent unintended actions or security breaches. The SecurityAnalyzer framework provides a structured approach to monitor and analyze agent actions for potential security risks.
 
 To enable this feature:
 * From the web interface
@@ -40,7 +40,7 @@ The `SecurityAnalyzer` class (analyzer.py) is an abstract base class designed to
 
 In conclusion, a concrete security analyzer should evaluate the risk of each event and act accordingly (e.g. auto-confirm, send Slack message, etc).
 
-For customization and decoupling from the Open Hands core logic, the security analyzer can define its own API endpoints that can then be accessed from the frontend. These API endpoints need to be secured (do not allow more capabilities than the core logic
+For customization and decoupling from the OpenHands core logic, the security analyzer can define its own API endpoints that can then be accessed from the frontend. These API endpoints need to be secured (do not allow more capabilities than the core logic
 provides).
 
 ## How to implement your own Security Analyzer
@@ -55,7 +55,7 @@ provides).
 
 ### Invariant
 
-It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with Open Hands's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
+It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with OpenHands's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
 
 This allows the agent to run autonomously without fear that it will inadvertently compromise security or perform unintended actions that could be harmful.
 
@@ -67,7 +67,7 @@ Features:
     * malicious bash commands
 * Logs:
     * actions and their associated risk
-    * Open Hands traces in JSON format
+    * OpenHands traces in JSON format
 * Run-time settings:
     * the [invariant policy](https://github.com/invariantlabs-ai/invariant?tab=readme-ov-file#policy-language)
     * acceptable risk threshold

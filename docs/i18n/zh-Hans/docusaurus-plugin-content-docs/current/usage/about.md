@@ -19,34 +19,34 @@ sidebar_position: 7
 
 ## 🤝 如何贡献
 
-Open Hands 是一个社区驱动的项目，我们欢迎每个人的贡献。无论您是开发人员、研究人员，还是对用 AI 提升软件工程领域有兴趣，只要您愿意参与，我们都有很多方式可供选择：
+OpenHands 是一个社区驱动的项目，我们欢迎每个人的贡献。无论您是开发人员、研究人员，还是对用 AI 提升软件工程领域有兴趣，只要您愿意参与，我们都有很多方式可供选择：
 
 - **代码贡献:** 帮助我们开发核心功能、前端界面或沙箱解决方案。
 - **研究和评价:** 贡献您对 LLM 在软件工程领域理解的见解，参与评估模型，或提出改进建议。
-- **反馈和测试:** 使用 Open Hands 工具集，报告错误，建议功能，或提供可用性方面的反馈。
+- **反馈和测试:** 使用 OpenHands 工具集，报告错误，建议功能，或提供可用性方面的反馈。
 
 详情请查阅[此文件](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md)。
 
 ## 🤖 加入我们的社区
 
-我们现在有一个 Slack 工作区，用于合作建设 Open Hands，还设有一个 Discord 服务器，用于讨论与该项目、LLM、代理等相关的任何事情。
+我们现在有一个 Slack 工作区，用于合作建设 OpenHands，还设有一个 Discord 服务器，用于讨论与该项目、LLM、代理等相关的任何事情。
 
 - [Slack 工作区](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw)
 - [Discord 服务器](https://discord.gg/ESHStjSjD4)
 
 如果您愿意贡献，请随时加入我们的社区。让我们一起简化软件工程！
 
-🐚 **少写代码，用 Open Hands 做更多的事情。**
+🐚 **少写代码，用 OpenHands 做更多的事情。**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date)](https://star-history.com/#All-Hands-AI/OpenHands&Date)
 
 ## 🛠️ 技术选型
 
-Open Hands 使用了一系列强大的框架和库，提供了坚实的开发基础。以下是项目中使用的关键技术：
+OpenHands 使用了一系列强大的框架和库，提供了坚实的开发基础。以下是项目中使用的关键技术：
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LlamaIndex](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
 
-请注意，这些技术选型仍在进行中，随着项目的发展，可能会添加新的技术或移除现有的技术。我们努力采用最适合、最高效的工具，以增强 Open Hands 的能力。
+请注意，这些技术选型仍在进行中，随着项目的发展，可能会添加新的技术或移除现有的技术。我们努力采用最适合、最高效的工具，以增强 OpenHands 的能力。
 
 ## 📜 许可证
 

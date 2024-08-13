@@ -9,7 +9,7 @@ function CustomFooter() {
       <div className="footer-content">
         <div className="footer-top">
           <div className="footer-title">
-            <Translate id="footer.title">Open Hands</Translate>
+            <Translate id="footer.title">OpenHands</Translate>
           </div>
           <div className="footer-link">
             <a href="/modules/usage/intro">
@@ -32,7 +32,7 @@ function CustomFooter() {
         <div className="footer-bottom">
           <p>
             <Translate id="footer.copyright" values={{ year: new Date().getFullYear() }}>
-              {'Copyright © {year} Open Hands'}
+              {'Copyright © {year} OpenHands'}
             </Translate>
           </p>
         </div>

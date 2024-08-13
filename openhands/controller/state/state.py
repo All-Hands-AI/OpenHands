@@ -38,9 +38,9 @@ RESUMABLE_STATES = [
 @dataclass
 class State:
     """
-    Open Hands is a multi-agentic system.
+    OpenHands is a multi-agentic system.
 
-    A `task` is an end-to-end conversation between Open Hands (the whole sytem) and the
+    A `task` is an end-to-end conversation between OpenHands (the whole sytem) and the
     user, which might involve one or more inputs from the user. It starts with
     an initial input (typically a task statement) from the user, and ends with either
     a `AgentFinishAction` initiated by the agent, or an error.
@@ -55,7 +55,7 @@ class State:
     subtasks.
 
     For example, considering a task from the user: `tell me how many GitHub stars
-    Open Hands repo has`. Let's assume the default agent is CodeActAgent.
+    OpenHands repo has`. Let's assume the default agent is CodeActAgent.
 
     -- TASK STARTS (SUBTASK 0 STARTS) --
 

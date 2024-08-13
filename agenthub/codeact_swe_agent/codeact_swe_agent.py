@@ -41,7 +41,7 @@ def get_in_context_example() -> str:
 class CodeActSWEAgent(Agent):
     VERSION = '1.6'
     """
-    This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of Open Hands.
+    This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of OpenHands.
 
     It is intended use is **solving Github issues**.
 

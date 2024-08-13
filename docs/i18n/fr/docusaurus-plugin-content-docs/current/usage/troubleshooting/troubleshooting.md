@@ -34,7 +34,7 @@ docker.errors.DockerException: Erreur lors de la récupération de la version de
 
 ### Détails
 
-Open Hands utilise un conteneur Docker pour effectuer son travail en toute sécurité, sans risquer de briser votre machine.
+OpenHands utilise un conteneur Docker pour effectuer son travail en toute sécurité, sans risquer de briser votre machine.
 
 ### Solutions de contournement
 
@@ -57,7 +57,7 @@ pexpect.pxssh.ExceptionPxssh: Impossible d'établir une connexion avec l'hôte
 
 ### Détails
 
-Par défaut, Open Hands se connecte à un conteneur en cours d'exécution via SSH. Sur certaines machines,
+Par défaut, OpenHands se connecte à un conteneur en cours d'exécution via SSH. Sur certaines machines,
 en particulier Windows, cela semble échouer.
 
 ### Solutions de contournement
@@ -84,7 +84,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 [Problèmes GitHub](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
-Cela se produit généralement avec les configurations de LLM *locales*, lorsque Open Hands ne parvient pas à se connecter au serveur LLM.
+Cela se produit généralement avec les configurations de LLM *locales*, lorsque OpenHands ne parvient pas à se connecter au serveur LLM.
 Consultez notre guide pour [LLMs locaux](llms/localLLMs) pour plus d'informations.
 
 ### Solutions de contournement
@@ -179,19 +179,19 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 ### Symptômes
 
-Open Hands demande généralement s'il faut reprendre ou commencer une nouvelle session lors de l'ouverture de l'interface utilisateur.
+OpenHands demande généralement s'il faut reprendre ou commencer une nouvelle session lors de l'ouverture de l'interface utilisateur.
 Mais cliquer sur "Reprendre" démarre toujours une toute nouvelle discussion.
 
 ### Détails
 
 Avec une installation standard à ce jour, les données de session sont stockées en mémoire.
-Actuellement, si le service Open Hands est redémarré, les sessions précédentes deviennent
+Actuellement, si le service OpenHands est redémarré, les sessions précédentes deviennent
 invalides (un nouveau secret est généré) et donc non récupérables.
 
 ### Solutions de contournement
 
 * Modifiez la configuration pour rendre les sessions persistantes en éditant le fichier `config.toml`
-(dans le dossier racine d'Open Hands) en spécifiant un `file_store` et un
+(dans le dossier racine d'OpenHands) en spécifiant un `file_store` et un
 `file_store_path` absolu :
 
 ```toml

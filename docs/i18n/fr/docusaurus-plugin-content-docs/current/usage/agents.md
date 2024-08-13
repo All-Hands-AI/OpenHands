@@ -22,7 +22,7 @@ L'idée conceptuelle est illustrée ci-dessous. À chaque tour, l'agent peut :
 
 ### Système de Plugin
 
-Pour rendre l'agent CodeAct plus puissant avec seulement l'accès à l'espace d'action `bash`, l'agent CodeAct exploite le système de plugins d'Open Hands:
+Pour rendre l'agent CodeAct plus puissant avec seulement l'accès à l'espace d'action `bash`, l'agent CodeAct exploite le système de plugins d'OpenHands:
 
 - [Plugin Jupyter](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/jupyter) : pour l'exécution d'IPython via la commande bash
 - [Plugin outil agent SWE](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/swe_agent_commands) : Outils de ligne de commande bash puissants pour les tâches de développement logiciel introduits par [swe-agent](https://github.com/princeton-nlp/swe-agent).

@@ -165,7 +165,7 @@ class BrowsingAgent(Agent):
 
         prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
-        # we should also send a message back to the user in Open Hands and call it a day
+        # we should also send a message back to the user in OpenHands and call it a day
         if (
             isinstance(last_action, BrowseInteractiveAction)
             and last_action.browsergym_send_msg_to_user

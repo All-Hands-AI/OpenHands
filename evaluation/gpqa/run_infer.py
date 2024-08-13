@@ -328,7 +328,7 @@ if __name__ == '__main__':
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to Open Hands's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset('Idavidrein/gpqa', args.data_split)
     gpqa_dataset = dataset['train']
     # preprocess the dataset

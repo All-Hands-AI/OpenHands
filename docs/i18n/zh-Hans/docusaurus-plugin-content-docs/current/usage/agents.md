@@ -22,7 +22,7 @@ sidebar_position: 3
 
 ### 插件系统
 
-为了使CodeAct agent在仅能访问`bash`动作空间时更强大，CodeAct agent利用了Open Hands的插件系统：
+为了使CodeAct agent在仅能访问`bash`动作空间时更强大，CodeAct agent利用了OpenHands的插件系统：
 
 - [Jupyter插件](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/jupyter)：通过bash命令实现IPython执行
 - [SWE-agent工具插件](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/swe_agent_commands)：为软件开发任务引入的强大bash命令行工具，由[swe-agent](https://github.com/princeton-nlp/swe-agent)提供。

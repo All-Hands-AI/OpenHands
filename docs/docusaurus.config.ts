@@ -3,7 +3,7 @@ import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
-  title: "Open Hands",
+  title: "OpenHands",
   tagline: "An Open Platform for AI Software Developers as Generalist Agents",
   favicon: "img/logo.png",
 
@@ -63,9 +63,9 @@ const config: Config = {
   themeConfig: {
     image: "img/docusaurus.png",
     navbar: {
-      title: "Open Hands",
+      title: "OpenHands",
       logo: {
-        alt: "Open Hands",
+        alt: "OpenHands",
         src: "img/logo.png",
       },
       items: [

@@ -1,6 +1,6 @@
 """
 This is the main file for the runtime client.
-It is responsible for executing actions received from Open Hands backend and producing observations.
+It is responsible for executing actions received from OpenHands backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
 """
@@ -66,7 +66,7 @@ INIT_COMMANDS = [
 
 class RuntimeClient:
     """RuntimeClient is running inside docker sandbox.
-    It is responsible for executing actions received from Open Hands backend and producing observations.
+    It is responsible for executing actions received from OpenHands backend and producing observations.
     """
 
     def __init__(

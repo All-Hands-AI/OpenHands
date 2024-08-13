@@ -1,16 +1,16 @@
 {
   "WORKSPACE$TITLE": {
-    "en": "Open Hands Workspace",
-    "zh-CN": "Open Hands 工作区",
-    "de": "Open Hands Arbeitsbereich",
-    "ko-KR": "Open Hands 워크스페이스",
-    "no": "Open Hands Arbeidsområde",
-    "zh-TW": "Open Hands 工作區",
+    "en": "OpenHands Workspace",
+    "zh-CN": "OpenHands 工作区",
+    "de": "OpenHands Arbeitsbereich",
+    "ko-KR": "OpenHands 워크스페이스",
+    "no": "OpenHands Arbeidsområde",
+    "zh-TW": "OpenHands 工作區",
     "ar": "مساحة عمل أوبنديفين",
-    "fr": "Open Hands Espace de travail",
-    "it": "Area di lavoro Open Hands",
-    "pt": "Espaço de trabalho Open Hands",
-    "es": "Espacio de trabajo de Open Hands"
+    "fr": "OpenHands Espace de travail",
+    "it": "Area di lavoro OpenHands",
+    "pt": "Espaço de trabalho OpenHands",
+    "es": "Espacio de trabajo de OpenHands"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -210,18 +210,18 @@
     "tr": "Tarayıcı"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
-    "en": "Open Hands Workspace directory",
-    "zh-CN": "Open Hands 工作区目录",
-    "de": "Open Hands Arbeitsverzeichnis",
-    "ko-KR": "Open Hands 워크스페이스 폴더",
-    "no": "Open Hands arbeidsmappe",
-    "zh-TW": "Open Hands 工作區目錄",
-    "it": "Directory dell'area di lavoro Open Hands",
-    "pt": "Diretório do espaço de trabalho Open Hands",
-    "es": "Directorio del espacio de trabajo de Open Hands",
+    "en": "OpenHands Workspace directory",
+    "zh-CN": "OpenHands 工作区目录",
+    "de": "OpenHands Arbeitsverzeichnis",
+    "ko-KR": "OpenHands 워크스페이스 폴더",
+    "no": "OpenHands arbeidsmappe",
+    "zh-TW": "OpenHands 工作區目錄",
+    "it": "Directory dell'area di lavoro OpenHands",
+    "pt": "Diretório do espaço de trabalho OpenHands",
+    "es": "Directorio del espacio de trabajo de OpenHands",
     "ar": "مجلد مساحة عمل أوبنديفين",
-    "fr": "Répertoire de l'espace de travail Open Hands",
-    "tr": "Open Hands çalışma alanı dizini"
+    "fr": "Répertoire de l'espace de travail OpenHands",
+    "tr": "OpenHands çalışma alanı dizini"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
@@ -665,17 +665,17 @@
     "de": "Bild hochladen"
   },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
-    "en": "Hi! I'm Open Hands, an AI Software Engineer. What would you like to build with me today?",
-    "zh-CN": "你好！我是 Open Hands，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
-    "de": "Hi! Ich bin Open Hands, ein KI-Softwareingenieur. Was möchten Sie heute mit mir erstellen?",
-    "ko-KR": "안녕하세요! 저는 오픈데빈(Open Hands), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
-    "no": "Hi! I'm Open Hands, an AI Software Engineer. What would you like to build with me today?",
-    "zh-TW": "嗨！我是 Open Hands，一位人工智慧軟體工程師。你今天想和我一起建造什麼？",
-    "it": "Hi! I'm Open Hands, an AI Software Engineer. What would you like to build with me today?",
-    "pt": "Hi! I'm Open Hands, an AI Software Engineer. What would you like to build with me today?",
-    "es": "Hi! I'm Open Hands, an AI Software Engineer. What would you like to build with me today?",
-    "ar": "مرحبا! أنا Open Hands، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
-    "fr": "Salut! Je suis Open Hands, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?"
+    "en": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
+    "zh-CN": "你好！我是 OpenHands，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
+    "de": "Hi! Ich bin OpenHands, ein KI-Softwareingenieur. Was möchten Sie heute mit mir erstellen?",
+    "ko-KR": "안녕하세요! 저는 오픈데빈(OpenHands), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
+    "no": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
+    "zh-TW": "嗨！我是 OpenHands，一位人工智慧軟體工程師。你今天想和我一起建造什麼？",
+    "it": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
+    "pt": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
+    "es": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
+    "ar": "مرحبا! أنا OpenHands، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
+    "fr": "Salut! Je suis OpenHands, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?"
   },
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",

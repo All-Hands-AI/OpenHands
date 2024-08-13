@@ -247,6 +247,6 @@ def test_browse_internet(http_server, current_test_name: str):
         last_observation, (BrowserOutputObservation, AgentDelegateObservation)
     )
     if isinstance(last_observation, BrowserOutputObservation):
-        assert 'Open Hands is all you need!' in last_observation.content
+        assert 'OpenHands is all you need!' in last_observation.content
     elif isinstance(last_observation, AgentDelegateObservation):
-        assert 'Open Hands is all you need!' in last_observation.outputs['content']
+        assert 'OpenHands is all you need!' in last_observation.outputs['content']

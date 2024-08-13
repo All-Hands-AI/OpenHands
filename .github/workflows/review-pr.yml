@@ -1,5 +1,5 @@
-# Workflow that uses Open Hands to review a pull request. PR must be labeled 'review-this'
-name: Use Open Hands to Review Pull Request
+# Workflow that uses OpenHands to review a pull request. PR must be labeled 'review-this'
+name: Use OpenHands to Review Pull Request
 
 on:
   pull_request:
@@ -49,7 +49,7 @@ jobs:
         export PATH="/github/home/.local/bin:$PATH"
         poetry install --without evaluation,llama-index
         poetry run playwright install --with-deps chromium
-    - name: Run Open Hands
+    - name: Run OpenHands
       env:
         LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         LLM_MODEL: ${{ vars.LLM_MODEL }}

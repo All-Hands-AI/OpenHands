@@ -1,6 +1,6 @@
 """agentskills.py
 
-This module provides various file manipulation skills for the Open Hands agent.
+This module provides various file manipulation skills for the OpenHands agent.
 
 Functions:
 - open_file(path: str, line_number: int | None = 1, context_lines: int = 100): Opens a file and optionally moves to a specific line.
@@ -1063,7 +1063,7 @@ __all__ = [
     'parse_pptx',
 ]
 
-# This is called from Open Hands's side
+# This is called from OpenHands's side
 # If SANDBOX_ENV_OPENAI_API_KEY is set, we will be able to use these tools in the sandbox environment
 if _get_openai_api_key() and _get_openai_base_url():
     __all__ += ['parse_audio', 'parse_video', 'parse_image']

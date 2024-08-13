@@ -1,14 +1,14 @@
 # Notes for Windows and WSL Users
 
-Open Hands only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+OpenHands only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 Please be sure to run all commands inside your WSL terminal.
 
 ## Troubleshooting
 
 ### Recommendation: Do not run as root user
 
-For security reasons, it is highly recommended to not run Open Hands as the root user, but a user with a non-zero UID.
-In addition, persistent sandboxes won't be supported when running as root and during start of Open Hands an appropriate message may appear.
+For security reasons, it is highly recommended to not run OpenHands as the root user, but a user with a non-zero UID.
+In addition, persistent sandboxes won't be supported when running as root and during start of OpenHands an appropriate message may appear.
 
 References:
 

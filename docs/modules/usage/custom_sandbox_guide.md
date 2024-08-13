@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # 💿 How to Create and Use a Custom Docker Sandbox
 
-The default Open Hands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
+The default OpenHands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
 
 Your use case may need additional software installed by default.
 
@@ -28,13 +28,13 @@ For a more feature-rich environment, you might consider using pre-built images l
 
 ## Setup
 
-Make sure you are able to run Open Hands using the [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) first.
+Make sure you are able to run OpenHands using the [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) first.
 
 ## Create Your Docker Image
 
 To create a custom docker image, it must be debian/ubuntu based.
 
-For example, if we want Open Hands to have access to the `node` binary, we would use the following Dockerfile:
+For example, if we want OpenHands to have access to the `node` binary, we would use the following Dockerfile:
 
 ```dockerfile
 # Start with latest ubuntu image
@@ -57,15 +57,15 @@ docker build -t custom_image .
 
 This will produce a new image called ```custom_image``` that will be available in Docker Engine.
 
-> Note that in the configuration described in this document, Open Hands will run as user "openhands" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
+> Note that in the configuration described in this document, OpenHands will run as user "openhands" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
 >
 > Installing with apt-get above installs node for all users.
 
 ## Specify your sandbox image in config.toml file
 
-Open Hands configuration occurs via the top-level `config.toml` file.
+OpenHands configuration occurs via the top-level `config.toml` file.
 
-Create a `config.toml` file in the Open Hands directory and enter these contents:
+Create a `config.toml` file in the OpenHands directory and enter these contents:
 
 ```toml
 [core]
@@ -80,7 +80,7 @@ For `sandbox_container_image`, you can specify either:
 2. A pre-existing image from Docker Hub (e.g., `”node:20”` if you want a sandbox with Node.js pre-installed)
 
 ## Run
-Run Open Hands by running ```make run``` in the top level directory.
+Run OpenHands by running ```make run``` in the top level directory.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.
 
@@ -96,7 +96,7 @@ In particular, `ssh_box.py` checks the config object for ```config.sandbox_conta
 
 When first using a custom image, it will not be found and thus it will be built (on subsequent runs the built image will be found and returned).
 
-The custom image is built using [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), which creates a docker file using your custom_image as a base and then configures the environment for Open Hands, like this:
+The custom image is built using [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), which creates a docker file using your custom_image as a base and then configures the environment for OpenHands, like this:
 
 ```python
 dockerfile_content = (
@@ -123,7 +123,7 @@ dockerfile_content = (
 
 ### Error: ```useradd: UID 1000 is not unique```
 
-If you see this error in the console output it is because Open Hands is trying to create the openhands user in the sandbox with a UID of 1000, however this UID is already being used in the image (for some reason). To fix this change the sandbox_user_id field in the config.toml file to a different value:
+If you see this error in the console output it is because OpenHands is trying to create the openhands user in the sandbox with a UID of 1000, however this UID is already being used in the image (for some reason). To fix this change the sandbox_user_id field in the config.toml file to a different value:
 
 ```toml
 [core]

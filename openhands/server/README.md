@@ -1,4 +1,4 @@
-# Open Hands Server
+# OpenHands Server
 
 This is a WebSocket server that executes tasks using an agent.
 

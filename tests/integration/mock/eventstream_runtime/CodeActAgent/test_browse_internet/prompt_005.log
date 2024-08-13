@@ -410,6 +410,6 @@ Certainly! I'll browse localhost:8000 and retrieve the ultimate answer to life f
 ----------
 
 OBSERVATION:
-{'content': 'The ultimate answer to life, the universe, and everything is: Open Hands is all you need!'}
+{'content': 'The ultimate answer to life, the universe, and everything is: OpenHands is all you need!'}
 
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>

@@ -32,7 +32,7 @@ docker.errors.DockerException: 获取服务器 API 版本时出错: ('连接中�
 
 ### 详情
 
-Open Hands 使用 Docker 容器来安全地完成工作，而不会破坏您的机器。
+OpenHands 使用 Docker 容器来安全地完成工作，而不会破坏您的机器。
 
 ### 解决方法
 
@@ -55,7 +55,7 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 
 ### 详情
 
-默认情况下，Open Hands 使用 SSH 连接到一个运行中的容器。在某些机器上，尤其是 Windows，这似乎会失败。
+默认情况下，OpenHands 使用 SSH 连接到一个运行中的容器。在某些机器上，尤其是 Windows，这似乎会失败。
 
 ### 解决方法
 
@@ -81,7 +81,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 [GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
-这通常发生在本地 LLM 设置中，当 Open Hands 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/localLLMs) 以获取更多信息。
+这通常发生在本地 LLM 设置中，当 OpenHands 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/localLLMs) 以获取更多信息。
 
 ### 解决方法
 
@@ -171,15 +171,15 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 ### 症状
 
-通常情况下，当打开 UI 时，Open Hands 会询问是否要恢复或开始新会话。但点击“恢复”仍然会开始一个全新的聊天。
+通常情况下，当打开 UI 时，OpenHands 会询问是否要恢复或开始新会话。但点击“恢复”仍然会开始一个全新的聊天。
 
 ### 详情
 
-按今天的标准安装，会话数据存储在内存中。目前，如果 Open Hands 的服务重启，以前的会话将失效（生成一个新秘密），因此无法恢复。
+按今天的标准安装，会话数据存储在内存中。目前，如果 OpenHands 的服务重启，以前的会话将失效（生成一个新秘密），因此无法恢复。
 
 ### 解决方法
 
-* 通过编辑 Open Hands 根文件夹中的 `config.toml` 文件，更改配置以使会话持久化，指定一个 `file_store` 和一个绝对路径的 `file_store_path`：
+* 通过编辑 OpenHands 根文件夹中的 `config.toml` 文件，更改配置以使会话持久化，指定一个 `file_store` 和一个绝对路径的 `file_store_path`：
 
 ```toml
 file_store="local"

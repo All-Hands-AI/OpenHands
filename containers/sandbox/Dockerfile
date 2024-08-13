@@ -28,7 +28,7 @@ RUN mkdir -p -m0755 /var/run/sshd
 # symlink python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# ==== Open Hands Runtime Client ====
+# ==== OpenHands Runtime Client ====
 RUN mkdir -p /openhands && mkdir -p /openhands/logs && chmod 777 /openhands/logs
 RUN wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 RUN bash Miniforge3.sh -b -p /openhands/miniforge3

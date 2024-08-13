@@ -60,7 +60,7 @@ def _create_project_source_dist():
 
 def _put_source_code_to_dir(temp_dir: str):
     """Builds the project source tarball. Copies it to temp_dir and unpacks it.
-    The Open Hands source code ends up in the temp_dir/code directory
+    The OpenHands source code ends up in the temp_dir/code directory
 
     Parameters:
     - temp_dir (str): The directory to put the source code in
@@ -287,7 +287,7 @@ def build_runtime_image(
     force_rebuild: bool = False,
 ) -> str:
     """Prepares the final docker build folder.
-    If dry_run is False, it will also build the Open Hands runtime Docker image using the docker build folder.
+    If dry_run is False, it will also build the OpenHands runtime Docker image using the docker build folder.
 
     Parameters:
     - base_image (str): The name of the base Docker image to use

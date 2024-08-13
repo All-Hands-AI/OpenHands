@@ -16,7 +16,7 @@ checkout_eval_branch() {
     fi
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     echo "Current version is: $current_branch"
-    echo "Check out Open Hands to version: $COMMIT_HASH"
+    echo "Check out OpenHands to version: $COMMIT_HASH"
     if ! git checkout $COMMIT_HASH; then
         echo "Failed to check out to $COMMIT_HASH"
         exit 1
@@ -40,7 +40,7 @@ checkout_original_branch() {
 }
 
 get_agent_version() {
-    # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of Open Hands
+    # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenHands
     # We need to track the version of Agent in the evaluation to make sure results are comparable
     AGENT_VERSION=v$(poetry run python -c "import agenthub; from openhands.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
 }
