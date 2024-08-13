@@ -603,12 +603,12 @@ Understood. Let's start by installing the `pymsgbox` package.
 OBSERVATION:
 Collecting pymsgbox==1.0.9
   Downloading PyMsgBox-1.0.9.tar.gz (18 kB)
-  Installing build dependencies ... [?25l- \ | / - \ | / done
+  Installing build dependencies ... [?25l- \ | / - \ | / - \ | / - \ | / - \ done
 [?25h  Getting requirements to build wheel ... [?25l- done
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=e504d1b40c05b7da59bba1f908d23edcd98381d8e0ecc41a1162745ee4ee6fd2
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=e6c344aecd9e7b02d3ff2bb4d98a74d0fe6156b5f523d40b402350da7aac55e6
   Stored in directory: /home/opendevin/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox
@@ -617,7 +617,7 @@ Successfully installed pymsgbox-1.0.9
 [notice] A new release of pip is available: 24.1 -> 24.2
 [notice] To update, run: pip install --upgrade pip
 Note: you may need to restart the kernel to use updated packages.
-
+[Jupyter current working directory: /workspace]
 
 ----------
 
@@ -637,5 +637,6 @@ version_info
 
 OBSERVATION:
 '1.0.9'
+[Jupyter current working directory: /workspace]
 
 ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>.
