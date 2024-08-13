@@ -37,8 +37,8 @@ ARG OPEN_DEVIN_BUILD_VERSION #re-declare for this section
 ENV RUN_AS_DEVIN=true
 # A random number--we need this to be different from the user's UID on the host machine
 ENV OPENDEVIN_USER_ID=42420
+ENV SANDBOX_API_HOSTNAME=host.docker.internal
 ENV USE_HOST_NETWORK=false
-ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
@@ -46,8 +46,10 @@ RUN mkdir -p $WORKSPACE_BASE
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
 
-RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs # Default is 1000, but OSX is often 501
-RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs # Default is 60000, but we've seen up to 200000
+# Default is 1000, but OSX is often 501
+RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
+# Default is 60000, but we've seen up to 200000
+RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
 RUN groupadd app
 RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash opendevin && \
@@ -68,6 +70,9 @@ RUN playwright install --with-deps chromium
 COPY --chown=opendevin:app --chmod=770 ./opendevin ./opendevin
 COPY --chown=opendevin:app --chmod=777 ./opendevin/runtime/plugins ./opendevin/runtime/plugins
 COPY --chown=opendevin:app --chmod=770 ./agenthub ./agenthub
+COPY --chown=opendevin:app --chmod=770 ./pyproject.toml ./pyproject.toml
+COPY --chown=opendevin:app --chmod=770 ./poetry.lock ./poetry.lock
+COPY --chown=opendevin:app --chmod=770 ./README.md ./README.md
 
 RUN python opendevin/core/download.py # No-op to download assets
 RUN chown -R opendevin:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script

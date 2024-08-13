@@ -1,5 +1,11 @@
 # Getting Started with the OpenDevin Frontend
 
+The frontend code can be run against the docker image defined in the [Main README](../README.md) as a backend
+
+## Prerequisites
+
+A recent version of NodeJS / NPM (`brew install node`)
+
 ## Available Scripts
 
 In the project directory, you can run:

@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "^3.4.0",
-    "@docusaurus/plugin-content-pages": "^3.4.0",
+    "@docusaurus/plugin-content-pages": "^3.5.1",
     "@docusaurus/preset-classic": "^3.4.0",
     "@docusaurus/theme-mermaid": "^3.4.0",
     "@mdx-js/react": "^3.0.0",
@@ -28,9 +28,9 @@
     "react-use": "^17.5.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.4.0",
-    "@docusaurus/tsconfig": "^3.4.0",
-    "@docusaurus/types": "^3.4.0",
+    "@docusaurus/module-type-aliases": "^3.5.1",
+    "@docusaurus/tsconfig": "^3.5.1",
+    "@docusaurus/types": "^3.5.1",
     "typescript": "~5.5.4"
   },
   "browserslist": {

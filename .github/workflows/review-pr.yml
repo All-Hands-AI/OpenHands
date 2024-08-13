@@ -53,7 +53,6 @@ jobs:
       env:
         LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         LLM_MODEL: ${{ vars.LLM_MODEL }}
-        SANDBOX_BOX_TYPE: ssh
       run: |
         # Append path to launch poetry
         export PATH="/github/home/.local/bin:$PATH"
