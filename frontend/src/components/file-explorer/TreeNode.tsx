@@ -8,7 +8,7 @@ import { listFiles, selectFile } from "#/services/fileService";
 import {
   setCode,
   setActiveFilepath,
-  addOrUpdateUnsavedEdit,
+  addOrUpdateFileState,
 } from "#/state/codeSlice";
 
 interface TitleProps {
@@ -47,11 +47,9 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const unsavedEdits = useSelector(
-    (state: RootState) => state.code.unsavedEdits,
-  );
-  const unsavedEdit = unsavedEdits.find((u) => u.path === path);
-  const isUnsaved = unsavedEdit?.savedContent !== unsavedEdit?.unsavedContent;
+  const fileStates = useSelector((state: RootState) => state.code.fileStates);
+  const fileState = fileStates.find((u) => u.path === path);
+  const isUnsaved = fileState?.savedContent !== fileState?.unsavedContent;
 
   const dispatch = useDispatch();
 
@@ -80,13 +78,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      let newUnsavedEdit = unsavedEdits.find((u) => u.path === path);
-      if (!newUnsavedEdit) {
+      let newFileState = fileStates.find((u) => u.path === path);
+      if (!newFileState) {
         const code = await selectFile(path);
-        newUnsavedEdit = { path, savedContent: code, unsavedContent: code };
+        newFileState = { path, savedContent: code, unsavedContent: code };
       }
-      dispatch(addOrUpdateUnsavedEdit(newUnsavedEdit));
-      dispatch(setCode(newUnsavedEdit.unsavedContent));
+      dispatch(addOrUpdateFileState(newFileState));
+      dispatch(setCode(newFileState.unsavedContent));
       dispatch(setActiveFilepath(path));
     }
   };

@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-export interface UnsavedEdit {
+export interface FileState {
   path: string;
   savedContent: string;
   unsavedContent: string;
@@ -10,7 +10,7 @@ export const initialState = {
   code: "",
   path: "",
   refreshID: 0,
-  unsavedEdits: [] as UnsavedEdit[],
+  fileStates: [] as FileState[],
 };
 
 export const codeSlice = createSlice({
@@ -26,18 +26,18 @@ export const codeSlice = createSlice({
     setRefreshID: (state, action) => {
       state.refreshID = action.payload;
     },
-    addOrUpdateUnsavedEdit: (state, action) => {
+    addOrUpdateFileState: (state, action) => {
       const { path, unsavedContent, savedContent } = action.payload;
-      const newUnsavedEdits = state.unsavedEdits.filter(
-        (unsavedEdit) => unsavedEdit.path !== path,
+      const newFileStates = state.fileStates.filter(
+        (fileState) => fileState.path !== path,
       );
-      newUnsavedEdits.push({ path, savedContent, unsavedContent });
-      state.unsavedEdits = newUnsavedEdits;
+      newFileStates.push({ path, savedContent, unsavedContent });
+      state.fileStates = newFileStates;
     },
-    removeUnsavedEdit: (state, action) => {
+    removeFileState: (state, action) => {
       const path = action.payload;
-      state.unsavedEdits = state.unsavedEdits.filter(
-        (unsavedEdit) => unsavedEdit.path !== path,
+      state.fileStates = state.fileStates.filter(
+        (fileState) => fileState.path !== path,
       );
     },
   },
@@ -47,8 +47,8 @@ export const {
   setCode,
   setActiveFilepath,
   setRefreshID,
-  addOrUpdateUnsavedEdit,
-  removeUnsavedEdit,
+  addOrUpdateFileState,
+  removeFileState,
 } = codeSlice.actions;
 
 export default codeSlice.reducer;

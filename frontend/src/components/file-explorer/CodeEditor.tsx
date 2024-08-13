@@ -8,11 +8,7 @@ import type { editor } from "monaco-editor";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import FileExplorer from "./FileExplorer";
-import {
-  setCode,
-  addOrUpdateUnsavedEdit,
-  UnsavedEdit,
-} from "#/state/codeSlice";
+import { setCode, addOrUpdateFileState, FileState } from "#/state/codeSlice";
 import toast from "#/utils/toast";
 import { saveFile } from "#/services/fileService";
 import AgentState from "#/types/AgentState";
@@ -20,11 +16,9 @@ import AgentState from "#/types/AgentState";
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const unsavedEdits = useSelector(
-    (state: RootState) => state.code.unsavedEdits,
-  );
+  const fileStates = useSelector((state: RootState) => state.code.fileStates);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const unsavedEdit = unsavedEdits.find((u) => u.path === activeFilepath);
+  const fileState = fileStates.find((u) => u.path === activeFilepath);
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
@@ -32,8 +26,8 @@ function CodeEditor(): JSX.Element {
     "idle" | "saving" | "saved" | "error"
   >("idle");
   const [showSaveNotification, setShowSaveNotification] = useState(false);
-  const unsavedContent = unsavedEdit?.unsavedContent;
-  const hasUnsavedChanges = unsavedEdit?.savedContent !== unsavedContent;
+  const unsavedContent = fileState?.unsavedContent;
+  const hasUnsavedChanges = fileState?.savedContent !== unsavedContent;
 
   const selectedFileName = useMemo(() => {
     const paths = activeFilepath.split("/");
@@ -58,12 +52,12 @@ function CodeEditor(): JSX.Element {
     (value: string | undefined): void => {
       if (value !== undefined && isEditingAllowed) {
         dispatch(setCode(value));
-        const newUnsavedEdit = {
+        const newFileState = {
           path: activeFilepath,
-          savedContent: unsavedEdit?.savedContent,
+          savedContent: fileState?.savedContent,
           unsavedContent: value,
         };
-        dispatch(addOrUpdateUnsavedEdit(newUnsavedEdit));
+        dispatch(addOrUpdateFileState(newFileState));
       }
     },
     [activeFilepath, dispatch, isEditingAllowed],
@@ -91,19 +85,19 @@ function CodeEditor(): JSX.Element {
     setSaveStatus("saving");
 
     try {
-      const newContent = unsavedEdit?.unsavedContent;
+      const newContent = fileState?.unsavedContent;
       if (newContent) {
         await saveFile(activeFilepath, newContent);
       }
       setSaveStatus("saved");
       setShowSaveNotification(true);
       setTimeout(() => setShowSaveNotification(false), 2000);
-      const newUnsavedEdit = {
+      const newFileState = {
         path: activeFilepath,
         savedContent: newContent,
         unsavedContent: newContent,
       };
-      setTimeout(() => dispatch(addOrUpdateUnsavedEdit(newUnsavedEdit)), 2000);
+      setTimeout(() => dispatch(addOrUpdateFileState(newFileState)), 2000);
       toast.success(
         "file-save-success",
         t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY),
@@ -122,9 +116,9 @@ function CodeEditor(): JSX.Element {
   }, [saveStatus, activeFilepath, unsavedContent, isEditingAllowed, t]);
 
   const handleCancel = useCallback(() => {
-    const { path, savedContent } = unsavedEdit as UnsavedEdit;
+    const { path, savedContent } = fileState as FileState;
     dispatch(
-      addOrUpdateUnsavedEdit({
+      addOrUpdateFileState({
         path,
         savedContent,
         unsavedContent: savedContent,
