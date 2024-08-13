@@ -26,6 +26,9 @@ export const codeSlice = createSlice({
     setRefreshID: (state, action) => {
       state.refreshID = action.payload;
     },
+    setFileStates: (state, action) => {
+      state.fileStates = action.payload;
+    },
     addOrUpdateFileState: (state, action) => {
       const { path, unsavedContent, savedContent } = action.payload;
       const newFileStates = state.fileStates.filter(
@@ -49,6 +52,7 @@ export const {
   setRefreshID,
   addOrUpdateFileState,
   removeFileState,
+  setFileStates,
 } = codeSlice.actions;
 
 export default codeSlice.reducer;

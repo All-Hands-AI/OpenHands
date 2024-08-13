@@ -8,7 +8,12 @@ import type { editor } from "monaco-editor";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import FileExplorer from "./FileExplorer";
-import { setCode, addOrUpdateFileState, FileState } from "#/state/codeSlice";
+import {
+  setCode,
+  addOrUpdateFileState,
+  FileState,
+  setFileStates,
+} from "#/state/codeSlice";
 import toast from "#/utils/toast";
 import { saveFile } from "#/services/fileService";
 import AgentState from "#/types/AgentState";
@@ -18,7 +23,7 @@ function CodeEditor(): JSX.Element {
   const dispatch = useDispatch();
   const fileStates = useSelector((state: RootState) => state.code.fileStates);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const fileState = fileStates.find((u) => u.path === activeFilepath);
+  const fileState = fileStates.find((f) => f.path === activeFilepath);
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
@@ -45,7 +50,13 @@ function CodeEditor(): JSX.Element {
 
   useEffect(() => {
     setSaveStatus("idle");
-    // TODO: Remove if not unsaved
+    // Clear out any file states where the file is not being viewed and does not have any changes
+    const newFileStates = fileStates.filter(
+      (f) => f.path === activeFilepath || f.savedContent !== f.unsavedContent,
+    );
+    if (fileStates.length !== newFileStates.length) {
+      dispatch(setFileStates(newFileStates));
+    }
   }, [activeFilepath]);
 
   const handleEditorChange = useCallback(
@@ -169,7 +180,7 @@ function CodeEditor(): JSX.Element {
                 size="sm"
                 startContent={<VscClose />}
               >
-                Cancel
+                {t(I18nKey.FEEDBACK$CANCEL_LABEL)}
               </Button>
               <Button
                 onClick={handleSave}

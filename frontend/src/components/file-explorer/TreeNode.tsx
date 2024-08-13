@@ -48,7 +48,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
   const fileStates = useSelector((state: RootState) => state.code.fileStates);
-  const fileState = fileStates.find((u) => u.path === path);
+  const fileState = fileStates.find((f) => f.path === path);
   const isUnsaved = fileState?.savedContent !== fileState?.unsavedContent;
 
   const dispatch = useDispatch();
@@ -78,7 +78,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      let newFileState = fileStates.find((u) => u.path === path);
+      let newFileState = fileStates.find((f) => f.path === path);
       if (!newFileState) {
         const code = await selectFile(path);
         newFileState = { path, savedContent: code, unsavedContent: code };
