@@ -1,8 +1,8 @@
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
-from opendevin.events.observation import AgentDelegateObservation
-from opendevin.llm.llm import LLM
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.events.action import Action, AgentDelegateAction, AgentFinishAction
+from openhands.events.observation import AgentDelegateObservation
+from openhands.llm.llm import LLM
 
 
 class DelegatorAgent(Agent):

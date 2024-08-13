@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from opendevin.core.config import load_app_config
-from opendevin.core.exceptions import UserCancelledError
-from opendevin.llm.llm import LLM
+from openhands.core.config import load_app_config
+from openhands.core.exceptions import UserCancelledError
+from openhands.llm.llm import LLM
 
 config = load_app_config()
 

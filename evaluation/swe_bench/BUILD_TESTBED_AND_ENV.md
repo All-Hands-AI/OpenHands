@@ -6,7 +6,7 @@ In the original SWE-Bench implementation, conda environment for evaluation is ty
 - Stability: setup could failed due to bad internet connectivity
 - Reliability: it is possible that an instance is considered failed not because the agent did badly, but because the environment setup failed.
 
-In OpenDevin-SWE-Bench fork, we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for efficient evaluation.
+In Open Hands-SWE-Bench fork, we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for efficient evaluation.
 
 NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
 
@@ -15,7 +15,7 @@ NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts
 ### Setup Eval Workspace (Util + Data)
 
 Setup your eval workspace by:
-1. Clone OpenDevin SWE-Bench [fork](https://github.com/OpenDevin/OD-SWE-bench.git)
+1. Clone Open Hands SWE-Bench [fork](https://github.com/Open Hands/OD-SWE-bench.git)
 2. Prepare SWE-Bench data
 
 Run the following command to do the above two steps. The results will be saved to `evaluation/SWE-bench/eval_workspace`.
@@ -34,6 +34,6 @@ Run the following command to do the above two steps. The results will be saved t
 
 ```bash
 pushd evaluation/swe_bench
-docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.2.1 -f ./scripts/docker/Dockerfile.full.v1.1 .
-docker push ghcr.io/opendevin/eval-swe-bench:full-v1.2.1
+docker build -t ghcr.io/openhands/eval-swe-bench:full-v1.2.1 -f ./scripts/docker/Dockerfile.full.v1.1 .
+docker push ghcr.io/openhands/eval-swe-bench:full-v1.2.1
 ```

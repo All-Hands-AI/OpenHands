@@ -1,4 +1,4 @@
-FROM ghcr.io/opendevin/eval-swe-bench:builder
+FROM ghcr.io/openhands/eval-swe-bench:builder
 
 # # Install Mamba/Conda
 RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -16,4 +16,4 @@ RUN /bin/bash -c ". /swe_util/miniforge3/etc/profile.d/conda.sh && conda config 
 
 CMD ["/bin/bash"]
 # pushd evaluation/swe_bench
-# docker build -t ghcr.io/opendevin/eval-swe-bench:builder_with_conda -f ./scripts/docker/Dockerfile.builder_with_conda .
+# docker build -t ghcr.io/openhands/eval-swe-bench:builder_with_conda -f ./scripts/docker/Dockerfile.builder_with_conda .

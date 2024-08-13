@@ -1,4 +1,4 @@
-FROM ghcr.io/opendevin/eval-swe-bench:builder
+FROM ghcr.io/openhands/eval-swe-bench:builder
 
 # This Dockerfile is used to build the Docker image for the evaluation of the SWE-Bench.
 # YOU SHOULD ENSURE ./eval_workspace CONTAINS THE EVALUATION WORKSPACE (testbed, conda)
@@ -69,4 +69,4 @@ RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     /eval_workspace/miniforge3/envs/pydata* /swe_util/miniforge3/envs/
 
 # pushd evaluation/SWE-bench
-# docker build -t ghcr.io/opendevin/eval-swe-bench:full_deps -f ./scripts/docker/Dockerfile.full_deps .
+# docker build -t ghcr.io/openhands/eval-swe-bench:full_deps -f ./scripts/docker/Dockerfile.full_deps .

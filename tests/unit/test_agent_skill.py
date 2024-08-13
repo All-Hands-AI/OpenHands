@@ -7,7 +7,7 @@ from unittest.mock import patch
 import docx
 import pytest
 
-from opendevin.runtime.plugins.agent_skills.agentskills import (
+from openhands.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
     WINDOW,
     _print_window,
@@ -32,7 +32,7 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
 # CURRENT_FILE must be reset for each test
 @pytest.fixture(autouse=True)
 def reset_current_file():
-    from opendevin.runtime.plugins.agent_skills import agentskills
+    from openhands.runtime.plugins.agent_skills import agentskills
 
     agentskills.CURRENT_FILE = None
 

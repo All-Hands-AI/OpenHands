@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from opendevin.core.utils import json
-from opendevin.events.action import MessageAction
+from openhands.core.utils import json
+from openhands.events.action import MessageAction
 
 
 def test_event_serialization_deserialization():

@@ -1,9 +1,9 @@
 from typing import TypedDict, Union
 
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.schema import AgentState
-from opendevin.events.action import (
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.schema import AgentState
+from openhands.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
@@ -16,7 +16,7 @@ from opendevin.events.action import (
     MessageAction,
     ModifyTaskAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     FileReadObservation,
@@ -24,8 +24,8 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.events.serialization.event import event_to_dict
-from opendevin.llm.llm import LLM
+from openhands.events.serialization.event import event_to_dict
+from openhands.llm.llm import LLM
 
 """
 FIXME: There are a few problems this surfaced

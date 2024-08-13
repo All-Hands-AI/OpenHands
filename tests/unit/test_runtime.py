@@ -10,10 +10,10 @@ from unittest.mock import patch
 import pytest
 from pytest import TempPathFactory
 
-from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream
-from opendevin.events.action import (
+from openhands.core.config import AppConfig, SandboxConfig, load_from_env
+from openhands.core.logger import openhands_logger as logger
+from openhands.events import EventStream
+from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -21,7 +21,7 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     BrowserOutputObservation,
     CmdOutputObservation,
     ErrorObservation,
@@ -29,10 +29,10 @@ from opendevin.events.observation import (
     FileWriteObservation,
     IPythonRunCellObservation,
 )
-from opendevin.runtime.client.runtime import EventStreamRuntime
-from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from opendevin.runtime.runtime import Runtime
-from opendevin.storage import get_file_store
+from openhands.runtime.client.runtime import EventStreamRuntime
+from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from openhands.runtime.runtime import Runtime
+from openhands.storage import get_file_store
 
 
 @pytest.fixture(autouse=True)
@@ -49,7 +49,7 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
-PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
+PY3_FOR_TESTING = '/openhands/miniforge3/bin/mamba run -n base python3'
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
@@ -261,14 +261,14 @@ async def test_bash_command_pexcept(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(CmdRunAction(command='env'))
 
     # For example:
-    # 02:16:13 - opendevin:DEBUG: client.py:78 - Executing command: env
-    # 02:16:13 - opendevin:DEBUG: client.py:82 - Command output: PYTHONUNBUFFERED=1
-    # CONDA_EXE=/opendevin/miniforge3/bin/conda
+    # 02:16:13 - openhands:DEBUG: client.py:78 - Executing command: env
+    # 02:16:13 - openhands:DEBUG: client.py:82 - Command output: PYTHONUNBUFFERED=1
+    # CONDA_EXE=/openhands/miniforge3/bin/conda
     # [...]
     # LC_CTYPE=C.UTF-8
     # PS1=\u@\h:\w $
-    # 02:16:13 - opendevin:DEBUG: client.py:89 - Executing command for exit code: env
-    # 02:16:13 - opendevin:DEBUG: client.py:92 - Exit code Output:
+    # 02:16:13 - openhands:DEBUG: client.py:89 - Executing command for exit code: env
+    # 02:16:13 - openhands:DEBUG: client.py:92 - Exit code Output:
     # CONDA_DEFAULT_ENV=base
 
     # As long as the exit code is 0, the test will pass.
@@ -408,7 +408,7 @@ async def test_browsergym_eval_env(temp_dir):
         container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
     )
-    from opendevin.runtime.browser.browser_env import (
+    from openhands.runtime.browser.browser_env import (
         BROWSER_EVAL_GET_GOAL_ACTION,
         BROWSER_EVAL_GET_REWARDS_ACTION,
     )
@@ -563,7 +563,7 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
 
 @pytest.mark.asyncio
 async def test_multiline_command_loop(temp_dir, box_class):
-    # https://github.com/OpenDevin/OpenDevin/issues/3143
+    # https://github.com/Open Hands/Open Hands/issues/3143
 
     runtime = await _load_runtime(temp_dir, box_class)
 
@@ -631,7 +631,7 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     if run_as_devin:
-        assert 'opendevin' in obs.content
+        assert 'openhands' in obs.content
     else:
         assert 'root' in obs.content
     assert 'test' in obs.content
@@ -676,7 +676,7 @@ async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
     if run_as_devin:
-        assert '/home/opendevin' in obs.content
+        assert '/home/openhands' in obs.content
     else:
         assert '/root' in obs.content
 
@@ -760,7 +760,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if run_as_devin:
-        assert 'opendevin' in obs.content
+        assert 'openhands' in obs.content
     else:
         assert 'root' in obs.content
 
@@ -795,8 +795,8 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
     if run_as_devin:
-        # -rw-r--r-- 1 opendevin root 13 Jul 28 03:53 test.txt
-        assert 'opendevin' in obs.content.split('\r\n')[0]
+        # -rw-r--r-- 1 openhands root 13 Jul 28 03:53 test.txt
+        assert 'openhands' in obs.content.split('\r\n')[0]
         assert 'root' in obs.content.split('\r\n')[0]
     else:
         # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
@@ -1313,17 +1313,17 @@ async def test_git_operation(box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    # drwx--S--- 2 opendevin root   64 Aug  7 23:32 .
+    # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
     # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
     for line in obs.content.split('\r\n'):
         if ' ..' in line:
             # parent directory should be owned by root
             assert 'root' in line
-            assert 'opendevin' not in line
+            assert 'openhands' not in line
         elif ' .' in line:
-            # current directory should be owned by opendevin
+            # current directory should be owned by openhands
             # and its group should be root
-            assert 'opendevin' in line
+            assert 'openhands' in line
             assert 'root' in line
 
     # make sure all git operations are allowed

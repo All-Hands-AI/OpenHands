@@ -25,7 +25,7 @@ if [[ -n $GITHUB_REF_NAME ]]; then
 fi
 echo "Tags: ${tags[@]}"
 
-if [[ "$image_name" == "opendevin" ]]; then
+if [[ "$image_name" == "openhands" ]]; then
   dir="./containers/app"
 elif [[ "$image_name" == "od_runtime" ]]; then
   dir="./containers/runtime"

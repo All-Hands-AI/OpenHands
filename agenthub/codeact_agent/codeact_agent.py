@@ -6,10 +6,10 @@ from agenthub.codeact_agent.prompt import (
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.message import ImageContent, Message, TextContent
-from opendevin.events.action import (
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.message import ImageContent, Message, TextContent
+from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
@@ -17,20 +17,20 @@ from opendevin.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.observation import Observation
-from opendevin.events.serialization.event import truncate_content
-from opendevin.llm.llm import LLM
-from opendevin.runtime.plugins import (
+from openhands.events.observation.observation import Observation
+from openhands.events.serialization.event import truncate_content
+from openhands.llm.llm import LLM
+from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
+from openhands.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 
@@ -64,17 +64,17 @@ class CodeActAgent(Agent):
     - Execute any valid Linux `bash` command
     - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
 
-    ![image](https://github.com/OpenDevin/OpenDevin/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
+    ![image](https://github.com/Open Hands/Open Hands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
 
     ### Plugin System
 
-    To make the CodeAct agent more powerful with only access to `bash` action space, CodeAct agent leverages OpenDevin's plugin system:
-    - [Jupyter plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/jupyter): for IPython execution via bash command
-    - [SWE-agent tool plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/swe_agent_commands): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
+    To make the CodeAct agent more powerful with only access to `bash` action space, CodeAct agent leverages Open Hands's plugin system:
+    - [Jupyter plugin](https://github.com/Open Hands/Open Hands/tree/main/openhands/runtime/plugins/jupyter): for IPython execution via bash command
+    - [SWE-agent tool plugin](https://github.com/Open Hands/Open Hands/tree/main/openhands/runtime/plugins/swe_agent_commands): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
 
     ### Demo
 
-    https://github.com/OpenDevin/OpenDevin/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
+    https://github.com/Open Hands/Open Hands/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
 
     *Example of CodeActAgent with `gpt-4-turbo-2024-04-09` performing a data science task (linear regression)*
 

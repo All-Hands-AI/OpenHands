@@ -1,4 +1,4 @@
 DOCKER_REGISTRY=ghcr.io
-DOCKER_ORG=opendevin
+DOCKER_ORG=openhands
 DOCKER_IMAGE=sandbox
 DOCKER_BASE_DIR="."

@@ -1,7 +1,7 @@
 #!/bin/bash
 # THIS SCRIPT ONLY NEED TO BE RUN ONCE BEFORE EVALUATION
 
-EVAL_DOCKER_IMAGE=ghcr.io/opendevin/eval-swe-bench:builder
+EVAL_DOCKER_IMAGE=ghcr.io/openhands/eval-swe-bench:builder
 EVAL_WORKSPACE="evaluation/swe_bench/eval_workspace"
 EVAL_WORKSPACE=$(realpath $EVAL_WORKSPACE)
 
@@ -27,5 +27,5 @@ docker run \
     -v $EVAL_WORKSPACE:/swe_util \
     -e UID=$(id -u) \
     --rm -it $EVAL_DOCKER_IMAGE \
-    bash -c "useradd -rm -d /home/opendevin -s /bin/bash -u $(id -u) opendevin && su opendevin -c 'bash /swe_util/swe_env_setup.sh $SETUP_INSTANCE_FILENAME'"
+    bash -c "useradd -rm -d /home/openhands -s /bin/bash -u $(id -u) openhands && su openhands -c 'bash /swe_util/swe_env_setup.sh $SETUP_INSTANCE_FILENAME'"
 #

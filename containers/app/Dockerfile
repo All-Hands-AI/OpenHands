@@ -52,38 +52,38 @@ RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
 RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
 RUN groupadd app
-RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash opendevin && \
-    usermod -aG app opendevin && \
-    usermod -aG sudo opendevin && \
+RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash openhands && \
+    usermod -aG app openhands && \
+    usermod -aG sudo openhands && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-RUN chown -R opendevin:app /app && chmod -R 770 /app
-RUN sudo chown -R opendevin:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
-USER opendevin
+RUN chown -R openhands:app /app && chmod -R 770 /app
+RUN sudo chown -R openhands:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
+USER openhands
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --chown=opendevin:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 RUN playwright install --with-deps chromium
 
-COPY --chown=opendevin:app --chmod=770 ./opendevin ./opendevin
-COPY --chown=opendevin:app --chmod=777 ./opendevin/runtime/plugins ./opendevin/runtime/plugins
-COPY --chown=opendevin:app --chmod=770 ./agenthub ./agenthub
-COPY --chown=opendevin:app --chmod=770 ./pyproject.toml ./pyproject.toml
-COPY --chown=opendevin:app --chmod=770 ./poetry.lock ./poetry.lock
-COPY --chown=opendevin:app --chmod=770 ./README.md ./README.md
+COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
+COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
+COPY --chown=openhands:app --chmod=770 ./agenthub ./agenthub
+COPY --chown=openhands:app --chmod=770 ./pyproject.toml ./pyproject.toml
+COPY --chown=openhands:app --chmod=770 ./poetry.lock ./poetry.lock
+COPY --chown=openhands:app --chmod=770 ./README.md ./README.md
 
-RUN python opendevin/core/download.py # No-op to download assets
-RUN chown -R opendevin:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script
+RUN python openhands/core/download.py # No-op to download assets
+RUN chown -R openhands:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script
 
 
-COPY --chown=opendevin:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
-COPY --chown=opendevin:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
+COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
 
 WORKDIR /app
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]

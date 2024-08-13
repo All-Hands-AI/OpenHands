@@ -5,9 +5,9 @@ set -e
 function setup_environment_and_testbed {
     local instance_file_name=$1
 
-    # throw error if user name is not opendevin
-    if [ "$USER" != "opendevin" ]; then
-        echo "Error: This script is intended to be run by the 'opendevin' user only." >&2
+    # throw error if user name is not openhands
+    if [ "$USER" != "openhands" ]; then
+        echo "Error: This script is intended to be run by the 'openhands' user only." >&2
         exit 1
     fi
 
