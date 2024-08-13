@@ -117,7 +117,7 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = { git = "https://github.com/Open Hands/SWE-bench.git" }
+swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
 gdown = "*"
