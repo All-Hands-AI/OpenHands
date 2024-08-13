@@ -8,7 +8,7 @@ This guide provides an overview of how to integrate your own evaluation benchmar
 
 ## Before everything begins: Setup Environment and LLM Configuration
 
-Please follow instruction [here](https://github.com/Open Hands/Open Hands/blob/main/Development.md) to setup your local development environment and LLM.
+Please follow instruction [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
 
 Open Hands in development mode uses `config.toml` to keep track of most configurations.
 
@@ -78,7 +78,7 @@ The `run_controller()` function is the core of Open Hands's execution. It manage
 
 ## Easiest way to get started: Exploring Existing Benchmarks
 
-We encourage you to review the various evaluation benchmarks available in the [`evaluation/` directory](https://github.com/Open Hands/Open Hands/blob/main/evaluation) of our repository.
+We encourage you to review the various evaluation benchmarks available in the [`evaluation/` directory](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation) of our repository.
 
 To integrate your own benchmark, we suggest starting with the one that most closely resembles your needs. This approach can significantly streamline your integration process, allowing you to build upon existing structures and adapt them to your specific requirements.
 

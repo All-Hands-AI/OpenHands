@@ -25,7 +25,7 @@ Open Hands est un projet communautaire, et nous accueillons les contributions de
 - **Recherche et Évaluation :** Contribuez à notre compréhension des LLM en ingénierie logicielle, participez à l'évaluation des modèles ou suggérez des améliorations.
 - **Retour d'Information et Tests :** Utilisez l'ensemble d'outils Open Hands, signalez des bogues, suggérez des fonctionnalités ou fournissez des retours sur l'ergonomie.
 
-Pour plus de détails, veuillez consulter [ce document](https://github.com/Open Hands/Open Hands/blob/main/CONTRIBUTING.md).
+Pour plus de détails, veuillez consulter [ce document](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md).
 
 ## 🤖 Rejoignez Notre Communauté {#join-our-community}
 
@@ -50,4 +50,4 @@ Veuillez noter que la sélection de ces technologies est en cours, et que des te
 
 ## 📜 Licence {#license}
 
-Distribué sous la licence MIT. Voir [notre licence](https://github.com/Open Hands/Open Hands/blob/main/LICENSE) pour plus d'informations.
+Distribué sous la licence MIT. Voir [notre licence](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE) pour plus d'informations.

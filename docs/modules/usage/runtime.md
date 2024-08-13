@@ -81,7 +81,7 @@ The role of the client is crucial:
 
 Open Hands uses a sophisticated approach to build and manage runtime images. This process ensures efficiency, consistency, and flexibility in creating and maintaining Docker images for both production and development environments.
 
-Check out [relavant code](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/utils/runtime_build.py) if you are interested in more details.
+Check out [relavant code](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) if you are interested in more details.
 
 ### Image Tagging System
 
@@ -164,7 +164,7 @@ By using this method, Open Hands maintains an efficient and flexible system for 
 
 The Open Hands Runtime supports a plugin system that allows for extending functionality and customizing the runtime environment. Plugins are initialized when the runtime client starts up.
 
-Check [an example of Jupyter plugin here](https://github.com/Open Hands/Open Hands/blob/9c44d94cef32e6426ebd8deeeb52963153b2348a/openhands/runtime/plugins/jupyter/__init__.py#L30-L63) if you want to implement your own plugin.
+Check [an example of Jupyter plugin here](https://github.com/All-Hands-AI/OpenHands/blob/9c44d94cef32e6426ebd8deeeb52963153b2348a/openhands/runtime/plugins/jupyter/__init__.py#L30-L63) if you want to implement your own plugin.
 
 *More details about the Plugin system are still under construction - contributions are welcomed!*
 

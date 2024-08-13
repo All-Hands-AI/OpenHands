@@ -21,7 +21,7 @@ The `state` contains:
 
 - A history of actions taken by the agent, as well as any observations (e.g. file content, command output) from those actions
 - A list of actions/observations that have happened since the most recent step
-- A [`root_task`](https://github.com/Open Hands/Open Hands/blob/main/openhands/controller/state/task.py), which contains a plan of action
+- A [`root_task`](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/controller/state/task.py), which contains a plan of action
   - The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTaskAction`
 
 ## Actions

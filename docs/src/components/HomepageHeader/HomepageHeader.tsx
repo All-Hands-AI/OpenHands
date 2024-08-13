@@ -18,7 +18,7 @@ export function HomepageHeader() {
         <p className="header-subtitle">{siteConfig.tagline}</p>
 
         <div className="header-links">
-          <a href="https://github.com/Open Hands/Open Hands">
+          <a href="https://github.com/All-Hands-AI/OpenHands">
             <img src="https://img.shields.io/badge/Code-Github-purple?logo=github&logoColor=white&style=for-the-badge" alt="Code" />
           </a>
           <a href="https://join.slack.com/t/openhands/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA">

@@ -13,7 +13,7 @@ If you have only been using Open Hands via frontend (web GUI), nothing needs
 to be taken care of.
 
 Here's a list of breaking changes in configs. They only apply to users who
-use Open Hands CLI via `main.py`. For more detail, see [#2756](https://github.com/Open Hands/Open Hands/pull/2756).
+use Open Hands CLI via `main.py`. For more detail, see [#2756](https://github.com/All-Hands-AI/OpenHands/pull/2756).
 
 #### Removal of --model-name option from main.py
 

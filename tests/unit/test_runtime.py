@@ -563,7 +563,7 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
 
 @pytest.mark.asyncio
 async def test_multiline_command_loop(temp_dir, box_class):
-    # https://github.com/Open Hands/Open Hands/issues/3143
+    # https://github.com/All-Hands-AI/OpenHands/issues/3143
 
     runtime = await _load_runtime(temp_dir, box_class)
 

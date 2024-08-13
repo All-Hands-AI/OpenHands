@@ -82,7 +82,7 @@ const config: Config = {
           label: "Codebase",
         },
         {
-          href: "https://github.com/Open Hands/Open Hands",
+          href: "https://github.com/All-Hands-AI/OpenHands",
           label: "GitHub",
           position: "right",
         },

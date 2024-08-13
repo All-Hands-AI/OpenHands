@@ -41,7 +41,7 @@ To learn more about how to integrate your benchmark into Open Hands, check out [
 
 ## Before everything begins: Setup Environment and LLM Configuration
 
-Please follow instruction [here](https://github.com/Open Hands/Open Hands/blob/main/Development.md) to setup your local development environment and LLM.
+Please follow instruction [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
 
 Open Hands in development mode uses `config.toml` to keep track of most configurations.
 

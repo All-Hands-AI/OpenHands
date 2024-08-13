@@ -25,7 +25,7 @@ Open Hands 是一个社区驱动的项目，我们欢迎每个人的贡献。无
 - **研究和评价:** 贡献您对 LLM 在软件工程领域理解的见解，参与评估模型，或提出改进建议。
 - **反馈和测试:** 使用 Open Hands 工具集，报告错误，建议功能，或提供可用性方面的反馈。
 
-详情请查阅[此文件](https://github.com/Open Hands/Open Hands/blob/main/CONTRIBUTING.md)。
+详情请查阅[此文件](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md)。
 
 ## 🤖 加入我们的社区
 
@@ -50,4 +50,4 @@ Open Hands 使用了一系列强大的框架和库，提供了坚实的开发基
 
 ## 📜 许可证
 
-根据 MIT 许可证分发。详见[我们的许可证](https://github.com/Open Hands/Open Hands/blob/main/LICENSE)了解更多信息。
+根据 MIT 许可证分发。详见[我们的许可证](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE)了解更多信息。

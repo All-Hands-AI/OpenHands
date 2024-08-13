@@ -25,7 +25,7 @@ Open Hands is a community-driven project, and we welcome contributions from ever
 - **Research and Evaluation:** Contribute to our understanding of LLMs in software engineering, participate in evaluating the models, or suggest improvements.
 - **Feedback and Testing:** Use the Open Hands toolset, report bugs, suggest features, or provide feedback on usability.
 
-For details, please check [this document](https://github.com/Open Hands/Open Hands/blob/main/CONTRIBUTING.md).
+For details, please check [this document](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
@@ -50,4 +50,4 @@ Please note that the selection of these technologies is in progress, and additio
 
 ## 📜 License
 
-Distributed under the MIT License. See [our license](https://github.com/Open Hands/Open Hands/blob/main/LICENSE) for more information.
+Distributed under the MIT License. See [our license](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE) for more information.

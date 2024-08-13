@@ -18,7 +18,7 @@ sidebar_position: 5
 
 ## 无法连接到 Docker
 
-[GitHub 问题](https://github.com/Open Hands/Open Hands/issues/1226)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1226)
 
 ### 症状
 
@@ -43,7 +43,7 @@ Open Hands 使用 Docker 容器来安全地完成工作，而不会破坏您的�
 
 ## 无法连接到 DockerSSHBox
 
-[GitHub 问题](https://github.com/Open Hands/Open Hands/issues/1156)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1156)
 
 ### 症状
 
@@ -62,11 +62,11 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 * 重新启动您的计算机（有时会有用）
 * 确保拥有最新版本的 WSL 和 Docker
 * 检查您的 WSL 分发版也已更新
-* 尝试[此重新安装指南](https://github.com/Open Hands/Open Hands/issues/1156#issuecomment-2064549427)
+* 尝试[此重新安装指南](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
 
 ## 无法连接到 LLM
 
-[GitHub 问题](https://github.com/Open Hands/Open Hands/issues/1208)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1208)
 
 ### 症状
 
@@ -79,7 +79,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 ### 详情
 
-[GitHub 问题](https://github.com/Open Hands/Open Hands/issues?q=is%3Aissue+is%3Aopen+404)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
 这通常发生在本地 LLM 设置中，当 Open Hands 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/localLLMs) 以获取更多信息。
 

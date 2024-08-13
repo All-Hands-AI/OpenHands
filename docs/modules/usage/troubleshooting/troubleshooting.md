@@ -29,7 +29,7 @@ If you're running on Windows and having trouble, check out our [guide for Window
 
 ### Unable to connect to Docker
 
-[GitHub Issue](https://github.com/Open Hands/Open Hands/issues/1226)
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1226)
 
 **Symptoms**
 
@@ -55,7 +55,7 @@ Open Hands uses a Docker container to do its work safely, without potentially br
 ---
 ### Unable to connect to SSH box
 
-[GitHub Issue](https://github.com/Open Hands/Open Hands/issues/1156)
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1156)
 
 **Symptoms**
 
@@ -75,12 +75,12 @@ especially Windows, this seems to fail.
 * Restart your computer (sometimes it does work)
 * Be sure to have the latest versions of WSL and Docker
 * Check that your distribution in WSL is up to date as well
-* Try [this reinstallation guide](https://github.com/Open Hands/Open Hands/issues/1156#issuecomment-2064549427)
+* Try [this reinstallation guide](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
 
 ---
 ### Unable to connect to LLM
 
-[GitHub Issue](https://github.com/Open Hands/Open Hands/issues/1208)
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1208)
 
 **Symptoms**
 
@@ -93,7 +93,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 **Details**
 
-[GitHub Issues](https://github.com/Open Hands/Open Hands/issues?q=is%3Aissue+is%3Aopen+404)
+[GitHub Issues](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
 This usually happens with *local* LLM setups, when Open Hands can't connect to the LLM server.
 See our guide for [local LLMs](llms/localLLMs) for more information.

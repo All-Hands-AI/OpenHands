@@ -25,7 +25,7 @@ function CustomFooter() {
           <a href="https://discord.gg/ESHStjSjD4" target="_blank" rel="noopener noreferrer">
             <FaDiscord />
           </a>
-          <a href="https://github.com/Open Hands/Open Hands" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/All-Hands-AI/OpenHands" target="_blank" rel="noopener noreferrer">
             <FaGithub />
           </a>
         </div>

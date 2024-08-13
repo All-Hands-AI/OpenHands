@@ -60,7 +60,7 @@ docker run \
 
 ### 从源代码构建
 
-使用[Development.md](https://github.com/Open Hands/Open Hands/blob/main/Development.md)中的说明构建 Open Hands。
+使用[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)中的说明构建 Open Hands。
 通过运行 `make setup-config` 确保 `config.toml` 存在，这将为您创建一个。在 `config.toml` 中，输入以下内容：
 
 ```

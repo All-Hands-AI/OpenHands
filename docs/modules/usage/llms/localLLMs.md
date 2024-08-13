@@ -65,7 +65,7 @@ You should now be able to connect to `http://localhost:3000/`
 
 ### Build from Source
 
-Use the instructions in [Development.md](https://github.com/Open Hands/Open Hands/blob/main/Development.md) to build Open Hands.
+Use the instructions in [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to build Open Hands.
 Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
 
 ```

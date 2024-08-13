@@ -1,10 +1,10 @@
 # 💿 如何创建自定义 Docker 沙箱
 
-默认的 Open Hands 沙箱包含一个[最小化 ubuntu 配置](https://github.com/Open Hands/Open Hands/blob/main/containers/sandbox/Dockerfile)。您的应用场景可能需要在默认状态下安装额外的软件。本指南将教您如何通过使用自定义 Docker 映像来实现这一目标。
+默认的 Open Hands 沙箱包含一个[最小化 ubuntu 配置](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile)。您的应用场景可能需要在默认状态下安装额外的软件。本指南将教您如何通过使用自定义 Docker 映像来实现这一目标。
 
 ## 环境设置
 
-确保您能够首先通过 [Development.md](https://github.com/Open Hands/Open Hands/blob/main/Development.md) 运行 Open Hands。
+确保您能够首先通过 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 运行 Open Hands。
 
 ## 创建您的 Docker 映像
 
@@ -58,13 +58,13 @@ sandbox_container_image="custom_image"
 
 ## 技术解释
 
-相关代码定义在 [ssh_box.py](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/ssh_box.py) 和 [image_agnostic_util.py](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py) 中。
+相关代码定义在 [ssh_box.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/ssh_box.py) 和 [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py) 中。
 
-特别是 ssh_box.py 检查配置对象中的 ```config.sandbox_container_image```，然后尝试使用 [get_od_sandbox_image](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72)，在 image_agnostic_util.py 定义中进行检索。
+特别是 ssh_box.py 检查配置对象中的 ```config.sandbox_container_image```，然后尝试使用 [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72)，在 image_agnostic_util.py 定义中进行检索。
 
 初次使用自定义映像时，该映像将不会被找到，因此将被构建（在后续运行中已构建的映像将被查找并返回）。
 
-自定义映像是通过 `_build_sandbox_image()` 构建的，在 [image_agnostic_util.py](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29) 中，使用您的 custom_image 作为基础，并为 Open Hands 配置环境。例如：
+自定义映像是通过 `_build_sandbox_image()` 构建的，在 [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29) 中，使用您的 custom_image 作为基础，并为 Open Hands 配置环境。例如：
 
 ```python
 dockerfile_content = (
@@ -80,7 +80,7 @@ dockerfile_content = (
     ).strip()
 ```
 
-> 注意：映像名称通过 [_get_new_image_name()](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) 修改，并且是后续运行中搜索的修改后的名称。
+> 注意：映像名称通过 [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) 修改，并且是后续运行中搜索的修改后的名称。
 
 ## 故障排除 / 错误
 

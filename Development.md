@@ -1,6 +1,6 @@
 # Development Guide
 This guide is for people working on Open Hands and editing the source code.
-If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/Open Hands/Open Hands/blob/main/CONTRIBUTING.md) on how to clone and setup the project initially before moving on.
+If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md) on how to clone and setup the project initially before moving on.
 Otherwise, you can clone the Open Hands project directly.
 
 ## Start the server for development
@@ -51,7 +51,7 @@ To configure the LM of your choice, run:
 
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest.
-And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to share your setup instructions with us by creating instructions and adding it [to our documentation](https://github.com/Open Hands/Open Hands/tree/main/docs/modules/usage/llms).
+And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to share your setup instructions with us by creating instructions and adding it [to our documentation](https://github.com/All-Hands-AI/OpenHands/tree/main/docs/modules/usage/llms).
 
 For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
 

@@ -4,7 +4,7 @@ Le sandbox par défaut Open Hands est équipé d'une configuration ubuntu minima
 
 ## Configuration
 
-Assurez-vous de pouvoir utiliser Open Hands en suivant la documentation [Development.md](https://github.com/Open Hands/Open Hands/blob/main/Development.md).
+Assurez-vous de pouvoir utiliser Open Hands en suivant la documentation [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
 ## Créer Votre Image Docker
 
@@ -59,13 +59,13 @@ Félicitations !
 
 ## Explication technique
 
-Le code pertinent est défini dans [ssh_box.py](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/ssh_box.py) et [image_agnostic_util.py](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py).
+Le code pertinent est défini dans [ssh_box.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/ssh_box.py) et [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py).
 
-En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox_container_image``` et ensuite tente de récupérer l'image à l'aide de [get_od_sandbox_image](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72), qui est défini dans image_agnostic_util.py.
+En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox_container_image``` et ensuite tente de récupérer l'image à l'aide de [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72), qui est défini dans image_agnostic_util.py.
 
 Lorsqu'une image personnalisée est utilisée pour la première fois, elle ne sera pas trouvée et donc elle sera construite (à l'exécution ultérieure, l'image construite sera trouvée et renvoyée).
 
-L'image personnalisée est construite avec [_build_sandbox_image()](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), qui crée un fichier docker en utilisant votre image personnalisée comme base et configure ensuite l'environnement pour Open Hands, comme ceci:
+L'image personnalisée est construite avec [_build_sandbox_image()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29), qui crée un fichier docker en utilisant votre image personnalisée comme base et configure ensuite l'environnement pour Open Hands, comme ceci:
 
 ```python
 dockerfile_content = (
@@ -81,7 +81,7 @@ dockerfile_content = (
     ).strip()
 ```
 
-> Remarque: Le nom de l'image est modifié via [_get_new_image_name()](https://github.com/Open Hands/Open Hands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) et c'est ce nom modifié qui sera recherché lors des exécutions ultérieures.
+> Remarque: Le nom de l'image est modifié via [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) et c'est ce nom modifié qui sera recherché lors des exécutions ultérieures.
 
 ## Dépannage / Erreurs
 

@@ -18,11 +18,11 @@
 -->
 
 <div align="center">
-  <a href="https://github.com/Open Hands/Open Hands/graphs/contributors"><img src="https://img.shields.io/github/contributors/openhands/openhands?style=for-the-badge&color=blue" alt="Contributors"></a>
-  <a href="https://github.com/Open Hands/Open Hands/network/members"><img src="https://img.shields.io/github/forks/openhands/openhands?style=for-the-badge&color=blue" alt="Forks"></a>
-  <a href="https://github.com/Open Hands/Open Hands/stargazers"><img src="https://img.shields.io/github/stars/openhands/openhands?style=for-the-badge&color=blue" alt="Stargazers"></a>
-  <a href="https://github.com/Open Hands/Open Hands/issues"><img src="https://img.shields.io/github/issues/openhands/openhands?style=for-the-badge&color=blue" alt="Issues"></a>
-  <a href="https://github.com/Open Hands/Open Hands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/openhands/openhands?style=for-the-badge&color=blue" alt="MIT License"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/openhands/openhands?style=for-the-badge&color=blue" alt="Contributors"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/network/members"><img src="https://img.shields.io/github/forks/openhands/openhands?style=for-the-badge&color=blue" alt="Forks"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/openhands/openhands?style=for-the-badge&color=blue" alt="Stargazers"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/issues"><img src="https://img.shields.io/github/issues/openhands/openhands?style=for-the-badge&color=blue" alt="Issues"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/openhands/openhands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <br/>
   <a href="https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
@@ -82,7 +82,7 @@ Open Hands will only have access to this workspace folder. The rest of your syst
 Upon opening Open Hands, you must select the appropriate `Model` and enter the `API Key` within the settings that should pop up automatically. These can be set at any time by selecting
 the `Settings` button (gear icon) in the UI. If the required `Model` does not exist in the list, you can manually enter it in the text box.
 
-For the development workflow, see [Development.md](https://github.com/Open Hands/Open Hands/blob/main/Development.md).
+For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
 Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
 
@@ -127,15 +127,15 @@ Let's make software engineering better together!
 Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
 
 [contributors-shield]: https://img.shields.io/github/contributors/openhands/openhands?style=for-the-badge
-[contributors-url]: https://github.com/Open Hands/Open Hands/graphs/contributors
+[contributors-url]: https://github.com/All-Hands-AI/OpenHands/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/openhands/openhands?style=for-the-badge
-[forks-url]: https://github.com/Open Hands/Open Hands/network/members
+[forks-url]: https://github.com/All-Hands-AI/OpenHands/network/members
 [stars-shield]: https://img.shields.io/github/stars/openhands/openhands?style=for-the-badge
-[stars-url]: https://github.com/Open Hands/Open Hands/stargazers
+[stars-url]: https://github.com/All-Hands-AI/OpenHands/stargazers
 [issues-shield]: https://img.shields.io/github/issues/openhands/openhands?style=for-the-badge
-[issues-url]: https://github.com/Open Hands/Open Hands/issues
+[issues-url]: https://github.com/All-Hands-AI/OpenHands/issues
 [license-shield]: https://img.shields.io/github/license/openhands/openhands?style=for-the-badge
-[license-url]: https://github.com/Open Hands/Open Hands/blob/main/LICENSE
+[license-url]: https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE
 
 ## 📚 Cite
 

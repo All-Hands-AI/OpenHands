@@ -6,9 +6,9 @@ Thanks for your interest in contributing to Open Hands! We welcome and appreciat
 
 There are many ways that you can contribute:
 
-1. **Download and use** Open Hands, and send [issues](https://github.com/Open Hands/Open Hands/issues) when you encounter something that isn't working or a feature that you'd like to see.
+1. **Download and use** Open Hands, and send [issues](https://github.com/All-Hands-AI/OpenHands/issues) when you encounter something that isn't working or a feature that you'd like to see.
 2. **Send feedback** after each session by [clicking the thumbs-up thumbs-down buttons](https://docs.all-hands.dev/modules/usage/feedback), so we can see where things are working and failing, and also build an open dataset for training code agents.
-3. **Improve the Codebase** by sending PRs (see details below). In particular, we have some [good first issue](https://github.com/Open Hands/Open Hands/labels/good%20first%20issue) issues that may be ones to start on.
+3. **Improve the Codebase** by sending PRs (see details below). In particular, we have some [good first issue](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) issues that may be ones to start on.
 
 ## Understanding Open Hands's CodeBase
 
@@ -25,7 +25,7 @@ At the moment, we have two kinds of tests: `unit` and `integration`. Please refe
 ## Sending Pull Requests to Open Hands
 
 ### 1. Fork the Official Repository
-Fork the [Open Hands repository](https://github.com/Open Hands/Open Hands) into your own account.
+Fork the [Open Hands repository](https://github.com/All-Hands-AI/OpenHands) into your own account.
 Clone your own forked repository into your local environment:
 
 ```shell
@@ -62,7 +62,7 @@ git push origin main
 
 ### 4. Set up the Development Environment
 
-We have a separate doc [Development.md](https://github.com/Open Hands/Open Hands/blob/main/Development.md) that tells you how to set up a development workflow.
+We have a separate doc [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) that tells you how to set up a development workflow.
 
 ### 5. Write Code and Commit It
 
@@ -84,7 +84,7 @@ git push origin my_branch
    - Set `base` to `main`
    - Click `Create pull request`
 
-The PR should appear in [Open Hands PRs](https://github.com/Open Hands/Open Hands/pulls).
+The PR should appear in [Open Hands PRs](https://github.com/All-Hands-AI/OpenHands/pulls).
 
 Then the Open Hands team will review your code.
 
@@ -109,7 +109,7 @@ For example, a PR title could be:
 - `refactor: modify package path`
 - `feat(frontend): xxxx`, where `(frontend)` means that this PR mainly focuses on the frontend component.
 
-You may also check out previous PRs in the [PR list](https://github.com/Open Hands/Open Hands/pulls).
+You may also check out previous PRs in the [PR list](https://github.com/All-Hands-AI/OpenHands/pulls).
 
 ### 2. Pull Request description
 - If your PR is small (such as a typo fix), you can go brief.
