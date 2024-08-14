@@ -7,7 +7,7 @@ class RuntimeBuilder(abc.ABC):
         self,
         path: str,
         tags: list[str],
-    ) -> bool:
+    ) -> str:
         """
         Build the runtime image.
 
@@ -16,7 +16,7 @@ class RuntimeBuilder(abc.ABC):
             tags (list[str]): The tags to apply to the runtime image (e.g., ["repo:my-repo", "sha:my-sha"]).
 
         Returns:
-            bool: Whether the build was successful.
+            str: The name of the runtime image (e.g., "repo:sha").
 
         Raises:
             RuntimeError: If the build failed.

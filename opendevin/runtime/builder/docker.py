@@ -9,7 +9,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
     def __init__(self, docker_client: docker.DockerClient):
         self.docker_client = docker_client
 
-    def build(self, path: str, tags: list[str]) -> bool:
+    def build(self, path: str, tags: list[str]) -> str:
         target_image_hash_name = tags[0]
         target_image_repo, target_image_hash_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
@@ -59,7 +59,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         logger.info(
             f'Image {target_image_repo} with tags [{tags_str}] built successfully'
         )
-        return True
+        return target_image_hash_name
 
     def image_exists(self, image_name: str) -> bool:
         """Check if the image exists in the registry (try to pull it first) AND in the local store.
