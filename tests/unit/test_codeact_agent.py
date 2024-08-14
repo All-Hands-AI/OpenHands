@@ -1,6 +1,3 @@
-# Assume these imports are available
-# from your_module import Agent, CmdOutputObservation, IPythonRunCellObservation, AgentDelegateObservation, ErrorObservation, Message, TextContent
-
 from unittest.mock import Mock
 
 import pytest
