@@ -199,6 +199,7 @@ class SandboxConfig(metaclass=Singleton):
     """
 
     api_hostname: str = 'localhost'
+    api_key: str | None = None
     container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
