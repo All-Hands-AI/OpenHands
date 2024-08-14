@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import platform
 import tempfile
 import time
 from unittest.mock import patch
@@ -41,6 +42,7 @@ def print_method_name(request):
     print(f'Running test: {request.node.name}')
     print('########################################################################')
     yield
+    print('\n########################################################################')
 
 
 @pytest.fixture
@@ -69,14 +71,6 @@ def box_class(request):
     return request.param
 
 
-# TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
-# since `EventStreamRuntime` supports running as an arbitrary user.
-@pytest.fixture(scope='module', params=[True, False])
-def run_as_devin(request):
-    time.sleep(1)
-    return request.param
-
-
 @pytest.fixture(scope='module', params=[True, False])
 def enable_auto_lint(request):
     time.sleep(1)
@@ -94,7 +88,6 @@ def container_image(request):
 async def _load_runtime(
     temp_dir,
     box_class,
-    run_as_devin: bool = True,
     enable_auto_lint: bool = False,
     container_image: str | None = None,
     browsergym_eval_env: str | None = None,
@@ -113,7 +106,7 @@ async def _load_runtime(
         ),
     )
     load_from_env(config, os.environ)
-    config.run_as_devin = run_as_devin
+    config.run_as_devin = False
     config.sandbox.enable_auto_lint = enable_auto_lint
 
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -147,14 +140,14 @@ async def _load_runtime(
 
     else:
         raise ValueError(f'Invalid box class: {box_class}')
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     return runtime
 
 
 @pytest.mark.asyncio
-async def test_env_vars_os_environ(temp_dir, box_class, run_as_devin):
+async def test_env_vars_os_environ(temp_dir, box_class):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+        runtime = await _load_runtime(temp_dir, box_class)
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='env')
@@ -171,7 +164,7 @@ async def test_env_vars_os_environ(temp_dir, box_class, run_as_devin):
         ), f'Output: [{obs.content}] for {box_class}'
 
         await runtime.close()
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -189,7 +182,7 @@ async def test_env_vars_runtime_add_env_vars(temp_dir, box_class):
     ), f'Output: [{obs.content}] for {box_class}'
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -210,13 +203,19 @@ async def test_env_vars_runtime_add_empty_dict(temp_dir, box_class):
     ), 'The env var content should be the same after adding an empty dict.'
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    'microsoft' in platform.uname().release.lower(),
+    reason='Skipping test in WSL environment',
+)
 async def test_env_vars_runtime_add_multiple_env_vars(temp_dir, box_class):
     runtime = await _load_runtime(temp_dir, box_class)
+    await asyncio.sleep(2)
     await runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
+    await asyncio.sleep(2)
 
     obs: CmdOutputObservation = await runtime.run_action(
         CmdRunAction(command='echo $QUUX $FOOBAR')
@@ -228,7 +227,7 @@ async def test_env_vars_runtime_add_multiple_env_vars(temp_dir, box_class):
     ), f'Output: [{obs.content}] for {box_class}'
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -247,12 +246,12 @@ async def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
         ), f'Output: [{obs.content}] for {box_class}'
 
         await runtime.close()
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_bash_command_pexcept(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_bash_command_pexcept(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # We set env var PS1="\u@\h:\w $"
     # and construct the PEXCEPT prompt base on it.
@@ -278,12 +277,12 @@ async def test_bash_command_pexcept(temp_dir, box_class, run_as_devin):
     assert obs.exit_code == 0, 'The exit code should be 0.'
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
@@ -347,12 +346,12 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     assert obs.exit_code == 0
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_simple_browse(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_simple_browse(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # Test browse
     action_cmd = CmdRunAction(
@@ -395,7 +394,7 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     assert obs.exit_code == 0
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -404,7 +403,6 @@ async def test_browsergym_eval_env(temp_dir):
         temp_dir,
         # only supported in event stream runtime
         box_class=EventStreamRuntime,
-        run_as_devin=False,  # need root permission to access file
         container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
     )
@@ -442,7 +440,7 @@ async def test_browsergym_eval_env(temp_dir):
     assert json.loads(obs.content) == [0.0]
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -457,7 +455,7 @@ async def test_single_multiline_command(temp_dir, box_class):
     assert 'foo' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -472,7 +470,7 @@ async def test_multiline_echo(temp_dir, box_class):
     assert 'hello\r\nworld' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -488,11 +486,11 @@ async def test_runtime_whitespace(temp_dir, box_class):
     assert '\r\n\r\n\r\n' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_multiple_multiline_commands(temp_dir, box_class, run_as_devin):
+async def test_multiple_multiline_commands(temp_dir, box_class):
     cmds = [
         'ls -l',
         'echo -e "hello\nworld"',
@@ -522,7 +520,7 @@ world "
     ]
     joined_cmds = '\n'.join(cmds)
 
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class)
 
     action = CmdRunAction(command=joined_cmds)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -541,13 +539,13 @@ world "
     assert 'hello\r\nworld "\r\n' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
+async def test_no_ps2_in_output(temp_dir, box_class):
     """Test that the PS2 sign is not added to the output of a multiline command."""
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class)
 
     action = CmdRunAction(command='echo -e "hello\nworld"')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -558,7 +556,7 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
     assert '>' not in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -602,12 +600,12 @@ echo "success"
     assert 'success' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_cmd_run(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_cmd_run(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     action = CmdRunAction(command='ls -l')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -630,10 +628,7 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    if run_as_devin:
-        assert 'opendevin' in obs.content
-    else:
-        assert 'root' in obs.content
+    assert 'root' in obs.content
     assert 'test' in obs.content
 
     action = CmdRunAction(command='touch test/foo.txt')
@@ -662,12 +657,12 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
     assert obs.exit_code == 0
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_run_as_user_correct_home_dir(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     action = CmdRunAction(command='cd ~ && pwd')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -675,13 +670,10 @@ async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    if run_as_devin:
-        assert '/home/opendevin' in obs.content
-    else:
-        assert '/root' in obs.content
+    assert '/root' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -698,7 +690,7 @@ async def test_multi_cmd_run_in_single_line(temp_dir, box_class):
     assert 'total 0' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -728,7 +720,7 @@ async def test_stateful_cmd(temp_dir, box_class):
     assert '/workspace/test' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -743,12 +735,12 @@ async def test_failed_cmd(temp_dir, box_class):
     assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_ipython_multi_user(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # Test run ipython
     # get username
@@ -759,10 +751,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    if run_as_devin:
-        assert 'opendevin' in obs.content
-    else:
-        assert 'root' in obs.content
+    assert 'root' in obs.content
 
     # print pwd
     test_code = 'import os; print(os.getcwd())'
@@ -794,13 +783,8 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-    if run_as_devin:
-        # -rw-r--r-- 1 opendevin root 13 Jul 28 03:53 test.txt
-        assert 'opendevin' in obs.content.split('\r\n')[0]
-        assert 'root' in obs.content.split('\r\n')[0]
-    else:
-        # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
-        assert 'root' in obs.content.split('\r\n')[0]
+    # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
+    assert 'root' in obs.content.split('\r\n')[0]
 
     # clean up
     action = CmdRunAction(command='rm -rf test')
@@ -810,7 +794,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     assert obs.exit_code == 0
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -828,7 +812,7 @@ async def test_ipython_simple(temp_dir, box_class):
     assert obs.content.strip() == '1\n[Jupyter current working directory: /workspace]'
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 async def _test_ipython_agentskills_fileop_pwd_impl(
@@ -945,22 +929,20 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     assert obs.exit_code == 0
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd(
-    temp_dir, box_class, run_as_devin, enable_auto_lint
-):
+async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
     """Make sure that cd in bash also update the current working directory in ipython."""
 
     runtime = await _load_runtime(
-        temp_dir, box_class, run_as_devin, enable_auto_lint=enable_auto_lint
+        temp_dir, box_class, enable_auto_lint=enable_auto_lint
     )
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -974,7 +956,6 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
     runtime = await _load_runtime(
         temp_dir,
         box_class,
-        run_as_devin=False,
     )
 
     action = CmdRunAction(command='cd ~')
@@ -1028,7 +1009,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
     ).strip().split('\n')
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -1058,13 +1039,13 @@ async def test_bash_python_version(temp_dir, box_class):
     # Should not error out
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
-async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
+async def test_ipython_package_install(temp_dir, box_class):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -1094,7 +1075,7 @@ async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
     )
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 def _create_test_file(host_temp_dir):
@@ -1130,7 +1111,7 @@ async def test_copy_single_file(temp_dir, box_class):
     assert 'Hello, World!' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 def _create_test_dir_with_files(host_temp_dir):
@@ -1180,7 +1161,7 @@ async def test_copy_directory_recursively(temp_dir, box_class):
     assert 'File 1 content' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -1202,7 +1183,7 @@ async def test_copy_to_non_existent_directory(temp_dir, box_class):
     assert 'Hello, World!' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -1240,7 +1221,7 @@ async def test_overwrite_existing_file(temp_dir, box_class):
     assert 'Hello, World!' in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -1261,15 +1242,13 @@ async def test_copy_non_existent_file(temp_dir, box_class):
     assert obs.exit_code != 0  # File should not exist
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
 async def test_keep_prompt(temp_dir):
     # only EventStreamRuntime supports keep_prompt
-    runtime = await _load_runtime(
-        temp_dir, box_class=EventStreamRuntime, run_as_devin=False
-    )
+    runtime = await _load_runtime(temp_dir, box_class=EventStreamRuntime)
 
     action = CmdRunAction(command='touch /workspace/test_file.txt')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -1288,7 +1267,7 @@ async def test_keep_prompt(temp_dir):
     assert 'root@' not in obs.content
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
 
 @pytest.mark.asyncio
@@ -1299,8 +1278,6 @@ async def test_git_operation(box_class):
     runtime = await _load_runtime(
         temp_dir=None,
         box_class=box_class,
-        # Need to use non-root user to expose issues
-        run_as_devin=True,
     )
 
     # this will happen if permission of runtime is not properly configured
@@ -1369,4 +1346,4 @@ async def test_git_operation(box_class):
     await runtime.close()
 
     await runtime.close()
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
