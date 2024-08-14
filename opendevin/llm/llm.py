@@ -172,8 +172,7 @@ class LLM:
                         debug_message += message_separator + content_str
                 else:
                     content_str = str(content)
-
-                debug_message += message_separator + content_str
+                    debug_message += message_separator + content_str
 
             llm_prompt_logger.debug(debug_message)
 
