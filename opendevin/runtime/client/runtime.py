@@ -188,12 +188,12 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=4, max=60),
+        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
         logger.info('Reconnecting session')
         container = self.docker_client.containers.get(self.container_name)
-        # print logs
+        # get logs
         _logs = container.logs(tail=10).decode('utf-8').split('\n')
         # add indent
         _logs = '\n'.join([f'    |{log}' for log in _logs])
