@@ -194,37 +194,7 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     )
 
 
-@patch('opendevin.runtime.utils.runtime_build.docker.DockerClient')
-def test_build_runtime_image_from_scratch(mock_docker_client, temp_dir):
-    base_image = 'debian:11'
-
-    mock_docker_client.images.list.return_value = []
-
-    # for image.tag(target_repo, target_image_tag)
-    mock_image = MagicMock()
-    mock_docker_client.images.get.return_value = mock_image
-
-    from_scratch_hash = prep_docker_build_folder(
-        temp_dir,
-        base_image,
-        skip_init=False,
-    )
-
-    image_name = build_runtime_image(base_image, mock_docker_client)
-
-    # The build call should be called with the hash tag
-    mock_docker_client.api.build.assert_called_once_with(
-        path=ANY, tag=f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}', rm=True, decode=True
-    )
-    # Then the hash tag should be tagged to the version
-    mock_image.tag.assert_called_once_with(
-        f'{RUNTIME_IMAGE_REPO}', f'{OD_VERSION}_image_debian_tag_11'
-    )
-    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
-
-
-@patch('opendevin.runtime.utils.runtime_build.docker.DockerClient')
-def test_build_runtime_image_exact_hash_exist(mock_docker_client, temp_dir):
+def test_build_runtime_image_from_scratch(temp_dir):
     base_image = 'debian:11'
 
     from_scratch_hash = prep_docker_build_folder(
@@ -233,20 +203,45 @@ def test_build_runtime_image_exact_hash_exist(mock_docker_client, temp_dir):
         skip_init=False,
     )
 
-    mock_docker_client.images.list.return_value = [
-        MagicMock(tags=[f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'])
-    ]
+    mock_runtime_builder = MagicMock()
+    mock_runtime_builder.image_exists.return_value = False
+    mock_runtime_builder.build.return_value = (
+        f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    )
 
-    image_name = build_runtime_image(base_image, mock_docker_client)
+    image_name = build_runtime_image(base_image, mock_runtime_builder)
+    mock_runtime_builder.build.assert_called_once_with(
+        path=ANY,
+        tags=[
+            f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}',
+            f'{RUNTIME_IMAGE_REPO}:{OD_VERSION}_image_debian_tag_11',
+        ],
+    )
     assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
-    mock_docker_client.api.build.assert_not_called()
+
+
+def test_build_runtime_image_exact_hash_exist(temp_dir):
+    base_image = 'debian:11'
+
+    from_scratch_hash = prep_docker_build_folder(
+        temp_dir,
+        base_image,
+        skip_init=False,
+    )
+
+    mock_runtime_builder = MagicMock()
+    mock_runtime_builder.image_exists.return_value = True
+    mock_runtime_builder.build.return_value = (
+        f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    )
+
+    image_name = build_runtime_image(base_image, mock_runtime_builder)
+    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    mock_runtime_builder.build.assert_not_called()
 
 
 @patch('opendevin.runtime.utils.runtime_build._build_sandbox_image')
-@patch('opendevin.runtime.utils.runtime_build.docker.DockerClient')
-def test_build_runtime_image_exact_hash_not_exist(
-    mock_docker_client, mock_build_sandbox_image, temp_dir
-):
+def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp_dir):
     base_image = 'debian:11'
     repo, latest_image_tag = get_runtime_image_repo_and_tag(base_image)
     latest_image_name = f'{repo}:{latest_image_tag}'
@@ -263,8 +258,9 @@ def test_build_runtime_image_exact_hash_not_exist(
             skip_init=True,
         )
 
-    # latest image exists BUT not the exact hash
-    mock_docker_client.images.list.return_value = [MagicMock(tags=[latest_image_name])]
+    mock_runtime_builder = MagicMock()
+    # Set up mock_runtime_builder.image_exists to return False then True
+    mock_runtime_builder.image_exists.side_effect = [False, True]
 
     with patch(
         'opendevin.runtime.utils.runtime_build.prep_docker_build_folder'
@@ -274,7 +270,7 @@ def test_build_runtime_image_exact_hash_not_exist(
             non_from_scratch_hash,
         ]
 
-        image_name = build_runtime_image(base_image, mock_docker_client)
+        image_name = build_runtime_image(base_image, mock_runtime_builder)
 
         mock_prep_docker_build_folder.assert_has_calls(
             [
@@ -287,7 +283,7 @@ def test_build_runtime_image_exact_hash_not_exist(
 
         mock_build_sandbox_image.assert_called_once_with(
             docker_folder=ANY,
-            docker_client=mock_docker_client,
+            runtime_builder=mock_runtime_builder,
             target_image_repo=repo,
             target_image_hash_tag=from_scratch_hash,
             target_image_tag=latest_image_tag,

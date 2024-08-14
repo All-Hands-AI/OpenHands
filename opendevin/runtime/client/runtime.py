@@ -28,6 +28,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
+from opendevin.runtime.builder import DockerRuntimeBuilder
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
@@ -70,6 +71,8 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+
+        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
         logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
@@ -80,7 +83,7 @@ class EventStreamRuntime(Runtime):
 
         self.container_image = build_runtime_image(
             self.container_image,
-            self.docker_client,
+            self.runtime_builder,
             extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
