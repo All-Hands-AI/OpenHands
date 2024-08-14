@@ -356,16 +356,16 @@ def _build_sandbox_image(
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
 
     try:
-        success = runtime_builder.build(
+        image_name = runtime_builder.build(
             path=docker_folder, tags=[target_image_hash_name, target_image_generic_name]
         )
-        if not success:
+        if not image_name:
             raise RuntimeError(f'Build failed for image {target_image_hash_name}')
     except Exception as e:
         logger.error(f'Sandbox image build failed: {e}')
         raise
 
-    return target_image_hash_name
+    return image_name
 
 
 if __name__ == '__main__':
