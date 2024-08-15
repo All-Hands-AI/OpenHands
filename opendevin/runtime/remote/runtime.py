@@ -69,25 +69,38 @@ class RemoteRuntime(Runtime):
             if container_image is None
             else container_image
         )
+        self.container_name = 'od-remote-runtime-' + self.instance_id
+        logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
+
+    async def ainit(self, env_vars: dict[str, str] | None = None):
+        # Check if the container image exists
+        # Use the /registry_prefix endpoint to get the registry prefix
+        session = await self._ensure_session()
+        async with session.get(f'{self.api_url}/registry_prefix') as response:
+            if response.status != 200:
+                raise RuntimeError(
+                    f'Failed to get registry prefix: {await response.text()}'
+                )
+            response_json = await response.json()
+            registry_prefix = response_json['registry_prefix']
+            os.environ['OD_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+                registry_prefix.rstrip('/') + '/od_runtime'
+            )
+            logger.info(
+                f'Runtime image repo: {os.environ["OD_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+            )
+
+        if self.config.sandbox.od_runtime_extra_deps:
+            logger.info(
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
+            )
+
         # Build the container image
         self.container_image = build_runtime_image(
             self.container_image,
             self.runtime_builder,
             extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
-
-        self.container_name = 'od-remote-runtime-' + self.instance_id
-        logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
-
-    async def ainit(self, env_vars: dict[str, str] | None = None):
-        if self.config.sandbox.od_runtime_extra_deps:
-            logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
-            )
-            # TODO: Implement building custom image with extra dependencies using the /build endpoint
-            raise NotImplementedError(
-                'Extra dependencies not supported for remote runtime'
-            )
 
         # Use the /image_exists endpoint to check if the image exists
         session = await self._ensure_session()
@@ -129,6 +142,7 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
+        session = await self._ensure_session()
         async with session.post(
             f'{self.api_url}/start', json=start_request
         ) as response:

@@ -13,9 +13,9 @@ import opendevin
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
-RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/opendevin/od_runtime'
-)
+
+def get_runtime_image_repo():
+    return os.getenv('OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/opendevin/od_runtime')
 
 
 def _get_package_version():
@@ -175,7 +175,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     - tuple[str, str]: The Docker repo and tag of the Docker image
     """
 
-    if RUNTIME_IMAGE_REPO in base_image:
+    if get_runtime_image_repo() in base_image:
         logger.info(
             f'The provided image [{base_image}] is a already a valid od_runtime image.\n'
             f'Will try to reuse it as is.'
@@ -191,7 +191,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         [repo, tag] = base_image.split(':')
         repo = repo.replace('/', '___')
         od_version = _get_package_version()
-        return RUNTIME_IMAGE_REPO, f'od_v{od_version}_image_{repo}_tag_{tag}'
+        return get_runtime_image_repo(), f'od_v{od_version}_image_{repo}_tag_{tag}'
 
 
 def build_runtime_image(
