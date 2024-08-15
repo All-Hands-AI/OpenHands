@@ -1,3 +1,4 @@
+import glob
 import logging
 import os
 import re
@@ -212,7 +213,7 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 class LlmFileHandler(logging.FileHandler):
     """# LLM prompt and response logging"""
 
-    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
+    def __init__(self, filename, mode='a', encoding='utf-8', delay=True):
         """Initializes an instance of LlmFileHandler.
 
         Args:
@@ -223,12 +224,10 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        if DEBUG:
-            self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
-        else:
-            self.session = 'default'
-        self.log_directory = os.path.join(LOG_DIR, 'llm', self.session)
+        self.session_id = os.getenv('SESSION_ID', 'default')
+        self.log_directory = os.path.join(LOG_DIR, 'llm', self.session_id)
         os.makedirs(self.log_directory, exist_ok=True)
+
         if not DEBUG:
             # Clear the log directory if not in debug mode
             for file in os.listdir(self.log_directory):
@@ -239,6 +238,18 @@ class LlmFileHandler(logging.FileHandler):
                     opendevin_logger.error(
                         'Failed to delete %s. Reason: %s', file_path, e
                     )
+        else:
+            # In DEBUG mode, continue writing existing log directory
+            # find the highest message counter
+            existing_files = glob.glob(
+                os.path.join(self.log_directory, f'{self.filename}_*.log')
+            )
+            if existing_files:
+                highest_counter = max(
+                    int(f.split('_')[-1].split('.')[0]) for f in existing_files
+                )
+                self.message_counter = highest_counter + 1
+
         filename = f'{self.filename}_{self.message_counter:03}.log'
         self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
