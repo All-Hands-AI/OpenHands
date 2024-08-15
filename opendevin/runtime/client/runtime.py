@@ -194,7 +194,7 @@ class EventStreamRuntime(Runtime):
         wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
-        logger.info('Reconnecting session')
+        logger.debug('Getting container logs...')
         container = self.docker_client.containers.get(self.container_name)
         # get logs
         _logs = container.logs(tail=10).decode('utf-8').split('\n')
