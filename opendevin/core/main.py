@@ -51,7 +51,7 @@ async def create_runtime(
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
     # we can do this better, this is just so that the sid is retrieved when we want to restore the session
-    session_id = sid or generate_sid()
+    session_id = sid or generate_sid(config)
 
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -102,6 +102,9 @@ async def run_controller(
         agent = agent_cls(
             llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
         )
+
+    # make sure the session id is set
+    sid = sid or generate_sid(config)
 
     if runtime is None:
         runtime = await create_runtime(config, sid=sid)
@@ -182,7 +185,7 @@ async def run_controller(
     return state
 
 
-def generate_sid(session_name: str | None = None) -> str:
+def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
     """Generate a session id based on the session name and the jwt secret."""
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret
@@ -221,7 +224,7 @@ if __name__ == '__main__':
 
     # Set session name
     session_name = args.name
-    sid = generate_sid(session_name)
+    sid = generate_sid(config, session_name)
 
     # if max budget per task is not sent on the command line, use the config value
     if args.max_budget_per_task is not None:
