@@ -101,7 +101,9 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
         if result['exists']:
             logger.info(
-                f"Image {image_name} exists. Created at: {result['created_at']}, Size: {result['size']}"
+                f"Image {image_name} exists. "
+                f"Uploaded at: {result['image']['upload_time']}, "
+                f"Size: {result['image']['image_size_bytes'] / 1024 / 1024:.2f} MB"
             )
         else:
             logger.info(f'Image {image_name} does not exist.')
