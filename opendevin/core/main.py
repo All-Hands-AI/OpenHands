@@ -110,7 +110,7 @@ async def run_controller(
                 event_stream.sid, event_stream.file_store
             )
         except Exception as e:
-            logger.info('Error restoring state', e)
+            logger.info(f'Error restoring state: {e}')
 
     # init controller with this initial state
     controller = AgentController(

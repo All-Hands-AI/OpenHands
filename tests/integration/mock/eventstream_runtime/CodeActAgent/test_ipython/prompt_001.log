@@ -396,6 +396,8 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
+----------
+
 Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
 
 ENVIRONMENT REMINDER: You have 14 turns left to complete the task. When finished reply with <finish></finish>.

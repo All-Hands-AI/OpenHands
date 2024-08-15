@@ -176,11 +176,11 @@ class AgentController:
         elif isinstance(event, ModifyTaskAction):
             self.state.root_task.set_subtask_state(event.task_id, event.state)
         elif isinstance(event, AgentFinishAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.outputs = event.outputs
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(event, AgentRejectAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.outputs = event.outputs
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):

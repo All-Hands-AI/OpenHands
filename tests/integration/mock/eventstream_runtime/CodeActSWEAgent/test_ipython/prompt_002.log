@@ -603,5 +603,6 @@ with open('/workspace/test.txt', 'w') as file:
 
 OBSERVATION:
 [Code executed successfully with no output]
+[Jupyter current working directory: /workspace]
 
 ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
