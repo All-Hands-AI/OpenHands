@@ -31,6 +31,7 @@ from opendevin.events.observation import (
 )
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.remote.runtime import RemoteRuntime
 from opendevin.runtime.runtime import Runtime
 from opendevin.storage import get_file_store
 
@@ -57,6 +58,8 @@ def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
+    elif runtime.lower() == 'remote':
+        return [RemoteRuntime]
     else:
         return [EventStreamRuntime]
 
