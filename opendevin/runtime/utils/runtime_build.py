@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader
 
 import opendevin
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 RUNTIME_IMAGE_REPO = os.getenv(
     'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/opendevin/od_runtime'
@@ -40,7 +41,7 @@ def _create_project_source_dist():
     logger.info(f'Using project root: {project_root}')
 
     # run "python -m build -s" on project_root to create project tarball
-    result = subprocess.run(['python', '-m', 'build', '-s', project_root])
+    result = subprocess.run(f'python -m build -s {project_root}', shell=True)
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
         raise Exception(f'Build failed: {result}')
@@ -164,67 +165,6 @@ def prep_docker_build_folder(
     return hash
 
 
-def _build_sandbox_image(
-    docker_folder: str,
-    docker_client: docker.DockerClient,
-    target_image_repo: str,
-    target_image_hash_tag: str,
-    target_image_tag: str,
-) -> str:
-    """Build and tag the sandbox image.
-    The image will be tagged as both:
-        - target_image_hash_tag
-        - target_image_tag
-
-    Parameters:
-    - docker_folder (str): the path to the docker build folder
-    - docker_client (docker.DockerClient): the docker client
-    - target_image_repo (str): the repository name for the target image
-    - target_image_hash_tag (str): the *hash* tag for the target image that is calculated based
-        on the contents of the docker build folder (source code and Dockerfile)
-        e.g. 1234567890abcdef
-    -target_image_tag (str): the tag for the target image that's generic and based on the base image name
-        e.g. od_v0.8.3_image_ubuntu_tag_22.04
-    """
-    # Build the Docker image and tag it with the hash (target_image_hash_tag)
-    target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
-    try:
-        build_logs = docker_client.api.build(
-            path=docker_folder,
-            tag=target_image_hash_name,
-            rm=True,
-            decode=True,
-        )
-    except docker.errors.BuildError as e:
-        logger.error(f'Sandbox image build failed: {e}')
-        raise e
-
-    for log in build_logs:
-        if 'stream' in log:
-            print(log['stream'].strip())
-        elif 'error' in log:
-            logger.error(log['error'].strip())
-        else:
-            logger.info(str(log))
-
-    # Re-tag the image with the target_image_tag
-    logger.info(f'Image [{target_image_hash_name}] build finished.')
-    image = docker_client.images.get(target_image_hash_name)
-    image.tag(target_image_repo, target_image_tag)
-    logger.info(
-        f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
-    )
-
-    # Check if the image is built successfully
-    image = docker_client.images.get(target_image_hash_name)
-    if image is None:
-        raise RuntimeError(f'Build failed: Image {target_image_hash_name} not found')
-    logger.info(
-        f'Image {target_image_repo} with tags [{target_image_hash_tag}, {target_image_tag}] built successfully'
-    )
-    return target_image_hash_name
-
-
 def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     """Retrieves the Docker repo and tag associated with the Docker image.
 
@@ -254,33 +194,9 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         return RUNTIME_IMAGE_REPO, f'od_v{od_version}_image_{repo}_tag_{tag}'
 
 
-def _check_image_exists(image_name: str, docker_client: docker.DockerClient) -> bool:
-    """Check if the image exists in the registry (try to pull it first) AND in the local store.
-
-    Parameters:
-    - image_name (str): The Docker image to check (<image repo>:<image tag>)
-    - docker_client (docker.DockerClient): The Docker client
-
-    Returns:
-    - bool: Whether the Docker image exists in the registry and in the local store
-    """
-    # Try to pull the Docker image from the registry
-    try:
-        docker_client.images.pull(image_name)
-    except Exception:
-        logger.info(f'Cannot pull image {image_name} directly')
-
-    images = docker_client.images.list()
-    if images:
-        for image in images:
-            if image_name in image.tags:
-                return True
-    return False
-
-
 def build_runtime_image(
     base_image: str,
-    docker_client: docker.DockerClient,
+    runtime_builder: RuntimeBuilder,
     extra_deps: str | None = None,
     docker_build_folder: str | None = None,
     dry_run: bool = False,
@@ -291,7 +207,7 @@ def build_runtime_image(
 
     Parameters:
     - base_image (str): The name of the base Docker image to use
-    - docker_client (docker.DockerClient): The Docker client
+    - runtime_builder (RuntimeBuilder): The runtime builder to use
     - extra_deps (str):
     - docker_build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
@@ -325,7 +241,7 @@ def build_runtime_image(
 
     # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
     # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if _check_image_exists(hash_runtime_image_name, docker_client):
+    if runtime_builder.image_exists(hash_runtime_image_name):
         logger.info(
             f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
         )
@@ -334,10 +250,7 @@ def build_runtime_image(
     # Scenario 2: If a Docker image with the exact hash is not found, we will FIRST try to re-build it
     # by leveraging the `generic_runtime_image_name` to save some time
     # from re-building the dependencies (e.g., poetry install, apt install)
-    elif (
-        _check_image_exists(generic_runtime_image_name, docker_client)
-        and not force_rebuild
-    ):
+    elif runtime_builder.image_exists(generic_runtime_image_name) and not force_rebuild:
         logger.info(
             f'Cannot find docker Image [{hash_runtime_image_name}]\n'
             f'Will try to re-build it from latest [{generic_runtime_image_name}] image to potentially save '
@@ -361,7 +274,7 @@ def build_runtime_image(
         if not dry_run:
             _build_sandbox_image(
                 docker_folder=cur_docker_build_folder,
-                docker_client=docker_client,
+                runtime_builder=runtime_builder,
                 target_image_repo=runtime_image_repo,
                 # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
                 # otherwise, even if the source code is exactly the same, the image *might* be re-built
@@ -400,7 +313,7 @@ def build_runtime_image(
         if not dry_run:
             _build_sandbox_image(
                 docker_folder=cur_docker_build_folder,
-                docker_client=docker_client,
+                runtime_builder=runtime_builder,
                 target_image_repo=runtime_image_repo,
                 # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
                 target_image_hash_tag=from_scratch_hash,
@@ -415,6 +328,44 @@ def build_runtime_image(
             shutil.rmtree(cur_docker_build_folder)
 
     return f'{runtime_image_repo}:{from_scratch_hash}'
+
+
+def _build_sandbox_image(
+    docker_folder: str,
+    runtime_builder: RuntimeBuilder,
+    target_image_repo: str,
+    target_image_hash_tag: str,
+    target_image_tag: str,
+) -> str:
+    """Build and tag the sandbox image.
+    The image will be tagged as both:
+        - target_image_hash_tag
+        - target_image_tag
+
+    Parameters:
+    - docker_folder (str): the path to the docker build folder
+    - runtime_builder (RuntimeBuilder): the runtime builder instance
+    - target_image_repo (str): the repository name for the target image
+    - target_image_hash_tag (str): the *hash* tag for the target image that is calculated based
+        on the contents of the docker build folder (source code and Dockerfile)
+        e.g. 1234567890abcdef
+    -target_image_tag (str): the tag for the target image that's generic and based on the base image name
+        e.g. od_v0.8.3_image_ubuntu_tag_22.04
+    """
+    target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
+    target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
+
+    try:
+        success = runtime_builder.build(
+            path=docker_folder, tags=[target_image_hash_name, target_image_generic_name]
+        )
+        if not success:
+            raise RuntimeError(f'Build failed for image {target_image_hash_name}')
+    except Exception as e:
+        logger.error(f'Sandbox image build failed: {e}')
+        raise
+
+    return target_image_hash_name
 
 
 if __name__ == '__main__':
@@ -450,7 +401,7 @@ if __name__ == '__main__':
             # then obtain the MD5 hash of the folder and return <image_repo>:<temp_dir_md5_hash>
             runtime_image_hash_name = build_runtime_image(
                 args.base_image,
-                docker_client=docker.from_env(),
+                runtime_builder=DockerRuntimeBuilder(docker.from_env()),
                 docker_build_folder=temp_dir,
                 dry_run=True,
                 force_rebuild=args.force_rebuild,
@@ -487,6 +438,6 @@ if __name__ == '__main__':
         # If a build_folder is not provided, after copying the required source code and dynamically creating the
         # Dockerfile, we actually build the Docker image
         logger.info('Building image in a temporary folder')
-        client = docker.from_env()
-        image_name = build_runtime_image(args.base_image, client)
+        docker_builder = DockerRuntimeBuilder(docker.from_env())
+        image_name = build_runtime_image(args.base_image, docker_builder)
         print(f'\nBUILT Image: {image_name}\n')
