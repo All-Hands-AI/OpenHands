@@ -1,3 +1,4 @@
+import base64
 import io
 import tarfile
 
@@ -22,17 +23,23 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             tar.add(path, arcname='.')
         tar_buffer.seek(0)
 
-        # Prepare the request payload
-        payload = {
-            'context': tar_buffer.getvalue(),
-            'target_image': tags[0],
-            'tags': tags[1:],  # Exclude the first tag as it's already the target_image
-        }
+        # Encode the tar file as base64
+        base64_encoded_tar = base64.b64encode(tar_buffer.getvalue()).decode('utf-8')
+
+        # Prepare the multipart form data
+        files = [
+            ('context', ('context.tar.gz', base64_encoded_tar)),
+            ('target_image', (None, tags[0])),
+        ]
+
+        # Add additional tags if present
+        for tag in tags[1:]:
+            files.append(('tags', (None, tag)))
 
         # Send the POST request
-        session = requests.Session()
-        session.headers.update({'X-API-Key': self.api_key})
-        response = session.post(f'{self.api_url}/build', json=payload)
+        headers = {'X-API-Key': self.api_key}
+        response = requests.post(f'{self.api_url}/build', files=files, headers=headers)
+
         if response.status_code != 200:
             logger.error(f'Build failed: {response.text}')
             raise RuntimeError(f'Build failed: {response.text}')
