@@ -469,8 +469,8 @@ def _edit_file_impl(
         n_added_lines = None
 
         # lint the original file
-        ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
-        if ENABLE_AUTO_LINT:
+        enable_auto_lint = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
+        if enable_auto_lint:
             original_lint_error, _ = _lint_file(file_name)
 
         # Create a temporary file
@@ -508,7 +508,7 @@ def _edit_file_impl(
         # Handle linting
         # NOTE: we need to get env var inside this function
         # because the env var will be set AFTER the agentskills is imported
-        if ENABLE_AUTO_LINT:
+        if enable_auto_lint:
             # BACKUP the original file
             original_file_backup_path = os.path.join(
                 os.path.dirname(file_name),
