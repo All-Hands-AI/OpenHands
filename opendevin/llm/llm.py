@@ -27,13 +27,14 @@ from tenacity import (
 )
 
 from opendevin.core.exceptions import UserCancelledError
-from opendevin.core.logger import llm_prompt_logger, llm_response_logger
+from opendevin.core.logger import get_llm_loggers
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
 
 __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
+llm_prompt_logger, llm_response_logger = get_llm_loggers().values()
 
 
 class LLM:

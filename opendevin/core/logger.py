@@ -211,21 +211,22 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 
 
 class LlmFileHandler(logging.FileHandler):
-    """# LLM prompt and response logging"""
+    """LLM prompt and response logging"""
 
-    def __init__(self, filename, mode='a', encoding='utf-8', delay=True):
-        """Initializes an instance of LlmFileHandler.
+    _instances: dict[str, 'LlmFileHandler'] = {}
 
-        Args:
-            filename (str): The name of the log file.
-            mode (str, optional): The file mode. Defaults to 'a'.
-            encoding (str, optional): The file encoding. Defaults to None.
-            delay (bool, optional): Whether to delay file opening. Defaults to False.
-        """
+    @classmethod
+    def get_instance(cls, sid: str, filename: str) -> 'LlmFileHandler':
+        """Get or create an LlmFileHandler instance for the given session ID."""
+        if sid not in cls._instances:
+            cls._instances[sid] = cls(sid, filename)
+        return cls._instances[sid]
+
+    def __init__(self, sid: str, filename: str, mode='a', encoding='utf-8', delay=True):
+        """Initializes an instance of LlmFileHandler."""
         self.filename = filename
         self.message_counter = 1
-        self.session_id = os.getenv('SESSION_ID', 'default')
-        self.log_directory = os.path.join(LOG_DIR, 'llm', self.session_id)
+        self.log_directory = os.path.join(LOG_DIR, 'llm', sid)
         os.makedirs(self.log_directory, exist_ok=True)
 
         if not DEBUG:
@@ -269,22 +270,23 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(name, debug_level=logging.DEBUG):
-    # The 'delay' parameter, when set to True, postpones the opening of the log file
-    # until the first log message is emitted.
-    llm_file_handler = LlmFileHandler(name, delay=True)
+def _get_llm_file_handler(name: str, sid: str, debug_level=logging.DEBUG):
+    llm_file_handler = LlmFileHandler.get_instance(sid, name)
     llm_file_handler.setFormatter(llm_formatter)
     llm_file_handler.setLevel(debug_level)
     return llm_file_handler
 
 
-def _setup_llm_logger(name, debug_level=logging.DEBUG):
-    logger = logging.getLogger(name)
+def _setup_llm_logger(name: str, sid: str, debug_level=logging.DEBUG):
+    logger = logging.getLogger(f'{name}_{sid}')
     logger.propagate = False
     logger.setLevel(debug_level)
-    logger.addHandler(_get_llm_file_handler(name, debug_level))
+    logger.addHandler(_get_llm_file_handler(name, sid, debug_level))
     return logger
 
 
-llm_prompt_logger = _setup_llm_logger('prompt', logging.DEBUG)
-llm_response_logger = _setup_llm_logger('response', logging.DEBUG)
+def get_llm_loggers(sid: str = 'default'):
+    return {
+        'prompt': _setup_llm_logger('prompt', sid, logging.DEBUG),
+        'response': _setup_llm_logger('response', sid, logging.DEBUG),
+    }
