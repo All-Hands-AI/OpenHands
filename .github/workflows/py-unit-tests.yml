@@ -2,7 +2,7 @@
 name: Run Python Unit Tests
 
 # * Always run on "main"
-# * Always run on PRs
+# * Run on PRs unless the only changed files are in the "paths-ignore"
 on:
   push:
     branches:
