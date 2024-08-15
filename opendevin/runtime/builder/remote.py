@@ -13,8 +13,6 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
     def __init__(self, api_url: str, api_key: str):
         self.api_url = api_url
         self.api_key = api_key
-        self.session = requests.Session()
-        self.session.headers.update({'X-API-Key': self.api_key})
 
     def build(self, path: str, tags: list[str]) -> str:
         """Builds a Docker image using the Runtime API's /build endpoint."""
@@ -32,7 +30,9 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         }
 
         # Send the POST request
-        response = self.session.post(f'{self.api_url}/build', json=payload)
+        session = requests.Session()
+        session.headers.update({'X-API-Key': self.api_key})
+        response = session.post(f'{self.api_url}/build', json=payload)
         if response.status_code != 200:
             logger.error(f'Build failed: {response.text}')
             raise RuntimeError(f'Build failed: {response.text}')
@@ -47,7 +47,9 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
     def image_exists(self, image_name: str) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
         params = {'image': image_name}
-        response = self.session.get(f'{self.api_url}/image_exists', params=params)
+        session = requests.Session()
+        session.headers.update({'X-API-Key': self.api_key})
+        response = session.get(f'{self.api_url}/image_exists', params=params)
 
         if response.status_code != 200:
             logger.error(f'Failed to check image existence: {response.text}')

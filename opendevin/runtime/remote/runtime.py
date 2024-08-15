@@ -30,6 +30,7 @@ from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.runtime.builder.remote import RemoteRuntimeBuilder
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.utils.runtime_build import build_runtime_image
 
 
 class RemoteRuntime(Runtime):
@@ -46,7 +47,7 @@ class RemoteRuntime(Runtime):
         container_image: str | None = None,
     ):
         super().__init__(config, event_stream, sid, plugins)
-        self.api_url = f'https://{self.config.sandbox.api_hostname}'
+        self.api_url = f'https://{self.config.sandbox.api_hostname.rstrip("/")}'
         self.session: Optional[aiohttp.ClientSession] = None
 
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
@@ -68,6 +69,13 @@ class RemoteRuntime(Runtime):
             if container_image is None
             else container_image
         )
+        # Build the container image
+        self.container_image = build_runtime_image(
+            self.container_image,
+            self.runtime_builder,
+            extra_deps=self.config.sandbox.od_runtime_extra_deps,
+        )
+
         self.container_name = 'od-remote-runtime-' + self.instance_id
         logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
 
