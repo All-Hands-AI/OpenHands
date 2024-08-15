@@ -1,6 +1,7 @@
 import base64
 import io
 import tarfile
+import time
 
 import requests
 
@@ -36,20 +37,54 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         for tag in tags[1:]:
             files.append(('tags', (None, tag)))
 
-        # Send the POST request
+        # Send the POST request to /build
         headers = {'X-API-Key': self.api_key}
         response = requests.post(f'{self.api_url}/build', files=files, headers=headers)
 
-        if response.status_code != 200:
-            logger.error(f'Build failed: {response.text}')
-            raise RuntimeError(f'Build failed: {response.text}')
+        if response.status_code != 202:
+            logger.error(f'Build initiation failed: {response.text}')
+            raise RuntimeError(f'Build initiation failed: {response.text}')
 
-        result = response.json()
+        build_data = response.json()
+        build_id = build_data['build_id']
+        logger.info(f'Build initiated with ID: {build_id}')
 
-        logger.info(f"Successfully built {result['image']}")
-        logger.info(f"Build status: {result['status']}")
+        # Poll /build_status until the build is complete
+        while True:
+            status_response = requests.get(
+                f'{self.api_url}/build_status',
+                params={'build_id': build_id},
+                headers=headers,
+            )
 
-        return result['image']
+            if status_response.status_code != 200:
+                logger.error(f'Failed to get build status: {status_response.text}')
+                raise RuntimeError(
+                    f'Failed to get build status: {status_response.text}'
+                )
+
+            status_data = status_response.json()
+            status = status_data['status']
+            logger.info(f'Build status: {status}')
+
+            if status == 'SUCCESS':
+                logger.info(f"Successfully built {status_data['image']}")
+                return status_data['image']
+            elif status in [
+                'FAILURE',
+                'INTERNAL_ERROR',
+                'TIMEOUT',
+                'CANCELLED',
+                'EXPIRED',
+            ]:
+                error_message = status_data.get(
+                    'error', f'Build failed with status: {status}'
+                )
+                logger.error(error_message)
+                raise RuntimeError(error_message)
+
+            # Wait before polling again
+            time.sleep(5)
 
     def image_exists(self, image_name: str) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
