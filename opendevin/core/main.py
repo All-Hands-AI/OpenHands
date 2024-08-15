@@ -103,6 +103,9 @@ async def run_controller(
             llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
         )
 
+    # make sure the session id is set
+    sid = sid or generate_sid()
+
     if runtime is None:
         runtime = await create_runtime(config, sid=sid)
 
