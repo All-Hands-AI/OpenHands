@@ -58,7 +58,7 @@ class EventStreamRuntime(Runtime):
         self.session: Optional[aiohttp.ClientSession] = None
 
         self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+            sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
