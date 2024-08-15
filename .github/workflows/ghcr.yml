@@ -1,6 +1,8 @@
 # Workflow that builds, tests and then pushes the docker images to the ghcr.io repository
 name: Build Publish and Test Runtime Image
 
+# Only run one workflow of the same group at a time.
+# There can be at most one running and one pending job in a concurrency group at any time.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
