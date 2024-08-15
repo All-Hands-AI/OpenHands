@@ -607,7 +607,6 @@ check(any_int)"""
 def test_edit_file_by_replace_with_multiple_errors(tmp_path):
     # If the file has multiple errors, but the suggested modification can only fix one error, make sure it is applied.
     with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-
         content = """def Sum(a,b):
     try:
         answer = a + b
