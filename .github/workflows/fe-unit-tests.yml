@@ -2,7 +2,7 @@
 name: Run Frontend Unit Tests
 
 # * Always run on "main"
-# * Run on PRs that have changes in the "frontend" folder
+# * Run on PRs that have changes in the "frontend" folder or this workflow
 on:
   push:
     branches:
@@ -10,6 +10,7 @@ on:
   pull_request:
     paths:
       - 'frontend/**'
+      -  '.github/workflows/fe-unit-tests.yml'
 
 jobs:
   # Run frontend unit tests

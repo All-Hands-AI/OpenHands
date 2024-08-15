@@ -1,18 +1,14 @@
 # Workflow that runs python unit tests
 name: Run Python Unit Tests
 
+# The jobs in this workflow are required, so they must run at all times
 # * Always run on "main"
-# * Run on PRs unless the only changed files are in the "paths-ignore"
+# * Always run on PRs
 on:
   push:
     branches:
       - main
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'frontend/**'
-      - 'docs/**'
-      - 'evaluation/**'
 
 jobs:
   # Run python unit tests on macOS
