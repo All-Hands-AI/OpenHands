@@ -189,7 +189,9 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         if ':' not in base_image:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
-        repo = repo.replace('/', '___')
+        # replace '/' with '_s_' to avoid '/' in the image name
+        # while make it a valid docker image name
+        repo = repo.replace('/', '_s_')
         od_version = _get_package_version()
         return get_runtime_image_repo(), f'od_v{od_version}_image_{repo}_tag_{tag}'
 
