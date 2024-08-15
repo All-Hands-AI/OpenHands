@@ -158,7 +158,6 @@ class AgentController:
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
-            # Reset here....
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
@@ -352,7 +351,6 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
-        print(f"TRACE:agent_controller#_step:102:#{self.state.iteration}:#{self.state.max_iterations}")
         if self.state.iteration >= self.state.max_iterations:
             if self.state.traffic_control_state == TrafficControlState.PAUSED:
                 logger.info(
