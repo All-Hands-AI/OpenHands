@@ -136,7 +136,7 @@ async def _load_runtime(
             f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
         )
 
-    runtime = EventStreamRuntime(
+    runtime = box_class(
         config=config,
         event_stream=event_stream,
         sid=sid,
