@@ -2,12 +2,14 @@
 name: Run Frontend Unit Tests
 
 # * Always run on "main"
-# * Always run on PRs
+# * Run on PRs that have changes in the "frontend" folder
 on:
   push:
     branches:
       - main
   pull_request:
+    paths:
+      - 'frontend/**'
 
 jobs:
   # Run frontend unit tests

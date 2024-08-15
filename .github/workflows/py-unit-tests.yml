@@ -8,6 +8,11 @@ on:
     branches:
       - main
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
 
 jobs:
   # Run python unit tests on macOS
