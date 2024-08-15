@@ -41,6 +41,8 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 
 class ColoredFormatter(logging.Formatter):
+    """Formatter for colored logging in console."""
+
     def format(self, record):
         msg_type = record.__dict__.get('msg_type')
         event_source = record.__dict__.get('event_source')
@@ -65,15 +67,43 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
+class NoColorFormatter(logging.Formatter):
+    """Formatter for non-colored logging in files."""
+
+    def format(self, record):
+        # Create a new record to avoid modifying the original
+        new_record = logging.makeLogRecord(record.__dict__)
+
+        # Strip ANSI color codes from the message
+        new_record.msg = strip_ansi(new_record.msg)
+
+        return super().format(new_record)
+
+
+def strip_ansi(str: str) -> str:
+    """
+    Removes ANSI escape sequences from str, as defined by ECMA-048 in
+    http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
+    # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
+    """
+
+    pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
+    stripped = pattern.sub('', str)
+    if stripped != str:
+        print(f'Stripped ANSI from {str} to {stripped}')
+    return stripped
+
+
 console_formatter = ColoredFormatter(
     '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
 
-file_formatter = logging.Formatter(
+file_formatter = NoColorFormatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
+
 llm_formatter = logging.Formatter('%(message)s')
 
 
