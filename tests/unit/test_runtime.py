@@ -125,31 +125,28 @@ async def _load_runtime(
     if container_image is not None:
         config.sandbox.container_image = container_image
 
-    if box_class == EventStreamRuntime:
-        # NOTE: we will use the default container image specified in the config.sandbox
-        # if it is an official od_runtime image.
-        cur_container_image = config.sandbox.container_image
-        if 'od_runtime' not in cur_container_image and cur_container_image not in {
-            'xingyaoww/od-eval-miniwob:v1.0'
-        }:  # a special exception list
-            cur_container_image = 'nikolaik/python-nodejs:python3.11-nodejs22'
-            logger.warning(
-                f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
-            )
-
-        runtime = EventStreamRuntime(
-            config=config,
-            event_stream=event_stream,
-            sid=sid,
-            plugins=plugins,
-            # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
-            # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
-            container_image=cur_container_image,
+    # NOTE: we will use the default container image specified in the config.sandbox
+    # if it is an official od_runtime image.
+    cur_container_image = config.sandbox.container_image
+    if 'od_runtime' not in cur_container_image and cur_container_image not in {
+        'xingyaoww/od-eval-miniwob:v1.0'
+    }:  # a special exception list
+        cur_container_image = 'nikolaik/python-nodejs:python3.11-nodejs22'
+        logger.warning(
+            f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
         )
-        await runtime.ainit()
 
-    else:
-        raise ValueError(f'Invalid box class: {box_class}')
+    runtime = EventStreamRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid=sid,
+        plugins=plugins,
+        # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
+        # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
+        container_image=cur_container_image,
+    )
+    await runtime.ainit()
+
     await asyncio.sleep(1)
     return runtime
 
