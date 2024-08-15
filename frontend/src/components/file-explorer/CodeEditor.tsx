@@ -59,6 +59,14 @@ function CodeEditor(): JSX.Element {
     }
   }, [activeFilepath]);
 
+  useEffect(() => {
+    if (!showSaveNotification) {
+      return undefined;
+    }
+    const timeout = setTimeout(() => setShowSaveNotification(false), 2000);
+    return () => clearTimeout(timeout);
+  }, [showSaveNotification]);
+
   const handleEditorChange = useCallback(
     (value: string | undefined): void => {
       if (value !== undefined && isEditingAllowed) {
@@ -102,13 +110,12 @@ function CodeEditor(): JSX.Element {
       }
       setSaveStatus("saved");
       setShowSaveNotification(true);
-      setTimeout(() => setShowSaveNotification(false), 2000);
       const newFileState = {
         path: activeFilepath,
         savedContent: newContent,
         unsavedContent: newContent,
       };
-      setTimeout(() => dispatch(addOrUpdateFileState(newFileState)), 2000);
+      dispatch(addOrUpdateFileState(newFileState));
       toast.success(
         "file-save-success",
         t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY),
