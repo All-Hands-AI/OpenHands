@@ -158,6 +158,7 @@ class AgentController:
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
+            # Reset here....
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
@@ -225,6 +226,8 @@ class AgentController:
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
             self.state.traffic_control_state = TrafficControlState.PAUSED
+            # Reset the iterations (So user will not be immediately asked again)
+            self.state.iteration = 0
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
@@ -349,6 +352,7 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
+        print(f"TRACE:agent_controller#_step:102:#{self.state.iteration}:#{self.state.max_iterations}")
         if self.state.iteration >= self.state.max_iterations:
             if self.state.traffic_control_state == TrafficControlState.PAUSED:
                 logger.info(
