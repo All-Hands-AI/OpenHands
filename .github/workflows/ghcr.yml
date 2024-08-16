@@ -79,9 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
-      # use the last tag to name the artifact
-      # because the last tag is the hash-based tag
-      last_tags: ${{ steps.capture-last-tags.outputs.last_tags }}
+      all_last_tags: ${{ steps.collect-all-last-tags.outputs.all_last_tags }}
     permissions:
       contents: read
       packages: write
@@ -147,11 +145,12 @@ jobs:
           tags=$(cat tags.txt)
           echo "tags=$tags"
           echo "tags=$tags" >> $GITHUB_OUTPUT
-      - name: Capture last tags
-        id: capture-last-tags
+      - name: Collect all last tags
+        id: collect-all-last-tags
+        if: always()
         run: |
-          last_tags=$(echo "${{ steps.build.outputs.last_tag }}" | jq -R -s -c 'split("\n")[:-1]')
-          echo "last_tags=$last_tags" >> $GITHUB_OUTPUT
+          all_last_tags=$(echo '${{ toJson(steps.*.outputs.last_tag) }}' | jq -c 'map(select(. != null))')
+          echo "all_last_tags=$all_last_tags" >> $GITHUB_OUTPUT
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -169,7 +168,7 @@ jobs:
         image: ['od_runtime']
         platform: ['amd64']
         runtime_type: ['eventstream']
-        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.last_tags) }}
+        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.all_last_tags) }}
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -230,7 +229,7 @@ jobs:
         image: ['od_runtime']
         platform: ['amd64']
         runtime_type: ['eventstream']
-        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.last_tags) }}
+        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.all_last_tags) }}
     steps:
       - uses: actions/checkout@v4
       - name: Install poetry via pipx
@@ -327,7 +326,7 @@ jobs:
       matrix:
         image: ['od_runtime']
         platform: ['amd64', 'arm64']
-        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.last_tags) }}
+        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.all_last_tags) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -350,8 +349,8 @@ jobs:
       - name: Download Docker images
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.last_tag }}
-          path: /tmp/${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.last_tag }}.tar
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar
       - name: List downloaded files
         run: |
           ls -la /tmp/${{ matrix.platform }}
