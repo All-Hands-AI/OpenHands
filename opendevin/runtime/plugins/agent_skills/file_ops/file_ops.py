@@ -24,7 +24,7 @@ import tempfile
 if __package__ is None or __package__ == '':
     from aider import Linter
 else:
-    from ..aider import Linter
+    from ..utils.aider import Linter
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
