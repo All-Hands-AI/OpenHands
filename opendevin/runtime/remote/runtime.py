@@ -185,7 +185,7 @@ class RemoteRuntime(Runtime):
         logger.info('Checking if sandbox is alive')
         session = await self._ensure_session()
         async with session.get(
-            f'{self.api_url}/runtime/{self.runtime_id}/alive'
+            f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/alive'
         ) as response:
             if response.status == 200:
                 return
