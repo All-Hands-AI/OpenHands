@@ -225,8 +225,7 @@ class AgentController:
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
             self.state.traffic_control_state = TrafficControlState.PAUSED
-            # Reset the iterations (So user will not be immediately asked again)
-            self.state.iteration = 0
+            self.state.max_iterations *= 2
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
