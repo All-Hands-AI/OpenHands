@@ -134,8 +134,8 @@ jobs:
           else
             echo 'No Dockerfile detected which means an exact image is already built. Pulling the image and saving it to a tar file...'
             source containers/runtime/config.sh
-            echo "$DOCKER_IMAGE_TAG $DOCKER_IMAGE_HASH_TAG" >> tags.txt
-            last_tag=$DOCKER_IMAGE_HASH_TAG
+            echo "$DOCKER_IMAGE_HASH_TAG $DOCKER_IMAGE_TAG" >> tags.txt
+            export last_tag=$DOCKER_IMAGE_TAG
             echo "Pulling image $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar"
             docker pull $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
             docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar
