@@ -1,9 +1,15 @@
 from inspect import signature
 
-from .file_ops import __all__ as file_op_all
-from .file_reader import __all__ as file_reader_all
+from . import file_ops, file_reader
+from .utils.dependency import import_functions
 
-__all__ = file_op_all + file_reader_all
+import_functions(
+    module=file_ops, function_names=file_ops.__all__, target_globals=globals()
+)
+import_functions(
+    module=file_reader, function_names=file_reader.__all__, target_globals=globals()
+)
+__all__ = file_ops.__all__ + file_reader.__all__
 
 DOCUMENTATION = ''
 for func_name in __all__:

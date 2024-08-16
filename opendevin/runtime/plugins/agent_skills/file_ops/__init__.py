@@ -1,4 +1,7 @@
 from ..utils.dependency import import_functions
-from .file_ops import __all__
+from . import file_ops
 
-import_functions(package=__name__ + '.file_ops', function_names=__all__)
+import_functions(
+    module=file_ops, function_names=file_ops.__all__, target_globals=globals()
+)
+__all__ = file_ops.__all__

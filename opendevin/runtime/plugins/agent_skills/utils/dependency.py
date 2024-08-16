@@ -1,9 +1,11 @@
-import importlib
+from types import ModuleType
 
 
-def import_functions(package: str, function_names: list[str]) -> None:
+def import_functions(
+    module: ModuleType, function_names: list[str], target_globals: dict
+) -> None:
     for name in function_names:
-        # import the module containing the function
-        module = importlib.import_module(f'.{name}', package)
-        # add the function to the globals
-        globals()[name] = getattr(module, name)
+        if hasattr(module, name):
+            target_globals[name] = getattr(module, name)
+        else:
+            raise ValueError(f'Function {name} not found in {module.__name__}')
