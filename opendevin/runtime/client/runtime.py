@@ -2,7 +2,6 @@ import asyncio
 import os
 import tempfile
 import uuid
-from typing import Optional
 from zipfile import ZipFile
 
 import aiohttp
@@ -28,6 +27,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
+from opendevin.runtime.builder import DockerRuntimeBuilder
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
@@ -54,7 +54,7 @@ class EventStreamRuntime(Runtime):
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
@@ -70,6 +70,8 @@ class EventStreamRuntime(Runtime):
 
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+
+        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
         logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
@@ -80,7 +82,7 @@ class EventStreamRuntime(Runtime):
 
         self.container_image = build_runtime_image(
             self.container_image,
-            self.docker_client,
+            self.runtime_builder,
             extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
@@ -188,12 +190,12 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=4, max=60),
+        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
         logger.info('Reconnecting session')
         container = self.docker_client.containers.get(self.container_name)
-        # print logs
+        # get logs
         _logs = container.logs(tail=10).decode('utf-8').split('\n')
         # add indent
         _logs = '\n'.join([f'    |{log}' for log in _logs])

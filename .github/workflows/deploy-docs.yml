@@ -1,6 +1,14 @@
 # Workflow that builds and deploys the documentation website
 name: Deploy Docs to GitHub Pages
 
+# Only run one workflow of the same group at a time.
+# There can be at most one running and one pending job in a concurrency group at any time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# * Always run on "main"
+# * Run on PRs that target the "main" branch and have changes in the "docs" folder
 on:
   push:
     branches:

@@ -3,12 +3,17 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs, Button } from "@nextui-org/react";
-import { VscCode, VscSave, VscCheck } from "react-icons/vsc";
+import { VscCode, VscSave, VscCheck, VscClose } from "react-icons/vsc";
 import type { editor } from "monaco-editor";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import FileExplorer from "./FileExplorer";
-import { setCode } from "#/state/codeSlice";
+import {
+  setCode,
+  addOrUpdateFileState,
+  FileState,
+  setFileStates,
+} from "#/state/codeSlice";
 import toast from "#/utils/toast";
 import { saveFile } from "#/services/fileService";
 import AgentState from "#/types/AgentState";
@@ -16,8 +21,9 @@ import AgentState from "#/types/AgentState";
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const code = useSelector((state: RootState) => state.code.code);
+  const fileStates = useSelector((state: RootState) => state.code.fileStates);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
+  const fileState = fileStates.find((f) => f.path === activeFilepath);
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
@@ -25,8 +31,8 @@ function CodeEditor(): JSX.Element {
     "idle" | "saving" | "saved" | "error"
   >("idle");
   const [showSaveNotification, setShowSaveNotification] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [lastSavedContent, setLastSavedContent] = useState(code);
+  const unsavedContent = fileState?.unsavedContent;
+  const hasUnsavedChanges = fileState?.savedContent !== unsavedContent;
 
   const selectedFileName = useMemo(() => {
     const paths = activeFilepath.split("/");
@@ -44,22 +50,36 @@ function CodeEditor(): JSX.Element {
 
   useEffect(() => {
     setSaveStatus("idle");
-    setHasUnsavedChanges(false);
-    setLastSavedContent(code);
+    // Clear out any file states where the file is not being viewed and does not have any changes
+    const newFileStates = fileStates.filter(
+      (f) => f.path === activeFilepath || f.savedContent !== f.unsavedContent,
+    );
+    if (fileStates.length !== newFileStates.length) {
+      dispatch(setFileStates(newFileStates));
+    }
   }, [activeFilepath]);
 
   useEffect(() => {
-    setHasUnsavedChanges(code !== lastSavedContent);
-  }, [code, lastSavedContent]);
+    if (!showSaveNotification) {
+      return undefined;
+    }
+    const timeout = setTimeout(() => setShowSaveNotification(false), 2000);
+    return () => clearTimeout(timeout);
+  }, [showSaveNotification]);
 
   const handleEditorChange = useCallback(
     (value: string | undefined): void => {
       if (value !== undefined && isEditingAllowed) {
         dispatch(setCode(value));
-        setHasUnsavedChanges(true);
+        const newFileState = {
+          path: activeFilepath,
+          savedContent: fileState?.savedContent,
+          unsavedContent: value,
+        };
+        dispatch(addOrUpdateFileState(newFileState));
       }
     },
-    [dispatch, isEditingAllowed],
+    [activeFilepath, dispatch, isEditingAllowed],
   );
 
   const handleEditorDidMount = useCallback(
@@ -84,12 +104,18 @@ function CodeEditor(): JSX.Element {
     setSaveStatus("saving");
 
     try {
-      await saveFile(activeFilepath, code);
+      const newContent = fileState?.unsavedContent;
+      if (newContent) {
+        await saveFile(activeFilepath, newContent);
+      }
       setSaveStatus("saved");
       setShowSaveNotification(true);
-      setLastSavedContent(code);
-      setHasUnsavedChanges(false);
-      setTimeout(() => setShowSaveNotification(false), 2000);
+      const newFileState = {
+        path: activeFilepath,
+        savedContent: newContent,
+        unsavedContent: newContent,
+      };
+      dispatch(addOrUpdateFileState(newFileState));
       toast.success(
         "file-save-success",
         t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY),
@@ -105,14 +131,18 @@ function CodeEditor(): JSX.Element {
         toast.error("file-save-error", t(I18nKey.CODE_EDITOR$FILE_SAVE_ERROR));
       }
     }
-  }, [
-    saveStatus,
-    activeFilepath,
-    code,
-    isEditingAllowed,
-    t,
-    hasUnsavedChanges,
-  ]);
+  }, [saveStatus, activeFilepath, unsavedContent, isEditingAllowed, t]);
+
+  const handleCancel = useCallback(() => {
+    const { path, savedContent } = fileState as FileState;
+    dispatch(
+      addOrUpdateFileState({
+        path,
+        savedContent,
+        unsavedContent: savedContent,
+      }),
+    );
+  }, [activeFilepath, unsavedContent]);
 
   const getSaveButtonColor = () => {
     switch (saveStatus) {
@@ -152,6 +182,14 @@ function CodeEditor(): JSX.Element {
           {selectedFileName && hasUnsavedChanges && (
             <div className="flex items-center mr-2">
               <Button
+                onClick={handleCancel}
+                className="text-white transition-colors duration-300 mr-2"
+                size="sm"
+                startContent={<VscClose />}
+              >
+                {t(I18nKey.FEEDBACK$CANCEL_LABEL)}
+              </Button>
+              <Button
                 onClick={handleSave}
                 className={`${getSaveButtonColor()} text-white transition-colors duration-300 mr-2`}
                 size="sm"
@@ -176,7 +214,7 @@ function CodeEditor(): JSX.Element {
               height="100%"
               path={selectedFileName.toLowerCase()}
               defaultValue=""
-              value={code}
+              value={unsavedContent}
               onMount={handleEditorDidMount}
               onChange={handleEditorChange}
               options={{ readOnly: !isEditingAllowed }}

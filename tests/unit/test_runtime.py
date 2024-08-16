@@ -291,7 +291,10 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == 'Hello, `World`!'
+    assert (
+        obs.content.strip()
+        == 'Hello, `World`!\n[Jupyter current working directory: /workspace]'
+    )
 
     # Test read file (file should not exist)
     action_read = FileReadAction(path='hello.sh')
@@ -756,7 +759,10 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == '/workspace'
+    assert (
+        obs.content.strip()
+        == '/workspace\n[Jupyter current working directory: /workspace]'
+    )
 
     # write a file
     test_code = "with open('test.txt', 'w') as f: f.write('Hello, world!')"
@@ -765,7 +771,10 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action_ipython)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.strip() == '[Code executed successfully with no output]'
+    assert (
+        obs.content.strip()
+        == '[Code executed successfully with no output]\n[Jupyter current working directory: /workspace]'
+    )
 
     # check file owner via bash
     action = CmdRunAction(command='ls -alh test.txt')
@@ -804,7 +813,7 @@ async def test_ipython_simple(temp_dir, box_class):
     obs = await runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == '1'
+    assert obs.content.strip() == '1\n[Jupyter current working directory: /workspace]'
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -838,6 +847,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
         '1|\n'
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
+        '[Jupyter current working directory: /workspace]'
     ).strip().split('\n')
 
     action = CmdRunAction(command='cd test')
@@ -860,6 +870,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
         '1|\n'
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
+        '[Jupyter current working directory: /workspace/test]'
     ).strip().split('\n')
 
     if enable_auto_lint:
@@ -892,6 +903,7 @@ ERRORS:
 Your changes have NOT been applied. Please fix your edit command and try again.
 You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
 DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+[Jupyter current working directory: /workspace/test]
 """
         ).strip().split('\n')
 
@@ -910,6 +922,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 1|print("hello world")
 (this is the end of the file)
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+[Jupyter current working directory: /workspace/test]
 """
     ).strip().split('\n')
 
@@ -976,6 +989,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '1|\n'
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
+        '[Jupyter current working directory: /root]'
     ).strip().split('\n')
 
     action = CmdRunAction(command='cd test')
@@ -998,6 +1012,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '1|\n'
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
+        '[Jupyter current working directory: /root/test]'
     ).strip().split('\n')
 
     await runtime.close()
@@ -1031,7 +1046,10 @@ async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     # import should not error out
-    assert obs.content.strip() == '[Code executed successfully with no output]'
+    assert (
+        obs.content.strip()
+        == '[Code executed successfully with no output]\n[Jupyter current working directory: /workspace]'
+    )
 
     await runtime.close()
     await asyncio.sleep(1)
