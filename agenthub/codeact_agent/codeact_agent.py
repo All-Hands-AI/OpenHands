@@ -205,21 +205,46 @@ class CodeActAgent(Agent):
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
 
-        response = self.llm.completion(
-            messages=[message.model_dump() for message in messages],
-            stop=[
+        params = {
+            'messages': [message.model_dump() for message in messages],
+            'stop': [
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
             ],
-            temperature=0.0,
-        )
+            'temperature': 0.0,
+        }
+
+        if self.llm.supports__prompt_caching():
+            params['extra_headers'] = {
+                'anthropic-version': '2023-06-01',
+                'anthropic-beta': 'prompt-caching-2024-07-31',
+            }
+
+        response = self.llm.completion(**params)
+
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
-            Message(role='system', content=[TextContent(text=self.system_message)]),
-            Message(role='user', content=[TextContent(text=self.in_context_example)]),
+            Message(
+                role='system',
+                content=[
+                    TextContent(
+                        text=self.system_message,
+                        cache_prompt=self.llm.supports__prompt_caching(),
+                    )
+                ],
+            ),
+            Message(
+                role='user',
+                content=[
+                    TextContent(
+                        text=self.in_context_example,
+                        cache_prompt=self.llm.supports__prompt_caching(),
+                    )
+                ],
+            ),
         ]
 
         for event in state.history.get_events():

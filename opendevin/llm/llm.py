@@ -421,6 +421,16 @@ class LLM:
     def supports_vision(self):
         return litellm.supports_vision(self.config.model)
 
+    def supports__prompt_caching(self):
+        cache_prompting_supported_models = [
+            'claude-3-5-sonnet-20240620',
+            'claude-3-haiku-20240307',
+        ]
+        if self.config.model in cache_prompting_supported_models:
+            return True
+        else:
+            return False
+
     def _post_completion(self, response: str) -> None:
         """Post-process the completion response."""
         try:

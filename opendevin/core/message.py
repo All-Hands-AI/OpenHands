@@ -20,10 +20,17 @@ class Content(BaseModel):
 class TextContent(Content):
     type: ContentType = ContentType.TEXT
     text: str
+    cache_prompt: bool = False
 
     @model_serializer
     def serialize_model(self):
-        return {'type': self.type.value, 'text': self.text}
+        data: dict[str, str | dict[str, str]] = {
+            'type': self.type.value,
+            'text': self.text,
+        }
+        if self.cache_prompt:
+            data['cache_control'] = {'type': 'ephemeral'}
+        return data
 
 
 class ImageContent(Content):
