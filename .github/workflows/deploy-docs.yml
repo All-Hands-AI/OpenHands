@@ -7,6 +7,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# * Always run on "main"
+# * Run on PRs that target the "main" branch and have changes in the "docs" folder
 on:
   push:
     branches:

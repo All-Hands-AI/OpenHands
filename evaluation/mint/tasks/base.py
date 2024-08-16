@@ -2,7 +2,6 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
 
 from utils import load_file
 
@@ -58,7 +57,7 @@ class Task(ABC):
         return self._reference
 
     @abstractmethod
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution."""
         pass
 
@@ -72,7 +71,7 @@ class Task(ABC):
         return answer == self.reference
 
     @classmethod
-    def load_tasks(cls, path: str) -> Tuple[List['Task'], int]:
+    def load_tasks(cls, path: str) -> tuple[list['Task'], int]:
         """Load all the tasks from a given jsonl file."""
         assert path.endswith('.jsonl') or path.endswith('.json')
         with open(path, 'r') as f:
