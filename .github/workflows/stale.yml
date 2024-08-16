@@ -1,6 +1,7 @@
 # Workflow that marks issues and PRs with no activity for 30 days with "Stale" and closes them after 7 more days of no activity
 name: 'Close stale issues'
 
+# Runs every day at 01:30
 on:
   schedule:
     - cron: '30 1 * * *'

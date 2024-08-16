@@ -3,6 +3,7 @@ import Markdown from "react-markdown";
 import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
+import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
@@ -76,7 +77,9 @@ function ChatMessage({
           {isCopy ? <FaClipboardCheck /> : <FaClipboard />}
         </button>
       )}
-      <Markdown components={{ code }}>{message.content}</Markdown>
+      <Markdown components={{ code }} remarkPlugins={[remarkGfm]}>
+        {message.content}
+      </Markdown>
       {message.imageUrls.length > 0 && (
         <div className="flex space-x-2 mt-2">
           {message.imageUrls.map((url, index) => (

@@ -7,7 +7,7 @@ import os
 import platform
 import signal
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 # use cache to avoid loading the same file multiple times
@@ -77,8 +77,8 @@ def check_correctness(
     solution_code: str,
     test_code: str,
     timeout: float = 10,
-    completion_id: Optional[int] = None,
-) -> Dict:
+    completion_id: int | None = None,
+) -> dict:
     """Evaluates the functional correctness of a completion by running the test
     suite provided in the problem.
 
@@ -178,7 +178,7 @@ def chdir(root):
         os.chdir(cwd)
 
 
-def reliability_guard(maximum_memory_bytes: Optional[int] = None):
+def reliability_guard(maximum_memory_bytes: int | None = None):
     """This disables various destructive functions and prevents the generated code
     from interfering with the test (e.g. fork bomb, killing other processes,
     removing filesystem files, etc.)

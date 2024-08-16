@@ -121,6 +121,16 @@ class RuntimeClient:
         if username == 'root':
             return
 
+        # Check if the username already exists
+        try:
+            subprocess.run(
+                f'id -u {username}', shell=True, check=True, capture_output=True
+            )
+            logger.debug(f'User {username} already exists. Skipping creation.')
+            return
+        except subprocess.CalledProcessError:
+            pass  # User does not exist, continue with creation
+
         # Add sudoer
         sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
         output = subprocess.run(sudoer_line, shell=True, capture_output=True)
@@ -128,30 +138,33 @@ class RuntimeClient:
             raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
         logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
-        # Add user and change ownership of the initial working directory if it doesn't exist
-        command = (
-            f'useradd -rm -d /home/{username} -s /bin/bash '
-            f'-g root -G sudo -u {user_id} {username}'
-        )
-
-        if not os.path.exists(self.initial_pwd):
-            command += f' && mkdir -p {self.initial_pwd}'
-            command += f' && chown -R {username}:root {self.initial_pwd}'
-            command += f' && chmod g+s {self.initial_pwd}'
-
-        output = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-        )
-        if output.returncode != 0:
-            raise RuntimeError(
-                f'Failed to create user {username}: {output.stderr.decode()}'
+        # Attempt to add the user, retrying with incremented user_id if necessary
+        while True:
+            command = (
+                f'useradd -rm -d /home/{username} -s /bin/bash '
+                f'-g root -G sudo -u {user_id} {username}'
             )
 
-        logger.debug(
-            f'Added user {username} successfully. Output: [{output.stdout.decode()}]'
-        )
+            if not os.path.exists(self.initial_pwd):
+                command += f' && mkdir -p {self.initial_pwd}'
+                command += f' && chown -R {username}:root {self.initial_pwd}'
+                command += f' && chmod g+s {self.initial_pwd}'
+
+            output = subprocess.run(command, shell=True, capture_output=True)
+            if output.returncode == 0:
+                logger.debug(
+                    f'Added user {username} successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
+                )
+                break
+            elif f'UID {user_id} is not unique' in output.stderr.decode():
+                logger.warning(
+                    f'UID {user_id} is not unique. Incrementing UID and retrying...'
+                )
+                user_id += 1
+            else:
+                raise RuntimeError(
+                    f'Failed to create user {username}: {output.stderr.decode()}'
+                )
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
@@ -301,7 +314,7 @@ class RuntimeClient:
                 logger.debug(
                     f"{self.pwd} != {getattr(self, '_jupyter_pwd', None)} -> reset Jupyter PWD"
                 )
-                reset_jupyter_pwd_code = f'import os; os.environ["JUPYTER_PWD"] = os.path.abspath("{self.pwd}")'
+                reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
                 _reset_obs = await _jupyter_plugin.run(_aux_action)
                 logger.debug(
@@ -310,6 +323,8 @@ class RuntimeClient:
                 self._jupyter_pwd = self.pwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
+            obs.content = obs.content.rstrip()
+            obs.content += f'\n[Jupyter current working directory: {self.pwd}]'
             return obs
         else:
             raise RuntimeError(

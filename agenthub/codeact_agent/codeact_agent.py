@@ -22,6 +22,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.observation.error import ErrorObservation
 from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
@@ -169,7 +170,14 @@ class CodeActAgent(Agent):
                 str(obs.outputs), max_message_chars
             )
             return Message(role='user', content=[TextContent(text=text)])
-        return None
+        elif isinstance(obs, ErrorObservation):
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += '\n[Error occurred in processing last action]'
+            return Message(role='user', content=[TextContent(text=text)])
+        else:
+            # If an observation message is not returned, it will cause an error
+            # when the LLM tries to return the next message
+            raise ValueError(f'Unknown observation type: {type(obs)}')
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""

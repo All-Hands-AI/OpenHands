@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from typing import Optional, Type
+from typing import Type
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
@@ -52,7 +52,7 @@ class AgentController:
     state: State
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
-    agent_task: Optional[asyncio.Task] = None
+    agent_task: asyncio.Task | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
@@ -176,11 +176,11 @@ class AgentController:
         elif isinstance(event, ModifyTaskAction):
             self.state.root_task.set_subtask_state(event.task_id, event.state)
         elif isinstance(event, AgentFinishAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.outputs = event.outputs
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(event, AgentRejectAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            self.state.outputs = event.outputs
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
