@@ -1,6 +1,6 @@
 import re
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 import docker
 from fastapi import HTTPException, Request
@@ -35,8 +35,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
     def __init__(
         self,
         event_stream: EventStream,
-        policy: Optional[str] = None,
-        sid: Optional[str] = None,
+        policy: str | None = None,
+        sid: str | None = None,
     ):
         """Initializes a new instance of the InvariantAnalzyer class."""
         super().__init__(event_stream)

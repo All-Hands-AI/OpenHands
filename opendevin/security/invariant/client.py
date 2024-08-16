@@ -1,5 +1,5 @@
 import time
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Union
 
 import requests
 from requests.exceptions import ConnectionError, HTTPError, Timeout
@@ -8,7 +8,7 @@ from requests.exceptions import ConnectionError, HTTPError, Timeout
 class InvariantClient:
     timeout: int = 120
 
-    def __init__(self, server_url: str, session_id: Optional[str] = None):
+    def __init__(self, server_url: str, session_id: str | None = None):
         self.server = server_url
         self.session_id, err = self._create_session(session_id)
         if err:
@@ -17,8 +17,8 @@ class InvariantClient:
         self.Monitor = self._Monitor(self)
 
     def _create_session(
-        self, session_id: Optional[str] = None
-    ) -> tuple[Optional[str], Optional[Exception]]:
+        self, session_id: str | None = None
+    ) -> tuple[str | None, Exception | None]:
         elapsed = 0
         while elapsed < self.timeout:
             try:
@@ -54,9 +54,7 @@ class InvariantClient:
             self.server = invariant.server
             self.session_id = invariant.session_id
 
-        def _create_policy(
-            self, rule: str
-        ) -> Tuple[Optional[str], Optional[Exception]]:
+        def _create_policy(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
                 response = requests.post(
                     f'{self.server}/policy/new?session_id={self.session_id}',
@@ -68,7 +66,7 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def get_template(self) -> tuple[Optional[str], Optional[Exception]]:
+        def get_template(self) -> tuple[str | None, Exception | None]:
             try:
                 response = requests.get(
                     f'{self.server}/policy/template',
@@ -104,9 +102,7 @@ class InvariantClient:
             self.session_id = invariant.session_id
             self.policy = ''
 
-        def _create_monitor(
-            self, rule: str
-        ) -> tuple[Optional[str], Optional[Exception]]:
+        def _create_monitor(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
                 response = requests.post(
                     f'{self.server}/monitor/new?session_id={self.session_id}',

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -22,8 +20,8 @@ class AgentSession:
     sid: str
     event_stream: EventStream
     file_store: FileStore
-    controller: Optional[AgentController] = None
-    runtime: Optional[Runtime] = None
+    controller: AgentController | None = None
+    runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
 
