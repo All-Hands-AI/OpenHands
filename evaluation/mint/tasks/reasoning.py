@@ -2,7 +2,7 @@ import ast
 import logging
 import re
 import traceback
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from sympy import Rational
@@ -21,7 +21,7 @@ class ReasoningTask(Task):
         self._prompt = prompt.strip()
         self._reference = str(reference).strip().lower()
 
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution."""
         return solution.lower().strip()
 
@@ -66,7 +66,7 @@ class MultipleChoiceTask(Task):
             pass
         self.metadata.update({'options': self._options})
 
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         # Extract the selected option from the solution
         solution = solution.lower().strip()
         for letter in 'abcdefghijklmnopqrstuvwxyz':
@@ -204,7 +204,7 @@ class TheoremqaTask(Task):
         self._reference = reference
         self._answer_type = kwargs.get('answer_type')
 
-    def extract_answer(self, solution: str) -> Optional[Any]:
+    def extract_answer(self, solution: str) -> Any:
         """Extract the answer from the given solution."""
         prediction = solution
         # Following the preprocessing steps from TheoremQA

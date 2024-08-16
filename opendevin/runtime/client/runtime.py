@@ -2,7 +2,6 @@ import asyncio
 import os
 import tempfile
 import uuid
-from typing import Optional
 from zipfile import ZipFile
 
 import aiohttp
@@ -55,7 +54,7 @@ class EventStreamRuntime(Runtime):
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())

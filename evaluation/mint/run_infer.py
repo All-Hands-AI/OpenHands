@@ -1,6 +1,6 @@
 import functools
 import os
-from typing import Any, Dict
+from typing import Any
 
 import pandas as pd
 from datasets import load_dataset
@@ -33,7 +33,7 @@ from opendevin.events.observation import CmdOutputObservation
 from opendevin.runtime.runtime import Runtime
 
 
-def codeact_user_response_mint(state: State, task: Task, task_config: Dict[str, int]):
+def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):
     logger.info(f'Gold reference: {task.reference}')
     logger.info(f'Task config: {task_config}')
 
