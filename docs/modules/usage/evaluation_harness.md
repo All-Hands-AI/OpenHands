@@ -84,9 +84,35 @@ To integrate your own benchmark, we suggest starting with the one that most clos
 
 ## How to create an evaluation workflow
 
+
 To create an evaluation workflow for your benchmark, follow these steps:
 
-1. Create a configuration:
+1. Import relevant OpenDevin utilities:
+   ```python
+    import agenthub
+    from evaluation.utils.shared import (
+        EvalMetadata,
+        EvalOutput,
+        make_metadata,
+        prepare_dataset,
+        reset_logger_for_multiprocessing,
+        run_evaluation,
+    )
+    from opendevin.controller.state.state import State
+    from opendevin.core.config import (
+        AppConfig,
+        SandboxConfig,
+        get_llm_config_arg,
+        parse_arguments,
+    )
+    from opendevin.core.logger import opendevin_logger as logger
+    from opendevin.core.main import create_runtime, run_controller
+    from opendevin.events.action import CmdRunAction
+    from opendevin.events.observation import CmdOutputObservation, ErrorObservation
+    from opendevin.runtime.runtime import Runtime
+   ```
+
+2. Create a configuration:
    ```python
    def get_config(instance: pd.Series, metadata: EvalMetadata) -> AppConfig:
        config = AppConfig(
@@ -103,7 +129,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
        return config
    ```
 
-2. Initialize the runtime and set up the evaluation environment:
+3. Initialize the runtime and set up the evaluation environment:
    ```python
    async def initialize_runtime(runtime: Runtime, instance: pd.Series):
        # Set up your evaluation environment here
@@ -111,7 +137,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
        pass
    ```
 
-3. Create a function to process each instance:
+4. Create a function to process each instance:
    ```python
    async def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
        config = get_config(instance, metadata)
@@ -141,7 +167,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
        )
    ```
 
-4. Run the evaluation:
+5. Run the evaluation:
    ```python
    metadata = make_metadata(llm_config, dataset_name, agent_class, max_iterations, eval_note, eval_output_dir)
    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
@@ -161,8 +187,6 @@ This workflow sets up the configuration, initializes the runtime environment, pr
 Remember to customize the `get_instruction`, `your_user_response_function`, and `evaluate_agent_actions` functions according to your specific benchmark requirements.
 
 By following this structure, you can create a robust evaluation workflow for your benchmark within the OpenDevin framework.
-
-Certainly! I'll add a section explaining the user_response_fn and include a description of the workflow and interaction. Here's an updated version of the guideline with the new section:
 
 
 ## Understanding the `user_response_fn`
