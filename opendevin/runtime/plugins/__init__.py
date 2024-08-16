@@ -1,14 +1,18 @@
 # Requirements
-from .agent_skills import AgentSkillsRequirement
-from .jupyter import JupyterRequirement
-from .mixin import PluginMixin
-from .requirement import PluginRequirement
-from .swe_agent_commands import SWEAgentCommandsRequirement
+from .agent_skills import AgentSkillsPlugin, AgentSkillsRequirement
+from .jupyter import JupyterPlugin, JupyterRequirement
+from .requirement import Plugin, PluginRequirement
 
 __all__ = [
-    'PluginMixin',
+    'Plugin',
     'PluginRequirement',
     'AgentSkillsRequirement',
+    'AgentSkillsPlugin',
     'JupyterRequirement',
-    'SWEAgentCommandsRequirement',
+    'JupyterPlugin',
 ]
+
+ALL_PLUGINS = {
+    'jupyter': JupyterPlugin,
+    'agent_skills': AgentSkillsPlugin,
+}

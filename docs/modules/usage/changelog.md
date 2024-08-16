@@ -2,9 +2,9 @@
 sidebar_position: 8
 ---
 
-# Changelog
+# Upgrade Guide
 
-## 0.8 (release date: ??)
+## 0.8.0 (2024-07-13)
 
 ### Config breaking changes
 

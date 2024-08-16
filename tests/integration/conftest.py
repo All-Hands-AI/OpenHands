@@ -1,8 +1,10 @@
 import io
 import os
 import re
+import shutil
 import subprocess
 import tempfile
+import time
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread
@@ -12,8 +14,21 @@ from litellm import completion
 
 from opendevin.llm.llm import message_separator
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-workspace_path = os.getenv('WORKSPACE_BASE')
+script_dir = os.environ.get('SCRIPT_DIR')
+project_root = os.environ.get('PROJECT_ROOT')
+workspace_path = os.environ.get('WORKSPACE_BASE')
+test_runtime = os.environ.get('TEST_RUNTIME')
+MOCK_ROOT_DIR = os.path.join(
+    script_dir,
+    'mock',
+    f'{test_runtime}_runtime',
+    os.environ.get('DEFAULT_AGENT'),
+)
+
+assert script_dir is not None, 'SCRIPT_DIR environment variable is not set'
+assert project_root is not None, 'PROJECT_ROOT environment variable is not set'
+assert workspace_path is not None, 'WORKSPACE_BASE environment variable is not set'
+assert test_runtime is not None, 'TEST_RUNTIME environment variable is not set'
 
 
 class SecretExit(Exception):
@@ -31,7 +46,19 @@ def pytest_exception_interact(node, call, report):
 
 
 def filter_out_symbols(input):
+    # remove shell hostname patterns (e.g., will change between each run)
+    # opendevin@379c7fce40b4:/workspace $
+    input = re.sub(r'(opendevin|root)@.*(:/.*)', r'\1[DUMMY_HOSTNAME]\2', input)
+
+    # handle sha256 hashes
+    # sha256=4ecf8be428f55981e2a188f510ba5f9022bed88f5fb404d7d949f44382201e3d
+    input = re.sub(r'sha256=[a-z0-9]+', 'sha256=[DUMMY_HASH]', input)
+
+    # remove newlines and whitespace
     input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
+
+    # remove all non-alphanumeric characters
+    input = re.sub(r'[^a-zA-Z0-9]', '', input)
     return input
 
 
@@ -42,16 +69,13 @@ def get_log_id(prompt_log_name):
 
 
 def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Apply the mock prompt, and find mock response based on id.
+    """Apply the mock prompt, and find mock response based on id.
     If there is no matching response file, return None.
 
     Note: this function blindly replaces existing prompt file with the given
     input without checking the contents.
     """
-    mock_dir = os.path.join(
-        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
-    )
+    mock_dir = os.path.join(MOCK_ROOT_DIR, test_name)
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     try:
@@ -61,14 +85,14 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
         # apply prompt
         with open(prompt_file_path, 'w') as prompt_file:
             prompt_file.write(messages)
+            prompt_file.write('\n')
         return response
     except FileNotFoundError:
         return None
 
 
 def get_mock_response(test_name: str, messages: str, id: int) -> str:
-    """
-    Find mock response based on prompt. Prompts are stored under nested
+    """Find mock response based on prompt. Prompts are stored under nested
     folders under mock folder. If prompt_{id}.log matches,
     then the mock response we're looking for is at response_{id}.log.
 
@@ -83,16 +107,14 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
     we start from the end of the file, but again, that is unnecessary and only
     makes test code harder to understand.
     """
+    mock_dir = os.path.join(MOCK_ROOT_DIR, test_name)
     prompt = filter_out_symbols(messages)
-    mock_dir = os.path.join(
-        script_dir, 'mock', os.environ.get('DEFAULT_AGENT'), test_name
-    )
     prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
     resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
     # Open the prompt file and compare its contents
     with open(prompt_file_path, 'r') as f:
         file_content = filter_out_symbols(f.read())
-        if file_content == prompt:
+        if file_content.strip() == prompt.strip():
             # Read the response file and return its content
             with open(resp_file_path, 'r') as resp_file:
                 return resp_file.read()
@@ -153,7 +175,9 @@ def mock_completion(*args, test_name, **kwargs):
     messages = kwargs['messages']
     message_str = ''
     for message in messages:
-        message_str += message_separator + message['content']
+        for m in message['content']:
+            if m['type'] == 'text':
+                message_str += message_separator + m['text']
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':
@@ -168,6 +192,11 @@ def mock_completion(*args, test_name, **kwargs):
     return response
 
 
+@pytest.fixture
+def current_test_name(request):
+    return request.node.name
+
+
 @pytest.fixture(autouse=True)
 def patch_completion(monkeypatch, request):
     test_name = request.node.name
@@ -175,6 +204,12 @@ def patch_completion(monkeypatch, request):
     monkeypatch.setattr(
         'opendevin.llm.llm.litellm_completion',
         partial(mock_completion, test_name=test_name),
+    )
+
+    # Mock LLM completion cost (1 USD per conversation)
+    monkeypatch.setattr(
+        'opendevin.llm.llm.litellm_completion_cost',
+        lambda completion_response, **extra_kwargs: 1,
     )
 
     # Mock user input (only for tests that have user_responses.log)
@@ -195,7 +230,9 @@ def http_server():
     thread = Thread(target=server.serve_forever)
     thread.setDaemon(True)
     thread.start()
+    time.sleep(1)
 
+    print('HTTP server started...')
     yield server
 
     # Stop the server
@@ -206,16 +243,41 @@ def http_server():
 def set_up():
     global cur_id
     cur_id = 0
-    assert workspace_path is not None
+    assert workspace_path is not None, 'workspace_path is not set'
+
+    # Remove and recreate the workspace_path
     if os.path.exists(workspace_path):
-        for file in os.listdir(workspace_path):
-            os.remove(os.path.join(workspace_path, file))
+        shutil.rmtree(workspace_path)
+    os.makedirs(workspace_path)
 
 
 @pytest.fixture(autouse=True)
 def resource_setup():
-    set_up()
-    if not os.path.exists(workspace_path):
-        os.makedirs(workspace_path)
-    # Yield to test execution
-    yield
+    try:
+        original_cwd = os.getcwd()
+    except FileNotFoundError:
+        print(
+            '[DEBUG] Original working directory does not exist. Using /tmp as fallback.'
+        )
+        original_cwd = '/tmp'
+        os.chdir('/tmp')
+
+    try:
+        set_up()
+        yield
+    finally:
+        try:
+            print(f'[DEBUG] Final working directory: {os.getcwd()}')
+        except FileNotFoundError:
+            print('[DEBUG] Final working directory does not exist')
+
+        if os.path.exists(workspace_path):
+            shutil.rmtree(workspace_path)
+        os.makedirs(workspace_path, exist_ok=True)
+
+        # Try to change back to the original directory
+        try:
+            os.chdir(original_cwd)
+            print(f'[DEBUG] Changed back to original directory: {original_cwd}')
+        except Exception:
+            os.chdir('/tmp')

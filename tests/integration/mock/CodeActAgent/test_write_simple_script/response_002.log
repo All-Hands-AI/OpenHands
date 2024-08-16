@@ -1,4 +1,0 @@
-Great! The shell script has been created successfully. Let's verify its contents:
-
-<execute_bash>
-cat hello.sh

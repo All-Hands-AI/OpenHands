@@ -3,7 +3,11 @@ import i18next from "i18next";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { fetchAgents, fetchModels } from "#/services/options";
+import {
+  fetchAgents,
+  fetchModels,
+  fetchSecurityAnalyzers,
+} from "#/services/options";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import Session from "#/services/session";
@@ -34,6 +38,9 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
+  const [securityAnalyzers, setSecurityAnalyzers] = React.useState<string[]>(
+    [],
+  );
   const [settings, setSettings] = React.useState<Settings>({} as Settings);
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
@@ -48,7 +55,8 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     const isRunning =
       curAgentState === AgentState.RUNNING ||
       curAgentState === AgentState.PAUSED ||
-      curAgentState === AgentState.AWAITING_USER_INPUT;
+      curAgentState === AgentState.AWAITING_USER_INPUT ||
+      curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
     setAgentIsRunning(isRunning);
   }, [curAgentState]);
 
@@ -57,6 +65,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       try {
         setModels(await fetchModels());
         setAgents(await fetchAgents());
+        setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
         toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));
       } finally {
@@ -87,6 +96,18 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   const handleAPIKeyChange = (key: string) => {
     setSettings((prev) => ({ ...prev, LLM_API_KEY: key }));
+  };
+
+  const handleConfirmationModeChange = (confirmationMode: boolean) => {
+    setSettings((prev) => ({ ...prev, CONFIRMATION_MODE: confirmationMode }));
+  };
+
+  const handleSecurityAnalyzerChange = (securityAnalyzer: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      CONFIRMATION_MODE: true,
+      SECURITY_ANALYZER: securityAnalyzer,
+    }));
   };
 
   const handleResetSettings = () => {
@@ -166,10 +187,13 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           settings={settings}
           models={models}
           agents={agents}
+          securityAnalyzers={securityAnalyzers}
           onModelChange={handleModelChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
+          onConfirmationModeChange={handleConfirmationModeChange}
+          onSecurityAnalyzerChange={handleSecurityAnalyzerChange}
         />
       )}
     </BaseModal>

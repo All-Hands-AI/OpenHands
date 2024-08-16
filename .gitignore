@@ -169,6 +169,10 @@ evaluation/outputs
 evaluation/swe_bench/eval_workspace*
 evaluation/SWE-bench/data
 evaluation/webarena/scripts/webarena_env.sh
+evaluation/bird/data
+evaluation/gaia/data
+evaluation/gorilla/data
+evaluation/toolqa/data
 
 # frontend
 
@@ -210,6 +214,7 @@ cache
 
 # configuration
 config.toml
+config.toml_
 config.toml.bak
 
 containers/agnostic_sandbox
@@ -217,3 +222,9 @@ containers/agnostic_sandbox
 # swe-bench-eval
 image_build_logs
 run_instance_logs
+
+od_runtime_*.tar
+
+# docker build
+containers/runtime/Dockerfile
+containers/runtime/project.tar.gz

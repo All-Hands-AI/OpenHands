@@ -26,9 +26,6 @@ enum ActionType {
   // Delegate a (sub)task to another agent.
   DELEGATE = "delegate",
 
-  // Searches long-term memory.
-  RECALL = "recall",
-
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",

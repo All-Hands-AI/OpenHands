@@ -1,6 +1,8 @@
 import json
+import os
 from functools import partial
 
+import pandas as pd
 import requests
 from ast_eval_hf import ast_eval_hf, ast_parse
 from ast_eval_tf import ast_eval_tf
@@ -10,7 +12,6 @@ from ast_eval_th import ast_eval_th
 # This function is modified from Gorilla's APIBench implementations (https://github.com/ShishirPatil/gorilla/blob/main/eval/get_llm_responses.py).
 def encode_question(question, api_name):
     """Encode multiple prompt instructions into a single string."""
-
     prompts = []
     if api_name == 'torch':
         api_name = 'torchhub'
@@ -49,48 +50,59 @@ def encode_question(question, api_name):
     return prompts
 
 
-def get_data(hub):
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def fetch_data(url, filename):
+    cache_path = os.path.join(DATA_DIR, filename)
+    if os.path.exists(cache_path):
+        with open(cache_path, 'r') as f:
+            return f.read()
+    else:
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(cache_path, 'w') as f:
+                f.write(response.text)
+            return response.text
+        else:
+            raise Exception(f'Failed to fetch data from {url}')
+
+
+def get_data_for_hub(hub: str):
     if hub == 'hf':
         question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-data/questions/huggingface/questions_huggingface_0_shot.jsonl'
         api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/api/huggingface_api.jsonl'
         apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/apibench/huggingface_eval.json'
         ast_eval = ast_eval_hf
-    if hub == 'torch':
+    elif hub == 'torch':
         question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-data/questions/torchhub/questions_torchhub_0_shot.jsonl'
         api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/api/torchhub_api.jsonl'
         apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/apibench/torchhub_eval.json'
         ast_eval = ast_eval_th
-    if hub == 'tf':
+    elif hub == 'tf':
         question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-data/questions/tensorflowhub/questions_tensorflowhub_0_shot.jsonl'
         api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/api/tensorflowhub_api.jsonl'
         apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/apibench/tensorflow_eval.json'
         ast_eval = ast_eval_tf
 
-    # get questions and question_ids
+    question_data = fetch_data(question_data, 'question_data.jsonl')
+    api_dataset = fetch_data(api_dataset, 'api_dataset.jsonl')
+    apibench = fetch_data(apibench, 'apibench.json')
+
+    # Parse question data
     questions = []
     question_ids = []
-    question_data = requests.get(question_data)
-    if question_data.status_code == 200:
-        lines = question_data.text.splitlines()
-        for line in lines:
-            questions.append(json.loads(line)['text'])
-            question_ids.append(json.loads(line)['question_id'])
+    for line in question_data.splitlines():
+        data = json.loads(line)
+        questions.append(data['text'])
+        question_ids.append(data['question_id'])
 
-    # get the api datasest
-    api_database = []
-    api_dataset = requests.get(api_dataset)
-    if api_dataset.status_code == 200:
-        lines = api_dataset.text.splitlines()
-        for line in lines:
-            api_database.append(json.loads(line))
+    # Parse API dataset
+    api_database = [json.loads(line) for line in api_dataset.splitlines()]
 
-    # get the question answer pair datasest
-    qa_pairs = []
-    apibench = requests.get(apibench)
-    if apibench.status_code == 200:
-        lines = apibench.text.splitlines()
-        for line in lines:
-            qa_pairs.append(json.loads(line)['api_data'])
+    # Parse question-answer pairs
+    qa_pairs = [json.loads(line)['api_data'] for line in apibench.splitlines()]
 
     # Parse all apis to ast trees
     ast_database = []
@@ -98,4 +110,15 @@ def get_data(hub):
         ast_tree = ast_parse(data['api_call'])
         ast_database.append(ast_tree)
     ast_eval = partial(ast_eval, api_database, qa_pairs, ast_database)
-    return questions, question_ids, ast_eval
+
+    return pd.DataFrame(
+        {
+            'question_id': question_ids,
+            'question': questions,
+            'api_database': [api_database] * len(questions),
+            'qa_pairs': [qa_pairs] * len(questions),
+            'ast_database': [ast_database] * len(questions),
+            'ast_eval': [ast_eval] * len(questions),
+            'hub': [hub] * len(questions),
+        }
+    )

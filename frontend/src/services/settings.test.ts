@@ -20,7 +20,9 @@ describe("getSettings", () => {
       .mockReturnValueOnce("llm_value")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
-      .mockReturnValueOnce("api_key");
+      .mockReturnValueOnce("api_key")
+      .mockReturnValueOnce("true")
+      .mockReturnValueOnce("invariant");
 
     const settings = getSettings();
 
@@ -29,11 +31,15 @@ describe("getSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
+      CONFIRMATION_MODE: true,
+      SECURITY_ANALYZER: "invariant",
     });
   });
 
   it("should handle return defaults if localStorage key does not exist", () => {
     (localStorage.getItem as Mock)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
@@ -46,6 +52,8 @@ describe("getSettings", () => {
       AGENT: DEFAULT_SETTINGS.AGENT,
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
       LLM_API_KEY: "",
+      CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+      SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
     });
   });
 });
@@ -57,6 +65,8 @@ describe("saveSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
+      CONFIRMATION_MODE: true,
+      SECURITY_ANALYZER: "invariant",
     };
 
     saveSettings(settings);

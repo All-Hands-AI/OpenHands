@@ -2,7 +2,7 @@ from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
+from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.core.utils import json
 from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
@@ -23,39 +23,36 @@ def parse_response(orig_response: str) -> Action:
 
 
 def to_json(obj, **kwargs):
-    """
-    Serialize an object to str format
-    """
+    """Serialize an object to str format"""
     return json.dumps(obj, **kwargs)
-
-
-def history_to_json(history: ShortTermHistory, max_events=20, **kwargs):
-    """
-    Serialize and simplify history to str format
-    """
-    # TODO: get agent specific llm config
-    llm_config = config.get_llm_config()
-    max_message_chars = llm_config.max_message_chars
-
-    processed_history = []
-    event_count = 0
-
-    for event in history.get_events(reverse=True):
-        if event_count >= max_events:
-            break
-        processed_history.append(event_to_memory(event, max_message_chars))
-        event_count += 1
-
-    # history is in reverse order, let's fix it
-    processed_history.reverse()
-
-    return json.dumps(processed_history, **kwargs)
 
 
 class MicroAgent(Agent):
     VERSION = '1.0'
     prompt = ''
     agent_definition: dict = {}
+
+    def history_to_json(
+        self, history: ShortTermHistory, max_events: int = 20, **kwargs
+    ):
+        """
+        Serialize and simplify history to str format
+        """
+        processed_history = []
+        event_count = 0
+
+        for event in history.get_events(reverse=True):
+            if event_count >= max_events:
+                break
+            processed_history.append(
+                event_to_memory(event, self.llm.config.max_message_chars)
+            )
+            event_count += 1
+
+        # history is in reverse order, let's fix it
+        processed_history.reverse()
+
+        return json.dumps(processed_history, **kwargs)
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -66,19 +63,20 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
+        last_user_message, last_image_urls = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
-            history_to_json=history_to_json,
+            history_to_json=self.history_to_json,
             delegates=self.delegates,
-            latest_user_message=state.get_current_user_intent(),
+            latest_user_message=last_user_message,
         )
-        messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+        content = [TextContent(text=prompt)]
+        if last_image_urls:
+            content.append(ImageContent(image_urls=last_image_urls))
+        message = Message(role='user', content=content)
+        resp = self.llm.completion(messages=[message.model_dump()])
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action
-
-    def search_memory(self, query: str) -> list[str]:
-        return []

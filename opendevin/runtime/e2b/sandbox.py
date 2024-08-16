@@ -1,5 +1,6 @@
 import os
 import tarfile
+import copy
 from glob import glob
 
 from e2b import Sandbox as E2BSandbox
@@ -7,32 +8,32 @@ from e2b.sandbox.exception import (
     TimeoutException,
 )
 
-from opendevin.core.config import config
+from opendevin.core.config import SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import CancellableStream
-from opendevin.runtime.sandbox import Sandbox
 
-
-class E2BBox(Sandbox):
+class E2BBox:
     closed = False
     _cwd: str = '/home/user'
+    _env: dict[str, str] = {}
+    is_initial_session: bool = True
 
     def __init__(
         self,
+        config: SandboxConfig,
+        e2b_api_key: str,
         template: str = 'open-devin',
-        timeout: int = config.sandbox.timeout,
     ):
+        self.config = copy.deepcopy(config)
+        self.initialize_plugins: bool = config.initialize_plugins
         self.sandbox = E2BSandbox(
-            api_key=config.e2b_api_key,
+            api_key=e2b_api_key,
             template=template,
             # It's possible to stream stdout and stderr from sandbox and from each process
             on_stderr=lambda x: logger.info(f'E2B sandbox stderr: {x}'),
             on_stdout=lambda x: logger.info(f'E2B sandbox stdout: {x}'),
             cwd=self._cwd,  # Default workdir inside sandbox
         )
-        self.timeout = timeout
         logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
-        super().__init__()
 
     @property
     def filesystem(self):
@@ -62,9 +63,9 @@ class E2BBox(Sandbox):
         return tar_filename
 
     def execute(
-        self, cmd: str, stream: bool = False, timeout: int | None = None
-    ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        self, cmd: str, timeout: int | None = None
+    ) -> tuple[int, str]:
+        timeout = timeout if timeout is not None else self.config.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
             process_output = process.wait(timeout=timeout)

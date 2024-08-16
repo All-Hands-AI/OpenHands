@@ -27,11 +27,14 @@ echo "Tags: ${tags[@]}"
 
 if [[ "$image_name" == "opendevin" ]]; then
   dir="./containers/app"
+elif [[ "$image_name" == "od_runtime" ]]; then
+  dir="./containers/runtime"
 else
   dir="./containers/$image_name"
 fi
 
-if [[ ! -f "$dir/Dockerfile" ]]; then
+if [[ (! -f "$dir/Dockerfile") && "$image_name" != "od_runtime" ]]; then
+  # Allow runtime to be built without a Dockerfile
   echo "No Dockerfile found"
   exit 1
 fi
@@ -45,6 +48,16 @@ source "$dir/config.sh"
 if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
+
+# If $DOCKER_IMAGE_TAG is set, add it to the tags
+if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
+  tags+=("$DOCKER_IMAGE_TAG")
+fi
+# If $DOCKER_IMAGE_HASH_TAG is set, add it to the tags
+if [[ -n "$DOCKER_IMAGE_HASH_TAG" ]]; then
+  tags+=("$DOCKER_IMAGE_HASH_TAG")
+fi
+
 
 DOCKER_REPOSITORY="$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE"
 DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase

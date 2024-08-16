@@ -1,10 +1,11 @@
 import asyncio
 import time
-from typing import Optional
 
 from fastapi import WebSocket
 
+from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.storage.files import FileStore
 
 from .session import Session
 
@@ -14,13 +15,17 @@ class SessionManager:
     cleanup_interval: int = 300
     session_timeout: int = 600
 
-    def __init__(self):
+    def __init__(self, config: AppConfig, file_store: FileStore):
         asyncio.create_task(self._cleanup_sessions())
+        self.config = config
+        self.file_store = file_store
 
     def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         if sid in self._sessions:
             asyncio.create_task(self._sessions[sid].close())
-        self._sessions[sid] = Session(sid=sid, ws=ws_conn)
+        self._sessions[sid] = Session(
+            sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config
+        )
         return self._sessions[sid]
 
     def get_session(self, sid: str) -> Session | None:
@@ -55,7 +60,7 @@ class SessionManager:
                     session_ids_to_remove.append(sid)
 
             for sid in session_ids_to_remove:
-                to_del_session: Optional[Session] = self._sessions.pop(sid, None)
+                to_del_session: Session | None = self._sessions.pop(sid, None)
                 if to_del_session is not None:
                     await to_del_session.close()
                     logger.info(

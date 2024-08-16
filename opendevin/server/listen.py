@@ -1,13 +1,14 @@
 import os
 import re
+import tempfile
 import uuid
 import warnings
 
 import requests
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 
+from opendevin.security.options import SecurityAnalyzers
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
+from opendevin.storage import get_file_store
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -29,18 +30,31 @@ from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
-from opendevin.core.config import config
+from opendevin.core.config import LLMConfig, load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState  # Add this import
-from opendevin.events.action import ChangeAgentStateAction, NullAction
+from opendevin.events.action import (
+    ChangeAgentStateAction,
+    FileReadAction,
+    FileWriteAction,
+    NullAction,
+)
 from opendevin.events.observation import (
     AgentStateChangedObservation,
+    ErrorObservation,
+    FileReadObservation,
+    FileWriteObservation,
     NullObservation,
 )
 from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
+from opendevin.runtime.runtime import Runtime
 from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.server.session import session_manager
+from opendevin.server.session import SessionManager
+
+config = load_app_config()
+file_store = get_file_store(config.file_store, config.file_store_path)
+session_manager = SessionManager(config, file_store)
 
 app = FastAPI()
 app.add_middleware(
@@ -55,8 +69,7 @@ security_scheme = HTTPBearer()
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
-    """
-    Load file upload configuration from the config object.
+    """Load file upload configuration from the config object.
 
     This function retrieves the file upload settings from the global config object.
     It handles the following settings:
@@ -115,8 +128,7 @@ MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_con
 
 
 def is_extension_allowed(filename):
-    """
-    Check if the file extension is allowed based on the current configuration.
+    """Check if the file extension is allowed based on the current configuration.
 
     This function supports wildcards and files without extensions.
     The check is case-insensitive for extensions.
@@ -140,8 +152,7 @@ def is_extension_allowed(filename):
 
 @app.middleware('http')
 async def attach_session(request: Request, call_next):
-    """
-    Middleware to attach session information to the request.
+    """Middleware to attach session information to the request.
 
     This middleware checks for the Authorization header, validates the token,
     and attaches the corresponding session to the request state.
@@ -169,7 +180,7 @@ async def attach_session(request: Request, call_next):
     if 'Bearer' in auth_token:
         auth_token = auth_token.split('Bearer')[1].strip()
 
-    request.state.sid = get_sid_from_token(auth_token)
+    request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
     if request.state.sid == '':
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -189,13 +200,13 @@ async def attach_session(request: Request, call_next):
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
-    """
-    WebSocket endpoint for receiving events from the client (i.e., the browser).
+    """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
     - Initialize the agent:
     session management, and event streaming.
         ```json
         {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
+
     Args:
         ```
         websocket (WebSocket): The WebSocket connection object.
@@ -205,7 +216,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Send a message:
         ```json
-        {"action": "message", "args": {"content": "Hello, how are you?"}}
+        {"action": "message", "args": {"content": "Hello, how are you?", "images_urls": ["base64_url1", "base64_url2"]}}
         ```
     - Write contents to a file:
         ```json
@@ -217,7 +228,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": ""}}
+        {"action": "run", "args": {"command": "ls -l", "thought": "", "is_confirmed": "confirmed"}}
         ```
     - Run an IPython command:
         ```json
@@ -226,10 +237,6 @@ async def websocket_endpoint(websocket: WebSocket):
     - Open a web page:
         ```json
         {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
-        ```
-    - Search long-term memory:
-        ```json
-        {"action": "recall", "args": {"query": "past projects"}}
         ```
     - Add a task to the root_task:
         ```json
@@ -252,7 +259,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')
-        sid = get_sid_from_token(token)
+        sid = get_sid_from_token(token, config.jwt_secret)
 
         if sid == '':
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
@@ -260,7 +267,7 @@ async def websocket_endpoint(websocket: WebSocket):
             return
     else:
         sid = str(uuid.uuid4())
-        token = sign_token({'sid': sid})
+        token = sign_token({'sid': sid}, config.jwt_secret)
 
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
@@ -287,7 +294,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/api/options/models')
-async def get_litellm_models():
+async def get_litellm_models() -> list[str]:
     """
     Get all models supported by LiteLLM.
 
@@ -306,7 +313,19 @@ async def get_litellm_models():
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
         litellm_model_list
     )
-    bedrock_model_list = bedrock.list_foundation_models()
+    # TODO: for bedrock, this is using the default config
+    llm_config: LLMConfig = config.get_llm_config()
+    bedrock_model_list = []
+    if (
+        llm_config.aws_region_name
+        and llm_config.aws_access_key_id
+        and llm_config.aws_secret_access_key
+    ):
+        bedrock_model_list = bedrock.list_foundation_models(
+            llm_config.aws_region_name,
+            llm_config.aws_access_key_id,
+            llm_config.aws_secret_access_key,
+        )
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
         ollama_base_url = llm_config.ollama_base_url
@@ -330,8 +349,7 @@ async def get_litellm_models():
 
 @app.get('/api/options/agents')
 async def get_agents():
-    """
-    Get all agents supported by LiteLLM.
+    """Get all agents supported by LiteLLM.
 
     To get the agents:
     ```sh
@@ -345,10 +363,24 @@ async def get_agents():
     return agents
 
 
-@app.get('/api/list-files')
-def list_files(request: Request, path: str = '/'):
+@app.get('/api/options/security-analyzers')
+async def get_security_analyzers():
+    """Get all supported security analyzers.
+
+    To get the security analyzers:
+    ```sh
+    curl http://localhost:3000/api/security-analyzers
+    ```
+
+    Returns:
+        list: A sorted list of security analyzer names.
     """
-    List files in the specified path.
+    return sorted(SecurityAnalyzers.keys())
+
+
+@app.get('/api/list-files')
+async def list_files(request: Request, path: str | None = None):
+    """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
     excluding certain system and hidden files/directories.
@@ -360,7 +392,7 @@ def list_files(request: Request, path: str = '/'):
 
     Args:
         request (Request): The incoming request object.
-        path (str, optional): The path to list files from. Defaults to '/'.
+        path (str, optional): The path to list files from. Defaults to None.
 
     Returns:
         list: A list of file names in the specified path.
@@ -373,92 +405,14 @@ def list_files(request: Request, path: str = '/'):
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
-
-    try:
-        # Get the full path of the requested directory
-        full_path = (
-            request.state.session.agent_session.runtime.file_store.get_full_path(path)
-        )
-
-        # Check if the directory exists
-        if not os.path.exists(full_path) or not os.path.isdir(full_path):
-            return []
-
-        # Check if .gitignore exists
-        gitignore_path = os.path.join(full_path, '.gitignore')
-        if os.path.exists(gitignore_path):
-            # Use PathSpec to parse .gitignore
-            with open(gitignore_path, 'r') as f:
-                spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
-        else:
-            # Fallback to default exclude list if .gitignore doesn't exist
-            default_exclude = [
-                '.git',
-                '.DS_Store',
-                '.svn',
-                '.hg',
-                '.idea',
-                '.vscode',
-                '.settings',
-                '.pytest_cache',
-                '__pycache__',
-                'node_modules',
-                'vendor',
-                'build',
-                'dist',
-                'bin',
-                'logs',
-                'log',
-                'tmp',
-                'temp',
-                'coverage',
-                'venv',
-                'env',
-            ]
-            spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
-
-        entries = request.state.session.agent_session.runtime.file_store.list(path)
-
-        # Filter entries using PathSpec
-        filtered_entries = [
-            entry
-            for entry in entries
-            if not spec.match_file(os.path.relpath(entry, str(full_path)))
-        ]
-
-        # Separate directories and files
-        directories = []
-        files = []
-        for entry in filtered_entries:
-            # Remove leading slash and any parent directory components
-            entry_relative = entry.lstrip('/').split('/')[-1]
-
-            # Construct the full path by joining the base path with the relative entry path
-            full_entry_path = os.path.join(full_path, entry_relative)
-            if os.path.exists(full_entry_path):
-                is_dir = os.path.isdir(full_entry_path)
-                if is_dir:
-                    directories.append(entry)
-                else:
-                    files.append(entry)
-
-        # Sort directories and files separately
-        directories.sort(key=lambda s: s.lower())
-        files.sort(key=lambda s: s.lower())
-
-        # Combine sorted directories and files
-        sorted_entries = directories + files
-        return sorted_entries
-
-    except Exception as e:
-        logger.error(f'Error listing files: {e}', exc_info=True)
-        return []
+    runtime: Runtime = request.state.session.agent_session.runtime
+    file_list = await runtime.list_files(path)
+    return file_list
 
 
 @app.get('/api/select-file')
-def select_file(file: str, request: Request):
-    """
-    Retrieve the content of a specified file.
+async def select_file(file: str, request: Request):
+    """Retrieve the content of a specified file.
 
     To select a file:
     ```sh
@@ -467,6 +421,7 @@ def select_file(file: str, request: Request):
 
     Args:
         file (str): The path of the file to be retrieved.
+            Expect path to be absolute inside the runtime.
         request (Request): The incoming request object.
 
     Returns:
@@ -475,22 +430,31 @@ def select_file(file: str, request: Request):
     Raises:
         HTTPException: If there's an error opening the file.
     """
-    try:
-        content = request.state.session.agent_session.runtime.file_store.read(file)
-    except Exception as e:
-        logger.error(f'Error opening file {file}: {e}', exc_info=False)
-        error_msg = f'Error opening file: {e}'
+    runtime: Runtime = request.state.session.agent_session.runtime
+
+    # convert file to an absolute path inside the runtime
+    if not os.path.isabs(file):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error': 'File path must be absolute'},
+        )
+
+    read_action = FileReadAction(file)
+    observation = await runtime.run_action(read_action)
+
+    if isinstance(observation, FileReadObservation):
+        content = observation.content
+        return {'code': content}
+    elif isinstance(observation, ErrorObservation):
+        logger.error(f'Error opening file {file}: {observation}', exc_info=False)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': error_msg},
+            content={'error': f'Error opening file: {observation}'},
         )
-    return {'code': content}
 
 
 def sanitize_filename(filename):
-    """
-    Sanitize the filename to prevent directory traversal
-    """
+    """Sanitize the filename to prevent directory traversal"""
     # Remove any directory components
     filename = os.path.basename(filename)
     # Remove any non-alphanumeric characters except for .-_
@@ -505,8 +469,7 @@ def sanitize_filename(filename):
 
 @app.post('/api/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
-    """
-    Upload a list of files to the workspace.
+    """Upload a list of files to the workspace.
 
     To upload a files:
     ```sh
@@ -548,9 +511,17 @@ async def upload_file(request: Request, files: list[UploadFile]):
                 )
                 continue
 
-            request.state.session.agent_session.runtime.file_store.write(
-                safe_filename, file_contents
-            )
+            # copy the file to the runtime
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_file_path = os.path.join(tmp_dir, safe_filename)
+                with open(tmp_file_path, 'wb') as tmp_file:
+                    tmp_file.write(file_contents)
+                    tmp_file.flush()
+
+                runtime: Runtime = request.state.session.agent_session.runtime
+                await runtime.copy_to(
+                    tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
+                )
             uploaded_files.append(safe_filename)
 
         response_content = {
@@ -584,8 +555,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request, feedback: FeedbackDataModel):
-    """
-    Submit user feedback.
+    """Submit user feedback.
 
     This function stores the provided feedback data.
 
@@ -618,8 +588,7 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
 
 @app.get('/api/root_task')
 def get_root_task(request: Request):
-    """
-    Retrieve the root task of the current agent session.
+    """Retrieve the root task of the current agent session.
 
     To get the root_task:
     ```sh
@@ -648,8 +617,7 @@ def get_root_task(request: Request):
 
 @app.get('/api/defaults')
 async def appconfig_defaults():
-    """
-    Retrieve the default configuration settings.
+    """Retrieve the default configuration settings.
 
     To get the default configurations:
     ```sh
@@ -664,8 +632,7 @@ async def appconfig_defaults():
 
 @app.post('/api/save-file')
 async def save_file(request: Request):
-    """
-    Save a file to the agent's runtime file store.
+    """Save a file to the agent's runtime file store.
 
     This endpoint allows saving a file when the agent is in a paused, finished,
     or awaiting user input state. It checks the agent's state before proceeding
@@ -709,17 +676,61 @@ async def save_file(request: Request):
         if not file_path or content is None:
             raise HTTPException(status_code=400, detail='Missing filePath or content')
 
-        # Save the file to the agent's runtime file store
-        request.state.session.agent_session.runtime.file_store.write(file_path, content)
+        # Make sure file_path is abs
+        if not os.path.isabs(file_path):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={'error': 'File path must be absolute'},
+            )
 
-        # Return a success response
-        return JSONResponse(
-            status_code=200, content={'message': 'File saved successfully'}
-        )
+        # Save the file to the agent's runtime file store
+        runtime: Runtime = request.state.session.agent_session.runtime
+        write_action = FileWriteAction(file_path, content)
+        observation = await runtime.run_action(write_action)
+
+        if isinstance(observation, FileWriteObservation):
+            return JSONResponse(
+                status_code=200, content={'message': 'File saved successfully'}
+            )
+        elif isinstance(observation, ErrorObservation):
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Failed to save file: {observation}'},
+            )
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Unexpected observation: {observation}'},
+            )
     except Exception as e:
         # Log the error and return a 500 response
         logger.error(f'Error saving file: {e}', exc_info=True)
         raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
+
+
+@app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+async def security_api(request: Request):
+    """Catch-all route for security analyzer API requests.
+
+    Each request is handled directly to the security analyzer.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        Any: The response from the security analyzer.
+
+    Raises:
+        HTTPException: If the security analyzer is not initialized.
+    """
+    if not request.state.session.agent_session.security_analyzer:
+        raise HTTPException(status_code=404, detail='Security analyzer not initialized')
+
+    return (
+        await request.state.session.agent_session.security_analyzer.handle_api_request(
+            request
+        )
+    )
 
 
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

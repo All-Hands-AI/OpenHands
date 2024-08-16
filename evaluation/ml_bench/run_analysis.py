@@ -4,9 +4,11 @@ import pprint
 
 import tqdm
 
-from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.config import get_llm_config_arg, get_parser, load_app_config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm.llm import LLM
+
+config = load_app_config()
 
 
 def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:

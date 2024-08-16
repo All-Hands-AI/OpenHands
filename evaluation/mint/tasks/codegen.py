@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from utils import check_correctness
 
@@ -42,7 +41,7 @@ class MBPPTask(CodeGenTask):
         """
         return self._prompt.replace('"""', '').strip()
 
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution.
 
         Split off first block of code by scanning for class, def etc. on newlines.
@@ -66,7 +65,7 @@ class HumanEvalTask(CodeGenTask):
         """
         return 'Complete the following code:\n\n' + self._prompt
 
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution.
 
         Split off first block of code by scanning for class, def etc. on newlines.
@@ -74,7 +73,6 @@ class HumanEvalTask(CodeGenTask):
         Modified from:
         https://github.com/bigcode-project/bigcode-evaluation-harness/blob/d61afde130005ecc65cf800ad8eca790a9bc2115/lm_eval/tasks/humaneval.py#L56
         """
-
         # STOP_WORDS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
         # # Remove the last block of the code containing stop_words for HumanEval
         # string_list = re.split("(%s)" % "|".join(STOP_WORDS), solution)

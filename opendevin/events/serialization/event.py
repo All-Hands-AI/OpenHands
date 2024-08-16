@@ -59,8 +59,12 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
         props.pop(key, None)
+    if 'security_risk' in props and props['security_risk'] is None:
+        props.pop('security_risk')
     if 'action' in d:
         d['args'] = props
+        if event.timeout is not None:
+            d['timeout'] = event.timeout
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
         d['extras'] = props
@@ -75,6 +79,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d.pop('cause', None)
     d.pop('timestamp', None)
     d.pop('message', None)
+    d.pop('images_urls', None)
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
     if isinstance(event, Observation) and 'content' in d:
@@ -83,9 +88,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
 
 
 def truncate_content(content: str, max_chars: int) -> str:
-    """
-    Truncate the middle of the observation content if it is too long.
-    """
+    """Truncate the middle of the observation content if it is too long."""
     if len(content) <= max_chars:
         return content
 

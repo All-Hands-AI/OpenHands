@@ -26,6 +26,14 @@ if [ -z "$MAX_ITER" ]; then
   MAX_ITER=30
 fi
 
+if [ -z "$USE_INSTANCE_IMAGE" ]; then
+  echo "USE_INSTANCE_IMAGE not specified, use default true"
+  USE_INSTANCE_IMAGE=true
+fi
+
+export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
+echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+
 get_agent_version
 
 echo "AGENT: $AGENT"

@@ -5,6 +5,23 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
+# unset environmental variables that might disturb testing
+unset OPENAI_API_KEY
+unset SANDBOX_ENV_OPENAI_API_KEY
+unset OPENAI_BASE_URL
+unset OPENAI_MODEL
+
+# Get the absolute path of the script directory
+get_script_dir() {
+    local source="${BASH_SOURCE[0]}"
+    while [ -h "$source" ]; do
+        local dir="$( cd -P "$( dirname "$source" )" && pwd )"
+        source="$(readlink "$source")"
+        [[ $source != /* ]] && source="$dir/$source"
+    done
+    echo "$( cd -P "$( dirname "$source" )" && pwd )"
+}
+
 TMP_FILE="${TMP_FILE:-tmp.log}"
 
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
@@ -14,27 +31,44 @@ if [ -z $WORKSPACE_BASE ]; then
   WORKSPACE_BASE=$(pwd)
 fi
 
-WORKSPACE_MOUNT_PATH+="/_test_workspace"
-WORKSPACE_BASE+="/_test_workspace"
-WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
+export SCRIPT_DIR=$(get_script_dir)
+export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 
+WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
+mkdir -p $WORKSPACE_BASE
+chmod -R 777 $WORKSPACE_BASE
+WORKSPACE_BASE=$(realpath $WORKSPACE_BASE)
+
+WORKSPACE_MOUNT_PATH=${WORKSPACE_MOUNT_PATH}/_test_workspace
+mkdir -p $WORKSPACE_MOUNT_PATH
+chmod -R 777 $WORKSPACE_MOUNT_PATH
+WORKSPACE_MOUNT_PATH=$(realpath $WORKSPACE_MOUNT_PATH)
+
+echo "Current working directory: $(pwd)"
+echo "SCRIPT_DIR: $SCRIPT_DIR"
+echo "PROJECT_ROOT: $PROJECT_ROOT"
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
-echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
+
+# Ensure we're in the correct directory
+cd "$PROJECT_ROOT" || exit 1
 
 mkdir -p $WORKSPACE_BASE
 
 # use environmental variable if exists, otherwise use "ssh"
-SANDBOX_BOX_TYPE="${SANDBOX_TYPE:-ssh}"
-# TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
-PERSIST_SANDBOX=false
+TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"  # can be server or eventstream
+# TODO: set this as default after ServerRuntime is deprecated
+if [ "$TEST_RUNTIME" == "eventstream" ] && [ -z "$SANDBOX_CONTAINER_IMAGE" ]; then
+  SANDBOX_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
+fi
+
 MAX_ITERATIONS=15
+echo "TEST_RUNTIME: $TEST_RUNTIME"
 
 agents=(
   "DelegatorAgent"
   "ManagerAgent"
   "BrowsingAgent"
-  "MonologueAgent"
   "CodeActAgent"
   "PlannerAgent"
   "CodeActSWEAgent"
@@ -65,20 +99,23 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
-  local pytest_cmd="poetry run pytest -s ./tests/integration/test_agent.py::$test_name"
+  # Ensure we're in the correct directory
+  cd "$PROJECT_ROOT" || exit 1
 
+  local pytest_cmd="poetry run pytest --cache-clear -vvsxx $SCRIPT_DIR/test_agent.py::$test_name"
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then
     pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
   fi
 
-  SANDBOX_BOX_TYPE=$SANDBOX_BOX_TYPE \
-    PERSIST_SANDBOX=$PERSIST_SANDBOX \
+  env SCRIPT_DIR="$SCRIPT_DIR" \
+    PROJECT_ROOT="$PROJECT_ROOT" \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-    WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     DEFAULT_AGENT=$agent \
+    TEST_RUNTIME="$TEST_RUNTIME" \
+    SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -114,7 +151,7 @@ run_test() {
 
 # browsing capability needs a local http server
 launch_http_server() {
-  poetry run python tests/integration/start_http_server.py &
+  poetry run python $SCRIPT_DIR/start_http_server.py &
   HTTP_SERVER_PID=$!
   echo "Test http server launched, PID = $HTTP_SERVER_PID"
   sleep 10
@@ -124,7 +161,7 @@ cleanup() {
   echo "Cleaning up before exit..."
   if [ -n "$HTTP_SERVER_PID" ]; then
     echo "Killing HTTP server..."
-    kill $HTTP_SERVER_PID
+    kill $HTTP_SERVER_PID || true
     unset HTTP_SERVER_PID
   fi
   [ -f $TMP_FILE ] && rm $TMP_FILE
@@ -134,22 +171,23 @@ cleanup() {
 # Trap the EXIT signal to run the cleanup function
 trap cleanup EXIT
 
-# generate prompts again, using existing LLM responses under tests/integration/mock/[agent]/[test_name]/response_*.log
+# generate prompts again, using existing LLM responses under tests/integration/mock/[test_runtime]_runtime/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
 # respond to the prompts. The benefit is developers don't have to regenerate real responses from LLM, if they only
 # apply a small change to prompts.
 regenerate_without_llm() {
   # set -x to print the command being executed
   set -x
-  SANDBOX_BOX_TYPE=$SANDBOX_BOX_TYPE \
-    PERSIST_SANDBOX=$PERSIST_SANDBOX \
-    WORKSPACE_BASE=$WORKSPACE_BASE \
-    WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-    WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
-    MAX_ITERATIONS=$MAX_ITERATIONS \
-    FORCE_APPLY_PROMPTS=true \
-    DEFAULT_AGENT=$agent \
-    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+  env SCRIPT_DIR="$SCRIPT_DIR" \
+      PROJECT_ROOT="$PROJECT_ROOT" \
+      WORKSPACE_BASE=$WORKSPACE_BASE \
+      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+      MAX_ITERATIONS=$MAX_ITERATIONS \
+      FORCE_APPLY_PROMPTS=true \
+      DEFAULT_AGENT=$agent \
+      TEST_RUNTIME="$TEST_RUNTIME" \
+      SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
+      poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
   set +x
 }
 
@@ -159,36 +197,38 @@ regenerate_with_llm() {
   fi
 
   rm -rf $WORKSPACE_BASE/*
-  if [ -d "tests/integration/workspace/$test_name" ]; then
-    cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+  if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
+    cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
   fi
 
   rm -rf logs
-  rm -rf tests/integration/mock/$agent/$test_name/*
+  rm -rf "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/*"
   # set -x to print the command being executed
   set -x
   echo -e "/exit\n" | \
-    DEBUG=true \
-    SANDBOX_BOX_TYPE=$SANDBOX_BOX_TYPE \
-    PERSIST_SANDBOX=$PERSIST_SANDBOX \
-    WORKSPACE_BASE=$WORKSPACE_BASE \
-    WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
-    WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
-    poetry run python ./opendevin/core/main.py \
-    -i $MAX_ITERATIONS \
-    -t "$task Do not ask me for confirmation at any point." \
-    -c $agent
+    env SCRIPT_DIR="$SCRIPT_DIR" \
+      PROJECT_ROOT="$PROJECT_ROOT" \
+      DEBUG=true \
+      WORKSPACE_BASE=$WORKSPACE_BASE \
+      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+      DEFAULT_AGENT=$agent \
+      RUNTIME="$TEST_RUNTIME" \
+      SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
+      poetry run python "$PROJECT_ROOT/opendevin/core/main.py" \
+      -i $MAX_ITERATIONS \
+      -t "$task Do not ask me for confirmation at any point." \
+      -c $agent
   set +x
 
-  mkdir -p tests/integration/mock/$agent/$test_name/
-  mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
+  mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
+  mv logs/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
+  kill $HTTP_SERVER_PID || true
 }
 
 ##############################################################
 ##                      MAIN PROGRAM                        ##
 ##############################################################
-
 
 if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
   echo "Every task must correspond to one test case"
@@ -216,8 +256,8 @@ for ((i = 0; i < num_of_tests; i++)); do
 
     echo -e "\n\n\n\n========STEP 1: Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE/*
-    if [ -d "tests/integration/workspace/$test_name" ]; then
-      cp -r "tests/integration/workspace/$test_name"/* $WORKSPACE_BASE
+    if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
+      cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
     fi
 
     if [ "$TEST_ONLY" = true ]; then
@@ -228,7 +268,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     TEST_STATUS=1
-    if [ -z $SKIP_TEST ]; then
+    if [ -z $FORCE_REGENERATE ]; then
       run_test
       TEST_STATUS=$?
     fi
@@ -239,8 +279,8 @@ for ((i = 0; i < num_of_tests; i++)); do
 
       if [ "$FORCE_USE_LLM" = true ]; then
         echo -e "\n\n\n\n========FORCE_USE_LLM, skipping step 2 & 3========\n\n\n\n"
-      elif [ ! -d "tests/integration/mock/$agent/$test_name" ]; then
-        echo -e "\n\n\n\n========No existing mock responses for $agent/$test_name, skipping step 2 & 3========\n\n\n\n"
+      elif [ ! -d "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name" ]; then
+        echo -e "\n\n\n\n========No existing mock responses for ${TEST_RUNTIME}_runtime/$agent/$test_name, skipping step 2 & 3========\n\n\n\n"
       else
         echo -e "\n\n\n\n========STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost========\n\n\n\n"
 
