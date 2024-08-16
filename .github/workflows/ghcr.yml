@@ -69,8 +69,8 @@ jobs:
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar
+          name: ${{ matrix.image }}_image_${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
           retention-days: 14
 
   # Builds the runtime Docker images
@@ -296,12 +296,12 @@ jobs:
       - name: Download Docker images
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
+          name: ${{ matrix.image }}_image_${{ matrix.platform }}
           path: /tmp/${{ matrix.platform }}
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}-docker-image-${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
+          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
+          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
           echo "loaded image = $loaded_image"
           tags=$(echo ${tags} | tr ' ' '\n')
           image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
