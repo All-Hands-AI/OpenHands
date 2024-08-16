@@ -1,5 +1,5 @@
 import time
-from typing import Any, List, Union
+from typing import Any, Union
 
 import requests
 from requests.exceptions import ConnectionError, HTTPError, Timeout
@@ -123,7 +123,7 @@ class InvariantClient:
             return self
 
         def check(
-            self, past_events: list[dict], pending_events: List[dict]
+            self, past_events: list[dict], pending_events: list[dict]
         ) -> Union[Any, Exception]:
             try:
                 response = requests.post(
