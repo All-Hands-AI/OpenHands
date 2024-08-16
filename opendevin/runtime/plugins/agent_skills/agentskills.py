@@ -22,7 +22,6 @@ import re
 import shutil
 import tempfile
 from inspect import signature
-from typing import Optional
 
 import docx
 import PyPDF2
@@ -121,12 +120,12 @@ def _clamp(value, min_value, max_value):
     return max(min_value, min(value, max_value))
 
 
-def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
+def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     """Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
     and the line number of the first error, if any.
 
     Returns:
-        tuple[str, Optional[int]]: (lint_error, first_error_line_number)
+        tuple[str | None, int | None]: (lint_error, first_error_line_number)
     """
     linter = Linter(root=os.getcwd())
     lint_error = linter.lint(file_path)
@@ -518,7 +517,7 @@ def _edit_file_impl(
                 f.writelines(lines)
 
             lint_error, first_error_line = _lint_file(file_name)
-            
+
             # Select the errors caused by the modification
             def extract_last_part(line):
                 parts = line.split(':')
@@ -532,13 +531,18 @@ def _edit_file_impl(
 
                 last_parts1 = [extract_last_part(line) for line in lines1]
 
-                remaining_lines = [line for line in lines2 if extract_last_part(line) not in last_parts1]
+                remaining_lines = [
+                    line
+                    for line in lines2
+                    if extract_last_part(line) not in last_parts1
+                ]
 
                 result = '\n'.join(remaining_lines)
                 return result
+
             if original_lint_error and lint_error:
                 lint_error = subtract_strings(original_lint_error, lint_error)
-                if lint_error == "":
+                if lint_error == '':
                     lint_error = None
                     first_error_line = None
 
@@ -784,7 +788,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
 
     Args:
         search_term: str: The term to search for.
-        dir_path: Optional[str]: The path to the directory to search.
+        dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
         raise FileNotFoundError(f'Directory {dir_path} not found')
@@ -818,12 +822,12 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
-def search_file(search_term: str, file_path: Optional[str] = None) -> None:
+def search_file(search_term: str, file_path: str | None = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
     Args:
         search_term: str: The term to search for.
-        file_path: Optional[str]: The path to the file to search.
+        file_path: str | None: The path to the file to search.
     """
     global CURRENT_FILE
     if file_path is None:
@@ -855,7 +859,7 @@ def find_file(file_name: str, dir_path: str = './') -> None:
 
     Args:
         file_name: str: The name of the file to find.
-        dir_path: Optional[str]: The path to the directory to search.
+        dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
         raise FileNotFoundError(f'Directory {dir_path} not found')
@@ -964,7 +968,7 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
 
     Args:
         file_path: str: The path to the audio file to transcribe.
-        model: Optional[str]: The audio model to use for transcription. Defaults to 'whisper-1'.
+        model: str: The audio model to use for transcription. Defaults to 'whisper-1'.
     """
     print(f'[Transcribing audio file from {file_path}]')
     try:
@@ -986,7 +990,7 @@ def parse_image(
 
     Args:
         file_path: str: The path to the file to open.
-        task: Optional[str]: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
+        task: str: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
     """
     print(f'[Reading image file from {file_path}]')
     # TODO: record the COST of the API call
@@ -1013,8 +1017,8 @@ def parse_video(
 
     Args:
         file_path: str: The path to the video file to open.
-        task: Optional[str]: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
-        frame_interval: Optional[int]: The interval between frames to analyze. Defaults to 30.
+        task: str: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
+        frame_interval: int: The interval between frames to analyze. Defaults to 30.
 
     """
     print(

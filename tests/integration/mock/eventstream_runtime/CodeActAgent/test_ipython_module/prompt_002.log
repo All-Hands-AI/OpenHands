@@ -126,19 +126,19 @@ search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
     Args:
     search_term: str: The term to search for.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
-search_file(search_term: str, file_path: Optional[str] = None) -> None:
+search_file(search_term: str, file_path: str | None = None) -> None:
     Searches for search_term in file. If file is not provided, searches in the current open file.
     Args:
     search_term: str: The term to search for.
-    file_path: Optional[str]: The path to the file to search.
+    file_path: str | None: The path to the file to search.
 
 find_file(file_name: str, dir_path: str = './') -> None:
     Finds all files with the given name in the specified directory.
     Args:
     file_name: str: The name of the file to find.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
 parse_pdf(file_path: str) -> None:
     Parses the content of a PDF file and prints it.
@@ -412,12 +412,12 @@ Sure! Let's start by installing the `pymsgbox` package.
 OBSERVATION:
 Collecting pymsgbox==1.0.9
   Downloading PyMsgBox-1.0.9.tar.gz (18 kB)
-  Installing build dependencies ... [?25l- \ | / - \ | / - \ | / - \ | / - done
+  Installing build dependencies ... [?25l- \ | / - done
 [?25h  Getting requirements to build wheel ... [?25l- done
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=0aa91e03ed30fdcf42db3522fd0444c80951cccb215529a6ed9a95fc2b8a6f0c
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=ef14d567d93427570776c0692e72503e364d52371ced8369846b1c6f72ea9a2b
   Stored in directory: /home/opendevin/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox

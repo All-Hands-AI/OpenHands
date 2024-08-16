@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from utils import check_correctness
 
@@ -42,7 +41,7 @@ class MBPPTask(CodeGenTask):
         """
         return self._prompt.replace('"""', '').strip()
 
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution.
 
         Split off first block of code by scanning for class, def etc. on newlines.
@@ -66,7 +65,7 @@ class HumanEvalTask(CodeGenTask):
         """
         return 'Complete the following code:\n\n' + self._prompt
 
-    def extract_answer(self, solution: str) -> Optional[str]:
+    def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution.
 
         Split off first block of code by scanning for class, def etc. on newlines.

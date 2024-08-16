@@ -1,14 +1,17 @@
-from pydantic.dataclasses import dataclass
 from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic.dataclasses import dataclass
+
 
 @dataclass
 class LLM:
     vendor: str
     model: str
 
+
 class Event(BaseModel):
-    metadata: Optional[dict] = Field(default_factory=dict, description="Metadata associated with the event")
+    metadata: dict | None = Field(
+        default_factory=dict, description='Metadata associated with the event'
+    )
 
 
 class Function(BaseModel):
@@ -24,19 +27,19 @@ class ToolCall(Event):
 
 class Message(Event):
     role: str
-    content: Optional[str]
-    tool_calls: Optional[list[ToolCall]] = None
-    
+    content: str | None
+    tool_calls: list[ToolCall] | None = None
+
     def __rich_repr__(self):
         # Print on separate line
-        yield "role", self.role
-        yield "content", self.content
-        yield "tool_calls", self.tool_calls
+        yield 'role', self.role
+        yield 'content', self.content
+        yield 'tool_calls', self.tool_calls
 
 
 class ToolOutput(Event):
     role: str
     content: str
-    tool_call_id: Optional[str]
+    tool_call_id: str | None = None
 
-    _tool_call: Optional[ToolCall]
+    _tool_call: ToolCall | None = None
