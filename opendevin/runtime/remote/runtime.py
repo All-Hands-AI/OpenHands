@@ -146,7 +146,7 @@ class RemoteRuntime(Runtime):
         async with session.post(
             f'{self.api_url}/start', json=start_request
         ) as response:
-            if response.status != 200:
+            if response.status != 201:
                 raise RuntimeError(f'Failed to start sandbox: {await response.text()}')
             start_response = await response.json()
             self.runtime_id = start_response['runtime_id']
