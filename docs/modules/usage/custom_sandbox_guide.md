@@ -90,34 +90,7 @@ Congratulations!
 
 ## Technical Explanation
 
-The relevant code is defined in [ssh_box.py](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/ssh_box.py) and [image_agnostic_util.py](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py).
-
-In particular, `ssh_box.py` checks the config object for ```config.sandbox_container_image``` and then attempts to retrieve the image using [get_od_sandbox_image](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py#L72) which is defined in image_agnostic_util.py.
-
-When first using a custom image, it will not be found and thus it will be built (on subsequent runs the built image will be found and returned).
-
-The custom image is built using [_build_sandbox_image()](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py#L29), which creates a docker file using your custom_image as a base and then configures the environment for OpenDevin, like this:
-
-```python
-dockerfile_content = (
-    f'FROM {base_image}\n'
-    'RUN apt update && apt install -y openssh-server wget sudo\n'
-    'RUN mkdir -p -m0755 /var/run/sshd\n'
-    'RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs\n'
-    'RUN echo "" > /opendevin/bash.bashrc\n'
-    'RUN if [ ! -d /opendevin/miniforge3 ]; then \\\n'
-    '        wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \\\n'
-    '        bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3 && \\\n'
-    '        chmod -R g+w /opendevin/miniforge3 && \\\n'
-    '        bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \\\n'
-    '    fi\n'
-    'RUN /opendevin/miniforge3/bin/pip install --upgrade pip\n'
-    'RUN /opendevin/miniforge3/bin/pip install jupyterlab notebook jupyter_kernel_gateway flake8\n'
-    'RUN /opendevin/miniforge3/bin/pip install python-docx PyPDF2 python-pptx pylatexenc openai\n'
-).strip()
-```
-
-> Note: the name of the image is modified via [_get_new_image_name()](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/image_agnostic_util.py#L63) and it is the modified name that is searched for on subsequent runs.
+Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/runtime#advanced-how-opendevin-builds-and-maintains-od-runtime-images) for more details.
 
 ## Troubleshooting / Errors
 

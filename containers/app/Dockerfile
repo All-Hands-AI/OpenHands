@@ -75,7 +75,12 @@ COPY --chown=opendevin:app --chmod=770 ./poetry.lock ./poetry.lock
 COPY --chown=opendevin:app --chmod=770 ./README.md ./README.md
 COPY --chown=opendevin:app --chmod=770 ./MANIFEST.in ./MANIFEST.in
 
+# This is run as "opendevin" user, and will create __pycache__ with opendevin:opendevin ownership
 RUN python opendevin/core/download.py # No-op to download assets
+# Add this line to set group ownership of all files/directories not already in "app" group
+# opendevin:opendevin -> opendevin:app
+RUN find /app \! -group app -exec chgrp app {} +
+
 RUN chown -R opendevin:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script
 
 COPY --chown=opendevin:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
