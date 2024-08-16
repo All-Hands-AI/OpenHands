@@ -226,7 +226,10 @@ class AgentController:
             # user intends to interrupt traffic control and let the task resume temporarily
             self.state.traffic_control_state = TrafficControlState.PAUSED
             # User has chosen to deliberately continue - lets double the max iterations
-            self.state.max_iterations *= 2
+            if self.state.iteration == self.state.max_iterations:
+                self.state.max_iterations *= 2
+            if self.state.metrics.accumulated_cost == self.max_budget_per_task:
+                self.max_budget_per_task *= 2
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
