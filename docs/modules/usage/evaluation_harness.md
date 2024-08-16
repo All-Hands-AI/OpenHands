@@ -87,7 +87,7 @@ To integrate your own benchmark, we suggest starting with the one that most clos
 
 To create an evaluation workflow for your benchmark, follow these steps:
 
-1. Import relavant OpenDevin utilities:
+1. Import relevant OpenDevin utilities:
    ```python
     import agenthub
     from evaluation.utils.shared import (
