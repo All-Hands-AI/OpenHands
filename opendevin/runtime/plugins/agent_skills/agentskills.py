@@ -121,7 +121,7 @@ def _clamp(value, min_value, max_value):
     return max(min_value, min(value, max_value))
 
 
-def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
+def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     """Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
     and the line number of the first error, if any.
 
@@ -518,7 +518,7 @@ def _edit_file_impl(
                 f.writelines(lines)
 
             lint_error, first_error_line = _lint_file(file_name)
-            
+
             # Select the errors caused by the modification
             def extract_last_part(line):
                 parts = line.split(':')
@@ -532,13 +532,18 @@ def _edit_file_impl(
 
                 last_parts1 = [extract_last_part(line) for line in lines1]
 
-                remaining_lines = [line for line in lines2 if extract_last_part(line) not in last_parts1]
+                remaining_lines = [
+                    line
+                    for line in lines2
+                    if extract_last_part(line) not in last_parts1
+                ]
 
                 result = '\n'.join(remaining_lines)
                 return result
+
             if original_lint_error and lint_error:
                 lint_error = subtract_strings(original_lint_error, lint_error)
-                if lint_error == "":
+                if lint_error == '':
                     lint_error = None
                     first_error_line = None
 
