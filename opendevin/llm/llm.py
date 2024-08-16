@@ -35,6 +35,11 @@ __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
 
+cache_prompting_supported_models = [
+    'claude-3-5-sonnet-20240620',
+    'claude-3-haiku-20240307',
+]
+
 
 class LLM:
     """The LLM class represents a Language Model instance.
@@ -58,6 +63,9 @@ class LLM:
         self.config = copy.deepcopy(config)
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
+        self.supports_prompt_caching = (
+            self.config.model in cache_prompting_supported_models
+        )
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
@@ -420,16 +428,6 @@ class LLM:
 
     def supports_vision(self):
         return litellm.supports_vision(self.config.model)
-
-    def supports__prompt_caching(self):
-        cache_prompting_supported_models = [
-            'claude-3-5-sonnet-20240620',
-            'claude-3-haiku-20240307',
-        ]
-        if self.config.model in cache_prompting_supported_models:
-            return True
-        else:
-            return False
 
     def _post_completion(self, response: str) -> None:
         """Post-process the completion response."""
