@@ -188,8 +188,6 @@ Remember to customize the `get_instruction`, `your_user_response_function`, and 
 
 By following this structure, you can create a robust evaluation workflow for your benchmark within the OpenDevin framework.
 
-Certainly! I'll add a section explaining the user_response_fn and include a description of the workflow and interaction. Here's an updated version of the guideline with the new section:
-
 
 ## Understanding the `user_response_fn`
 
