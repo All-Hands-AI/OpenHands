@@ -196,7 +196,7 @@ LOG_DIR = os.path.join(
 if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
     # default log to project root
-    opendevin_logger.info('DEBUG logging is enabled. Logging to %s', LOG_DIR)
+    opendevin_logger.info(f'DEBUG logging is enabled. Logging to {LOG_DIR}')
 opendevin_logger.addHandler(get_file_handler(LOG_DIR))
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
@@ -236,9 +236,7 @@ class LlmFileHandler(logging.FileHandler):
                 try:
                     os.unlink(file_path)
                 except Exception as e:
-                    opendevin_logger.error(
-                        'Failed to delete %s. Reason: %s', file_path, e
-                    )
+                    opendevin_logger.error(f'Failed to delete {file_path}. Reason: {e}')
         else:
             # In DEBUG mode, continue writing existing log directory
             # find the highest message counter
@@ -266,7 +264,7 @@ class LlmFileHandler(logging.FileHandler):
         self.stream = self._open()
         super().emit(record)
         self.stream.close()
-        opendevin_logger.debug('Logging to %s', self.baseFilename)
+        opendevin_logger.debug(f'Logging to {self.baseFilename}')
         self.message_counter += 1
 
 
