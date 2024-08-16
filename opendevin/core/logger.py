@@ -1,3 +1,4 @@
+import copy
 import glob
 import logging
 import os
@@ -72,9 +73,8 @@ class NoColorFormatter(logging.Formatter):
     """Formatter for non-colored logging in files."""
 
     def format(self, record):
-        # Create a new record to avoid modifying the original
-        new_record = logging.makeLogRecord(record.__dict__)
-
+        # Create a deep copy of the record to avoid modifying the original
+        new_record = copy.deepcopy(record)
         # Strip ANSI color codes from the message
         new_record.msg = strip_ansi(new_record.msg)
 
