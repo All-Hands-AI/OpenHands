@@ -1,0 +1,39 @@
+# Workflow that runs frontend unit tests
+name: Run Frontend Unit Tests
+
+# * Always run on "main"
+# * Run on PRs that have changes in the "frontend" folder or this workflow
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'frontend/**'
+      -  '.github/workflows/fe-unit-tests.yml'
+
+jobs:
+  # Run frontend unit tests
+  fe-test:
+    name: FE Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      - name: Run tests and collect coverage
+        working-directory: ./frontend
+        run: npm run test:coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
