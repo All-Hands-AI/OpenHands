@@ -527,7 +527,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
-                elif not key.startswith('sandbox_') and key.lower() != 'core':
+                elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.opendevin_logger.warning(f'Unknown key in {toml_file}: "{key}"')
             except (TypeError, KeyError) as e:
                 logger.opendevin_logger.warning(
