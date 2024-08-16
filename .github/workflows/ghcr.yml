@@ -24,6 +24,7 @@ on:
 jobs:
   # Builds the OpenDevin Docker images
   ghcr_build:
+    name: Build App Image
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
@@ -74,11 +75,13 @@ jobs:
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
+    name: Build Runtime Image
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
-      # use the first tag to name the artifact
-      first_tags: ${{ steps.capture-first-tags.outputs.first_tags }}
+      # use the last tag to name the artifact
+      # because the last tag is the hash-based tag
+      last_tags: ${{ steps.capture-last-tags.outputs.last_tags }}
     permissions:
       contents: read
       packages: write
@@ -126,47 +129,47 @@ jobs:
           if [ -f 'containers/runtime/Dockerfile' ]; then
             echo 'Dockerfile detected, building runtime image...'
             ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
-            # Capture the first tag to use in the artifact name
-            first_tag=$(cat tags.txt | awk '{print $1}')
+            # Capture the last tag to use in the artifact name
+            last_tag=$(cat tags.txt | awk '{print $NF}')
           else
             echo 'No Dockerfile detected which means an exact image is already built. Pulling the image and saving it to a tar file...'
             source containers/runtime/config.sh
             echo "$DOCKER_IMAGE_TAG $DOCKER_IMAGE_HASH_TAG" >> tags.txt
-            first_tag=$DOCKER_IMAGE_TAG
-            echo "Pulling image $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_${first_tag}_${{ matrix.platform }}.tar"
+            last_tag=$DOCKER_IMAGE_HASH_TAG
+            echo "Pulling image $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar"
             docker pull $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
-            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${first_tag}_${{ matrix.platform }}.tar
+            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar
           fi
-          echo "first_tag=${first_tag}" >> $GITHUB_OUTPUT
+          echo "last_tag=${last_tag}" >> $GITHUB_OUTPUT
       - name: Capture tags
         id: capture-tags
         run: |
           tags=$(cat tags.txt)
           echo "tags=$tags"
           echo "tags=$tags" >> $GITHUB_OUTPUT
-      - name: Capture first tags
-        id: capture-first-tags
+      - name: Capture last tags
+        id: capture-last-tags
         run: |
-          first_tags=$(echo "${{ steps.build.outputs.first_tag }}" | jq -R -s -c 'split("\n")[:-1]')
-          echo "first_tags=$first_tags" >> $GITHUB_OUTPUT
+          last_tags=$(echo "${{ steps.build.outputs.last_tag }}" | jq -R -s -c 'split("\n")[:-1]')
+          echo "last_tags=$last_tags" >> $GITHUB_OUTPUT
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ steps.build.outputs.first_tag }}_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ steps.build.outputs.first_tag }}_${{ matrix.platform }}.tar
+          name: ${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}.tar
           retention-days: 14
 
   # Run unit tests with the EventStream and Server runtime Docker images
   test_runtime:
     name: Test Runtime
     runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, ghcr_build]
+    needs: [ghcr_build_runtime]
     strategy:
       matrix:
         image: ['od_runtime']
         platform: ['amd64']
         runtime_type: ['eventstream']
-        first_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.first_tags) }}
+        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.last_tags) }}
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -190,14 +193,14 @@ jobs:
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ matrix.first_tag }}_${{ matrix.platform }}
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
           path: /tmp/
       - name: Load Runtime image and run runtime tests
         run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.first_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
 
           if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ matrix.first_tag }}"
+            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
             exit 1
           fi
 
@@ -227,7 +230,7 @@ jobs:
         image: ['od_runtime']
         platform: ['amd64']
         runtime_type: ['eventstream']
-        first_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.first_tags) }}
+        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.last_tags) }}
     steps:
       - uses: actions/checkout@v4
       - name: Install poetry via pipx
@@ -242,14 +245,14 @@ jobs:
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ matrix.first_tag }}_${{ matrix.platform }}
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
           path: /tmp/
       - name: Load runtime image and run integration tests
         run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.first_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
 
           if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ matrix.first_tag }}"
+            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
             exit 1
           fi
 
@@ -324,7 +327,7 @@ jobs:
       matrix:
         image: ['od_runtime']
         platform: ['amd64', 'arm64']
-        first_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.first_tags) }}
+        last_tag: ${{ fromJson(needs.ghcr_build_runtime.outputs.last_tags) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -347,15 +350,15 @@ jobs:
       - name: Download Docker images
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.first_tag }}
-          path: /tmp/${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.first_tag }}.tar
+          name: ${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.last_tag }}
+          path: /tmp/${{ matrix.image }}_${{ matrix.platform }}_${{ matrix.last_tag }}.tar
       - name: List downloaded files
         run: |
           ls -la /tmp/${{ matrix.platform }}
           file /tmp/${{ matrix.platform }}/*
       - name: Load images and push to registry
         run: |
-          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ matrix.first_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
           if [ -z "$image_file" ]; then
             echo "No matching image file found"
             exit 1
