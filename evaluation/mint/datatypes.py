@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Dict, Tuple
+from typing import Any
 
 
 class TaskState:
@@ -9,11 +9,11 @@ class TaskState:
         success: bool = False,
         agent_action_count: dict = None,
         terminate_reason: str = None,
-        latest_output: Dict[str, Any] = None,
+        latest_output: dict[str, Any] = None,
     ):
         self.finished = finished
         self.success = success
-        self.agent_action_count: Dict[str, int] = (
+        self.agent_action_count: dict[str, int] = (
             agent_action_count
             if agent_action_count
             else {
@@ -25,7 +25,7 @@ class TaskState:
         self.terminate_reason = terminate_reason
         self.latest_output = latest_output
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'finished': self.finished,
             'success': self.success,
@@ -50,12 +50,12 @@ class StepOutput:
         self,
         observation: str = None,
         success: bool = False,
-        extra: Dict[str, Any] = None,
-        turn_info: Tuple[int, int] = None,
+        extra: dict[str, Any] = None,
+        turn_info: tuple[int, int] = None,
     ):
         self.observation: str = observation
         self.success: bool = success
-        self.extra: Dict[str, Any] = extra
+        self.extra: dict[str, Any] = extra
         self.turn_info = turn_info
 
     def __repr__(self) -> str:
@@ -79,7 +79,7 @@ class StepOutput:
 
         return output
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'observation': self.observation,
             'success': self.success,

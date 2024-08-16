@@ -1,9 +1,8 @@
+import re
 import uuid
-from typing import Any, Optional, List
+from typing import Any
 
 import docker
-import re
-
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -36,8 +35,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
     def __init__(
         self,
         event_stream: EventStream,
-        policy: Optional[str] = None,
-        sid: Optional[str] = None,
+        policy: str | None = None,
+        sid: str | None = None,
     ):
         """Initializes a new instance of the InvariantAnalzyer class."""
         super().__init__(event_stream)
@@ -51,7 +50,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                f'Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.',
+                'Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.',
                 exc_info=False,
             )
             raise ex
@@ -110,8 +109,12 @@ class InvariantAnalyzer(SecurityAnalyzer):
         else:
             logger.info('Invariant skipping element: event')
 
-    def get_risk(self, results: List[str]) -> ActionSecurityRisk:
-        mapping = {"high": ActionSecurityRisk.HIGH, "medium": ActionSecurityRisk.MEDIUM, "low": ActionSecurityRisk.LOW}
+    def get_risk(self, results: list[str]) -> ActionSecurityRisk:
+        mapping = {
+            'high': ActionSecurityRisk.HIGH,
+            'medium': ActionSecurityRisk.MEDIUM,
+            'low': ActionSecurityRisk.LOW,
+        }
         regex = r'(?<=risk=)\w+'
         risks = []
         for result in results:
@@ -130,10 +133,17 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     async def should_confirm(self, event: Event) -> bool:
         risk = event.security_risk  # type: ignore [attr-defined]
-        return risk is not None and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM) and hasattr(event, 'is_confirmed') and event.is_confirmed == "awaiting_confirmation"
+        return (
+            risk is not None
+            and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
+            and hasattr(event, 'is_confirmed')
+            and event.is_confirmed == 'awaiting_confirmation'
+        )
 
     async def confirm(self, event: Event) -> None:
-        new_event = action_from_dict({"action":"change_agent_state", "args":{"agent_state":"user_confirmed"}})
+        new_event = action_from_dict(
+            {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
+        )
         if event.source:
             self.event_stream.add_event(new_event, event.source)
         else:
@@ -172,7 +182,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 return await self.update_policy(request)
             elif endpoint == 'settings':
                 return await self.update_settings(request)
-        raise HTTPException(status_code=405, detail="Method Not Allowed")
+        raise HTTPException(status_code=405, detail='Method Not Allowed')
 
     async def export_trace(self, request: Request) -> Any:
         return JSONResponse(content=self.input)

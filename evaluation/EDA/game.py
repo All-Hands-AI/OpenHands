@@ -1,6 +1,5 @@
 import logging
 import re
-from typing import Optional
 
 import openai
 import requests.exceptions
@@ -19,7 +18,7 @@ class Q20Game:
         num_turns: int = 20,
         temperature: float = 0.8,
         openai_api: bool = True,
-        openai_api_key: Optional[str] = None,
+        openai_api_key: str | None = None,
         guesser_kargs=None,
     ) -> None:
         if guesser_kargs is None:
