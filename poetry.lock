@@ -3084,13 +3084,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.27.2"
+version = "0.28.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json_repair-0.27.2-py3-none-any.whl", hash = "sha256:493ad22d9918ebc60661cf5f590d2c727a554f2ddddcc68953aeca83bde7ce68"},
-    {file = "json_repair-0.27.2.tar.gz", hash = "sha256:8a22455b58a098c73c18c81c4efe3d77e27763b4e643715ae20dce31eb4a703e"},
+    {file = "json_repair-0.28.0-py3-none-any.whl", hash = "sha256:e4ca15633c01a003f77c82246608f1604fc75af2839f10ee2b17f6e8b44294ca"},
+    {file = "json_repair-0.28.0.tar.gz", hash = "sha256:76c7e569018a3d4534c8051d38c2781f1faaa315800bfa527356f3a6aef18b8d"},
 ]
 
 [[package]]
