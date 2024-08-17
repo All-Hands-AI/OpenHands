@@ -1,52 +1,19 @@
-# Workflow that runs frontend and python unit tests
-name: Run Unit Tests
+# Workflow that runs python unit tests
+name: Run Python Unit Tests
 
-# Only run one workflow of the same group at a time.
-# There can be at most one running and one pending job in a concurrency group at any time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
+# The jobs in this workflow are required, so they must run at all times
+# * Always run on "main"
+# * Always run on PRs
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**/*.md'
-      - 'frontend/**'
-      - 'docs/**'
-      - 'evaluation/**'
   pull_request:
 
-
 jobs:
-  # Run frontend unit tests
-  fe-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm ci
-      - name: Run tests and collect coverage
-        working-directory: ./frontend
-        run: npm run test:coverage
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
   # Run python unit tests on macOS
   test-on-macos:
-    name: Test on macOS
+    name: Python Unit Tests on macOS
     runs-on: macos-12
     env:
       INSTALL_DOCKER: '1' # Set to '0' to skip Docker installation
@@ -123,7 +90,7 @@ jobs:
 
   # Run python unit tests on Linux
   test-on-linux:
-    name: Test on Linux
+    name: Python Unit Tests on Linux
     runs-on: ubuntu-latest
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation

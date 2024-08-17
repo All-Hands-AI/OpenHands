@@ -1,12 +1,8 @@
 # Workflow that builds and deploys the documentation website
 name: Deploy Docs to GitHub Pages
 
-# Only run one workflow of the same group at a time.
-# There can be at most one running and one pending job in a concurrency group at any time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
+# * Always run on "main"
+# * Run on PRs that target the "main" branch and have changes in the "docs" folder or this workflow
 on:
   push:
     branches:
@@ -14,15 +10,16 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - '.github/workflows/deploy-docs.yml'
     branches:
       - main
 
 jobs:
   # Build the documentation website
   build:
+    if: github.repository == 'OpenDevin/OpenDevin'
     name: Build Docusaurus
     runs-on: ubuntu-latest
-    if: github.repository == 'OpenDevin/OpenDevin'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,10 +47,14 @@ jobs:
 
   # Deploy the documentation website
   deploy:
+    if: github.ref == 'refs/heads/main' && github.repository == 'OpenDevin/OpenDevin'
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+    # This job only runs on "main" so only run one of these jobs at a time
+    # otherwise it will fail if one is already running
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     needs: build
-    if: github.ref == 'refs/heads/main' && github.repository == 'OpenDevin/OpenDevin'
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write # to deploy to Pages

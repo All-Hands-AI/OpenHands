@@ -330,6 +330,9 @@ class AppConfig(metaclass=Singleton):
         llm_config_name = agent_config.llm_config
         return self.get_llm_config(llm_config_name)
 
+    def get_agent_configs(self) -> dict[str, AgentConfig]:
+        return self.agents
+
     def __post_init__(self):
         """Post-initialization hook, called when the instance is created with only default values."""
         AppConfig.defaults_dict = self.defaults_to_dict()
@@ -511,7 +514,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
-                if key is not None and key.lower() == 'llm':
+                elif key is not None and key.lower() == 'llm':
                     logger.opendevin_logger.info(
                         'Attempt to load default LLM config from config toml'
                     )
@@ -527,11 +530,17 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif not key.startswith('sandbox') and key.lower() != 'core':
+                    logger.opendevin_logger.warning(
+                        f'Unknown key in {toml_file}: "{key}"'
+                    )
             except (TypeError, KeyError) as e:
                 logger.opendevin_logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
                     exc_info=False,
                 )
+        else:
+            logger.opendevin_logger.warning(f'Unknown key in {toml_file}: "{key}')
 
     try:
         # set sandbox config from the toml file
@@ -656,7 +665,11 @@ def get_parser() -> argparse.ArgumentParser:
         help='The working directory for the agent',
     )
     parser.add_argument(
-        '-t', '--task', type=str, default='', help='The task for the agent to perform'
+        '-t',
+        '--task',
+        type=str,
+        default='',
+        help='The task for the agent to perform',
     )
     parser.add_argument(
         '-f',
@@ -715,6 +728,13 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
+    )
+    parser.add_argument(
+        '-n',
+        '--name',
+        default='default',
+        type=str,
+        help='Name for the session',
     )
     return parser
 

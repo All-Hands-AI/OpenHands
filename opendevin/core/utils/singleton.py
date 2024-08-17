@@ -1,5 +1,5 @@
 import dataclasses
-
+from opendevin.core import logger
 
 class Singleton(type):
     _instances: dict = {}
@@ -13,7 +13,10 @@ class Singleton(type):
             # useful for pre-defined groups of settings
             instance = cls._instances[cls]
             for key, value in kwargs.items():
-                setattr(instance, key, value)
+                if hasattr(instance, key):
+                    setattr(instance, key, value)
+                else:
+                    logger.opendevin_logger.warning(f'Unknown key for {cls.__name__}: "{key}"')
         return cls._instances[cls]
 
     @classmethod

@@ -30,6 +30,7 @@
     "react-markdown": "^9.0.1",
     "react-redux": "^9.1.2",
     "react-syntax-highlighter": "^15.5.0",
+    "remark-gfm": "^4.0.0",
     "tailwind-merge": "^2.5.2",
     "vite": "^5.4.1",
     "web-vitals": "^3.5.2"

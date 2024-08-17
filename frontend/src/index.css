@@ -49,3 +49,11 @@ code {
   list-style-type: disc; /* Handles bullet points */
   margin-left: 20px;
 }
+
+.markdown-body th {
+  text-align: left;
+}
+
+.markdown-body th, .markdown-body td {
+  padding: 0.1rem 1rem;
+}
