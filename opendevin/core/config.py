@@ -330,6 +330,9 @@ class AppConfig(metaclass=Singleton):
         llm_config_name = agent_config.llm_config
         return self.get_llm_config(llm_config_name)
 
+    def get_agent_configs(self) -> dict[str, AgentConfig]:
+        return self.agents
+
     def __post_init__(self):
         """Post-initialization hook, called when the instance is created with only default values."""
         AppConfig.defaults_dict = self.defaults_to_dict()
