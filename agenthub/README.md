@@ -94,47 +94,47 @@ sending a prompt to the LLM, then parsing the response into an `Action`.
 
 ## Agent Delegation
 
-        OpenDevin is a multi-agentic system. Agents can delegate tasks to other agents, whether
-        prompted by the user, or when the agent decides to ask another agent for help. For example,
-        the `CodeActAgent` might delegate to the `BrowsingAgent` to answer questions that involve browsing
-        the web. The Delegator Agent forwards tasks to micro-agents, such as 'RepoStudyAgent' to study a repo,
-        or 'VerifierAgent' to verify a task completion.
+OpenDevin is a multi-agentic system. Agents can delegate tasks to other agents, whether
+prompted by the user, or when the agent decides to ask another agent for help. For example,
+the `CodeActAgent` might delegate to the `BrowsingAgent` to answer questions that involve browsing
+the web. The Delegator Agent forwards tasks to micro-agents, such as 'RepoStudyAgent' to study a repo,
+or 'VerifierAgent' to verify a task completion.
 
-        ### Understanding the terminology
+### Understanding the terminology
 
-        A `task` is an end-to-end conversation between OpenDevin (the whole system) and the user,
-        which might involve one or more inputs from the user. It starts with an initial input
-        (typically a task statement) from the user, and ends with either an `AgentFinishAction`
-        initiated by the agent, or an error.
+A `task` is an end-to-end conversation between OpenDevin (the whole system) and the user,
+which might involve one or more inputs from the user. It starts with an initial input
+(typically a task statement) from the user, and ends with either an `AgentFinishAction`
+initiated by the agent, or an error.
 
-        A `subtask` is an end-to-end conversation between an agent and the user, or
-        another agent. If a `task` is conducted by a single agent, then it's also a `subtask`
-        itself. Otherwise, a `task` consists of multiple `subtasks`, each executed by
-        one agent.
+A `subtask` is an end-to-end conversation between an agent and the user, or
+another agent. If a `task` is conducted by a single agent, then it's also a `subtask`
+itself. Otherwise, a `task` consists of multiple `subtasks`, each executed by
+one agent.
 
-        For example, considering a task from the user: `tell me how many GitHub stars
-        OpenDevin repo has`. Let's assume the default agent is CodeActAgent.
+For example, considering a task from the user: `tell me how many GitHub stars
+OpenDevin repo has`. Let's assume the default agent is CodeActAgent.
 
-        -- TASK STARTS (SUBTASK 0 STARTS) --
+-- TASK STARTS (SUBTASK 0 STARTS) --
 
-        DELEGATE_LEVEL 0, ITERATION 0, LOCAL_ITERATION 0
-        CodeActAgent: I should request help from BrowsingAgent
+DELEGATE_LEVEL 0, ITERATION 0, LOCAL_ITERATION 0
+CodeActAgent: I should request help from BrowsingAgent
 
-        -- DELEGATE STARTS (SUBTASK 1 STARTS) --
+-- DELEGATE STARTS (SUBTASK 1 STARTS) --
 
-        DELEGATE_LEVEL 1, ITERATION 1, LOCAL_ITERATION 0
-        BrowsingAgent: Let me find the answer on GitHub
+DELEGATE_LEVEL 1, ITERATION 1, LOCAL_ITERATION 0
+BrowsingAgent: Let me find the answer on GitHub
 
-        DELEGATE_LEVEL 1, ITERATION 2, LOCAL_ITERATION 1
-        BrowsingAgent: I found the answer, let me convey the result and finish
+DELEGATE_LEVEL 1, ITERATION 2, LOCAL_ITERATION 1
+BrowsingAgent: I found the answer, let me convey the result and finish
 
-        -- DELEGATE ENDS (SUBTASK 1 ENDS) --
+-- DELEGATE ENDS (SUBTASK 1 ENDS) --
 
-        DELEGATE_LEVEL 0, ITERATION 3, LOCAL_ITERATION 1
-        CodeActAgent: I got the answer from BrowsingAgent, let me convey the result
-        and finish
+DELEGATE_LEVEL 0, ITERATION 3, LOCAL_ITERATION 1
+CodeActAgent: I got the answer from BrowsingAgent, let me convey the result
+and finish
 
-        -- TASK ENDS (SUBTASK 0 ENDS) --
+-- TASK ENDS (SUBTASK 0 ENDS) --
 
-        Note how ITERATION counter is shared across agents, while LOCAL_ITERATION
-        is local to each subtask.
+Note how ITERATION counter is shared across agents, while LOCAL_ITERATION
+is local to each subtask.
