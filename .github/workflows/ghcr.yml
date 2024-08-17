@@ -104,6 +104,12 @@ jobs:
           name: ${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}
           path: /tmp/${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}.tar
           retention-days: 14
+      - name: Save matrix output
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-output
+          path: $GITHUB_OUTPUT
+          retention-days: 1
 
   collect_all_tags:
     needs: ghcr_build_runtime
@@ -111,10 +117,14 @@ jobs:
     outputs:
       all_last_tags: ${{ steps.collect-all-last-tags.outputs.all_last_tags }}
     steps:
+      - name: Download matrix output
+        uses: actions/download-artifact@v4
+        with:
+          name: matrix-output
       - name: Collect all last tags
         id: collect-all-last-tags
         run: |
-          all_last_tags=$(echo '${{ needs.ghcr_build_runtime.outputs.matrix_last_tags }}' | jq -c 'split("\n") | map(split("=") | .[1]) | unique')
+          all_last_tags=$(cat $GITHUB_OUTPUT | grep matrix_last_tags | cut -d'=' -f2 | jq -c 'split("\n") | unique')
           echo "all_last_tags=$all_last_tags" >> $GITHUB_OUTPUT
           echo "All last tags for subsequent jobs: $all_last_tags"
 
