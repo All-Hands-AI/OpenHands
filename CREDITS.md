@@ -8,58 +8,74 @@ We would like to thank all the [contributors](https://github.com/opendevin/opend
 
 OpenDevin includes and adapts the following open source projects. We are grateful for their contributions to the open source community:
 
+### Agent Skills and Adaptations
 
-### [HumanEval](https://github.com/openai/human-eval)
+#### [SWE Agent](https://github.com/princeton-nlp/swe-agent)
    - License: MIT License
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/humaneval
+   - Description: Adapted for use in OpenDevin's agenthub
 
-### [MBPP](https://github.com/google-research/google-research/tree/master/mbpp)
+#### [Aider](https://github.com/paul-gauthier/aider)
    - License: Apache License 2.0
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/mbpp
+   - Description: AI pair programming tool. OpenDevin has adapted and integrated its linter module for code-related tasks in ./opendevin/runtime/plugins/agent_skills/agentskills.py. Aider allows for pair programming with LLMs to edit code in local git repositories.
 
-### [DSP](https://github.com/microsoft/DataScienceProblems)
-   - License: MIT License
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/dsp
-
-### [HumanEvalPack](https://github.com/bigcode-project/bigcode-evaluation-harness)
+#### [BrowserGym](https://github.com/ServiceNow/BrowserGym)
    - License: Apache License 2.0
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/humanevalpack
+   - Description: Used for implementing the browsing agent framework in ./devin/agenthub/browsing_agent
 
-### [APPS](https://github.com/hendrycks/apps)
+
+### Evaluation Benchmarks
+
+#### [HumanEval](https://github.com/openai/human-eval)
    - License: MIT License
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/apps
 
-### [CodeContests](https://github.com/deepmind/code_contests)
+#### [MBPP](https://github.com/google-research/google-research/tree/master/mbpp)
    - License: Apache License 2.0
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/codecontests
 
-### [MTPB](https://github.com/THUDM/CodeGeeX/tree/main/codegeex/benchmark/mtpb)
+#### [DSP](https://github.com/microsoft/DataScienceProblems)
+   - License: MIT License
+
+#### [HumanEvalPack](https://github.com/bigcode-project/bigcode-evaluation-harness)
    - License: Apache License 2.0
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/mtpb
 
-### [MultiPL-E](https://github.com/nuprl/MultiPL-E)
+#### [APPS](https://github.com/hendrycks/apps)
    - License: MIT License
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/multiple
 
-### [ProntoQA](https://github.com/asaparov/prontoqa)
-   - License: MIT License
-   - Description: Used as a logic reasoning benchmark in ./opendevin/evaluation/logic_reasoning
-
-### [ProofWriter](https://allenai.org/data/proofwriter)
-   - License: MIT License
-   - Description: Used as a logic reasoning benchmark in ./opendevin/evaluation/logic_reasoning
-
-### [AgentBench](https://github.com/THUDM/AgentBench)
+#### [CodeContests](https://github.com/deepmind/code_contests)
    - License: Apache License 2.0
-   - Description: Adapted for agent evaluation benchmark in ./opendevin/evaluation/agent_bench
 
-### [BioCoder](https://github.com/microsoft/biocoder)
-   - License: MIT License
-   - Description: Adapted for evaluation benchmark in ./opendevin/evaluation/biocoder
+#### [MTPB](https://github.com/THUDM/CodeGeeX/tree/main/codegeex/benchmark/mtpb)
+   - License: Apache License 2.0
 
-13. [SWE-Bench](https://github.com/princeton-nlp/SWE-bench)
+#### [MultiPL-E](https://github.com/nuprl/MultiPL-E)
    - License: MIT License
-   - Description: Adapted for software engineering benchmark in ./opendevin/evaluation/swe_bench
+
+#### [AgentBench](https://github.com/THUDM/AgentBench)
+   - License: Apache License 2.0
+
+#### [BioCoder](https://github.com/microsoft/biocoder)
+   - License: MIT License
+
+#### [SWE-Bench](https://github.com/princeton-nlp/SWE-bench)
+   - License: MIT License
+
+#### [BIRD](https://bird-bench.github.io/)
+   - License: Apache License 2.0
+
+#### [Entity-deduction-Arena (EDA)](https://arxiv.org/abs/2310.01468)
+   - License: Not specified in the README
+
+#### [GAIA](https://huggingface.co/datasets/gaia-benchmark/GAIA)
+   - License: Not specified in the README
+
+#### [Gorilla APIBench](https://github.com/ShishirPatil/gorilla)
+   - License: MIT License
+
+#### [GPQA](https://github.com/idavidrein/gpqa)
+   - License: Not specified in the README
+
+#### [ProntoQA](https://github.com/asaparov/prontoqa)
+   - License: Apache License 2.0
+
 
 
 ## License Texts
