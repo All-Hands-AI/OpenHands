@@ -104,7 +104,7 @@ class ReasoningAction:
                         f'Data must be a list of strings for Self Discover state {SelfDiscoverState.SELECT.value}.'
                     )
             elif k == SelfDiscoverState.ADAPT.value:
-                if isinstance(v, dict) and is_str_dict(v):
+                if is_str_dict(v):
                     self._adapted_reasoning_modules = v
                 else:
                     raise TypeError(
