@@ -97,7 +97,7 @@ jobs:
       - name: Collect matrix last tags
         id: matrix-last-tags
         run: |
-          echo "matrix_last_tags=${{ matrix.base_image }}_${{ matrix.platform }}=${{ steps.build.outputs.last_tag }}" >> $GITHUB_OUTPUT
+          echo "matrix_last_tags=${{ steps.build.outputs.last_tag }}" >> $GITHUB_OUTPUT
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
