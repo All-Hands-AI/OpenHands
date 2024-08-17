@@ -10,6 +10,7 @@ from termcolor import colored
 
 DISABLE_COLOR_PRINTING = False
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
+LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
 
 ColorType = Literal[
     'red',
@@ -162,11 +163,15 @@ LOG_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
 )
+
 if DEBUG:
     opendevin_logger.setLevel(logging.DEBUG)
+
+if LOG_TO_FILE:
     # default log to project root
-    opendevin_logger.info('DEBUG logging is enabled. Logging to %s', LOG_DIR)
-opendevin_logger.addHandler(get_file_handler(LOG_DIR))
+    opendevin_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
+    opendevin_logger.addHandler(get_file_handler(LOG_DIR))
+
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
@@ -241,7 +246,8 @@ def _setup_llm_logger(name, debug_level=logging.DEBUG):
     logger = logging.getLogger(name)
     logger.propagate = False
     logger.setLevel(debug_level)
-    logger.addHandler(_get_llm_file_handler(name, debug_level))
+    if LOG_TO_FILE:
+        logger.addHandler(_get_llm_file_handler(name, debug_level))
     return logger
 
 
