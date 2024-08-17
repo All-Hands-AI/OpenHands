@@ -111,9 +111,7 @@ class AgentController:
             self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
-        """
-        Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
-        """
+        """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         if self.agent_task is not None:
             self.agent_task.cancel()
         await self.set_agent_state_to(AgentState.STOPPED)
@@ -140,9 +138,8 @@ class AgentController:
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def _start_step_loop(self):
-        """
-        The main loop for the agent's step-by-step execution.
-        """
+        """The main loop for the agent's step-by-step execution."""
+
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
         while True:
             try:
@@ -163,8 +160,7 @@ class AgentController:
             await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
-        """
-        Callback from the event stream. Notifies the controller of incoming events.
+        """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
             event (Event): The incoming event to process.
@@ -219,15 +215,13 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
-        """
-        Resets the agent's task.
-        """
+        """Resets the agent's task."""
+
         self.almost_stuck = 0
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        """
-        Updates the agent's state and handles side effects. Can emit events to the event stream.
+        """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
         Args:
             new_state (AgentState): The new state to set for the agent.
@@ -272,8 +266,7 @@ class AgentController:
             self.state.resume_state = None
 
     def get_agent_state(self):
-        """
-        Returns the current state of the agent.
+        """Returns the current state of the agent.
 
         Returns:
             AgentState: The current state of the agent.
@@ -324,9 +317,7 @@ class AgentController:
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self) -> None:
-        """
-        Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget.
-        """
+        """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             await asyncio.sleep(1)
             return
@@ -473,8 +464,7 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
 
     def get_state(self):
-        """
-        Returns the current running state object.
+        """Returns the current running state object.
 
         Returns:
             State: The current state object.
@@ -487,8 +477,7 @@ class AgentController:
         max_iterations: int,
         confirmation_mode: bool = False,
     ):
-        """
-        Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
+        """Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
 
         Args:
             state: The state to initialize with, or None to create a new state.
@@ -527,8 +516,7 @@ class AgentController:
             self.state.history.end_id = self.state.end_id
 
     def _is_stuck(self):
-        """
-        Checks if the agent or its delegate is stuck in a loop.
+        """Checks if the agent or its delegate is stuck in a loop.
 
         Returns:
             bool: True if the agent is stuck, False otherwise.
