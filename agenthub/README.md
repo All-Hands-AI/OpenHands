@@ -21,30 +21,26 @@ The `state` represents the running state of an agent in the OpenDevin system. Th
 
 The State object stores information about:
 
-    - Multi-agent state / delegates:
-      - the ['root task'](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/controller/state/task.py) (conversation between the agent and the user)
-      - the subtask (conversation between an agent and the user or another agent)
-      - global and local iterations
-      - delegate levels for multi-agent interactions
-      - almost stuck state
+* Multi-agent state / delegates:
+  * the 'root task' (conversation between the agent and the user)
+  * the subtask (conversation between an agent and the user or another agent)
+  * global and local iterations
+  * delegate levels for multi-agent interactions
+  * almost stuck state
+* Running state of an agent:
+  * current agent state (e.g., LOADING, RUNNING, PAUSED)
+  * traffic control state for rate limiting
+  * confirmation mode
+  * the last error encountered
+* History:
+  * start and end IDs for events in agent's history. This allows to retrieve the actions taken by the agent, and observations (e.g. file content, command output) from the current or past sessions.
+* Metrics:
+  * global metrics for the current task
+  * local metrics for the current subtask
+* Extra data:
+  * additional task-specific data
 
-    - Running state of an agent:
-      - current agent state (e.g., LOADING, RUNNING, PAUSED)
-      - traffic control state for rate limiting
-      - confirmation mode
-      - the last error encountered
-
-    - History:
-      - start and end IDs for events in agent's history. This allows to retrieve the actions taken by the agent, and observations (e.g. file content, command output) from the current or past sessions.
-
-    - Metrics:
-      - global metrics for the current task
-      - local metrics for the current subtask
-
-    - Extra data:
-      - additional task-specific data
-
-  - The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTaskAction`
+The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTaskAction`
 
 ## Actions
 
