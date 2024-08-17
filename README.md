@@ -142,7 +142,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 
 OpenDevin is build upon other open source projects, and we are deeply thankful for their work. This project would not be possible without the contributions of the open source community.
 
-For a complete list of contributors and open source projects used in OpenDevin, please see our [CREDITS.md](./CREDITS.md) file.
+For a list of open source projects and licenses used in OpenDevin, please see our [CREDITS.md](./CREDITS.md) file.
 
 ## 📚 Cite
 
