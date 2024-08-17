@@ -112,6 +112,7 @@ class AgentSession:
         if self.runtime is None:
             raise Exception('Runtime must be initialized before the agent controller')
 
+        logger.info(f'Agents: {agent_configs}')
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
 
         self.controller = AgentController(
