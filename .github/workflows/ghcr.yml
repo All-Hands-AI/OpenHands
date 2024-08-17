@@ -36,7 +36,6 @@ jobs:
         platform: ['amd64', 'arm64']
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
-      last_tag_${{ matrix.image }}_${{ matrix.base_image }}_${{ matrix.platform }}: ${{ steps.build.outputs.last_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,20 +99,44 @@ jobs:
           name: ${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}
           path: /tmp/${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}.tar
           retention-days: 14
+      - name: Capture last tag
+        id: capture-last-tag
+        run: |
+          last_tag=$(cat tags.txt | awk '{print $NF}')
+          echo "${{ matrix.image }}_${{ matrix.base_image }}_${{ matrix.platform }}=$last_tag" > last_tag.txt
+      - name: Upload last tag as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: last-tag-${{ matrix.image }}-${{ matrix.base_image }}-${{ matrix.platform }}
+          path: last_tag.txt
+          retention-days: 1
+
+  prepare_test_matrix:
+    needs: ghcr_build_runtime
+    runs-on: ubuntu-latest
+    outputs:
+      test_matrix: ${{ steps.set-matrix.outputs.test_matrix }}
+    steps:
+      - name: Download last tags
+        uses: actions/download-artifact@v4
+        with:
+          pattern: last-tag-*
+          merge-multiple: true
+      - name: Set up test matrix
+        id: set-matrix
+        run: |
+          matrix=$(cat last-tag-* | jq -R -s -c 'split("\n")[:-1] | map(select(length > 0)) | map(split("=")) | map({"image": .[0] | split("_")[0], "base_image": .[0] | split("_")[1], "platform": .[0] | split("_")[2], "last_tag": .[1]})')
+          echo "test_matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "test_matrix=$matrix"
 
   # Run unit tests with the EventStream and Server runtime Docker images
   test_runtime:
     name: Test Runtime
     runs-on: ubuntu-latest
-    needs: ghcr_build_runtime
+    needs: prepare_test_matrix
     strategy:
       matrix:
-        image: ['od_runtime']
-        base_image:
-          - 'nikolaik/python-nodejs:python3.11-nodejs22'
-          - 'python:3.11-bookworm'
-          - 'node:22-bookworm'
-        platform: ['amd64']
+        include: ${{ fromJson(needs.prepare_test_matrix.outputs.test_matrix) }}
         runtime_type: ['eventstream']
     steps:
       - uses: actions/checkout@v4
@@ -135,22 +158,17 @@ jobs:
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Set last_tag
-        id: set_last_tag
-        run: |
-          last_tag=${{ needs.ghcr_build_runtime.outputs[format('last_tag_{0}_{1}_{2}', matrix.image, matrix.base_image, matrix.platform)] }}
-          echo "last_tag=${last_tag}" >> $GITHUB_OUTPUT
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
           path: /tmp/
       - name: Load Runtime image and run runtime tests
         run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
 
           if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ steps.set_last_tag.outputs.last_tag }}"
+            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
             exit 1
           fi
 
@@ -173,16 +191,11 @@ jobs:
   runtime_integration_tests_on_linux:
     name: Runtime Integration Tests on Linux
     runs-on: ubuntu-latest
-    needs: ghcr_build_runtime
+    needs: prepare_test_matrix
     strategy:
       fail-fast: false
       matrix:
-        image: ['od_runtime']
-        base_image:
-          - 'nikolaik/python-nodejs:python3.11-nodejs22'
-          - 'python:3.11-bookworm'
-          - 'node:22-bookworm'
-        platform: ['amd64']
+        include: ${{ fromJson(needs.prepare_test_matrix.outputs.test_matrix) }}
         runtime_type: ['eventstream']
     steps:
       - uses: actions/checkout@v4
@@ -195,22 +208,17 @@ jobs:
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Set last_tag
-        id: set_last_tag
-        run: |
-          last_tag=${{ needs.ghcr_build_runtime.outputs[format('last_tag_{0}_{1}_{2}', matrix.image, matrix.base_image, matrix.platform)] }}
-          echo "last_tag=${last_tag}" >> $GITHUB_OUTPUT
       - name: Download Runtime Docker image
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
           path: /tmp/
       - name: Load runtime image and run integration tests
         run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
 
           if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ steps.set_last_tag.outputs.last_tag }}"
+            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
             exit 1
           fi
 
@@ -232,7 +240,7 @@ jobs:
   # Push the runtime Docker images to the ghcr.io repository
   ghcr_push_runtime:
     runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, test_runtime, runtime_integration_tests_on_linux]
+    needs: [ghcr_build_runtime, prepare_test_matrix, test_runtime, runtime_integration_tests_on_linux]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     env:
       RUNTIME_TAGS: ${{ needs.ghcr_build_runtime.outputs.tags }}
@@ -241,12 +249,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['od_runtime']
-        base_image:
-          - 'nikolaik/python-nodejs:python3.11-nodejs22'
-          - 'python:3.11-bookworm'
-          - 'node:22-bookworm'
-        platform: ['amd64', 'arm64']
+        include: ${{ fromJson(needs.prepare_test_matrix.outputs.test_matrix) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -266,23 +269,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set last_tag
-        id: set_last_tag
-        run: |
-          last_tag=${{ needs.ghcr_build_runtime.outputs[format('last_tag_{0}_{1}_{2}', matrix.image, matrix.base_image, matrix.platform)] }}
-          echo "last_tag=${last_tag}" >> $GITHUB_OUTPUT
       - name: Download Docker images
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}.tar
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar
       - name: List downloaded files
         run: |
           ls -la /tmp/${{ matrix.platform }}
           file /tmp/${{ matrix.platform }}/*
       - name: Load images and push to registry
         run: |
-          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ steps.set_last_tag.outputs.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
           if [ -z "$image_file" ]; then
             echo "No matching image file found"
             exit 1
@@ -308,7 +306,7 @@ jobs:
   # Creates and pushes the runtime Docker image manifest
   create_manifest_runtime:
     runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, ghcr_push_runtime]
+    needs: [ghcr_build_runtime, prepare_test_matrix, ghcr_push_runtime]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     env:
       tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
