@@ -59,7 +59,6 @@ else
   fi
 
   usermod -aG $DOCKER_SOCKET_GID enduser
-  usermod -aG opendevin enduser
   echo "Running as enduser"
   su enduser /bin/bash -c "$*"
 fi
