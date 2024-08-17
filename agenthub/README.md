@@ -105,7 +105,7 @@ or 'VerifierAgent' to verify a task completion.
 A `task` is an end-to-end conversation between OpenDevin (the whole system) and the user,
 which might involve one or more inputs from the user. It starts with an initial input
 (typically a task statement) from the user, and ends with either an `AgentFinishAction`
-initiated by the agent, or an error.
+initiated by the agent, a stop initiated by the user, or an error.
 
 A `subtask` is an end-to-end conversation between an agent and the user, or
 another agent. If a `task` is conducted by a single agent, then it's also a `subtask`
