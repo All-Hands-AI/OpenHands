@@ -149,7 +149,6 @@ class LLM:
                 messages = kwargs['messages']
             else:
                 messages = args[1]
-
             # log the prompt
             debug_message = ''
             for message in messages:
@@ -178,7 +177,31 @@ class LLM:
 
             # skip if messages is empty (thus debug_message is empty)
             if debug_message:
-                resp = completion_unwrapped(*args, **kwargs)
+                # Check if the model is an Anthropic model
+                is_anthropic_model = 'anthropic' in self.config.model
+
+                if is_anthropic_model:
+                    # Add cache control to the messages
+                    for message in messages:
+                        if 'content' in message and isinstance(
+                            message['content'], list
+                        ):
+                            for content in message['content']:
+                                if isinstance(content, dict) and 'text' in content:
+                                    # Add cache control to the content
+                                    content['cache_control'] = {'type': 'ephemeral'}
+
+                    # Set extra headers for Anthropic models
+                    extra_headers = {
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-beta': 'prompt-caching-2024-07-31',
+                    }
+
+                    # Modify kwargs to include extra headers
+                    kwargs['extra_headers'] = extra_headers
+                    resp = completion_unwrapped(*args, **kwargs)
+                else:
+                    resp = completion_unwrapped(*args, **kwargs)
             else:
                 resp = {'choices': [{'message': {'content': ''}}]}
 
@@ -277,8 +300,30 @@ class LLM:
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                # Check if the model is an Anthropic model
+                is_anthropic_model = 'anthropic' in self.config.model
+
+                if is_anthropic_model:
+                    # Add cache control to the messages
+                    for message in messages:
+                        if 'content' in message and isinstance(
+                            message['content'], list
+                        ):
+                            for content in message['content']:
+                                if isinstance(content, dict) and 'text' in content:
+                                    # Add cache control to the content
+                                    content['cache_control'] = {'type': 'ephemeral'}
+
+                    # Set extra headers for Anthropic models
+                    extra_headers = {
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-beta': 'prompt-caching-2024-07-31',
+                    }
+                    kwargs['extra_headers'] = extra_headers
+                    resp = await async_completion_unwrapped(*args, **kwargs)
+                else:
+                    # For non-Anthropic models, use the standard completion call
+                    resp = await async_completion_unwrapped(*args, **kwargs)
 
                 # skip if messages is empty (thus debug_message is empty)
                 if debug_message:
@@ -348,10 +393,38 @@ class LLM:
             llm_prompt_logger.debug(debug_message)
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                # Check if the model is an Anthropic model
+                is_anthropic_model = 'anthropic' in self.config.model
 
-                # For streaming we iterate over the chunks
+                if is_anthropic_model:
+                    # Add cache control to the messages
+                    for message in messages:
+                        if 'content' in message and isinstance(
+                            message['content'], list
+                        ):
+                            for content in message['content']:
+                                if isinstance(content, dict) and 'text' in content:
+                                    # Add cache control to the content
+                                    content['cache_control'] = {'type': 'ephemeral'}
+
+                    # Set extra headers for Anthropic models
+                    extra_headers = {
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-beta': 'prompt-caching-2024-07-31',
+                    }
+
+                    # Directly call and await litellm.acompletion with extra headers
+                    resp = await litellm.acompletion(
+                        model=self.config.model,
+                        messages=messages,
+                        extra_headers=extra_headers,
+                        stream=True,  # Ensure streaming is enabled
+                    )
+                else:
+                    # For non-Anthropic models, use the standard completion call
+                    resp = await async_completion_unwrapped(*args, **kwargs)
+
+                # For streaming, iterate over the chunks
                 async for chunk in resp:
                     # Check for cancellation before yielding the chunk
                     if (
