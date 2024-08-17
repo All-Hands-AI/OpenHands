@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}
-          path: /tmp/last-tag.txt
+          path: last_tag.txt
           retention-days: 1
 
   prepare_test_matrix:
@@ -125,7 +125,7 @@ jobs:
       - name: Set up test matrix
         id: set-matrix
         run: |
-          matrix=$(cat /tmp/last-tag-* | jq -R -s -c 'split("\n")[:-1] | map(select(length > 0)) | map(split("=")) | map({"image": .[0] | split("_")[0], "base_image": .[0] | split("_")[1], "platform": .[0] | split("_")[2], "last_tag": .[1]})')
+          matrix=$(cat last-tag-* | jq -R -s -c 'split("\n")[:-1] | map(select(length > 0)) | map(split("=")) | map({"image": .[0] | split("_")[0], "base_image": .[0] | split("_")[1], "platform": .[0] | split("_")[2], "last_tag": .[1]})')
           echo "test_matrix=$matrix" >> $GITHUB_OUTPUT
           echo "test_matrix=$matrix"
 
