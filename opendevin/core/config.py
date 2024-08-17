@@ -665,7 +665,11 @@ def get_parser() -> argparse.ArgumentParser:
         help='The working directory for the agent',
     )
     parser.add_argument(
-        '-t', '--task', type=str, default='', help='The task for the agent to perform'
+        '-t',
+        '--task',
+        type=str,
+        default='',
+        help='The task for the agent to perform',
     )
     parser.add_argument(
         '-f',
@@ -724,6 +728,13 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
+    )
+    parser.add_argument(
+        '-n',
+        '--name',
+        default='default',
+        type=str,
+        help='Name for the session',
     )
     return parser
 

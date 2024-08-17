@@ -135,4 +135,4 @@ class AgentSession:
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            print('Error restoring state', e)
+            logger.info(f'Error restoring state: {e}')
