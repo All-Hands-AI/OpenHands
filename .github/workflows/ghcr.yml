@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}
-          path: last_tag.txt
+          path: last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}.txt
           retention-days: 1
 
   prepare_test_matrix:
