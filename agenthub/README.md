@@ -34,9 +34,8 @@ The State object stores information about:
       - confirmation mode
       - the last error encountered
 
-    - Message history:
+    - History:
       - start and end IDs for events in agent's history. This allows to retrieve the actions taken by the agent, and observations (e.g. file content, command output) from the current or past sessions.
-      - summaries and delegate summaries
 
     - Metrics:
       - global metrics for the current task
@@ -99,7 +98,7 @@ sending a prompt to the LLM, then parsing the response into an `Action`.
 
 ## Agent Delegation
 
-        OpenDevin is a multi-agentic system. Agents can delegate tasks to other agents, whether 
+        OpenDevin is a multi-agentic system. Agents can delegate tasks to other agents, whether
         prompted by the user, or when the agent decides to ask another agent for help. For example,
         the `CodeActAgent` might delegate to the `BrowsingAgent` to answer questions that involve browsing
         the web. The Delegator Agent forwards tasks to micro-agents, such as 'RepoStudyAgent' to study a repo,
@@ -107,9 +106,9 @@ sending a prompt to the LLM, then parsing the response into an `Action`.
 
         ### Understanding the terminology
 
-        A `task` is an end-to-end conversation between OpenDevin (the whole system) and the user, 
-        which might involve one or more inputs from the user. It starts with an initial input 
-        (typically a task statement) from the user, and ends with either an `AgentFinishAction` 
+        A `task` is an end-to-end conversation between OpenDevin (the whole system) and the user,
+        which might involve one or more inputs from the user. It starts with an initial input
+        (typically a task statement) from the user, and ends with either an `AgentFinishAction`
         initiated by the agent, or an error.
 
         A `subtask` is an end-to-end conversation between an agent and the user, or
