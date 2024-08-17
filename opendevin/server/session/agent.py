@@ -1,7 +1,7 @@
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import AppConfig, LLMConfig
+from opendevin.core.config import AgentConfig, AppConfig, LLMConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.stream import EventStream
 from opendevin.runtime import get_runtime_cls
@@ -39,6 +39,7 @@ class AgentSession:
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
     ):
         """Starts the agent session.
 
@@ -57,6 +58,7 @@ class AgentSession:
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
         )
 
     async def close(self):
@@ -102,6 +104,7 @@ class AgentSession:
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
     ):
         """Creates an AgentController instance."""
         if self.controller is not None:
@@ -109,6 +112,7 @@ class AgentSession:
         if self.runtime is None:
             raise Exception('Runtime must be initialized before the agent controller')
 
+        logger.info(f'Agents: {agent_configs}')
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
 
         self.controller = AgentController(
@@ -118,6 +122,7 @@ class AgentSession:
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
@@ -130,4 +135,4 @@ class AgentSession:
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            print('Error restoring state', e)
+            logger.info(f'Error restoring state: {e}')

@@ -5,7 +5,7 @@ from typing import Type
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.controller.stuck import StuckDetector
-from opendevin.core.config import LLMConfig
+from opendevin.core.config import AgentConfig, LLMConfig
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
@@ -52,6 +52,7 @@ class AgentController:
     state: State
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
+    agent_configs: dict[str, AgentConfig]
     agent_task: asyncio.Task | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
@@ -64,6 +65,7 @@ class AgentController:
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
         sid: str = 'default',
         confirmation_mode: bool = False,
         initial_state: State | None = None,
@@ -78,6 +80,8 @@ class AgentController:
             max_iterations: The maximum number of iterations the agent can run.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             agent_to_llm_config: A dictionary mapping agent names to LLM configurations in the case that
+                we delegate to a different agent.
+            agent_configs: A dictionary mapping agent names to agent configurations in the case that
                 we delegate to a different agent.
             sid: The session ID of the agent.
             initial_state: The initial state of the controller.
@@ -103,6 +107,7 @@ class AgentController:
         )
         self.max_budget_per_task = max_budget_per_task
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
+        self.agent_configs = agent_configs if agent_configs else {}
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -256,9 +261,10 @@ class AgentController:
 
     async def start_delegate(self, action: AgentDelegateAction):
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
+        agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config)
-        delegate_agent = agent_cls(llm=llm)
+        delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
             local_iteration=0,
@@ -278,8 +284,10 @@ class AgentController:
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
+            agent_configs=self.agent_configs,
             initial_state=state,
             is_delegate=True,
+            headless_mode=self.headless_mode,
         )
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 

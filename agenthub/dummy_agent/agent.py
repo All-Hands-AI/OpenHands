@@ -2,6 +2,7 @@ from typing import TypedDict, Union
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
@@ -45,8 +46,8 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM):
-        super().__init__(llm)
+    def __init__(self, llm: LLM, config: AgentConfig):
+        super().__init__(llm, config)
         self.steps: list[ActionObs] = [
             {
                 'action': AddTaskAction(

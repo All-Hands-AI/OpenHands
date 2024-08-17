@@ -102,7 +102,8 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
-        agent = Agent.get_cls(agent_cls)(llm)
+        agent_config = self.config.get_agent_config(agent_cls)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         # Create the agent session
         try:
@@ -113,6 +114,7 @@ class Session:
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
+                agent_configs=self.config.get_agent_configs(),
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
