@@ -183,7 +183,6 @@ class EventStreamRuntime(Runtime):
             raise e
 
     async def _ensure_session(self):
-        await asyncio.sleep(1)
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
         return self.session
