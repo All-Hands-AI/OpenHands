@@ -21,10 +21,6 @@ OpenDevin includes and adapts the following open source projects. We are gratefu
    - License: MIT License
    - Description: Used as an evaluation benchmark in ./opendevin/evaluation/dsp
 
-### [LeetCode](https://leetcode.com/)
-   - License: Various (problems are typically under LeetCode's Terms of Service)
-   - Description: Used as an evaluation benchmark in ./opendevin/evaluation/leetcode
-
 ### [HumanEvalPack](https://github.com/bigcode-project/bigcode-evaluation-harness)
    - License: Apache License 2.0
    - Description: Used as an evaluation benchmark in ./opendevin/evaluation/humanevalpack
@@ -52,6 +48,19 @@ OpenDevin includes and adapts the following open source projects. We are gratefu
 ### [ProofWriter](https://allenai.org/data/proofwriter)
    - License: MIT License
    - Description: Used as a logic reasoning benchmark in ./opendevin/evaluation/logic_reasoning
+
+### [AgentBench](https://github.com/THUDM/AgentBench)
+   - License: Apache License 2.0
+   - Description: Adapted for agent evaluation benchmark in ./opendevin/evaluation/agent_bench
+
+### [BioCoder](https://github.com/microsoft/biocoder)
+   - License: MIT License
+   - Description: Adapted for evaluation benchmark in ./opendevin/evaluation/biocoder
+
+13. [SWE-Bench](https://github.com/princeton-nlp/SWE-bench)
+   - License: MIT License
+   - Description: Adapted for software engineering benchmark in ./opendevin/evaluation/swe_bench
+
 
 ## License Texts
 
