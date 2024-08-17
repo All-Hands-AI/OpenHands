@@ -263,7 +263,7 @@ jobs:
   ghcr_push:
     runs-on: ubuntu-latest
     needs: [ghcr_build]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     env:
       tags: ${{ needs.ghcr_build.outputs.tags }}
     permissions:
@@ -305,7 +305,7 @@ jobs:
   ghcr_push_runtime:
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime, test_runtime, runtime_integration_tests_on_linux]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     env:
       RUNTIME_TAGS: ${{ needs.ghcr_build_runtime.outputs.tags }}
     permissions:
@@ -367,7 +367,7 @@ jobs:
   create_manifest:
     runs-on: ubuntu-latest
     needs: [ghcr_build, ghcr_push]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     env:
       tags: ${{ needs.ghcr_build.outputs.tags }}
     strategy:
@@ -401,7 +401,7 @@ jobs:
   create_manifest_runtime:
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime, ghcr_push_runtime]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
     env:
       tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
     strategy:
