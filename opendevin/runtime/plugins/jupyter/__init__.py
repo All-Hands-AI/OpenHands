@@ -27,7 +27,7 @@ class JupyterPlugin(Plugin):
                 f"su - {username} -s /bin/bash << 'EOF'\n"
                 'cd /opendevin/code\n'
                 'export POETRY_VIRTUALENVS_PATH=/opendevin/poetry;\n'
-                'export PYTHONPATH=/opendevin/code/opendevin/runtime/plugins/agent_skills:$PYTHONPATH;\n'
+                'export PYTHONPATH=/opendevin/code:$PYTHONPATH;\n'
                 '/opendevin/miniforge3/bin/mamba run -n base '
                 'poetry run jupyter kernelgateway '
                 '--KernelGatewayApp.ip=0.0.0.0 '

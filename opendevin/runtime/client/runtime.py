@@ -2,7 +2,6 @@ import asyncio
 import os
 import tempfile
 import uuid
-from typing import Optional
 from zipfile import ZipFile
 
 import aiohttp
@@ -55,10 +54,10 @@ class EventStreamRuntime(Runtime):
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
         self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
         self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+            sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
@@ -184,7 +183,6 @@ class EventStreamRuntime(Runtime):
             raise e
 
     async def _ensure_session(self):
-        await asyncio.sleep(1)
         if self.session is None or self.session.closed:
             self.session = aiohttp.ClientSession()
         return self.session
@@ -194,7 +192,7 @@ class EventStreamRuntime(Runtime):
         wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
-        logger.info('Reconnecting session')
+        logger.debug('Getting container logs...')
         container = self.docker_client.containers.get(self.container_name)
         # get logs
         _logs = container.logs(tail=10).decode('utf-8').split('\n')

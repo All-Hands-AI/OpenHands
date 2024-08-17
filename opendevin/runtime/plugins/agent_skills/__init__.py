@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 
-from opendevin.runtime.plugins.agent_skills.agentskills import DOCUMENTATION
 from opendevin.runtime.plugins.requirement import Plugin, PluginRequirement
+
+from . import agentskills
 
 
 @dataclass
 class AgentSkillsRequirement(PluginRequirement):
     name: str = 'agent_skills'
-    documentation: str = DOCUMENTATION
+    documentation: str = agentskills.DOCUMENTATION
 
 
 class AgentSkillsPlugin(Plugin):
