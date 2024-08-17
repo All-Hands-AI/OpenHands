@@ -115,6 +115,7 @@ one agent.
 For example, considering a task from the user: `tell me how many GitHub stars
 OpenDevin repo has`. Let's assume the default agent is CodeActAgent.
 
+```
 -- TASK STARTS (SUBTASK 0 STARTS) --
 
 DELEGATE_LEVEL 0, ITERATION 0, LOCAL_ITERATION 0
@@ -135,6 +136,7 @@ CodeActAgent: I got the answer from BrowsingAgent, let me convey the result
 and finish
 
 -- TASK ENDS (SUBTASK 0 ENDS) --
+```
 
 Note how ITERATION counter is shared across agents, while LOCAL_ITERATION
 is local to each subtask.
