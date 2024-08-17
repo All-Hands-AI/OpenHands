@@ -140,7 +140,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 
 ## 🙏 Acknowledgements
 
-OpenDevin is build upon other open source projects, and we are deeply thankful for their work. This project would not be possible without the contributions of the open source community.
+OpenDevin is built by a large number of contributors, and every contribution is greatly appreciated! We also build upon other open source projects, and we are deeply thankful for their work.
 
 For a list of open source projects and licenses used in OpenDevin, please see our [CREDITS.md](./CREDITS.md) file.
 
