@@ -6,18 +6,12 @@ from opendevin.events.action import (
     MessageAction,
 )
 
-# from .prompt import (
-#     ADAPT_PROMPT,
-#     IMPLEMENT_PROMPT,
-#     SELECT_PROMPT,
-# )
 
-
-class SelfDiscoverState(Enum):
-    SELECT = 0
-    ADAPT = 1
-    IMPLEMENT = 2
-    DELEGATE = 3
+class SelfDiscoverState(str, Enum):
+    SELECT = 'select'
+    ADAPT = 'adapt'
+    IMPLEMENT = 'implement'
+    DELEGATE = 'delegate'
 
 
 class SelfDiscoverStateMachine:
@@ -31,7 +25,7 @@ class SelfDiscoverStateMachine:
 
     def transition(self, action: Action) -> None:
         self.prev_state = self.current_state
-        # Only move to next state if not browsing or user inquiry
+        # Only move to next state if not browsing or user inquiry (for now deactivated)
         if not (
             (
                 isinstance(action, AgentDelegateAction)
@@ -39,5 +33,9 @@ class SelfDiscoverStateMachine:
             )
             or (isinstance(action, MessageAction) and action.wait_for_response)
         ):
-            if self.current_state != SelfDiscoverState.DELEGATE:
-                self.current_state = SelfDiscoverState(self.current_state.value + 1)
+            state_order = list(SelfDiscoverState)
+            current_index = state_order.index(self.current_state)
+
+            # Move to the next state if it exists
+            if current_index < len(state_order) - 1:
+                self.current_state = state_order[current_index + 1]

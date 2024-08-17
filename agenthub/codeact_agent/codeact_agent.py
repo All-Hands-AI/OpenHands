@@ -171,7 +171,6 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        print(f'CodeActAgent messages: {messages}\n')
 
         response = self.llm.completion(
             messages=[message.model_dump() for message in messages],
