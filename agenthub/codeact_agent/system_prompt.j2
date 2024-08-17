@@ -23,13 +23,13 @@ Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 {% endset %}
 
-{% set SYSTEM_SUFFIX %}
-Responses should be concise.
-The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
-Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
-If the assistant is finished with the task you MUST include <finish></finish> in your response.
-IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
-When handling files, try to use full paths and pwd to avoid errors.
+{% set SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX %}
+
+{% set GITHUB_MESSAGE %}
+To interact with GitHub, use the $GITHUB_TOKEN environment variable.
+For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
+<execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
+If $GITHUB_TOKEN is not set, ask the user to set it.
 {% endset %}
 
 {% set COMMAND_DOCS %}
@@ -38,20 +38,18 @@ Apart from the standard Python library, the assistant can also use the following
 Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 {% endset %}
 
+{% set SYSTEM_SUFFIX %}
+Responses should be concise.
+The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
+Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
+If the assistant is finished with the task you MUST include <finish></finish> in your response.
+IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
+When handling files, try to use full paths and pwd to avoid errors.
+{% endset %}
 {# Combine all parts #}
-{% set SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX %}
-
+{{ SYSTEM_PREFIX }}
 {% if enable_github %}
-{{ SYSTEM_PREFIX }}
 {{ GITHUB_MESSAGE }}
-
-{{ COMMAND_DOCS }}
-
-{{ SYSTEM_SUFFIX }}
-{% else %}
-{{ SYSTEM_PREFIX }}
-
-{{ COMMAND_DOCS }}
-
-{{ SYSTEM_SUFFIX }}
 {% endif %}
+{{ COMMAND_DOCS }}
+{{ SYSTEM_SUFFIX }}
