@@ -4,7 +4,7 @@ from typing import Any, Dict, List, TypeGuard, Union
 from .agent_state_machine import SelfDiscoverState
 
 # Order is important as it is used in prompt
-RESEASONING_MODULE_LIST: List[str] = [
+REASONING_MODULE_LIST: List[str] = [
     'How could I devise an experiment to help solve that problem?',
     'Make a list of ideas for solving this problem, and apply them one by one to the problem to see if any progress can be made.',
     'How could I measure progress on this problem?',

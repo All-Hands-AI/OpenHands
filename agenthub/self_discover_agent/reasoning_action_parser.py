@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 from opendevin.core.utils import json
 
 from .agent_state_machine import SelfDiscoverState
-from .reasoning_action import RESEASONING_MODULE_LIST, NestedDict
+from .reasoning_action import REASONING_MODULE_LIST, NestedDict
 
 
 class SelfDiscoverResponseToReasoningActionParser:
@@ -29,7 +29,7 @@ class SelfDiscoverResponseToReasoningActionParser:
         reasoning_dict = json.loads(reasoning_str)
         if SelfDiscoverState.SELECT.value in reasoning_dict:
             reasoning_dict[SelfDiscoverState.SELECT.value] = [
-                RESEASONING_MODULE_LIST[i]
+                REASONING_MODULE_LIST[i]
                 for i in reasoning_dict[SelfDiscoverState.SELECT.value]
             ]
         return reasoning_dict

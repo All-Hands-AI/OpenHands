@@ -1,7 +1,7 @@
 from opendevin.core.message import Message, TextContent
 
 from .agent_state_machine import SelfDiscoverState
-from .reasoning_action import RESEASONING_MODULE_LIST, ReasoningAction
+from .reasoning_action import REASONING_MODULE_LIST, ReasoningAction
 
 TASK_KEY = 'task'
 
@@ -34,7 +34,7 @@ SELECT_PROMPT = """Select several reasoning moduls that are crucial to solve the
 Recall from above the task: {task}
 
 ## Reasoning modules list (0-based indexing)
-{reseasoning_module_list}
+{reasoning_module_list}
 
 ## Constraints
 Select between 3 and 5 task-relevant reasoning modules.
@@ -192,7 +192,7 @@ def get_prompt(
     if current_state == SelfDiscoverState.SELECT:
         content = SELECT_PROMPT.format(
             task=task,
-            reseasoning_module_list=RESEASONING_MODULE_LIST,
+            reasoning_module_list=REASONING_MODULE_LIST,
             select_state_key=current_state.value,
         )
     elif current_state == SelfDiscoverState.ADAPT:
