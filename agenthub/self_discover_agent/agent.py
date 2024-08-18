@@ -1,5 +1,5 @@
 from agenthub.codeact_agent import CodeActAgent
-from opendevin.controller.agent import Agent
+from opendevin.controller.agent import Agent, AgentConfig
 from opendevin.controller.state.state import State
 from opendevin.core.message import Message, TextContent
 from opendevin.events.action import (
@@ -40,6 +40,7 @@ class SelfDiscoverAgent(Agent):
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """
         Initializes a new instance of the SelfDiscoveryAgent class.
@@ -49,7 +50,7 @@ class SelfDiscoverAgent(Agent):
         """
         self.agent_state_machine: SelfDiscoverStateMachine = SelfDiscoverStateMachine()
         self.reasoning_data: ReasoningAction = ReasoningAction()
-        super().__init__(llm)
+        super().__init__(llm, config)
         self.reset()
 
     def reset(self) -> None:

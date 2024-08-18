@@ -24,6 +24,7 @@ SYSTEM_SUFFIX = """Let the following principles guide your response:
 - Use only information that's explicitly stated by the user.
 """
 
+# TODO: allow agent to ask questions before specifying a plan
 # SYSTEM_MESSAGE = ROLE_DESCRIPTION + INTERACTION_SKILL + BROWSING_SKILL + SYSTEM_SUFFIX
 SYSTEM_MESSAGE = ROLE_DESCRIPTION + SYSTEM_SUFFIX
 
@@ -73,7 +74,7 @@ For example,
 You MUST NOT include any other text besides the JSON response.
 """
 
-# TODO modify example
+# TODO: modify example so that it is consistent with prompting
 # ADAPT_EXAMPLE = """
 # ## Example
 # USER:
