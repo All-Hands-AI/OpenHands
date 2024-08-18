@@ -21,9 +21,6 @@ FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
-DOCKERHUB_NAMESPACE="xingyaoww"
-SWEBENCH_TASKS=$(realpath evaluation/swe_bench/eval_workspace/eval_data/instances/swe-bench-lite-all.json)
-export SWEBENCH_DOCKER_FORK_DIR=$(realpath evaluation/swe_bench/eval_workspace/SWE-bench-docker)
 
 # ================================================
 # detect whether PROCESS_FILEPATH is in OD format or in SWE-bench format
@@ -82,6 +79,8 @@ if [ -z "$INSTANCE_ID" ]; then
     # change `--dataset_name` and `--split` to alter dataset
 
     poetry run python -m swebench.harness.run_evaluation \
+        --dataset_name "princeton-nlp/SWE-bench_Lite" \
+        --split "test" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 1800 \
         --cache_level instance \
@@ -126,6 +125,8 @@ if [ -z "$INSTANCE_ID" ]; then
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
     poetry run python -m swebench.harness.run_evaluation \
+        --dataset_name "princeton-nlp/SWE-bench_Lite" \
+        --split "test" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 1800 \
         --instance_ids $INSTANCE_ID \
