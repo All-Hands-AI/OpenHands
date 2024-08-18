@@ -14,7 +14,7 @@ OpenDevin includes and adapts the following open source projects. We are gratefu
 
 #### [Aider](https://github.com/paul-gauthier/aider)
    - License: Apache License 2.0
-   - Description: AI pair programming tool. OpenDevin has adapted and integrated its linter module for code-related tasks in ./opendevin/runtime/plugins/agent_skills/agentskills.py.
+   - Description: AI pair programming tool. OpenDevin has adapted and integrated its linter module for code-related tasks in [`agentskills utilities`](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/agent_skills/utils/aider)
 
 #### [BrowserGym](https://github.com/ServiceNow/BrowserGym)
    - License: Apache License 2.0
