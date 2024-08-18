@@ -1035,6 +1035,36 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
+async def test_bash_python_version(temp_dir, box_class):
+    """Make sure Python is available in bash."""
+
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    action = CmdRunAction(command='which python')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='python --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    # Should not error out
+
+    action = CmdRunAction(command='pip --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    # Should not error out
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
 async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
     """Make sure that cd in bash also update the current working directory in ipython."""
     runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
