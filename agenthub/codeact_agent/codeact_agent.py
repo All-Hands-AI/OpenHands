@@ -27,8 +27,8 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 from opendevin.utils.prompt import PromptManager
+
 
 class CodeActAgent(Agent):
     VERSION = '1.9'
