@@ -178,7 +178,12 @@ jobs:
           output=$(docker load -i "$image_file")
 
           # Extract the image name from the output
-          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
+          # Print all tags
+          echo "All tags:"
+          all_tags=$(echo "$output" | grep -oP 'Loaded image: \K.*')
+          echo "$all_tags"
+          # Choose the last tag
+          image_name=$(echo "$all_tags" | tail -n 1)
 
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
