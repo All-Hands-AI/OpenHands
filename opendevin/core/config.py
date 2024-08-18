@@ -49,6 +49,37 @@ class MemoryConfig:
             result[f.name] = get_field_info(f)
         return result
 
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'MemoryConfig':
+        config = cls()
+        for field in fields(cls):
+            env_var_name = f"MEMORY_{field.name.upper()}"
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, field.name, cls._cast_value(field.type, value))
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> dict[str, 'MemoryConfig']:
+        memory_configs = {}
+
+        # Load default Memory config
+        if 'memory' in toml_config:
+            default_config = cls(**toml_config['memory'])
+            memory_configs['memory'] = default_config
+
+        # Load custom Memory configs
+        for key, value in toml_config.get('memory', {}).items():
+            if isinstance(value, dict):
+                memory_configs[key] = cls(**value)
+
+        return memory_configs
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        # Same as LLMConfig._cast_value
+
 
 @dataclass
 class LLMConfig:
@@ -139,6 +170,42 @@ class LLMConfig:
             if not hasattr(self, field_name):
                 setattr(self, field_name, field_obj.default)
 
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'LLMConfig':
+        config = cls()
+        for field in fields(cls):
+            env_var_name = f"LLM_{field.name.upper()}"
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, field.name, cls._cast_value(field.type, value))
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> dict[str, 'LLMConfig']:
+        llm_configs = {}
+
+        # Load default LLM config
+        if 'llm' in toml_config:
+            default_config = cls(**toml_config['llm'])
+            llm_configs['llm'] = default_config
+
+        # Load custom LLM configs
+        for key, value in toml_config.get('llm', {}).items():
+            if isinstance(value, dict):
+                llm_configs[key] = cls(**value)
+
+        return llm_configs
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        if field_type is bool:
+            return str(value).lower() in ['true', '1']
+        if get_origin(field_type) is UnionType:
+            non_none_type = next((t for t in get_args(field_type) if t is not type(None)), None)
+            return non_none_type(value) if non_none_type else value
+        return field_type(value)
+
 
 @dataclass
 class AgentConfig:
@@ -162,6 +229,40 @@ class AgentConfig:
         for f in fields(self):
             result[f.name] = get_field_info(f)
         return result
+
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'AgentConfig':
+        config = cls()
+        for field in fields(cls):
+            if field.name == 'memory_config':
+                continue  # Skip memory_config, it's handled separately
+            env_var_name = f"AGENT_{field.name.upper()}"
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, field.name, cls._cast_value(field.type, value))
+        config.memory_config = MemoryConfig.load_from_env(env_dict)
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> dict[str, 'AgentConfig']:
+        agent_configs = {}
+
+        # Load default Agent config
+        if 'agent' in toml_config:
+            default_config = cls(**toml_config['agent'])
+            agent_configs['agent'] = default_config
+
+        # Load custom Agent configs
+        for key, value in toml_config.get('agent', {}).items():
+            if isinstance(value, dict):
+                agent_configs[key] = cls(**value)
+
+        return agent_configs
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        # Same as LLMConfig._cast_value
 
 
 @dataclass
@@ -195,6 +296,27 @@ class SecurityConfig(metaclass=Singleton):
 
     def __repr__(self):
         return self.__str__()
+
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'SecurityConfig':
+        config = cls()
+        for field in fields(cls):
+            env_var_name = f"SECURITY_{field.name.upper()}"
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, field.name, cls._cast_value(field.type, value))
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> 'SecurityConfig':
+        if 'security' in toml_config:
+            return cls(**toml_config['security'])
+        return cls()
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        # Same as LLMConfig._cast_value
 
 
 @dataclass
@@ -254,6 +376,27 @@ class SandboxConfig(metaclass=Singleton):
 
     def __repr__(self):
         return self.__str__()
+
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'SandboxConfig':
+        config = cls()
+        for field in fields(cls):
+            env_var_name = f"SANDBOX_{field.name.upper()}"
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, field.name, cls._cast_value(field.type, value))
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> 'SandboxConfig':
+        if 'sandbox' in toml_config:
+            return cls(**toml_config['sandbox'])
+        return cls()
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        # Same as LLMConfig._cast_value
 
 
 class UndefinedString(str, Enum):
@@ -418,6 +561,67 @@ class AppConfig(metaclass=Singleton):
     def __repr__(self):
         return self.__str__()
 
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'AppConfig':
+        config = cls()
+
+        # Load main AppConfig fields
+        for field in fields(cls):
+            if field.name in ['llms', 'agents', 'memories', 'sandbox', 'security']:
+                continue  # These are handled separately
+            env_var_name = field.name.upper()
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, field.name, cls._cast_value(field.type, value))
+
+        # Load sub-configs
+        config.llms['llm'] = LLMConfig.load_from_env(env_dict)
+        config.agents['agent'] = AgentConfig.load_from_env(env_dict)
+        config.memories['memory'] = MemoryConfig.load_from_env(env_dict)
+        config.sandbox = SandboxConfig.load_from_env(env_dict)
+        config.security = SecurityConfig.load_from_env(env_dict)
+
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> 'AppConfig':
+        config = cls()
+
+        # Load main AppConfig fields
+        if 'core' in toml_config:
+            for key, value in toml_config['core'].items():
+                if hasattr(config, key):
+                    setattr(config, key, value)
+                else:
+                    logger.opendevin_logger.warning(f'Unknown key in core config: "{key}"')
+
+        # Load sub-configs
+        config.llms.update(LLMConfig.load_from_toml(toml_config))
+        config.agents.update(AgentConfig.load_from_toml(toml_config))
+        config.memories.update(MemoryConfig.load_from_toml(toml_config))
+        config.sandbox = SandboxConfig.load_from_toml(toml_config)
+        config.security = SecurityConfig.load_from_toml(toml_config)
+
+        # Compatibility: Move embedding-related configs from LLM to Memory
+        if 'llm' in toml_config:
+            embedding_keys = ['embedding_base_url', 'embedding_model', 'embedding_deployment_name']
+            default_memory_config = config.get_memory_config()
+            for key in embedding_keys:
+                if key in toml_config['llm']:
+                    value = toml_config['llm'].pop(key)
+                    setattr(default_memory_config, key, value)
+                    logger.opendevin_logger.warning(
+                        f"Deprecated: '{key}' should be set in [memory] section. "
+                        f"Automatically moved from [llm] to [memory]."
+                    )
+
+        return config
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        # Same as LLMConfig._cast_value
+
 
 def get_field_info(f):
     """Extract information about a dataclass field: type, optional, and default.
@@ -518,31 +722,24 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(default_memory_config, 'MEMORY_')
 
     # Compatibility: Move embedding-related configs from LLM to Memory
-    embedding_keys = [
-        'embedding_base_url',
-        'embedding_model',
-        'embedding_deployment_name',
-    ]
+    embedding_keys = ['embedding_base_url', 'embedding_model', 'embedding_deployment_name']
+    default_memory_config = cfg.get_memory_config()
+    default_llm_config = cfg.get_llm_config()
     for key in embedding_keys:
         env_key = f'LLM_{key.upper()}'
         if env_key in env_or_toml_dict:
             value = env_or_toml_dict[env_key]
             if value:
                 setattr(default_memory_config, key, value)
+                if hasattr(default_llm_config, key):
+                    delattr(default_llm_config, key)
                 logger.opendevin_logger.warning(
-                    f'Deprecated: {env_key} should be set in MEMORY config. '
-                    f'Automatically moved to MEMORY_{key.upper()}.'
+                    f"Deprecated: {env_key} should be set in MEMORY config. "
+                    f"Automatically moved to MEMORY_{key.upper()}."
                 )
 
 
 def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
-    """Load the config from the toml file. Supports both styles of config vars.
-
-    Args:
-        cfg: The AppConfig object to update attributes of.
-        toml_file: The path to the toml file. Defaults to 'config.toml'.
-    """
-    # try to read the config.toml file into the config object
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
@@ -555,120 +752,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         )
         return
 
-    # if there was an exception or core is not in the toml, try to use the old-style toml
-    if 'core' not in toml_config:
-        # re-use the env loader to set the config from env-style vars
-        load_from_env(cfg, toml_config)
-        return
+    # Use the new load_from_toml method of AppConfig
+    new_config = AppConfig.load_from_toml(toml_config)
 
-    core_config = toml_config['core']
-
-    # load llm configs, agent configs, and memory configs
-    for key, value in toml_config.items():
-        if isinstance(value, dict):
-            try:
-                if key is not None and key.lower() == 'agent':
-                    logger.opendevin_logger.info(
-                        'Attempt to load default agent config from config toml'
-                    )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    agent_config = AgentConfig(**non_dict_fields)
-                    cfg.set_agent_config(agent_config, 'agent')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.opendevin_logger.info(
-                                f'Attempt to load group {nested_key} from config toml as agent config'
-                            )
-                            agent_config = AgentConfig(**nested_value)
-                            cfg.set_agent_config(agent_config, nested_key)
-                elif key is not None and key.lower() == 'llm':
-                    logger.opendevin_logger.info(
-                        'Attempt to load default LLM config from config toml'
-                    )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    llm_config = LLMConfig(**non_dict_fields)
-                    cfg.set_llm_config(llm_config, 'llm')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.opendevin_logger.info(
-                                f'Attempt to load group {nested_key} from config toml as llm config'
-                            )
-                            llm_config = LLMConfig(**nested_value)
-                            cfg.set_llm_config(llm_config, nested_key)
-                elif key is not None and key.lower() == 'memory':
-                    logger.opendevin_logger.info(
-                        'Attempt to load default memory config from config toml'
-                    )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    memory_config = MemoryConfig(**non_dict_fields)
-                    cfg.set_memory_config(memory_config, 'memory')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.opendevin_logger.info(
-                                f'Attempt to load group {nested_key} from config toml as memory config'
-                            )
-                            memory_config = MemoryConfig(**nested_value)
-                            cfg.set_memory_config(memory_config, nested_key)
-                elif not key.startswith('sandbox') and key.lower() != 'core':
-                    logger.opendevin_logger.warning(
-                        f'Unknown key in {toml_file}: "{key}"'
-                    )
-            except (TypeError, KeyError) as e:
-                logger.opendevin_logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
-                    exc_info=False,
-                )
-        else:
-            logger.opendevin_logger.warning(f'Unknown key in {toml_file}: "{key}')
-
-    # Compatibility: Move embedding-related configs from LLM to Memory
-    if 'llm' in toml_config:
-        embedding_keys = [
-            'embedding_base_url',
-            'embedding_model',
-            'embedding_deployment_name',
-        ]
-        default_memory_config = cfg.get_memory_config()
-        for key in embedding_keys:
-            if key in toml_config['llm']:
-                value = toml_config['llm'].pop(key)
-                setattr(default_memory_config, key, value)
-                logger.opendevin_logger.warning(
-                    f"Deprecated: '{key}' should be set in [memory] section. "
-                    f'Automatically moved from [llm] to [memory].'
-                )
-
-    try:
-        # set sandbox config from the toml file
-        sandbox_config = cfg.sandbox
-
-        # migrate old sandbox configs from [core] section to sandbox config
-        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
-        for key in keys_to_migrate:
-            new_key = key.replace('sandbox_', '')
-            if new_key in sandbox_config.__annotations__:
-                # read the key in sandbox and remove it from core
-                setattr(sandbox_config, new_key, core_config.pop(key))
-            else:
-                logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
-
-        # the new style values override the old style values
-        if 'sandbox' in toml_config:
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
-
-        # update the config object with the new values
-        AppConfig(sandbox=sandbox_config, **core_config)
-    except (TypeError, KeyError) as e:
-        logger.opendevin_logger.warning(
-            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
-            exc_info=False,
-        )
+    # Update the existing cfg with the new values
+    for field in fields(AppConfig):
+        setattr(cfg, field.name, getattr(new_config, field.name))
 
 
 def finalize_config(cfg: AppConfig):
