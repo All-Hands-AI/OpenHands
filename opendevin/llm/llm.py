@@ -193,7 +193,6 @@ class LLM:
 
                     # Set extra headers for Anthropic models
                     extra_headers = {
-                        'anthropic-version': '2023-06-01',
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
