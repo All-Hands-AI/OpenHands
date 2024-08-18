@@ -268,6 +268,7 @@ class AppConfig(metaclass=Singleton):
         llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
         memories: A dictionary of name -> Memory configuration. Default config is under 'memory' key.
         agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
+        memories: A dictionary of name -> Memory configuration. Default config is under 'memory' key.
         default_agent: The name of the default agent to use.
         sandbox: The sandbox configuration.
         runtime: The runtime environment.
@@ -291,8 +292,8 @@ class AppConfig(metaclass=Singleton):
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
+    agents: dict[str, AgentConfig] = field(default_factory=dict)
     memories: dict[str, MemoryConfig] = field(default_factory=dict)
-    agents: dict = field(default_factory=dict)
     default_agent: str = _DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
@@ -347,18 +348,6 @@ class AppConfig(metaclass=Singleton):
     def set_agent_config(self, value: AgentConfig, name='agent'):
         self.agents[name] = value
 
-    def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
-        """Get a map of agent names to llm configs."""
-        return {name: self.get_llm_config_from_agent(name) for name in self.agents}
-
-    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
-        agent_config: AgentConfig = self.get_agent_config(name)
-        llm_config_name = agent_config.llm_config
-        return self.get_llm_config(llm_config_name)
-
-    def get_agent_configs(self) -> dict[str, AgentConfig]:
-        return self.agents
-
     def get_memory_config(self, name='memory') -> MemoryConfig:
         """Memory is the name for default config"""
         if name in self.memories:
@@ -373,6 +362,24 @@ class AppConfig(metaclass=Singleton):
 
     def set_memory_config(self, value: MemoryConfig, name='memory'):
         self.memories[name] = value
+
+    def get_memory_config_from_agent(self, name='agent') -> MemoryConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        if agent_config.memory_config:
+            return agent_config.memory_config
+        return self.get_memory_config()
+
+    def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
+        """Get a map of agent names to llm configs."""
+        return {name: self.get_llm_config_from_agent(name) for name in self.agents}
+
+    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        llm_config_name = agent_config.llm_config
+        return self.get_llm_config(llm_config_name)
+
+    def get_agent_configs(self) -> dict[str, AgentConfig]:
+        return self.agents
 
     def __post_init__(self):
         """Post-initialization hook, called when the instance is created with only default values."""
@@ -506,6 +513,27 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
 
+    # load default memory config from env
+    default_memory_config = cfg.get_memory_config()
+    set_attr_from_env(default_memory_config, 'MEMORY_')
+
+    # Compatibility: Move embedding-related configs from LLM to Memory
+    embedding_keys = [
+        'embedding_base_url',
+        'embedding_model',
+        'embedding_deployment_name',
+    ]
+    for key in embedding_keys:
+        env_key = f'LLM_{key.upper()}'
+        if env_key in env_or_toml_dict:
+            value = env_or_toml_dict[env_key]
+            if value:
+                setattr(default_memory_config, key, value)
+                logger.opendevin_logger.warning(
+                    f'Deprecated: {env_key} should be set in MEMORY config. '
+                    f'Automatically moved to MEMORY_{key.upper()}.'
+                )
+
 
 def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     """Load the config from the toml file. Supports both styles of config vars.
@@ -535,7 +563,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     core_config = toml_config['core']
 
-    # load llm configs and agent configs
+    # load llm configs, agent configs, and memory configs
     for key, value in toml_config.items():
         if isinstance(value, dict):
             try:
@@ -571,6 +599,22 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif key is not None and key.lower() == 'memory':
+                    logger.opendevin_logger.info(
+                        'Attempt to load default memory config from config toml'
+                    )
+                    non_dict_fields = {
+                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    }
+                    memory_config = MemoryConfig(**non_dict_fields)
+                    cfg.set_memory_config(memory_config, 'memory')
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            logger.opendevin_logger.info(
+                                f'Attempt to load group {nested_key} from config toml as memory config'
+                            )
+                            memory_config = MemoryConfig(**nested_value)
+                            cfg.set_memory_config(memory_config, nested_key)
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.opendevin_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
@@ -582,6 +626,23 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 )
         else:
             logger.opendevin_logger.warning(f'Unknown key in {toml_file}: "{key}')
+
+    # Compatibility: Move embedding-related configs from LLM to Memory
+    if 'llm' in toml_config:
+        embedding_keys = [
+            'embedding_base_url',
+            'embedding_model',
+            'embedding_deployment_name',
+        ]
+        default_memory_config = cfg.get_memory_config()
+        for key in embedding_keys:
+            if key in toml_config['llm']:
+                value = toml_config['llm'].pop(key)
+                setattr(default_memory_config, key, value)
+                logger.opendevin_logger.warning(
+                    f"Deprecated: '{key}' should be set in [memory] section. "
+                    f'Automatically moved from [llm] to [memory].'
+                )
 
     try:
         # set sandbox config from the toml file
@@ -623,9 +684,17 @@ def finalize_config(cfg: AppConfig):
         parts = cfg.workspace_mount_rewrite.split(':')
         cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    for llm in cfg.llms.values():
-        if llm.embedding_base_url is None:
-            llm.embedding_base_url = llm.base_url
+    for agent_name, agent in cfg.agents.items():
+        memory = cfg.get_memory_config_from_agent(agent_name)
+        llm = cfg.get_llm_config_from_agent(agent_name)
+
+        # Compatibility: If embedding_base_url is not set in memory config, use the one from LLM config
+        if memory.embedding_base_url is None and hasattr(llm, 'embedding_base_url'):
+            memory.embedding_base_url = getattr(llm, 'embedding_base_url')
+            logger.opendevin_logger.warning(
+                f"Deprecated: 'embedding_base_url' should be set in memory config. "
+                f"Automatically copied from LLM config for agent '{agent_name}'."
+            )
 
     if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
         logger.opendevin_logger.warning(
