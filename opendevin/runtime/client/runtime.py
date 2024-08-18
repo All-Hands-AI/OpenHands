@@ -2,6 +2,7 @@ import asyncio
 import os
 import tempfile
 import uuid
+from collections import deque
 from zipfile import ZipFile
 
 import aiohttp
@@ -32,6 +33,37 @@ from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.runtime.utils.runtime_build import build_runtime_image
+
+
+class LogBuffer:
+    def __init__(self, container: docker.models.containers.Container, maxlen=10000):
+        self.log_stream_task = asyncio.create_task(self.stream_logs(container))
+        self.buffer: deque[str] = deque(maxlen=maxlen)
+        self.lock = asyncio.Lock()
+
+    async def append(self, log_line: str):
+        async with self.lock:
+            self.buffer.append(log_line)
+
+    async def get_and_clear(self) -> list[str]:
+        async with self.lock:
+            logs = list(self.buffer)
+            self.buffer.clear()
+            return logs
+
+    async def stream_logs(self, container: docker.models.containers.Container):
+        for line in container.logs(stream=True, follow=True):
+            log_line = line.decode('utf-8').strip()
+            if log_line:
+                await self.append(log_line)
+
+    async def close(self):
+        if self.log_stream_task:
+            self.log_stream_task.cancel()
+            try:
+                await self.log_stream_task
+            except asyncio.CancelledError:
+                pass
 
 
 class EventStreamRuntime(Runtime):
@@ -73,6 +105,9 @@ class EventStreamRuntime(Runtime):
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
         logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
+
+        # Buffer for container logs
+        self.log_buffer: LogBuffer | None = None
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         if self.config.sandbox.od_runtime_extra_deps:
@@ -174,6 +209,7 @@ class EventStreamRuntime(Runtime):
                 environment={'DEBUG': 'true'} if self.config.debug else None,
                 volumes=volumes,
             )
+            self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
             return container
         except Exception as e:
@@ -193,20 +229,24 @@ class EventStreamRuntime(Runtime):
     )
     async def _wait_until_alive(self):
         logger.debug('Getting container logs...')
-        container = self.docker_client.containers.get(self.container_name)
-        # get logs
-        _logs = container.logs(tail=10).decode('utf-8').split('\n')
-        # add indent
-        _logs = '\n'.join([f'    |{log}' for log in _logs])
-        logger.info(
-            '\n'
-            + '-' * 30
-            + 'Container logs (last 10 lines):'
-            + '-' * 30
-            + f'\n{_logs}'
-            + '\n'
-            + '-' * 90
-        )
+
+        # Print and clear the log buffer
+        assert (
+            self.log_buffer is not None
+        ), 'Log buffer is expected to be initialized when container is started'
+        logs = await self.log_buffer.get_and_clear()
+        if logs:
+            formatted_logs = '\n'.join([f'    |{log}' for log in logs])
+            logger.info(
+                '\n'
+                + '-' * 30
+                + 'Container logs:'
+                + '-' * 30
+                + f'\n{formatted_logs}'
+                + '\n'
+                + '-' * 90
+            )
+
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
@@ -221,6 +261,9 @@ class EventStreamRuntime(Runtime):
         return self.config.workspace_mount_path_in_sandbox
 
     async def close(self, close_client: bool = True):
+        if self.log_buffer:
+            await self.log_buffer.close()
+
         if self.session is not None and not self.session.closed:
             await self.session.close()
 
