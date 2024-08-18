@@ -2,7 +2,7 @@
 
 PROCESS_FILEPATH=$1
 if [ -z "$PROCESS_FILEPATH" ]; then
-    echo "Error: PROCESS_FILEPATH is empty. Usage: ./eval_infer.sh <output_file>"
+    echo "Error: PROCESS_FILEPATH is empty. Usage: ./eval_infer.sh <output_file> [instance_id] [dataset_name] [split]"
     exit 1
 fi
 
@@ -14,7 +14,12 @@ fi
 # If instance_id is empty, it means we want to eval on the whole $PROCESS_FILEPATH
 # otherwise, we want to eval on the instance_id
 INSTANCE_ID=$2
+DATASET_NAME=${3:-"princeton-nlp/SWE-bench_Lite"}
+SPLIT=${4:-"test"}
+
 echo "INSTANCE_ID: $INSTANCE_ID"
+echo "DATASET_NAME: $DATASET_NAME"
+echo "SPLIT: $SPLIT"
 
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
@@ -79,8 +84,8 @@ if [ -z "$INSTANCE_ID" ]; then
     # change `--dataset_name` and `--split` to alter dataset
 
     poetry run python -m swebench.harness.run_evaluation \
-        --dataset_name "princeton-nlp/SWE-bench_Lite" \
-        --split "test" \
+        --dataset_name "$DATASET_NAME" \
+        --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 1800 \
         --cache_level instance \
@@ -125,8 +130,8 @@ if [ -z "$INSTANCE_ID" ]; then
 else
     echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
     poetry run python -m swebench.harness.run_evaluation \
-        --dataset_name "princeton-nlp/SWE-bench_Lite" \
-        --split "test" \
+        --dataset_name "$DATASET_NAME" \
+        --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 1800 \
         --instance_ids $INSTANCE_ID \
