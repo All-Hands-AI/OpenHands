@@ -30,7 +30,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 from opendevin.utils.prompt import PromptManager
 
-
 class CodeActAgent(Agent):
     VERSION = '1.9'
     """
@@ -59,7 +58,6 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     action_parser = CodeActResponseParser()
 
