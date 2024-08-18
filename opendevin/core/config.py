@@ -214,16 +214,21 @@ class MemoryConfig(BaseConfig):
     @classmethod
     def load_from_toml(cls, toml_config: dict) -> dict[str, 'MemoryConfig']:
         memory_configs = {}
+        default_config = cls()
 
-        # Load default Memory config
-        if 'memory' in toml_config:
+        # Load default [memory] section if it exists
+        if 'memory' in toml_config and isinstance(toml_config['memory'], dict):
             default_config = cls(**toml_config['memory'])
             memory_configs['memory'] = default_config
 
-        # Load custom Memory configs
+        # Load custom Memory configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('memory', {}).items():
             if isinstance(value, dict):
-                memory_configs[key] = cls(**value)
+                # Create a new config, starting with default values
+                custom_config = cls(**default_config.__dict__)
+                # Update with custom values
+                custom_config.__dict__.update(value)
+                memory_configs[key] = custom_config
 
         return memory_configs
 
@@ -235,7 +240,8 @@ class AgentConfig(BaseConfig):
     Attributes:
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
-        llm_config: The name of the llm config to use. If specified, this will override global llm config.
+        llm_config: The name of the llm config to use or an actual LLMConfig object. If specified, this will override global llm config.
+        memory_config: The name of the memory config to use or an actual MemoryConfig object. If specified, this will override global memory config.
     """
 
     memory_enabled: bool = False
@@ -261,29 +267,42 @@ class AgentConfig(BaseConfig):
     def load_from_env(cls, env_dict: dict[str, str]) -> 'AgentConfig':
         config = cls()
         for f in fields(cls):
-            if f.name == 'memory_config':
-                continue  # Skip memory_config, it's handled separately
+            if f.name in ['llm_config', 'memory_config']:
+                continue  # These are handled separately
             env_var_name = f'AGENT_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
                     setattr(config, f.name, cls._cast_value(f.type, value))
-        config.memory_config = MemoryConfig.load_from_env(env_dict)
+
+        # Handle llm_config and memory_config separately
+        if 'AGENT_LLM_CONFIG' in env_dict:
+            config.llm_config = env_dict['AGENT_LLM_CONFIG']
+        if 'AGENT_MEMORY_CONFIG' in env_dict:
+            config.memory_config = env_dict['AGENT_MEMORY_CONFIG']
+
         return config
 
     @classmethod
     def load_from_toml(cls, toml_config: dict) -> dict[str, 'AgentConfig']:
         agent_configs = {}
+        default_config = cls()
 
-        # Load default Agent config
-        if 'agent' in toml_config:
+        # Load default [agent] section if it exists
+        if 'agent' in toml_config and isinstance(toml_config['agent'], dict):
             default_config = cls(**toml_config['agent'])
-            agent_configs['agent'] = default_config
 
-        # Load custom Agent configs
+        # Always ensure there's a default 'agent' config
+        agent_configs['agent'] = default_config
+
+        # Load custom Agent configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('agent', {}).items():
-            if isinstance(value, dict):
-                agent_configs[key] = cls(**value)
+            if isinstance(value, dict) and key != 'agent':
+                # Create a new config, starting with default values
+                custom_config = cls(**default_config.__dict__)
+                # Update with custom values
+                custom_config.__dict__.update(value)
+                agent_configs[key] = custom_config
 
         return agent_configs
 
@@ -545,7 +564,11 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
     def load_from_toml(cls, toml_config: dict) -> 'AppConfig':
         config = cls()
 
-        # Load main AppConfig fields
+        # First, load the old-style config (env-style)
+        if 'core' not in toml_config:
+            config = cls.load_from_env(toml_config)
+
+        # Then, load and override with the new-style config
         if 'core' in toml_config:
             for key, value in toml_config['core'].items():
                 if hasattr(config, key):
@@ -555,30 +578,18 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
                         f'Unknown key in core config: "{key}"'
                     )
 
-        # Load sub-configs
+        # Load and override other configs
         config.llms.update(LLMConfig.load_from_toml(toml_config))
         config.agents.update(AgentConfig.load_from_toml(toml_config))
         config.memories.update(MemoryConfig.load_from_toml(toml_config))
         config.sandbox = SandboxConfig.load_from_toml(toml_config)
         config.security = SecurityConfig.load_from_toml(toml_config)
-        embedding_keys = [
-            'embedding_base_url',
-            'embedding_model',
-            'embedding_deployment_name',
-        ]
-        default_memory_config = config.get_memory_config()
-        default_llm_config = config.get_llm_config()
-        for key in embedding_keys:
-            env_key = f'LLM_{key.upper()}'
-            if env_key in toml_config.get('llm', {}):
-                value = toml_config['llm'][key]
-                setattr(default_memory_config, key, value)
-                if hasattr(default_llm_config, key):
-                    delattr(default_llm_config, key)
-                logger.opendevin_logger.warning(
-                    f'Deprecated: {env_key} should be set in MEMORY config. '
-                    f'Automatically moved to MEMORY_{key.upper()}.'
-                )
+
+        # Log warnings for unknown keys
+        for key in toml_config:
+            if key not in ['core', 'llm', 'agent', 'memory', 'sandbox', 'security']:
+                logger.opendevin_logger.warning(f'Unknown key in config: "{key}"')
+
         return config
 
     def __str__(self):
@@ -699,27 +710,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     # load default memory config from env
     default_memory_config = cfg.get_memory_config()
     set_attr_from_env(default_memory_config, 'MEMORY_')
-
-    # Compatibility: Move embedding-related configs from LLM to Memory
-    embedding_keys = [
-        'embedding_base_url',
-        'embedding_model',
-        'embedding_deployment_name',
-    ]
-    default_memory_config = cfg.get_memory_config()
-    default_llm_config = cfg.get_llm_config()
-    for key in embedding_keys:
-        env_key = f'LLM_{key.upper()}'
-        if env_key in env_or_toml_dict:
-            value = env_or_toml_dict[env_key]
-            if value:
-                setattr(default_memory_config, key, value)
-                if hasattr(default_llm_config, key):
-                    delattr(default_llm_config, key)
-                logger.opendevin_logger.warning(
-                    f'Deprecated: {env_key} should be set in MEMORY config. '
-                    f'Automatically moved to MEMORY_{key.upper()}.'
-                )
 
 
 def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
