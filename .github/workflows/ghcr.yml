@@ -127,9 +127,9 @@ jobs:
       - name: Set up test matrix
         id: set-matrix
         run: |
-          matrix=$(cat /tmp/last-tag-* | jq -s '.')
+          matrix=$(cat /tmp/last-tag-* | jq -c -s '.')
           echo "test_matrix=$matrix" >> $GITHUB_OUTPUT
-          echo "test_matrix=$matrix"
+          echo "Generated test_matrix: $matrix"
 
   # Run unit tests with the EventStream and Server runtime Docker images
   test_runtime:
