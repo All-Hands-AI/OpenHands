@@ -22,7 +22,6 @@ from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 
 USE_NAV = (
     os.environ.get('USE_NAV', 'true') == 'true'
@@ -94,7 +93,6 @@ class BrowsingAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = []
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = BrowsingResponseParser()
 
     def __init__(
