@@ -1,12 +1,15 @@
 import dataclasses
+from abc import ABCMeta
+
 from opendevin.core import logger
 
-class Singleton(type):
+
+class SingletonABCMeta(ABCMeta):
     _instances: dict = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super().__call__(*args, **kwargs)
         else:
             # allow updates, just update existing instance
             # perhaps not the most orthodox way to do it, though it simplifies client code
@@ -16,7 +19,9 @@ class Singleton(type):
                 if hasattr(instance, key):
                     setattr(instance, key, value)
                 else:
-                    logger.opendevin_logger.warning(f'Unknown key for {cls.__name__}: "{key}"')
+                    logger.opendevin_logger.warning(
+                        f'Unknown key for {cls.__name__}: "{key}"'
+                    )
         return cls._instances[cls]
 
     @classmethod

@@ -3,6 +3,7 @@ import os
 import pathlib
 import platform
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
@@ -12,7 +13,7 @@ import toml
 from dotenv import load_dotenv
 
 from opendevin.core import logger
-from opendevin.core.utils import Singleton
+from opendevin.core.utils import SingletonABCMeta
 
 load_dotenv()
 
@@ -23,7 +24,48 @@ _MAX_ITERATIONS = 100
 
 
 @dataclass
-class MemoryConfig:
+class BaseConfig(ABC):
+    @classmethod
+    @abstractmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'BaseConfig':
+        pass
+
+    @classmethod
+    @abstractmethod
+    def load_from_toml(cls, toml_config: dict) -> Any:
+        pass
+
+    def defaults_to_dict(self) -> dict:
+        result = {}
+        for f in fields(self):
+            result[f.name] = get_field_info(f)
+        return result
+
+    @staticmethod
+    def _cast_value(field_type: type, value: str) -> Any:
+        if field_type is bool:
+            return str(value).lower() in ['true', '1']
+        if get_origin(field_type) is UnionType:
+            non_none_type = next(
+                (t for t in get_args(field_type) if t is not type(None)), None
+            )
+            return non_none_type(value) if non_none_type else value
+        return field_type(value)
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+        return f"{self.__class__.__name__}({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
+
+
+@dataclass
+class MemoryConfig(BaseConfig):
     """Configuration for the memory and embeddings.
 
     Attributes:
@@ -42,22 +84,15 @@ class MemoryConfig:
     base_url: str | None = None
     api_version: str | None = None
 
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            result[f.name] = get_field_info(f)
-        return result
-
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'MemoryConfig':
         config = cls()
-        for field in fields(cls):
-            env_var_name = f"MEMORY_{field.name.upper()}"
+        for f in fields(cls):
+            env_var_name = f'MEMORY_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, field.name, cls._cast_value(field.type, value))
+                    setattr(config, f.name, cls._cast_value(f.type, value))
         return config
 
     @classmethod
@@ -76,13 +111,9 @@ class MemoryConfig:
 
         return memory_configs
 
-    @staticmethod
-    def _cast_value(field_type: type, value: str) -> Any:
-        # Same as LLMConfig._cast_value
-
 
 @dataclass
-class LLMConfig:
+class LLMConfig(BaseConfig):
     """Configuration for the LLM model.
 
     Attributes:
@@ -132,53 +163,17 @@ class LLMConfig:
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
     drop_params: bool | None = None
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            result[f.name] = get_field_info(f)
-        return result
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            if attr_name in LLM_SENSITIVE_FIELDS:
-                attr_value = '******' if attr_value else None
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"LLMConfig({', '.join(attr_str)})"
-
-    def __repr__(self):
-        return self.__str__()
-
-    def to_safe_dict(self):
-        """Return a dict with the sensitive fields replaced with ******."""
-        ret = self.__dict__.copy()
-        for k, v in ret.items():
-            if k in LLM_SENSITIVE_FIELDS:
-                ret[k] = '******' if v else None
-        return ret
-
-    def set_missing_attributes(self):
-        """Set any missing attributes to their default values."""
-        for field_name, field_obj in self.__dataclass_fields__.items():
-            if not hasattr(self, field_name):
-                setattr(self, field_name, field_obj.default)
+    memory_summarization_fraction: float = 0.75
 
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'LLMConfig':
         config = cls()
-        for field in fields(cls):
-            env_var_name = f"LLM_{field.name.upper()}"
+        for f in fields(cls):
+            env_var_name = f'LLM_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, field.name, cls._cast_value(field.type, value))
+                    setattr(config, f.name, cls._cast_value(f.type, value))
         return config
 
     @classmethod
@@ -197,18 +192,39 @@ class LLMConfig:
 
         return llm_configs
 
-    @staticmethod
-    def _cast_value(field_type: type, value: str) -> Any:
-        if field_type is bool:
-            return str(value).lower() in ['true', '1']
-        if get_origin(field_type) is UnionType:
-            non_none_type = next((t for t in get_args(field_type) if t is not type(None)), None)
-            return non_none_type(value) if non_none_type else value
-        return field_type(value)
+    def to_safe_dict(self):
+        """Return a dict with the sensitive fields replaced with ******."""
+        ret = self.__dict__.copy()
+        for k, v in ret.items():
+            if k in LLM_SENSITIVE_FIELDS:
+                ret[k] = '******' if v else None
+        return ret
+
+    def set_missing_attributes(self):
+        """Set any missing attributes to their default values."""
+        for field_name, field_obj in self.__dataclass_fields__.items():
+            if not hasattr(self, field_name):
+                setattr(self, field_name, field_obj.default)
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in LLM_SENSITIVE_FIELDS:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"LLMConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
-class AgentConfig:
+class AgentConfig(BaseConfig):
     """Configuration for the agent.
 
     Attributes:
@@ -221,26 +237,19 @@ class AgentConfig:
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | None = None
-    memory_config: str | None = None
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            result[f.name] = get_field_info(f)
-        return result
+    memory_config: MemoryConfig = field(default_factory=MemoryConfig)
 
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'AgentConfig':
         config = cls()
-        for field in fields(cls):
-            if field.name == 'memory_config':
+        for f in fields(cls):
+            if f.name == 'memory_config':
                 continue  # Skip memory_config, it's handled separately
-            env_var_name = f"AGENT_{field.name.upper()}"
+            env_var_name = f'AGENT_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, field.name, cls._cast_value(field.type, value))
+                    setattr(config, f.name, cls._cast_value(f.type, value))
         config.memory_config = MemoryConfig.load_from_env(env_dict)
         return config
 
@@ -260,13 +269,9 @@ class AgentConfig:
 
         return agent_configs
 
-    @staticmethod
-    def _cast_value(field_type: type, value: str) -> Any:
-        # Same as LLMConfig._cast_value
-
 
 @dataclass
-class SecurityConfig(metaclass=Singleton):
+class SecurityConfig(BaseConfig, metaclass=SingletonABCMeta):
     """Configuration for security related functionalities.
 
     Attributes:
@@ -277,35 +282,15 @@ class SecurityConfig(metaclass=Singleton):
     confirmation_mode: bool = False
     security_analyzer: str | None = None
 
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        dict = {}
-        for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"SecurityConfig({', '.join(attr_str)})"
-
-    def __repr__(self):
-        return self.__str__()
-
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'SecurityConfig':
         config = cls()
-        for field in fields(cls):
-            env_var_name = f"SECURITY_{field.name.upper()}"
+        for f in fields(cls):
+            env_var_name = f'SECURITY_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, field.name, cls._cast_value(field.type, value))
+                    setattr(config, f.name, cls._cast_value(f.type, value))
         return config
 
     @classmethod
@@ -314,13 +299,9 @@ class SecurityConfig(metaclass=Singleton):
             return cls(**toml_config['security'])
         return cls()
 
-    @staticmethod
-    def _cast_value(field_type: type, value: str) -> Any:
-        # Same as LLMConfig._cast_value
-
 
 @dataclass
-class SandboxConfig(metaclass=Singleton):
+class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
     """Configuration for the sandbox.
 
     Attributes:
@@ -357,35 +338,15 @@ class SandboxConfig(metaclass=Singleton):
     od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
 
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        dict = {}
-        for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"SandboxConfig({', '.join(attr_str)})"
-
-    def __repr__(self):
-        return self.__str__()
-
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'SandboxConfig':
         config = cls()
-        for field in fields(cls):
-            env_var_name = f"SANDBOX_{field.name.upper()}"
+        for f in fields(cls):
+            env_var_name = f'SANDBOX_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, field.name, cls._cast_value(field.type, value))
+                    setattr(config, f.name, cls._cast_value(f.type, value))
         return config
 
     @classmethod
@@ -394,17 +355,13 @@ class SandboxConfig(metaclass=Singleton):
             return cls(**toml_config['sandbox'])
         return cls()
 
-    @staticmethod
-    def _cast_value(field_type: type, value: str) -> Any:
-        # Same as LLMConfig._cast_value
-
 
 class UndefinedString(str, Enum):
     UNDEFINED = 'UNDEFINED'
 
 
 @dataclass
-class AppConfig(metaclass=Singleton):
+class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
     """Configuration for the app.
 
     Attributes:
@@ -528,52 +485,19 @@ class AppConfig(metaclass=Singleton):
         """Post-initialization hook, called when the instance is created with only default values."""
         AppConfig.defaults_dict = self.defaults_to_dict()
 
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            field_value = getattr(self, f.name)
-
-            # dataclasses compute their defaults themselves
-            if is_dataclass(type(field_value)):
-                result[f.name] = field_value.defaults_to_dict()
-            else:
-                result[f.name] = get_field_info(f)
-        return result
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            if attr_name in [
-                'e2b_api_key',
-                'github_token',
-                'jwt_secret',
-            ]:
-                attr_value = '******' if attr_value else None
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"AppConfig({', '.join(attr_str)}"
-
-    def __repr__(self):
-        return self.__str__()
-
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'AppConfig':
         config = cls()
 
         # Load main AppConfig fields
-        for field in fields(cls):
-            if field.name in ['llms', 'agents', 'memories', 'sandbox', 'security']:
+        for f in fields(cls):
+            if f.name in ['llms', 'agents', 'memories', 'sandbox', 'security']:
                 continue  # These are handled separately
-            env_var_name = field.name.upper()
+            env_var_name = f.name.upper()
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, field.name, cls._cast_value(field.type, value))
+                    setattr(config, f.name, cls._cast_value(f.type, value))
 
         # Load sub-configs
         config.llms['llm'] = LLMConfig.load_from_env(env_dict)
@@ -594,7 +518,9 @@ class AppConfig(metaclass=Singleton):
                 if hasattr(config, key):
                     setattr(config, key, value)
                 else:
-                    logger.opendevin_logger.warning(f'Unknown key in core config: "{key}"')
+                    logger.opendevin_logger.warning(
+                        f'Unknown key in core config: "{key}"'
+                    )
 
         # Load sub-configs
         config.llms.update(LLMConfig.load_from_toml(toml_config))
@@ -602,25 +528,45 @@ class AppConfig(metaclass=Singleton):
         config.memories.update(MemoryConfig.load_from_toml(toml_config))
         config.sandbox = SandboxConfig.load_from_toml(toml_config)
         config.security = SecurityConfig.load_from_toml(toml_config)
-
-        # Compatibility: Move embedding-related configs from LLM to Memory
-        if 'llm' in toml_config:
-            embedding_keys = ['embedding_base_url', 'embedding_model', 'embedding_deployment_name']
-            default_memory_config = config.get_memory_config()
-            for key in embedding_keys:
-                if key in toml_config['llm']:
-                    value = toml_config['llm'].pop(key)
-                    setattr(default_memory_config, key, value)
-                    logger.opendevin_logger.warning(
-                        f"Deprecated: '{key}' should be set in [memory] section. "
-                        f"Automatically moved from [llm] to [memory]."
-                    )
-
+        embedding_keys = [
+            'embedding_base_url',
+            'embedding_model',
+            'embedding_deployment_name',
+        ]
+        default_memory_config = config.get_memory_config()
+        default_llm_config = config.get_llm_config()
+        for key in embedding_keys:
+            env_key = f'LLM_{key.upper()}'
+            if env_key in toml_config.get('llm', {}):
+                value = toml_config['llm'][key]
+                setattr(default_memory_config, key, value)
+                if hasattr(default_llm_config, key):
+                    delattr(default_llm_config, key)
+                logger.opendevin_logger.warning(
+                    f'Deprecated: {env_key} should be set in MEMORY config. '
+                    f'Automatically moved to MEMORY_{key.upper()}.'
+                )
         return config
 
-    @staticmethod
-    def _cast_value(field_type: type, value: str) -> Any:
-        # Same as LLMConfig._cast_value
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in [
+                'e2b_api_key',
+                'github_token',
+                'jwt_secret',
+            ]:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"AppConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def get_field_info(f):
@@ -722,7 +668,11 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(default_memory_config, 'MEMORY_')
 
     # Compatibility: Move embedding-related configs from LLM to Memory
-    embedding_keys = ['embedding_base_url', 'embedding_model', 'embedding_deployment_name']
+    embedding_keys = [
+        'embedding_base_url',
+        'embedding_model',
+        'embedding_deployment_name',
+    ]
     default_memory_config = cfg.get_memory_config()
     default_llm_config = cfg.get_llm_config()
     for key in embedding_keys:
@@ -734,8 +684,8 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                 if hasattr(default_llm_config, key):
                     delattr(default_llm_config, key)
                 logger.opendevin_logger.warning(
-                    f"Deprecated: {env_key} should be set in MEMORY config. "
-                    f"Automatically moved to MEMORY_{key.upper()}."
+                    f'Deprecated: {env_key} should be set in MEMORY config. '
+                    f'Automatically moved to MEMORY_{key.upper()}.'
                 )
 
 
@@ -756,8 +706,8 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     new_config = AppConfig.load_from_toml(toml_config)
 
     # Update the existing cfg with the new values
-    for field in fields(AppConfig):
-        setattr(cfg, field.name, getattr(new_config, field.name))
+    for f in fields(AppConfig):
+        setattr(cfg, f.name, getattr(new_config, f.name))
 
 
 def finalize_config(cfg: AppConfig):
