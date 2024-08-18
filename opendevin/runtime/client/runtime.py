@@ -1,6 +1,7 @@
 import asyncio
 import os
 import tempfile
+import threading
 import uuid
 from collections import deque
 from zipfile import ZipFile
@@ -37,7 +38,7 @@ from opendevin.runtime.utils.runtime_build import build_runtime_image
 
 class LogBuffer:
     """
-    Asynchronous buffer for Docker container logs.
+    Synchronous buffer for Docker container logs.
 
     This class provides a thread-safe way to collect, store, and retrieve logs
     from a Docker container. It uses a deque with a maximum length to store log
@@ -46,51 +47,49 @@ class LogBuffer:
 
     def __init__(self, container: docker.models.containers.Container, maxlen=10000):
         self.buffer: deque[str] = deque(maxlen=maxlen)
-        self.lock = asyncio.Lock()
+        self.lock = threading.Lock()
         self.log_generator = container.logs(stream=True, follow=True)
-        self.log_stream_task = asyncio.create_task(self.stream_logs())
+        self.log_stream_thread = threading.Thread(target=self.stream_logs)
+        self.log_stream_thread.daemon = True
+        self.log_stream_thread.start()
+        self._stop_event = threading.Event()
 
-    async def append(self, log_line: str):
-        async with self.lock:
+    def append(self, log_line: str):
+        with self.lock:
             self.buffer.append(log_line)
 
-    async def get_and_clear(self) -> list[str]:
-        async with self.lock:
+    def get_and_clear(self) -> list[str]:
+        with self.lock:
             logs = list(self.buffer)
             self.buffer.clear()
             return logs
 
-    async def stream_logs(self):
+    def stream_logs(self):
         """
-        Asynchronously stream logs from the Docker container.
+        Stream logs from the Docker container in a separate thread.
 
-        This method uses asyncio.to_thread to handle the potentially blocking
+        This method runs in its own thread to handle the blocking
         operation of reading log lines from the Docker SDK's synchronous generator.
-
-        asyncio.to_thread is used because:
-        1. The Docker SDK's logs() method returns a blocking generator.
-        2. Reading each log line can potentially block the event loop.
-        3. Using a separate thread allows the event loop to remain responsive.
-        4. It bridges the gap between the synchronous Docker SDK and our async design.
         """
         try:
-            while True:
-                log_line = await asyncio.to_thread(next, self.log_generator)
+            for log_line in self.log_generator:
+                if self._stop_event.is_set():
+                    break
                 if log_line:
-                    await self.append(log_line.decode('utf-8').rstrip())
-                await asyncio.sleep(0.1)
-        except StopIteration:
-            pass
+                    self.append(log_line.decode('utf-8').rstrip())
         except Exception as e:
             logger.error(f'Error in stream_logs: {e}')
 
-    async def close(self):
-        if self.log_stream_task:
-            self.log_stream_task.cancel()
-            try:
-                await self.log_stream_task
-            except asyncio.CancelledError:
-                pass
+    def __del__(self):
+        if self.log_stream_thread.is_alive():
+            logger.warn(
+                "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown."
+            )
+            self.close(timeout=5)
+
+    def close(self, timeout: float = 10.0):
+        self._stop_event.set()
+        self.log_stream_thread.join(timeout)
 
 
 class EventStreamRuntime(Runtime):
@@ -261,7 +260,7 @@ class EventStreamRuntime(Runtime):
         assert (
             self.log_buffer is not None
         ), 'Log buffer is expected to be initialized when container is started'
-        logs = await self.log_buffer.get_and_clear()
+        logs = self.log_buffer.get_and_clear()
         if logs:
             formatted_logs = '\n'.join([f'    |{log}' for log in logs])
             logger.info(
@@ -289,7 +288,7 @@ class EventStreamRuntime(Runtime):
 
     async def close(self, close_client: bool = True):
         if self.log_buffer:
-            await self.log_buffer.close()
+            self.log_buffer.close()
 
         if self.session is not None and not self.session.closed:
             await self.session.close()
