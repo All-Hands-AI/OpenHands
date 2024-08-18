@@ -205,7 +205,7 @@ ten actions--more happened before that.
   {
     "source": "agent",
     "observation": "run",
-    "content": "hello\r\n\r\nopendevin@docker-desktop:/workspace $ ",
+    "content": "hello\r\n\r\n[Python Interpreter: /usr/local/bin/python]\nopendevin@docker-desktop:/workspace $ ",
     "extras": {
       "command_id": -1,
       "command": "bash hello.sh",
