@@ -32,7 +32,6 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 
@@ -94,7 +93,6 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
