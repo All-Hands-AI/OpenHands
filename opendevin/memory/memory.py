@@ -8,7 +8,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core.config import LLMConfig
+from opendevin.core.config import MemoryConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 
@@ -66,7 +66,7 @@ if LLAMA_INDEX_AVAILABLE:
         """Loader for embedding model initialization."""
 
         @staticmethod
-        def get_embedding_model(strategy: str, llm_config: LLMConfig):
+        def get_embedding_model(strategy: str, memory_config: MemoryConfig):
             supported_ollama_embed_models = [
                 'llama2',
                 'mxbai-embed-large',
@@ -79,7 +79,7 @@ if LLAMA_INDEX_AVAILABLE:
 
                 return OllamaEmbedding(
                     model_name=strategy,
-                    base_url=llm_config.embedding_base_url,
+                    base_url=memory_config.embedding_base_url,
                     ollama_additional_kwargs={'mirostat': 0},
                 )
             elif strategy == 'openai':
@@ -87,17 +87,17 @@ if LLAMA_INDEX_AVAILABLE:
 
                 return OpenAIEmbedding(
                     model='text-embedding-ada-002',
-                    api_key=llm_config.api_key,
+                    api_key=memory_config.api_key,
                 )
             elif strategy == 'azureopenai':
                 from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 
                 return AzureOpenAIEmbedding(
                     model='text-embedding-ada-002',
-                    deployment_name=llm_config.embedding_deployment_name,
-                    api_key=llm_config.api_key,
-                    azure_endpoint=llm_config.base_url,
-                    api_version=llm_config.api_version,
+                    deployment_name=memory_config.embedding_deployment_name,
+                    api_key=memory_config.api_key,
+                    azure_endpoint=memory_config.base_url,
+                    api_version=memory_config.api_version,
                 )
             elif (strategy is not None) and (strategy.lower() == 'none'):
                 # TODO: this works but is not elegant enough. The incentive is when
@@ -113,7 +113,7 @@ if LLAMA_INDEX_AVAILABLE:
 class LongTermMemory:
     """Handles storing information for the agent to access later, using chromadb."""
 
-    def __init__(self, llm_config: LLMConfig, memory_max_threads: int = 1):
+    def __init__(self, memory_config: MemoryConfig, memory_max_threads: int = 1):
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
         if not LLAMA_INDEX_AVAILABLE:
             raise ImportError(
@@ -124,9 +124,9 @@ class LongTermMemory:
         db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
-        embedding_strategy = llm_config.embedding_model
+        embedding_strategy = memory_config.embedding_model
         embed_model = EmbeddingsLoader.get_embedding_model(
-            embedding_strategy, llm_config
+            embedding_strategy, memory_config
         )
         self.index = VectorStoreIndex.from_vector_store(vector_store, embed_model)
         self.sema = threading.Semaphore(value=memory_max_threads)

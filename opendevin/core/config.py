@@ -23,6 +23,34 @@ _MAX_ITERATIONS = 100
 
 
 @dataclass
+class MemoryConfig:
+    """Configuration for the memory and embeddings.
+
+    Attributes:
+        embedding_model: The embedding model to use.
+        embedding_base_url: The base URL for the embedding API.
+        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
+        api_key: The API key to use for embeddings.
+        base_url: The base URL for the API. This is necessary for local embeddings or Azure.
+        api_version: The version of the API.
+    """
+
+    embedding_model: str = 'local'
+    embedding_base_url: str | None = None
+    embedding_deployment_name: str | None = None
+    api_key: str | None = None
+    base_url: str | None = None
+    api_version: str | None = None
+
+    def defaults_to_dict(self) -> dict:
+        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
+        result = {}
+        for f in fields(self):
+            result[f.name] = get_field_info(f)
+        return result
+
+
+@dataclass
 class LLMConfig:
     """Configuration for the LLM model.
 
@@ -31,9 +59,6 @@ class LLMConfig:
         api_key: The API key to use.
         base_url: The base URL for the API. This is necessary for local LLMs. It is also used for Azure embeddings.
         api_version: The version of the API.
-        embedding_model: The embedding model to use.
-        embedding_base_url: The base URL for the embedding API.
-        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
         aws_access_key_id: The AWS access key ID.
         aws_secret_access_key: The AWS secret access key.
         aws_region_name: The AWS region name.
@@ -58,9 +83,6 @@ class LLMConfig:
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
-    embedding_model: str = 'local'
-    embedding_base_url: str | None = None
-    embedding_deployment_name: str | None = None
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
@@ -126,11 +148,13 @@ class AgentConfig:
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
+        memory_config: The name of the memory config to use. If specified, this will override global memory config.
     """
 
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | None = None
+    memory_config: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -242,6 +266,7 @@ class AppConfig(metaclass=Singleton):
 
     Attributes:
         llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
+        memories: A dictionary of name -> Memory configuration. Default config is under 'memory' key.
         agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
         default_agent: The name of the default agent to use.
         sandbox: The sandbox configuration.
@@ -266,6 +291,7 @@ class AppConfig(metaclass=Singleton):
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
+    memories: dict[str, MemoryConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
     default_agent: str = _DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
@@ -332,6 +358,21 @@ class AppConfig(metaclass=Singleton):
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
+
+    def get_memory_config(self, name='memory') -> MemoryConfig:
+        """Memory is the name for default config"""
+        if name in self.memories:
+            return self.memories[name]
+        if name is not None and name != 'memory':
+            logger.opendevin_logger.warning(
+                f'memory config group {name} not found, using default config'
+            )
+        if 'memory' not in self.memories:
+            self.memories['memory'] = MemoryConfig()
+        return self.memories['memory']
+
+    def set_memory_config(self, value: MemoryConfig, name='memory'):
+        self.memories[name] = value
 
     def __post_init__(self):
         """Post-initialization hook, called when the instance is created with only default values."""
