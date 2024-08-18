@@ -37,9 +37,10 @@ from opendevin.runtime.utils.runtime_build import build_runtime_image
 
 class LogBuffer:
     def __init__(self, container: docker.models.containers.Container, maxlen=10000):
-        self.log_stream_task = asyncio.create_task(self.stream_logs(container))
         self.buffer: deque[str] = deque(maxlen=maxlen)
         self.lock = asyncio.Lock()
+        self.log_generator = container.logs(stream=True, follow=True)
+        self.log_stream_task = asyncio.create_task(self.stream_logs())
 
     async def append(self, log_line: str):
         async with self.lock:
@@ -51,11 +52,29 @@ class LogBuffer:
             self.buffer.clear()
             return logs
 
-    async def stream_logs(self, container: docker.models.containers.Container):
-        for line in container.logs(stream=True, follow=True):
-            log_line = line.decode('utf-8').rstrip()
-            if log_line:
-                await self.append(log_line)
+    async def stream_logs(self):
+        """
+        Asynchronously stream logs from the Docker container.
+
+        This method uses asyncio.to_thread to handle the potentially blocking
+        operation of reading log lines from the Docker SDK's synchronous generator.
+
+        asyncio.to_thread is used because:
+        1. The Docker SDK's logs() method returns a blocking generator.
+        2. Reading each log line can potentially block the event loop.
+        3. Using a separate thread allows the event loop to remain responsive.
+        4. It bridges the gap between the synchronous Docker SDK and our async design.
+        """
+        try:
+            while True:
+                log_line = await asyncio.to_thread(next, self.log_generator)
+                if log_line:
+                    await self.append(log_line.decode('utf-8').rstrip())
+                await asyncio.sleep(0.1)
+        except StopIteration:
+            pass
+        except Exception as e:
+            logger.error(f'Error in stream_logs: {e}')
 
     async def close(self):
         if self.log_stream_task:
