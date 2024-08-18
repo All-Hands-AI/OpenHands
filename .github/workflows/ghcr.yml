@@ -103,8 +103,8 @@ jobs:
         id: capture-last-tag
         run: |
           last_tag=$(cat tags.txt | awk '{print $NF}')
-          echo "${{ matrix.image }}_${{ matrix.base_image }}_${{ matrix.platform }}=$last_tag" >> /tmp/last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}.txt
-          echo "Saved last tag (${{ matrix.image }}_${{ matrix.base_image }}_${{ matrix.platform }}=$last_tag) to /tmp/last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}.txt"
+          echo '{"image": "${{ matrix.image }}", "base_image": "${{ matrix.base_image }}", "platform": "${{ matrix.platform }}", "last_tag": "'$last_tag'"}' >> /tmp/last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}.txt
+          echo "Saved last tag JSON to /tmp/last-tag-${{ matrix.image }}-${{ steps.build.outputs.last_tag }}-${{ matrix.platform }}.txt"
       - name: Upload last tag as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -127,7 +127,7 @@ jobs:
       - name: Set up test matrix
         id: set-matrix
         run: |
-          matrix=$(cat /tmp/last-tag-* | jq -R -s -c 'split("\n")[:-1] | map(select(length > 0)) | map(split("=")) | map({"image": .[0] | split("_")[0], "base_image": .[0] | split("_")[1], "platform": .[0] | split("_")[2], "last_tag": .[1]})')
+          matrix=$(cat /tmp/last-tag-* | jq -s '.')
           echo "test_matrix=$matrix" >> $GITHUB_OUTPUT
           echo "test_matrix=$matrix"
 
