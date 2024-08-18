@@ -53,7 +53,7 @@ class LogBuffer:
 
     async def stream_logs(self, container: docker.models.containers.Container):
         for line in container.logs(stream=True, follow=True):
-            log_line = line.decode('utf-8').strip()
+            log_line = line.decode('utf-8')
             if log_line:
                 await self.append(log_line)
 
