@@ -1,8 +1,4 @@
----
-sidebar_position: 6
----
-
-# 💿 How to Create and Use a Custom Docker Sandbox
+# Create and Use a Custom Docker Sandbox
 
 The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https://github.com/OpenDevin/OpenDevin/blob/main/containers/sandbox/Dockerfile).
 

@@ -1,8 +1,4 @@
----
-sidebar_position: 6
----
-
-# 💿 How to use OpenDevin in OpenShift/K8S
+# Use OpenDevin in OpenShift/K8S
 
 There are different ways and scenarios that you can do, we're just mentioning one example here:
 1. Create a PV "as a cluster admin" to map workspace_base data and docker directory to the pod through the worker node.
