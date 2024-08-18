@@ -36,6 +36,14 @@ from opendevin.runtime.utils.runtime_build import build_runtime_image
 
 
 class LogBuffer:
+    """
+    Asynchronous buffer for Docker container logs.
+
+    This class provides a thread-safe way to collect, store, and retrieve logs
+    from a Docker container. It uses a deque with a maximum length to store log
+    lines and provides methods for appending, retrieving, and clearing logs.
+    """
+
     def __init__(self, container: docker.models.containers.Container, maxlen=10000):
         self.buffer: deque[str] = deque(maxlen=maxlen)
         self.lock = asyncio.Lock()
