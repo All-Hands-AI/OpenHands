@@ -5,7 +5,7 @@ from typing import Type
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State, TrafficControlState
 from opendevin.controller.stuck import StuckDetector
-from opendevin.core.config import LLMConfig
+from opendevin.core.config import AgentConfig, LLMConfig
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
@@ -52,6 +52,7 @@ class AgentController:
     state: State
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
+    agent_configs: dict[str, AgentConfig]
     agent_task: asyncio.Task | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
@@ -64,6 +65,7 @@ class AgentController:
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
         sid: str = 'default',
         confirmation_mode: bool = False,
         initial_state: State | None = None,
@@ -78,6 +80,8 @@ class AgentController:
             max_iterations: The maximum number of iterations the agent can run.
             max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             agent_to_llm_config: A dictionary mapping agent names to LLM configurations in the case that
+                we delegate to a different agent.
+            agent_configs: A dictionary mapping agent names to agent configurations in the case that
                 we delegate to a different agent.
             sid: The session ID of the agent.
             initial_state: The initial state of the controller.
@@ -103,6 +107,7 @@ class AgentController:
         )
         self.max_budget_per_task = max_budget_per_task
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
+        self.agent_configs = agent_configs if agent_configs else {}
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -111,6 +116,7 @@ class AgentController:
             self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
+        """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         if self.agent_task is not None:
             self.agent_task.cancel()
         await self.set_agent_state_to(AgentState.STOPPED)
@@ -125,7 +131,7 @@ class AgentController:
         self.state.local_metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
-        """This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+        """Reports an error to the user and sends the exception to the LLM next step, in the hope it can self-correct.
 
         This method should be called for a particular type of errors, which have:
         - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
@@ -137,6 +143,8 @@ class AgentController:
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def _start_step_loop(self):
+        """The main loop for the agent's step-by-step execution."""
+
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
         while True:
             try:
@@ -157,6 +165,11 @@ class AgentController:
             await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
+        """Callback from the event stream. Notifies the controller of incoming events.
+
+        Args:
+            event (Event): The incoming event to process.
+        """
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
@@ -207,10 +220,17 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
+        """Resets the agent's task."""
+
         self.almost_stuck = 0
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
+        """Updates the agent's state and handles side effects. Can emit events to the event stream.
+
+        Args:
+            new_state (AgentState): The new state to set for the agent.
+        """
         logger.debug(
             f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
@@ -251,14 +271,34 @@ class AgentController:
             self.state.resume_state = None
 
     def get_agent_state(self):
-        """Returns the current state of the agent task."""
+        """Returns the current state of the agent.
+
+        Returns:
+            AgentState: The current state of the agent.
+        """
         return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
+        """Start a delegate agent to handle a subtask.
+
+        OpenDevin is a multi-agentic system. A `task` is a conversation between
+        OpenDevin (the whole system) and the user, which might involve one or more inputs
+        from the user. It starts with an initial input (typically a task statement) from
+        the user, and ends with either an `AgentFinishAction` initiated by the agent, a
+        stop initiated by the user, or an error.
+
+        A `subtask` is a conversation between an agent and the user, or another agent. If a `task`
+        is conducted by a single agent, then it's also a `subtask`. Otherwise, a `task` consists of
+        multiple `subtasks`, each executed by one agent.
+
+        Args:
+            action (AgentDelegateAction): The action containing information about the delegate agent to start.
+        """
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
+        agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config)
-        delegate_agent = agent_cls(llm=llm)
+        delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
             local_iteration=0,
@@ -278,12 +318,15 @@ class AgentController:
             max_iterations=self.state.max_iterations,
             max_budget_per_task=self.max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
+            agent_configs=self.agent_configs,
             initial_state=state,
             is_delegate=True,
+            headless_mode=self.headless_mode,
         )
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self) -> None:
+        """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             await asyncio.sleep(1)
             return
@@ -430,6 +473,11 @@ class AgentController:
             await self.set_agent_state_to(AgentState.ERROR)
 
     def get_state(self):
+        """Returns the current running state object.
+
+        Returns:
+            State: The current state object.
+        """
         return self.state
 
     def set_initial_state(
@@ -438,6 +486,13 @@ class AgentController:
         max_iterations: int,
         confirmation_mode: bool = False,
     ):
+        """Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
+
+        Args:
+            state: The state to initialize with, or None to create a new state.
+            max_iterations: The maximum number of iterations allowed for the task.
+            confirmation_mode: Whether to enable confirmation mode.
+        """
         # state from the previous session, state from a parent agent, or a new state
         # note that this is called twice when restoring a previous session, first with state=None
         if state is None:
@@ -470,6 +525,11 @@ class AgentController:
             self.state.history.end_id = self.state.end_id
 
     def _is_stuck(self):
+        """Checks if the agent or its delegate is stuck in a loop.
+
+        Returns:
+            bool: True if the agent is stuck, False otherwise.
+        """
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():
             return True

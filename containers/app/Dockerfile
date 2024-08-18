@@ -81,8 +81,6 @@ RUN python opendevin/core/download.py # No-op to download assets
 # opendevin:opendevin -> opendevin:app
 RUN find /app \! -group app -exec chgrp app {} +
 
-RUN chown -R opendevin:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script
-
 COPY --chown=opendevin:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
 COPY --chown=opendevin:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 

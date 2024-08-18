@@ -23,6 +23,7 @@
   <a href="https://github.com/OpenDevin/OpenDevin/stargazers"><img src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge&color=blue" alt="Stargazers"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/issues"><img src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge&color=blue" alt="Issues"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE"><img src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge&color=blue" alt="MIT License"></a>
+  <a href="https://github.com/OpenDevin/OpenDevin/blob/main/CREDITS.md"><img src="https://img.shields.io/github/credits/opendevin/opendevin?style=for-the-badge&color=blue" alt="Credits"></a>
   <br/>
   <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
@@ -136,6 +137,12 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 [issues-url]: https://github.com/OpenDevin/OpenDevin/issues
 [license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
 [license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE
+
+## 🙏 Acknowledgements
+
+OpenDevin is built by a large number of contributors, and every contribution is greatly appreciated! We also build upon other open source projects, and we are deeply thankful for their work.
+
+For a list of open source projects and licenses used in OpenDevin, please see our [CREDITS.md](./CREDITS.md) file.
 
 ## 📚 Cite
 

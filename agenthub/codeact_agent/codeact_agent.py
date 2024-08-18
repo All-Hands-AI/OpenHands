@@ -8,6 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.events.action import (
     Action,
@@ -31,7 +32,6 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 
@@ -93,7 +93,6 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
@@ -103,13 +102,14 @@ class CodeActAgent(Agent):
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
         self.reset()
 
     def action_to_str(self, action: Action) -> str:

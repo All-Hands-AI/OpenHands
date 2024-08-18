@@ -538,3 +538,27 @@ embedding_model="openai"
     llm_config = get_llm_config_arg('gpt3', temp_toml_file)
     assert llm_config.model == 'gpt-3.5-turbo'
     assert llm_config.embedding_model == 'openai'
+
+
+def test_get_agent_configs(default_config, temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 100
+max_budget_per_task = 4.0
+
+[agent.CodeActAgent]
+memory_enabled = true
+
+[agent.PlannerAgent]
+memory_max_threads = 10
+"""
+
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    load_from_toml(default_config, temp_toml_file)
+
+    codeact_config = default_config.get_agent_configs().get('CodeActAgent')
+    assert codeact_config.memory_enabled is True
+    planner_config = default_config.get_agent_configs().get('PlannerAgent')
+    assert planner_config.memory_max_threads == 10

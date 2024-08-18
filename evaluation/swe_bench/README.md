@@ -103,9 +103,20 @@ NOTE, you should have already pulled the instance-level OR env-level docker imag
 Then you can run the following:
 
 ```bash
-# ./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL
+# ./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split]
 # For example:
 ./evaluation/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
+```
+
+The script now accepts optional arguments:
+- `instance_id`: Specify a single instance to evaluate (optional)
+- `dataset_name`: The name of the dataset to use (default: `"princeton-nlp/SWE-bench_Lite"`)
+- `split`: The split of the dataset to use (default: `"test"`)
+
+For example, to evaluate a specific instance with a custom dataset and split:
+
+```bash
+./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 princeton-nlp/SWE-bench test
 ```
 
 > You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.

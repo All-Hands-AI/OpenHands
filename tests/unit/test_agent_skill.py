@@ -7,7 +7,7 @@ from unittest.mock import patch
 import docx
 import pytest
 
-from opendevin.runtime.plugins.agent_skills.agentskills import (
+from opendevin.runtime.plugins.agent_skills.file_ops.file_ops import (
     MSG_FILE_UPDATED,
     WINDOW,
     _print_window,
@@ -18,14 +18,16 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     goto_line,
     insert_content_at_line,
     open_file,
-    parse_docx,
-    parse_latex,
-    parse_pdf,
-    parse_pptx,
     scroll_down,
     scroll_up,
     search_dir,
     search_file,
+)
+from opendevin.runtime.plugins.agent_skills.file_reader.file_readers import (
+    parse_docx,
+    parse_latex,
+    parse_pdf,
+    parse_pptx,
 )
 
 
