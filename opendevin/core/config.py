@@ -477,68 +477,152 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
     defaults_dict: ClassVar[dict] = {}
 
-    def get_llm_config(self, name='llm') -> LLMConfig:
-        """Llm is the name for default config (for backward compatibility prior to 0.8)"""
+    def get_llm_config(self, name: str = 'llm') -> LLMConfig:
+        """Get the LLM configuration for the specified name.
+
+        Args:
+            name: The name of the LLM configuration to retrieve. Defaults to 'llm'.
+
+        Returns:
+            The LLMConfig object for the specified name.
+
+        Note:
+            If the specified name is not found, it falls back to the default 'llm' config.
+            If 'llm' config is not found, it creates a new default LLMConfig.
+        """
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
             logger.opendevin_logger.warning(
-                f'llm config group {name} not found, using default config'
+                f'LLM config group {name} not found, using default config'
             )
         if 'llm' not in self.llms:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
 
-    def set_llm_config(self, value: LLMConfig, name='llm'):
+    def set_llm_config(self, value: LLMConfig, name: str = 'llm') -> None:
+        """Set the LLM configuration for the specified name.
+
+        Args:
+            value: The LLMConfig object to set.
+            name: The name of the LLM configuration to set. Defaults to 'llm'.
+        """
         self.llms[name] = value
 
-    def get_agent_config(self, name='agent') -> AgentConfig:
-        """Agent is the name for default config (for backward compability prior to 0.8)"""
+    def get_agent_config(self, name: str = 'agent') -> AgentConfig:
+        """Get the agent configuration for the specified name.
+
+        Args:
+            name: The name of the agent configuration to retrieve. Defaults to 'agent'.
+
+        Returns:
+            The AgentConfig object for the specified name.
+
+        Note:
+            If the specified name is not found, it falls back to the default 'agent' config.
+            If 'agent' config is not found, it creates a new default AgentConfig.
+        """
         if name in self.agents:
             return self.agents[name]
         if 'agent' not in self.agents:
             self.agents['agent'] = AgentConfig()
         return self.agents['agent']
 
-    def set_agent_config(self, value: AgentConfig, name='agent'):
+    def set_agent_config(self, value: AgentConfig, name: str = 'agent') -> None:
+        """Set the agent configuration for the specified name.
+
+        Args:
+            value: The AgentConfig object to set.
+            name: The name of the agent configuration to set. Defaults to 'agent'.
+        """
         self.agents[name] = value
 
-    def get_memory_config(self, name='memory') -> MemoryConfig:
-        """Memory is the name for default config"""
+    def get_memory_config(self, name: str = 'memory') -> MemoryConfig:
+        """Get the memory configuration for the specified name.
+
+        Args:
+            name: The name of the memory configuration to retrieve. Defaults to 'memory'.
+
+        Returns:
+            The MemoryConfig object for the specified name.
+
+        Note:
+            If the specified name is not found, it falls back to the default 'memory' config.
+            If 'memory' config is not found, it creates a new default MemoryConfig.
+        """
         if name in self.memories:
             return self.memories[name]
         if name is not None and name != 'memory':
             logger.opendevin_logger.warning(
-                f'memory config group {name} not found, using default config'
+                f'Memory config group {name} not found, using default config'
             )
         if 'memory' not in self.memories:
             self.memories['memory'] = MemoryConfig()
         return self.memories['memory']
 
-    def set_memory_config(self, value: MemoryConfig, name='memory'):
+    def set_memory_config(self, value: MemoryConfig, name: str = 'memory') -> None:
+        """Set the memory configuration for the specified name.
+
+        Args:
+            value: The MemoryConfig object to set.
+            name: The name of the memory configuration to set. Defaults to 'memory'.
+        """
         self.memories[name] = value
 
-    def get_memory_config_from_agent(self, name='agent') -> MemoryConfig:
+    def get_memory_config_from_agent(self, name: str = 'agent') -> MemoryConfig:
+        """Get the memory configuration associated with the specified agent.
+
+        Args:
+            name: The name of the agent configuration to use. Defaults to 'agent'.
+
+        Returns:
+            The MemoryConfig object associated with the specified agent.
+        """
         agent_config: AgentConfig = self.get_agent_config(name)
         return agent_config.get_memory_config(self)
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
-        """Get a map of agent names to llm configs."""
+        """Get a map of agent names to their associated LLM configurations.
+
+        Returns:
+            A dictionary mapping agent names to their LLMConfig objects.
+        """
         return {name: agent.get_llm_config(self) for name, agent in self.agents.items()}
 
-    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
+    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
+        """Get the LLM configuration associated with the specified agent.
+
+        Args:
+            name: The name of the agent configuration to use. Defaults to 'agent'.
+
+        Returns:
+            The LLMConfig object associated with the specified agent.
+        """
         agent_config: AgentConfig = self.get_agent_config(name)
         return agent_config.get_llm_config(self)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
+        """Get all agent configurations.
+
+        Returns:
+            A dictionary of all agent configurations.
+        """
         return self.agents
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post-initialization hook, called when the instance is created with only default values."""
         AppConfig.defaults_dict = self.defaults_to_dict()
 
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'AppConfig':
+        """Load configuration from environment variables.
+
+        Args:
+            env_dict: A dictionary of environment variables.
+
+        Returns:
+            An AppConfig object with values loaded from environment variables.
+        """
         config = cls()
 
         # Load main AppConfig fields
@@ -549,7 +633,10 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
-                    setattr(config, f.name, cls._cast_value(f.type, value))
+                    try:
+                        setattr(config, f.name, cls._cast_value(f.type, value))
+                    except ValueError as e:
+                        logger.opendevin_logger.warning(f'Error setting {f.name}: {e}')
 
         # Load sub-configs
         config.llms['llm'] = LLMConfig.load_from_env(env_dict)
@@ -562,6 +649,14 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
     @classmethod
     def load_from_toml(cls, toml_config: dict) -> 'AppConfig':
+        """Load configuration from a TOML dictionary.
+
+        Args:
+            toml_config: A dictionary containing TOML configuration.
+
+        Returns:
+            An AppConfig object with values loaded from the TOML configuration.
+        """
         config = cls()
 
         # First, load the old-style config (env-style)
@@ -572,7 +667,10 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
         if 'core' in toml_config:
             for key, value in toml_config['core'].items():
                 if hasattr(config, key):
-                    setattr(config, key, value)
+                    try:
+                        setattr(config, key, value)
+                    except ValueError as e:
+                        logger.opendevin_logger.warning(f'Error setting {key}: {e}')
                 else:
                     logger.opendevin_logger.warning(
                         f'Unknown key in core config: "{key}"'
@@ -592,7 +690,8 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
         return config
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return a string representation of the AppConfig object."""
         attr_str = []
         for f in fields(self):
             attr_name = f.name
@@ -609,17 +708,19 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
         return f"AppConfig({', '.join(attr_str)})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a string representation of the AppConfig object."""
         return self.__str__()
 
 
-def get_field_info(f):
+def get_field_info(f: Any) -> dict[str, Any]:
     """Extract information about a dataclass field: type, optional, and default.
 
     Args:
         f: The field to extract information from.
 
-    Returns: A dict with the field's type, whether it's optional, and its default value.
+    Returns:
+        A dict with the field's type, whether it's optional, and its default value.
     """
     field_type = f.type
     optional = False
@@ -647,13 +748,17 @@ def get_field_info(f):
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
-def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
+def load_from_env(
+    cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]
+) -> None:
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
 
     Args:
         cfg: The AppConfig object to set attributes on.
         env_or_toml_dict: The environment variables or a config.toml dict.
+
+    Note:
+        This function is compatible with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
     """
 
     def get_optional_type(union_type: UnionType) -> Any:
@@ -662,7 +767,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: Any, prefix=''):
+    def set_attr_from_env(sub_config: Any, prefix: str = '') -> None:
         """Set attributes of a config dataclass based on environment variables."""
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name
@@ -712,11 +817,21 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(default_memory_config, 'MEMORY_')
 
 
-def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
+    """Load configuration from a TOML file.
+
+    Args:
+        cfg: The AppConfig object to update with TOML configuration.
+        toml_file: The path to the TOML configuration file. Defaults to 'config.toml'.
+
+    Note:
+        If the TOML file is not found or cannot be parsed, appropriate warnings will be logged.
+    """
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError:
+        logger.opendevin_logger.warning(f'Config file not found: {toml_file}')
         return
     except toml.TomlDecodeError as e:
         logger.opendevin_logger.warning(
@@ -733,15 +848,21 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         setattr(cfg, f.name, getattr(new_config, f.name))
 
 
-def finalize_config(cfg: AppConfig):
-    """More tweaks to the config after it's been loaded."""
-    # Set workspace_mount_path if not set by the user
+def finalize_config(cfg: AppConfig) -> None:
+    """Perform final tweaks to the configuration after it's been loaded.
+
+    Args:
+        cfg: The AppConfig object to finalize.
+
+    Note:
+        This function sets default values for certain configurations if they haven't been set,
+        ensures directory existence, and performs compatibility checks.
+    """
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
         cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
     cfg.workspace_base = os.path.abspath(cfg.workspace_base)
 
-    if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
-        # TODO why do we need to check if workspace_mount_path is None?
+    if cfg.workspace_mount_rewrite:
         base = cfg.workspace_base or os.getcwd()
         parts = cfg.workspace_mount_rewrite.split(':')
         cfg.workspace_mount_path = base.replace(parts[0], parts[1])
@@ -773,7 +894,7 @@ def finalize_config(cfg: AppConfig):
 def get_llm_config_arg(
     llm_config_arg: str, toml_file: str = 'config.toml'
 ) -> LLMConfig | None:
-    """Get a group of llm settings from the config file.
+    """Get a group of LLM settings from the config file.
 
     A group in config.toml can look like this:
 
@@ -792,10 +913,11 @@ def get_llm_config_arg(
     Note that the group must be under "llm" group, or in other words, the group name must start with "llm.".
 
     Args:
-        llm_config_arg: The group of llm settings to get from the config.toml file.
+        llm_config_arg: The group of LLM settings to get from the config.toml file.
+        toml_file: The path to the TOML configuration file. Defaults to 'config.toml'.
 
     Returns:
-        LLMConfig: The LLMConfig object with the settings from the config file.
+        LLMConfig: The LLMConfig object with the settings from the config file, or None if not found or an error occurred.
     """
     # keep only the name, just in case
     llm_config_arg = llm_config_arg.strip('[]')
@@ -922,7 +1044,16 @@ def load_app_config(set_logging_levels: bool = True) -> AppConfig:
     """Load the configuration from the config.toml file and environment variables.
 
     Args:
-        set_logger_levels: Whether to set the global variables for logging levels.
+        set_logging_levels: Whether to set the global variables for logging levels.
+
+    Returns:
+        An AppConfig object with the loaded configuration.
+
+    Note:
+        The configuration is loaded in the following order of precedence:
+        1. Environment variables
+        2. TOML configuration file
+        3. Default values initialized in the dataclasses
     """
     config = AppConfig()
     load_from_toml(config)
