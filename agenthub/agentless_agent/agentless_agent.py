@@ -13,18 +13,18 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.llm.llm import LLM
-from OpenDevin.opendevin.runtime.plugins.agent_skills.agentskills import (
+from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
+    JupyterRequirement,
+    PluginRequirement,
+)
+from opendevin.runtime.plugins.agent_skills.agentless.agentless import (
     AGENTLESS_FINAL_PATCH_OBSERVATION,
     AGENTLESS_FOUND_FILE_OBSERVATION,
     AGENTLESS_LINE_LOCATIONS_OBSERVATION,
     AGENTLESS_RELATED_LOCATIONS_OBSERVATION,
     AGENTLESS_REPAIR_OBSERVATION,
     extract_observation,
-)
-from opendevin.runtime.plugins import (
-    AgentSkillsRequirement,
-    JupyterRequirement,
-    PluginRequirement,
 )
 
 ActionObs = TypedDict(
