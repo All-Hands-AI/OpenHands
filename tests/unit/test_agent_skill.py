@@ -1569,7 +1569,7 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             '(this is the end of the file)\n'
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
             'ERRORS:\n'
-            f'{file_path}:1\n'
+            f"{file_path}:1:1: Syntax error at node type 'ERROR'\n"
             '[This is how your edit would have looked if applied]\n'
             '-------------------------------------------------\n'
             '(this is the beginning of the file)\n'

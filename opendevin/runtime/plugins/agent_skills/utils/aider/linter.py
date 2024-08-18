@@ -26,6 +26,8 @@ class Linter:
 
         self.languages = dict(
             python=self.py_lint,
+            javascript=self.ts_lint,
+            typescript=self.ts_lint,
         )
         self.all_lint_cmd = None
 
@@ -109,6 +111,26 @@ class Linter:
             error = basic_lint(rel_fname, code)
         return error
 
+    # TODO: fix this with a correct config file, that does NOT rely on frontend!
+    def eslint_lint(self, rel_fname, code):
+        eslint_config_path = f'{self.root}/frontend/.eslintrc'
+        eslint = f'npx eslint --config {eslint_config_path}'  # must be npx!
+        try:
+            eslint_res = self.run_cmd(eslint, rel_fname, code)
+            if eslint_res and 'Oops' in eslint_res.text:
+                eslint_res = None
+        except FileNotFoundError:
+            eslint_res = None
+        return eslint_res
+
+    def ts_lint(self, fname, rel_fname, code):
+        # TODO: only use basic_lint for now, until we have a config file
+        # error = self.eslint_lint(fname, code)
+        # if not error:
+        #     error = basic_lint(rel_fname, code)
+        error = basic_lint(rel_fname, code)
+        return error
+
 
 def lint_python_compile(fname, code):
     try:
@@ -137,10 +159,7 @@ def lint_python_compile(fname, code):
 
 
 def basic_lint(fname, code):
-    """
-    Use tree-sitter to look for syntax errors, display them with tree context.
-    """
-
+    """Use tree-sitter to look for syntax errors, display them with tree context."""
     lang = filename_to_lang(fname)
     if not lang:
         return
@@ -151,11 +170,17 @@ def basic_lint(fname, code):
     errors = traverse_tree(tree.root_node)
     if not errors:
         return
-    return LintResult(text=f'{fname}:{errors[0]}', lines=errors)
+
+    error_messages = [
+        f'{fname}:{line}:{col}: {error_details}' for line, col, error_details in errors
+    ]
+    return LintResult(
+        text='\n'.join(error_messages), lines=[line for line, _, _ in errors]
+    )
 
 
 def extract_error_line_from(lint_error):
-    # moved from opendevin.agentskills#_lint_file
+    first_error_line = 0
     for line in lint_error.splitlines(True):
         if line.strip():
             # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
@@ -191,12 +216,15 @@ def tree_context(fname, code, line_nums):
     return output
 
 
-# Traverse the tree to find errors
 def traverse_tree(node):
+    """Traverses the tree to find errors"""
     errors = []
     if node.type == 'ERROR' or node.is_missing:
         line_no = node.start_point[0] + 1
-        errors.append(line_no)
+        col_no = node.start_point[1] + 1
+        error_type = 'Missing node' if node.is_missing else 'Syntax error'
+        error_details = f"{error_type} at node type '{node.type}'"
+        errors.append((line_no, col_no, error_details))
 
     for child in node.children:
         errors += traverse_tree(child)
@@ -205,9 +233,7 @@ def traverse_tree(node):
 
 
 def main():
-    """
-    Main function to parse files provided as command line arguments.
-    """
+    """Main function to parse files provided as command line arguments."""
     if len(sys.argv) < 2:
         print('Usage: python linter.py <file1> <file2> ...')
         sys.exit(1)
