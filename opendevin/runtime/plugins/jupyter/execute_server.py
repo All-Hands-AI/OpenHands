@@ -68,11 +68,9 @@ class JupyterKernel:
     async def initialize(self):
         await self.execute(r'%colors nocolor')
         # pre-defined tools
-        self.tools_to_run = [
+        self.tools_to_run: list[str] = [
             # TODO: You can add code for your pre-defined tools here
         ]
-        if os.path.exists('/opendevin/plugins/agent_skills/agentskills.py'):
-            self.tools_to_run.append('from agentskills import *')
         for tool in self.tools_to_run:
             res = await self.execute(tool)
             logging.info(f'Tool [{tool}] initialized:\n{res}')

@@ -1,12 +1,9 @@
 # Workflow that runs lint on the frontend and python code
 name: Lint
 
-# Only run one workflow of the same group at a time.
-# There can be at most one running and one pending job in a concurrency group at any time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
+# The jobs in this workflow are required, so they must run at all times
+# Always run on "main"
+# Always run on PRs
 on:
   push:
     branches:

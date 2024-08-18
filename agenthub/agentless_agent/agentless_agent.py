@@ -1,16 +1,8 @@
 from typing import TypedDict
 
-from OpenDevin.opendevin.runtime.plugins.agent_skills.agentskills import (
-    AGENTLESS_FINAL_PATCH_OBSERVATION,
-    AGENTLESS_FOUND_FILE_OBSERVATION,
-    AGENTLESS_LINE_LOCATIONS_OBSERVATION,
-    AGENTLESS_RELATED_LOCATIONS_OBSERVATION,
-    AGENTLESS_REPAIR_OBSERVATION,
-    extract_observation,
-)
-
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
@@ -21,6 +13,14 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.llm.llm import LLM
+from OpenDevin.opendevin.runtime.plugins.agent_skills.agentskills import (
+    AGENTLESS_FINAL_PATCH_OBSERVATION,
+    AGENTLESS_FOUND_FILE_OBSERVATION,
+    AGENTLESS_LINE_LOCATIONS_OBSERVATION,
+    AGENTLESS_RELATED_LOCATIONS_OBSERVATION,
+    AGENTLESS_REPAIR_OBSERVATION,
+    extract_observation,
+)
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -46,8 +46,8 @@ class AgentlessAgent(Agent):
     ]
 
     # action_parser = CodeActResponseParser()
-    def __init__(self, llm: LLM):
-        super().__init__(llm)
+    def __init__(self, llm: LLM, config: AgentConfig):
+        super().__init__(llm, config)
         self.steps: list[ActionObs] = []
         self.reset()
 

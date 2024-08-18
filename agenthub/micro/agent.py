@@ -2,6 +2,7 @@ from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.core.message import ImageContent, Message, TextContent
 from opendevin.core.utils import json
 from opendevin.events.action import Action
@@ -54,8 +55,8 @@ class MicroAgent(Agent):
 
         return json.dumps(processed_history, **kwargs)
 
-    def __init__(self, llm: LLM):
-        super().__init__(llm)
+    def __init__(self, llm: LLM, config: AgentConfig):
+        super().__init__(llm, config)
         if 'name' not in self.agent_definition:
             raise ValueError('Agent definition must contain a name')
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)

@@ -1,7 +1,8 @@
 import asyncio
+import hashlib
 import sys
 import uuid
-from typing import Callable, Type
+from typing import Callable, Protocol, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
@@ -17,12 +18,22 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import MessageAction
+from opendevin.events.action.action import Action
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.storage import get_file_store
+
+
+class FakeUserResponseFunc(Protocol):
+    def __call__(
+        self,
+        state: State,
+        encapsulate_solution: bool = ...,
+        try_parse: Callable[[Action], str] = ...,
+    ) -> str: ...
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -47,9 +58,13 @@ async def create_runtime(
     sid: The session id.
     runtime_tools_config: (will be deprecated) The runtime tools config.
     """
+    # if sid is provided on the command line, use it as the name of the event stream
+    # otherwise generate it on the basis of the configured jwt_secret
+    # we can do this better, this is just so that the sid is retrieved when we want to restore the session
+    session_id = sid or generate_sid(config)
+
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
-    session_id = 'main' + ('_' + sid if sid else str(uuid.uuid4()))
     event_stream = EventStream(session_id, file_store)
 
     # agent class
@@ -72,10 +87,11 @@ async def create_runtime(
 async def run_controller(
     config: AppConfig,
     task_str: str,
+    sid: str | None = None,
     runtime: Runtime | None = None,
     agent: Agent | None = None,
     exit_on_message: bool = False,
-    fake_user_response_fn: Callable[[State | None], str] | None = None,
+    fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
@@ -87,25 +103,32 @@ async def run_controller(
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
-        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
+        fake_user_response_fn: An optional function that receives the current state
+            (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
     """
     # Create the agent
     if agent is None:
         agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+        agent_config = config.get_agent_config(config.default_agent)
+        llm_config = config.get_llm_config_from_agent(config.default_agent)
         agent = agent_cls(
-            llm=LLM(config=config.get_llm_config_from_agent(config.default_agent))
+            llm=LLM(config=llm_config),
+            config=agent_config,
         )
 
+    # make sure the session id is set
+    sid = sid or generate_sid(config)
+
     if runtime is None:
-        runtime = await create_runtime(config)
+        runtime = await create_runtime(config, sid=sid)
 
     event_stream = runtime.event_stream
     # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
         try:
-            logger.info('Restoring agent state from cli session')
+            logger.info(f'Restoring agent state from cli session {event_stream.sid}')
             initial_state = State.restore_from_session(
                 event_stream.sid, event_stream.file_store
             )
@@ -126,7 +149,8 @@ async def run_controller(
     assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
     # Logging
     logger.info(
-        f'Agent Controller Initialized: Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
+        f'Agent Controller Initialized: Running agent {agent.name}, model '
+        f'{agent.llm.config.model}, with task: "{task_str}"'
     )
 
     # start event is a MessageAction with the task, either resumed or new
@@ -134,7 +158,10 @@ async def run_controller(
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
-                content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
+                content=(
+                    "Let's get back on track. If you experienced errors before, do "
+                    'NOT resume your task. Ask me about it.'
+                ),
             ),
             EventSource.USER,
         )
@@ -176,6 +203,15 @@ async def run_controller(
     return state
 
 
+def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
+    """Generate a session id based on the session name and the jwt secret."""
+    session_name = session_name or str(uuid.uuid4())
+    jwt_secret = config.jwt_secret
+
+    hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
+    return f'{session_name}_{hash_str[:16]}'
+
+
 if __name__ == '__main__':
     args = parse_arguments()
 
@@ -204,6 +240,10 @@ if __name__ == '__main__':
     # Set default agent
     config.default_agent = args.agent_cls
 
+    # Set session name
+    session_name = args.name
+    sid = generate_sid(config, session_name)
+
     # if max budget per task is not sent on the command line, use the config value
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
@@ -214,5 +254,6 @@ if __name__ == '__main__':
         run_controller(
             config=config,
             task_str=task_str,
+            sid=sid,
         )
     )

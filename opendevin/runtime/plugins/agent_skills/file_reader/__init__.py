@@ -1,4 +1,7 @@
-from ..utils.modules import import_modules
-from .file_readers import __all__
+from ..utils.dependency import import_functions
+from . import file_readers
 
-import_modules(__name__ + '.file_readers', __all__)
+import_functions(
+    module=file_readers, function_names=file_readers.__all__, target_globals=globals()
+)
+__all__ = file_readers.__all__

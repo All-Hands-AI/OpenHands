@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from opendevin.runtime.plugins.agent_skills.aider import Linter, LintResult
+from opendevin.runtime.plugins.agent_skills.utils.aider import Linter, LintResult
 
 
 @pytest.fixture
@@ -108,7 +108,7 @@ def test_py_lint_fail(linter, temp_file):
 
 
 def test_basic_lint(temp_file):
-    from opendevin.runtime.plugins.agent_skills.aider.linter import basic_lint
+    from opendevin.runtime.plugins.agent_skills.utils.aider.linter import basic_lint
 
     poorly_formatted_code = """
         def foo()
@@ -124,7 +124,7 @@ def test_basic_lint(temp_file):
 
 
 def test_basic_lint_fail_returns_text_and_lines(temp_file):
-    from opendevin.runtime.plugins.agent_skills.aider.linter import basic_lint
+    from opendevin.runtime.plugins.agent_skills.utils.aider.linter import basic_lint
 
     poorly_formatted_code = """
         def foo()
@@ -141,7 +141,9 @@ def test_basic_lint_fail_returns_text_and_lines(temp_file):
 
 
 def test_lint_python_compile(temp_file):
-    from opendevin.runtime.plugins.agent_skills.aider.linter import lint_python_compile
+    from opendevin.runtime.plugins.agent_skills.utils.aider.linter import (
+        lint_python_compile,
+    )
 
     result = lint_python_compile(temp_file, "print('Hello, World!')\n")
 
@@ -149,7 +151,9 @@ def test_lint_python_compile(temp_file):
 
 
 def test_lint_python_compile_fail_returns_text_and_lines(temp_file):
-    from opendevin.runtime.plugins.agent_skills.aider.linter import lint_python_compile
+    from opendevin.runtime.plugins.agent_skills.utils.aider.linter import (
+        lint_python_compile,
+    )
 
     poorly_formatted_code = """
         def foo()
