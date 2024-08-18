@@ -65,54 +65,6 @@ class BaseConfig(ABC):
 
 
 @dataclass
-class MemoryConfig(BaseConfig):
-    """Configuration for the memory and embeddings.
-
-    Attributes:
-        embedding_model: The embedding model to use.
-        embedding_base_url: The base URL for the embedding API.
-        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
-        api_key: The API key to use for embeddings.
-        base_url: The base URL for the API. This is necessary for local embeddings or Azure.
-        api_version: The version of the API.
-    """
-
-    embedding_model: str = 'local'
-    embedding_base_url: str | None = None
-    embedding_deployment_name: str | None = None
-    api_key: str | None = None
-    base_url: str | None = None
-    api_version: str | None = None
-
-    @classmethod
-    def load_from_env(cls, env_dict: dict[str, str]) -> 'MemoryConfig':
-        config = cls()
-        for f in fields(cls):
-            env_var_name = f'MEMORY_{f.name.upper()}'
-            if env_var_name in env_dict:
-                value = env_dict[env_var_name]
-                if value:
-                    setattr(config, f.name, cls._cast_value(f.type, value))
-        return config
-
-    @classmethod
-    def load_from_toml(cls, toml_config: dict) -> dict[str, 'MemoryConfig']:
-        memory_configs = {}
-
-        # Load default Memory config
-        if 'memory' in toml_config:
-            default_config = cls(**toml_config['memory'])
-            memory_configs['memory'] = default_config
-
-        # Load custom Memory configs
-        for key, value in toml_config.get('memory', {}).items():
-            if isinstance(value, dict):
-                memory_configs[key] = cls(**value)
-
-        return memory_configs
-
-
-@dataclass
 class LLMConfig(BaseConfig):
     """Configuration for the LLM model.
 
@@ -179,16 +131,21 @@ class LLMConfig(BaseConfig):
     @classmethod
     def load_from_toml(cls, toml_config: dict) -> dict[str, 'LLMConfig']:
         llm_configs = {}
+        default_config = cls()
 
-        # Load default LLM config
-        if 'llm' in toml_config:
+        # Load default [llm] section if it exists
+        if 'llm' in toml_config and isinstance(toml_config['llm'], dict):
             default_config = cls(**toml_config['llm'])
             llm_configs['llm'] = default_config
 
-        # Load custom LLM configs
+        # Load custom LLM configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('llm', {}).items():
             if isinstance(value, dict):
-                llm_configs[key] = cls(**value)
+                # Create a new config, starting with default values
+                custom_config = cls(**default_config.__dict__)
+                # Update with custom values
+                custom_config.__dict__.update(value)
+                llm_configs[key] = custom_config
 
         return llm_configs
 
@@ -224,6 +181,54 @@ class LLMConfig(BaseConfig):
 
 
 @dataclass
+class MemoryConfig(BaseConfig):
+    """Configuration for the memory and embeddings.
+
+    Attributes:
+        embedding_model: The embedding model to use.
+        embedding_base_url: The base URL for the embedding API.
+        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
+        api_key: The API key to use for embeddings.
+        base_url: The base URL for the API. This is necessary for local embeddings or Azure.
+        api_version: The version of the API.
+    """
+
+    embedding_model: str = 'local'
+    embedding_base_url: str | None = None
+    embedding_deployment_name: str | None = None
+    api_key: str | None = None
+    base_url: str | None = None
+    api_version: str | None = None
+
+    @classmethod
+    def load_from_env(cls, env_dict: dict[str, str]) -> 'MemoryConfig':
+        config = cls()
+        for f in fields(cls):
+            env_var_name = f'MEMORY_{f.name.upper()}'
+            if env_var_name in env_dict:
+                value = env_dict[env_var_name]
+                if value:
+                    setattr(config, f.name, cls._cast_value(f.type, value))
+        return config
+
+    @classmethod
+    def load_from_toml(cls, toml_config: dict) -> dict[str, 'MemoryConfig']:
+        memory_configs = {}
+
+        # Load default Memory config
+        if 'memory' in toml_config:
+            default_config = cls(**toml_config['memory'])
+            memory_configs['memory'] = default_config
+
+        # Load custom Memory configs
+        for key, value in toml_config.get('memory', {}).items():
+            if isinstance(value, dict):
+                memory_configs[key] = cls(**value)
+
+        return memory_configs
+
+
+@dataclass
 class AgentConfig(BaseConfig):
     """Configuration for the agent.
 
@@ -231,13 +236,26 @@ class AgentConfig(BaseConfig):
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
-        memory_config: The name of the memory config to use. If specified, this will override global memory config.
     """
 
     memory_enabled: bool = False
     memory_max_threads: int = 2
-    llm_config: str | None = None
-    memory_config: MemoryConfig = field(default_factory=MemoryConfig)
+    llm_config: str | LLMConfig | None = None
+    memory_config: str | MemoryConfig | None = None
+
+    def get_memory_config(self, app_config: 'AppConfig') -> MemoryConfig:
+        if isinstance(self.memory_config, MemoryConfig):
+            return self.memory_config
+        elif isinstance(self.memory_config, str):
+            return app_config.get_memory_config(self.memory_config)
+        return app_config.get_memory_config()
+
+    def get_llm_config(self, app_config: 'AppConfig') -> LLMConfig:
+        if isinstance(self.llm_config, LLMConfig):
+            return self.llm_config
+        elif isinstance(self.llm_config, str):
+            return app_config.get_llm_config(self.llm_config)
+        return app_config.get_llm_config()
 
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'AgentConfig':
@@ -351,9 +369,27 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
 
     @classmethod
     def load_from_toml(cls, toml_config: dict) -> 'SandboxConfig':
+        sandbox_config = (
+            cls()
+        )  # This will either create a new instance or return the existing one
+
+        # First, migrate old sandbox configs from [core] section
+        if 'core' in toml_config:
+            core_config = toml_config['core']
+            keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
+            for key in keys_to_migrate:
+                new_key = key.replace('sandbox_', '')
+                if hasattr(sandbox_config, new_key):
+                    setattr(sandbox_config, new_key, core_config[key])
+                else:
+                    logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
+
+        # Then, override with new-style [sandbox] section if it exists
         if 'sandbox' in toml_config:
-            return cls(**toml_config['sandbox'])
-        return cls()
+            # Use the singleton's update mechanism
+            cls(**toml_config['sandbox'])
+
+        return sandbox_config
 
 
 class UndefinedString(str, Enum):
@@ -465,18 +501,15 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
     def get_memory_config_from_agent(self, name='agent') -> MemoryConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
-        if agent_config.memory_config:
-            return agent_config.memory_config
-        return self.get_memory_config()
+        return agent_config.get_memory_config(self)
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
         """Get a map of agent names to llm configs."""
-        return {name: self.get_llm_config_from_agent(name) for name in self.agents}
+        return {name: agent.get_llm_config(self) for name, agent in self.agents.items()}
 
     def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
-        llm_config_name = agent_config.llm_config
-        return self.get_llm_config(llm_config_name)
+        return agent_config.get_llm_config(self)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
