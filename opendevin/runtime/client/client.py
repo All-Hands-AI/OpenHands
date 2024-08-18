@@ -479,7 +479,7 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
-        logger.info('Client initialized.')
+        logger.info('Runtime client initialized.')
         yield
         # Clean up & release the resources
         client.close()
