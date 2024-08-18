@@ -1092,3 +1092,16 @@ def most_frequent_string(processed_patches):
         if patch[0] == most_common_normalized_patch:
             return patch[1]
     return ''
+
+
+__all__ = [
+    'agentless_file_localization',
+    'agentless_related_localization',
+    'agentless_line_level_localization',
+    'install_agentless_dependencies',
+    'install_agentless_dependencies_dummy',
+    'agentless_repair',
+    'agentless_repair_multi_context',
+    'agentless_post_process_repair',
+    'apply_git_patch',
+]
