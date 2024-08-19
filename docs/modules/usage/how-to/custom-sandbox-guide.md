@@ -1,6 +1,6 @@
 # Create and Use a Custom Docker Sandbox
 
-The default OpenDevin sandbox comes with a [minimal ubuntu configuration](https://github.com/OpenDevin/OpenDevin/blob/main/containers/sandbox/Dockerfile).
+The default OpenHands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
 
 Your use case may need additional software installed by default.
 
@@ -24,13 +24,13 @@ For a more feature-rich environment, you might consider using pre-built images l
 
 ## Setup
 
-Make sure you are able to run OpenDevin using the [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) first.
+Make sure you are able to run OpenHands using the [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) first.
 
 ## Create Your Docker Image
 
 To create a custom docker image, it must be debian/ubuntu based.
 
-For example, if we want OpenDevin to have access to the `node` binary, we would use the following Dockerfile:
+For example, if we want OpenHands to have access to the `node` binary, we would use the following Dockerfile:
 
 ```dockerfile
 # Start with latest ubuntu image
@@ -53,20 +53,20 @@ docker build -t custom_image .
 
 This will produce a new image called ```custom_image``` that will be available in Docker Engine.
 
-> Note that in the configuration described in this document, OpenDevin will run as user "opendevin" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
+> Note that in the configuration described in this document, OpenHands will run as user "openhands" inside the sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
 >
 > Installing with apt-get above installs node for all users.
 
 ## Specify your sandbox image in config.toml file
 
-OpenDevin configuration occurs via the top-level `config.toml` file.
+OpenHands configuration occurs via the top-level `config.toml` file.
 
-Create a `config.toml` file in the OpenDevin directory and enter these contents:
+Create a `config.toml` file in the OpenHands directory and enter these contents:
 
 ```toml
 [core]
 workspace_base="./workspace"
-run_as_devin=true
+run_as_openhands=true
 sandbox_container_image="custom_image"
 ```
 
@@ -76,7 +76,7 @@ For `sandbox_container_image`, you can specify either:
 2. A pre-existing image from Docker Hub (e.g., `”node:20”` if you want a sandbox with Node.js pre-installed)
 
 ## Run
-Run OpenDevin by running ```make run``` in the top level directory.
+Run OpenHands by running ```make run``` in the top level directory.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.
 
@@ -86,18 +86,18 @@ Congratulations!
 
 ## Technical Explanation
 
-Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/runtime#advanced-how-opendevin-builds-and-maintains-od-runtime-images) for more details.
+Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
 
 ## Troubleshooting / Errors
 
 ### Error: ```useradd: UID 1000 is not unique```
 
-If you see this error in the console output it is because OpenDevin is trying to create the opendevin user in the sandbox with a UID of 1000, however this UID is already being used in the image (for some reason). To fix this change the sandbox_user_id field in the config.toml file to a different value:
+If you see this error in the console output it is because OpenHands is trying to create the openhands user in the sandbox with a UID of 1000, however this UID is already being used in the image (for some reason). To fix this change the sandbox_user_id field in the config.toml file to a different value:
 
 ```toml
 [core]
 workspace_base="./workspace"
-run_as_devin=true
+run_as_openhands=true
 sandbox_container_image="custom_image"
 sandbox_user_id="1001"
 ```
@@ -108,4 +108,4 @@ If you see an error about a port being in use or unavailable, try deleting all r
 
 ## Discuss
 
-For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
+For other issues or questions join the [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) or [Discord](https://discord.gg/ESHStjSjD4) and ask!

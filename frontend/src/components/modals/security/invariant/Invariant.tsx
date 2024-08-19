@@ -125,7 +125,7 @@ function SecurityInvariant(): JSX.Element {
     const data = await request(`/api/security/export-trace`);
     toast.info("Trace exported");
 
-    const filename = `opendevin-trace-${getFormattedDateTime()}.json`;
+    const filename = `openhands-trace-${getFormattedDateTime()}.json`;
     downloadJSON(data, filename);
   }
 
@@ -281,7 +281,7 @@ function SecurityInvariant(): JSX.Element {
           <b>Invariant Analyzer</b>
         </div>
         <p className="text-[0.6rem]">
-          Invariant Analyzer continuously monitors your OpenDevin agent for
+          Invariant Analyzer continuously monitors your OpenHands agent for
           security issues.{" "}
           <a
             className="underline"

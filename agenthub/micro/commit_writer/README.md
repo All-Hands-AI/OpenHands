@@ -4,7 +4,7 @@ CommitWriterAgent can help write git commit message. Example:
 
 ```bash
 WORKSPACE_MOUNT_PATH="`PWD`" \
-  poetry run python opendevin/core/main.py -t "dummy task" -c CommitWriterAgent -d ./
+  poetry run python openhands/core/main.py -t "dummy task" -c CommitWriterAgent -d ./
 ```
 
 This agent is special in the sense that it doesn't need a task. Once called,

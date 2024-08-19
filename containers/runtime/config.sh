@@ -1,5 +1,5 @@
 DOCKER_REGISTRY=ghcr.io
-DOCKER_ORG=opendevin
+DOCKER_ORG=all-hands-ai
 DOCKER_BASE_DIR="./containers/runtime"
 DOCKER_IMAGE=od_runtime
 # These variables will be appended by the runtime_build.py script

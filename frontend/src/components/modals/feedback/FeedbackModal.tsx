@@ -16,7 +16,7 @@ const isEmailValid = (email: string) => {
   return emailRegex.test(email);
 };
 
-const VIEWER_PAGE = "https://www.all-hands.dev/share-opendevin";
+const VIEWER_PAGE = "https://www.all-hands.dev/share-openhands";
 const FEEDBACK_VERSION = "1.0";
 
 interface FeedbackModalProps {

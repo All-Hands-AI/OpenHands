@@ -9,7 +9,7 @@ function CustomFooter() {
       <div className="footer-content">
         <div className="footer-top">
           <div className="footer-title">
-            <Translate id="footer.title">OpenDevin</Translate>
+            <Translate id="footer.title">OpenHands</Translate>
           </div>
           <div className="footer-link">
             <a href="/modules/usage/intro">
@@ -19,20 +19,20 @@ function CustomFooter() {
         </div>
 
         <div className="footer-icons">
-          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw" target="_blank" rel="noopener noreferrer">
+          <a href="https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw" target="_blank" rel="noopener noreferrer">
             <FaSlack />
           </a>
           <a href="https://discord.gg/ESHStjSjD4" target="_blank" rel="noopener noreferrer">
             <FaDiscord />
           </a>
-          <a href="https://github.com/OpenDevin/OpenDevin" target="_blank" rel="noopener noreferrer">
+          <a href="https://github.com/All-Hands-AI/OpenHands" target="_blank" rel="noopener noreferrer">
             <FaGithub />
           </a>
         </div>
         <div className="footer-bottom">
           <p>
             <Translate id="footer.copyright" values={{ year: new Date().getFullYear() }}>
-              {'Copyright © {year} OpenDevin'}
+              {'Copyright © {year} OpenHands'}
             </Translate>
           </p>
         </div>

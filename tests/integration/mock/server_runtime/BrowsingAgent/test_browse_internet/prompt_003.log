@@ -119,7 +119,7 @@ RootWebArea 'The Ultimate Answer', focused
 	[9] paragraph ''
 		StaticText 'Click the button to reveal the answer to life, the universe, and everything.'
 	[10] button 'Click me', clickable, focused
-	StaticText 'The answer is OpenDevin is all you need!'
+	StaticText 'The answer is OpenHands is all you need!'
 
 # Previous Actions
 goto('http://localhost:8000')
