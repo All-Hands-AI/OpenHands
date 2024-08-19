@@ -19,18 +19,18 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import CmdRunAction
-from opendevin.events.observation import CmdOutputObservation, ErrorObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction
+from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.runtime.runtime import Runtime
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -90,7 +90,7 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
+    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/openhands/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
         container_image = 'sweb.eval.x86_64.' + instance['instance_id']
@@ -99,7 +99,7 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
@@ -377,7 +377,7 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to OpenDevin's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
     swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 

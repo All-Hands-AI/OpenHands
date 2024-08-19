@@ -17,7 +17,7 @@ on:
 jobs:
   # Build the documentation website
   build:
-    if: github.repository == 'OpenDevin/OpenDevin'
+    if: github.repository == 'All-Hands-AI/OpenHands'
     name: Build Docusaurus
     runs-on: ubuntu-latest
     steps:
@@ -47,7 +47,7 @@ jobs:
 
   # Deploy the documentation website
   deploy:
-    if: github.ref == 'refs/heads/main' && github.repository == 'OpenDevin/OpenDevin'
+    if: github.ref == 'refs/heads/main' && github.repository == 'All-Hands-AI/OpenHands'
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     # This job only runs on "main" so only run one of these jobs at a time
