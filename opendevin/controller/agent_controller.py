@@ -109,6 +109,7 @@ class AgentController:
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
+        self._initial_max_budget_per_task = max_budget_per_task
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -235,15 +236,17 @@ class AgentController:
             if (
                 self.state.iteration is not None
                 and self.state.max_iterations is not None
+                and self._initial_max_iterations is not None
             ):
                 if self.state.iteration >= self.state.max_iterations:
                     self.state.max_iterations += self._initial_max_iterations
             if (
                 self.state.metrics.accumulated_cost is not None
                 and self.max_budget_per_task is not None
+                and self._initial_max_budget_per_task is not None
             ):
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
-                    self.max_budget_per_task *= 2
+                    self.max_budget_per_task += self._initial_max_budget_per_task
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
