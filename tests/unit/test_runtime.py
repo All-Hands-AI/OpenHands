@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 from pytest import TempPathFactory
 
-from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
+from opendevin.core.config import AppConfig, SandboxConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
@@ -112,7 +112,8 @@ async def _load_runtime(
             browsergym_eval_env=browsergym_eval_env,
         ),
     )
-    load_from_env(config, os.environ)
+    # load from env
+    config.load_from_env(dict(os.environ))
     config.run_as_devin = run_as_devin
     config.sandbox.enable_auto_lint = enable_auto_lint
 

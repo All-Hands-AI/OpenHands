@@ -129,9 +129,14 @@ class LLMConfig(BaseConfig):
         return config
 
     @classmethod
-    def load_from_toml(cls, toml_config: dict) -> dict[str, 'LLMConfig']:
+    def load_from_toml(cls, toml_config: dict | None) -> dict[str, 'LLMConfig']:
         llm_configs = {}
         default_config = cls()
+
+        if toml_config is None:
+            # nothing to read, return default llm
+            llm_configs['llm'] = default_config
+            return llm_configs
 
         # Load default [llm] section if it exists
         llm_section_dict = toml_config.get('llm', {})
@@ -143,7 +148,7 @@ class LLMConfig(BaseConfig):
 
         # Load custom LLM configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('llm', {}).items():
-            if key.startswith('llm.') and isinstance(value, dict):
+            if key != 'llm' and isinstance(value, dict):
                 logger.opendevin_logger.debug(f'Loading custom llm config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
@@ -184,7 +189,7 @@ class MemoryConfig(BaseConfig):
 
     Attributes:
         embedding_model: The embedding model to use.
-        embedding_base_url: The base URL for the embedding API.
+        base_url: The base URL for the embedding API.
         embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
         api_key: The API key to use for embeddings.
         base_url: The base URL for the API. This is necessary for local embeddings or Azure.
@@ -192,10 +197,9 @@ class MemoryConfig(BaseConfig):
     """
 
     embedding_model: str = 'local'
-    embedding_base_url: str | None = None
+    base_url: str | None = None
     embedding_deployment_name: str | None = None
     api_key: str | None = None
-    base_url: str | None = None
     api_version: str | None = None
 
     @classmethod
@@ -210,9 +214,14 @@ class MemoryConfig(BaseConfig):
         return config
 
     @classmethod
-    def load_from_toml(cls, toml_config: dict) -> dict[str, 'MemoryConfig']:
+    def load_from_toml(cls, toml_config: dict | None) -> dict[str, 'MemoryConfig']:
         memory_configs = {}
         default_config = cls()
+
+        if toml_config is None:
+            # nothing to read, return default memory
+            memory_configs['memory'] = default_config
+            return memory_configs
 
         # Load default [memory] section if it exists
         memory_section_dict = toml_config.get('memory', {})
@@ -224,7 +233,7 @@ class MemoryConfig(BaseConfig):
 
         # Load custom memory configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('memory', {}).items():
-            if key.startswith('memory.') and isinstance(value, dict):
+            if key != 'memory' and isinstance(value, dict):
                 logger.opendevin_logger.debug(f'Loading custom memory config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
@@ -280,9 +289,14 @@ class AgentConfig(BaseConfig):
         return config
 
     @classmethod
-    def load_from_toml(cls, toml_config: dict) -> dict[str, 'AgentConfig']:
+    def load_from_toml(cls, toml_config: dict | None) -> dict[str, 'AgentConfig']:
         agent_configs = {}
         default_config = cls()
+
+        if toml_config is None:
+            # nothing to read, return default agent
+            agent_configs['agent'] = default_config
+            return agent_configs
 
         # Load default [agent] section if it exists
         agent_section_dict = toml_config.get('agent', {})
@@ -290,21 +304,19 @@ class AgentConfig(BaseConfig):
             k: v for k, v in agent_section_dict.items() if not isinstance(v, dict)
         }
         default_config = cls(**non_dict_fields)
+
+        # Ensure there is always a default 'agent' config
         agent_configs['agent'] = default_config
 
-        # Load custom Agent configs, falling back to default for unspecified attributes
+        # Load custom Agent configs
         for key, value in toml_config.get('agent', {}).items():
-            if key.startswith('agent.') and isinstance(value, dict):
+            if key != 'agent' and isinstance(value, dict):
                 logger.opendevin_logger.debug(f'Loading custom agent config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
                 custom_config.__dict__.update(value)
                 agent_configs[key] = custom_config
-
-        # Ensure there is always a default 'agent' config
-        if 'agent' not in agent_configs:
-            agent_configs['agent'] = default_config
 
         return agent_configs
 
@@ -333,7 +345,9 @@ class SecurityConfig(BaseConfig, metaclass=SingletonABCMeta):
         return config
 
     @classmethod
-    def load_from_toml(cls, toml_config: dict) -> 'SecurityConfig':
+    def load_from_toml(cls, toml_config: dict | None) -> 'SecurityConfig':
+        if toml_config is None:
+            return cls()
         if 'security' in toml_config:
             return cls(**toml_config['security'])
         return cls()
@@ -389,10 +403,13 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
         return config
 
     @classmethod
-    def load_from_toml(cls, toml_config: dict) -> 'SandboxConfig':
+    def load_from_toml(cls, toml_config: dict | None) -> 'SandboxConfig':
         sandbox_config = (
             cls()
         )  # This will either create a new instance or return the existing one
+
+        if toml_config is None:
+            return sandbox_config
 
         # First, migrate old sandbox configs from [core] section
         if 'core' in toml_config:
@@ -406,7 +423,7 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
                     logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
 
         # Then, override with new-style [sandbox] section if it exists
-        if 'sandbox' in toml_config:
+        if 'sandbox' in toml_config and isinstance(toml_config['sandbox'], dict):
             # Use the singleton's update mechanism
             cls(**toml_config['sandbox'])
 
@@ -650,7 +667,7 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
         return config
 
     @classmethod
-    def load_from_toml(cls, toml_config: dict) -> 'AppConfig':
+    def load_from_toml(cls, toml_config: dict | None) -> 'AppConfig':
         """Load configuration from a TOML dictionary.
 
         Args:
@@ -660,6 +677,9 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
             An AppConfig object with values loaded from the TOML configuration.
         """
         config = cls()
+
+        if toml_config is None:
+            return config
 
         # First, load the old-style config (env-style)
         if 'core' not in toml_config:
@@ -680,7 +700,9 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
         # Load and override other configs
         config.llms.update(LLMConfig.load_from_toml(toml_config))
+        print('Agents first: ', config.agents)
         config.agents.update(AgentConfig.load_from_toml(toml_config))
+        print('Agents second: ', config.agents)
         config.memories.update(MemoryConfig.load_from_toml(toml_config))
         config.sandbox = SandboxConfig.load_from_toml(toml_config)
         config.security = SecurityConfig.load_from_toml(toml_config)
@@ -750,11 +772,10 @@ def get_field_info(f: Any) -> dict[str, Any]:
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
-def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
+def load_dict_from_toml(toml_file: str = 'config.toml') -> dict[str, Any] | None:
     """Load configuration from a TOML file.
 
     Args:
-        cfg: The AppConfig object to update with TOML configuration.
         toml_file: The path to the TOML configuration file. Defaults to 'config.toml'.
 
     Note:
@@ -762,23 +783,18 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     """
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
-            toml_config = toml.load(toml_contents)
+            toml_dict = toml.load(toml_contents)
     except FileNotFoundError:
         logger.opendevin_logger.warning(f'Config file not found: {toml_file}')
-        return
+        return None
     except toml.TomlDecodeError as e:
         logger.opendevin_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
-        return
+        return None
 
-    # Use the new load_from_toml method of AppConfig
-    new_config = AppConfig.load_from_toml(toml_config)
-
-    # Update the existing cfg with the new values
-    for f in fields(AppConfig):
-        setattr(cfg, f.name, getattr(new_config, f.name))
+    return toml_dict
 
 
 def finalize_config(cfg: AppConfig) -> None:
@@ -800,17 +816,31 @@ def finalize_config(cfg: AppConfig) -> None:
         parts = cfg.workspace_mount_rewrite.split(':')
         cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    for agent_name, agent in cfg.agents.items():
-        memory = cfg.get_memory_config_from_agent(agent_name)
-        llm = cfg.get_llm_config_from_agent(agent_name)
-
-        # Compatibility: If embedding_base_url is not set in memory config, use the one from LLM config
-        if memory.embedding_base_url is None and hasattr(llm, 'embedding_base_url'):
-            memory.embedding_base_url = getattr(llm, 'embedding_base_url')
-            logger.opendevin_logger.warning(
-                f"Deprecated: 'embedding_base_url' should be set in memory config. "
-                f"Automatically copied from LLM config for agent '{agent_name}'."
-            )
+    default_llm = cfg.get_llm_config()
+    default_memory = cfg.get_memory_config()
+    # Compatibility: If base_url is not set in memory config, use the one from LLM config
+    if hasattr(default_llm, 'embedding_base_url'):
+        default_memory.base_url = getattr(default_llm, 'embedding_base_url')
+        logger.opendevin_logger.warning(
+            "Deprecated: 'embedding_base_url' should be set in memory config as base_url. "
+            'Loaded from default LLM config.'
+        )
+    if hasattr(default_llm, 'embedding_model'):
+        default_memory.embedding_model = getattr(default_llm, 'embedding_model')
+        logger.opendevin_logger.warning(
+            "Deprecated: 'embedding_model' should be set in memory config. "
+            'Loaded from default LLM config.'
+        )
+    if default_memory.embedding_deployment_name is None and hasattr(
+        default_llm, 'embedding_deployment_name'
+    ):
+        default_memory.embedding_deployment_name = getattr(
+            default_llm, 'embedding_deployment_name'
+        )
+        logger.opendevin_logger.warning(
+            "Deprecated: 'embedding_deployment_name' should be set in memory config. "
+            'Loaded from default LLM config.'
+        )
 
     if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
         logger.opendevin_logger.warning(
@@ -989,7 +1019,9 @@ def load_app_config(set_logging_levels: bool = True) -> AppConfig:
         3. Default values initialized in the dataclasses
     """
     config = AppConfig()
-    load_from_toml(config)
+    toml_dict = load_dict_from_toml()
+    if toml_dict:
+        AppConfig.load_from_toml(toml_dict)
     env_dict = dict(os.environ)
     AppConfig.load_from_env(env_dict)
     finalize_config(config)

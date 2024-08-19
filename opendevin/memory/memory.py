@@ -79,7 +79,7 @@ if LLAMA_INDEX_AVAILABLE:
 
                 return OllamaEmbedding(
                     model_name=strategy,
-                    base_url=memory_config.embedding_base_url,
+                    base_url=memory_config.base_url,
                     ollama_additional_kwargs={'mirostat': 0},
                 )
             elif strategy == 'openai':
