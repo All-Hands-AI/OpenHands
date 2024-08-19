@@ -99,7 +99,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.image }}_image_${{ matrix.platform }}
-          path: /tmp/${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
       - name: Load images and push to registry
         run: |
           mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
