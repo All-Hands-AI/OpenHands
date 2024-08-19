@@ -297,17 +297,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar
+          path: /tmp/
       - name: List downloaded files
         run: |
-          ls -la /tmp/*
+          ls -la /tmp/${{ matrix.platform }}
       - name: Load images and push to registry
         run: |
-          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
           if [ -z "$image_file" ]; then
-            echo "No matching image file found"
+            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
             exit 1
           fi
+
           echo "Loading image from file: $image_file"
           if ! loaded_image=$(docker load -i "$image_file" | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
             echo "Failed to load Docker image"
