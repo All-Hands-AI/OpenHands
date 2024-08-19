@@ -2,7 +2,7 @@ import asyncio
 import hashlib
 import sys
 import uuid
-from typing import Callable, Type
+from typing import Callable, Protocol, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
@@ -18,12 +18,22 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import MessageAction
+from opendevin.events.action.action import Action
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.runtime import Runtime
 from opendevin.storage import get_file_store
+
+
+class FakeUserResponseFunc(Protocol):
+    def __call__(
+        self,
+        state: State,
+        encapsulate_solution: bool = ...,
+        try_parse: Callable[[Action], str] = ...,
+    ) -> str: ...
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -81,7 +91,7 @@ async def run_controller(
     runtime: Runtime | None = None,
     agent: Agent | None = None,
     exit_on_message: bool = False,
-    fake_user_response_fn: Callable[[State | None], str] | None = None,
+    fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
@@ -93,7 +103,8 @@ async def run_controller(
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
-        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
+        fake_user_response_fn: An optional function that receives the current state
+            (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
     """
     # Create the agent
@@ -138,7 +149,8 @@ async def run_controller(
     assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
     # Logging
     logger.info(
-        f'Agent Controller Initialized: Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
+        f'Agent Controller Initialized: Running agent {agent.name}, model '
+        f'{agent.llm.config.model}, with task: "{task_str}"'
     )
 
     # start event is a MessageAction with the task, either resumed or new
@@ -146,7 +158,10 @@ async def run_controller(
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
-                content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
+                content=(
+                    "Let's get back on track. If you experienced errors before, do "
+                    'NOT resume your task. Ask me about it.'
+                ),
             ),
             EventSource.USER,
         )
