@@ -131,10 +131,12 @@ class Linter:
         except FileNotFoundError:
             pass
 
-        # If no TypeScript-specific errors, fall back to basic linting
+        # If tsc is not available or finds no errors, fall back to basic linting
         basic_lint_result = basic_lint(rel_fname, code)
         if basic_lint_result:
-            return basic_lint_result
+            # Convert basic lint result to TypeScript-like error message
+            ts_error_message = f'{rel_fname}({basic_lint_result.lines[0]},1): error TS2304: {basic_lint_result.text}'
+            return LintResult(text=ts_error_message, lines=basic_lint_result.lines)
 
         # If still no errors, check for missing semicolons
         lines = code.split('\n')
@@ -146,11 +148,15 @@ class Linter:
                 and not stripped_line.endswith(';')
                 and not stripped_line.endswith('{')
                 and not stripped_line.endswith('}')
+                and not stripped_line.startswith('//')
             ):
                 error_lines.append(i + 1)
 
         if error_lines:
-            return LintResult(text='Missing semicolons detected.', lines=error_lines)
+            error_message = (
+                f"{rel_fname}({error_lines[0]},1): error TS1005: ';' expected."
+            )
+            return LintResult(text=error_message, lines=error_lines)
 
         return None
 

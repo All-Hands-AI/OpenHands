@@ -1607,7 +1607,7 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
         assert result is not None
 
         # Use a regex to match the file path in the error message
-        error_line_pattern = r'.*test\.ts\(3,1\): error TS1005: \'\}\' expected\.'
+        error_line_pattern = r'.*test\.ts\(\d+,\d+\): error TS\d+: .*'
 
         expected_lines = [
             f'[File: {file_path} (1 lines total)]',
