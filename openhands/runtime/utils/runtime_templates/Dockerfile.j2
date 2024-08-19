@@ -54,9 +54,9 @@ RUN cd /openhands/code && \
     /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
     /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root && \
     apt-get update && \
-    /opendevin/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
-    /opendevin/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
-    export OD_INTERPRETER_PATH=$(/opendevin/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
+    /openhands/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
+    /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
+    export OD_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
     npx install -g typescript && \
     {{ extra_deps }} {% if extra_deps %} && {% endif %} \
     /openhands/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
