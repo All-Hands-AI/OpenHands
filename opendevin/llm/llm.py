@@ -192,7 +192,25 @@ class LLM:
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
-            llm_response_logger.debug(message_back)
+
+            token_logs = 'Input tokens: ' + str(resp.usage.prompt_tokens) + '\n'
+            token_logs += 'Output tokens: ' + str(resp.usage.completion_tokens) + '\n'
+
+            if 'cache_creation_input_tokens' in resp.usage.model_extra:
+                token_logs += (
+                    'Input tokens (cache write): '
+                    + str(resp.usage.model_extra['cache_creation_input_tokens'])
+                    + '\n'
+                )
+
+            if 'cache_read_input_tokens' in resp.usage.model_extra:
+                token_logs += (
+                    'Input tokens (cache read): '
+                    + str(resp.usage.model_extra['cache_read_input_tokens'])
+                    + '\n'
+                )
+
+            llm_response_logger.debug(message_back + '\n\n\n' + token_logs)
 
             # post-process to log costs
             self._post_completion(resp)
