@@ -1,5 +1,5 @@
-"""This script compares gold patches with OpenDevin-generated patches and check whether
-OpenDevin found the right (set of) files to modify.
+"""This script compares gold patches with OpenHands-generated patches and check whether
+OpenHands found the right (set of) files to modify.
 """
 
 import argparse

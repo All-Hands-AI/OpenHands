@@ -2,9 +2,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendevin.core.exceptions import LLMResponseError
-from opendevin.llm.llm import LLM
-from opendevin.memory.condenser import MemoryCondenser
+from openhands.core.exceptions import LLMResponseError
+from openhands.llm.llm import LLM
+from openhands.memory.condenser import MemoryCondenser
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_condense_exception(memory_condenser, mock_llm):
         memory_condenser.condense('Summarize this', mock_llm)
 
 
-@patch('opendevin.memory.condenser.logger')
+@patch('openhands.memory.condenser.logger')
 def test_condense_logs_error(mock_logger, memory_condenser, mock_llm):
     mock_llm.completion.side_effect = LLMResponseError('LLM error')
     with pytest.raises(LLMResponseError):

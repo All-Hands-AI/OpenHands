@@ -9,14 +9,14 @@ checkout_eval_branch() {
         return 0
     fi
 
-    echo "Start to checkout opendevin version to $COMMIT_HASH, but keep current evaluation harness"
+    echo "Start to checkout openhands version to $COMMIT_HASH, but keep current evaluation harness"
     if ! git diff-index --quiet HEAD --; then
         echo "There are uncommitted changes, please stash or commit them first"
         exit 1
     fi
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     echo "Current version is: $current_branch"
-    echo "Check out OpenDevin to version: $COMMIT_HASH"
+    echo "Check out OpenHands to version: $COMMIT_HASH"
     if ! git checkout $COMMIT_HASH; then
         echo "Failed to check out to $COMMIT_HASH"
         exit 1
@@ -40,7 +40,7 @@ checkout_original_branch() {
 }
 
 get_agent_version() {
-    # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
+    # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenHands
     # We need to track the version of Agent in the evaluation to make sure results are comparable
-    AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+    AGENT_VERSION=v$(poetry run python -c "import agenthub; from openhands.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
 }

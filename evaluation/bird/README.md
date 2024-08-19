@@ -1,4 +1,4 @@
-# BIRD Evaluation with OpenDevin
+# BIRD Evaluation with OpenHands
 
 Implements evaluation of agents on BIRD introduced in [Can LLM Already Serve as A Database Interface? A BIg Bench for Large-Scale Database Grounded Text-to-SQLs](https://arxiv.org/abs/2305.03111). Please see [here](https://bird-bench.github.io/) for the reference implementation used in the paper.
 
@@ -15,12 +15,12 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
 
-- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
+- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version you would
 like to evaluate. It could also be a release tag like `0.6.2`.
 
 ## Examples
 
-For each problem, OpenDevin is given a set number of iterations to fix the failing code. The history field shows each iteration's response to correct its code that fails any test case.
+For each problem, OpenHands is given a set number of iterations to fix the failing code. The history field shows each iteration's response to correct its code that fails any test case.
 
 
 ```
