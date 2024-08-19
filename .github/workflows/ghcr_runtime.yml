@@ -31,7 +31,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
         platform: ['amd64', 'arm64']
     outputs:
@@ -139,7 +139,7 @@ jobs:
     needs: prepare_test_image_tags
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         runtime_type: ['eventstream']
         platform: ['amd64']
         last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
@@ -205,7 +205,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         runtime_type: ['eventstream']
         platform: ['amd64']
         last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
@@ -270,7 +270,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         runtime_type: ['eventstream']
         platform: ['amd64', 'arm64']
         last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
@@ -297,17 +297,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar
+          path: /tmp/
       - name: List downloaded files
         run: |
-          ls -la /tmp/*
+          ls -la /tmp/${{ matrix.platform }}
       - name: Load images and push to registry
         run: |
-          image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
           if [ -z "$image_file" ]; then
-            echo "No matching image file found"
+            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
             exit 1
           fi
+
           echo "Loading image from file: $image_file"
           if ! loaded_image=$(docker load -i "$image_file" | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
             echo "Failed to load Docker image"
@@ -335,7 +336,7 @@ jobs:
       tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
     permissions:
       contents: read
       packages: write

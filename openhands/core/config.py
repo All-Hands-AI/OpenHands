@@ -365,12 +365,12 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
-        od_runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
+        runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
             The path to the interpreter is available as $OD_INTERPRETER_PATH,
             which can be used to install dependencies for the OD-specific Python interpreter.
-        od_runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
+        runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
             This is a dictionary of key-value pairs.
             This is useful for setting environment variables that are needed by the runtime.
             For example, for specifying the base url of website for browsergym evaluation.
@@ -387,8 +387,8 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
-    od_runtime_extra_deps: str | None = None
-    od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
+    runtime_extra_deps: str | None = None
+    runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
 
     @classmethod

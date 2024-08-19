@@ -75,7 +75,7 @@ WORKSPACE_DIR="$(pwd)/workspace"
 
 Remplacez `LLM_MODEL` par celui de votre choix si nécessaire.
 
-Fini ! Vous pouvez maintenant démarrer Devin avec : `make run` sans Docker. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
+Fini ! Vous pouvez maintenant démarrer OpenHands avec : `make run` sans Docker. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
 
 ## Sélection de votre modèle
 

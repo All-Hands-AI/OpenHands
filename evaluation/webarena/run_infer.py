@@ -58,7 +58,7 @@ def get_config(
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,
-            od_runtime_startup_env_vars={
+            runtime_startup_env_vars={
                 'BASE_URL': base_url,
                 'OPENAI_API_KEY': openai_api_key,
                 'SHOPPING': f'{base_url}:7770/',
