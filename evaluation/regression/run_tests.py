@@ -2,7 +2,7 @@ import argparse
 
 import pytest
 
-from opendevin.config import load_app_config
+from openhands.config import load_app_config
 
 config = load_app_config()
 

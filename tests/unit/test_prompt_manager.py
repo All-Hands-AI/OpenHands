@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from opendevin.utils.prompt import PromptManager
+from openhands.utils.prompt import PromptManager
 
 
 @pytest.fixture

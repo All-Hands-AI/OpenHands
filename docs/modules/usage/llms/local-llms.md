@@ -24,11 +24,11 @@ mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
 starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ```
 
-## Start OpenDevin
+## Start OpenHands
 
 ### Docker
 
-Use the instructions [here](../intro) to start OpenDevin using Docker.
+Use the instructions [here](../intro) to start OpenHands using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
@@ -43,7 +43,7 @@ LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the avai
 Example:
 
 ```bash
-# The directory you want OpenDevin to modify. MUST be an absolute path!
+# The directory you want OpenHands to modify. MUST be an absolute path!
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
@@ -65,7 +65,7 @@ You should now be able to connect to `http://localhost:3000/`
 
 ### Build from Source
 
-Use the instructions in [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to build OpenDevin.
+Use the instructions in [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to build OpenHands.
 Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
 
 ```
@@ -83,11 +83,11 @@ ollama_base_url="http://localhost:11434"
 
 Replace `LLM_MODEL` of your choice if you need to.
 
-Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
+Done! Now you can start OpenHands by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
 
 ## Select your Model
 
-In the OpenDevin UI, click on the Settings wheel in the bottom-left corner.
+In the OpenHands UI, click on the Settings wheel in the bottom-left corner.
 Then in the `Model` input, enter `ollama/codellama:7b`, or the name of the model you pulled earlier.
 If it doesn’t show up in a dropdown, that’s fine, just type it in. Click Save when you’re done.
 
@@ -95,7 +95,7 @@ And now you're ready to go!
 
 ## Configuring the ollama service (WSL) {#configuring-ollama-service-wsl-en}
 
-The default configuration for ollama in WSL only serves localhost. This means you can't reach it from a docker container. eg. it wont work with OpenDevin. First let's test that ollama is running correctly.
+The default configuration for ollama in WSL only serves localhost. This means you can't reach it from a docker container. eg. it wont work with OpenHands. First let's test that ollama is running correctly.
 
 ```bash
 ollama list # get list of installed models
@@ -107,7 +107,7 @@ curl http://localhost:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 Once that is done, test that it allows "outside" requests, like those from inside a docker container.
 
 ```bash
-docker ps # get list of running docker containers, for most accurate test choose the open devin sandbox container.
+docker ps # get list of running docker containers, for most accurate test choose the OpenHands sandbox container.
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 #ex. docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
 ```
@@ -144,7 +144,7 @@ Finally test that ollama is accessible from within the container
 
 ```bash
 ollama list # get list of installed models
-docker ps # get list of running docker containers, for most accurate test choose the open devin sandbox container.
+docker ps # get list of running docker containers, for most accurate test choose the OpenHands sandbox container.
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 ```
 
