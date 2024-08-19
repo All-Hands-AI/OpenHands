@@ -111,25 +111,48 @@ class Linter:
             error = basic_lint(rel_fname, code)
         return error
 
-    # TODO: fix this with a correct config file, that does NOT rely on frontend!
-    def eslint_lint(self, rel_fname, code):
-        eslint_config_path = f'{self.root}/frontend/.eslintrc'
-        eslint = f'npx eslint --config {eslint_config_path}'  # must be npx!
-        try:
-            eslint_res = self.run_cmd(eslint, rel_fname, code)
-            if eslint_res and 'Oops' in eslint_res.text:
-                eslint_res = None
-        except FileNotFoundError:
-            eslint_res = None
-        return eslint_res
-
     def ts_lint(self, fname, rel_fname, code):
-        # TODO: only use basic_lint for now, until we have a config file
-        # error = self.eslint_lint(fname, code)
-        # if not error:
-        #     error = basic_lint(rel_fname, code)
-        error = basic_lint(rel_fname, code)
-        return error
+        """Use typescript compiler to check for errors."""
+        tsc_cmd = 'tsc --noEmit --allowJs --checkJs --strict --noImplicitAny --strictNullChecks --strictFunctionTypes --strictBindCallApply --strictPropertyInitialization --noImplicitThis --alwaysStrict'
+        try:
+            tsc_res = self.run_cmd(tsc_cmd, rel_fname, code)
+            if tsc_res:
+                # Parse the TSC output
+                error_lines = []
+                for line in tsc_res.text.split('\n'):
+                    if ': error TS' in line or ': warning TS' in line:
+                        parts = line.split(':')
+                        if len(parts) >= 3:
+                            try:
+                                error_lines.append(int(parts[1]))
+                            except ValueError:
+                                continue
+                return LintResult(text=tsc_res.text, lines=error_lines)
+        except FileNotFoundError:
+            pass
+
+        # If no TypeScript-specific errors, fall back to basic linting
+        basic_lint_result = basic_lint(rel_fname, code)
+        if basic_lint_result:
+            return basic_lint_result
+
+        # If still no errors, check for missing semicolons
+        lines = code.split('\n')
+        error_lines = []
+        for i, line in enumerate(lines):
+            stripped_line = line.strip()
+            if (
+                stripped_line
+                and not stripped_line.endswith(';')
+                and not stripped_line.endswith('{')
+                and not stripped_line.endswith('}')
+            ):
+                error_lines.append(i + 1)
+
+        if error_lines:
+            return LintResult(text='Missing semicolons detected.', lines=error_lines)
+
+        return None
 
 
 def lint_python_compile(fname, code):

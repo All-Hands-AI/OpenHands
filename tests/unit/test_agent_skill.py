@@ -1,6 +1,7 @@
 import contextlib
 import io
 import os
+import re
 import sys
 from unittest.mock import patch
 
@@ -1588,3 +1589,63 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
         assert result.split('\n') == expected.split('\n')
+
+
+def test_lint_file_fail_typescript(tmp_path, capsys):
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        current_line = 1
+        file_path = tmp_path / 'test.ts'
+        file_path.write_text('')  # Create an empty TypeScript file
+
+        open_file(str(file_path), current_line)
+        insert_content_at_line(
+            str(file_path),
+            1,
+            "function greet(name: string) {\n    console.log('Hello, ' + name)\n",
+        )
+        result = capsys.readouterr().out
+        assert result is not None
+
+        # Use a regex to match the file path in the error message
+        error_line_pattern = r'.*test\.ts\(3,1\): error TS1005: \'\}\' expected\.'
+
+        expected_lines = [
+            f'[File: {file_path} (1 lines total)]',
+            '(this is the beginning of the file)',
+            '1|',
+            '(this is the end of the file)',
+            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]',
+            'ERRORS:',
+            error_line_pattern,  # This line will be checked with regex
+            '[This is how your edit would have looked if applied]',
+            '-------------------------------------------------',
+            '(this is the beginning of the file)',
+            '1|function greet(name: string) {',
+            "2|    console.log('Hello, ' + name)",
+            '(this is the end of the file)',
+            '-------------------------------------------------',
+            '',
+            '[This is the original code before your edit]',
+            '-------------------------------------------------',
+            '(this is the beginning of the file)',
+            '1|',
+            '(this is the end of the file)',
+            '-------------------------------------------------',
+            'Your changes have NOT been applied. Please fix your edit command and try again.',
+            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.',
+            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.',
+            '',
+        ]
+
+        result_lines = result.split('\n')
+        assert len(result_lines) == len(expected_lines), "Number of lines doesn't match"
+
+        for i, (result_line, expected_line) in enumerate(
+            zip(result_lines, expected_lines)
+        ):
+            if i == 6:  # The line with the file path
+                assert re.match(
+                    expected_line, result_line
+                ), f"Line {i+1} doesn't match the expected pattern"
+            else:
+                assert result_line == expected_line, f"Line {i+1} doesn't match"

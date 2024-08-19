@@ -64,6 +64,48 @@ def linter(tmp_path):
     return Linter(root=tmp_path)
 
 
+@pytest.fixture
+def temp_typescript_file_errors(tmp_path):
+    # Fixture to create a temporary TypeScript file with errors
+    temp_name = os.path.join(tmp_path, 'lint-test.ts')
+    with open(temp_name, 'w', encoding='utf-8') as tmp_file:
+        tmp_file.write("""function foo() {
+    console.log("Hello, World!")
+foo()
+""")
+    tmp_file.close()
+    yield temp_name
+    os.remove(temp_name)
+
+
+@pytest.fixture
+def temp_typescript_file_errors_semicolon(tmp_path):
+    # Fixture to create a temporary TypeScript file with missing semicolon
+    temp_name = os.path.join(tmp_path, 'lint-test.ts')
+    with open(temp_name, 'w', encoding='utf-8') as tmp_file:
+        tmp_file.write("""function printHelloWorld() {
+    console.log('Hello World')
+}""")
+    tmp_file.close()
+    yield temp_name
+    os.remove(temp_name)
+
+
+@pytest.fixture
+def temp_typescript_file_correct(tmp_path):
+    # Fixture to create a temporary TypeScript file with correct code
+    temp_name = os.path.join(tmp_path, 'lint-test.ts')
+    with open(temp_name, 'w', encoding='utf-8') as tmp_file:
+        tmp_file.write("""function foo(): void {
+  console.log("Hello, World!");
+}
+foo();
+""")
+    tmp_file.close()
+    yield temp_name
+    os.remove(temp_name)
+
+
 def test_get_rel_fname(linter, temp_file, tmp_path):
     # Test get_rel_fname method
     rel_fname = linter.get_rel_fname(temp_file)
@@ -198,4 +240,21 @@ def test_lint_fail_ruby(linter, temp_ruby_file_errors):
 
 def test_lint_fail_ruby_no_parentheses(linter, temp_ruby_file_errors_parentheses):
     errors = linter.lint(temp_ruby_file_errors_parentheses)
+    assert errors is not None
+
+
+def test_lint_pass_typescript(linter, temp_typescript_file_correct):
+    result = linter.lint(temp_typescript_file_correct)
+    assert result is None
+
+
+def test_lint_fail_typescript(linter, temp_typescript_file_errors):
+    errors = linter.lint(temp_typescript_file_errors)
+    assert errors is not None
+
+
+def test_lint_fail_typescript_missing_semicolon(
+    linter, temp_typescript_file_errors_semicolon
+):
+    errors = linter.lint(temp_typescript_file_errors_semicolon)
     assert errors is not None

@@ -95,7 +95,8 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     if not lint_error:
         # Linting successful. No issues found.
         return None, None
-    return 'ERRORS:\n' + lint_error.text, lint_error.lines[0]
+    first_error_line = lint_error.lines[0] if lint_error.lines else None
+    return 'ERRORS:\n' + lint_error.text, first_error_line
 
 
 def _print_window(file_path, targeted_line, window, return_str=False):
