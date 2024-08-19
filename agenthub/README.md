@@ -7,17 +7,17 @@ Contributors from different backgrounds and interests can choose to contribute t
 
 ## Constructing an Agent
 
-The abstraction for an agent can be found [here](../opendevin/controller/agent.py).
+The abstraction for an agent can be found [here](../openhands/controller/agent.py).
 
 Agents are run inside of a loop. At each iteration, `agent.step()` is called with a
-[State](../opendevin/controller/state/state.py) input, and the agent must output an [Action](../opendevin/events/action).
+[State](../openhands/controller/state/state.py) input, and the agent must output an [Action](../openhands/events/action).
 
 Every agent also has a `self.llm` which it can use to interact with the LLM configured by the user.
 See the [LiteLLM docs for `self.llm.completion`](https://docs.litellm.ai/docs/completion).
 
 ## State
 
-The `state` represents the running state of an agent in the OpenDevin system. The class handles saving and restoring the agent session. It is serialized in a pickle.
+The `state` represents the running state of an agent in the OpenHands system. The class handles saving and restoring the agent session. It is serialized in a pickle.
 
 The State object stores information about:
 
@@ -46,17 +46,17 @@ The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTas
 
 Here is a list of available Actions, which can be returned by `agent.step()`:
 
-- [`CmdRunAction`](../opendevin/events/action/commands.py) - Runs a command inside a sandboxed terminal
-- [`IPythonRunCellAction`](../opendevin/events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../opendevin/runtime/plugins) as a requirement.
-- [`FileReadAction`](../opendevin/events/action/files.py) - Reads the content of a file
-- [`FileWriteAction`](../opendevin/events/action/files.py) - Writes new content to a file
-- [`BrowseURLAction`](../opendevin/events/action/browse.py) - Gets the content of a URL
-- [`AddTaskAction`](../opendevin/events/action/tasks.py) - Adds a subtask to the plan
-- [`ModifyTaskAction`](../opendevin/events/action/tasks.py) - Changes the state of a subtask.
-- [`AgentFinishAction`](../opendevin/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
-- [`AgentRejectAction`](../opendevin/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
-- [`AgentFinishAction`](../opendevin/events/action/agent.py) - Stops the control loop, allowing the user to enter a new task
-- [`MessageAction`](../opendevin/events/action/message.py) - Represents a message from an agent or the user
+- [`CmdRunAction`](../openhands/events/action/commands.py) - Runs a command inside a sandboxed terminal
+- [`IPythonRunCellAction`](../openhands/events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../openhands/runtime/plugins) as a requirement.
+- [`FileReadAction`](../openhands/events/action/files.py) - Reads the content of a file
+- [`FileWriteAction`](../openhands/events/action/files.py) - Writes new content to a file
+- [`BrowseURLAction`](../openhands/events/action/browse.py) - Gets the content of a URL
+- [`AddTaskAction`](../openhands/events/action/tasks.py) - Adds a subtask to the plan
+- [`ModifyTaskAction`](../openhands/events/action/tasks.py) - Changes the state of a subtask.
+- [`AgentFinishAction`](../openhands/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
+- [`AgentRejectAction`](../openhands/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
+- [`AgentFinishAction`](../openhands/events/action/agent.py) - Stops the control loop, allowing the user to enter a new task
+- [`MessageAction`](../openhands/events/action/message.py) - Represents a message from an agent or the user
 
 To serialize and deserialize an action, you can use:
 - `action.to_dict()` to serialize the action to a dictionary to be sent to the UI, including a user-friendly string representation of the message
@@ -70,12 +70,12 @@ But they may also appear as a result of asynchronous events (e.g. a message from
 
 Here is a list of available Observations:
 
-- [`CmdOutputObservation`](../opendevin/events/observation/commands.py)
-- [`BrowserOutputObservation`](../opendevin/events/observation/browse.py)
-- [`FileReadObservation`](../opendevin/events/observation/files.py)
-- [`FileWriteObservation`](../opendevin/events/observation/files.py)
-- [`ErrorObservation`](../opendevin/events/observation/error.py)
-- [`SuccessObservation`](../opendevin/events/observation/success.py)
+- [`CmdOutputObservation`](../openhands/events/observation/commands.py)
+- [`BrowserOutputObservation`](../openhands/events/observation/browse.py)
+- [`FileReadObservation`](../openhands/events/observation/files.py)
+- [`FileWriteObservation`](../openhands/events/observation/files.py)
+- [`ErrorObservation`](../openhands/events/observation/error.py)
+- [`SuccessObservation`](../openhands/events/observation/success.py)
 
 You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize observations.
 
@@ -94,7 +94,7 @@ sending a prompt to the LLM, then parsing the response into an `Action`.
 
 ## Agent Delegation
 
-OpenDevin is a multi-agentic system. Agents can delegate tasks to other agents, whether
+OpenHands is a multi-agentic system. Agents can delegate tasks to other agents, whether
 prompted by the user, or when the agent decides to ask another agent for help. For example,
 the `CodeActAgent` might delegate to the `BrowsingAgent` to answer questions that involve browsing
 the web. The Delegator Agent forwards tasks to micro-agents, such as 'RepoStudyAgent' to study a repo,
@@ -102,7 +102,7 @@ or 'VerifierAgent' to verify a task completion.
 
 ### Understanding the terminology
 
-A `task` is an end-to-end conversation between OpenDevin (the whole system) and the user,
+A `task` is an end-to-end conversation between OpenHands (the whole system) and the user,
 which might involve one or more inputs from the user. It starts with an initial input
 (typically a task statement) from the user, and ends with either an `AgentFinishAction`
 initiated by the agent, a stop initiated by the user, or an error.
@@ -113,7 +113,7 @@ itself. Otherwise, a `task` consists of multiple `subtasks`, each executed by
 one agent.
 
 For example, considering a task from the user: `tell me how many GitHub stars
-OpenDevin repo has`. Let's assume the default agent is CodeActAgent.
+OpenHands repo has`. Let's assume the default agent is CodeActAgent.
 
 ```
 -- TASK STARTS (SUBTASK 0 STARTS) --

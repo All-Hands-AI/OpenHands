@@ -1,4 +1,4 @@
-from opendevin.core.message import ImageContent, Message, TextContent
+from openhands.core.message import ImageContent, Message, TextContent
 
 
 def test_message_serialization():
