@@ -18,10 +18,10 @@ export function HomepageHeader() {
         <p className="header-subtitle">{siteConfig.tagline}</p>
 
         <div className="header-links">
-          <a href="https://github.com/OpenDevin/OpenDevin">
+          <a href="https://github.com/All-Hands-AI/OpenHands">
             <img src="https://img.shields.io/badge/Code-Github-purple?logo=github&logoColor=white&style=for-the-badge" alt="Code" />
           </a>
-          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA">
+          <a href="https://join.slack.com/t/openhands/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA">
             <img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community" />
           </a>
           <a href="https://discord.gg/ESHStjSjD4">
@@ -31,7 +31,7 @@ export function HomepageHeader() {
           <a href="https://arxiv.org/abs/2407.16741">
             <img src="https://img.shields.io/badge/Paper-%20on%20Arxiv-red?logo=arxiv&style=for-the-badge" alt="Paper on Arxiv" />
           </a>
-          <a href="https://huggingface.co/spaces/OpenDevin/evaluation">
+          <a href="https://huggingface.co/spaces/OpenHands/evaluation">
             <img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark" />
           </a>
         </div>

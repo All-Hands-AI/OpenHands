@@ -18,18 +18,18 @@ sidebar_position: 3
 - 执行任何有效的Linux `bash`命令
 - 使用[交互式Python解释器](https://ipython.org/)执行任何有效的 `Python`代码。这是通过`bash`命令模拟的，详细信息请参见插件系统。
 
-![image](https://github.com/OpenDevin/OpenDevin/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
+![image](https://github.com/All-Hands-AI/OpenHands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
 
 ### 插件系统
 
-为了使CodeAct agent在仅能访问`bash`动作空间时更强大，CodeAct agent利用了OpenDevin的插件系统：
+为了使CodeAct agent在仅能访问`bash`动作空间时更强大，CodeAct agent利用了OpenHands的插件系统：
 
-- [Jupyter插件](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/jupyter)：通过bash命令实现IPython执行
-- [SWE-agent工具插件](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/swe_agent_commands)：为软件开发任务引入的强大bash命令行工具，由[swe-agent](https://github.com/princeton-nlp/swe-agent)提供。
+- [Jupyter插件](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/jupyter)：通过bash命令实现IPython执行
+- [SWE-agent工具插件](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/swe_agent_commands)：为软件开发任务引入的强大bash命令行工具，由[swe-agent](https://github.com/princeton-nlp/swe-agent)提供。
 
 ### 演示
 
-https://github.com/OpenDevin/OpenDevin/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
+https://github.com/All-Hands-AI/OpenHands/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
 
 _CodeActAgent使用`gpt-4-turbo-2024-04-09`执行数据科学任务（线性回归）的示例_
 

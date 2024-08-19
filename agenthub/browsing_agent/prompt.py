@@ -12,7 +12,7 @@ from browsergym.core.action.base import AbstractActionSet
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.core.action.python import PythonActionSet
 
-from opendevin.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser.browser_env import BrowserEnv
 
 from .utils import (
     ParseError,

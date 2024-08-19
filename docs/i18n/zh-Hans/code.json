@@ -1,6 +1,6 @@
 {
   "footer.title": {
-    "message": "OpenDevin"
+    "message": "OpenHands"
   },
   "footer.docs": {
     "message": "文档"
@@ -9,7 +9,7 @@
     "message": "社区"
   },
   "footer.copyright": {
-    "message": "版权所有 © {year} OpenDevin"
+    "message": "版权所有 © {year} OpenHands"
   },
   "faq.title": {
     "message": "常见问题解答",
@@ -19,20 +19,20 @@
     "message": "常见问题解答"
   },
   "faq.section.title.1": {
-    "message": "什么是OpenDevin？",
+    "message": "什么是OpenHands？",
     "description": "First Section Title"
   },
   "faq.section.highlight": {
-    "message": "OpenDevin",
+    "message": "OpenHands",
     "description": "Highlight Text"
   },
   "faq.section.description.1": {
-    "message": "是一个自主的软件工程师，能够端到端地解决软件工程和网页浏览任务。它能执行数据科学查询，如 \"查找上个月OpenDevin仓库中的拉取请求数量\"，还能处理软件工程任务，例如 \"请为这个文件添加测试并验证所有测试都通过，如果没有修复该文件\"。",
-    "description": "Description for OpenDevin"
+    "message": "是一个自主的软件工程师，能够端到端地解决软件工程和网页浏览任务。它能执行数据科学查询，如 \"查找上个月OpenHands仓库中的拉取请求数量\"，还能处理软件工程任务，例如 \"请为这个文件添加测试并验证所有测试都通过，如果没有修复该文件\"。",
+    "description": "Description for OpenHands"
   },
   "faq.section.description.2": {
-    "message": "同时，OpenDevin是一个代理开发者平台和社区，用于测试和评估新代理的环境。",
-    "description": "Further Description for OpenDevin"
+    "message": "同时，OpenHands是一个代理开发者平台和社区，用于测试和评估新代理的环境。",
+    "description": "Further Description for OpenHands"
   },
   "faq.section.title.2": {
     "message": "支持",
@@ -43,15 +43,15 @@
     "description": "Support Answer"
   },
   "faq.section.title.3": {
-    "message": "如何使用OpenDevin解决GitHub上的问题？",
+    "message": "如何使用OpenHands解决GitHub上的问题？",
     "description": "GitHub Issue Section Title"
   },
   "faq.section.github.steps.intro": {
-    "message": "要通过OpenDevin解决GitHub上的问题，您可以发送一个提示给OpenDevin，请它按照以下步骤操作：",
+    "message": "要通过OpenHands解决GitHub上的问题，您可以发送一个提示给OpenHands，请它按照以下步骤操作：",
     "description": "GitHub Steps Introduction"
   },
   "faq.section.github.step1": {
-    "message": "阅读问题 https://github.com/OpenDevin/OpenDevin/issues/1611",
+    "message": "阅读问题 https://github.com/All-Hands-AI/OpenHands/issues/1611",
     "description": "GitHub Step 1"
   },
   "faq.section.github.step2": {
@@ -71,11 +71,11 @@
     "description": "GitHub Step 5"
   },
   "faq.section.github.steps.preRun": {
-    "message": "在运行OpenDevin之前，您可以：",
+    "message": "在运行OpenHands之前，您可以：",
     "description": "GitHub Steps Pre-Run"
   },
   "faq.section.github.steps.tokenInfo": {
-    "message": "其中XXX是您创建的一个具有对OpenDevin仓库写权限的GitHub令牌。如果您的写入权限不足，请将其更改为：",
+    "message": "其中XXX是您创建的一个具有对OpenHands仓库写权限的GitHub令牌。如果您的写入权限不足，请将其更改为：",
     "description": "GitHub Steps Token Info"
   },
   "faq.section.github.steps.usernameInfo": {
@@ -83,23 +83,23 @@
     "description": "GitHub Steps Username Info"
   },
   "faq.section.title.4": {
-    "message": "OpenDevin与Devin有何不同？",
+    "message": "OpenHands与Devin有何不同？",
     "description": "Devin Section Title"
   },
-  "faq.section.devin.linkText": {
+  "faq.section.openhands.linkText": {
     "message": "Devin",
     "description": "Devin Link Text"
   },
-  "faq.section.devin.description": {
-    "message": "是由Cognition Inc.开发的商业产品，它最初为OpenDevin提供了灵感。它们都旨在擅长解决软件工程任务，但您可以下载、使用和修改OpenDevin，而Devin只能通过Cognition网站进行访问。此外，OpenDevin已超越最初的灵感，并成为一个面向代理开发者的社区驱动生态系统，在这里我们欢迎您加入并",
+  "faq.section.openhands.description": {
+    "message": "是由Cognition Inc.开发的商业产品，它最初为OpenHands提供了灵感。它们都旨在擅长解决软件工程任务，但您可以下载、使用和修改OpenHands，而Devin只能通过Cognition网站进行访问。此外，OpenHands已超越最初的灵感，并成为一个面向代理开发者的社区驱动生态系统，在这里我们欢迎您加入并",
     "description": "Devin Description"
   },
-  "faq.section.devin.contribute": {
+  "faq.section.openhands.contribute": {
     "message": "贡献",
     "description": "Contribute Link"
   },
   "faq.section.title.5": {
-    "message": "OpenDevin与ChatGPT有何不同？",
+    "message": "OpenHands与ChatGPT有何不同？",
     "description": "ChatGPT Section Title"
   },
   "faq.section.chatgpt.description": {
@@ -114,7 +114,7 @@
     "message": "开始使用"
   },
   "welcome.message": {
-    "message": "欢迎来到OpenDevin，这是一个开源自主AI软件工程师，能够执行复杂的工程任务，并积极参与用户在软件开发项目中的协作。"
+    "message": "欢迎来到OpenHands，这是一个开源自主AI软件工程师，能够执行复杂的工程任务，并积极参与用户在软件开发项目中的协作。"
   },
   "theme.ErrorPageContent.title": {
     "message": "页面已崩溃。",

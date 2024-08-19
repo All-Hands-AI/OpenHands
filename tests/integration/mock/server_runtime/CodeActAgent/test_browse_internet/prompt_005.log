@@ -270,8 +270,8 @@ Collecting click>=8.1.3
   Using cached click-8.1.7-py3-none-any.whl (97 kB)
 Collecting itsdangerous>=2.1.2
   Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
-Requirement already satisfied: Jinja2>=3.1.2 in /home/opendevin/.local/lib/python3.10/site-packages (from flask) (3.1.3)
-Requirement already satisfied: MarkupSafe>=2.0 in /home/opendevin/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Requirement already satisfied: Jinja2>=3.1.2 in /home/openhands/.local/lib/python3.10/site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
 Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
 Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
 
@@ -408,6 +408,6 @@ Sure! Let me browse the server's homepage at http://localhost:8000 to find the u
 ----------
 
 OBSERVATION:
-{'content': 'The answer to life, the universe, and everything is: OpenDevin is all you need!'}
+{'content': 'The answer to life, the universe, and everything is: OpenHands is all you need!'}
 
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task. When finished reply with <finish></finish>.

@@ -3,8 +3,8 @@ import shutil
 
 import pytest
 
-from opendevin.storage.local import LocalFileStore
-from opendevin.storage.memory import InMemoryFileStore
+from openhands.storage.local import LocalFileStore
+from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture

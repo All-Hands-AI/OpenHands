@@ -1,7 +1,7 @@
 # Development Guide
-This guide is for people working on OpenDevin and editing the source code.
-If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/OpenDevin/OpenDevin/blob/main/CONTRIBUTING.md) on how to clone and setup the project initially before moving on.
-Otherwise, you can clone the OpenDevin project directly.
+This guide is for people working on OpenHands and editing the source code.
+If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md) on how to clone and setup the project initially before moving on.
+Otherwise, you can clone the OpenHands project directly.
 
 ## Start the server for development
 ### 1. Requirements
@@ -29,14 +29,14 @@ mamba install conda-forge::poetry
 ```
 
 ### 2. Build and Setup The Environment
-Begin by building the project which includes setting up the environment and installing dependencies. This step ensures that OpenDevin is ready to run on your system:
+Begin by building the project which includes setting up the environment and installing dependencies. This step ensures that OpenHands is ready to run on your system:
 
 ```bash
 make build
 ```
 
 ### 3. Configuring the Language Model
-OpenDevin supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
+OpenHands supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
 
 To configure the LM of your choice, run:
 
@@ -44,20 +44,20 @@ To configure the LM of your choice, run:
    make setup-config
    ```
 
-   This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
+   This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenHands is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
 
-   Note: If you have previously run OpenDevin using the docker command, you may have already set some environmental variables in your terminal. The final configurations are set from highest to lowest priority:
+   Note: If you have previously run OpenHands using the docker command, you may have already set some environmental variables in your terminal. The final configurations are set from highest to lowest priority:
    Environment variables > config.toml variables > default variables
 
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest.
-And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to share your setup instructions with us by creating instructions and adding it [to our documentation](https://github.com/OpenDevin/OpenDevin/tree/main/docs/modules/usage/llms).
+And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to share your setup instructions with us by creating instructions and adding it [to our documentation](https://github.com/All-Hands-AI/OpenHands/tree/main/docs/modules/usage/llms).
 
 For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
 
 ### 4. Running the application
 #### Option A: Run the Full Application
-Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin:
+Once the setup is complete, launching OpenHands is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenHands:
 ```bash
 make run
 ```
@@ -75,10 +75,10 @@ make run
 
 ### 6. LLM Debugging
 If you encounter any issues with the Language Model (LM) or you're simply curious, you can inspect the actual LLM prompts and responses. To do so, export DEBUG=1 in the environment and restart the backend.
-OpenDevin will then log the prompts and responses in the logs/llm/CURRENT_DATE directory, allowing you to identify the causes.
+OpenHands will then log the prompts and responses in the logs/llm/CURRENT_DATE directory, allowing you to identify the causes.
 
 ### 7. Help
-Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
+Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenHands.
 ```bash
 make help
  ```

@@ -1,10 +1,10 @@
 from agenthub.planner_agent.response_parser import PlannerResponseParser
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.config import AgentConfig
-from opendevin.core.message import ImageContent, Message, TextContent
-from opendevin.events.action import Action, AgentFinishAction
-from opendevin.llm.llm import LLM
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.core.message import ImageContent, Message, TextContent
+from openhands.events.action import Action, AgentFinishAction
+from openhands.llm.llm import LLM
 
 from .prompt import get_prompt_and_images
 

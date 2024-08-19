@@ -1,13 +1,13 @@
-from opendevin.controller.state.state import State
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ActionType
-from opendevin.core.utils import json
-from opendevin.events.action import (
+from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import ActionType
+from openhands.core.utils import json
+from openhands.events.action import (
     Action,
     NullAction,
 )
-from opendevin.events.serialization.action import action_from_dict
-from opendevin.events.serialization.event import event_to_memory
+from openhands.events.serialization.action import action_from_dict
+from openhands.events.serialization.event import event_to_memory
 
 HISTORY_SIZE = 20
 

@@ -4,8 +4,8 @@ from agenthub.codeact_swe_agent.action_parser import (
     CodeActSWEActionParserIPythonRunCell,
     CodeActSWEActionParserMessage,
 )
-from opendevin.controller.action_parser import ResponseParser
-from opendevin.events.action import Action
+from openhands.controller.action_parser import ResponseParser
+from openhands.events.action import Action
 
 
 class CodeActSWEResponseParser(ResponseParser):
