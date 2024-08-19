@@ -2,9 +2,9 @@ import pytest
 
 from agenthub.micro.agent import parse_response as parse_response_micro
 from agenthub.planner_agent.prompt import parse_response as parse_response_planner
-from opendevin.core.exceptions import LLMResponseError
-from opendevin.core.utils.json import loads as custom_loads
-from opendevin.events.action import (
+from openhands.core.exceptions import LLMResponseError
+from openhands.core.utils.json import loads as custom_loads
+from openhands.events.action import (
     FileWriteAction,
     MessageAction,
 )

@@ -5,17 +5,17 @@ import subprocess
 
 import pytest
 
-from opendevin.controller.state.state import State
-from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
-from opendevin.core.main import run_controller
-from opendevin.core.schema import AgentState
-from opendevin.events.action import (
+from openhands.controller.state.state import State
+from openhands.core.config import AppConfig, SandboxConfig, load_from_env
+from openhands.core.main import run_controller
+from openhands.core.schema import AgentState
+from openhands.events.action import (
     AgentFinishAction,
     AgentRejectAction,
 )
-from opendevin.events.observation.browse import BrowserOutputObservation
-from opendevin.events.observation.delegate import AgentDelegateObservation
-from opendevin.runtime import get_runtime_cls
+from openhands.events.observation.browse import BrowserOutputObservation
+from openhands.events.observation.delegate import AgentDelegateObservation
+from openhands.runtime import get_runtime_cls
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME')
 assert TEST_RUNTIME in ['eventstream', 'server']
@@ -247,6 +247,6 @@ def test_browse_internet(http_server, current_test_name: str):
         last_observation, (BrowserOutputObservation, AgentDelegateObservation)
     )
     if isinstance(last_observation, BrowserOutputObservation):
-        assert 'OpenDevin is all you need!' in last_observation.content
+        assert 'OpenHands is all you need!' in last_observation.content
     elif isinstance(last_observation, AgentDelegateObservation):
-        assert 'OpenDevin is all you need!' in last_observation.outputs['content']
+        assert 'OpenHands is all you need!' in last_observation.outputs['content']

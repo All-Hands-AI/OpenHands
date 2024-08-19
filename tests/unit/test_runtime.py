@@ -10,10 +10,10 @@ from unittest.mock import patch
 import pytest
 from pytest import TempPathFactory
 
-from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream
-from opendevin.events.action import (
+from openhands.core.config import AppConfig, SandboxConfig, load_from_env
+from openhands.core.logger import openhands_logger as logger
+from openhands.events import EventStream
+from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -21,7 +21,7 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     BrowserOutputObservation,
     CmdOutputObservation,
     ErrorObservation,
@@ -29,10 +29,10 @@ from opendevin.events.observation import (
     FileWriteObservation,
     IPythonRunCellObservation,
 )
-from opendevin.runtime.client.runtime import EventStreamRuntime
-from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from opendevin.runtime.runtime import Runtime
-from opendevin.storage import get_file_store
+from openhands.runtime.client.runtime import EventStreamRuntime
+from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from openhands.runtime.runtime import Runtime
+from openhands.storage import get_file_store
 
 
 @pytest.fixture(autouse=True)
@@ -49,7 +49,7 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
-PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
+PY3_FOR_TESTING = '/openhands/miniforge3/bin/mamba run -n base python3'
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
@@ -72,7 +72,7 @@ def box_class(request):
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
 # since `EventStreamRuntime` supports running as an arbitrary user.
 @pytest.fixture(scope='module', params=[True, False])
-def run_as_devin(request):
+def run_as_openhands(request):
     time.sleep(1)
     return request.param
 
@@ -99,7 +99,7 @@ def container_image(request):
 async def _load_runtime(
     temp_dir,
     box_class,
-    run_as_devin: bool = True,
+    run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     container_image: str | None = None,
     browsergym_eval_env: str | None = None,
@@ -118,7 +118,7 @@ async def _load_runtime(
         ),
     )
     load_from_env(config, os.environ)
-    config.run_as_devin = run_as_devin
+    config.run_as_openhands = run_as_openhands
     config.sandbox.enable_auto_lint = enable_auto_lint
 
     file_store = get_file_store(config.file_store, config.file_store_path)
@@ -140,9 +140,9 @@ async def _load_runtime(
 
 
 @pytest.mark.asyncio
-async def test_env_vars_os_environ(temp_dir, box_class, run_as_devin):
+async def test_env_vars_os_environ(temp_dir, box_class, run_as_openhands):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+        runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
         obs: CmdOutputObservation = await runtime.run_action(
             CmdRunAction(command='env')
@@ -239,8 +239,8 @@ async def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_bash_command_pexcept(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_bash_command_pexcept(temp_dir, box_class, run_as_openhands):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # We set env var PS1="\u@\h:\w $"
     # and construct the PEXCEPT prompt base on it.
@@ -249,14 +249,14 @@ async def test_bash_command_pexcept(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(CmdRunAction(command='env'))
 
     # For example:
-    # 02:16:13 - opendevin:DEBUG: client.py:78 - Executing command: env
-    # 02:16:13 - opendevin:DEBUG: client.py:82 - Command output: PYTHONUNBUFFERED=1
-    # CONDA_EXE=/opendevin/miniforge3/bin/conda
+    # 02:16:13 - openhands:DEBUG: client.py:78 - Executing command: env
+    # 02:16:13 - openhands:DEBUG: client.py:82 - Command output: PYTHONUNBUFFERED=1
+    # CONDA_EXE=/openhands/miniforge3/bin/conda
     # [...]
     # LC_CTYPE=C.UTF-8
     # PS1=\u@\h:\w $
-    # 02:16:13 - opendevin:DEBUG: client.py:89 - Executing command for exit code: env
-    # 02:16:13 - opendevin:DEBUG: client.py:92 - Exit code Output:
+    # 02:16:13 - openhands:DEBUG: client.py:89 - Executing command for exit code: env
+    # 02:16:13 - openhands:DEBUG: client.py:92 - Exit code Output:
     # CONDA_DEFAULT_ENV=base
 
     # As long as the exit code is 0, the test will pass.
@@ -270,8 +270,8 @@ async def test_bash_command_pexcept(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
@@ -339,8 +339,8 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_simple_browse(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_simple_browse(temp_dir, box_class, run_as_openhands):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # Test browse
     action_cmd = CmdRunAction(
@@ -392,11 +392,11 @@ async def test_browsergym_eval_env(temp_dir):
         temp_dir,
         # only supported in event stream runtime
         box_class=EventStreamRuntime,
-        run_as_devin=False,  # need root permission to access file
+        run_as_openhands=False,  # need root permission to access file
         container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
     )
-    from opendevin.runtime.browser.browser_env import (
+    from openhands.runtime.browser.browser_env import (
         BROWSER_EVAL_GET_GOAL_ACTION,
         BROWSER_EVAL_GET_REWARDS_ACTION,
     )
@@ -480,7 +480,7 @@ async def test_runtime_whitespace(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_multiple_multiline_commands(temp_dir, box_class, run_as_devin):
+async def test_multiple_multiline_commands(temp_dir, box_class, run_as_openhands):
     cmds = [
         'ls -l',
         'echo -e "hello\nworld"',
@@ -510,7 +510,7 @@ world "
     ]
     joined_cmds = '\n'.join(cmds)
 
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     action = CmdRunAction(command=joined_cmds)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -533,9 +533,9 @@ world "
 
 
 @pytest.mark.asyncio
-async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
+async def test_no_ps2_in_output(temp_dir, box_class, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     action = CmdRunAction(command='echo -e "hello\nworld"')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -551,7 +551,7 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
 
 @pytest.mark.asyncio
 async def test_multiline_command_loop(temp_dir, box_class):
-    # https://github.com/OpenDevin/OpenDevin/issues/3143
+    # https://github.com/All-Hands-AI/OpenHands/issues/3143
 
     runtime = await _load_runtime(temp_dir, box_class)
 
@@ -594,8 +594,8 @@ echo "success"
 
 
 @pytest.mark.asyncio
-async def test_cmd_run(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_cmd_run(temp_dir, box_class, run_as_openhands):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     action = CmdRunAction(command='ls -l')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -618,8 +618,8 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    if run_as_devin:
-        assert 'opendevin' in obs.content
+    if run_as_openhands:
+        assert 'openhands' in obs.content
     else:
         assert 'root' in obs.content
     assert 'test' in obs.content
@@ -654,8 +654,8 @@ async def test_cmd_run(temp_dir, box_class, run_as_devin):
 
 
 @pytest.mark.asyncio
-async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     action = CmdRunAction(command='cd ~ && pwd')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -663,8 +663,8 @@ async def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    if run_as_devin:
-        assert '/home/opendevin' in obs.content
+    if run_as_openhands:
+        assert '/home/openhands' in obs.content
     else:
         assert '/root' in obs.content
 
@@ -735,8 +735,8 @@ async def test_failed_cmd(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -747,8 +747,8 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    if run_as_devin:
-        assert 'opendevin' in obs.content
+    if run_as_openhands:
+        assert 'openhands' in obs.content
     else:
         assert 'root' in obs.content
 
@@ -782,9 +782,9 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-    if run_as_devin:
-        # -rw-r--r-- 1 opendevin root 13 Jul 28 03:53 test.txt
-        assert 'opendevin' in obs.content.split('\r\n')[0]
+    if run_as_openhands:
+        # -rw-r--r-- 1 openhands root 13 Jul 28 03:53 test.txt
+        assert 'openhands' in obs.content.split('\r\n')[0]
         assert 'root' in obs.content.split('\r\n')[0]
     else:
         # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
@@ -938,12 +938,12 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
 @pytest.mark.asyncio
 async def test_ipython_agentskills_fileop_pwd(
-    temp_dir, box_class, run_as_devin, enable_auto_lint
+    temp_dir, box_class, run_as_openhands, enable_auto_lint
 ):
     """Make sure that cd in bash also update the current working directory in ipython."""
 
     runtime = await _load_runtime(
-        temp_dir, box_class, run_as_devin, enable_auto_lint=enable_auto_lint
+        temp_dir, box_class, run_as_openhands, enable_auto_lint=enable_auto_lint
     )
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
@@ -962,7 +962,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
     runtime = await _load_runtime(
         temp_dir,
         box_class,
-        run_as_devin=False,
+        run_as_openhands=False,
     )
 
     action = CmdRunAction(command='cd ~')
@@ -1020,9 +1020,9 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
+async def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -1226,7 +1226,7 @@ async def test_copy_non_existent_file(temp_dir, box_class):
 async def test_keep_prompt(temp_dir):
     # only EventStreamRuntime supports keep_prompt
     runtime = await _load_runtime(
-        temp_dir, box_class=EventStreamRuntime, run_as_devin=False
+        temp_dir, box_class=EventStreamRuntime, run_as_openhands=False
     )
 
     action = CmdRunAction(command='touch /workspace/test_file.txt')
@@ -1258,7 +1258,7 @@ async def test_git_operation(box_class):
         temp_dir=None,
         box_class=box_class,
         # Need to use non-root user to expose issues
-        run_as_devin=True,
+        run_as_openhands=True,
     )
 
     # this will happen if permission of runtime is not properly configured
@@ -1271,17 +1271,17 @@ async def test_git_operation(box_class):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
-    # drwx--S--- 2 opendevin root   64 Aug  7 23:32 .
+    # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
     # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
     for line in obs.content.split('\r\n'):
         if ' ..' in line:
             # parent directory should be owned by root
             assert 'root' in line
-            assert 'opendevin' not in line
+            assert 'openhands' not in line
         elif ' .' in line:
-            # current directory should be owned by opendevin
+            # current directory should be owned by openhands
             # and its group should be root
-            assert 'opendevin' in line
+            assert 'openhands' in line
             assert 'root' in line
 
     # make sure all git operations are allowed

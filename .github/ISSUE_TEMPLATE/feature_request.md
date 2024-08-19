@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for OpenDevin features
+about: Suggest an idea for OpenHands features
 title: ''
 labels: 'enhancement'
 assignees: ''
