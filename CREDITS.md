@@ -2,19 +2,19 @@
 
 ## Contributors
 
-We would like to thank all the [contributors](https://github.com/opendevin/opendevin/graphs/contributors) who have helped make OpenDevin possible. Your dedication and hard work are greatly appreciated.
+We would like to thank all the [contributors](https://github.com/All-Hands-AI/OpenHands/graphs/contributors) who have helped make OpenHands possible. Your dedication and hard work are greatly appreciated.
 
 ## Open Source Projects
 
-OpenDevin includes and adapts the following open source projects. We are grateful for their contributions to the open source community:
+OpenHands includes and adapts the following open source projects. We are grateful for their contributions to the open source community:
 
 #### [SWE Agent](https://github.com/princeton-nlp/swe-agent)
    - License: MIT License
-   - Description: Adapted for use in OpenDevin's agenthub
+   - Description: Adapted for use in OpenHands's agenthub
 
 #### [Aider](https://github.com/paul-gauthier/aider)
    - License: Apache License 2.0
-   - Description: AI pair programming tool. OpenDevin has adapted and integrated its linter module for code-related tasks in [`agentskills utilities`](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/agent_skills/utils/aider)
+   - Description: AI pair programming tool. OpenHands has adapted and integrated its linter module for code-related tasks in [`agentskills utilities`](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/agent_skills/utils/aider)
 
 #### [BrowserGym](https://github.com/ServiceNow/BrowserGym)
    - License: Apache License 2.0
@@ -22,7 +22,7 @@ OpenDevin includes and adapts the following open source projects. We are gratefu
 
 
 ### Reference Implementations for Evaluation Benchmarks
-OpenDevin integrates code of the reference implementations for the following agent evaluation benchmarks:
+OpenHands integrates code of the reference implementations for the following agent evaluation benchmarks:
 
 #### [HumanEval](https://github.com/openai/human-eval)
    - License: MIT License

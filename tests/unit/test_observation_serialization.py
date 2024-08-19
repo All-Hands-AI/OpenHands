@@ -1,8 +1,8 @@
-from opendevin.events.observation import (
+from openhands.events.observation import (
     CmdOutputObservation,
     Observation,
 )
-from opendevin.events.serialization import (
+from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
     event_to_memory,

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from opendevin.runtime.utils import files
+from openhands.runtime.utils import files
 
 SANDBOX_PATH_PREFIX = '/workspace'
 WORKSPACE_BASE = 'workspace'

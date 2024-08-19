@@ -5126,13 +5126,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.40.8"
+version = "1.41.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.40.8-py3-none-any.whl", hash = "sha256:3ed4ddad48e0dde059c9b4d3dc240e47781beca2811e52ba449ddc4a471a2fd4"},
-    {file = "openai-1.40.8.tar.gz", hash = "sha256:e225f830b946378e214c5b2cfa8df28ba2aeb7e9d44f738cb2a926fd971f5bc0"},
+    {file = "openai-1.41.0-py3-none-any.whl", hash = "sha256:3b6cca4571667f3e0800442ef8f2bfa6a6f3301c51776bc7626159a4d81c242c"},
+    {file = "openai-1.41.0.tar.gz", hash = "sha256:26b81f39b49dce92ff5d30c373625ddb212c2f1050e1574e456d18423730cdd0"},
 ]
 
 [package.dependencies]
@@ -7666,7 +7666,7 @@ inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "s
 
 [package.source]
 type = "git"
-url = "https://github.com/OpenDevin/SWE-bench.git"
+url = "https://github.com/All-Hands-AI/SWE-bench.git"
 reference = "HEAD"
 resolved_reference = "c2b3cefd4a5af0b248966a773650a39046072975"
 
@@ -9212,4 +9212,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "c3c227a4550f1c7ed07c67a282958580d83b3ede8f754c519b9830def91c2ffe"
+content-hash = "3c0aff71c1d6c27233e86a5da23e308e83432db015f52d507d1297067c0dd0f8"

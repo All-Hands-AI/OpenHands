@@ -1,9 +1,9 @@
-from opendevin.controller.action_parser import ResponseParser
-from opendevin.core.utils import json
-from opendevin.events.action import (
+from openhands.controller.action_parser import ResponseParser
+from openhands.core.utils import json
+from openhands.events.action import (
     Action,
 )
-from opendevin.events.serialization.action import action_from_dict
+from openhands.events.serialization.action import action_from_dict
 
 
 class PlannerResponseParser(ResponseParser):
