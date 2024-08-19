@@ -300,8 +300,7 @@ jobs:
           path: /tmp/${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar
       - name: List downloaded files
         run: |
-          ls -la /tmp/${{ matrix.platform }}
-          file /tmp/${{ matrix.platform }}/*
+          ls -la /tmp/*
       - name: Load images and push to registry
         run: |
           image_file=$(find /tmp/${{ matrix.platform }} -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
