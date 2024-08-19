@@ -602,7 +602,7 @@ echo 'echo "hello"' > hello.sh
 
 OBSERVATION:
 
-opendevin@docker-desktop:/workspace $
+openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 
 ----------
@@ -619,7 +619,7 @@ cat hello.sh
 OBSERVATION:
 echo "hello"
 
-opendevin@docker-desktop:/workspace $
+openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 
 ENVIRONMENT REMINDER: You have 12 turns left to complete the task. When finished reply with <finish></finish>.

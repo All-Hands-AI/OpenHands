@@ -1,10 +1,10 @@
 {
   "title": {
-    "message": "OpenDevin",
+    "message": "OpenHands",
     "description": "The title in the navbar"
   },
   "logo.alt": {
-    "message": "OpenDevin",
+    "message": "OpenHands",
     "description": "The alt text of navbar logo"
   },
   "item.label.Docs": {

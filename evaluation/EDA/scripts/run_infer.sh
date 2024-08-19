@@ -34,9 +34,9 @@ if [ -z "$OPENAI_API_KEY" ]; then
   exit 1
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
+# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenHands
 # We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+AGENT_VERSION=v$(poetry run python -c "import agenthub; from openhands.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
