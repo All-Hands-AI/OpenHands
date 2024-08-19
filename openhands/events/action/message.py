@@ -4,6 +4,7 @@ from openhands.core.schema import ActionType
 
 from .action import Action, ActionSecurityRisk
 
+
 @dataclass
 class MessageAction(Action):
     content: str
