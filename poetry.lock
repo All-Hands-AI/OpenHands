@@ -3566,13 +3566,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.43.15"
+version = "1.43.18"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.43.15-py3-none-any.whl", hash = "sha256:99a91680e4a421b28fa5124c5d2500d32708c0c18b7a9e6f0d8472b3ff9a8beb"},
-    {file = "litellm-1.43.15.tar.gz", hash = "sha256:4137e04a5837d997dd09588d9cd70de0e9833566d7c57c58b4f609fea636b5de"},
+    {file = "litellm-1.43.18-py3-none-any.whl", hash = "sha256:68d853b4a0198a16e2260e4406a20f8d2e59bd903e019b7f3ba5a9f35ecc3e62"},
+    {file = "litellm-1.43.18.tar.gz", hash = "sha256:e22b20065b62663dd060be9da1e84ca05903931c41c49d35a98649ed09e79d29"},
 ]
 
 [package.dependencies]
