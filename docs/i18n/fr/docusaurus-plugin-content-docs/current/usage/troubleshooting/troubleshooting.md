@@ -85,7 +85,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 [Problèmes GitHub](https://github.com/OpenDevin/OpenDevin/issues?q=is%3Aissue+is%3Aopen+404)
 
 Cela se produit généralement avec les configurations de LLM *locales*, lorsque OpenDevin ne parvient pas à se connecter au serveur LLM.
-Consultez notre guide pour [LLMs locaux](llms/localLLMs) pour plus d'informations.
+Consultez notre guide pour [LLMs locaux](llms/local-llms) pour plus d'informations.
 
 ### Solutions de contournement
 
@@ -133,9 +133,9 @@ le point de terminaison API avec lequel vous essayez de vous connecter. Cela arr
   * Si vous êtes en cours d'exécution dans l'interface utilisateur, assurez-vous de définir le `model` dans le modal des paramètres
   * Si vous êtes en cours d'exécution sans interface (via main.py), assurez-vous de définir `LLM_MODEL` dans votre env/config
 * Assurez-vous de suivre les instructions spéciales de votre fournisseur de LLM
-  * [ollama](/fr/modules/usage/llms/localLLMs)
-  * [Azure](/fr/modules/usage/llms/azureLLMs)
-  * [Google](/fr/modules/usage/llms/googleLLMs)
+  * [ollama](/fr/modules/usage/llms/local-llms)
+  * [Azure](/fr/modules/usage/llms/azure-llms)
+  * [Google](/fr/modules/usage/llms/google-llms)
 * Assurez-vous que votre clé API est correcte
 * Voyez si vous pouvez vous connecter au LLM en utilisant `curl`
 * Essayez de [vous connecter via LiteLLM directement](https://github.com/BerriAI/litellm) pour tester votre configuration

@@ -277,7 +277,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -329,7 +329,7 @@ jobs:
           docker-images: false
           swap-storage: true
       - name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -380,7 +380,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -414,7 +414,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}

@@ -81,7 +81,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 [GitHub 问题](https://github.com/OpenDevin/OpenDevin/issues?q=is%3Aissue+is%3Aopen+404)
 
-这通常发生在本地 LLM 设置中，当 OpenDevin 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/localLLMs) 以获取更多信息。
+这通常发生在本地 LLM 设置中，当 OpenDevin 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/local-llms) 以获取更多信息。
 
 ### 解决方法
 
@@ -128,9 +128,9 @@ openai.NotFoundError: Error code: 404 - {'error': {'code': '404', 'message': 'Re
   * 如果您在 UI 中运行，请确保在设置模式中设置 `model`
   * 如果您通过 main.py 运行，请确保在环境变量/配置中设置 `LLM_MODEL`
 * 确保遵循了您的 LLM 提供商的任何特殊说明
-  * [Ollama](/zh-Hans/modules/usage/llms/localLLMs)
-  * [Azure](/zh-Hans/modules/usage/llms/azureLLMs)
-  * [Google](/zh-Hans/modules/usage/llms/googleLLMs)
+  * [Ollama](/zh-Hans/modules/usage/llms/local-llms)
+  * [Azure](/zh-Hans/modules/usage/llms/azure-llms)
+  * [Google](/zh-Hans/modules/usage/llms/google-llms)
 * 确保您的 API 密钥正确无误
 * 尝试使用 `curl` 连接到 LLM
 * 尝试[直接通过 LiteLLM 连接](https://github.com/BerriAI/litellm)来测试您的设置
