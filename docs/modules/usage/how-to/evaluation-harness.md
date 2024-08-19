@@ -1,8 +1,4 @@
----
-sidebar_position: 6
----
-
-# 📈 How to contribute to OpenDevin Evaluation Harness
+# Contribute to OpenDevin Evaluation Harness
 
 This guide provides an overview of how to integrate your own evaluation benchmark into the OpenDevin framework.
 
