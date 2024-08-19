@@ -3734,17 +3734,18 @@ sentence-transformers = ">=2.6.1"
 
 [[package]]
 name = "llama-index-embeddings-ollama"
-version = "0.1.3"
+version = "0.2.0"
 description = "llama-index embeddings ollama integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_ollama-0.1.3-py3-none-any.whl", hash = "sha256:b960a8c744e2e56ce1fd75a34753614fed3ad81558570ae9958b90b9062afb6a"},
-    {file = "llama_index_embeddings_ollama-0.1.3.tar.gz", hash = "sha256:4bd1dd3230c9be04cfa45b28c3a8066e46c1654d4360fcbecdc1718ac9013eca"},
+    {file = "llama_index_embeddings_ollama-0.2.0-py3-none-any.whl", hash = "sha256:372b059321386bd9bbf4f619ad33dd551adb9ee92eeeb0c664d3466f7c212e2e"},
+    {file = "llama_index_embeddings_ollama-0.2.0.tar.gz", hash = "sha256:5673c740e1dd146e17d1c0401c1e179c0d559caf0967f4a4721b89fbb6822ad8"},
 ]
 
 [package.dependencies]
 llama-index-core = ">=0.10.1,<0.11.0"
+ollama = ">=0.3.1,<0.4.0"
 
 [[package]]
 name = "llama-index-embeddings-openai"
@@ -5081,6 +5082,20 @@ files = [
 rsa = ["cryptography (>=3.0.0)"]
 signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
+
+[[package]]
+name = "ollama"
+version = "0.3.1"
+description = "The official Python client for Ollama."
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "ollama-0.3.1-py3-none-any.whl", hash = "sha256:db50034c73d6350349bdfba19c3f0d54a3cea73eb97b35f9d7419b2fc7206454"},
+    {file = "ollama-0.3.1.tar.gz", hash = "sha256:032572fb494a4fba200c65013fe937a65382c846b5f358d9e8918ecbc9ac44b5"},
+]
+
+[package.dependencies]
+httpx = ">=0.27.0,<0.28.0"
 
 [[package]]
 name = "onnxruntime"
