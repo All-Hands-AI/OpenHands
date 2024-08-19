@@ -1277,22 +1277,22 @@ def test_find_file_cwd(tmp_path, monkeypatch):
 def test_find_file_not_exist_file():
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            find_file('unexist.txt')
+            find_file('nonexist.txt')
         result = buf.getvalue()
     assert result is not None
 
-    expected = '[No matches found for "unexist.txt" in ./]\n'
+    expected = '[No matches found for "nonexist.txt" in ./]\n'
     assert result.split('\n') == expected.split('\n')
 
 
 def test_find_file_not_exist_file_specific_path(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            find_file('unexist.txt', str(tmp_path))
+            find_file('nonexist.txt', str(tmp_path))
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[No matches found for "unexist.txt" in {tmp_path}]\n'
+    expected = f'[No matches found for "nonexist.txt" in {tmp_path}]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -1569,7 +1569,7 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             '(this is the end of the file)\n'
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
             'ERRORS:\n'
-            f"{file_path}:1:1: Syntax error at node type 'ERROR'\n"
+            f'{file_path}:1:1: Syntax error\n'
             '[This is how your edit would have looked if applied]\n'
             '-------------------------------------------------\n'
             '(this is the beginning of the file)\n'

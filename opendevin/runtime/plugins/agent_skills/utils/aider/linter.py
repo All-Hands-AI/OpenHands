@@ -223,8 +223,7 @@ def traverse_tree(node):
         line_no = node.start_point[0] + 1
         col_no = node.start_point[1] + 1
         error_type = 'Missing node' if node.is_missing else 'Syntax error'
-        error_details = f"{error_type} at node type '{node.type}'"
-        errors.append((line_no, col_no, error_details))
+        errors.append((line_no, col_no, error_type))
 
     for child in node.children:
         errors += traverse_tree(child)
