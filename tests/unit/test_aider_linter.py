@@ -119,7 +119,7 @@ def test_basic_lint(temp_file):
     result = basic_lint(temp_file, poorly_formatted_code)
 
     assert isinstance(result, LintResult)
-    assert result.text == f'{temp_file}:2'
+    assert result.text.startswith(f'{temp_file}:2:9')
     assert 2 in result.lines
 
 
@@ -136,7 +136,7 @@ def test_basic_lint_fail_returns_text_and_lines(temp_file):
     result = basic_lint(temp_file, poorly_formatted_code)
 
     assert isinstance(result, LintResult)
-    assert result.text == f'{temp_file}:2'
+    assert result.text.startswith(f'{temp_file}:2:9')
     assert 2 in result.lines
 
 
