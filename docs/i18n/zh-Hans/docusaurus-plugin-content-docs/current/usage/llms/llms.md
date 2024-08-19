@@ -25,8 +25,8 @@ OpenDevin 将向你配置的 LLM 发出许多提示。大多数这些 LLM 都是
 
 我们有一些指南，介绍了如何使用特定模型提供商运行 OpenDevin：
 
-- [ollama](llms/localLLMs)
-- [Azure](llms/azureLLMs)
+- [ollama](llms/local-llms)
+- [Azure](llms/azure-llms)
 
 如果你使用其他提供商，我们鼓励你打开一个 PR 来分享你的配置！
 
