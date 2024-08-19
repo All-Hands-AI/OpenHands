@@ -128,10 +128,7 @@ jobs:
       - name: Set up test matrix
         id: set-matrix
         run: |
-          matrix=$(for file in /tmp/last-tag-*.txt; do
-            last_tag=$(cat $file)
-            echo "$last_tag"
-          done | sort -u | jq -R . | jq -s .)
+          matrix=$(cat /tmp/last-tag-*.txt | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "test_image_tags=$matrix" >> $GITHUB_OUTPUT
           echo "Generated test_image_tags: $matrix"
 
