@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from opendevin.controller.agent import Agent
-from opendevin.controller.agent_controller import AgentController
-from opendevin.controller.state.state import TrafficControlState
-from opendevin.core.exceptions import LLMMalformedActionError
-from opendevin.core.schema import AgentState
-from opendevin.events import EventStream
-from opendevin.events.action import ChangeAgentStateAction, MessageAction
+from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
+from openhands.controller.state.state import TrafficControlState
+from openhands.core.exceptions import LLMMalformedActionError
+from openhands.core.schema import AgentState
+from openhands.events import EventStream
+from openhands.events.action import ChangeAgentStateAction, MessageAction
 
 
 @pytest.fixture

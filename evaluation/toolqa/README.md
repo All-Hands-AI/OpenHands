@@ -1,4 +1,4 @@
-# ToolQA Evaluation with OpenDevin
+# ToolQA Evaluation with OpenHands
 
 This folder contains an evaluation harness we built on top of the original [ToolQA](https://github.com/night-chen/ToolQA) ([paper](https://arxiv.org/pdf/2306.13304)).
 
@@ -19,7 +19,7 @@ where `model_config` is mandatory, while all other arguments are optional.
 `model_config`, e.g. `llm`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
 
-`git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
+`git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version you would
 like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting

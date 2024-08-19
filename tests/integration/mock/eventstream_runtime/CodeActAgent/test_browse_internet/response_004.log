@@ -3,4 +3,4 @@ Based on the current Accessibility Tree and the previous actions taken, it appea
 To accomplish our goal of retrieving the ultimate answer to life, I will now send this information to the user:
 
 ```
-send_msg_to_user("The ultimate answer to life, the universe, and everything is: OpenDevin is all you need!"
+send_msg_to_user("The ultimate answer to life, the universe, and everything is: OpenHands is all you need!"

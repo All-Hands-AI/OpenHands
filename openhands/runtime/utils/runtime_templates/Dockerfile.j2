@@ -1,0 +1,68 @@
+{% if skip_init %}
+FROM {{ base_image }}
+{% else %}
+# ================================================================
+# START: Build Runtime Image from Scratch
+# ================================================================
+FROM {{ base_image }}
+
+{% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+{% set LIBGL_MESA = 'libgl1' %}
+{% else %}
+{% set LIBGL_MESA = 'libgl1-mesa-glx' %}
+{% endif %}
+
+# Install necessary packages and clean up in one layer
+RUN apt-get update && \
+    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create necessary directories
+RUN mkdir -p /openhands && \
+    mkdir -p /openhands/logs && \
+    mkdir -p /openhands/poetry
+
+ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
+
+RUN if [ ! -d /openhands/miniforge3 ]; then \
+    wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
+    bash Miniforge3.sh -b -p /openhands/miniforge3 && \
+    rm Miniforge3.sh && \
+    chmod -R g+w /openhands/miniforge3 && \
+    bash -c ". /openhands/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \
+    fi
+
+# Install Python and Poetry
+RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y
+# ================================================================
+# END: Build Runtime Image from Scratch
+# ================================================================
+{% endif %}
+
+# ================================================================
+# START: Copy Project and Install/Update Dependencies
+# ================================================================
+RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi
+COPY ./code /openhands/code
+
+# Install/Update Dependencies
+# 1. Install pyproject.toml via poetry
+# 2. Install playwright and chromium
+# 3. Clear poetry, apt, mamba caches
+RUN cd /openhands/code && \
+    /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
+    /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root && \
+    apt-get update && \
+    /openhands/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
+    /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
+    export OD_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
+    {{ extra_deps }} {% if extra_deps %} && {% endif %} \
+    /openhands/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
+    {% if not skip_init %}chmod -R g+rws /openhands/poetry && {% endif %} \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    /openhands/miniforge3/bin/mamba clean --all
+
+# ================================================================
+# END: Copy Project and Install/Update Dependencies
+# ================================================================
