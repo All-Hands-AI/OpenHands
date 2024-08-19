@@ -134,14 +134,17 @@ class LLMConfig(BaseConfig):
         default_config = cls()
 
         # Load default [llm] section if it exists
-        if 'llm' in toml_config and isinstance(toml_config['llm'], dict):
-            default_config = cls(**toml_config['llm'])
-            llm_configs['llm'] = default_config
+        llm_section_dict = toml_config.get('llm', {})
+        non_dict_fields = {
+            k: v for k, v in llm_section_dict.items() if not isinstance(v, dict)
+        }
+        default_config = cls(**non_dict_fields)
+        llm_configs['llm'] = default_config
 
         # Load custom LLM configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('llm', {}).items():
-            logger.opendevin_logger.debug(f'Loading custom llm config for {key}')
-            if isinstance(value, dict):
+            if key.startswith('llm.') and isinstance(value, dict):
+                logger.opendevin_logger.debug(f'Loading custom llm config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
@@ -212,14 +215,17 @@ class MemoryConfig(BaseConfig):
         default_config = cls()
 
         # Load default [memory] section if it exists
-        if 'memory' in toml_config and isinstance(toml_config['memory'], dict):
-            default_config = cls(**toml_config['memory'])
-            memory_configs['memory'] = default_config
+        memory_section_dict = toml_config.get('memory', {})
+        non_dict_fields = {
+            k: v for k, v in memory_section_dict.items() if not isinstance(v, dict)
+        }
+        default_config = cls(**non_dict_fields)
+        memory_configs['memory'] = default_config
 
         # Load custom memory configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('memory', {}).items():
-            logger.opendevin_logger.debug(f'Loading custom memory config for {key}')
-            if isinstance(value, dict):
+            if key.startswith('memory.') and isinstance(value, dict):
+                logger.opendevin_logger.debug(f'Loading custom memory config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
@@ -279,13 +285,17 @@ class AgentConfig(BaseConfig):
         default_config = cls()
 
         # Load default [agent] section if it exists
-        if 'agent' in toml_config and isinstance(toml_config['agent'], dict):
-            default_config = cls(**toml_config['agent'])
+        agent_section_dict = toml_config.get('agent', {})
+        non_dict_fields = {
+            k: v for k, v in agent_section_dict.items() if not isinstance(v, dict)
+        }
+        default_config = cls(**non_dict_fields)
+        agent_configs['agent'] = default_config
 
         # Load custom Agent configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('agent', {}).items():
-            logger.opendevin_logger.debug(f'Loading custom agent config for {key}')
-            if isinstance(value, dict) and key != 'agent':
+            if key.startswith('agent.') and isinstance(value, dict):
+                logger.opendevin_logger.debug(f'Loading custom agent config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
