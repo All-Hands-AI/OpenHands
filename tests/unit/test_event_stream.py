@@ -3,12 +3,12 @@ import json
 import pytest
 from pytest import TempPathFactory
 
-from opendevin.events import EventSource, EventStream
-from opendevin.events.action import (
+from openhands.events import EventSource, EventStream
+from openhands.events.action import (
     NullAction,
 )
-from opendevin.events.observation import NullObservation
-from opendevin.storage import get_file_store
+from openhands.events.observation import NullObservation
+from openhands.storage import get_file_store
 
 
 @pytest.fixture

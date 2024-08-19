@@ -1,4 +1,4 @@
-# HumanEvalFix Evaluation with OpenDevin
+# HumanEvalFix Evaluation with OpenHands
 
 Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in [OctoPack: Instruction Tuning Code Large Language Models](https://arxiv.org/abs/2308.07124). Please see [here](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py) for the reference implementation used in the paper. Currently only `python` evaluation is supported.
 
@@ -17,7 +17,7 @@ You can replace `eval_gpt4_1106_preview` with any model you set up in `config.to
 
 ## Examples
 
-For each problem, OpenDevin is given a set number of iterations to fix the failing code. The history field shows each iteration's response to correct its code that fails any test case.
+For each problem, OpenHands is given a set number of iterations to fix the failing code. The history field shows each iteration's response to correct its code that fails any test case.
 
 
 ```

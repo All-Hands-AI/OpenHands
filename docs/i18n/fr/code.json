@@ -1,6 +1,6 @@
 {
   "footer.title": {
-    "message": "OpenDevin"
+    "message": "OpenHands"
   },
   "footer.docs": {
     "message": "Documents"
@@ -9,7 +9,7 @@
     "message": "Communauté"
   },
   "footer.copyright": {
-    "message": "© {year} OpenDevin"
+    "message": "© {year} OpenHands"
   },
   "faq.title": {
     "message": "Questions Fréquemment Posées",
@@ -19,20 +19,20 @@
     "message": "Questions Fréquemment Posées"
   },
   "faq.section.title.1": {
-    "message": "Qu'est-ce qu'OpenDevin ?",
+    "message": "Qu'est-ce qu'OpenHands ?",
     "description": "First Section Title"
   },
   "faq.section.highlight": {
-    "message": "OpenDevin",
+    "message": "OpenHands",
     "description": "Highlight Text"
   },
   "faq.section.description.1": {
-    "message": "est un ingénieur logiciel autonome qui peut résoudre des tâches d'ingénierie logicielle et de navigation web à tout moment. Il peut exécuter des requêtes en sciences des données, telles que \"Trouver le nombre de demandes de pull à l'repository OpenDevin dans les derniers mois\", et des tâches d'ingénierie logicielle, comme \"Veuillez ajouter des tests à ce fichier et vérifier si tous les tests passent. Si ce n'est pas le cas, réparez le fichier.\"",
-    "description": "Description for OpenDevin"
+    "message": "est un ingénieur logiciel autonome qui peut résoudre des tâches d'ingénierie logicielle et de navigation web à tout moment. Il peut exécuter des requêtes en sciences des données, telles que \"Trouver le nombre de demandes de pull à l'repository OpenHands dans les derniers mois\", et des tâches d'ingénierie logicielle, comme \"Veuillez ajouter des tests à ce fichier et vérifier si tous les tests passent. Si ce n'est pas le cas, réparez le fichier.\"",
+    "description": "Description for OpenHands"
   },
   "faq.section.description.2": {
-    "message": "De plus, OpenDevin est une plateforme et communauté pour les développeurs d'agents qui souhaitent tester et évaluer de nouveaux agents.",
-    "description": "Further Description for OpenDevin"
+    "message": "De plus, OpenHands est une plateforme et communauté pour les développeurs d'agents qui souhaitent tester et évaluer de nouveaux agents.",
+    "description": "Further Description for OpenHands"
   },
   "faq.section.title.2": {
     "message": "Support",
@@ -43,15 +43,15 @@
     "description": "Support Answer"
   },
   "faq.section.title.3": {
-    "message": "Comment résoudre un problème sur GitHub avec OpenDevin ?",
+    "message": "Comment résoudre un problème sur GitHub avec OpenHands ?",
     "description": "GitHub Issue Section Title"
   },
   "faq.section.github.steps.intro": {
-    "message": "Pour résoudre un problème sur GitHub en utilisant OpenDevin, envoyez une commande à OpenDevin demandant qu'il suit des étapes comme les suivantes :",
+    "message": "Pour résoudre un problème sur GitHub en utilisant OpenHands, envoyez une commande à OpenHands demandant qu'il suit des étapes comme les suivantes :",
     "description": "GitHub Steps Introduction"
   },
   "faq.section.github.step1": {
-    "message": "Lisez l'issue https://github.com/OpenDevin/OpenDevin/issues/1611",
+    "message": "Lisez l'issue https://github.com/All-Hands-AI/OpenHands/issues/1611",
     "description": "GitHub Step 1"
   },
   "faq.section.github.step2": {
@@ -71,11 +71,11 @@
     "description": "GitHub Step 5"
   },
   "faq.section.github.steps.preRun": {
-    "message": "Avant de lancer OpenDevin, vous pouvez faire :",
+    "message": "Avant de lancer OpenHands, vous pouvez faire :",
     "description": "GitHub Steps Pre-Run"
   },
   "faq.section.github.steps.tokenInfo": {
-    "message": "où XXX est un jeton GitHub que vous avez créé et qui a les autorisations pour pousser dans le dépôt OpenDevin. Si vous n'avez pas d'autorisations de modification du dépôt OpenDevin, vous devrez peut-être changer cela en :",
+    "message": "où XXX est un jeton GitHub que vous avez créé et qui a les autorisations pour pousser dans le dépôt OpenHands. Si vous n'avez pas d'autorisations de modification du dépôt OpenHands, vous devrez peut-être changer cela en :",
     "description": "GitHub Steps Token Info"
   },
   "faq.section.github.steps.usernameInfo": {
@@ -83,23 +83,23 @@
     "description": "GitHub Steps Username Info"
   },
   "faq.section.title.4": {
-    "message": "Comment OpenDevin est-il différent de Devin ?",
+    "message": "Comment OpenHands est-il différent de Devin ?",
     "description": "Devin Section Title"
   },
-  "faq.section.devin.linkText": {
+  "faq.section.openhands.linkText": {
     "message": "Devin",
     "description": "Devin Link Text"
   },
-  "faq.section.devin.description": {
-    "message": "est un produit commercial par Cognition Inc., qui a servi d'inspiration initiale pour OpenDevin. Les deux visent à bien faire le travail d'ingénierie logicielle, mais vous pouvez télécharger, utiliser et modifier OpenDevin, tandis que Devin peut être utilisé uniquement via le site de Cognition. De plus, OpenDevin a évolué au-delà de l'inspiration initiale, et est maintenant un écosystème communautaire pour le développement d'agents en général, et nous serions ravis de vous voir rejoindre et",
+  "faq.section.openhands.description": {
+    "message": "est un produit commercial par Cognition Inc., qui a servi d'inspiration initiale pour OpenHands. Les deux visent à bien faire le travail d'ingénierie logicielle, mais vous pouvez télécharger, utiliser et modifier OpenHands, tandis que Devin peut être utilisé uniquement via le site de Cognition. De plus, OpenHands a évolué au-delà de l'inspiration initiale, et est maintenant un écosystème communautaire pour le développement d'agents en général, et nous serions ravis de vous voir rejoindre et",
     "description": "Devin Description"
   },
-  "faq.section.devin.contribute": {
+  "faq.section.openhands.contribute": {
     "message": "contribuer",
     "description": "Contribute Link"
   },
   "faq.section.title.5": {
-    "message": "Comment OpenDevin est-il différent de ChatGPT ?",
+    "message": "Comment OpenHands est-il différent de ChatGPT ?",
     "description": "ChatGPT Section Title"
   },
   "faq.section.chatgpt.description": {
@@ -114,7 +114,7 @@
     "message": "Commencer"
   },
   "welcome.message": {
-    "message": "Bienvenue à OpenDevin, un système d'IA autonome ingénieur logiciel capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur les projets de développement logiciel."
+    "message": "Bienvenue à OpenHands, un système d'IA autonome ingénieur logiciel capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur les projets de développement logiciel."
   },
   "theme.ErrorPageContent.title": {
     "message": "Cette page a planté.",

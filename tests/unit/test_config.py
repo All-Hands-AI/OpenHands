@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from opendevin.core.config import (
+from openhands.core.config import (
     AgentConfig,
     AppConfig,
     LLMConfig,
@@ -49,7 +49,7 @@ def default_config():
 
 def test_compat_env_to_config(monkeypatch):
     # Use `monkeypatch` to set environment variables for this specific test
-    monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
+    monkeypatch.setenv('WORKSPACE_BASE', '/repos/openhands/workspace')
     monkeypatch.setenv('LLM_API_KEY', 'sk-proj-rgMV0...')
     monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
     monkeypatch.setenv('MEMORY_EMBEDDING_MODEL', 'local')
@@ -61,7 +61,7 @@ def test_compat_env_to_config(monkeypatch):
     config = AppConfig()
     config.load_from_env(dict(os.environ))
 
-    assert config.workspace_base == '/repos/opendevin/workspace'
+    assert config.workspace_base == '/repos/openhands/workspace'
     assert isinstance(config.get_llm_config(), LLMConfig)
     assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
     assert config.get_llm_config().model == 'gpt-4o'

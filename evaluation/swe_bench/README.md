@@ -1,4 +1,4 @@
-# SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
+# SWE-Bench Evaluation with OpenHands SWE-Bench Docker Image
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
@@ -6,7 +6,7 @@ This folder contains the evaluation harness that we built on top of the original
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](../README.md#development-environment), [configure LLM config](../README.md#configure-opendevin-and-your-llm), and [pull docker](#opendevin-swe-bench-instance-level-docker-support).
+1. Environment setup: [install python environment](../README.md#development-environment), [configure LLM config](../README.md#configure-openhands-and-your-llm), and [pull docker](#openhands-swe-bench-instance-level-docker-support).
 2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
 3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
 
@@ -14,9 +14,9 @@ The evaluation consists of three steps:
 
 Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
-## OpenDevin SWE-Bench Instance-level Docker Support
+## OpenHands SWE-Bench Instance-level Docker Support
 
-OpenDevin now support using the [official evaluation docker](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md) for both **[inference](#run-inference-on-swe-bench-instances) and [evaluation](#evaluate-generated-patches)**.
+OpenHands now support using the [official evaluation docker](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md) for both **[inference](#run-inference-on-swe-bench-instances) and [evaluation](#evaluate-generated-patches)**.
 This is now the default behavior.
 
 ### Download Docker Images
@@ -35,7 +35,7 @@ evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
 
 ## Run Inference on SWE-Bench Instances
 
-Make sure your Docker daemon is running, and you have pulled the [instance-level docker image](#opendevin-swe-bench-instance-level-docker-support).
+Make sure your Docker daemon is running, and you have pulled the [instance-level docker image](#openhands-swe-bench-instance-level-docker-support).
 
 ```bash
 ./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
@@ -46,7 +46,7 @@ where `model_config` is mandatory, and the rest are optional.
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
-- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
+- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version you would
 like to evaluate. It could also be a release tag like `0.6.2`.
 - `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
@@ -95,10 +95,10 @@ With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patc
 
 > If you want to evaluate existing results, you should first run this to clone existing outputs
 >```bash
->git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
+>git clone https://huggingface.co/spaces/OpenHands/evaluation evaluation/evaluation_outputs
 >```
 
-NOTE, you should have already pulled the instance-level OR env-level docker images following [this section](#opendevin-swe-bench-instance-level-docker-support).
+NOTE, you should have already pulled the instance-level OR env-level docker images following [this section](#openhands-swe-bench-instance-level-docker-support).
 
 Then you can run the following:
 
@@ -129,10 +129,10 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 
 ## Visualize Results
 
-First you need to clone `https://huggingface.co/spaces/OpenDevin/evaluation` and add your own running results from opendevin into the `outputs` of the cloned repo.
+First you need to clone `https://huggingface.co/spaces/OpenHands/evaluation` and add your own running results from openhands into the `outputs` of the cloned repo.
 
 ```bash
-git clone https://huggingface.co/spaces/OpenDevin/evaluation
+git clone https://huggingface.co/spaces/OpenHands/evaluation
 ```
 
 **(optional) setup streamlit environment with conda**:
@@ -149,11 +149,11 @@ Then, in a separate Python environment with `streamlit` library, you can run the
 ```bash
 # Make sure you are inside the cloned `evaluation` repo
 conda activate streamlit # if you follow the optional conda env setup above
-streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 0.0.0.0
+streamlit run 0_📊_OpenHands_Benchmark.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
 
 ## Submit your evaluation results
 
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
+You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).

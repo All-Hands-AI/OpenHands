@@ -29,7 +29,7 @@ If you're running on Windows and having trouble, check out our [guide for Window
 
 ### Unable to connect to Docker
 
-[GitHub Issue](https://github.com/OpenDevin/OpenDevin/issues/1226)
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1226)
 
 **Symptoms**
 
@@ -43,7 +43,7 @@ docker.errors.DockerException: Error while fetching server API version: ('Connec
 
 **Details**
 
-OpenDevin uses a Docker container to do its work safely, without potentially breaking your machine.
+OpenHands uses a Docker container to do its work safely, without potentially breaking your machine.
 
 **Workarounds**
 
@@ -55,7 +55,7 @@ OpenDevin uses a Docker container to do its work safely, without potentially bre
 ---
 ### Unable to connect to SSH box
 
-[GitHub Issue](https://github.com/OpenDevin/OpenDevin/issues/1156)
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1156)
 
 **Symptoms**
 
@@ -67,7 +67,7 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 
 **Details**
 
-By default, OpenDevin connects to a running container using SSH. On some machines,
+By default, OpenHands connects to a running container using SSH. On some machines,
 especially Windows, this seems to fail.
 
 **Workarounds**
@@ -75,12 +75,12 @@ especially Windows, this seems to fail.
 * Restart your computer (sometimes it does work)
 * Be sure to have the latest versions of WSL and Docker
 * Check that your distribution in WSL is up to date as well
-* Try [this reinstallation guide](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
+* Try [this reinstallation guide](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
 
 ---
 ### Unable to connect to LLM
 
-[GitHub Issue](https://github.com/OpenDevin/OpenDevin/issues/1208)
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1208)
 
 **Symptoms**
 
@@ -93,10 +93,10 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 **Details**
 
-[GitHub Issues](https://github.com/OpenDevin/OpenDevin/issues?q=is%3Aissue+is%3Aopen+404)
+[GitHub Issues](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
-This usually happens with *local* LLM setups, when OpenDevin can't connect to the LLM server.
-See our guide for [local LLMs](llms/localLLMs) for more information.
+This usually happens with *local* LLM setups, when OpenHands can't connect to the LLM server.
+See our guide for [local LLMs](llms/local-llms) for more information.
 
 **Workarounds**
 
@@ -145,9 +145,9 @@ the API endpoint you're trying to connect to. Most often this happens for Azure 
   * If you're running inside the UI, be sure to set the `model` in the settings modal
   * If you're running headless (via main.py) be sure to set `LLM_MODEL` in your env/config
 * Make sure you've followed any special instructions for your LLM provider
-  * [ollama](/modules/usage/llms/localLLMs)
-  * [Azure](/modules/usage/llms/azureLLMs)
-  * [Google](/modules/usage/llms/googleLLMs)
+  * [ollama](/modules/usage/llms/local-llms)
+  * [Azure](/modules/usage/llms/azure-llms)
+  * [Google](/modules/usage/llms/google-llms)
 * Make sure your API key is correct
 * See if you can connect to the LLM using `curl`
 * Try [connecting via LiteLLM directly](https://github.com/BerriAI/litellm) to test your setup
@@ -190,24 +190,24 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 **Symptoms**
 
-OpenDevin usually asks whether to resume or start a new session when opening the UI.
+OpenHands usually asks whether to resume or start a new session when opening the UI.
 But clicking "Resume" still starts a fresh new chat.
 
 **Details**
 
 With a standard installation as of today session data is stored in memory.
-Currently, if OpenDevin's service is restarted, previous sessions become
+Currently, if OpenHands's service is restarted, previous sessions become
 invalid (a new secret is generated) and thus not recoverable.
 
 **Workarounds**
 
 * Change configuration to make sessions persistent by editing the `config.toml`
-file (in OpenDevin's root folder) by specifying a `file_store` and an
+file (in OpenHands's root folder) by specifying a `file_store` and an
 absolute `file_store_path`:
 
 ```toml
 file_store="local"
-file_store_path="/absolute/path/to/opendevin/cache/directory"
+file_store_path="/absolute/path/to/openhands/cache/directory"
 ```
 
 * Add a fixed jwt secret in your .bashrc, like below, so that previous session id's

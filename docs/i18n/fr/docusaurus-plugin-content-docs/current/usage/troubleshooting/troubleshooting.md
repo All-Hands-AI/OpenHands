@@ -20,7 +20,7 @@ Si vous utilisez Windows et que vous rencontrez des problèmes, consultez notre 
 
 ## Impossible de se connecter à Docker
 
-[Problème GitHub](https://github.com/OpenDevin/OpenDevin/issues/1226)
+[Problème GitHub](https://github.com/All-Hands-AI/OpenHands/issues/1226)
 
 ### Symptômes
 
@@ -34,7 +34,7 @@ docker.errors.DockerException: Erreur lors de la récupération de la version de
 
 ### Détails
 
-OpenDevin utilise un conteneur Docker pour effectuer son travail en toute sécurité, sans risquer de briser votre machine.
+OpenHands utilise un conteneur Docker pour effectuer son travail en toute sécurité, sans risquer de briser votre machine.
 
 ### Solutions de contournement
 
@@ -45,7 +45,7 @@ OpenDevin utilise un conteneur Docker pour effectuer son travail en toute sécur
 
 ## Impossible de se connecter à la boîte SSH
 
-[Problème GitHub](https://github.com/OpenDevin/OpenDevin/issues/1156)
+[Problème GitHub](https://github.com/All-Hands-AI/OpenHands/issues/1156)
 
 ### Symptômes
 
@@ -57,7 +57,7 @@ pexpect.pxssh.ExceptionPxssh: Impossible d'établir une connexion avec l'hôte
 
 ### Détails
 
-Par défaut, OpenDevin se connecte à un conteneur en cours d'exécution via SSH. Sur certaines machines,
+Par défaut, OpenHands se connecte à un conteneur en cours d'exécution via SSH. Sur certaines machines,
 en particulier Windows, cela semble échouer.
 
 ### Solutions de contournement
@@ -65,11 +65,11 @@ en particulier Windows, cela semble échouer.
 * Redémarrez votre ordinateur (parfois cela fonctionne)
 * Assurez-vous d'avoir les dernières versions de WSL et Docker
 * Vérifiez que votre distribution dans WSL est également à jour
-* Essayez [ce guide de réinstallation](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
+* Essayez [ce guide de réinstallation](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
 
 ## Impossible de se connecter à LLM
 
-[Problème GitHub](https://github.com/OpenDevin/OpenDevin/issues/1208)
+[Problème GitHub](https://github.com/All-Hands-AI/OpenHands/issues/1208)
 
 ### Symptômes
 
@@ -82,10 +82,10 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 ### Détails
 
-[Problèmes GitHub](https://github.com/OpenDevin/OpenDevin/issues?q=is%3Aissue+is%3Aopen+404)
+[Problèmes GitHub](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
-Cela se produit généralement avec les configurations de LLM *locales*, lorsque OpenDevin ne parvient pas à se connecter au serveur LLM.
-Consultez notre guide pour [LLMs locaux](llms/localLLMs) pour plus d'informations.
+Cela se produit généralement avec les configurations de LLM *locales*, lorsque OpenHands ne parvient pas à se connecter au serveur LLM.
+Consultez notre guide pour [LLMs locaux](llms/local-llms) pour plus d'informations.
 
 ### Solutions de contournement
 
@@ -133,9 +133,9 @@ le point de terminaison API avec lequel vous essayez de vous connecter. Cela arr
   * Si vous êtes en cours d'exécution dans l'interface utilisateur, assurez-vous de définir le `model` dans le modal des paramètres
   * Si vous êtes en cours d'exécution sans interface (via main.py), assurez-vous de définir `LLM_MODEL` dans votre env/config
 * Assurez-vous de suivre les instructions spéciales de votre fournisseur de LLM
-  * [ollama](/fr/modules/usage/llms/localLLMs)
-  * [Azure](/fr/modules/usage/llms/azureLLMs)
-  * [Google](/fr/modules/usage/llms/googleLLMs)
+  * [ollama](/fr/modules/usage/llms/local-llms)
+  * [Azure](/fr/modules/usage/llms/azure-llms)
+  * [Google](/fr/modules/usage/llms/google-llms)
 * Assurez-vous que votre clé API est correcte
 * Voyez si vous pouvez vous connecter au LLM en utilisant `curl`
 * Essayez de [vous connecter via LiteLLM directement](https://github.com/BerriAI/litellm) pour tester votre configuration
@@ -179,24 +179,24 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 ### Symptômes
 
-OpenDevin demande généralement s'il faut reprendre ou commencer une nouvelle session lors de l'ouverture de l'interface utilisateur.
+OpenHands demande généralement s'il faut reprendre ou commencer une nouvelle session lors de l'ouverture de l'interface utilisateur.
 Mais cliquer sur "Reprendre" démarre toujours une toute nouvelle discussion.
 
 ### Détails
 
 Avec une installation standard à ce jour, les données de session sont stockées en mémoire.
-Actuellement, si le service OpenDevin est redémarré, les sessions précédentes deviennent
+Actuellement, si le service OpenHands est redémarré, les sessions précédentes deviennent
 invalides (un nouveau secret est généré) et donc non récupérables.
 
 ### Solutions de contournement
 
 * Modifiez la configuration pour rendre les sessions persistantes en éditant le fichier `config.toml`
-(dans le dossier racine d'OpenDevin) en spécifiant un `file_store` et un
+(dans le dossier racine d'OpenHands) en spécifiant un `file_store` et un
 `file_store_path` absolu :
 
 ```toml
 file_store="local"
-file_store_path="/absolute/path/to/opendevin/cache/directory"
+file_store_path="/absolute/path/to/openhands/cache/directory"
 ```
 
 * Ajoutez un secret jwt fixe dans votre .bashrc, comme ci-dessous, afin que les id de session précédents

@@ -7,14 +7,14 @@ import yaml
 from pytest import TempPathFactory
 
 from agenthub.micro.registry import all_microagents
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.config import AgentConfig
-from opendevin.events import EventSource
-from opendevin.events.action import MessageAction
-from opendevin.events.stream import EventStream
-from opendevin.memory.history import ShortTermHistory
-from opendevin.storage import get_file_store
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.events import EventSource
+from openhands.events.action import MessageAction
+from openhands.events.stream import EventStream
+from openhands.memory.history import ShortTermHistory
+from openhands.storage import get_file_store
 
 
 @pytest.fixture
