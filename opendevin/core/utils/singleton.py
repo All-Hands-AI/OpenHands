@@ -1,5 +1,5 @@
 import dataclasses
-from opendevin.core import logger
+from openhands.core import logger
 
 class Singleton(type):
     _instances: dict = {}
@@ -16,7 +16,7 @@ class Singleton(type):
                 if hasattr(instance, key):
                     setattr(instance, key, value)
                 else:
-                    logger.opendevin_logger.warning(f'Unknown key for {cls.__name__}: "{key}"')
+                    logger.openhands_logger.warning(f'Unknown key for {cls.__name__}: "{key}"')
         return cls._instances[cls]
 
     @classmethod

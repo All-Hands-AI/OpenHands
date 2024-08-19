@@ -4,9 +4,9 @@ import tempfile
 
 import pytest
 
-from opendevin.core.schema.action import ActionType
-from opendevin.core.schema.agent import AgentState
-from opendevin.events.action import (
+from openhands.core.schema.action import ActionType
+from openhands.core.schema.agent import AgentState
+from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
@@ -17,9 +17,9 @@ from opendevin.events.action import (
     MessageAction,
     NullAction,
 )
-from opendevin.events.action.action import ActionConfirmationStatus, ActionSecurityRisk
-from opendevin.events.event import Event
-from opendevin.events.observation import (
+from openhands.events.action.action import ActionConfirmationStatus, ActionSecurityRisk
+from openhands.events.event import Event
+from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
     BrowserOutputObservation,
@@ -27,11 +27,11 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     NullObservation,
 )
-from opendevin.events.stream import EventSource, EventStream
-from opendevin.security.invariant import InvariantAnalyzer
-from opendevin.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
-from opendevin.security.invariant.parser import parse_action, parse_observation
-from opendevin.storage import get_file_store
+from openhands.events.stream import EventSource, EventStream
+from openhands.security.invariant import InvariantAnalyzer
+from openhands.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
+from openhands.security.invariant.parser import parse_action, parse_observation
+from openhands.storage import get_file_store
 
 
 @pytest.fixture

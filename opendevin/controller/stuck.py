@@ -1,18 +1,18 @@
 from typing import cast
 
-from opendevin.controller.state.state import State
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.action import Action
-from opendevin.events.action.empty import NullAction
-from opendevin.events.action.message import MessageAction
-from opendevin.events.event import Event, EventSource
-from opendevin.events.observation.commands import (
+from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.action import Action
+from openhands.events.action.empty import NullAction
+from openhands.events.action.message import MessageAction
+from openhands.events.event import Event, EventSource
+from openhands.events.observation.commands import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.empty import NullObservation
-from opendevin.events.observation.error import ErrorObservation
-from opendevin.events.observation.observation import Observation
+from openhands.events.observation.empty import NullObservation
+from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.observation import Observation
 
 
 class StuckDetector:

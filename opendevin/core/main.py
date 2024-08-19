@@ -5,26 +5,26 @@ import uuid
 from typing import Callable, Protocol, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
-from opendevin.controller import AgentController
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller import AgentController
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     get_llm_config_arg,
     load_app_config,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import AgentState
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
-from opendevin.events.action import MessageAction
-from opendevin.events.action.action import Action
-from opendevin.events.event import Event
-from opendevin.events.observation import AgentStateChangedObservation
-from opendevin.llm.llm import LLM
-from opendevin.runtime import get_runtime_cls
-from opendevin.runtime.runtime import Runtime
-from opendevin.storage import get_file_store
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import AgentState
+from openhands.events import EventSource, EventStream, EventStreamSubscriber
+from openhands.events.action import MessageAction
+from openhands.events.action.action import Action
+from openhands.events.event import Event
+from openhands.events.observation import AgentStateChangedObservation
+from openhands.llm.llm import LLM
+from openhands.runtime import get_runtime_cls
+from openhands.runtime.runtime import Runtime
+from openhands.storage import get_file_store
 
 
 class FakeUserResponseFunc(Protocol):
@@ -95,7 +95,7 @@ async def run_controller(
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
-    It's only used when you launch opendevin backend directly via cmdline.
+    It's only used when you launch openhands backend directly via cmdline.
 
     Args:
         config: The app config.

@@ -11,8 +11,8 @@ from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 import toml
 from dotenv import load_dotenv
 
-from opendevin.core import logger
-from opendevin.core.utils import Singleton
+from openhands.core import logger
+from openhands.core.utils import Singleton
 
 load_dotenv()
 
@@ -45,7 +45,7 @@ class LLMConfig:
         max_message_chars: The approximate max number of characters in the content of an event included in the prompt to the LLM. Larger observations are truncated.
         temperature: The temperature for the API.
         top_p: The top p for the API.
-        custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
+        custom_llm_provider: The custom LLM provider to use. This is undocumented in openhands, and normally not used. It is documented on the litellm side.
         max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4).
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
@@ -203,7 +203,7 @@ class SandboxConfig(metaclass=Singleton):
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
     enable_auto_lint: bool = (
-        False  # once enabled, OpenDevin would lint files after editing
+        False  # once enabled, OpenHands would lint files after editing
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
@@ -253,7 +253,7 @@ class AppConfig(metaclass=Singleton):
         workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
-        run_as_devin: Whether to run as devin.
+        run_as_openhands: Whether to run as openhands.
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
@@ -281,7 +281,7 @@ class AppConfig(metaclass=Singleton):
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-    run_as_devin: bool = True
+    run_as_openhands: bool = True
     max_iterations: int = _MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
@@ -300,7 +300,7 @@ class AppConfig(metaclass=Singleton):
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
-            logger.opendevin_logger.warning(
+            logger.openhands_logger.warning(
                 f'llm config group {name} not found, using default config'
             )
         if 'llm' not in self.llms:
@@ -451,7 +451,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
                 except (ValueError, TypeError):
-                    logger.opendevin_logger.error(
+                    logger.openhands_logger.error(
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
@@ -480,7 +480,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     except FileNotFoundError:
         return
     except toml.TomlDecodeError as e:
-        logger.opendevin_logger.warning(
+        logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
@@ -499,7 +499,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
-                    logger.opendevin_logger.info(
+                    logger.openhands_logger.info(
                         'Attempt to load default agent config from config toml'
                     )
                     non_dict_fields = {
@@ -509,13 +509,13 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_agent_config(agent_config, 'agent')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.opendevin_logger.info(
+                            logger.openhands_logger.info(
                                 f'Attempt to load group {nested_key} from config toml as agent config'
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 elif key is not None and key.lower() == 'llm':
-                    logger.opendevin_logger.info(
+                    logger.openhands_logger.info(
                         'Attempt to load default LLM config from config toml'
                     )
                     non_dict_fields = {
@@ -525,22 +525,22 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.opendevin_logger.info(
+                            logger.openhands_logger.info(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
                 elif not key.startswith('sandbox') and key.lower() != 'core':
-                    logger.opendevin_logger.warning(
+                    logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
             except (TypeError, KeyError) as e:
-                logger.opendevin_logger.warning(
+                logger.openhands_logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
                     exc_info=False,
                 )
         else:
-            logger.opendevin_logger.warning(f'Unknown key in {toml_file}: "{key}')
+            logger.openhands_logger.warning(f'Unknown key in {toml_file}: "{key}')
 
     try:
         # set sandbox config from the toml file
@@ -554,7 +554,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
+                logger.openhands_logger.warning(f'Unknown sandbox config: {key}')
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -563,7 +563,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         # update the config object with the new values
         AppConfig(sandbox=sandbox_config, **core_config)
     except (TypeError, KeyError) as e:
-        logger.opendevin_logger.warning(
+        logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
@@ -587,7 +587,7 @@ def finalize_config(cfg: AppConfig):
             llm.embedding_base_url = llm.base_url
 
     if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
-        logger.opendevin_logger.warning(
+        logger.openhands_logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
@@ -632,17 +632,17 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.opendevin_logger.info(f'Loading llm config from {llm_config_arg}')
+    logger.openhands_logger.info(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.opendevin_logger.error(f'Config file not found: {e}')
+        logger.openhands_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
-        logger.opendevin_logger.error(
+        logger.openhands_logger.error(
             f'Cannot parse llm group from {llm_config_arg}. Exception: {e}'
         )
         return None
@@ -650,7 +650,7 @@ def get_llm_config_arg(
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
         return LLMConfig(**toml_config['llm'][llm_config_arg])
-    logger.opendevin_logger.debug(f'Loading from toml failed for {llm_config_arg}')
+    logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
 

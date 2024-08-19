@@ -6,9 +6,9 @@ import warnings
 
 import requests
 
-from opendevin.security.options import SecurityAnalyzers
-from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
-from opendevin.storage import get_file_store
+from openhands.security.options import SecurityAnalyzers
+from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
+from openhands.storage import get_file_store
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -29,28 +29,28 @@ from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
-from opendevin.controller.agent import Agent
-from opendevin.core.config import LLMConfig, load_app_config
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import AgentState  # Add this import
-from opendevin.events.action import (
+from openhands.controller.agent import Agent
+from openhands.core.config import LLMConfig, load_app_config
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import AgentState  # Add this import
+from openhands.events.action import (
     ChangeAgentStateAction,
     FileReadAction,
     FileWriteAction,
     NullAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     AgentStateChangedObservation,
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     NullObservation,
 )
-from opendevin.events.serialization import event_to_dict
-from opendevin.llm import bedrock
-from opendevin.runtime.runtime import Runtime
-from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.server.session import SessionManager
+from openhands.events.serialization import event_to_dict
+from openhands.llm import bedrock
+from openhands.runtime.runtime import Runtime
+from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.session import SessionManager
 
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
@@ -220,7 +220,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Write contents to a file:
         ```json
-        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenDevin?"}}
+        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenHands?"}}
         ```
     - Read the contents of a file:
         ```json

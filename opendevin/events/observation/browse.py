@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from opendevin.core.schema import ObservationType
+from openhands.core.schema import ObservationType
 
 from .observation import Observation
 

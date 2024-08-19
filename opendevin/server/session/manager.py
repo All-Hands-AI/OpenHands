@@ -3,9 +3,9 @@ import time
 
 from fastapi import WebSocket
 
-from opendevin.core.config import AppConfig
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.storage.files import FileStore
+from openhands.core.config import AppConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.storage.files import FileStore
 
 from .session import Session
 

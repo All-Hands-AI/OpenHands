@@ -127,7 +127,7 @@ def get_file_handler(log_dir):
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
-    file_name = f'opendevin_{timestamp}.log'
+    file_name = f'openhands_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     if DEBUG:
         file_handler.setLevel(logging.DEBUG)
@@ -156,26 +156,26 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 
 sys.excepthook = log_uncaught_exceptions
 
-opendevin_logger = logging.getLogger('opendevin')
-opendevin_logger.setLevel(logging.INFO)
+openhands_logger = logging.getLogger('openhands')
+openhands_logger.setLevel(logging.INFO)
 LOG_DIR = os.path.join(
-    # parent dir of opendevin/core (i.e., root of the repo)
+    # parent dir of openhands/core (i.e., root of the repo)
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
 )
 
 if DEBUG:
-    opendevin_logger.setLevel(logging.DEBUG)
+    openhands_logger.setLevel(logging.DEBUG)
 
 if LOG_TO_FILE:
     # default log to project root
-    opendevin_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
-    opendevin_logger.addHandler(get_file_handler(LOG_DIR))
+    openhands_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
+    openhands_logger.addHandler(get_file_handler(LOG_DIR))
 
-opendevin_logger.addHandler(get_console_handler())
-opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
-opendevin_logger.propagate = False
-opendevin_logger.debug('Logging initialized')
+openhands_logger.addHandler(get_console_handler())
+openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
+openhands_logger.propagate = False
+openhands_logger.debug('Logging initialized')
 
 
 # Exclude LiteLLM from logging output
@@ -211,7 +211,7 @@ class LlmFileHandler(logging.FileHandler):
                 try:
                     os.unlink(file_path)
                 except Exception as e:
-                    opendevin_logger.error(
+                    openhands_logger.error(
                         'Failed to delete %s. Reason: %s', file_path, e
                     )
         filename = f'{self.filename}_{self.message_counter:03}.log'
@@ -229,7 +229,7 @@ class LlmFileHandler(logging.FileHandler):
         self.stream = self._open()
         super().emit(record)
         self.stream.close()
-        opendevin_logger.debug('Logging to %s', self.baseFilename)
+        openhands_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
 
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from opendevin.events.event import Event
+from openhands.events.event import Event
 
 
 @dataclass

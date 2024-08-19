@@ -5,10 +5,10 @@ import json
 import os
 from abc import abstractmethod
 
-from opendevin.core.config import AppConfig, SandboxConfig
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
-from opendevin.events.action import (
+from openhands.core.config import AppConfig, SandboxConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.events import EventSource, EventStream, EventStreamSubscriber
+from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
     BrowseInteractiveAction,
@@ -18,16 +18,16 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.event import Event
-from opendevin.events.observation import (
+from openhands.events.event import Event
+from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
 )
-from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.plugins import JupyterRequirement, PluginRequirement
+from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:

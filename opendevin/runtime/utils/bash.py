@@ -1,6 +1,6 @@
 import bashlex
 
-from opendevin.core.logger import opendevin_logger as logger
+from openhands.core.logger import openhands_logger as logger
 
 
 def split_bash_commands(commands):

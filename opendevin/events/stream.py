@@ -4,10 +4,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.utils import json
-from opendevin.events.serialization.event import event_from_dict, event_to_dict
-from opendevin.storage import FileStore
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.utils import json
+from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.storage import FileStore
 
 from .event import Event, EventSource
 

@@ -1,8 +1,8 @@
 from dataclasses import asdict
 from datetime import datetime
 
-from opendevin.events import Event, EventSource
-from opendevin.events.observation.observation import Observation
+from openhands.events import Event, EventSource
+from openhands.events.observation.observation import Observation
 
 from .action import action_from_dict
 from .observation import observation_from_dict

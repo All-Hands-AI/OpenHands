@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 
-from opendevin.events.action import Action
-from opendevin.events.observation import Observation
+from openhands.events.action import Action
+from openhands.events.observation import Observation
 
 
 class Plugin:

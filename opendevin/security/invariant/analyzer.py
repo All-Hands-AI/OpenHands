@@ -6,19 +6,19 @@ import docker
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.action import (
     Action,
     ActionSecurityRisk,
 )
-from opendevin.events.event import Event, EventSource
-from opendevin.events.observation import Observation
-from opendevin.events.serialization.action import action_from_dict
-from opendevin.events.stream import EventStream
-from opendevin.runtime.utils import find_available_tcp_port
-from opendevin.security.analyzer import SecurityAnalyzer
-from opendevin.security.invariant.client import InvariantClient
-from opendevin.security.invariant.parser import TraceElement, parse_element
+from openhands.events.event import Event, EventSource
+from openhands.events.observation import Observation
+from openhands.events.serialization.action import action_from_dict
+from openhands.events.stream import EventStream
+from openhands.runtime.utils import find_available_tcp_port
+from openhands.security.analyzer import SecurityAnalyzer
+from openhands.security.invariant.client import InvariantClient
+from openhands.security.invariant.parser import TraceElement, parse_element
 
 
 class InvariantAnalyzer(SecurityAnalyzer):
@@ -26,8 +26,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     trace: list[TraceElement]
     input: list[dict]
-    container_name: str = 'opendevin-invariant-server'
-    image_name: str = 'ghcr.io/invariantlabs-ai/server:opendevin'
+    container_name: str = 'openhands-invariant-server'
+    image_name: str = 'ghcr.io/invariantlabs-ai/server:openhands'
     api_host: str = 'http://localhost'
     timeout: int = 180
     settings: dict = {}

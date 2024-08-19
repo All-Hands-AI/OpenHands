@@ -8,9 +8,9 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core.config import LLMConfig
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.utils import json
+from openhands.core.config import LLMConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.utils import json
 
 try:
     import chromadb

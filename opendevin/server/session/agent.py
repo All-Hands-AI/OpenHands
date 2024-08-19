@@ -1,13 +1,13 @@
-from opendevin.controller import AgentController
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.config import AgentConfig, AppConfig, LLMConfig
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.stream import EventStream
-from opendevin.runtime import get_runtime_cls
-from opendevin.runtime.runtime import Runtime
-from opendevin.security import SecurityAnalyzer, options
-from opendevin.storage.files import FileStore
+from openhands.controller import AgentController
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.stream import EventStream
+from openhands.runtime import get_runtime_cls
+from openhands.runtime.runtime import Runtime
+from openhands.security import SecurityAnalyzer, options
+from openhands.storage.files import FileStore
 
 
 class AgentSession:

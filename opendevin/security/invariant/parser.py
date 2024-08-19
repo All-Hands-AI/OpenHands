@@ -2,21 +2,21 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import (
     Action,
     ChangeAgentStateAction,
     MessageAction,
     NullAction,
 )
-from opendevin.events.event import EventSource
-from opendevin.events.observation import (
+from openhands.events.event import EventSource
+from openhands.events.observation import (
     AgentStateChangedObservation,
     NullObservation,
     Observation,
 )
-from opendevin.events.serialization.event import event_to_dict
-from opendevin.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
+from openhands.events.serialization.event import event_to_dict
+from openhands.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
 
 TraceElement = Union[Message, ToolCall, ToolOutput, Function]
 

@@ -155,7 +155,7 @@ def basic_lint(fname, code):
 
 
 def extract_error_line_from(lint_error):
-    # moved from opendevin.agentskills#_lint_file
+    # moved from openhands.agentskills#_lint_file
     for line in lint_error.splitlines(True):
         if line.strip():
             # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>

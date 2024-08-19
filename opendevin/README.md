@@ -1,12 +1,12 @@
-# OpenDevin Architecture
+# OpenHands Architecture
 
-This directory contains the core components of OpenDevin.
+This directory contains the core components of OpenHands.
 
 This diagram provides an overview of the roles of each component and how they communicate and collaborate.
-![OpenDevin System Architecture Diagram (July 4, 2024)](../docs/static/img/system_architecture_overview.png)
+![OpenHands System Architecture Diagram (July 4, 2024)](../docs/static/img/system_architecture_overview.png)
 
 ## Classes
-The key classes in OpenDevin are:
+The key classes in OpenHands are:
 
 * LLM: brokers all interactions with large language models. Works with any underlying completion model, thanks to LiteLLM.
 * Agent: responsible for looking at the current State, and producing an Action that moves one step closer toward the end-goal.
@@ -18,7 +18,7 @@ The key classes in OpenDevin are:
       * Observation: represents information collected from the environment, e.g. file contents or command output
 * Runtime: responsible for performing Actions, and sending back Observations
     * Sandbox: the part of the runtime responsible for running commands, e.g. inside of Docker
-* Server: brokers OpenDevin sessions over HTTP, e.g. to drive the frontend
+* Server: brokers OpenHands sessions over HTTP, e.g. to drive the frontend
     * Session: holds a single EventStream, a single AgentController, and a single Runtime. Generally represents a single task (but potentially including several user prompts)
     * SessionManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
 
@@ -34,7 +34,7 @@ while True:
 ```
 
 In reality, most of this is achieved through message passing, via the EventStream.
-The EventStream serves as the backbone for all communication in OpenDevin.
+The EventStream serves as the backbone for all communication in OpenHands.
 
 ```mermaid
 flowchart LR

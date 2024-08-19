@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
-from opendevin.core.schema import ActionType
+from openhands.core.schema import ActionType
 
 from .action import Action, ActionSecurityRisk
 

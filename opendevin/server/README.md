@@ -1,4 +1,4 @@
-# OpenDevin Server
+# OpenHands Server
 
 This is a WebSocket server that executes tasks using an agent.
 
@@ -23,7 +23,7 @@ Next run `poetry shell` (So you don't have to repeat `poetry run`)
 ## Start the Server
 
 ```sh
-uvicorn opendevin.server.listen:app --reload --port 3000
+uvicorn openhands.server.listen:app --reload --port 3000
 ```
 
 ## Test the Server

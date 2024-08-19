@@ -9,12 +9,12 @@ import toml
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
-import opendevin
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
+import openhands
+from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/opendevin/od_runtime'
+    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/openhands/od_runtime'
 )
 
 
@@ -24,7 +24,7 @@ def _get_package_version():
     Returns:
     - The version specified in pyproject.toml under [tool.poetry]
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     pyproject_path = os.path.join(project_root, 'pyproject.toml')
     with open(pyproject_path, 'r') as f:
         pyproject_data = toml.load(f)
@@ -37,7 +37,7 @@ def _create_project_source_dist():
     Returns:
     - str: The path to the project tarball
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(opendevin.__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     logger.info(f'Using project root: {project_root}')
 
     # run "python -m build -s" on project_root to create project tarball
@@ -49,7 +49,7 @@ def _create_project_source_dist():
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
     tarball_path = os.path.join(
-        project_root, 'dist', f'opendevin-{package_version}.tar.gz'
+        project_root, 'dist', f'openhands-{package_version}.tar.gz'
     )
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
@@ -61,7 +61,7 @@ def _create_project_source_dist():
 
 def _put_source_code_to_dir(temp_dir: str):
     """Builds the project source tarball. Copies it to temp_dir and unpacks it.
-    The OpenDevin source code ends up in the temp_dir/code directory
+    The OpenHands source code ends up in the temp_dir/code directory
 
     Parameters:
     - temp_dir (str): The directory to put the source code in
@@ -203,7 +203,7 @@ def build_runtime_image(
     force_rebuild: bool = False,
 ) -> str:
     """Prepares the final docker build folder.
-    If dry_run is False, it will also build the OpenDevin runtime Docker image using the docker build folder.
+    If dry_run is False, it will also build the OpenHands runtime Docker image using the docker build folder.
 
     Parameters:
     - base_image (str): The name of the base Docker image to use

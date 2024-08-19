@@ -3,7 +3,7 @@ import copy
 import warnings
 from functools import partial
 
-from opendevin.core.config import LLMConfig
+from openhands.core.config import LLMConfig
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -26,10 +26,10 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core.exceptions import UserCancelledError
-from opendevin.core.logger import llm_prompt_logger, llm_response_logger
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.metrics import Metrics
+from openhands.core.exceptions import UserCancelledError
+from openhands.core.logger import llm_prompt_logger, llm_response_logger
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.metrics import Metrics
 
 __all__ = ['LLM']
 

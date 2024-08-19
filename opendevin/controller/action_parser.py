@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from opendevin.events.action import Action
+from openhands.events.action import Action
 
 
 class ResponseParser(ABC):

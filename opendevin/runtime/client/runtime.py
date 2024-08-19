@@ -8,10 +8,10 @@ import aiohttp
 import docker
 import tenacity
 
-from opendevin.core.config import AppConfig
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream
-from opendevin.events.action import (
+from openhands.core.config import AppConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.events import EventStream
+from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -19,19 +19,19 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.action.action import Action
-from opendevin.events.observation import (
+from openhands.events.action.action import Action
+from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
 )
-from opendevin.events.serialization import event_to_dict, observation_from_dict
-from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.builder import DockerRuntimeBuilder
-from opendevin.runtime.plugins import PluginRequirement
-from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.utils import find_available_tcp_port
-from opendevin.runtime.utils.runtime_build import build_runtime_image
+from openhands.events.serialization import event_to_dict, observation_from_dict
+from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime import Runtime
+from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.runtime_build import build_runtime_image
 
 
 class EventStreamRuntime(Runtime):
@@ -39,7 +39,7 @@ class EventStreamRuntime(Runtime):
     When receive an event, it will send the event to od-runtime-client which run inside the docker environment.
     """
 
-    container_name_prefix = 'opendevin-sandbox-'
+    container_name_prefix = 'openhands-sandbox-'
 
     def __init__(
         self,
@@ -157,18 +157,18 @@ class EventStreamRuntime(Runtime):
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
-                    f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base '
+                    f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                     'PYTHONUNBUFFERED=1 poetry run '
-                    f'python -u -m opendevin.runtime.client.client {self._port} '
+                    f'python -u -m openhands.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
                     f'{plugin_arg}'
-                    f'--username {"opendevin" if self.config.run_as_devin else "root"} '
+                    f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                     f'--user-id {self.config.sandbox.user_id} '
                     f'{browsergym_arg}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
-                working_dir='/opendevin/code/',
+                working_dir='/openhands/code/',
                 name=self.container_name,
                 detach=True,
                 environment={'DEBUG': 'true'} if self.config.debug else None,

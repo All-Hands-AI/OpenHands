@@ -2,11 +2,11 @@ import subprocess
 import time
 from dataclasses import dataclass
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action import Action, IPythonRunCellAction
-from opendevin.events.observation import IPythonRunCellObservation
-from opendevin.runtime.plugins.requirement import Plugin, PluginRequirement
-from opendevin.runtime.utils import find_available_tcp_port
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import Action, IPythonRunCellAction
+from openhands.events.observation import IPythonRunCellObservation
+from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
+from openhands.runtime.utils import find_available_tcp_port
 
 from .execute_server import JupyterKernel
 
@@ -19,16 +19,16 @@ class JupyterRequirement(PluginRequirement):
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
-    async def initialize(self, username: str, kernel_id: str = 'opendevin-default'):
+    async def initialize(self, username: str, kernel_id: str = 'openhands-default'):
         self.kernel_gateway_port = find_available_tcp_port()
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
             (
                 f"su - {username} -s /bin/bash << 'EOF'\n"
-                'cd /opendevin/code\n'
-                'export POETRY_VIRTUALENVS_PATH=/opendevin/poetry;\n'
-                'export PYTHONPATH=/opendevin/code:$PYTHONPATH;\n'
-                '/opendevin/miniforge3/bin/mamba run -n base '
+                'cd /openhands/code\n'
+                'export POETRY_VIRTUALENVS_PATH=/openhands/poetry;\n'
+                'export PYTHONPATH=/openhands/code:$PYTHONPATH;\n'
+                '/openhands/miniforge3/bin/mamba run -n base '
                 'poetry run jupyter kernelgateway '
                 '--KernelGatewayApp.ip=0.0.0.0 '
                 f'--KernelGatewayApp.port={self.kernel_gateway_port}\n'

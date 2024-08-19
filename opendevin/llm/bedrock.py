@@ -1,6 +1,6 @@
 import boto3
 
-from opendevin.core.logger import opendevin_logger as logger
+from openhands.core.logger import openhands_logger as logger
 
 
 def list_foundation_models(

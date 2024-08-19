@@ -1,16 +1,16 @@
-from opendevin.events.observation.agent import AgentStateChangedObservation
-from opendevin.events.observation.browse import BrowserOutputObservation
-from opendevin.events.observation.commands import (
+from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.browse import BrowserOutputObservation
+from openhands.events.observation.commands import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.delegate import AgentDelegateObservation
-from opendevin.events.observation.empty import NullObservation
-from opendevin.events.observation.error import ErrorObservation
-from opendevin.events.observation.files import FileReadObservation, FileWriteObservation
-from opendevin.events.observation.observation import Observation
-from opendevin.events.observation.reject import UserRejectObservation
-from opendevin.events.observation.success import SuccessObservation
+from openhands.events.observation.delegate import AgentDelegateObservation
+from openhands.events.observation.empty import NullObservation
+from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.files import FileReadObservation, FileWriteObservation
+from openhands.events.observation.observation import Observation
+from openhands.events.observation.reject import UserRejectObservation
+from openhands.events.observation.success import SuccessObservation
 
 observations = (
     NullObservation,

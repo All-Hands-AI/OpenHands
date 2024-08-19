@@ -1,6 +1,6 @@
 """
 This is the main file for the runtime client.
-It is responsible for executing actions received from OpenDevin backend and producing observations.
+It is responsible for executing actions received from OpenHands backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
 """
@@ -22,8 +22,8 @@ from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel
 from uvicorn import run
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -32,7 +32,7 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -40,16 +40,16 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from opendevin.events.serialization import event_from_dict, event_to_dict
-from opendevin.runtime.browser import browse
-from opendevin.runtime.browser.browser_env import BrowserEnv
-from opendevin.runtime.plugins import (
+from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.runtime.browser import browse
+from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.plugins import (
     ALL_PLUGINS,
     JupyterPlugin,
     Plugin,
 )
-from opendevin.runtime.utils import split_bash_commands
-from opendevin.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils import split_bash_commands
+from openhands.runtime.utils.files import insert_lines, read_lines
 
 
 class ActionRequest(BaseModel):
@@ -58,15 +58,15 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    'git config --global user.name "opendevin"',
-    'git config --global user.email "opendevin@all-hands.dev"',
+    'git config --global user.name "openhands"',
+    'git config --global user.email "openhands@all-hands.dev"',
     "alias git='git --no-pager'",
 ]
 
 
 class RuntimeClient:
     """RuntimeClient is running inside docker sandbox.
-    It is responsible for executing actions received from OpenDevin backend and producing observations.
+    It is responsible for executing actions received from OpenHands backend and producing observations.
     """
 
     def __init__(
@@ -110,7 +110,7 @@ class RuntimeClient:
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
                 IPythonRunCellAction(
-                    code='from opendevin.runtime.plugins.agent_skills.agentskills import *\n'
+                    code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
                 )
             )
             logger.info(f'AgentSkills initialized: {obs}')
@@ -440,7 +440,7 @@ if __name__ == '__main__':
     parser.add_argument('--working-dir', type=str, help='Working directory')
     parser.add_argument('--plugins', type=str, help='Plugins to initialize', nargs='+')
     parser.add_argument(
-        '--username', type=str, help='User to run as', default='opendevin'
+        '--username', type=str, help='User to run as', default='openhands'
     )
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
     parser.add_argument(

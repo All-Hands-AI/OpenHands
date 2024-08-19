@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from opendevin.runtime.plugins.requirement import Plugin, PluginRequirement
+from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 
 from . import agentskills
 

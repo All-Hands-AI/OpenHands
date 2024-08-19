@@ -2,10 +2,10 @@ from typing import Any
 
 from fastapi import Request
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.action import Action, ActionSecurityRisk
-from opendevin.events.event import Event
-from opendevin.events.stream import EventStream, EventStreamSubscriber
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.event import Event
+from openhands.events.stream import EventStream, EventStreamSubscriber
 
 
 class SecurityAnalyzer:

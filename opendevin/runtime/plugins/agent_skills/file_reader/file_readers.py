@@ -1,4 +1,4 @@
-"""File reader skills for the OpenDevin agent.
+"""File reader skills for the OpenHands agent.
 
 This module provides various functions to parse and extract content from different file types,
 including PDF, DOCX, LaTeX, audio, image, video, and PowerPoint files. It utilizes different
@@ -238,7 +238,7 @@ __all__ = [
     'parse_pptx',
 ]
 
-# This is called from OpenDevin's side
+# This is called from OpenHands's side
 # If SANDBOX_ENV_OPENAI_API_KEY is set, we will be able to use these tools in the sandbox environment
 if _get_openai_api_key() and _get_openai_base_url():
     __all__ += ['parse_audio', 'parse_video', 'parse_image']

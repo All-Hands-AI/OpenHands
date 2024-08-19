@@ -2,15 +2,15 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
-    from opendevin.controller.state.state import State
-    from opendevin.core.config import AgentConfig
-    from opendevin.events.action import Action
-from opendevin.core.exceptions import (
+    from openhands.controller.state.state import State
+    from openhands.core.config import AgentConfig
+    from openhands.events.action import Action
+from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
 )
-from opendevin.llm.llm import LLM
-from opendevin.runtime.plugins import PluginRequirement
+from openhands.llm.llm import LLM
+from openhands.runtime.plugins import PluginRequirement
 
 
 class Agent(ABC):

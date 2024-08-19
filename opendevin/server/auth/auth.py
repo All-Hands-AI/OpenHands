@@ -1,7 +1,7 @@
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-from opendevin.core.logger import opendevin_logger as logger
+from openhands.core.logger import openhands_logger as logger
 
 
 def get_sid_from_token(token: str, jwt_secret: str) -> str:

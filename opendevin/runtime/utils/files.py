@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from opendevin.events.observation import (
+from openhands.events.observation import (
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,

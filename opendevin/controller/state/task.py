@@ -1,8 +1,8 @@
-from opendevin.core.exceptions import (
+from openhands.core.exceptions import (
     LLMMalformedActionError,
     TaskInvalidStateError,
 )
-from opendevin.core.logger import opendevin_logger as logger
+from openhands.core.logger import openhands_logger as logger
 
 OPEN_STATE = 'open'
 COMPLETED_STATE = 'completed'

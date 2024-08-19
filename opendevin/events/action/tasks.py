@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from opendevin.core.schema import ActionType
+from openhands.core.schema import ActionType
 
 from .action import Action
 

@@ -1,10 +1,10 @@
 import os
 
-from opendevin.core.exceptions import BrowserUnavailableException
-from opendevin.core.schema import ActionType
-from opendevin.events.action import BrowseInteractiveAction, BrowseURLAction
-from opendevin.events.observation import BrowserOutputObservation
-from opendevin.runtime.browser.browser_env import BrowserEnv
+from openhands.core.exceptions import BrowserUnavailableException
+from openhands.core.schema import ActionType
+from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
+from openhands.events.observation import BrowserOutputObservation
+from openhands.runtime.browser.browser_env import BrowserEnv
 
 
 async def browse(

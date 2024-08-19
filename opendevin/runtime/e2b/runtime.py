@@ -1,17 +1,17 @@
-from opendevin.core.config import AppConfig
-from opendevin.events.action import (
+from openhands.core.config import AppConfig
+from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     Observation,
 )
-from opendevin.events.stream import EventStream
-from opendevin.runtime.plugins import PluginRequirement
-from opendevin.runtime.runtime import Runtime
+from openhands.events.stream import EventStream
+from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime import Runtime
 
 from ..utils.files import insert_lines, read_lines
 from .filestore import E2BFileStore

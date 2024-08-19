@@ -1,21 +1,21 @@
 from typing import ClassVar, Iterable
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.action import Action
-from opendevin.events.action.agent import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.action import Action
+from openhands.events.action.agent import (
     AgentDelegateAction,
     ChangeAgentStateAction,
 )
-from opendevin.events.action.empty import NullAction
-from opendevin.events.action.message import MessageAction
-from opendevin.events.event import Event, EventSource
-from opendevin.events.observation.agent import AgentStateChangedObservation
-from opendevin.events.observation.commands import CmdOutputObservation
-from opendevin.events.observation.delegate import AgentDelegateObservation
-from opendevin.events.observation.empty import NullObservation
-from opendevin.events.observation.observation import Observation
-from opendevin.events.serialization.event import event_to_dict
-from opendevin.events.stream import EventStream
+from openhands.events.action.empty import NullAction
+from openhands.events.action.message import MessageAction
+from openhands.events.event import Event, EventSource
+from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.commands import CmdOutputObservation
+from openhands.events.observation.delegate import AgentDelegateObservation
+from openhands.events.observation.empty import NullObservation
+from openhands.events.observation.observation import Observation
+from openhands.events.serialization.event import event_to_dict
+from openhands.events.stream import EventStream
 
 
 class ShortTermHistory(list[Event]):

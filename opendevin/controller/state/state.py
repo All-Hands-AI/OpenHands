@@ -4,16 +4,16 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from opendevin.controller.state.task import RootTask
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.metrics import Metrics
-from opendevin.core.schema import AgentState
-from opendevin.events.action import (
+from openhands.controller.state.task import RootTask
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.metrics import Metrics
+from openhands.core.schema import AgentState
+from openhands.events.action import (
     MessageAction,
 )
-from opendevin.events.action.agent import AgentFinishAction
-from opendevin.memory.history import ShortTermHistory
-from opendevin.storage.files import FileStore
+from openhands.events.action.agent import AgentFinishAction
+from openhands.memory.history import ShortTermHistory
+from openhands.storage.files import FileStore
 
 
 class TrafficControlState(str, Enum):
@@ -38,7 +38,7 @@ RESUMABLE_STATES = [
 @dataclass
 class State:
     """
-    Represents the running state of an agent in the OpenDevin system, saving data of its operation and memory.
+    Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
 
     - Multi-agent/delegate state:
       - store the task (conversation between the agent and the user)

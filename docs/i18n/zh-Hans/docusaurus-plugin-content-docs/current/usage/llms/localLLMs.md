@@ -23,11 +23,11 @@ mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
 starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ```
 
-## 启动 OpenDevin
+## 启动 OpenHands
 
 ### Docker
 
-使用[此处](../intro)的说明通过 Docker 启动 OpenDevin。
+使用[此处](../intro)的说明通过 Docker 启动 OpenHands。
 但是在运行 `docker run` 时，您需要添加一些额外的参数：
 
 ```bash
@@ -39,7 +39,7 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 例如：
 
 ```bash
-# 您希望 OpenDevin 修改的目录。必须是绝对路径！
+# 您希望 OpenHands 修改的目录。必须是绝对路径！
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
@@ -53,14 +53,14 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 现在您应该可以连接到 `http://localhost:3000/`
 
 ### 从源代码构建
 
-使用[Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md)中的说明构建 OpenDevin。
+使用[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)中的说明构建 OpenHands。
 通过运行 `make setup-config` 确保 `config.toml` 存在，这将为您创建一个。在 `config.toml` 中，输入以下内容：
 
 ```
@@ -78,7 +78,7 @@ WORKSPACE_DIR="$(pwd)/workspace"
 
 ## 选择您的模型
 
-在 OpenDevin UI 中，点击左下角的设置齿轮。
+在 OpenHands UI 中，点击左下角的设置齿轮。
 然后在 `Model` 输入中，输入 `ollama/codellama:7b`，或者您之前拉取的模型名称。
 如果它没有出现在下拉列表中，也没关系，只需输入即可。完成后点击保存。
 
@@ -86,7 +86,7 @@ WORKSPACE_DIR="$(pwd)/workspace"
 
 ## 配置 ollama 服务（WSL）{#configuring-ollama-service-zh-Hans}
 
-WSL 中 ollama 的默认配置仅为 localhost 提供服务。这意味着您无法从 docker 容器中访问它。比如，它不会与 OpenDevin 一起工作。首先让我们测试 ollama 是否正常运行。
+WSL 中 ollama 的默认配置仅为 localhost 提供服务。这意味着您无法从 docker 容器中访问它。比如，它不会与 OpenHands 一起工作。首先让我们测试 ollama 是否正常运行。
 
 ```bash
 ollama list # 获取已安装模型列表
@@ -98,7 +98,7 @@ curl http://localhost:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 完成后，测试它是否允许“外部”请求，比如那些来自 docker 容器内的请求。
 
 ```bash
-docker ps # 获取正在运行的 docker 容器列表，最准确的测试选择 open devin sandbox 容器。
+docker ps # 获取正在运行的 docker 容器列表，最准确的测试选择 OpenHands sandbox 容器。
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 #例如，docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
 ```
@@ -135,6 +135,6 @@ sudo systemctl restart ollama
 
 ```bash
 ollama list # 获取已安装模型列表
-docker ps # 获取正在运行的 docker 容器列表，最准确的测试选择 open devin sandbox 容器。
+docker ps # 获取正在运行的 docker 容器列表，最准确的测试选择 OpenHands sandbox 容器。
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 ```

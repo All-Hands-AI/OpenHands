@@ -1,6 +1,6 @@
 """file_ops.py
 
-This module provides various file manipulation skills for the OpenDevin agent.
+This module provides various file manipulation skills for the OpenHands agent.
 
 Functions:
 - open_file(path: str, line_number: int | None = 1, context_lines: int = 100): Opens a file and optionally moves to a specific line.

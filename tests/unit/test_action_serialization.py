@@ -1,4 +1,4 @@
-from opendevin.events.action import (
+from openhands.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
@@ -11,8 +11,8 @@ from opendevin.events.action import (
     MessageAction,
     ModifyTaskAction,
 )
-from opendevin.events.action.action import ActionConfirmationStatus
-from opendevin.events.serialization import (
+from openhands.events.action.action import ActionConfirmationStatus
+from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
     event_to_memory,

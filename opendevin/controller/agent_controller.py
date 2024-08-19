@@ -2,19 +2,19 @@ import asyncio
 import traceback
 from typing import Type
 
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State, TrafficControlState
-from opendevin.controller.stuck import StuckDetector
-from opendevin.core.config import AgentConfig, LLMConfig
-from opendevin.core.exceptions import (
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State, TrafficControlState
+from openhands.controller.stuck import StuckDetector
+from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import AgentState
-from opendevin.events import EventSource, EventStream, EventStreamSubscriber
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import AgentState
+from openhands.events import EventSource, EventStream, EventStreamSubscriber
+from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
     AddTaskAction,
@@ -28,15 +28,15 @@ from opendevin.events.action import (
     ModifyTaskAction,
     NullAction,
 )
-from opendevin.events.event import Event
-from opendevin.events.observation import (
+from openhands.events.event import Event
+from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
     Observation,
 )
-from opendevin.llm.llm import LLM
+from openhands.llm.llm import LLM
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -281,8 +281,8 @@ class AgentController:
     async def start_delegate(self, action: AgentDelegateAction):
         """Start a delegate agent to handle a subtask.
 
-        OpenDevin is a multi-agentic system. A `task` is a conversation between
-        OpenDevin (the whole system) and the user, which might involve one or more inputs
+        OpenHands is a multi-agentic system. A `task` is a conversation between
+        OpenHands (the whole system) and the user, which might involve one or more inputs
         from the user. It starts with an initial input (typically a task statement) from
         the user, and ends with either an `AgentFinishAction` initiated by the agent, a
         stop initiated by the user, or an error.

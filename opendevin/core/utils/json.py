@@ -3,9 +3,9 @@ from datetime import datetime
 
 from json_repair import repair_json
 
-from opendevin.core.exceptions import LLMResponseError
-from opendevin.events.event import Event
-from opendevin.events.serialization import event_to_dict
+from openhands.core.exceptions import LLMResponseError
+from openhands.events.event import Event
+from openhands.events.serialization import event_to_dict
 
 
 def my_default_encoder(obj):

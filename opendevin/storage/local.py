@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from opendevin.core.logger import opendevin_logger as logger
+from openhands.core.logger import openhands_logger as logger
 
 from .files import FileStore
 

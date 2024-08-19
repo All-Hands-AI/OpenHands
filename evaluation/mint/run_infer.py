@@ -17,20 +17,20 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
     CmdRunAction,
 )
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):
@@ -97,7 +97,7 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -243,7 +243,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to OpenDevin's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     if args.subset == 'all':
         subsets = SUBSETS
     else:

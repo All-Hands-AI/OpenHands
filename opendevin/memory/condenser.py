@@ -1,5 +1,5 @@
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.llm.llm import LLM
+from openhands.core.logger import openhands_logger as logger
+from openhands.llm.llm import LLM
 
 
 class MemoryCondenser:

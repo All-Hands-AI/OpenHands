@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, WebSocket
 
-from opendevin.core.schema import ActionType
+from openhands.core.schema import ActionType
 
 app = FastAPI()
 

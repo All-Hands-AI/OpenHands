@@ -3,24 +3,24 @@ import time
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from opendevin.controller.agent import Agent
-from opendevin.core.config import AppConfig
-from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import AgentState
-from opendevin.core.schema.action import ActionType
-from opendevin.core.schema.config import ConfigType
-from opendevin.events.action import ChangeAgentStateAction, MessageAction, NullAction
-from opendevin.events.event import Event, EventSource
-from opendevin.events.observation import (
+from openhands.controller.agent import Agent
+from openhands.core.config import AppConfig
+from openhands.core.const.guide_url import TROUBLESHOOTING_URL
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import AgentState
+from openhands.core.schema.action import ActionType
+from openhands.core.schema.config import ConfigType
+from openhands.events.action import ChangeAgentStateAction, MessageAction, NullAction
+from openhands.events.event import Event, EventSource
+from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     NullObservation,
 )
-from opendevin.events.serialization import event_from_dict, event_to_dict
-from opendevin.events.stream import EventStreamSubscriber
-from opendevin.llm.llm import LLM
-from opendevin.storage.files import FileStore
+from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.events.stream import EventStreamSubscriber
+from openhands.llm.llm import LLM
+from openhands.storage.files import FileStore
 
 from .agent import AgentSession
 

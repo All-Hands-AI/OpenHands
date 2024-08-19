@@ -8,8 +8,8 @@ from e2b.sandbox.exception import (
     TimeoutException,
 )
 
-from opendevin.core.config import SandboxConfig
-from opendevin.core.logger import opendevin_logger as logger
+from openhands.core.config import SandboxConfig
+from openhands.core.logger import openhands_logger as logger
 
 class E2BBox:
     closed = False
@@ -21,7 +21,7 @@ class E2BBox:
         self,
         config: SandboxConfig,
         e2b_api_key: str,
-        template: str = 'open-devin',
+        template: str = 'openhands',
     ):
         self.config = copy.deepcopy(config)
         self.initialize_plugins: bool = config.initialize_plugins

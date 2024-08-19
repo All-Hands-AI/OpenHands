@@ -1,20 +1,20 @@
-from opendevin.core.exceptions import LLMMalformedActionError
-from opendevin.events.action.action import Action
-from opendevin.events.action.agent import (
+from openhands.core.exceptions import LLMMalformedActionError
+from openhands.events.action.action import Action
+from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
     ChangeAgentStateAction,
 )
-from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
-from opendevin.events.action.commands import (
+from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
+from openhands.events.action.commands import (
     CmdRunAction,
     IPythonRunCellAction,
 )
-from opendevin.events.action.empty import NullAction
-from opendevin.events.action.files import FileReadAction, FileWriteAction
-from opendevin.events.action.message import MessageAction
-from opendevin.events.action.tasks import AddTaskAction, ModifyTaskAction
+from openhands.events.action.empty import NullAction
+from openhands.events.action.files import FileReadAction, FileWriteAction
+from openhands.events.action.message import MessageAction
+from openhands.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     NullAction,

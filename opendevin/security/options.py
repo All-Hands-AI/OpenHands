@@ -1,4 +1,4 @@
-from opendevin.security.invariant.analyzer import InvariantAnalyzer
+from openhands.security.invariant.analyzer import InvariantAnalyzer
 
 SecurityAnalyzers = {
     'invariant': InvariantAnalyzer,
