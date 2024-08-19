@@ -7,12 +7,12 @@ To better organize the evaluation folder, we should follow the rules below:
   - Each subfolder contains a specific benchmark or experiment. For example, `evaluation/swe_bench` should contain
 all the preprocessing/evaluation/analysis scripts.
   - Raw data and experimental records should not be stored within this repo.
-    - For model outputs, they should be stored at [this huggingface space](https://huggingface.co/spaces/OpenDevin/evaluation) for visualization.
+    - For model outputs, they should be stored at [this huggingface space](https://huggingface.co/spaces/OpenHands/evaluation) for visualization.
   - Important data files of manageable size and analysis scripts (e.g., jupyter notebooks) can be directly uploaded to this repo.
 
 ## Supported Benchmarks
 
-To learn more about how to integrate your benchmark into OpenDevin, check out [tutorial here](https://docs.all-hands.dev/modules/usage/evaluation_harness).
+To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/evaluation_harness).
 
 ### Software Engineering
 
@@ -41,9 +41,9 @@ To learn more about how to integrate your benchmark into OpenDevin, check out [t
 
 ## Before everything begins: Setup Environment and LLM Configuration
 
-Please follow instruction [here](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup your local development environment and LLM.
+Please follow instruction [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
 
-OpenDevin in development mode uses `config.toml` to keep track of most configurations.
+OpenHands in development mode uses `config.toml` to keep track of most configurations.
 
 Here's an example configuration file you can use to define and use multiple LLMs:
 
@@ -68,9 +68,9 @@ temperature = 0.0
 
 ### Result Visualization
 
-Check [this huggingface space](https://huggingface.co/spaces/OpenDevin/evaluation) for visualization of existing experimental results.
+Check [this huggingface space](https://huggingface.co/spaces/OpenHands/evaluation) for visualization of existing experimental results.
 
 
 ### Upload your results
 
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results to our hosted huggingface repo via PR following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
+You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results to our hosted huggingface repo via PR following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).

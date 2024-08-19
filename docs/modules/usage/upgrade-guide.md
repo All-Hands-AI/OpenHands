@@ -9,11 +9,11 @@ sidebar_position: 8
 ### Config breaking changes
 
 In this release we introduced a few breaking changes to backend configurations.
-If you have only been using OpenDevin via frontend (web GUI), nothing needs
+If you have only been using OpenHands via frontend (web GUI), nothing needs
 to be taken care of.
 
 Here's a list of breaking changes in configs. They only apply to users who
-use OpenDevin CLI via `main.py`. For more detail, see [#2756](https://github.com/OpenDevin/OpenDevin/pull/2756).
+use OpenHands CLI via `main.py`. For more detail, see [#2756](https://github.com/All-Hands-AI/OpenHands/pull/2756).
 
 #### Removal of --model-name option from main.py
 

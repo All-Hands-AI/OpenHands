@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export const initialState = {
   // URL of browser window (placeholder for now, will be replaced with the actual URL later)
-  url: "https://github.com/OpenDevin/OpenDevin",
+  url: "https://github.com/All-Hands-AI/OpenHands",
   // Base64-encoded screenshot of browser window (placeholder for now, will be replaced with the actual screenshot later)
   screenshotSrc: "",
 };
