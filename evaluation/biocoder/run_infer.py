@@ -18,18 +18,18 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import CmdRunAction
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': functools.partial(
@@ -58,7 +58,7 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -212,7 +212,7 @@ async def complete_runtime(
     assert obs.exit_code == 0
 
     action = CmdRunAction(
-        command='/home/devin/mambaforge/bin/mamba run -n test python3 /testing/start_test_opendevin.py'
+        command='/home/openhands/mambaforge/bin/mamba run -n test python3 /testing/start_test_openhands.py'
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)

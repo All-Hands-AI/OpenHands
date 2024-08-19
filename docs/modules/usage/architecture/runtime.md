@@ -1,12 +1,12 @@
 # 📦 EventStream Runtime
 
-The OpenDevin EventStream Runtime is the core component that enables secure and flexible execution of AI agent's action.
+The OpenHands EventStream Runtime is the core component that enables secure and flexible execution of AI agent's action.
 It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
 
 
 ## Why do we need a sandboxed runtime?
 
-OpenDevin needs to execute arbitrary code in a secure, isolated environment for several reasons:
+OpenHands needs to execute arbitrary code in a secure, isolated environment for several reasons:
 
 1. Security: Executing untrusted code can pose significant risks to the host system. A sandboxed environment prevents malicious code from accessing or modifying the host system's resources.
 
@@ -20,11 +20,11 @@ OpenDevin needs to execute arbitrary code in a secure, isolated environment for 
 
 ## How does our Runtime work?
 
-The OpenDevin Runtime system uses a client-server architecture implemented with Docker containers. Here's an overview of how it works:
+The OpenHands Runtime system uses a client-server architecture implemented with Docker containers. Here's an overview of how it works:
 
 ```mermaid
 graph TD
-    A[User-provided Custom Docker Image] --> B[OpenDevin Backend]
+    A[User-provided Custom Docker Image] --> B[OpenHands Backend]
     B -->|Builds| C[OD Runtime Image]
     C -->|Launches| D[Runtime Client]
     D -->|Initializes| E[Browser]
@@ -53,35 +53,35 @@ graph TD
 
 1. User Input: The user provides a custom base Docker image.
 
-2. Image Building: OpenDevin builds a new Docker image (the "OD runtime image") based on the user-provided image. This new image includes OpenDevin-specific code, primarily the "runtime client."
+2. Image Building: OpenHands builds a new Docker image (the "OD runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client."
 
-3. Container Launch: When OpenDevin starts, it launches a Docker container using the OD runtime image.
+3. Container Launch: When OpenHands starts, it launches a Docker container using the OD runtime image.
 
 4. Client Initialization: The runtime client initializes inside the container, setting up necessary components like a bash shell and loading any specified plugins.
 
-5. Communication: The OpenDevin backend (`runtime.py`) communicates with the runtime client over RESTful API, sending actions and receiving observations.
+5. Communication: The OpenHands backend (`runtime.py`) communicates with the runtime client over RESTful API, sending actions and receiving observations.
 
 6. Action Execution: The runtime client receives actions from the backend, executes them in the sandboxed environment, and sends back observations.
 
-7. Observation Return: The client sends execution results back to the OpenDevin backend as observations.
+7. Observation Return: The client sends execution results back to the OpenHands backend as observations.
 
 
 The role of the client is crucial:
-- It acts as an intermediary between the OpenDevin backend and the sandboxed environment.
+- It acts as an intermediary between the OpenHands backend and the sandboxed environment.
 - It executes various types of actions (shell commands, file operations, Python code, etc.) safely within the container.
 - It manages the state of the sandboxed environment, including the current working directory and loaded plugins.
 - It formats and returns observations to the backend, ensuring a consistent interface for processing results.
 
 
-## Advanced: How OpenDevin builds and maintains OD Runtime images
+## Advanced: How OpenHands builds and maintains OD Runtime images
 
-OpenDevin uses a sophisticated approach to build and manage runtime images. This process ensures efficiency, consistency, and flexibility in creating and maintaining Docker images for both production and development environments.
+OpenHands uses a sophisticated approach to build and manage runtime images. This process ensures efficiency, consistency, and flexibility in creating and maintaining Docker images for both production and development environments.
 
-Check out [relavant code](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/utils/runtime_build.py) if you are interested in more details.
+Check out [relavant code](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/utils/runtime_build.py) if you are interested in more details.
 
 ### Image Tagging System
 
-OpenDevin uses a dual-tagging system for its runtime images to balance reproducibility with flexibility:
+OpenHands uses a dual-tagging system for its runtime images to balance reproducibility with flexibility:
 
 1. Hash-based tag: `{target_image_repo}:{target_image_hash_tag}`
    Example: `od_runtime:abc123def456`
@@ -94,10 +94,10 @@ OpenDevin uses a dual-tagging system for its runtime images to balance reproduci
    Example: `od_runtime:od_v0.8.3_ubuntu_tag_22.04`
 
    - This tag follows the format: `od_runtime:od_v{OD_VERSION}_{BASE_IMAGE_NAME}_tag_{BASE_IMAGE_TAG}`
-   - It represents the latest build for a particular base image and OpenDevin version combination.
+   - It represents the latest build for a particular base image and OpenHands version combination.
    - This tag is updated whenever a new image is built from the same base image, even if the source code changes.
 
-The hash-based tag ensures exact reproducibility, while the generic tag provides a stable reference to the latest version of a particular configuration. This dual-tagging approach allows OpenDevin to efficiently manage both development and production environments.
+The hash-based tag ensures exact reproducibility, while the generic tag provides a stable reference to the latest version of a particular configuration. This dual-tagging approach allows OpenHands to efficiently manage both development and production environments.
 
 ### Build Process
 
@@ -110,7 +110,7 @@ The hash-based tag ensures exact reproducibility, while the generic tag provides
 2. Build Process:
    - a. Convert the base image name to an OD runtime image name.
       Example: `ubuntu:22.04` -> `od_runtime:od_v0.8.3_ubuntu_tag_22.04`
-   - b. Generate a build context (Dockerfile and OpenDevin source code) and calculate its hash.
+   - b. Generate a build context (Dockerfile and OpenHands source code) and calculate its hash.
    - c. Check for an existing image with the calculated hash.
    - d. If not found, check for a recent compatible image to use as a base.
    - e. If no compatible image exists, build from scratch using the original base image.
@@ -151,16 +151,16 @@ This approach ensures that:
 
 1. Identical source code and Dockerfile always produce the same image (via hash-based tags).
 2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images).
-3. The generic tag (e.g., `od_runtime:od_v0.8.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenDevin version combination.
+3. The generic tag (e.g., `od_runtime:od_v0.8.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenHands version combination.
 
-By using this method, OpenDevin maintains an efficient and flexible system for building and managing runtime images, adapting to both development needs and production requirements.
+By using this method, OpenHands maintains an efficient and flexible system for building and managing runtime images, adapting to both development needs and production requirements.
 
 
 ## Advanced: Runtime Plugin System
 
-The OpenDevin Runtime supports a plugin system that allows for extending functionality and customizing the runtime environment. Plugins are initialized when the runtime client starts up.
+The OpenHands Runtime supports a plugin system that allows for extending functionality and customizing the runtime environment. Plugins are initialized when the runtime client starts up.
 
-Check [an example of Jupyter plugin here](https://github.com/OpenDevin/OpenDevin/blob/9c44d94cef32e6426ebd8deeeb52963153b2348a/opendevin/runtime/plugins/jupyter/__init__.py#L30-L63) if you want to implement your own plugin.
+Check [an example of Jupyter plugin here](https://github.com/All-Hands-AI/OpenHands/blob/9c44d94cef32e6426ebd8deeeb52963153b2348a/openhands/runtime/plugins/jupyter/__init__.py#L30-L63) if you want to implement your own plugin.
 
 *More details about the Plugin system are still under construction - contributions are welcomed!*
 

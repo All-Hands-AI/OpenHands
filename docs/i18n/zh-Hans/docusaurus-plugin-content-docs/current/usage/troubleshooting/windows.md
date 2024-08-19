@@ -1,6 +1,6 @@
 # Windows 和 WSL 用户须知
 
-OpenDevin 仅支持通过 [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 在 Windows 上运行。
+OpenHands 仅支持通过 [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 在 Windows 上运行。
 请确保在 WSL 终端内运行所有命令。
 
 ## 故障排除
@@ -12,8 +12,8 @@ Docker 还需要启用 WSL 集成选项。
 
 ### 建议：不要以 root 用户身份运行
 
-出于安全原因，非常建议不要以 root 用户身份运行 OpenDevin，而是使用 UID 非零的用户身份运行。
-此外，当以 root 身份运行时，不支持持久化沙箱，并且在启动 OpenDevin 时可能会出现相应消息。
+出于安全原因，非常建议不要以 root 用户身份运行 OpenHands，而是使用 UID 非零的用户身份运行。
+此外，当以 root 身份运行时，不支持持久化沙箱，并且在启动 OpenHands 时可能会出现相应消息。
 
 参考资料：
 
@@ -21,12 +21,12 @@ Docker 还需要启用 WSL 集成选项。
 * [在 WSL 中设置默认用户](https://www.tenforums.com/tutorials/128152-set-default-user-windows-subsystem-linux-distro-windows-10-a.html#option2)
 关于第二个参考资料的小提示：对于 Ubuntu 用户，该命令实际上可能是 "ubuntupreview" 而不是 "ubuntu"。
 
-### 创建 opendevin 用户失败
+### 创建 openhands 用户失败
 
 如果您在设置过程中遇到以下错误：
 
 ```sh
-Exception: Failed to create opendevin user in sandbox: 'useradd: UID 0 is not unique'
+Exception: Failed to create openhands user in sandbox: 'useradd: UID 0 is not unique'
 ```
 
 您可以通过运行以下命令解决：

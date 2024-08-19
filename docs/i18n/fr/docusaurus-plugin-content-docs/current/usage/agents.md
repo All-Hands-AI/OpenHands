@@ -18,18 +18,18 @@ L'idée conceptuelle est illustrée ci-dessous. À chaque tour, l'agent peut :
 - Exécuter toute commande `bash` Linux valide
 - Exécuter tout code `Python` valide avec [un interpréteur Python interactif](https://ipython.org/). Cela est simulé à travers la commande `bash`, voir le système de plugin ci-dessous pour plus de détails.
 
-![image](https://github.com/OpenDevin/OpenDevin/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
+![image](https://github.com/All-Hands-AI/OpenHands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
 
 ### Système de Plugin
 
-Pour rendre l'agent CodeAct plus puissant avec seulement l'accès à l'espace d'action `bash`, l'agent CodeAct exploite le système de plugins d'OpenDevin:
+Pour rendre l'agent CodeAct plus puissant avec seulement l'accès à l'espace d'action `bash`, l'agent CodeAct exploite le système de plugins d'OpenHands:
 
-- [Plugin Jupyter](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/jupyter) : pour l'exécution d'IPython via la commande bash
-- [Plugin outil agent SWE](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/swe_agent_commands) : Outils de ligne de commande bash puissants pour les tâches de développement logiciel introduits par [swe-agent](https://github.com/princeton-nlp/swe-agent).
+- [Plugin Jupyter](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/jupyter) : pour l'exécution d'IPython via la commande bash
+- [Plugin outil agent SWE](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/swe_agent_commands) : Outils de ligne de commande bash puissants pour les tâches de développement logiciel introduits par [swe-agent](https://github.com/princeton-nlp/swe-agent).
 
 ### Démonstration
 
-https://github.com/OpenDevin/OpenDevin/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
+https://github.com/All-Hands-AI/OpenHands/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
 
 _Exemple de CodeActAgent avec `gpt-4-turbo-2024-04-09` effectuant une tâche de science des données (régression linéaire)_
 
