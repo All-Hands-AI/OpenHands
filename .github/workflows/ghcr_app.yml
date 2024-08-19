@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.image }}_image_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_$(echo "${{ steps.capture-tags.outputs.tags }}" | awk '{print $NF}')_${{ matrix.platform }}.tar
+          path: /tmp/${{ matrix.image }}_${{ steps.capture-tags.outputs.tags }}_${{ matrix.platform }}.tar
           retention-days: 14
 
   # Push the OpenHands and sandbox Docker images to the ghcr.io repository
@@ -99,7 +99,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.image }}_image_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ steps.capture-tags.outputs.tags }}_${{ matrix.platform }}.tar
+          path: /tmp
       - name: Load images and push to registry
         run: |
           mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_${{ steps.capture-tags.outputs.tags }}_${{ matrix.platform }}.tar .
