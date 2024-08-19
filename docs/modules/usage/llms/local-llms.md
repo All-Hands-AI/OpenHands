@@ -83,7 +83,7 @@ ollama_base_url="http://localhost:11434"
 
 Replace `LLM_MODEL` of your choice if you need to.
 
-Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
+Done! Now you can start OpenHands by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
 
 ## Select your Model
 

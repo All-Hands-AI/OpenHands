@@ -52,7 +52,7 @@ def get_config(
             container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
-            od_runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
+            runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
         ),
         # do not mount workspace
         workspace_base=None,
