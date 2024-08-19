@@ -423,7 +423,6 @@ if __name__ == '__main__':
             file.write(
                 (
                     f'\n'
-                    f'DOCKER_IMAGE={runtime_image_repo}\n'
                     f'DOCKER_IMAGE_TAG={runtime_image_tag}\n'
                     f'DOCKER_IMAGE_HASH_TAG={runtime_image_hash_tag}\n'
                 )
