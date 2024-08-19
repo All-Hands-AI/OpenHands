@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import AppConfig, SandboxConfig, load_from_env
+from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -117,7 +117,8 @@ async def _load_runtime(
             browsergym_eval_env=browsergym_eval_env,
         ),
     )
-    load_from_env(config, os.environ)
+
+    config.load_from_env(dict(os.environ))
     config.run_as_openhands = run_as_openhands
     config.sandbox.enable_auto_lint = enable_auto_lint
 
