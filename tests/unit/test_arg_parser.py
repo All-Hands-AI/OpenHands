@@ -1,6 +1,6 @@
 import pytest
 
-from opendevin.core.config import get_parser
+from openhands.core.config import get_parser
 
 
 def test_help_message(capsys):

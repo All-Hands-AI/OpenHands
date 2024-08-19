@@ -24,7 +24,7 @@ def process_git_patch(patch):
 
     patch = patch.replace('\r\n', '\n')
     # There might be some weird characters at the beginning of the patch
-    # due to some OpenDevin inference command outputs
+    # due to some OpenHands inference command outputs
 
     # FOR EXAMPLE:
     # git diff --no-color --cached 895f28f9cbed817c00ab68770433170d83132d90

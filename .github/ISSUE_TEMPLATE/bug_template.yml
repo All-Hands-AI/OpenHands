@@ -1,5 +1,5 @@
 name: Bug
-description: Report a problem with OpenDevin
+description: Report a problem with OpenHands
 title: '[Bug]: '
 labels: ['bug']
 body:
@@ -28,8 +28,8 @@ body:
   - type: textarea
     id: current-version
     attributes:
-      label: Current OpenDevin version
-      description: What version of OpenDevin are you using? If you're running in docker, tell us the tag you're using (e.g. ghcr.io/opendevin/opendevin:0.3.1).
+      label: Current OpenHands version
+      description: What version of OpenHands are you using? If you're running in docker, tell us the tag you're using (e.g. ghcr.io/all-hands-ai/openhands:0.3.1).
       render: bash
     validations:
       required: true

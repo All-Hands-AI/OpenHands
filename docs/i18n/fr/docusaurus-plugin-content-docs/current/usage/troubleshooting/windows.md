@@ -1,6 +1,6 @@
 # Notes pour les utilisateurs de Windows et WSL
 
-OpenDevin ne supporte Windows que via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+OpenHands ne supporte Windows que via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 Veuillez vous assurer de lancer toutes les commandes à l'intérieur de votre terminal WSL.
 
 ## Dépannage
@@ -12,8 +12,8 @@ Docker doit également avoir l'option d'intégration WSL activée.
 
 ### Recommandation : Ne pas exécuter en tant qu'utilisateur root
 
-Pour des raisons de sécurité, il est fortement recommandé de ne pas exécuter OpenDevin en tant qu'utilisateur root, mais en tant qu'utilisateur avec un UID non nul.
-De plus, les sandboxes persistants ne seront pas pris en charge lors de l'exécution en tant que root et un message approprié pourrait apparaître lors du démarrage d'OpenDevin.
+Pour des raisons de sécurité, il est fortement recommandé de ne pas exécuter OpenHands en tant qu'utilisateur root, mais en tant qu'utilisateur avec un UID non nul.
+De plus, les sandboxes persistants ne seront pas pris en charge lors de l'exécution en tant que root et un message approprié pourrait apparaître lors du démarrage d'OpenHands.
 
 Références :
 
@@ -21,12 +21,12 @@ Références :
 * [Définir l'utilisateur par défaut dans WSL](https://www.tenforums.com/tutorials/128152-set-default-user-windows-subsystem-linux-distro-windows-10-a.html#option2)
 Astuce pour la 2e référence : pour les utilisateurs d'Ubuntu, la commande pourrait en fait être "ubuntupreview" au lieu de "ubuntu".
 
-### Échec de la création de l'utilisateur opendevin
+### Échec de la création de l'utilisateur openhands
 
 Si vous rencontrez l'erreur suivante lors de l'installation :
 
 ```sh
-Exception: Failed to create opendevin user in sandbox: 'useradd: UID 0 is not unique'
+Exception: Failed to create openhands user in sandbox: 'useradd: UID 0 is not unique'
 ```
 
 Vous pouvez la résoudre en exécutant :

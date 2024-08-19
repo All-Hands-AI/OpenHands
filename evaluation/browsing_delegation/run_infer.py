@@ -14,15 +14,15 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
 
 # Only CodeActAgent can delegate to BrowsingAgent
 SUPPORTED_AGENT_CLS = {'CodeActAgent'}
@@ -36,7 +36,7 @@ def get_config(
     ), 'max_iterations must be 1 for browsing delegation evaluation.'
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -131,7 +131,7 @@ async def process_instance(
 if __name__ == '__main__':
     args = parse_arguments()
 
-    dataset = load_dataset('OpenDevin/eval-browsing-instructions')
+    dataset = load_dataset('OpenHands/eval-browsing-instructions')
     dataset = dataset['train'].to_pandas()
     assert dataset.columns.tolist() == ['instance_id', 'instruction']
 
