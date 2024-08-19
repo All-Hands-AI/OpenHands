@@ -31,7 +31,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
         platform: ['amd64', 'arm64']
     outputs:
@@ -139,7 +139,7 @@ jobs:
     needs: prepare_test_image_tags
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         runtime_type: ['eventstream']
         platform: ['amd64']
         last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
@@ -205,7 +205,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         runtime_type: ['eventstream']
         platform: ['amd64']
         last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
@@ -270,7 +270,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
         runtime_type: ['eventstream']
         platform: ['amd64', 'arm64']
         last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
@@ -336,7 +336,7 @@ jobs:
       tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
     strategy:
       matrix:
-        image: ['od_runtime']
+        image: ['runtime']
     permissions:
       contents: read
       packages: write

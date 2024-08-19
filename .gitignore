@@ -223,7 +223,7 @@ containers/agnostic_sandbox
 image_build_logs
 run_instance_logs
 
-od_runtime_*.tar
+runtime_*.tar
 
 # docker build
 containers/runtime/Dockerfile
