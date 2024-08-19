@@ -170,7 +170,7 @@ class RuntimeClient:
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
-            f'su - {username}',
+            f'su {username}',
             encoding='utf-8',
             echo=False,
         )
