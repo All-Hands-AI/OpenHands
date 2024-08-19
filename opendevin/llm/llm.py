@@ -59,9 +59,6 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
 
-        # Set up config attributes with default values to prevent AttributeError
-        LLMConfig.set_missing_attributes(self.config)
-
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:

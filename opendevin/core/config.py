@@ -4,10 +4,10 @@ import pathlib
 import platform
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import dataclass, field, fields
 from enum import Enum
 from types import UnionType
-from typing import Any, ClassVar, MutableMapping, get_args, get_origin
+from typing import Any, ClassVar, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -140,6 +140,7 @@ class LLMConfig(BaseConfig):
 
         # Load custom LLM configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('llm', {}).items():
+            logger.opendevin_logger.debug(f'Loading custom llm config for {key}')
             if isinstance(value, dict):
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
@@ -156,12 +157,6 @@ class LLMConfig(BaseConfig):
             if k in LLM_SENSITIVE_FIELDS:
                 ret[k] = '******' if v else None
         return ret
-
-    def set_missing_attributes(self):
-        """Set any missing attributes to their default values."""
-        for field_name, field_obj in self.__dataclass_fields__.items():
-            if not hasattr(self, field_name):
-                setattr(self, field_name, field_obj.default)
 
     def __str__(self):
         attr_str = []
@@ -221,8 +216,9 @@ class MemoryConfig(BaseConfig):
             default_config = cls(**toml_config['memory'])
             memory_configs['memory'] = default_config
 
-        # Load custom Memory configs, falling back to default for unspecified attributes
+        # Load custom memory configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('memory', {}).items():
+            logger.opendevin_logger.debug(f'Loading custom memory config for {key}')
             if isinstance(value, dict):
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
@@ -268,18 +264,12 @@ class AgentConfig(BaseConfig):
         config = cls()
         for f in fields(cls):
             if f.name in ['llm_config', 'memory_config']:
-                continue  # These are handled separately
+                continue  # custom configs like llm per agent are not supported in env
             env_var_name = f'AGENT_{f.name.upper()}'
             if env_var_name in env_dict:
                 value = env_dict[env_var_name]
                 if value:
                     setattr(config, f.name, cls._cast_value(f.type, value))
-
-        # Handle llm_config and memory_config separately
-        if 'AGENT_LLM_CONFIG' in env_dict:
-            config.llm_config = env_dict['AGENT_LLM_CONFIG']
-        if 'AGENT_MEMORY_CONFIG' in env_dict:
-            config.memory_config = env_dict['AGENT_MEMORY_CONFIG']
 
         return config
 
@@ -292,17 +282,19 @@ class AgentConfig(BaseConfig):
         if 'agent' in toml_config and isinstance(toml_config['agent'], dict):
             default_config = cls(**toml_config['agent'])
 
-        # Always ensure there's a default 'agent' config
-        agent_configs['agent'] = default_config
-
         # Load custom Agent configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('agent', {}).items():
+            logger.opendevin_logger.debug(f'Loading custom agent config for {key}')
             if isinstance(value, dict) and key != 'agent':
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
                 custom_config.__dict__.update(value)
                 agent_configs[key] = custom_config
+
+        # Ensure there is always a default 'agent' config
+        if 'agent' not in agent_configs:
+            agent_configs['agent'] = default_config
 
         return agent_configs
 
@@ -615,13 +607,13 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
 
     @classmethod
     def load_from_env(cls, env_dict: dict[str, str]) -> 'AppConfig':
-        """Load configuration from environment variables.
+        """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
 
         Args:
-            env_dict: A dictionary of environment variables.
+            env_dict: The environment variables.
 
-        Returns:
-            An AppConfig object with values loaded from environment variables.
+        Note:
+            This method is compatible with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
         """
         config = cls()
 
@@ -746,75 +738,6 @@ def get_field_info(f: Any) -> dict[str, Any]:
 
     # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
-
-
-def load_from_env(
-    cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]
-) -> None:
-    """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-
-    Args:
-        cfg: The AppConfig object to set attributes on.
-        env_or_toml_dict: The environment variables or a config.toml dict.
-
-    Note:
-        This function is compatible with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
-    """
-
-    def get_optional_type(union_type: UnionType) -> Any:
-        """Returns the non-None type from a Union."""
-        types = get_args(union_type)
-        return next((t for t in types if t is not type(None)), None)
-
-    # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: Any, prefix: str = '') -> None:
-        """Set attributes of a config dataclass based on environment variables."""
-        for field_name, field_type in sub_config.__annotations__.items():
-            # compute the expected env var name from the prefix and field name
-            # e.g. LLM_BASE_URL
-            env_var_name = (prefix + field_name).upper()
-
-            if is_dataclass(field_type):
-                # nested dataclass
-                nested_sub_config = getattr(sub_config, field_name)
-                set_attr_from_env(nested_sub_config, prefix=field_name + '_')
-            elif env_var_name in env_or_toml_dict:
-                # convert the env var to the correct type and set it
-                value = env_or_toml_dict[env_var_name]
-
-                # skip empty config values (fall back to default)
-                if not value:
-                    continue
-
-                try:
-                    # if it's an optional type, get the non-None type
-                    if get_origin(field_type) is UnionType:
-                        field_type = get_optional_type(field_type)
-
-                    # Attempt to cast the env var to type hinted in the dataclass
-                    if field_type is bool:
-                        cast_value = str(value).lower() in ['true', '1']
-                    else:
-                        cast_value = field_type(value)
-                    setattr(sub_config, field_name, cast_value)
-                except (ValueError, TypeError):
-                    logger.opendevin_logger.error(
-                        f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
-                    )
-
-    # Start processing from the root of the config object
-    set_attr_from_env(cfg)
-
-    # load default LLM config from env
-    default_llm_config = cfg.get_llm_config()
-    set_attr_from_env(default_llm_config, 'LLM_')
-    # load default agent config from env
-    default_agent_config = cfg.get_agent_config()
-    set_attr_from_env(default_agent_config, 'AGENT_')
-
-    # load default memory config from env
-    default_memory_config = cfg.get_memory_config()
-    set_attr_from_env(default_memory_config, 'MEMORY_')
 
 
 def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
@@ -1057,7 +980,8 @@ def load_app_config(set_logging_levels: bool = True) -> AppConfig:
     """
     config = AppConfig()
     load_from_toml(config)
-    load_from_env(config, os.environ)
+    env_dict = dict(os.environ)
+    AppConfig.load_from_env(env_dict)
     finalize_config(config)
     if set_logging_levels:
         logger.DEBUG = config.debug
