@@ -42,7 +42,7 @@ class ImageContent(Content):
         images: list[dict[str, str | dict[str, str]]] = []
         for url in self.image_urls:
             images.append({'type': self.type.value, 'image_url': {'url': url}})
-        if images:
+        if self.cache_prompt and images:
             images[-1]['cache_control'] = {'type': 'ephemeral'}
         return images
 
