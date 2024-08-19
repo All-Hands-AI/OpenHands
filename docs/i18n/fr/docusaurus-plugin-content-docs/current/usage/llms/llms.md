@@ -25,8 +25,8 @@ Les variables d'environnement suivantes peuvent être nécessaires pour certains
 
 Nous avons quelques guides pour exécuter OpenDevin avec des fournisseurs de modèles spécifiques :
 
-- [ollama](llms/localLLMs)
-- [Azure](llms/azureLLMs)
+- [ollama](llms/local-llms)
+- [Azure](llms/azure-llms)
 
 Si vous utilisez un autre fournisseur, nous vous encourageons à ouvrir une PR pour partager votre configuration !
 
