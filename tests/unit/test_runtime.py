@@ -1414,8 +1414,7 @@ async def test_go_version(temp_dir, box_class, container_image):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-    print(obs.content)
-    # assert 'go1.23' in obs.content  # Check for specific version
+    assert 'go1.23' in obs.content  # Check for specific version
 
     await runtime.close()
     await asyncio.sleep(1)
