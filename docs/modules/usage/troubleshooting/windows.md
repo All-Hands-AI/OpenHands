@@ -1,14 +1,14 @@
 # Notes for Windows and WSL Users
 
-OpenDevin only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+OpenHands only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 Please be sure to run all commands inside your WSL terminal.
 
 ## Troubleshooting
 
 ### Recommendation: Do not run as root user
 
-For security reasons, it is highly recommended to not run OpenDevin as the root user, but a user with a non-zero UID.
-In addition, persistent sandboxes won't be supported when running as root and during start of OpenDevin an appropriate message may appear.
+For security reasons, it is highly recommended to not run OpenHands as the root user, but a user with a non-zero UID.
+In addition, persistent sandboxes won't be supported when running as root and during start of OpenHands an appropriate message may appear.
 
 References:
 
@@ -23,12 +23,12 @@ If you are using Docker Desktop, make sure to start it before calling any docker
 Docker also needs to have the WSL integration option activated.
 
 ---
-### Failed to create opendevin user
+### Failed to create openhands user
 
 If you encounter the following error during setup:
 
 ```sh
-Exception: Failed to create opendevin user in sandbox: 'useradd: UID 0 is not unique'
+Exception: Failed to create openhands user in sandbox: 'useradd: UID 0 is not unique'
  ```
 
 You can resolve it by running:

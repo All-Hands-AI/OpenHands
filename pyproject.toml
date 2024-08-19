@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "opendevin"
+name = "openhands"
 version = "0.8.3"
-description = "OpenDevin: Code Less, Make More"
-authors = ["OpenDevin"]
+description = "OpenHands: Code Less, Make More"
+authors = ["OpenHands"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/OpenDevin/OpenDevin"
+repository = "https://github.com/All-Hands-AI/OpenHands"
 include = ["poetry.lock"]
 
 [tool.poetry.dependencies]
@@ -117,7 +117,7 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
+swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
 gdown = "*"

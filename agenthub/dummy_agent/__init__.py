@@ -1,4 +1,4 @@
-from opendevin.controller.agent import Agent
+from openhands.controller.agent import Agent
 
 from .agent import DummyAgent
 

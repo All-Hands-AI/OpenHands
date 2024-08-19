@@ -68,7 +68,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 opendevin/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image }} --build_folder containers/runtime --force_rebuild
+        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image }} --build_folder containers/runtime --force_rebuild
       - name: Build and export image
         id: build
         run: |
@@ -191,7 +191,7 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_runtime.py
+          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/unit/test_runtime.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:

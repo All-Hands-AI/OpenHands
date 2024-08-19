@@ -21,7 +21,7 @@ on:
         default: ''
 
 jobs:
-  # Builds the OpenDevin Docker images
+  # Builds the OpenHands Docker images
   ghcr_build:
     name: Build App Image
     runs-on: ubuntu-latest
@@ -32,7 +32,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['opendevin']
+        image: ['openhands']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout
@@ -72,7 +72,7 @@ jobs:
           path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
           retention-days: 14
 
-  # Push the OpenDevin and sandbox Docker images to the ghcr.io repository
+  # Push the OpenHands and sandbox Docker images to the ghcr.io repository
   ghcr_push:
     runs-on: ubuntu-latest
     needs: [ghcr_build]
@@ -84,7 +84,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['opendevin']
+        image: ['openhands']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout code
@@ -113,7 +113,7 @@ jobs:
             docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
             docker push $image_name:${tag}_${{ matrix.platform }}
           done
-  # Creates and pushes the OpenDevin and sandbox Docker image manifests
+  # Creates and pushes the OpenHands and sandbox Docker image manifests
   create_manifest:
     runs-on: ubuntu-latest
     needs: [ghcr_build, ghcr_push]
@@ -122,7 +122,7 @@ jobs:
       tags: ${{ needs.ghcr_build.outputs.tags }}
     strategy:
       matrix:
-        image: ['opendevin']
+        image: ['openhands']
     permissions:
       contents: read
       packages: write

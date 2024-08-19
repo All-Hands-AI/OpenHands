@@ -1,88 +1,88 @@
-@startuml opendevin
+@startuml openhands
 !pragma useIntermediatePackages false
 
-class opendevin.action.agent.AgentEchoAction {
+class openhands.action.agent.AgentEchoAction {
   content: str
   runnable: bool
   action: str
 }
-class opendevin.action.agent.AgentFinishAction {
+class openhands.action.agent.AgentFinishAction {
   runnable: bool
   action: str
 }
-class opendevin.observation.AgentMessageObservation {
+class openhands.observation.AgentMessageObservation {
   role: str
   observation: str
 }
-class opendevin.action.agent.AgentSummarizeAction {
+class openhands.action.agent.AgentSummarizeAction {
   summary: str
   action: str
 }
-class opendevin.action.agent.AgentThinkAction {
+class openhands.action.agent.AgentThinkAction {
   thought: str
   runnable: bool
   action: str
 }
-class opendevin.action.base.ExecutableAction {
+class openhands.action.base.ExecutableAction {
 }
-class opendevin.action.base.NotExecutableAction {
+class openhands.action.base.NotExecutableAction {
 }
-class opendevin.observation.Observation {
+class openhands.observation.Observation {
   content: str
 }
-class opendevin.action.base.Action {
+class openhands.action.base.Action {
 }
-class opendevin.action.base.NullAction {
+class openhands.action.base.NullAction {
   action: str
 }
-class opendevin.action.bash.CmdRunAction {
+class openhands.action.bash.CmdRunAction {
   command: str
   action: str
 }
-class opendevin.action.browse.BrowseURLAction {
+class openhands.action.browse.BrowseURLAction {
   url: str
   action: str
 }
-class opendevin.observation.BrowserOutputObservation {
+class openhands.observation.BrowserOutputObservation {
   url: str
   status_code: int
   error: bool
   observation: str
 }
-class opendevin.action.fileop.FileReadAction {
+class openhands.action.fileop.FileReadAction {
   path: str
   action: str
 }
-class opendevin.observation.FileReadObservation {
+class openhands.observation.FileReadObservation {
   path: str
   observation: str
 }
-class opendevin.action.fileop.FileWriteAction {
+class openhands.action.fileop.FileWriteAction {
   path: str
   contents: str
   action: str
 }
-class opendevin.observation.FileWriteObservation {
+class openhands.observation.FileWriteObservation {
   path: str
   observation: str
 }
-class opendevin.action.tasks.AddTaskAction {
+class openhands.action.tasks.AddTaskAction {
   parent: str
   goal: str
   subtasks: list
   action: str
 }
-class opendevin.action.tasks.ModifyTaskAction {
+class openhands.action.tasks.ModifyTaskAction {
   id: str
   state: str
   action: str
 }
-abstract class opendevin.agent.Agent {
+abstract class openhands.agent.Agent {
   _registry: Dict[str, Type[Agent]] {static}
   llm: LLM
   _complete: None
 }
-class opendevin.llm.llm.LLM {
+class openhands.llm.llm.LLM {
   model: None
   api_key: None
   base_url: None
@@ -91,7 +91,7 @@ class opendevin.llm.llm.LLM {
   _debug_id: None
   _completion: None
 }
-class opendevin.controller.agent_controller.AgentController {
+class openhands.controller.agent_controller.AgentController {
   agent: Agent
   max_iterations: int
   workdir: str
@@ -100,35 +100,35 @@ class opendevin.controller.agent_controller.AgentController {
   plan: Plan
   callbacks: List[Callable]
 }
-class opendevin.observation.AgentErrorObservation {
+class openhands.observation.AgentErrorObservation {
   observation: str
 }
-class opendevin.controller.command_manager.CommandManager {
+class openhands.controller.command_manager.CommandManager {
   directory: None
   shell: None
 }
-class opendevin.observation.NullObservation {
+class openhands.observation.NullObservation {
   observation: str
 }
-class opendevin.plan.Plan {
+class openhands.plan.Plan {
   main_goal: str {static}
   task: Task {static}
   main_goal: str
   task: None
 }
-class opendevin.state.State {
+class openhands.state.State {
   plan: Plan
   iteration: int
   history: List[Tuple[Action, Observation]]
   updated_info: List[Tuple[Action, Observation]]
 }
-class opendevin.observation.CmdOutputObservation {
+class openhands.observation.CmdOutputObservation {
   command_id: int
   command: str
   exit_code: int
   observation: str
 }
-class opendevin.sandbox.sandbox.DockerInteractive {
+class openhands.sandbox.sandbox.DockerInteractive {
   instance_id: None
   instance_id: None
   workspace_dir: None
@@ -138,11 +138,11 @@ class opendevin.sandbox.sandbox.DockerInteractive {
   container_image: None
   container_name: None
 }
-class opendevin.observation.UserMessageObservation {
+class openhands.observation.UserMessageObservation {
   role: str
   observation: str
 }
-class opendevin.plan.Task {
+class openhands.plan.Task {
   id: str {static}
   goal: str {static}
   parent: Task | None {static}
@@ -154,49 +154,49 @@ class opendevin.plan.Task {
   subtasks: None
 }
 
-class opendevin.server.session.Session {
+class openhands.server.session.Session {
   websocket: None
   controller: Optional[AgentController]
   agent: Optional[Agent]
   agent_task: None
 }
 
-opendevin.action.base.ExecutableAction <|-- opendevin.action.agent.AgentEchoAction
-opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentFinishAction
-opendevin.observation.Observation <|-- opendevin.observation.AgentMessageObservation
-opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentSummarizeAction
-opendevin.action.base.NotExecutableAction <|-- opendevin.action.agent.AgentThinkAction
-opendevin.action.base.Action <|-- opendevin.action.base.ExecutableAction
-opendevin.action.base.Action <|-- opendevin.action.base.NotExecutableAction
-opendevin.action.base.NotExecutableAction <|-- opendevin.action.base.NullAction
-opendevin.action.base.ExecutableAction <|-- opendevin.action.bash.CmdRunAction
-opendevin.action.base.ExecutableAction <|-- opendevin.action.browse.BrowseURLAction
-opendevin.observation.Observation <|-- opendevin.observation.BrowserOutputObservation
-opendevin.action.base.ExecutableAction <|-- opendevin.action.fileop.FileReadAction
-opendevin.observation.Observation <|-- opendevin.observation.FileReadObservation
-opendevin.action.base.ExecutableAction <|-- opendevin.action.fileop.FileWriteAction
-opendevin.observation.Observation <|-- opendevin.observation.FileWriteObservation
-opendevin.action.base.NotExecutableAction <|-- opendevin.action.tasks.AddTaskAction
-opendevin.action.base.NotExecutableAction <|-- opendevin.action.tasks.ModifyTaskAction
-opendevin.agent.Agent *-- opendevin.agent.Agent
-opendevin.agent.Agent *-- opendevin.llm.llm.LLM
-opendevin.controller.agent_controller.AgentController *-- opendevin.agent.Agent
-opendevin.observation.Observation <|-- opendevin.observation.AgentErrorObservation
-opendevin.observation.Observation <|-- opendevin.observation.NullObservation
-opendevin.plan.Plan *-- opendevin.plan.Task
-opendevin.state.State *-- opendevin.plan.Plan
-opendevin.state.State *-- opendevin.observation.CmdOutputObservation
-opendevin.state.State *-- opendevin.action.base.Action
-opendevin.state.State *-- opendevin.observation.Observation
-opendevin.observation.Observation <|-- opendevin.observation.CmdOutputObservation
-opendevin.observation.Observation <|-- opendevin.observation.UserMessageObservation
-opendevin.plan.Task *-- opendevin.plan.Task
-opendevin.server.session.Session *-- opendevin.controller.agent_controller.AgentController
-opendevin.server.session.Session *-- opendevin.agent.Agent
-opendevin.controller.agent_controller.AgentController -> opendevin.state.State
-opendevin.controller.agent_controller.AgentController -> opendevin.plan.Plan
-opendevin.controller.agent_controller.AgentController -> opendevin.controller.command_manager.CommandManager
-opendevin.controller.command_manager.CommandManager -> opendevin.sandbox.sandbox.DockerInteractive
+openhands.action.base.ExecutableAction <|-- openhands.action.agent.AgentEchoAction
+openhands.action.base.NotExecutableAction <|-- openhands.action.agent.AgentFinishAction
+openhands.observation.Observation <|-- openhands.observation.AgentMessageObservation
+openhands.action.base.NotExecutableAction <|-- openhands.action.agent.AgentSummarizeAction
+openhands.action.base.NotExecutableAction <|-- openhands.action.agent.AgentThinkAction
+openhands.action.base.Action <|-- openhands.action.base.ExecutableAction
+openhands.action.base.Action <|-- openhands.action.base.NotExecutableAction
+openhands.action.base.NotExecutableAction <|-- openhands.action.base.NullAction
+openhands.action.base.ExecutableAction <|-- openhands.action.bash.CmdRunAction
+openhands.action.base.ExecutableAction <|-- openhands.action.browse.BrowseURLAction
+openhands.observation.Observation <|-- openhands.observation.BrowserOutputObservation
+openhands.action.base.ExecutableAction <|-- openhands.action.fileop.FileReadAction
+openhands.observation.Observation <|-- openhands.observation.FileReadObservation
+openhands.action.base.ExecutableAction <|-- openhands.action.fileop.FileWriteAction
+openhands.observation.Observation <|-- openhands.observation.FileWriteObservation
+openhands.action.base.NotExecutableAction <|-- openhands.action.tasks.AddTaskAction
+openhands.action.base.NotExecutableAction <|-- openhands.action.tasks.ModifyTaskAction
+openhands.agent.Agent *-- openhands.agent.Agent
+openhands.agent.Agent *-- openhands.llm.llm.LLM
+openhands.controller.agent_controller.AgentController *-- openhands.agent.Agent
+openhands.observation.Observation <|-- openhands.observation.AgentErrorObservation
+openhands.observation.Observation <|-- openhands.observation.NullObservation
+openhands.plan.Plan *-- openhands.plan.Task
+openhands.state.State *-- openhands.plan.Plan
+openhands.state.State *-- openhands.observation.CmdOutputObservation
+openhands.state.State *-- openhands.action.base.Action
+openhands.state.State *-- openhands.observation.Observation
+openhands.observation.Observation <|-- openhands.observation.CmdOutputObservation
+openhands.observation.Observation <|-- openhands.observation.UserMessageObservation
+openhands.plan.Task *-- openhands.plan.Task
+openhands.server.session.Session *-- openhands.controller.agent_controller.AgentController
+openhands.server.session.Session *-- openhands.agent.Agent
+openhands.controller.agent_controller.AgentController -> openhands.state.State
+openhands.controller.agent_controller.AgentController -> openhands.plan.Plan
+openhands.controller.agent_controller.AgentController -> openhands.controller.command_manager.CommandManager
+openhands.controller.command_manager.CommandManager -> openhands.sandbox.sandbox.DockerInteractive
 
 footer Based on f3fda42; Generated by //py2puml//
 @enduml
