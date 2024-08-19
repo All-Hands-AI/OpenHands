@@ -24,7 +24,7 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
-    parse_arguments,
+    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -374,12 +374,27 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    parser = get_parser()
+    parser.add_argument(
+        '-s',
+        '--set',
+        type=str,
+        default='lite',
+        choices=['lite-test', 'full-test'],
+        help='data set to evaluate on, either full-test or lite-test',
+    )
+    args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
-    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
+    if args.set == 'full-test':
+        dataset = load_dataset('princeton-nlp/SWE-bench', split='test')
+    elif args.set == 'lite-test':
+        dataset = load_dataset('princeton-nlp/SWE-bench_Lite', split='test')
+    else:
+        raise ValueError(f'Unsupported set: {args.set}')
+
+    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
 
     llm_config = None
     if args.llm_config:
