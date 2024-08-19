@@ -13,7 +13,7 @@ import toml
 from dotenv import load_dotenv
 
 from openhands.core import logger
-from openhands.core.utils import Singleton
+from openhands.core.utils import SingletonABCMeta
 
 load_dotenv()
 
@@ -149,7 +149,7 @@ class LLMConfig(BaseConfig):
         # Load custom LLM configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('llm', {}).items():
             if key != 'llm' and isinstance(value, dict):
-                logger.opendevin_logger.debug(f'Loading custom llm config for {key}')
+                logger.openhands_logger.debug(f'Loading custom llm config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
@@ -234,7 +234,7 @@ class MemoryConfig(BaseConfig):
         # Load custom memory configs, falling back to default for unspecified attributes
         for key, value in toml_config.get('memory', {}).items():
             if key != 'memory' and isinstance(value, dict):
-                logger.opendevin_logger.debug(f'Loading custom memory config for {key}')
+                logger.openhands_logger.debug(f'Loading custom memory config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
@@ -311,7 +311,7 @@ class AgentConfig(BaseConfig):
         # Load custom Agent configs
         for key, value in toml_config.get('agent', {}).items():
             if key != 'agent' and isinstance(value, dict):
-                logger.opendevin_logger.debug(f'Loading custom agent config for {key}')
+                logger.openhands_logger.debug(f'Loading custom agent config for {key}')
                 # Create a new config, starting with default values
                 custom_config = cls(**default_config.__dict__)
                 # Update with custom values
@@ -420,7 +420,7 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
                 if hasattr(sandbox_config, new_key):
                     setattr(sandbox_config, new_key, core_config[key])
                 else:
-                    logger.opendevin_logger.warning(f'Unknown sandbox config: {key}')
+                    logger.openhands_logger.warning(f'Unknown sandbox config: {key}')
 
         # Then, override with new-style [sandbox] section if it exists
         if 'sandbox' in toml_config and isinstance(toml_config['sandbox'], dict):
@@ -572,7 +572,7 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
         if name in self.memories:
             return self.memories[name]
         if name is not None and name != 'memory':
-            logger.opendevin_logger.warning(
+            logger.openhands_logger.warning(
                 f'Memory config group {name} not found, using default config'
             )
         if 'memory' not in self.memories:
@@ -655,7 +655,7 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
                     try:
                         setattr(config, f.name, cls._cast_value(f.type, value))
                     except ValueError as e:
-                        logger.opendevin_logger.warning(f'Error setting {f.name}: {e}')
+                        logger.openhands_logger.warning(f'Error setting {f.name}: {e}')
 
         # Load sub-configs
         config.llms['llm'] = LLMConfig.load_from_env(env_dict)
@@ -692,9 +692,9 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
                     try:
                         setattr(config, key, value)
                     except ValueError as e:
-                        logger.opendevin_logger.warning(f'Error setting {key}: {e}')
+                        logger.openhands_logger.warning(f'Error setting {key}: {e}')
                 else:
-                    logger.opendevin_logger.warning(
+                    logger.openhands_logger.warning(
                         f'Unknown key in core config: "{key}"'
                     )
 
@@ -710,7 +710,7 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
         # Log warnings for unknown keys
         for key in toml_config:
             if key not in ['core', 'llm', 'agent', 'memory', 'sandbox', 'security']:
-                logger.opendevin_logger.warning(f'Unknown key in config: "{key}"')
+                logger.openhands_logger.warning(f'Unknown key in config: "{key}"')
 
         return config
 
@@ -781,72 +781,11 @@ def load_dict_from_toml(toml_file: str = 'config.toml') -> dict[str, Any] | None
     Note:
         If the TOML file is not found or cannot be parsed, appropriate warnings will be logged.
     """
-
-    def get_optional_type(union_type: UnionType) -> Any:
-        """Returns the non-None type from a Union."""
-        types = get_args(union_type)
-        return next((t for t in types if t is not type(None)), None)
-
-    # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: Any, prefix=''):
-        """Set attributes of a config dataclass based on environment variables."""
-        for field_name, field_type in sub_config.__annotations__.items():
-            # compute the expected env var name from the prefix and field name
-            # e.g. LLM_BASE_URL
-            env_var_name = (prefix + field_name).upper()
-
-            if is_dataclass(field_type):
-                # nested dataclass
-                nested_sub_config = getattr(sub_config, field_name)
-                set_attr_from_env(nested_sub_config, prefix=field_name + '_')
-            elif env_var_name in env_or_toml_dict:
-                # convert the env var to the correct type and set it
-                value = env_or_toml_dict[env_var_name]
-
-                # skip empty config values (fall back to default)
-                if not value:
-                    continue
-
-                try:
-                    # if it's an optional type, get the non-None type
-                    if get_origin(field_type) is UnionType:
-                        field_type = get_optional_type(field_type)
-
-                    # Attempt to cast the env var to type hinted in the dataclass
-                    if field_type is bool:
-                        cast_value = str(value).lower() in ['true', '1']
-                    else:
-                        cast_value = field_type(value)
-                    setattr(sub_config, field_name, cast_value)
-                except (ValueError, TypeError):
-                    logger.openhands_logger.error(
-                        f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
-                    )
-
-    # Start processing from the root of the config object
-    set_attr_from_env(cfg)
-
-    # load default LLM config from env
-    default_llm_config = cfg.get_llm_config()
-    set_attr_from_env(default_llm_config, 'LLM_')
-    # load default agent config from env
-    default_agent_config = cfg.get_agent_config()
-    set_attr_from_env(default_agent_config, 'AGENT_')
-
-
-def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
-    """Load the config from the toml file. Supports both styles of config vars.
-
-    Args:
-        cfg: The AppConfig object to update attributes of.
-        toml_file: The path to the toml file. Defaults to 'config.toml'.
-    """
-    # try to read the config.toml file into the config object
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_dict = toml.load(toml_contents)
     except FileNotFoundError:
-        logger.opendevin_logger.warning(f'Config file not found: {toml_file}')
+        logger.openhands_logger.warning(f'Config file not found: {toml_file}')
         return None
     except toml.TomlDecodeError as e:
         logger.openhands_logger.warning(
@@ -855,87 +794,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         )
         return None
 
-    # if there was an exception or core is not in the toml, try to use the old-style toml
-    if 'core' not in toml_config:
-        # re-use the env loader to set the config from env-style vars
-        load_from_env(cfg, toml_config)
-        return
-
-    core_config = toml_config['core']
-
-    # load llm configs and agent configs
-    for key, value in toml_config.items():
-        if isinstance(value, dict):
-            try:
-                if key is not None and key.lower() == 'agent':
-                    logger.openhands_logger.info(
-                        'Attempt to load default agent config from config toml'
-                    )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    agent_config = AgentConfig(**non_dict_fields)
-                    cfg.set_agent_config(agent_config, 'agent')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.openhands_logger.info(
-                                f'Attempt to load group {nested_key} from config toml as agent config'
-                            )
-                            agent_config = AgentConfig(**nested_value)
-                            cfg.set_agent_config(agent_config, nested_key)
-                elif key is not None and key.lower() == 'llm':
-                    logger.openhands_logger.info(
-                        'Attempt to load default LLM config from config toml'
-                    )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    llm_config = LLMConfig(**non_dict_fields)
-                    cfg.set_llm_config(llm_config, 'llm')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.openhands_logger.info(
-                                f'Attempt to load group {nested_key} from config toml as llm config'
-                            )
-                            llm_config = LLMConfig(**nested_value)
-                            cfg.set_llm_config(llm_config, nested_key)
-                elif not key.startswith('sandbox') and key.lower() != 'core':
-                    logger.openhands_logger.warning(
-                        f'Unknown key in {toml_file}: "{key}"'
-                    )
-            except (TypeError, KeyError) as e:
-                logger.openhands_logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
-                    exc_info=False,
-                )
-        else:
-            logger.openhands_logger.warning(f'Unknown key in {toml_file}: "{key}')
-
-    try:
-        # set sandbox config from the toml file
-        sandbox_config = cfg.sandbox
-
-        # migrate old sandbox configs from [core] section to sandbox config
-        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
-        for key in keys_to_migrate:
-            new_key = key.replace('sandbox_', '')
-            if new_key in sandbox_config.__annotations__:
-                # read the key in sandbox and remove it from core
-                setattr(sandbox_config, new_key, core_config.pop(key))
-            else:
-                logger.openhands_logger.warning(f'Unknown sandbox config: {key}')
-
-        # the new style values override the old style values
-        if 'sandbox' in toml_config:
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
-
-        # update the config object with the new values
-        AppConfig(sandbox=sandbox_config, **core_config)
-    except (TypeError, KeyError) as e:
-        logger.openhands_logger.warning(
-            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
-            exc_info=False,
-        )
+    return toml_dict
 
 
 def finalize_config(cfg: AppConfig) -> None:
@@ -962,13 +821,13 @@ def finalize_config(cfg: AppConfig) -> None:
     # Compatibility: If base_url is not set in memory config, use the one from LLM config
     if hasattr(default_llm, 'embedding_base_url'):
         default_memory.base_url = getattr(default_llm, 'embedding_base_url')
-        logger.opendevin_logger.warning(
+        logger.openhands_logger.warning(
             "Deprecated: 'embedding_base_url' should be set in memory config as base_url. "
             'Loaded from default LLM config.'
         )
     if hasattr(default_llm, 'embedding_model'):
         default_memory.embedding_model = getattr(default_llm, 'embedding_model')
-        logger.opendevin_logger.warning(
+        logger.openhands_logger.warning(
             "Deprecated: 'embedding_model' should be set in memory config. "
             'Loaded from default LLM config.'
         )
@@ -978,7 +837,7 @@ def finalize_config(cfg: AppConfig) -> None:
         default_memory.embedding_deployment_name = getattr(
             default_llm, 'embedding_deployment_name'
         )
-        logger.opendevin_logger.warning(
+        logger.openhands_logger.warning(
             "Deprecated: 'embedding_deployment_name' should be set in memory config. "
             'Loaded from default LLM config.'
         )

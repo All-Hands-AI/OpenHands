@@ -8,7 +8,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from openhands.core.config import LLMConfig
+from openhands.core.config import MemoryConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
 

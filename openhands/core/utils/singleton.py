@@ -1,7 +1,7 @@
 import dataclasses
+from abc import ABCMeta
 
 from openhands.core import logger
-
 
 
 class SingletonABCMeta(ABCMeta):
