@@ -75,15 +75,15 @@ class EventStreamRuntime(Runtime):
         logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
-        if self.config.sandbox.od_runtime_extra_deps:
+        if self.config.sandbox.runtime_extra_deps:
             logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
         self.container_image = build_runtime_image(
             self.container_image,
             self.runtime_builder,
-            extra_deps=self.config.sandbox.od_runtime_extra_deps,
+            extra_deps=self.config.sandbox.runtime_extra_deps,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
