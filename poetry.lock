@@ -4333,13 +4333,13 @@ files = [
 
 [[package]]
 name = "minio"
-version = "7.2.7"
+version = "7.2.8"
 description = "MinIO Python SDK for Amazon S3 Compatible Cloud Storage"
 optional = false
-python-versions = "*"
+python-versions = ">3.8"
 files = [
-    {file = "minio-7.2.7-py3-none-any.whl", hash = "sha256:59d1f255d852fe7104018db75b3bebbd987e538690e680f7c5de835e422de837"},
-    {file = "minio-7.2.7.tar.gz", hash = "sha256:473d5d53d79f340f3cd632054d0c82d2f93177ce1af2eac34a235bea55708d98"},
+    {file = "minio-7.2.8-py3-none-any.whl", hash = "sha256:aa3b485788b63b12406a5798465d12a57e4be2ac2a58a8380959b6b748e64ddd"},
+    {file = "minio-7.2.8.tar.gz", hash = "sha256:f8af2dafc22ebe1aef3ac181b8e217037011c430aa6da276ed627e55aaf7c815"},
 ]
 
 [package.dependencies]
@@ -9212,4 +9212,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ad6af14b6fae673b88ea9951171bfa4913100210714dd909d8b399da1263cc02"
+content-hash = "efd375d5346913a04cb6cd85c69f2672c4c226b931b5710556a70ba019dd0ef9"
