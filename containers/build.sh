@@ -8,7 +8,7 @@ platform=$3
 echo "Building: $image_name for platform: $platform"
 tags=()
 
-OPEN_OPENHANDS_BUILD_VERSION="dev"
+OPENHANDS_BUILD_VERSION="dev"
 
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
@@ -19,7 +19,7 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     tags+=("latest")
   fi
   sanitized=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
-  OPEN_OPENHANDS_BUILD_VERSION=$sanitized
+  OPENHANDS_BUILD_VERSION=$sanitized
   tag=$(echo "$sanitized" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
   tags+=("$tag")
 fi
@@ -73,7 +73,7 @@ echo "Output image will be saved to: $output_image"
 
 docker buildx build \
   $args \
-  --build-arg OPEN_OPENHANDS_BUILD_VERSION="$OPEN_OPENHANDS_BUILD_VERSION" \
+  --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
   --platform linux/$platform \
   --provenance=false \
   -f "$dir/Dockerfile" \
