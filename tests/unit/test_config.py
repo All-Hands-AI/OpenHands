@@ -6,6 +6,8 @@ from opendevin.core.config import (
     AgentConfig,
     AppConfig,
     LLMConfig,
+    SandboxConfig,
+    SecurityConfig,
     UndefinedString,
     finalize_config,
     get_llm_config_arg,
@@ -21,7 +23,7 @@ def setup_env():
         f.write('[default]\nLLM_MODEL="GPT-4"\n')
 
     with open('new_style_config.toml', 'w') as f:
-        f.write('[app]\nLLM_MODEL="GPT-3"\n')
+        f.write('[llm]\nmodel="GPT-3"\n')
 
     yield
 
@@ -33,14 +35,16 @@ def setup_env():
 @pytest.fixture
 def temp_toml_file(tmp_path):
     # Fixture to create a temporary directory and TOML file for testing
-    tmp_toml_file = os.path.join(tmp_path, 'config.toml')
-    yield tmp_toml_file
+    tmp_toml_file = tmp_path / 'config.toml'
+    yield str(tmp_toml_file)
 
 
 @pytest.fixture
-def default_config(monkeypatch):
+def default_config():
     # Fixture to provide a default AppConfig instance
     AppConfig.reset()
+    SandboxConfig.reset()
+    SecurityConfig.reset()
     yield AppConfig()
 
 
@@ -49,6 +53,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
     monkeypatch.setenv('LLM_API_KEY', 'sk-proj-rgMV0...')
     monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
+    monkeypatch.setenv('MEMORY_EMBEDDING_MODEL', 'local')
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('DEFAULT_AGENT', 'CodeActAgent')
@@ -61,8 +66,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert isinstance(config.get_llm_config(), LLMConfig)
     assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
     assert config.get_llm_config().model == 'gpt-4o'
-    assert isinstance(config.get_agent_config(), AgentConfig)
-    assert isinstance(config.get_agent_config().memory_max_threads, int)
+    assert config.get_memory_config().embedding_model == 'local'
     assert config.get_agent_config().memory_max_threads == 4
     assert config.get_agent_config().memory_enabled is True
     assert config.default_agent == 'CodeActAgent'
@@ -123,7 +127,6 @@ default_agent = "TestAgent"
 
     load_from_toml(default_config, temp_toml_file)
 
-    # default llm & agent configs
     assert default_config.default_agent == 'TestAgent'
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.get_llm_config().api_key == 'toml-api-key'
@@ -145,7 +148,6 @@ default_agent = "TestAgent"
         == 'some-cheap-model'
     )
     assert default_config.get_agent_config('BrowsingAgent').memory_enabled is False
-
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.timeout == 1
 
@@ -256,7 +258,7 @@ sandbox_user_id = 1001
 
     finalize_config(default_config)
     # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
-    assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
+    assert default_config.workspace_mount_path == os.path.abspath('UNDEFINED')
 
 
 def test_env_overrides_sandbox_toml(monkeypatch, default_config, temp_toml_file):
@@ -303,7 +305,7 @@ user_id = 1001
 
     finalize_config(default_config)
     # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
-    assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
+    assert default_config.workspace_mount_path == os.path.abspath('UNDEFINED')
 
 
 def test_sandbox_config_from_toml(default_config, temp_toml_file):
@@ -336,7 +338,7 @@ user_id = 1001
 
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
-    initial_defaults = default_config.defaults_dict
+    initial_defaults = default_config.defaults_to_dict()
     assert (
         initial_defaults['workspace_mount_path']['default'] is UndefinedString.UNDEFINED
     )
@@ -349,7 +351,7 @@ def test_defaults_dict_after_updates(default_config):
     updated_config.get_llm_config_from_agent('PlannerAgent').api_key = 'updated-api-key'
     updated_config.default_agent = 'PlannerAgent'
 
-    defaults_after_updates = updated_config.defaults_dict
+    defaults_after_updates = updated_config.defaults_to_dict()
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
     assert (
         defaults_after_updates['workspace_mount_path']['default']
@@ -371,7 +373,7 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write('INVALID TOML CONTENT')
 
-    load_from_toml(default_config)
+    load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
     default_config.jwt_secret = None  # prevent leak
     for llm in default_config.llms.values():
