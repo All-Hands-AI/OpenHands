@@ -37,5 +37,5 @@ docker run -it \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     ghcr.io/all-hands-ai/openhands:0.8 \
     python -m opendevin.core.main \
-    -t "Write a bash script that prints Hello World" \
+    -t "Write a bash script that prints Hello World"
 ```
