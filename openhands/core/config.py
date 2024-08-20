@@ -4,7 +4,7 @@ import pathlib
 import platform
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, is_dataclass
 from enum import Enum
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
@@ -38,7 +38,11 @@ class BaseConfig(ABC):
     def defaults_to_dict(self) -> dict:
         result = {}
         for f in fields(self):
-            result[f.name] = get_field_info(f)
+            field_value = getattr(self, f.name)
+            if is_dataclass(field_value):
+                result[f.name] = field_value.defaults_to_dict()
+            else:
+                result[f.name] = get_field_info(f)
         return result
 
     @staticmethod
@@ -429,6 +433,9 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
 
         return sandbox_config
 
+    def defaults_to_dict(self) -> dict:
+        return {f.name: get_field_info(f) for f in fields(self)}
+
 
 class UndefinedString(str, Enum):
     UNDEFINED = 'UNDEFINED'
@@ -699,11 +706,9 @@ class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
                     )
 
         # Load and override other configs
-        config.llms.update(LLMConfig.load_from_toml(toml_config))
-        print('Agents first: ', config.agents)
-        config.agents.update(AgentConfig.load_from_toml(toml_config))
-        print('Agents second: ', config.agents)
-        config.memories.update(MemoryConfig.load_from_toml(toml_config))
+        config.llms = LLMConfig.load_from_toml(toml_config)
+        config.agents = AgentConfig.load_from_toml(toml_config)
+        config.memories = MemoryConfig.load_from_toml(toml_config)
         config.sandbox = SandboxConfig.load_from_toml(toml_config)
         config.security = SecurityConfig.load_from_toml(toml_config)
 
@@ -851,6 +856,10 @@ def finalize_config(cfg: AppConfig) -> None:
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    # Copy base_url from LLM config to Memory config if not set
+    if default_memory.base_url is None and default_llm.base_url is not None:
+        default_memory.base_url = default_llm.base_url
 
 
 # Utility function for command line --group argument
