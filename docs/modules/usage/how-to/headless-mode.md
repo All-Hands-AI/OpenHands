@@ -36,6 +36,6 @@ docker run -it \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     ghcr.io/all-hands-ai/openhands:main \ # TODO: pin a version here
-    python -m opendevin.core.main \
+    python -m openhands.core.main \
     -t "Write a bash script that prints Hello World"
 ```
