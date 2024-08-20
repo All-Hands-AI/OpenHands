@@ -5,9 +5,8 @@ from fastapi import WebSocket
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
-
-from .session import Session
 
 
 class SessionManager:

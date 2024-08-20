@@ -1,7 +1,10 @@
 # Requirements
-from .agent_skills import AgentSkillsPlugin, AgentSkillsRequirement
-from .jupyter import JupyterPlugin, JupyterRequirement
-from .requirement import Plugin, PluginRequirement
+from openhands.runtime.plugins.agent_skills import (
+    AgentSkillsPlugin,
+    AgentSkillsRequirement,
+)
+from openhands.runtime.plugins.jupyter import JupyterPlugin, JupyterRequirement
+from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 
 __all__ = [
     'Plugin',
