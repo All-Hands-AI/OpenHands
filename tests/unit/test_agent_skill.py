@@ -1,7 +1,6 @@
 import contextlib
 import io
 import os
-import re
 import sys
 from unittest.mock import patch
 
@@ -1595,20 +1594,19 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
     with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
         current_line = 1
         file_path = tmp_path / 'test.ts'
-        file_path.write_text('')  # Create an empty TypeScript file
+        file_path.write_text('')
 
         open_file(str(file_path), current_line)
         insert_content_at_line(
             str(file_path),
             1,
-            "function greet(name: string) {\n    console.log('Hello, ' + name)\n",
+            "function greet(name: string) {\n    console.log('Hello, ' + name)",
         )
         result = capsys.readouterr().out
         assert result is not None
 
-        # Use a regex to match the file path in the error message
-        error_line_pattern = r'.*test\.ts\(\d+,\d+\): error TS\d+: .*'
-
+        # Note: the tsc (typescript compiler) message is different from a
+        # compared to a python linter message, like line and column in brackets:
         expected_lines = [
             f'[File: {file_path} (1 lines total)]',
             '(this is the beginning of the file)',
@@ -1616,7 +1614,7 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
             '(this is the end of the file)',
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]',
             'ERRORS:',
-            error_line_pattern,  # This line will be checked with regex
+            f"../../../..{file_path}(3,1): error TS1005: '}}' expected.",
             '[This is how your edit would have looked if applied]',
             '-------------------------------------------------',
             '(this is the beginning of the file)',
@@ -1636,16 +1634,10 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.',
             '',
         ]
-
         result_lines = result.split('\n')
         assert len(result_lines) == len(expected_lines), "Number of lines doesn't match"
 
         for i, (result_line, expected_line) in enumerate(
             zip(result_lines, expected_lines)
         ):
-            if i == 6:  # The line with the file path
-                assert re.match(
-                    expected_line, result_line
-                ), f"Line {i+1} doesn't match the expected pattern"
-            else:
-                assert result_line == expected_line, f"Line {i+1} doesn't match"
+            assert result_line == expected_line, f"Line {i+1} doesn't match"

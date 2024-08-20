@@ -49,9 +49,15 @@ class Linter:
         cmd = cmd.split()
 
         process = subprocess.Popen(
-            cmd, cwd=self.root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            cmd,
+            cwd=self.root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,  # Add stdin parameter
         )
-        stdout, _ = process.communicate()
+        stdout, _ = process.communicate(
+            input=code.encode()
+        )  # Pass the code to the process
         errors = stdout.decode().strip()
         self.returncode = process.returncode
         if self.returncode == 0:
@@ -209,7 +215,7 @@ def basic_lint(fname, code):
 
 
 def extract_error_line_from(lint_error):
-    first_error_line = 0
+    first_error_line = None
     for line in lint_error.splitlines(True):
         if line.strip():
             # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
