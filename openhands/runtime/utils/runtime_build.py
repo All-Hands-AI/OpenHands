@@ -14,7 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/openhands/od_runtime'
+    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/openhands/runtime'
 )
 
 
@@ -177,7 +177,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
 
     if RUNTIME_IMAGE_REPO in base_image:
         logger.info(
-            f'The provided image [{base_image}] is a already a valid od_runtime image.\n'
+            f'The provided image [{base_image}] is a already a valid runtime image.\n'
             f'Will try to reuse it as is.'
         )
 
@@ -235,7 +235,7 @@ def build_runtime_image(
     # non-hash generic image name, it could contain *similar* dependencies
     # but *might* not exactly match the state of the source code.
     # It resembles the "latest" tag in the docker image naming convention for
-    # a particular {repo}:{tag} pair (e.g., ubuntu:latest -> od_runtime:ubuntu_tag_latest)
+    # a particular {repo}:{tag} pair (e.g., ubuntu:latest -> runtime:ubuntu_tag_latest)
     # we will build from IT to save time if the `from_scratch_hash` is not found
     generic_runtime_image_name = f'{runtime_image_repo}:{runtime_image_tag}'
 
