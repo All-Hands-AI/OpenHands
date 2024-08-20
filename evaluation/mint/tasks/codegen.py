@@ -2,7 +2,7 @@ import logging
 
 from utils import check_correctness
 
-from .base import Task
+from evaluation.mint.tasks.base import Task
 
 LOGGER = logging.getLogger('MINT')
 

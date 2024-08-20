@@ -58,7 +58,7 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 You should now be able to connect to `http://localhost:3000/`
@@ -179,7 +179,7 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 You should now be able to connect to `http://localhost:3000/`

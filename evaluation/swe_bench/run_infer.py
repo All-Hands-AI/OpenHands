@@ -90,7 +90,7 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/openhands/eval-swe-bench:full-v1.2.1'
+    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
         container_image = 'sweb.eval.x86_64.' + instance['instance_id']

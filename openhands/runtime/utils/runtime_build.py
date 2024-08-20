@@ -14,7 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/openhands/runtime'
+    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime'
 )
 
 
