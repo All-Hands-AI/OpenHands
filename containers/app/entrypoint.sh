@@ -60,5 +60,5 @@ else
 
   usermod -aG $DOCKER_SOCKET_GID enduser
   echo "Running as enduser"
-  su enduser /bin/bash -c "$*"
+  su enduser /bin/bash -c "${*@Q}"
 fi
