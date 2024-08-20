@@ -3,7 +3,6 @@ import os
 import tempfile
 import threading
 import uuid
-from collections import deque
 from zipfile import ZipFile
 
 import aiohttp
@@ -45,8 +44,8 @@ class LogBuffer:
     lines and provides methods for appending, retrieving, and clearing logs.
     """
 
-    def __init__(self, container: docker.models.containers.Container, maxlen=10000):
-        self.buffer: deque[str] = deque(maxlen=maxlen)
+    def __init__(self, container: docker.models.containers.Container):
+        self.buffer: list[str] = []
         self.lock = threading.Lock()
         self.log_generator = container.logs(stream=True, follow=True)
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
