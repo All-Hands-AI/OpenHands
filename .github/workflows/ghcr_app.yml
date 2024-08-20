@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
+      last_tag: ${{ steps.capture-last-tag.outputs.last_tag }}
     permissions:
       contents: read
       packages: write
@@ -65,15 +66,22 @@ jobs:
           tags=$(cat tags.txt)
           echo "tags=$tags"
           echo "tags=$tags" >> $GITHUB_OUTPUT
+      - name: Capture last tag
+        id: capture-last-tag
+        run: |
+          last_tag=$(cat tags.txt | awk '{print $NF}')
+          echo "last_tag=$last_tag"
+          echo "last_tag=$last_tag" >> $GITHUB_OUTPUT
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.image }}_image_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ steps.capture-tags.outputs.tags }}_${{ matrix.platform }}.tar
+          name: ${{ matrix.image }}_${{ steps.capture-last-tag.outputs.last_tag }}_${{ matrix.platform }}
+          path: /tmp/${{ matrix.image }}_${{ steps.capture-last-tag.outputs.last_tag }}_${{ matrix.platform }}.tar
           retention-days: 14
 
   # Push the OpenHands and sandbox Docker images to the ghcr.io repository
   ghcr_push:
+    name: Push App Image
     runs-on: ubuntu-latest
     needs: [ghcr_build]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
@@ -85,6 +93,7 @@ jobs:
     strategy:
       matrix:
         image: ['openhands']
+        last_tag: ['${{ needs.ghcr_build.outputs.last_tag }}']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout code
@@ -98,12 +107,12 @@ jobs:
       - name: Download Docker images
         uses: actions/download-artifact@v4
         with:
-          name: ${{ matrix.image }}_image_${{ matrix.platform }}
+          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
           path: /tmp
       - name: Load images and push to registry
         run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_${{ steps.capture-tags.outputs.tags }}_${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}_${{ steps.capture-tags.outputs.tags }}_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
+          mv /tmp/${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar .
+          loaded_image=$(docker load -i ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar | grep "Loaded image:" | head -n 1 | awk '{print $3}')
           echo "loaded image = $loaded_image"
           tags=$(echo ${tags} | tr ' ' '\n')
           image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
@@ -113,8 +122,9 @@ jobs:
             docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
             docker push $image_name:${tag}_${{ matrix.platform }}
           done
-  # Creates and pushes the OpenHands and sandbox Docker image manifests
+  # Creates and pushes the OpenHands Docker image manifests
   create_manifest:
+    name: Create Manifest
     runs-on: ubuntu-latest
     needs: [ghcr_build, ghcr_push]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
