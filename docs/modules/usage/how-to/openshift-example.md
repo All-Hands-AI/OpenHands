@@ -150,7 +150,7 @@ metadata:
 spec:
   containers:
   - name: openhands-app-2024
-    image: ghcr.io/opendevin/opendevin:0.7.1
+    image: ghcr.io/all-hands-ai/openhands:main
     env:
     - name: SANDBOX_USER_ID
       value: "1000"
@@ -164,7 +164,7 @@ spec:
     ports:
     - containerPort: 3000
   - name: openhands-sandbox-2024
-    image: ghcr.io/openhands/sandbox:main
+    image: ghcr.io/all-hands-ai/sandbox:main
     ports:
     - containerPort: 51963
     command: ["/usr/sbin/sshd", "-D", "-p 51963", "-o", "PermitRootLogin=yes"]
@@ -204,10 +204,10 @@ LAST SEEN   TYPE     REASON                   OBJECT                            
 9s          Normal   SuccessfulAttachVolume   pod/openhands-app-2024                AttachVolume.Attach succeeded for volume "pvc-2b1d223a-1c8f-4990-8e3d-68061a9ae252"
 9s          Normal   SuccessfulAttachVolume   pod/openhands-app-2024                AttachVolume.Attach succeeded for volume "pvc-31f15b25-faad-4665-a25f-201a530379af"
 6s          Normal   AddedInterface           pod/openhands-app-2024                Add eth0 [10.128.2.48/23] from openshift-sdn
-6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/opendevin/opendevin:0.7.1" already present on machine
+6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/all-hands-ai/openhands:main" already present on machine
 6s          Normal   Created                  pod/openhands-app-2024                Created container openhands-app-2024
 6s          Normal   Started                  pod/openhands-app-2024                Started container openhands-app-2024
-6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/openhands/sandbox:main" already present on machine
+6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/all-hands-ai/sandbox:main" already present on machine
 5s          Normal   Created                  pod/openhands-app-2024                Created container openhands-sandbox-2024
 5s          Normal   Started                  pod/openhands-app-2024                Started container openhands-sandbox-2024
 83s         Normal   WaitForFirstConsumer     persistentvolumeclaim/workspace-pvc   waiting for first consumer to be created before binding
@@ -273,7 +273,7 @@ Some of the challenages that would be needed to improve:
 Example below: "to be tested!"
 
 ```dockerfile
-FROM ghcr.io/opendevin/opendevin:0.7.1
+FROM ghcr.io/all-hands-ai/openhands:main
 
 # Install Git
 RUN apt-get update && apt-get install -y git
