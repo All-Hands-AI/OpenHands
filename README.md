@@ -71,7 +71,7 @@ docker run -it \
 ```
 
 > [!NOTE]
-> By default, this command pulls the `latest` tag, which represents the most recent release of OpenHands. You have other options as well:
+> This command pulls the `0.8` tag, which represents the most recent stable release of OpenHands. You have other options as well:
 > - For a specific release version, use `ghcr.io/opendevin/opendevin:<OpenHands_version>` (replace <OpenHands_version> with the desired version number).
 > - For the most up-to-date development version, use `ghcr.io/opendevin/opendevin:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
 >
