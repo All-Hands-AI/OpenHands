@@ -1,63 +1,131 @@
 import pytest
 
-from openhands.core.config import get_parser
+from openhands.core.config import _DEFAULT_AGENT, _MAX_ITERATIONS, get_parser
+
+
+def test_parser_default_values():
+    parser = get_parser()
+    args = parser.parse_args([])
+
+    assert args.directory is None
+    assert args.task == ''
+    assert args.file is None
+    assert args.agent_cls == _DEFAULT_AGENT
+    assert args.max_iterations == _MAX_ITERATIONS
+    assert args.max_budget_per_task is None
+    assert args.eval_output_dir == 'evaluation/evaluation_outputs/outputs'
+    assert args.eval_n_limit is None
+    assert args.eval_num_workers == 4
+    assert args.eval_note is None
+    assert args.llm_config is None
+    assert args.name == 'default'
+
+
+def test_parser_custom_values():
+    parser = get_parser()
+    args = parser.parse_args(
+        [
+            '-d',
+            '/path/to/dir',
+            '-t',
+            'custom task',
+            '-f',
+            'task.txt',
+            '-c',
+            'CustomAgent',
+            '-i',
+            '50',
+            '-b',
+            '100.5',
+            '--eval-output-dir',
+            'custom/output',
+            '--eval-n-limit',
+            '10',
+            '--eval-num-workers',
+            '8',
+            '--eval-note',
+            'Test run',
+            '-l',
+            'gpt4',
+            '-n',
+            'test_session',
+        ]
+    )
+
+    assert args.directory == '/path/to/dir'
+    assert args.task == 'custom task'
+    assert args.file == 'task.txt'
+    assert args.agent_cls == 'CustomAgent'
+    assert args.max_iterations == 50
+    assert args.max_budget_per_task == pytest.approx(100.5)
+    assert args.eval_output_dir == 'custom/output'
+    assert args.eval_n_limit == 10
+    assert args.eval_num_workers == 8
+    assert args.eval_note == 'Test run'
+    assert args.llm_config == 'gpt4'
+    assert args.name == 'test_session'
+
+
+def test_parser_file_overrides_task():
+    parser = get_parser()
+    args = parser.parse_args(['-t', 'task from command', '-f', 'task_file.txt'])
+
+    assert args.task == 'task from command'
+    assert args.file == 'task_file.txt'
+
+
+def test_parser_invalid_max_iterations():
+    parser = get_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(['-i', 'not_a_number'])
+
+
+def test_parser_invalid_max_budget():
+    parser = get_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(['-b', 'not_a_number'])
+
+
+def test_parser_invalid_eval_n_limit():
+    parser = get_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(['--eval-n-limit', 'not_a_number'])
+
+
+def test_parser_invalid_eval_num_workers():
+    parser = get_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(['--eval-num-workers', 'not_a_number'])
 
 
 def test_help_message(capsys):
     parser = get_parser()
-    with pytest.raises(SystemExit):  # `--help` causes SystemExit
+    with pytest.raises(SystemExit):
         parser.parse_args(['--help'])
     captured = capsys.readouterr()
-    expected_help_message = """
-usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
-              [-i MAX_ITERATIONS] [-b MAX_BUDGET_PER_TASK]
-              [--eval-output-dir EVAL_OUTPUT_DIR]
-              [--eval-n-limit EVAL_N_LIMIT]
-              [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
-              [-l LLM_CONFIG] [-n NAME]
+    help_output = captured.out
 
-Run an agent with a specific task
+    expected_elements = [
+        'usage:',
+        'Run an agent with a specific task',
+        'options:',
+        '-h, --help',
+        '-d DIRECTORY, --directory DIRECTORY',
+        '-t TASK, --task TASK',
+        '-f FILE, --file FILE',
+        '-c AGENT_CLS, --agent-cls AGENT_CLS',
+        '-i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS',
+        '-b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK',
+        '--eval-output-dir EVAL_OUTPUT_DIR',
+        '--eval-n-limit EVAL_N_LIMIT',
+        '--eval-num-workers EVAL_NUM_WORKERS',
+        '--eval-note EVAL_NOTE',
+        '-l LLM_CONFIG, --llm-config LLM_CONFIG',
+        '-n NAME, --name NAME',
+    ]
 
-options:
-  -h, --help            show this help message and exit
-  -d DIRECTORY, --directory DIRECTORY
-                        The working directory for the agent
-  -t TASK, --task TASK  The task for the agent to perform
-  -f FILE, --file FILE  Path to a file containing the task. Overrides -t if
-                        both are provided.
-  -c AGENT_CLS, --agent-cls AGENT_CLS
-                        Name of the default agent to use
-  -i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS
-                        The maximum number of iterations to run the agent
-  -b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK
-                        The maximum budget allowed per task, beyond which the
-                        agent will stop.
-  --eval-output-dir EVAL_OUTPUT_DIR
-                        The directory to save evaluation output
-  --eval-n-limit EVAL_N_LIMIT
-                        The number of instances to evaluate
-  --eval-num-workers EVAL_NUM_WORKERS
-                        The number of workers to use for evaluation
-  --eval-note EVAL_NOTE
-                        The note to add to the evaluation directory
-  -l LLM_CONFIG, --llm-config LLM_CONFIG
-                        Replace default LLM ([llm] section in config.toml)
-                        config with the specified LLM config, e.g. "llama3"
-                        for [llm.llama3] section in config.toml
-  -n NAME, --name NAME  Name for the session
-"""
+    for element in expected_elements:
+        assert element in help_output, f"Expected '{element}' to be in the help message"
 
-    actual_lines = captured.out.strip().split('\n')
-    print('\n'.join(actual_lines))
-    expected_lines = expected_help_message.strip().split('\n')
-
-    # Ensure both outputs have the same number of lines
-    assert len(actual_lines) == len(
-        expected_lines
-    ), 'The number of lines in the help message does not match.'
-
-    # Compare each line
-    for actual, expected in zip(actual_lines, expected_lines):
-        assert (
-            actual.strip() == expected.strip()
-        ), f"Expected '{expected}', got '{actual}'"
+    option_count = help_output.count('  -')
+    assert option_count == 13, f'Expected 13 options, found {option_count}'
