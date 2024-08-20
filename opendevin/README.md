@@ -3,11 +3,7 @@
 This directory contains the core components of OpenDevin.
 
 This diagram provides an overview of the roles of each component and how they communicate and collaborate.
-
-<div style="text-align: center;">
-  <img src="https://github.com/OpenDevin/OpenDevin/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="OpenDevin System Architecture Diagram Jul 4 2024" />
-  <p><em>OpenDevin System Architecture Diagram (July 4, 2024)</em></p>
-</div>
+![OpenDevin System Architecture Diagram (July 4, 2024)](../docs/static/img/system_architecture_overview.png)
 
 ## Classes
 The key classes in OpenDevin are:
@@ -52,8 +48,5 @@ flowchart LR
 ```
 
 ## Runtime
-The Runtime class is abstract, and has a few different implementations:
 
-* We have a LocalRuntime, which runs commands and edits files directly on the user's machine
-* We have a DockerRuntime, which runs commands inside of a docker sandbox, and edits files directly on the user's machine
-* We have an E2BRuntime, which uses [e2b.dev containers](https://github.com/e2b-dev/e2b) to sandbox file and command operations
+Please refer to the [documentation](https://docs.all-hands.dev/modules/usage/runtime) to learn more about `Runtime`.

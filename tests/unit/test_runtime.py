@@ -1,7 +1,9 @@
 """Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
 import asyncio
+import json
 import os
+import tempfile
 import time
 from unittest.mock import patch
 
@@ -12,6 +14,7 @@ from opendevin.core.config import AppConfig, SandboxConfig, load_from_env
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventStream
 from opendevin.events.action import (
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
@@ -28,7 +31,7 @@ from opendevin.events.observation import (
 )
 from opendevin.runtime.client.runtime import EventStreamRuntime
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.runtime.runtime import Runtime
 from opendevin.storage import get_file_store
 
 
@@ -37,6 +40,7 @@ def print_method_name(request):
     print('\n########################################################################')
     print(f'Running test: {request.node.name}')
     print('########################################################################')
+    yield
 
 
 @pytest.fixture
@@ -44,22 +48,25 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime'))
 
 
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'both')
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
 PY3_FOR_TESTING = '/opendevin/miniforge3/bin/mamba run -n base python3'
 
 
-# This assures that all tests run together for each runtime, not alternating between them,
-# which caused them to fail previously.
-@pytest.fixture(scope='module')
-def box_class(request):
-    time.sleep(1)
+# Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
+def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
-        return EventStreamRuntime
-    elif runtime.lower() == 'server':
-        return ServerRuntime
+        return [EventStreamRuntime]
     else:
-        return pytest.param([EventStreamRuntime, ServerRuntime])
+        raise ValueError(f'Invalid runtime: {runtime}')
+
+
+# This assures that all tests run together per runtime, not alternating between them,
+# which cause errors (especially outside GitHub actions).
+@pytest.fixture(scope='module', params=get_box_classes())
+def box_class(request):
+    time.sleep(2)
+    return request.param
 
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
@@ -76,10 +83,17 @@ def enable_auto_lint(request):
     return request.param
 
 
-@pytest.fixture(scope='module', params=['ubuntu:22.04', 'debian:11'])
+@pytest.fixture(scope='module')
 def container_image(request):
     time.sleep(1)
-    return request.param
+    env_image = os.environ.get('SANDBOX_CONTAINER_IMAGE')
+    if env_image:
+        return [env_image]
+    return [
+        'nikolaik/python-nodejs:python3.11-nodejs22',
+        'python:3.11-bookworm',
+        'node:22-bookworm',
+    ]
 
 
 async def _load_runtime(
@@ -88,7 +102,8 @@ async def _load_runtime(
     run_as_devin: bool = True,
     enable_auto_lint: bool = False,
     container_image: str | None = None,
-):
+    browsergym_eval_env: str | None = None,
+) -> Runtime:
     sid = 'test'
     cli_session = 'main_test'
     # AgentSkills need to be initialized **before** Jupyter
@@ -97,7 +112,10 @@ async def _load_runtime(
     config = AppConfig(
         workspace_base=temp_dir,
         workspace_mount_path=temp_dir,
-        sandbox=SandboxConfig(use_host_network=True),
+        sandbox=SandboxConfig(
+            use_host_network=True,
+            browsergym_eval_env=browsergym_eval_env,
+        ),
     )
     load_from_env(config, os.environ)
     config.run_as_devin = run_as_devin
@@ -109,42 +127,14 @@ async def _load_runtime(
     if container_image is not None:
         config.sandbox.container_image = container_image
 
-    if box_class == EventStreamRuntime:
-        # NOTE: we will use the default container image specified in the config.sandbox
-        # if it is an official od_runtime image.
-        cur_container_image = config.sandbox.container_image
-        if 'od_runtime' not in cur_container_image:
-            cur_container_image = 'ubuntu:22.04'
-            logger.warning(
-                f'`{config.sandbox.container_image}` is not an od_runtime image. Will use `{cur_container_image}` as the container image for testing.'
-            )
-
-        runtime = EventStreamRuntime(
-            config=config,
-            event_stream=event_stream,
-            sid=sid,
-            plugins=plugins,
-            # NOTE: we probably don't have a default container image `/sandbox` for the event stream runtime
-            # Instead, we will pre-build a suite of container images with OD-runtime-cli installed.
-            container_image=cur_container_image,
-        )
-        await runtime.ainit()
-    elif box_class == ServerRuntime:
-        runtime = ServerRuntime(
-            config=config, event_stream=event_stream, sid=sid, plugins=plugins
-        )
-        await runtime.ainit()
-        from opendevin.runtime.tools import (
-            RuntimeTool,  # deprecate this after ServerRuntime is deprecated
-        )
-
-        runtime.init_runtime_tools(
-            [RuntimeTool.BROWSER],
-            is_async=False,
-            runtime_tools_config={},
-        )
-    else:
-        raise ValueError(f'Invalid box class: {box_class}')
+    runtime = box_class(
+        config=config,
+        event_stream=event_stream,
+        sid=sid,
+        plugins=plugins,
+        container_image=container_image,
+    )
+    await runtime.ainit()
     await asyncio.sleep(1)
     return runtime
 
@@ -301,7 +291,10 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == 'Hello, `World`!'
+    assert (
+        obs.content.strip()
+        == 'Hello, `World`!\n[Jupyter current working directory: /workspace]'
+    )
 
     # Test read file (file should not exist)
     action_read = FileReadAction(path='hello.sh')
@@ -319,11 +312,8 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == ''
-    if box_class == ServerRuntime:
-        assert obs.path == 'hello.sh'
-    else:
-        # event stream runtime will always use absolute path
-        assert obs.path == '/workspace/hello.sh'
+    # event stream runtime will always use absolute path
+    assert obs.path == '/workspace/hello.sh'
 
     # Test read file (file should exist)
     action_read = FileReadAction(path='hello.sh')
@@ -335,10 +325,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_devin):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == 'echo "Hello, World!"\n'
-    if box_class == ServerRuntime:
-        assert obs.path == 'hello.sh'
-    else:
-        assert obs.path == '/workspace/hello.sh'
+    assert obs.path == '/workspace/hello.sh'
 
     # clean up
     action = CmdRunAction(command='rm -rf hello.sh')
@@ -380,7 +367,6 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
 
     assert isinstance(obs, BrowserOutputObservation)
     assert 'http://localhost:8000' in obs.url
-    assert obs.status_code == 200
     assert not obs.error
     assert obs.open_pages_urls == ['http://localhost:8000/']
     assert obs.active_page_index == 0
@@ -395,6 +381,53 @@ async def test_simple_browse(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_browsergym_eval_env(temp_dir):
+    runtime = await _load_runtime(
+        temp_dir,
+        # only supported in event stream runtime
+        box_class=EventStreamRuntime,
+        run_as_devin=False,  # need root permission to access file
+        container_image='xingyaoww/od-eval-miniwob:v1.0',
+        browsergym_eval_env='browsergym/miniwob.choose-list',
+    )
+    from opendevin.runtime.browser.browser_env import (
+        BROWSER_EVAL_GET_GOAL_ACTION,
+        BROWSER_EVAL_GET_REWARDS_ACTION,
+    )
+
+    # Test browse
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, BrowserOutputObservation)
+    assert not obs.error
+    assert 'Select' in obs.content
+    assert 'from the list and click Submit' in obs.content
+
+    # Make sure the browser can produce observation in eva[l
+    action = BrowseInteractiveAction(browser_actions='noop()')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert (
+        obs.url.strip()
+        == 'file:///miniwob-plusplus/miniwob/html/miniwob/choose-list.html'
+    )
+
+    # Make sure the rewards are working
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert json.loads(obs.content) == [0.0]
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -509,14 +542,8 @@ async def test_no_ps2_in_output(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    if box_class == ServerRuntime:
-        # the extra PS2 '>' is NOT handled by the ServerRuntime
-        assert 'hello\r\nworld' in obs.content
-        assert '>' in obs.content
-        assert obs.content.count('>') == 1
-    else:
-        assert 'hello\r\nworld' in obs.content
-        assert '>' not in obs.content
+    assert 'hello\r\nworld' in obs.content
+    assert '>' not in obs.content
 
     await runtime.close()
     await asyncio.sleep(1)
@@ -732,7 +759,10 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == '/workspace'
+    assert (
+        obs.content.strip()
+        == '/workspace\n[Jupyter current working directory: /workspace]'
+    )
 
     # write a file
     test_code = "with open('test.txt', 'w') as f: f.write('Hello, world!')"
@@ -741,7 +771,10 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_devin):
     obs = await runtime.run_action(action_ipython)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.strip() == '[Code executed successfully with no output]'
+    assert (
+        obs.content.strip()
+        == '[Code executed successfully with no output]\n[Jupyter current working directory: /workspace]'
+    )
 
     # check file owner via bash
     action = CmdRunAction(command='ls -alh test.txt')
@@ -780,11 +813,14 @@ async def test_ipython_simple(temp_dir, box_class):
     obs = await runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == '1'
+    assert obs.content.strip() == '1\n[Jupyter current working directory: /workspace]'
+
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
 async def _test_ipython_agentskills_fileop_pwd_impl(
-    runtime: ServerRuntime | EventStreamRuntime, enable_auto_lint: bool
+    runtime: EventStreamRuntime, enable_auto_lint: bool
 ):
     # remove everything in /workspace
     action = CmdRunAction(command='rm -rf /workspace/*')
@@ -811,6 +847,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
         '1|\n'
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
+        '[Jupyter current working directory: /workspace]'
     ).strip().split('\n')
 
     action = CmdRunAction(command='cd test')
@@ -833,6 +870,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
         '1|\n'
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
+        '[Jupyter current working directory: /workspace/test]'
     ).strip().split('\n')
 
     if enable_auto_lint:
@@ -865,6 +903,7 @@ ERRORS:
 Your changes have NOT been applied. Please fix your edit command and try again.
 You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
 DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+[Jupyter current working directory: /workspace/test]
 """
         ).strip().split('\n')
 
@@ -883,6 +922,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 1|print("hello world")
 (this is the end of the file)
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
+[Jupyter current working directory: /workspace/test]
 """
     ).strip().split('\n')
 
@@ -892,41 +932,461 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-
-@pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd(temp_dir, box_class, enable_auto_lint):
-    """Make sure that cd in bash also update the current working directory in ipython."""
-
-    runtime = await _load_runtime(
-        temp_dir, box_class, enable_auto_lint=enable_auto_lint
-    )
-    await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
     await runtime.close()
     await asyncio.sleep(1)
 
 
-@pytest.mark.skipif(
-    TEST_RUNTIME.lower() == 'eventstream',
-    reason='Skip this if we want to test EventStreamRuntime',
-)
-@pytest.mark.skipif(
-    os.environ.get('TEST_IN_CI', 'false').lower() == 'true',
-    # FIXME: There's some weird issue with the CI environment.
-    reason='Skip this if in CI.',
-)
 @pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd_agnostic_sandbox(
-    temp_dir, enable_auto_lint, container_image
+async def test_ipython_agentskills_fileop_pwd(
+    temp_dir, box_class, run_as_devin, enable_auto_lint
 ):
     """Make sure that cd in bash also update the current working directory in ipython."""
 
     runtime = await _load_runtime(
-        temp_dir,
-        # NOTE: we only test for ServerRuntime, since EventStreamRuntime is image agnostic by design.
-        ServerRuntime,
-        enable_auto_lint=enable_auto_lint,
-        container_image=container_image,
+        temp_dir, box_class, run_as_devin, enable_auto_lint=enable_auto_lint
     )
     await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
+    """Make sure that cd in bash also update the current working directory in ipython.
+
+    Handle special case where the pwd is provided as "~", which should be expanded using os.path.expanduser
+    on the client side.
+    """
+
+    runtime = await _load_runtime(
+        temp_dir,
+        box_class,
+        run_as_devin=False,
+    )
+
+    action = CmdRunAction(command='cd ~')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='mkdir test && ls -la')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /root/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+        '[Jupyter current working directory: /root]'
+    ).strip().split('\n')
+
+    action = CmdRunAction(command='cd test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # This should create a file in the current working directory
+    # i.e., /workspace/test/hello.py instead of /workspace/hello.py
+    action = IPythonRunCellAction(code="create_file('hello.py')")
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, IPythonRunCellObservation)
+    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
+        '[File: /root/test/hello.py (1 lines total)]\n'
+        '(this is the beginning of the file)\n'
+        '1|\n'
+        '(this is the end of the file)\n'
+        '[File hello.py created.]\n'
+        '[Jupyter current working directory: /root/test]'
+    ).strip().split('\n')
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_ipython_package_install(temp_dir, box_class, run_as_devin):
+    """Make sure that cd in bash also update the current working directory in ipython."""
+    runtime = await _load_runtime(temp_dir, box_class, run_as_devin)
+
+    # It should error out since pymsgbox is not installed
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert "ModuleNotFoundError: No module named 'pymsgbox'" in obs.content
+
+    # Install pymsgbox in Jupyter
+    action = IPythonRunCellAction(code='%pip install pymsgbox==1.0.9')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert (
+        'Successfully installed pymsgbox-1.0.9' in obs.content
+        or '[Package installed successfully]' in obs.content
+    )
+
+    action = IPythonRunCellAction(code='import pymsgbox')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # import should not error out
+    assert (
+        obs.content.strip()
+        == '[Code executed successfully with no output]\n[Jupyter current working directory: /workspace]'
+    )
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+def _create_test_file(host_temp_dir):
+    # Single file
+    with open(os.path.join(host_temp_dir, 'test_file.txt'), 'w') as f:
+        f.write('Hello, World!')
+
+
+@pytest.mark.asyncio
+async def test_copy_single_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_file.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+def _create_test_dir_with_files(host_temp_dir):
+    os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file1.txt'), 'w') as f:
+        f.write('File 1 content')
+    with open(os.path.join(host_temp_dir, 'test_dir', 'file2.txt'), 'w') as f:
+        f.write('File 2 content')
+
+
+@pytest.mark.asyncio
+async def test_copy_directory_recursively(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        # We need a separate directory, since temp_dir is mounted to /workspace
+        _create_test_dir_with_files(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_dir'), '/workspace', recursive=True
+        )
+
+    action = CmdRunAction(command='ls -alh /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'test_dir' in obs.content
+    assert 'file1.txt' not in obs.content
+    assert 'file2.txt' not in obs.content
+
+    action = CmdRunAction(command='ls -alh /workspace/test_dir')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'file1.txt' in obs.content
+    assert 'file2.txt' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_dir/file1.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'File 1 content' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_copy_to_non_existent_directory(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace/new_dir'
+        )
+
+    action = CmdRunAction(command='cat /workspace/new_dir/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_overwrite_existing_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    # touch a file in /workspace
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' not in obs.content
+
+    with tempfile.TemporaryDirectory() as host_temp_dir:
+        _create_test_file(host_temp_dir)
+        await runtime.copy_to(
+            os.path.join(host_temp_dir, 'test_file.txt'), '/workspace'
+        )
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'Hello, World!' in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_copy_non_existent_file(temp_dir, box_class):
+    runtime = await _load_runtime(temp_dir, box_class)
+
+    with pytest.raises(FileNotFoundError):
+        await runtime.copy_to(
+            os.path.join(temp_dir, 'non_existent_file.txt'),
+            '/workspace/should_not_exist.txt',
+        )
+
+    action = CmdRunAction(command='ls /workspace/should_not_exist.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code != 0  # File should not exist
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_keep_prompt(temp_dir):
+    # only EventStreamRuntime supports keep_prompt
+    runtime = await _load_runtime(
+        temp_dir, box_class=EventStreamRuntime, run_as_devin=False
+    )
+
+    action = CmdRunAction(command='touch /workspace/test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'root@' in obs.content
+
+    action = CmdRunAction(command='cat /workspace/test_file.txt', keep_prompt=False)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    assert 'root@' not in obs.content
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_git_operation(box_class):
+    # do not mount workspace, since workspace mount by tests will be owned by root
+    # while the user_id we get via os.getuid() is different from root
+    # which causes permission issues
+    runtime = await _load_runtime(
+        temp_dir=None,
+        box_class=box_class,
+        # Need to use non-root user to expose issues
+        run_as_devin=True,
+    )
+
+    # this will happen if permission of runtime is not properly configured
+    # fatal: detected dubious ownership in repository at '/workspace'
+
+    # check the ownership of the current directory
+    action = CmdRunAction(command='ls -alh .')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+    # drwx--S--- 2 opendevin root   64 Aug  7 23:32 .
+    # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
+    for line in obs.content.split('\r\n'):
+        if ' ..' in line:
+            # parent directory should be owned by root
+            assert 'root' in line
+            assert 'opendevin' not in line
+        elif ' .' in line:
+            # current directory should be owned by opendevin
+            # and its group should be root
+            assert 'opendevin' in line
+            assert 'root' in line
+
+    # make sure all git operations are allowed
+    action = CmdRunAction(command='git init')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # create a file
+    action = CmdRunAction(command='echo "hello" > test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git add
+    action = CmdRunAction(command='git add test_file.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git diff
+    action = CmdRunAction(command='git diff')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # git commit
+    action = CmdRunAction(command='git commit -m "test commit"')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    await runtime.close()
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+# ============================================================================================================================
+# Image-specific tests
+# ============================================================================================================================
+
+
+@pytest.mark.asyncio
+async def test_bash_python_version(temp_dir, box_class, container_image):
+    """Make sure Python is available in bash."""
+    if container_image not in [
+        'python:3.11-bookworm',
+        'nikolaik/python-nodejs:python3.11-nodejs22',
+    ]:
+        pytest.skip('This test is only for python-related images')
+
+    runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
+
+    action = CmdRunAction(command='which python')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='python --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'Python 3.11' in obs.content  # Check for specific version
+
+    action = CmdRunAction(command='pip --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'pip' in obs.content  # Check that pip is available
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_nodejs_22_version(temp_dir, box_class, container_image):
+    """Make sure Node.js is available in bash."""
+    if container_image not in [
+        'node:22-bookworm',
+        'nikolaik/python-nodejs:python3.11-nodejs22',
+    ]:
+        pytest.skip('This test is only for nodejs-related images')
+
+    runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
+
+    action = CmdRunAction(command='node --version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'v22' in obs.content  # Check for specific version
+
     await runtime.close()
     await asyncio.sleep(1)

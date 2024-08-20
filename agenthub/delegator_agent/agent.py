@@ -1,5 +1,6 @@
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
 from opendevin.events.observation import AgentDelegateObservation
 from opendevin.llm.llm import LLM
@@ -13,13 +14,13 @@ class DelegatorAgent(Agent):
 
     current_delegate: str = ''
 
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, config: AgentConfig):
         """Initialize the Delegator Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
 
     def step(self, state: State) -> Action:
         """Checks to see if current step is completed, returns AgentFinishAction if True.
@@ -34,7 +35,7 @@ class DelegatorAgent(Agent):
         """
         if self.current_delegate == '':
             self.current_delegate = 'study'
-            task = state.get_current_user_intent()
+            task, _ = state.get_current_user_intent()
             return AgentDelegateAction(
                 agent='StudyRepoForTaskAgent', inputs={'task': task}
             )
@@ -45,7 +46,7 @@ class DelegatorAgent(Agent):
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 
-        goal = state.get_current_user_intent()
+        goal, _ = state.get_current_user_intent()
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
             return AgentDelegateAction(

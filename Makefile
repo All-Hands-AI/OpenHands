@@ -23,9 +23,6 @@ RESET=$(shell tput -Txterm sgr0)
 build:
 	@echo "$(GREEN)Building project...$(RESET)"
 	@$(MAKE) -s check-dependencies
-ifeq ($(INSTALL_DOCKER),)
-	@$(MAKE) -s pull-docker-image
-endif
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-pre-commit-hooks
@@ -124,11 +121,6 @@ check-poetry:
 		exit 1; \
 	fi
 
-pull-docker-image:
-	@echo "$(YELLOW)Pulling Docker image...$(RESET)"
-	@docker pull $(DOCKER_IMAGE)
-	@echo "$(GREEN)Docker image pulled successfully.$(RESET)"
-
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
 	@if [ -z "${TZ}" ]; then \
@@ -141,7 +133,7 @@ install-python-dependencies:
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
-	@poetry install
+	@poetry install --without llama-index
 	@if [ -f "/etc/manjaro-release" ]; then \
 		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
 		poetry run pip install playwright; \
@@ -246,16 +238,6 @@ setup-config-prompts:
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
-	@read -p "Do you want to persist the sandbox container? [true/false] [default: false]: " persist_sandbox; \
-	 persist_sandbox=$${persist_sandbox:-false}; \
-	 if [ "$$persist_sandbox" = "true" ]; then \
-		 read -p "Enter a password for the sandbox container: " ssh_password; \
-		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
-		 echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
-	 else \
-		echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
-	 fi
-
 	@echo "" >> $(CONFIG_FILE).tmp
 
 	@echo "[llm]" >> $(CONFIG_FILE).tmp
@@ -316,4 +298,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help

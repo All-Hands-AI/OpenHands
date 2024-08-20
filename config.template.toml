@@ -55,24 +55,11 @@ workspace_base = "./workspace"
 # Path to rewrite the workspace mount path to
 #workspace_mount_rewrite = ""
 
-# Persist the sandbox
-persist_sandbox = false
-
 # Run as devin
 #run_as_devin = true
 
 # Runtime environment
-#runtime = "server"
-
-# SSH hostname for the sandbox
-#ssh_hostname = "localhost"
-
-# SSH password for the sandbox
-#ssh_password = ""
-
-# SSH port for the sandbox
-#ssh_port = 63710
-
+#runtime = "eventstream"
 
 # Name of the default agent
 #default_agent = "CodeActAgent"
@@ -183,20 +170,28 @@ llm_config = 'gpt3'
 # Sandbox timeout in seconds
 #timeout = 120
 
-# Sandbox type (ssh, e2b, local)
-#box_type = "ssh"
-
 # Sandbox user ID
 #user_id = 1000
 
 # Container image to use for the sandbox
-#container_image = "ghcr.io/opendevin/sandbox:main"
+#container_image = "nikolaik/python-nodejs:python3.11-nodejs22"
 
 # Use host network
 #use_host_network = false
 
 # Enable auto linting after editing
 #enable_auto_lint = false
+
+#################################### Security ###################################
+# Configuration for security features
+##############################################################################
+[security]
+
+# Enable confirmation mode
+#confirmation_mode = true
+
+# The security analyzer to use
+#security_analyzer = ""
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation

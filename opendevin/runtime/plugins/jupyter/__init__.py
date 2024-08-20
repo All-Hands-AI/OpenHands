@@ -1,4 +1,3 @@
-import os
 import subprocess
 import time
 from dataclasses import dataclass
@@ -15,16 +14,6 @@ from .execute_server import JupyterKernel
 @dataclass
 class JupyterRequirement(PluginRequirement):
     name: str = 'jupyter'
-    host_src: str = os.path.dirname(
-        os.path.abspath(__file__)
-    )  # The directory of this file (opendevin/runtime/plugins/jupyter)
-    sandbox_dest: str = '/opendevin/plugins/jupyter'
-    bash_script_path: str = 'setup.sh'
-
-    # ================================================================
-    # Plugin methods, which will ONLY be used in the runtime client
-    # running inside docker
-    # ================================================================
 
 
 class JupyterPlugin(Plugin):
@@ -38,6 +27,7 @@ class JupyterPlugin(Plugin):
                 f"su - {username} -s /bin/bash << 'EOF'\n"
                 'cd /opendevin/code\n'
                 'export POETRY_VIRTUALENVS_PATH=/opendevin/poetry;\n'
+                'export PYTHONPATH=/opendevin/code:$PYTHONPATH;\n'
                 '/opendevin/miniforge3/bin/mamba run -n base '
                 'poetry run jupyter kernelgateway '
                 '--KernelGatewayApp.ip=0.0.0.0 '
@@ -61,7 +51,8 @@ class JupyterPlugin(Plugin):
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
 
-    async def run(self, action: Action) -> IPythonRunCellObservation:
+    async def _run(self, action: Action) -> IPythonRunCellObservation:
+        """Internal method to run a code cell in the jupyter kernel."""
         if not isinstance(action, IPythonRunCellAction):
             raise ValueError(
                 f'Jupyter plugin only supports IPythonRunCellAction, but got {action}'
@@ -74,8 +65,12 @@ class JupyterPlugin(Plugin):
 
         if not self.kernel.initialized:
             await self.kernel.initialize()
-        output = await self.kernel.execute(action.code)
+        output = await self.kernel.execute(action.code, timeout=action.timeout)
         return IPythonRunCellObservation(
             content=output,
             code=action.code,
         )
+
+    async def run(self, action: Action) -> IPythonRunCellObservation:
+        obs = await self._run(action)
+        return obs

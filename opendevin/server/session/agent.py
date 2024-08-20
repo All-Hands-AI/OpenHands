@@ -1,15 +1,12 @@
-from typing import Optional
-
-from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import AppConfig, LLMConfig
+from opendevin.core.config import AgentConfig, AppConfig, LLMConfig
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.stream import EventStream
-from opendevin.runtime import DockerSSHBox, get_runtime_cls
+from opendevin.runtime import get_runtime_cls
 from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
+from opendevin.security import SecurityAnalyzer, options
 from opendevin.storage.files import FileStore
 
 
@@ -22,8 +19,10 @@ class AgentSession:
 
     sid: str
     event_stream: EventStream
-    controller: Optional[AgentController] = None
-    runtime: Optional[Runtime] = None
+    file_store: FileStore
+    controller: AgentController | None = None
+    runtime: Runtime | None = None
+    security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
 
     def __init__(self, sid: str, file_store: FileStore):
@@ -37,10 +36,10 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        confirmation_mode: bool,
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
     ):
         """Starts the agent session.
 
@@ -51,13 +50,15 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
+        await self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(runtime_name, config, agent)
         await self._create_controller(
             agent,
-            confirmation_mode,
+            config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
         )
 
     async def close(self):
@@ -69,7 +70,17 @@ class AgentSession:
             await self.controller.close()
         if self.runtime is not None:
             await self.runtime.close()
+        if self.security_analyzer is not None:
+            await self.security_analyzer.close()
         self._closed = True
+
+    async def _create_security_analyzer(self, security_analyzer: str | None):
+        """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
+        logger.info(f'Using security analyzer: {security_analyzer}')
+        if security_analyzer:
+            self.security_analyzer = options.SecurityAnalyzers.get(
+                security_analyzer, SecurityAnalyzer
+            )(self.event_stream)
 
     async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
         """Creates a runtime instance."""
@@ -93,6 +104,7 @@ class AgentSession:
         max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
     ):
         """Creates an AgentController instance."""
         if self.controller is not None:
@@ -100,17 +112,8 @@ class AgentSession:
         if self.runtime is None:
             raise Exception('Runtime must be initialized before the agent controller')
 
+        logger.info(f'Agents: {agent_configs}')
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
-        if isinstance(agent, CodeActAgent):
-            if not self.runtime or not (
-                isinstance(self.runtime, ServerRuntime)
-                and isinstance(self.runtime.sandbox, DockerSSHBox)
-            ):
-                logger.warning(
-                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful'
-                    ' LocalBox will not work properly.'
-                )
-        self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(
             sid=self.sid,
@@ -119,6 +122,7 @@ class AgentSession:
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
+            agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
@@ -131,4 +135,4 @@ class AgentSession:
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            print('Error restoring state', e)
+            logger.info(f'Error restoring state: {e}')

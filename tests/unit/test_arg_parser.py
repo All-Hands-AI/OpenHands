@@ -14,7 +14,7 @@ usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
               [--eval-output-dir EVAL_OUTPUT_DIR]
               [--eval-n-limit EVAL_N_LIMIT]
               [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
-              [-l LLM_CONFIG]
+              [-l LLM_CONFIG] [-n NAME]
 
 Run an agent with a specific task
 
@@ -44,6 +44,7 @@ options:
                         Replace default LLM ([llm] section in config.toml)
                         config with the specified LLM config, e.g. "llama3"
                         for [llm.llama3] section in config.toml
+  -n NAME, --name NAME  Name for the session
 """
 
     actual_lines = captured.out.strip().split('\n')

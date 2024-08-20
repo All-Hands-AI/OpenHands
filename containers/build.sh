@@ -49,6 +49,10 @@ if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
 
+# If $DOCKER_IMAGE_HASH_TAG is set, add it to the tags
+if [[ -n "$DOCKER_IMAGE_HASH_TAG" ]]; then
+  tags+=("$DOCKER_IMAGE_HASH_TAG")
+fi
 # If $DOCKER_IMAGE_TAG is set, add it to the tags
 if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
   tags+=("$DOCKER_IMAGE_TAG")
@@ -64,7 +68,8 @@ for tag in "${tags[@]}"; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
 done
 
-output_image="/tmp/${image_name}_image_${platform}.tar"
+output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
+echo "Output image will be saved to: $output_image"
 
 docker buildx build \
   $args \

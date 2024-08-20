@@ -10,7 +10,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
 from opendevin.core.schema.config import ConfigType
-from opendevin.events.action import ChangeAgentStateAction, NullAction
+from opendevin.events.action import ChangeAgentStateAction, MessageAction, NullAction
 from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import (
     AgentStateChangedObservation,
@@ -80,8 +80,11 @@ class Session:
             key: value for key, value in data.get('args', {}).items() if value != ''
         }
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
-        confirmation_mode = args.get(
-            ConfigType.CONFIRMATION_MODE, self.config.confirmation_mode
+        self.config.security.confirmation_mode = args.get(
+            ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
+        )
+        self.config.security.security_analyzer = data.get('args', {}).get(
+            ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
         )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
         # override default LLM config
@@ -99,7 +102,8 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
-        agent = Agent.get_cls(agent_cls)(llm)
+        agent_config = self.config.get_agent_config(agent_cls)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         # Create the agent session
         try:
@@ -107,10 +111,10 @@ class Session:
                 runtime_name=self.config.runtime,
                 config=self.config,
                 agent=agent,
-                confirmation_mode=confirmation_mode,
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
+                agent_configs=self.config.get_agent_configs(),
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -133,6 +137,7 @@ class Session:
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
+            logger.info('Server event')
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER and isinstance(
             event, CmdOutputObservation
@@ -145,6 +150,14 @@ class Session:
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
+        # This checks if the model supports images
+        if isinstance(event, MessageAction) and event.images_urls:
+            controller = self.agent_session.controller
+            if controller and not controller.agent.llm.supports_vision():
+                await self.send_error(
+                    'Model does not support image upload, change to a different model or try without an image.'
+                )
+                return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:

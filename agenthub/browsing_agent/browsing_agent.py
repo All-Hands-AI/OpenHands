@@ -6,7 +6,9 @@ from browsergym.utils.obs import flatten_axtree_to_str
 from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import AgentConfig
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.message import Message, TextContent
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -20,7 +22,6 @@ from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 
 USE_NAV = (
     os.environ.get('USE_NAV', 'true') == 'true'
@@ -92,19 +93,19 @@ class BrowsingAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = []
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = BrowsingResponseParser()
 
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """Initializes a new instance of the BrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']
@@ -136,7 +137,7 @@ class BrowsingAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages = []
+        messages: list[Message] = []
         prev_actions = []
         cur_axtree_txt = ''
         error_prefix = ''
@@ -191,20 +192,23 @@ class BrowsingAgent(Agent):
                 )
                 return MessageAction('Error encountered when browsing.')
 
-        if (goal := state.get_current_user_intent()) is None:
+        goal, _ = state.get_current_user_intent()
+
+        if goal is None:
             goal = state.inputs['task']
+
         system_msg = get_system_message(
             goal,
             self.action_space.describe(with_long_description=False, with_examples=True),
         )
 
-        messages.append({'role': 'system', 'content': system_msg})
+        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
 
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
-        messages.append({'role': 'user', 'content': prompt})
+        messages.append(Message(role='user', content=[TextContent(text=prompt)]))
         logger.debug(prompt)
         response = self.llm.completion(
-            messages=messages,
+            messages=[message.model_dump() for message in messages],
             temperature=0.0,
             stop=[')```', ')\n```'],
         )

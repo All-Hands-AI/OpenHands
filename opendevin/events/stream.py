@@ -14,6 +14,7 @@ from .event import Event, EventSource
 
 class EventStreamSubscriber(str, Enum):
     AGENT_CONTROLLER = 'agent_controller'
+    SECURITY_ANALYZER = 'security_analyzer'
     SERVER = 'server'
     RUNTIME = 'runtime'
     MAIN = 'main'
@@ -22,16 +23,16 @@ class EventStreamSubscriber(str, Enum):
 
 class EventStream:
     sid: str
+    file_store: FileStore
     # For each subscriber ID, there is a stack of callback functions - useful
     # when there are agent delegates
     _subscribers: dict[str, list[Callable]]
     _cur_id: int
     _lock: threading.Lock
-    _file_store: FileStore
 
     def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
-        self._file_store = file_store
+        self.file_store = file_store
         self._subscribers = {}
         self._cur_id = 0
         self._lock = threading.Lock()
@@ -39,7 +40,7 @@ class EventStream:
 
     def _reinitialize_from_file_store(self) -> None:
         try:
-            events = self._file_store.list(f'sessions/{self.sid}/events')
+            events = self.file_store.list(f'sessions/{self.sid}/events')
         except FileNotFoundError:
             logger.debug(f'No events found for session {self.sid}')
             self._cur_id = 0
@@ -100,7 +101,7 @@ class EventStream:
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id)
-        content = self._file_store.read(filename)
+        content = self.file_store.read(filename)
         data = json.loads(content)
         return event_from_dict(data)
 
@@ -136,10 +137,9 @@ class EventStream:
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
         if event.id is not None:
-            self._file_store.write(
-                self._get_filename_for_id(event.id), json.dumps(data)
-            )
-        for stack in self._subscribers.values():
+            self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
+        for key in sorted(self._subscribers.keys()):
+            stack = self._subscribers[key]
             callback = stack[-1]
             asyncio.create_task(callback(event))
 
@@ -149,7 +149,7 @@ class EventStream:
                 yield event
 
     def clear(self):
-        self._file_store.delete(f'sessions/{self.sid}')
+        self.file_store.delete(f'sessions/{self.sid}')
         self._cur_id = 0
         # self._subscribers = {}
         self._reinitialize_from_file_store()

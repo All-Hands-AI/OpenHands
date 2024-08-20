@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
     from opendevin.controller.state.state import State
+    from opendevin.core.config import AgentConfig
     from opendevin.events.action import Action
 from opendevin.core.exceptions import (
     AgentAlreadyRegisteredError,
@@ -10,7 +11,6 @@ from opendevin.core.exceptions import (
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import PluginRequirement
-from opendevin.runtime.tools import RuntimeTool
 
 
 class Agent(ABC):
@@ -24,13 +24,14 @@ class Agent(ABC):
 
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
-    runtime_tools: list[RuntimeTool] = []
 
     def __init__(
         self,
         llm: LLM,
+        config: 'AgentConfig',
     ):
         self.llm = llm
+        self.config = config
         self._complete = False
 
     @property

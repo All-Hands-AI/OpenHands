@@ -1,25 +1,39 @@
 import asyncio
-import os
+import hashlib
 import sys
-from typing import Callable, Type
+import uuid
+from typing import Callable, Protocol, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import get_llm_config_arg, load_app_config, parse_arguments
+from opendevin.core.config import (
+    AppConfig,
+    get_llm_config_arg,
+    load_app_config,
+    parse_arguments,
+)
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import MessageAction
+from opendevin.events.action.action import Action
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime import get_runtime_cls
-from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.runtime import Runtime
 from opendevin.storage import get_file_store
 
-config = load_app_config()
+
+class FakeUserResponseFunc(Protocol):
+    def __call__(
+        self,
+        state: State,
+        encapsulate_solution: bool = ...,
+        try_parse: Callable[[Action], str] = ...,
+    ) -> str: ...
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -33,89 +47,121 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def run_agent_controller(
-    agent: Agent,
-    task_str: str,
-    max_iterations: int,
-    max_budget_per_task: float | None = None,
-    exit_on_message: bool = False,
-    fake_user_response_fn: Callable[[State | None], str] | None = None,
-    sandbox: Sandbox | None = None,
-    runtime_tools_config: dict | None = None,
+async def create_runtime(
+    config: AppConfig,
     sid: str | None = None,
+    runtime_tools_config: dict | None = None,
+) -> Runtime:
+    """Create a runtime for the agent to run on.
+
+    config: The app config.
+    sid: The session id.
+    runtime_tools_config: (will be deprecated) The runtime tools config.
+    """
+    # if sid is provided on the command line, use it as the name of the event stream
+    # otherwise generate it on the basis of the configured jwt_secret
+    # we can do this better, this is just so that the sid is retrieved when we want to restore the session
+    session_id = sid or generate_sid(config)
+
+    # set up the event stream
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    event_stream = EventStream(session_id, file_store)
+
+    # agent class
+    agent_cls = agenthub.Agent.get_cls(config.default_agent)
+
+    # runtime and tools
+    runtime_cls = get_runtime_cls(config.runtime)
+    logger.info(f'Initializing runtime: {runtime_cls}')
+    runtime: Runtime = runtime_cls(
+        config=config,
+        event_stream=event_stream,
+        sid=session_id,
+        plugins=agent_cls.sandbox_plugins,
+    )
+    await runtime.ainit()
+
+    return runtime
+
+
+async def run_controller(
+    config: AppConfig,
+    task_str: str,
+    sid: str | None = None,
+    runtime: Runtime | None = None,
+    agent: Agent | None = None,
+    exit_on_message: bool = False,
+    fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
 
     Args:
-        task_str: The task to run.
+        config: The app config.
+        task_str: The task to run. It can be a string.
+        runtime: (optional) A runtime for the agent to run on.
+        agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
-        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
-        sandbox: An optional sandbox to run the agent in.
+        fake_user_response_fn: An optional function that receives the current state
+            (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
     """
-    # Logging
-    logger.info(
-        f'Running agent {agent.name}, model {agent.llm.config.model}, with task: "{task_str}"'
-    )
+    # Create the agent
+    if agent is None:
+        agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+        agent_config = config.get_agent_config(config.default_agent)
+        llm_config = config.get_llm_config_from_agent(config.default_agent)
+        agent = agent_cls(
+            llm=LLM(config=llm_config),
+            config=agent_config,
+        )
 
-    # set up the event stream
-    file_store = get_file_store(config.file_store, config.file_store_path)
-    cli_session = 'main' + ('_' + sid if sid else '')
-    event_stream = EventStream(cli_session, file_store)
+    # make sure the session id is set
+    sid = sid or generate_sid(config)
 
+    if runtime is None:
+        runtime = await create_runtime(config, sid=sid)
+
+    event_stream = runtime.event_stream
     # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
         try:
-            logger.info('Restoring agent state from cli session')
-            initial_state = State.restore_from_session(cli_session, file_store)
+            logger.info(f'Restoring agent state from cli session {event_stream.sid}')
+            initial_state = State.restore_from_session(
+                event_stream.sid, event_stream.file_store
+            )
         except Exception as e:
-            print('Error restoring state', e)
+            logger.info(f'Error restoring state: {e}')
 
     # init controller with this initial state
     controller = AgentController(
         agent=agent,
-        max_iterations=max_iterations,
-        max_budget_per_task=max_budget_per_task,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
         headless_mode=headless_mode,
     )
 
-    # runtime and tools
-    runtime_cls = get_runtime_cls(config.runtime)
-    runtime = runtime_cls(
-        config=config,
-        event_stream=event_stream,
-        sandbox=sandbox,
-        plugins=controller.agent.sandbox_plugins,
+    assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
+    # Logging
+    logger.info(
+        f'Agent Controller Initialized: Running agent {agent.name}, model '
+        f'{agent.llm.config.model}, with task: "{task_str}"'
     )
-    await runtime.ainit()
-    runtime.init_runtime_tools(
-        controller.agent.runtime_tools,
-        is_async=False,
-        runtime_tools_config=runtime_tools_config,
-    )
-
-    # browser eval specific
-    # TODO: move to a better place
-    if runtime.browser and runtime.browser.eval_dir:
-        logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
-        with open(
-            os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
-        ) as f:
-            task_str = f.read()
-            logger.info(f'Dynamic Eval task: {task_str}')
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
-                content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
+                content=(
+                    "Let's get back on track. If you experienced errors before, do "
+                    'NOT resume your task. Ask me about it.'
+                ),
             ),
             EventSource.USER,
         )
@@ -148,12 +194,22 @@ async def run_agent_controller(
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
-        end_state.save_to_session(cli_session, file_store)
+        end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
     # close when done
     await controller.close()
-    await runtime.close()
-    return controller.get_state()
+    state = controller.get_state()
+
+    return state
+
+
+def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
+    """Generate a session id based on the session name and the jwt secret."""
+    session_name = session_name or str(uuid.uuid4())
+    jwt_secret = config.jwt_secret
+
+    hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
+    return f'{session_name}_{hash_str[:16]}'
 
 
 if __name__ == '__main__':
@@ -169,30 +225,35 @@ if __name__ == '__main__':
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
+    # Load the app config
+    # this will load config from config.toml in the current directory
+    # as well as from the environment variables
+    config = load_app_config()
+
     # Override default LLM configs ([llm] section in config.toml)
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
-    llm = LLM(config=config.get_llm_config_from_agent(args.agent_cls))
 
-    # Create the agent
-    AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
-    agent = AgentCls(llm=llm)
+    # Set default agent
+    config.default_agent = args.agent_cls
+
+    # Set session name
+    session_name = args.name
+    sid = generate_sid(config, session_name)
 
     # if max budget per task is not sent on the command line, use the config value
-    max_budget_per_task = (
-        args.max_budget_per_task
-        if args.max_budget_per_task
-        else config.max_budget_per_task
-    )
+    if args.max_budget_per_task is not None:
+        config.max_budget_per_task = args.max_budget_per_task
+    if args.max_iterations is not None:
+        config.max_iterations = args.max_iterations
 
     asyncio.run(
-        run_agent_controller(
-            agent=agent,
+        run_controller(
+            config=config,
             task_str=task_str,
-            max_iterations=args.max_iterations,
-            max_budget_per_task=args.max_budget_per_task,
+            sid=sid,
         )
     )

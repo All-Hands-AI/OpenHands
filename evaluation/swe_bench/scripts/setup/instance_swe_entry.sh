@@ -45,7 +45,11 @@ echo "$item" | jq -r '.patch' > $SWE_TASK_DIR/gold.patch
 echo "$item" | jq 'del(.test_patch, .patch)' > $SWE_TASK_DIR/instance.json
 
 # Clear the workspace
-rm -rf /workspace/*
+if [ -d /workspace ]; then
+    rm -rf /workspace/*
+else
+    mkdir /workspace
+fi
 # Copy repo to workspace
 if [ -d /workspace/$WORKSPACE_NAME ]; then
     rm -rf /workspace/$WORKSPACE_NAME
@@ -61,7 +65,7 @@ mkdir -p $SWE_TASK_DIR/reset_testbed_log_dir
 
 REPO_PATH=/workspace/$WORKSPACE_NAME
 echo "Repo Path: $REPO_PATH"
-echo "Test Command: $TEST_CMD"
+# echo "Test Command: $TEST_CMD"
 echo "export REPO_PATH=\"$REPO_PATH\"" >> ~/.bashrc
 # echo "export TEST_CMD=\"$TEST_CMD\"" >> ~/.bashrc
 

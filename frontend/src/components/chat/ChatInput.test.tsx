@@ -55,7 +55,7 @@ describe("ChatInput", () => {
     await user.type(textarea, "Hello, world!");
     await user.click(button);
 
-    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
+    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!", []);
     // Additionally, check if it was called exactly once
     expect(onSendMessage).toHaveBeenCalledTimes(1);
   });
@@ -68,7 +68,7 @@ describe("ChatInput", () => {
     await user.type(textarea, "Hello, world!");
     await user.keyboard("{Enter}");
 
-    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
+    expect(onSendMessage).toHaveBeenCalledWith("Hello, world!", []);
   });
 
   it("should NOT send a message when shift + enter is pressed", async () => {

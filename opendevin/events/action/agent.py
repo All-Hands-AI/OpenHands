@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Any
 
 from opendevin.core.schema import ActionType
 
@@ -46,7 +47,15 @@ class AgentSummarizeAction(Action):
 
 @dataclass
 class AgentFinishAction(Action):
-    outputs: dict = field(default_factory=dict)
+    """An action where the agent finishes the task.
+
+    Attributes:
+        outputs (dict): The outputs of the agent, for instance "content".
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.FINISH.
+    """
+
+    outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
 

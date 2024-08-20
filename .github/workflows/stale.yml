@@ -1,4 +1,7 @@
+# Workflow that marks issues and PRs with no activity for 30 days with "Stale" and closes them after 7 more days of no activity
 name: 'Close stale issues'
+
+# Runs every day at 01:30
 on:
   schedule:
     - cron: '30 1 * * *'
@@ -9,21 +12,9 @@ jobs:
     steps:
       - uses: actions/stale@v9
         with:
-          # Aggressively close issues that have been explicitly labeled `age-out`
-          any-of-labels: age-out
-          stale-issue-message: 'This issue is stale because it has been open for 7 days with no activity. Remove stale label or comment or this will be closed in 1 day.'
-          close-issue-message: 'This issue was closed because it has been stalled for over 7 days with no activity.'
-          stale-pr-message: 'This PR is stale because it has been open for 7 days with no activity. Remove stale label or comment or this will be closed in 1 days.'
-          close-pr-message: 'This PR was closed because it has been stalled for over 7 days with no activity.'
-          days-before-stale: 7
-          days-before-close: 1
-
-      - uses: actions/stale@v9
-        with:
-          # Be more lenient with other issues
           stale-issue-message: 'This issue is stale because it has been open for 30 days with no activity. Remove stale label or comment or this will be closed in 7 days.'
-          close-issue-message: 'This issue was closed because it has been stalled for over 30 days with no activity.'
           stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity. Remove stale label or comment or this will be closed in 7 days.'
-          close-pr-message: 'This PR was closed because it has been stalled for over 30 days with no activity.'
           days-before-stale: 30
+          close-issue-message: 'This issue was closed because it has been stalled for over 30 days with no activity.'
+          close-pr-message: 'This PR was closed because it has been stalled for over 30 days with no activity.'
           days-before-close: 7

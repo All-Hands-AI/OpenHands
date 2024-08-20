@@ -1,6 +1,5 @@
 import asyncio
 import time
-from typing import Optional
 
 from fastapi import WebSocket
 
@@ -61,7 +60,7 @@ class SessionManager:
                     session_ids_to_remove.append(sid)
 
             for sid in session_ids_to_remove:
-                to_del_session: Optional[Session] = self._sessions.pop(sid, None)
+                to_del_session: Session | None = self._sessions.pop(sid, None)
                 if to_del_session is not None:
                     await to_del_session.close()
                     logger.info(

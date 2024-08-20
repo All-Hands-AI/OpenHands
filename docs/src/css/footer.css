@@ -3,12 +3,12 @@
 .custom-footer {
     background-color: dark;
     color: white;
-    height: 25vh;
+    height: 200px;
     /* background: linear-gradient(to bottom, #1a1a1a, #1a1a1a); */
     background: linear-gradient(to bottom, #1f2937, #000000);
 
   }
-  
+
   .footer-content {
     display: flex;
     flex-direction: column;
@@ -17,56 +17,55 @@
     padding: 8px;
     height: 100%;
   }
-  
+
   .footer-top {
     display: flex;
     gap: 8px;
     align-items: center;
   }
-  
+
   .footer-title {
     font-weight: bold;
     font-size: 1.125rem;
   }
-  
+
   @media (min-width: 768px) {
     .footer-title {
       font-size: 1.875rem;
     }
   }
-  
+
   .footer-link a {
     font-size: 0.875rem;
     text-decoration: none;
     color: gray;
     transition: color 0.3s ease;
   }
-  
+
   .footer-link a:hover {
     color: white;
   }
-  
+
   .footer-community {
     text-transform: uppercase;
     font-weight: 300;
   }
-  
+
   .footer-icons {
     display: flex;
     gap: 24px;
     font-size: 1.875rem;
   }
-  
+
   .footer-icons a {
     color:gray;
     transition: color 0.3s ease;
   }
-  
+
   .footer-icons a:hover {
     color: white;
   }
-  
+
   .footer-bottom {
     text-transform: uppercase;
   }
-  

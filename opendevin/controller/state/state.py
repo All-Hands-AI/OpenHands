@@ -2,6 +2,7 @@ import base64
 import pickle
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 from opendevin.controller.state.task import RootTask
 from opendevin.core.logger import opendevin_logger as logger
@@ -37,48 +38,35 @@ RESUMABLE_STATES = [
 @dataclass
 class State:
     """
-    OpenDevin is a multi-agentic system.
+    Represents the running state of an agent in the OpenDevin system, saving data of its operation and memory.
 
-    A `task` is an end-to-end conversation between OpenDevin (the whole sytem) and the
-    user, which might involve one or more inputs from the user. It starts with
-    an initial input (typically a task statement) from the user, and ends with either
-    a `AgentFinishAction` initiated by the agent, or an error.
+    - Multi-agent/delegate state:
+      - store the task (conversation between the agent and the user)
+      - the subtask (conversation between an agent and the user or another agent)
+      - global and local iterations
+      - delegate levels for multi-agent interactions
+      - almost stuck state
 
-    A `subtask` is an end-to-end conversation between an agent and the user, or
-    another agent. If a `task` is conducted by a single agent, then it's also a `subtask`
-    itself. Otherwise, a `task` consists of multiple `subtasks`, each executed by
-    one agent.
+    - Running state of an agent:
+      - current agent state (e.g., LOADING, RUNNING, PAUSED)
+      - traffic control state for rate limiting
+      - confirmation mode
+      - the last error encountered
 
-    A `State` is a mutable object associated with a `subtask`. It includes several
-    mutable and immutable fields, among which `iteration` is shared across
-    subtasks.
+    - Data for saving and restoring the agent:
+      - save to and restore from a session
+      - serialize with pickle and base64
 
-    For example, considering a task from the user: `tell me how many GitHub stars
-    OpenDevin repo has`. Let's assume the default agent is CodeActAgent.
+    - Save / restore data about message history
+      - start and end IDs for events in agent's history
+      - summaries and delegate summaries
 
-    -- TASK STARTS (SUBTASK 0 STARTS) --
+    - Metrics:
+      - global metrics for the current task
+      - local metrics for the current subtask
 
-    DELEGATE_LEVEL 0, ITERATION 0, LOCAL_ITERATION 0
-    CodeActAgent: I should request help from BrowsingAgent
-
-    -- DELEGATE STARTS (SUBTASK 1 STARTS) --
-
-    DELEGATE_LEVEL 1, ITERATION 1, LOCAL_ITERATION 0
-    BrowsingAgent: Let me find the answer on GitHub
-
-    DELEGATE_LEVEL 1, ITERATION 2, LOCAL_ITERATION 1
-    BrowsingAgent: I found the answer, let me convey the result and finish
-
-    -- DELEGATE ENDS (SUBTASK 1 ENDS) --
-
-    DELEGATE_LEVEL 0, ITERATION 3, LOCAL_ITERATION 1
-    CodeActAgent: I got the answer from BrowsingAgent, let me convey the result
-    and finish
-
-    -- TASK ENDS (SUBTASK 0 ENDS) --
-
-    Note how ITERATION counter is shared across agents, while LOCAL_ITERATION
-    is local to each subtask.
+    - Extra data:
+      - additional task-specific data
     """
 
     root_task: RootTask = field(default_factory=RootTask)
@@ -106,6 +94,9 @@ class State:
     start_id: int = -1
     end_id: int = -1
     almost_stuck: int = 0
+    # NOTE: This will never be used by the controller, but it can be used by different
+    # evaluation tasks to store extra data needed to track the progress/state of the task.
+    extra_data: dict[str, Any] = field(default_factory=dict)
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
@@ -167,13 +158,15 @@ class State:
         # remove the restored data from the state if any
 
     def get_current_user_intent(self):
-        """Returns the latest user message that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
+        """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
+        last_user_message_image_urls: list[str] | None = []
         for event in self.history.get_events(reverse=True):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
+                last_user_message_image_urls = event.images_urls
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
                     return last_user_message
 
-        return last_user_message
+        return last_user_message, last_user_message_image_urls

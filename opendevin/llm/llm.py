@@ -4,6 +4,7 @@ from opendevin.core.config import LLMConfig
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
+
 from opendevin.condenser.condenser import CondenserMixin
 from opendevin.core.exceptions import (
     ContextWindowLimitExceededError,
@@ -31,13 +32,6 @@ class LLM(BaseLLM, CondenserMixin):
         config: LLMConfig,
         metrics: Metrics | None = None,
     ):
-        """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
-
-        Passing simple parameters always overrides config.
-
-        Args:
-            config: The LLM configuration
-        """
         super().__init__(config, metrics)
 
         def wrapper(*args, **kwargs):
@@ -54,7 +48,8 @@ class LLM(BaseLLM, CondenserMixin):
             except TokenLimitExceededError:
                 print('An error occurred: ')
                 # If we got a context alert, try trimming the messages length, then try again
-                if kwargs['condense'] and self.is_over_token_limit(messages):
+                # if kwargs['condense'] and self.is_over_token_limit(messages):
+                if self.is_over_token_limit(messages):
                     # A separate call to run a summarizer
                     summary_action = self.condense(messages=messages)
                     return summary_action
@@ -62,22 +57,46 @@ class LLM(BaseLLM, CondenserMixin):
                     print('step() failed with an unrecognized exception:')
                     raise ContextWindowLimitExceededError()
 
+            text_messages = [message.model_dump() for message in messages]
+            print('No of tokens, ' + str(self.get_token_count(text_messages)) + '\n')
+
             # log the prompt
             debug_message = ''
-            for message in messages:
-                debug_message += message_separator + message.message['content']
+            for message in text_messages:
+                content = message['content']
+
+                if isinstance(content, list):
+                    for element in content:
+                        if isinstance(element, dict):
+                            if 'text' in element:
+                                content_str = element['text'].strip()
+                            elif (
+                                'image_url' in element and 'url' in element['image_url']
+                            ):
+                                content_str = element['image_url']['url']
+                            else:
+                                content_str = str(element)
+                        else:
+                            content_str = str(element)
+
+                        debug_message += message_separator + content_str
+                else:
+                    content_str = str(content)
+                    debug_message += message_separator + content_str
+
             llm_prompt_logger.debug(debug_message)
 
-            # get the messages in form of list[str]
-            text_messages = self.get_text_messages(messages)
-
-            # call the completion function
             kwargs = {
                 'messages': text_messages,
                 'stop': kwargs['stop'],
                 'temperature': kwargs['temperature'],
             }
-            resp = self.completion_unwrapped(**kwargs)
+
+            # skip if messages is empty (thus debug_message is empty)
+            if debug_message:
+                resp = self.completion_unwrapped(*args, **kwargs)
+            else:
+                resp = {'choices': [{'message': {'content': ''}}]}
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
@@ -85,6 +104,7 @@ class LLM(BaseLLM, CondenserMixin):
 
             # post-process to log costs
             self._post_completion(resp)
+
             return resp
 
         self._completion = wrapper  # type: ignore

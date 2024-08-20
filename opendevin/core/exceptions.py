@@ -69,6 +69,11 @@ class LLMResponseError(Exception):
         super().__init__(message)
 
 
+class UserCancelledError(Exception):
+    def __init__(self, message='User cancelled the request'):
+        super().__init__(message)
+
+
 class TokenLimitExceededError(Exception):
     """Exception raised when the user-defined max_input_tokens limit is exceeded."""
 

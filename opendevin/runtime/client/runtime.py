@@ -1,6 +1,8 @@
 import asyncio
+import os
+import tempfile
 import uuid
-from typing import Optional
+from zipfile import ZipFile
 
 import aiohttp
 import docker
@@ -8,7 +10,7 @@ import tenacity
 
 from opendevin.core.config import AppConfig
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventSource, EventStream
+from opendevin.events import EventStream
 from opendevin.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -18,7 +20,6 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.action.action import Action
-from opendevin.events.event import Event
 from opendevin.events.observation import (
     ErrorObservation,
     NullObservation,
@@ -26,6 +27,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization import event_to_dict, observation_from_dict
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
+from opendevin.runtime.builder import DockerRuntimeBuilder
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.utils import find_available_tcp_port
@@ -51,11 +53,11 @@ class EventStreamRuntime(Runtime):
             config, event_stream, sid, plugins
         )  # will initialize the event stream
         self._port = find_available_tcp_port()
-        self.api_url = f'http://localhost:{self._port}'
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
+        self.session: aiohttp.ClientSession | None = None
 
         self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+            sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
@@ -66,18 +68,22 @@ class EventStreamRuntime(Runtime):
         )
         self.container_name = self.container_name_prefix + self.instance_id
 
-        self.plugins = plugins if plugins is not None else []
         self.container = None
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
+        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
+        logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
+
     async def ainit(self, env_vars: dict[str, str] | None = None):
+        if self.config.sandbox.od_runtime_extra_deps:
+            logger.info(
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
+            )
+
         self.container_image = build_runtime_image(
             self.container_image,
-            self.docker_client,
-            # NOTE: You can need set DEBUG=true to update the source code
-            # inside the container. This is useful when you want to test/debug the
-            # latest code in the runtime docker container.
-            update_source_code=self.config.sandbox.update_source_code,
+            self.runtime_builder,
+            extra_deps=self.config.sandbox.od_runtime_extra_deps,
         )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
@@ -87,6 +93,11 @@ class EventStreamRuntime(Runtime):
         # MUST call super().ainit() to initialize both default env vars
         # AND the ones in env vars!
         await super().ainit(env_vars)
+
+        logger.info(
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
+        )
+        logger.info(f'Container initialized with env vars: {env_vars}')
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -112,9 +123,11 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Starting container with image: {self.container_image} and name: {self.container_name}'
             )
-            if plugins is None:
-                plugins = []
-            plugin_names = ' '.join([plugin.name for plugin in plugins])
+            plugin_arg = ''
+            if plugins is not None and len(plugins) > 0:
+                plugin_arg = (
+                    f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+                )
 
             network_mode: str | None = None
             port_mapping: dict[str, int] | None = None
@@ -128,12 +141,19 @@ class EventStreamRuntime(Runtime):
 
             if mount_dir is not None:
                 volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+                logger.info(f'Mount dir: {sandbox_workspace_dir}')
             else:
                 logger.warn(
                     'Mount dir is not set, will not mount the workspace directory to the container.'
                 )
                 volumes = None
 
+            if self.config.sandbox.browsergym_eval_env is not None:
+                browsergym_arg = (
+                    f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
+                )
+            else:
+                browsergym_arg = ''
             container = self.docker_client.containers.run(
                 self.container_image,
                 command=(
@@ -141,9 +161,10 @@ class EventStreamRuntime(Runtime):
                     'PYTHONUNBUFFERED=1 poetry run '
                     f'python -u -m opendevin.runtime.client.client {self._port} '
                     f'--working-dir {sandbox_workspace_dir} '
-                    f'--plugins {plugin_names} '
+                    f'{plugin_arg}'
                     f'--username {"opendevin" if self.config.run_as_devin else "root"} '
-                    f'--user-id {self.config.sandbox.user_id}'
+                    f'--user-id {self.config.sandbox.user_id} '
+                    f'{browsergym_arg}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
@@ -168,20 +189,32 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=4, max=600),
+        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
+        logger.debug('Getting container logs...')
+        container = self.docker_client.containers.get(self.container_name)
+        # get logs
+        _logs = container.logs(tail=10).decode('utf-8').split('\n')
+        # add indent
+        _logs = '\n'.join([f'    |{log}' for log in _logs])
+        logger.info(
+            '\n'
+            + '-' * 30
+            + 'Container logs (last 10 lines):'
+            + '-' * 30
+            + f'\n{_logs}'
+            + '\n'
+            + '-' * 90
+        )
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
                     return
                 else:
-                    logger.error(
-                        f'Action execution API is not alive. Response: {response}'
-                    )
-                    raise RuntimeError(
-                        f'Action execution API is not alive. Response: {response}'
-                    )
+                    msg = f'Action execution API is not alive. Response: {response}'
+                    logger.error(msg)
+                    raise RuntimeError(msg)
 
     @property
     def sandbox_workspace_dir(self):
@@ -205,17 +238,11 @@ class EventStreamRuntime(Runtime):
         if close_client:
             self.docker_client.close()
 
-    async def on_event(self, event: Event) -> None:
-        logger.info(f'EventStreamRuntime: on_event triggered: {event}')
-        if isinstance(event, Action):
-            logger.info(event, extra={'msg_type': 'ACTION'})
-            observation = await self.run_action(event)
-            observation._cause = event.id  # type: ignore[attr-defined]
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-            source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
+    async def run_action(self, action: Action) -> Observation:
+        # set timeout to default if not set
+        if action.timeout is None:
+            action.timeout = self.config.sandbox.timeout
 
-    async def run_action(self, action: Action, timeout: int = 600) -> Observation:
         async with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
@@ -227,13 +254,18 @@ class EventStreamRuntime(Runtime):
                     f'Action {action_type} is not supported in the current runtime.'
                 )
 
+            logger.info('Awaiting session')
             session = await self._ensure_session()
             await self._wait_until_alive()
+
+            assert action.timeout is not None
+
             try:
+                logger.info('Executing command')
                 async with session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=timeout,
+                    timeout=action.timeout,
                 ) as response:
                     if response.status == 200:
                         output = await response.json()
@@ -272,11 +304,83 @@ class EventStreamRuntime(Runtime):
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return await self.run_action(action)
 
-    ############################################################################
-    # Keep the same with other runtimes
-    ############################################################################
+    # ====================================================================
+    # Implement these methods (for file operations) in the subclass
+    # ====================================================================
 
-    def get_working_directory(self):
-        raise NotImplementedError(
-            'This method is not implemented in the runtime client.'
-        )
+    async def copy_to(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ) -> None:
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
+        session = await self._ensure_session()
+        await self._wait_until_alive()
+        try:
+            if recursive:
+                # For recursive copy, create a zip file
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_zip:
+                    temp_zip_path = temp_zip.name
+
+                with ZipFile(temp_zip_path, 'w') as zipf:
+                    for root, _, files in os.walk(host_src):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(
+                                file_path, os.path.dirname(host_src)
+                            )
+                            zipf.write(file_path, arcname)
+
+                upload_data = {'file': open(temp_zip_path, 'rb')}
+            else:
+                # For single file copy
+                upload_data = {'file': open(host_src, 'rb')}
+
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+
+            async with session.post(
+                f'{self.api_url}/upload_file', data=upload_data, params=params
+            ) as response:
+                if response.status == 200:
+                    return
+                else:
+                    error_message = await response.text()
+                    raise Exception(f'Copy operation failed: {error_message}')
+
+        except asyncio.TimeoutError:
+            raise TimeoutError('Copy operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'Copy operation failed: {str(e)}')
+        finally:
+            if recursive:
+                os.unlink(temp_zip_path)
+            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+
+    async def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the sandbox.
+
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+        session = await self._ensure_session()
+        await self._wait_until_alive()
+        try:
+            data = {}
+            if path is not None:
+                data['path'] = path
+
+            async with session.post(
+                f'{self.api_url}/list_files', json=data
+            ) as response:
+                if response.status == 200:
+                    response_json = await response.json()
+                    assert isinstance(response_json, list)
+                    return response_json
+                else:
+                    error_message = await response.text()
+                    raise Exception(f'List files operation failed: {error_message}')
+        except asyncio.TimeoutError:
+            raise TimeoutError('List files operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'List files operation failed: {str(e)}')
