@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action, IPythonRunCellAction
 from openhands.events.observation import IPythonRunCellObservation
+from openhands.runtime.plugins.jupyter.execute_server import JupyterKernel
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-
-from .execute_server import JupyterKernel
 
 
 @dataclass

@@ -1,8 +1,7 @@
 import docker
 
 from openhands.core.logger import openhands_logger as logger
-
-from .base import RuntimeBuilder
+from openhands.runtime.builder.base import RuntimeBuilder
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):

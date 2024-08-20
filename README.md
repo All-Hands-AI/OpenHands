@@ -41,7 +41,7 @@
 </div>
 <hr>
 
-Welcome to OpenHands, a platform for autonomous software engineers, powered by AI and LLMs.
+Welcome to OpenHands, a platform for autonomous software engineers, powered by AI and LLMs (previously called "OpenDevin").
 
 OpenHands agents collaborate with human developers to write code, fix bugs, and ship features.
 
