@@ -30,6 +30,7 @@ class Linter:
             typescript=self.ts_lint,
         )
         self.all_lint_cmd = None
+        self.ts_installed = self.check_ts_installed()
 
     def set_linter(self, lang, cmd):
         if lang:
@@ -117,32 +118,40 @@ class Linter:
             error = basic_lint(rel_fname, code)
         return error
 
-    def ts_lint(self, fname, rel_fname, code):
-        """Use typescript compiler to check for errors."""
-        tsc_cmd = 'tsc --noEmit --allowJs --checkJs --strict --noImplicitAny --strictNullChecks --strictFunctionTypes --strictBindCallApply --strictPropertyInitialization --noImplicitThis --alwaysStrict'
+    def check_ts_installed(self):
+        """Check if TypeScript is installed."""
         try:
-            tsc_res = self.run_cmd(tsc_cmd, rel_fname, code)
-            if tsc_res:
-                # Parse the TSC output
-                error_lines = []
-                for line in tsc_res.text.split('\n'):
-                    if ': error TS' in line or ': warning TS' in line:
-                        parts = line.split(':')
-                        if len(parts) >= 3:
-                            try:
-                                error_lines.append(int(parts[1]))
-                            except ValueError:
-                                continue
-                return LintResult(text=tsc_res.text, lines=error_lines)
-        except FileNotFoundError:
-            pass
+            subprocess.run(
+                ['tsc', '--version'],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
 
-        # If tsc is not available or finds no errors, fall back to basic linting
-        basic_lint_result = basic_lint(rel_fname, code)
-        if basic_lint_result:
-            # Convert basic lint result to TypeScript-like error message
-            ts_error_message = f'{rel_fname}({basic_lint_result.lines[0]},1): error TS2304: {basic_lint_result.text}'
-            return LintResult(text=ts_error_message, lines=basic_lint_result.lines)
+    def ts_lint(self, fname, rel_fname, code):
+        """Use typescript compiler to check for errors. If TypeScript is not installed return None."""
+        if self.ts_installed:
+            tsc_cmd = 'tsc --noEmit --allowJs --checkJs --strict --noImplicitAny --strictNullChecks --strictFunctionTypes --strictBindCallApply --strictPropertyInitialization --noImplicitThis --alwaysStrict'
+            try:
+                tsc_res = self.run_cmd(tsc_cmd, rel_fname, code)
+                if tsc_res:
+                    # Parse the TSC output
+                    error_lines = []
+                    for line in tsc_res.text.split('\n'):
+                        # Extract lines and column numbers
+                        if ': error TS' in line or ': warning TS' in line:
+                            try:
+                                location_part = line.split('(')[1].split(')')[0]
+                                line_num, _ = map(int, location_part.split(','))
+                                error_lines.append(line_num)
+                            except (IndexError, ValueError):
+                                continue
+                    return LintResult(text=tsc_res.text, lines=error_lines)
+            except FileNotFoundError:
+                pass
 
         # If still no errors, check for missing semicolons
         lines = code.split('\n')
@@ -164,6 +173,7 @@ class Linter:
             )
             return LintResult(text=error_message, lines=error_lines)
 
+        # If tsc is not available return None (basic_lint causes other problems!)
         return None
 
 

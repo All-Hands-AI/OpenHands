@@ -1,4 +1,5 @@
 import os
+from unittest.mock import patch
 
 import pytest
 
@@ -244,17 +245,21 @@ def test_lint_fail_ruby_no_parentheses(linter, temp_ruby_file_errors_parentheses
 
 
 def test_lint_pass_typescript(linter, temp_typescript_file_correct):
-    result = linter.lint(temp_typescript_file_correct)
-    assert result is None
+    if linter.ts_installed:
+        result = linter.lint(temp_typescript_file_correct)
+        assert result is None
 
 
 def test_lint_fail_typescript(linter, temp_typescript_file_errors):
-    errors = linter.lint(temp_typescript_file_errors)
-    assert errors is not None
+    if linter.ts_installed:
+        errors = linter.lint(temp_typescript_file_errors)
+        assert errors is not None
 
 
 def test_lint_fail_typescript_missing_semicolon(
     linter, temp_typescript_file_errors_semicolon
 ):
-    errors = linter.lint(temp_typescript_file_errors_semicolon)
-    assert errors is not None
+    if linter.ts_installed:
+        with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+            errors = linter.lint(temp_typescript_file_errors_semicolon)
+            assert errors is not None

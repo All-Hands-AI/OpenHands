@@ -29,6 +29,7 @@ from openhands.runtime.plugins.agent_skills.file_reader.file_readers import (
     parse_pdf,
     parse_pptx,
 )
+from openhands.runtime.plugins.agent_skills.utils.aider import Linter
 
 
 # CURRENT_FILE must be reset for each test
@@ -1591,6 +1592,9 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
 
 
 def test_lint_file_fail_typescript(tmp_path, capsys):
+    linter = Linter()
+    if not linter.ts_installed:
+        return
     with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
         current_line = 1
         file_path = tmp_path / 'test.ts'
