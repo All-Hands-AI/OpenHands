@@ -215,6 +215,8 @@ def basic_lint(fname, code):
 
 
 def extract_error_line_from(lint_error):
+    # TODO: this is a temporary fix to extract the error line from the error message
+    # it should be replaced with a more robust/unified solution
     first_error_line = None
     for line in lint_error.splitlines(True):
         if line.strip():
