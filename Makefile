@@ -2,7 +2,6 @@ SHELL=/bin/bash
 # Makefile for OpenHands project
 
 # Variables
-DOCKER_IMAGE = ghcr.io/openhands/sandbox:main
 BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001

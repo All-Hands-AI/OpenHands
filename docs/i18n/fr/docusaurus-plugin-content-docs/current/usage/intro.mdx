@@ -78,7 +78,7 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.6
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 Vous trouverez OpenHands fonctionnant à l'adresse [http://localhost:3000](http://localhost:3000) avec accès à `./workspace`. Pour qu'OpenHands fonctionne sur votre code, placez-le dans `./workspace`.
@@ -86,7 +86,7 @@ Vous trouverez OpenHands fonctionnant à l'adresse [http://localhost:3000](http:
 OpenHands n'aura accès qu'à ce dossier de workspace. Le reste de votre système ne sera pas affecté car il s'exécute dans un bac à sable sécurisé de docker.
 
 :::tip
-Si vous souhaitez utiliser la version **(instable !)** la plus récente, vous pouvez utiliser `ghcr.io/opendevin/opendevin:main` comme image (dernière ligne).
+Si vous souhaitez utiliser la version **(instable !)** la plus récente, vous pouvez utiliser `ghcr.io/all-hands-ai/openhands:main` comme image (dernière ligne).
 :::
 
 Pour le workflow de développement, consultez [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
