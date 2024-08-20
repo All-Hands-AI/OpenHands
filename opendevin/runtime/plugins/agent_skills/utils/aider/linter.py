@@ -58,7 +58,7 @@ class Linter:
         cmd = ' '.join(cmd)
         res = ''
         res += errors
-        line_num = extract_error_line_from(res)
+        line_num = Linter.extract_first_error_line_from(res)
         return LintResult(text=res, lines=[line_num])
 
     def get_abs_fname(self, fname):
@@ -109,6 +109,35 @@ class Linter:
             error = basic_lint(rel_fname, code)
         return error
 
+    @staticmethod
+    def extract_error_line_from(line):
+        if line.strip():
+            # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
+            parts = line.split(':')
+            if len(parts) >= 2:
+                try:
+                    return int(parts[1])
+                except ValueError:
+                    pass
+        return None
+
+    @staticmethod
+    def extract_first_error_line_from(lint_error):
+        for line in lint_error.splitlines(True):
+            error_lineno = Linter.extract_error_line_from(line)
+            if error_lineno is not None:
+                return error_lineno
+        return None
+
+    @staticmethod
+    def extract_error_lines_from(lint_error):
+        lines = []
+        for line in lint_error.splitlines(True):
+            error_lineno = Linter.extract_error_line_from(line)
+            if error_lineno is not None:
+                lines.append(error_lineno)
+        return lines
+
 
 def lint_python_compile(fname, code):
     try:
@@ -152,21 +181,6 @@ def basic_lint(fname, code):
     if not errors:
         return
     return LintResult(text=f'{fname}:{errors[0]}', lines=errors)
-
-
-def extract_error_line_from(lint_error):
-    # moved from opendevin.agentskills#_lint_file
-    for line in lint_error.splitlines(True):
-        if line.strip():
-            # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
-            parts = line.split(':')
-            if len(parts) >= 2:
-                try:
-                    first_error_line = int(parts[1])
-                    break
-                except ValueError:
-                    continue
-    return first_error_line
 
 
 def tree_context(fname, code, line_nums):

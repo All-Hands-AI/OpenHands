@@ -1389,8 +1389,12 @@ def test_lint_file_disabled_undefined_name(tmp_path, capsys):
 
 
 def test_lint_file_ignore_existing_errors(tmp_path):
-    # Make sure we allow edits as long as it does not introduce new errors
-    # Rationale behind this can be found in the below examples
+    """
+    Make sure we allow edits as long as it does not introduce new errors. In other
+    words, we don't care about existing linting errors. Although they might be
+    real syntax issues, sometimes they are just false positives, or errors that
+    we don't care about.
+    """
     with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
         content = """def some_valid_but_weird_function():
     # this function is legitimate, yet static analysis tools like flake8
@@ -1446,8 +1450,12 @@ def sum(a, b):
             assert result.split('\n') == expected.split('\n')
 
 
-def test_lint_file_catch_new_errors(tmp_path):
-    # Make sure we catch new linting errors induced by our edits
+def test_lint_file_catch_new_errors_in_edits(tmp_path):
+    """
+    Make sure we catch new linting errors in our edit chunk, and at the same
+    time, ignore old linting errors (in this case, the old linting error is
+    a false positive)
+    """
     with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
         content = """def some_valid_but_weird_function():
     # this function is legitimate, yet static analysis tools like flake8
@@ -1471,15 +1479,110 @@ def sum(a, b):
                     str(temp_file_path),
                     to_replace='    return a - b',
                     # we deliberately make a mistake here (LLMs can make mistakes like this)
-                    # note c is an undefined variable
+                    # note 'variable' is an undefined name
                     new_content='    return a + variable',
                 )
             result = buf.getvalue()
+
             expected = (
-                f'[File: {temp_file_path} (15 lines total after edit)]\n'
-                """TODO: linting error
+                '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+                f"{temp_file_path}:9:16: F821 undefined name 'variable'\n"
+                """[This is how your edit would have looked if applied]
+-------------------------------------------------
+(this is the beginning of the file)
+1|def some_valid_but_weird_function():
+2|    # this function is legitimate, yet static analysis tools like flake8
+3|    # reports 'F821 undefined name'
+4|    if 'variable' in locals():
+5|        print(variable)
+6|
+7|
+8|def sum(a, b):
+9|    return a + variable
+(this is the end of the file)
+-------------------------------------------------
+
+[This is the original code before your edit]
+-------------------------------------------------
+(this is the beginning of the file)
+1|def some_valid_but_weird_function():
+2|    # this function is legitimate, yet static analysis tools like flake8
+3|    # reports 'F821 undefined name'
+4|    if 'variable' in locals():
+5|        print(variable)
+6|
+7|
+8|def sum(a, b):
+9|    return a - b
+(this is the end of the file)
+-------------------------------------------------
+Your changes have NOT been applied. Please fix your edit command and try again.
+You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
 """
             )
+            assert result.split('\n') == expected.split('\n')
+
+
+def test_lint_file_catch_new_errors_outside_edits(tmp_path):
+    """
+    Make sure we catch new linting errors induced by our edits, even
+    though the error itself is not in the edit chunk
+    """
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        content = """def valid_func1():
+    print(my_sum(1, 2))
+
+
+def my_sum(a, b):
+    return a - b
+
+
+def valid_func2():
+    print(my_sum(0, 0))
+"""
+
+        for _ in range(100):
+            content += '\ninvalid line'
+
+        temp_file_path = tmp_path / 'problematic-file-test.py'
+        temp_file_path.write_text(content)
+
+        open_file(str(temp_file_path))
+
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                edit_file_by_replace(
+                    str(temp_file_path),
+                    to_replace='def my_sum(a, b):',
+                    # we deliberately make a mistake here (LLMs can make mistakes like this)
+                    # by changing the function name, existing function calls become invalid
+                    new_content='def my_sum2(a, b):',
+                )
+            result = buf.getvalue()
+
+            expected = (
+                '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+                f"{temp_file_path}:2:11: F821 undefined name 'my_sum'\n"
+                f"{temp_file_path}:10:11: F821 undefined name 'my_sum'\n"
+                """[This is how your edit would have looked if applied]
+-------------------------------------------------
+(this is the beginning of the file)
+(this is the end of the file)
+-------------------------------------------------
+
+[This is the original code before your edit]
+-------------------------------------------------
+(this is the beginning of the file)
+(this is the end of the file)
+-------------------------------------------------
+Your changes have NOT been applied. Please fix your edit command and try again.
+You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
+DO NOT re-run the same failed edit command. Running it again will lead to the same error.
+"""
+            )
+            for lineno in range(12, 101):
+                result += f'{lineno}|invalid line\n'
             assert result.split('\n') == expected.split('\n')
 
 

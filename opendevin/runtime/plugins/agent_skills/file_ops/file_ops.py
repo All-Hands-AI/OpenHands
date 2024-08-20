@@ -430,10 +430,15 @@ def _edit_file_impl(
     try:
         n_added_lines = None
 
-        # lint the original file
+        # NOTE: we need to get env var inside this function
+        # because the env var will be set AFTER the agentskills is imported
         enable_auto_lint = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
         if enable_auto_lint:
-            original_lint_error, _ = _lint_file(file_name)
+            # Copy the original file to a temporary file (with the same ext) and lint it
+            suffix = os.path.splitext(file_name)[1]
+            with tempfile.NamedTemporaryFile(suffix=suffix) as orig_file_clone:
+                shutil.copy2(file_name, orig_file_clone.name)
+                original_lint_error, _ = _lint_file(orig_file_clone.name)
 
         # Create a temporary file
         with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
@@ -468,8 +473,6 @@ def _edit_file_impl(
         shutil.move(temp_file_path, src_abs_path)
 
         # Handle linting
-        # NOTE: we need to get env var inside this function
-        # because the env var will be set AFTER the agentskills is imported
         if enable_auto_lint:
             # BACKUP the original file
             original_file_backup_path = os.path.join(
@@ -482,32 +485,69 @@ def _edit_file_impl(
             lint_error, first_error_line = _lint_file(file_name)
 
             # Select the errors caused by the modification
-            def extract_last_part(line):
-                parts = line.split(':')
-                if len(parts) > 1:
-                    return parts[-1].strip()
-                return line.strip()
+            def refine_lint_error(original_lint_error, lint_error):
+                original_error_lines = set(
+                    Linter.extract_error_lines_from(original_lint_error)
+                )
+                new_lint_errors = []
+                first_error_lineno = None
 
-            def subtract_strings(str1, str2) -> str:
-                lines1 = str1.splitlines()
-                lines2 = str2.splitlines()
+                # due to the edit, the old line numbers and new line numbers may not match
+                # for every lint error, check if it is caused by modification
+                for line in lint_error.splitlines(True):
+                    lineno = Linter.extract_error_line_from(line)
+                    if lineno is None:
+                        continue
+                    elif is_append:
+                        # append: only retain errors from appendication chunk, since
+                        # an appendication never causes new errors in other places
+                        if lineno > len(lines):
+                            new_lint_errors.append(line)
+                        else:
+                            continue
+                    elif is_insert:
+                        # insert: similar to append, only retain errors from insertion
+                        # chunk, since an insertion never causes new errors in other places,
+                        # except the line right below the insertion
+                        if lineno >= start and lineno <= start + n_added_lines:
+                            new_lint_errors.append(line)
+                        else:
+                            continue
+                    else:
+                        # edit:
+                        if lineno >= start and lineno <= start + n_added_lines:
+                            # error coming from edit part itself
+                            new_lint_errors.append(line)
+                        elif lineno < start and lineno not in original_error_lines:
+                            # error coming before edit part, and is new, meaning the
+                            # error is caused by the edit - e.g. edit changes a
+                            # function signature and breaks existing code
+                            new_lint_errors.append(line)
+                        elif (
+                            lineno > start + n_added_lines
+                            and (lineno - n_added_lines + end - start + 1)
+                            not in original_error_lines
+                        ):
+                            # error coming after edit part, and is new, meaning the
+                            # error is caused by the edit - e.g. edit changes a
+                            # function signature and breaks existing code
+                            new_lint_errors.append(line)
+                        else:
+                            continue
 
-                last_parts1 = [extract_last_part(line) for line in lines1]
+                    if first_error_lineno is None:
+                        first_error_lineno = lineno
 
-                remaining_lines = [
-                    line
-                    for line in lines2
-                    if extract_last_part(line) not in last_parts1
-                ]
+                # TODO: start with "ERROR:"
+                if len(new_lint_errors) == 0:
+                    return None, None
+                else:
+                    return '\n'.join(new_lint_errors), first_error_lineno
 
-                result = '\n'.join(remaining_lines)
-                return result
-
-            if original_lint_error and lint_error:
-                lint_error = subtract_strings(original_lint_error, lint_error)
-                if lint_error == '':
-                    lint_error = None
-                    first_error_line = None
+            if original_lint_error is not None and lint_error is not None:
+                lint_error, first_error_line = refine_lint_error(
+                    original_lint_error, lint_error
+                )
 
             if lint_error is not None:
                 if first_error_line is not None:
