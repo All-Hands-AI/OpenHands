@@ -298,9 +298,6 @@ jobs:
         with:
           name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
           path: /tmp/
-      - name: List downloaded files
-        run: |
-          ls -la /tmp/${{ matrix.platform }}
       - name: Load images and push to registry
         run: |
           image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
