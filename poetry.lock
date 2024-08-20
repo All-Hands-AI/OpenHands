@@ -519,17 +519,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.162"
+version = "1.35.0"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.162-py3-none-any.whl", hash = "sha256:d6f6096bdab35a0c0deff469563b87d184a28df7689790f7fe7be98502b7c590"},
-    {file = "boto3-1.34.162.tar.gz", hash = "sha256:873f8f5d2f6f85f1018cbb0535b03cceddc7b655b61f66a0a56995238804f41f"},
+    {file = "boto3-1.35.0-py3-none-any.whl", hash = "sha256:ada32dab854c46a877cf967b8a55ab1a7d356c3c87f1c8bd556d446ff03dfd95"},
+    {file = "boto3-1.35.0.tar.gz", hash = "sha256:bdc242e3ea81decc6ea551b04b2c122f088c29269d8e093b55862946aa0fcfc6"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.162,<1.35.0"
+botocore = ">=1.35.0,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -538,13 +538,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.162"
+version = "1.35.0"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.162-py3-none-any.whl", hash = "sha256:2d918b02db88d27a75b48275e6fb2506e9adaaddbec1ffa6a8a0898b34e769be"},
-    {file = "botocore-1.34.162.tar.gz", hash = "sha256:adc23be4fb99ad31961236342b7cbf3c0bfc62532cd02852196032e8c0d682f3"},
+    {file = "botocore-1.35.0-py3-none-any.whl", hash = "sha256:a3c96fe0b6afe7d00bad6ffbe73f2610953065fcdf0ed697eba4e1e5287cc84f"},
+    {file = "botocore-1.35.0.tar.gz", hash = "sha256:6ab2f5a5cbdaa639599e3478c65462c6d6a10173dc8b941bfc69b0c9eb548f45"},
 ]
 
 [package.dependencies]
@@ -3084,13 +3084,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.28.0"
+version = "0.28.1"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json_repair-0.28.0-py3-none-any.whl", hash = "sha256:e4ca15633c01a003f77c82246608f1604fc75af2839f10ee2b17f6e8b44294ca"},
-    {file = "json_repair-0.28.0.tar.gz", hash = "sha256:76c7e569018a3d4534c8051d38c2781f1faaa315800bfa527356f3a6aef18b8d"},
+    {file = "json_repair-0.28.1-py3-none-any.whl", hash = "sha256:f1d3f2d1f47080a085fba5cca1f5780d1e514094f0fbc480c105bc2daa61abd8"},
+    {file = "json_repair-0.28.1.tar.gz", hash = "sha256:4e7bfdf4606bd124819b529ec767c0b511d9078823429367f1d9c6ef19df22e2"},
 ]
 
 [[package]]
@@ -3734,17 +3734,18 @@ sentence-transformers = ">=2.6.1"
 
 [[package]]
 name = "llama-index-embeddings-ollama"
-version = "0.1.3"
+version = "0.2.0"
 description = "llama-index embeddings ollama integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_ollama-0.1.3-py3-none-any.whl", hash = "sha256:b960a8c744e2e56ce1fd75a34753614fed3ad81558570ae9958b90b9062afb6a"},
-    {file = "llama_index_embeddings_ollama-0.1.3.tar.gz", hash = "sha256:4bd1dd3230c9be04cfa45b28c3a8066e46c1654d4360fcbecdc1718ac9013eca"},
+    {file = "llama_index_embeddings_ollama-0.2.0-py3-none-any.whl", hash = "sha256:372b059321386bd9bbf4f619ad33dd551adb9ee92eeeb0c664d3466f7c212e2e"},
+    {file = "llama_index_embeddings_ollama-0.2.0.tar.gz", hash = "sha256:5673c740e1dd146e17d1c0401c1e179c0d559caf0967f4a4721b89fbb6822ad8"},
 ]
 
 [package.dependencies]
 llama-index-core = ">=0.10.1,<0.11.0"
+ollama = ">=0.3.1,<0.4.0"
 
 [[package]]
 name = "llama-index-embeddings-openai"
@@ -4333,13 +4334,13 @@ files = [
 
 [[package]]
 name = "minio"
-version = "7.2.7"
+version = "7.2.8"
 description = "MinIO Python SDK for Amazon S3 Compatible Cloud Storage"
 optional = false
-python-versions = "*"
+python-versions = ">3.8"
 files = [
-    {file = "minio-7.2.7-py3-none-any.whl", hash = "sha256:59d1f255d852fe7104018db75b3bebbd987e538690e680f7c5de835e422de837"},
-    {file = "minio-7.2.7.tar.gz", hash = "sha256:473d5d53d79f340f3cd632054d0c82d2f93177ce1af2eac34a235bea55708d98"},
+    {file = "minio-7.2.8-py3-none-any.whl", hash = "sha256:aa3b485788b63b12406a5798465d12a57e4be2ac2a58a8380959b6b748e64ddd"},
+    {file = "minio-7.2.8.tar.gz", hash = "sha256:f8af2dafc22ebe1aef3ac181b8e217037011c430aa6da276ed627e55aaf7c815"},
 ]
 
 [package.dependencies]
@@ -5081,6 +5082,20 @@ files = [
 rsa = ["cryptography (>=3.0.0)"]
 signals = ["blinker (>=1.4.0)"]
 signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
+
+[[package]]
+name = "ollama"
+version = "0.3.1"
+description = "The official Python client for Ollama."
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "ollama-0.3.1-py3-none-any.whl", hash = "sha256:db50034c73d6350349bdfba19c3f0d54a3cea73eb97b35f9d7419b2fc7206454"},
+    {file = "ollama-0.3.1.tar.gz", hash = "sha256:032572fb494a4fba200c65013fe937a65382c846b5f358d9e8918ecbc9ac44b5"},
+]
+
+[package.dependencies]
+httpx = ">=0.27.0,<0.28.0"
 
 [[package]]
 name = "onnxruntime"
@@ -9212,4 +9227,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ad6af14b6fae673b88ea9951171bfa4913100210714dd909d8b399da1263cc02"
+content-hash = "efd375d5346913a04cb6cd85c69f2672c4c226b931b5710556a70ba019dd0ef9"
