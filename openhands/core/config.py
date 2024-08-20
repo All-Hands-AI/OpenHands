@@ -123,11 +123,13 @@ class AgentConfig:
     """Configuration for the agent.
 
     Attributes:
+        micro_agent_name: The name of the micro agent to use for this agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
+    micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | None = None
