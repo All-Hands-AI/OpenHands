@@ -14,7 +14,7 @@ jobs:
   # Run python unit tests on macOS
   test-on-macos:
     name: Python Unit Tests on macOS
-    runs-on: macos-12
+    runs-on: macos-13
     strategy:
       matrix:
         python-version: ['3.11']
