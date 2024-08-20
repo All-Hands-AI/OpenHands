@@ -93,7 +93,7 @@ jobs:
     strategy:
       matrix:
         image: ['openhands']
-        last_tag: ${{ fromJSON(needs.ghcr_build.outputs.last_tag) }}
+        last_tag: ['${{ needs.ghcr_build.outputs.last_tag }}']
         platform: ['amd64', 'arm64']
     steps:
       - name: Checkout code
