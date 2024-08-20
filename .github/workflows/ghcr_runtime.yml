@@ -82,9 +82,9 @@ jobs:
             source containers/runtime/config.sh
             echo "$DOCKER_IMAGE_HASH_TAG $DOCKER_IMAGE_TAG" >> tags.txt
             export last_tag=$DOCKER_IMAGE_TAG
-            echo "Pulling image $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar"
-            docker pull $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
-            docker save $DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar
+            echo "Pulling image $DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar"
+            docker pull $DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
+            docker save $DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar
           fi
           echo "last_tag=${last_tag}" >> $GITHUB_OUTPUT
       - name: Capture tags
