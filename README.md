@@ -67,13 +67,13 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.8
+    ghcr.io/all-hands-ai/openhands:0.8
 ```
 
 > [!NOTE]
 > By default, this command pulls the `latest` tag, which represents the most recent release of OpenHands. You have other options as well:
-> - For a specific release version, use `ghcr.io/opendevin/opendevin:<OpenHands_version>` (replace <OpenHands_version> with the desired version number).
-> - For the most up-to-date development version, use `ghcr.io/opendevin/opendevin:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
+> - For a specific release version, use `ghcr.io/all-hands-ai/openhands:<OpenHands_version>` (replace <OpenHands_version> with the desired version number).
+> - For the most up-to-date development version, use `ghcr.io/all-hands-ai/openhands:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
 >
 > Choose the tag that best suits your needs based on stability requirements and desired features.
 
