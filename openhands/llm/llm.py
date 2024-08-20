@@ -193,24 +193,7 @@ class LLM:
             # log the response
             message_back = resp['choices'][0]['message']['content']
 
-            token_logs = 'Input tokens: ' + str(resp.usage.prompt_tokens) + '\n'
-            token_logs += 'Output tokens: ' + str(resp.usage.completion_tokens) + '\n'
-
-            if 'cache_creation_input_tokens' in resp.usage.model_extra:
-                token_logs += (
-                    'Input tokens (cache write): '
-                    + str(resp.usage.model_extra['cache_creation_input_tokens'])
-                    + '\n'
-                )
-
-            if 'cache_read_input_tokens' in resp.usage.model_extra:
-                token_logs += (
-                    'Input tokens (cache read): '
-                    + str(resp.usage.model_extra['cache_read_input_tokens'])
-                    + '\n'
-                )
-
-            llm_response_logger.debug(message_back + '\n\n\n' + token_logs)
+            llm_response_logger.debug(message_back)
 
             # post-process to log costs
             self._post_completion(resp)
@@ -447,18 +430,48 @@ class LLM:
     def supports_vision(self):
         return litellm.supports_vision(self.config.model)
 
-    def _post_completion(self, response: str) -> None:
+    def _post_completion(self, response) -> None:
         """Post-process the completion response."""
         try:
             cur_cost = self.completion_cost(response)
         except Exception:
             cur_cost = 0
+
         if self.cost_metric_supported:
-            logger.info(
-                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+            stats = 'Cost: %.2f USD | Accumulated Cost: %.2f USD\n' % (
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
+
+        usage = response.get('usage')
+
+        if usage:
+            input_tokens = usage.get('prompt_tokens')
+            output_tokens = usage.get('completion_tokens')
+
+            if input_tokens:
+                stats += 'Input tokens: ' + str(input_tokens) + '\n'
+
+            if output_tokens:
+                stats += 'Output tokens: ' + str(output_tokens) + '\n'
+
+            model_extra = usage.get('model_extra', {})
+
+            cache_creation_input_tokens = model_extra.get('cache_creation_input_tokens')
+            if cache_creation_input_tokens:
+                stats += (
+                    'Input tokens (cache write): '
+                    + str(cache_creation_input_tokens)
+                    + '\n'
+                )
+
+            cache_read_input_tokens = model_extra.get('cache_read_input_tokens')
+            if cache_read_input_tokens:
+                stats += (
+                    'Input tokens (cache read): ' + str(cache_read_input_tokens) + '\n'
+                )
+
+        logger.info(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.
