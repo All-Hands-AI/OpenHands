@@ -83,17 +83,24 @@ def enable_auto_lint(request):
     return request.param
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='module', params=None)
 def container_image(request):
     time.sleep(1)
     env_image = os.environ.get('SANDBOX_CONTAINER_IMAGE')
     if env_image:
-        return [env_image]
-    return [
-        'nikolaik/python-nodejs:python3.11-nodejs22',
-        'python:3.11-bookworm',
-        'node:22-bookworm',
-    ]
+        request.param = env_image
+    else:
+        if request.param is None:
+            request.param = request.config.getoption('--container-image')
+        if request.param is None:
+            request.param = pytest.param(
+                'nikolaik/python-nodejs:python3.11-nodejs22',
+                'python:3.11-bookworm',
+                'node:22-bookworm',
+                'golang:1.23-bookworm',
+            )
+    print(f'Container image: {request.param}')
+    return request.param
 
 
 async def _load_runtime(
@@ -1387,6 +1394,27 @@ async def test_nodejs_22_version(temp_dir, box_class, container_image):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
     assert 'v22' in obs.content  # Check for specific version
+
+    await runtime.close()
+    await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_go_version(temp_dir, box_class, container_image):
+    """Make sure Go is available in bash."""
+    if container_image not in [
+        'golang:1.23-bookworm',
+    ]:
+        pytest.skip('This test is only for go-related images')
+
+    runtime = await _load_runtime(temp_dir, box_class, container_image=container_image)
+
+    action = CmdRunAction(command='go version')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+    assert 'go1.23' in obs.content  # Check for specific version
 
     await runtime.close()
     await asyncio.sleep(1)
