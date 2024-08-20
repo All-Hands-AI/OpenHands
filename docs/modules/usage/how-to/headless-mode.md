@@ -19,11 +19,11 @@ To run OpenHands in headless mode with Docker, run:
 # Set WORKSPACE_BASE to the directory you want OpenHands to edit
 WORKSPACE_BASE=$(pwd)/workspace
 
+# Set LLM_API_KEY to an API key, e.g. for OpenAI or Anthropic
+LLM_API_KEY="abcde"
+
 # Set LLM_MODEL to the model you want to use
 LLM_MODEL="gpt-4o"
-
-# Set LLM_API_KEY to an API key, e.g. for OpenAI
-LLM_API_KEY="abcde"
 
 docker run -it \
     --pull=always \
@@ -35,7 +35,7 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.8 \
+    ghcr.io/all-hands-ai/openhands:main \ # TODO: pin a version here
     python -m opendevin.core.main \
     -t "Write a bash script that prints Hello World"
 ```
