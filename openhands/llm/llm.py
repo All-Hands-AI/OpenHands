@@ -437,6 +437,7 @@ class LLM:
         except Exception:
             cur_cost = 0
 
+        stats = ''
         if self.cost_metric_supported:
             stats = 'Cost: %.2f USD | Accumulated Cost: %.2f USD\n' % (
                 cur_cost,
@@ -471,7 +472,8 @@ class LLM:
                     'Input tokens (cache read): ' + str(cache_read_input_tokens) + '\n'
                 )
 
-        logger.info(stats)
+        if stats:
+            logger.info(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.
