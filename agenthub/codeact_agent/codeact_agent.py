@@ -242,8 +242,21 @@ class CodeActAgent(Agent):
                     ].cache_prompt = True  # Last item inside the message content
                     user_turns_processed += 1
 
-        # Add reminder prompt at the end, we want to remind the agent of the environment constraints.
-        reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-        messages.append(Message(role='user', content=[TextContent(text=reminder_text)]))
+        # the latest user message is important:
+        # we want to remind the agent of the environment constraints
+        latest_user_message = next(
+            (
+                m
+                for m in reversed(messages)
+                if m.role == 'user'
+                and any(isinstance(c, TextContent) for c in m.content)
+            ),
+            None,
+        )
+        if latest_user_message:
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            latest_user_message.content.append(
+                Message(role='user', content=[TextContent(text=reminder_text)])
+            )
 
         return messages
