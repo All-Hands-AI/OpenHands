@@ -11,7 +11,7 @@ from openhands.core.logger import openhands_logger as logger
 class MicroAgentMetadata(pydantic.BaseModel):
     name: str
     agent: str
-    require_env_var: list[str]
+    require_env_var: dict[str, str]
 
 
 class MicroAgent:
@@ -37,8 +37,8 @@ class MicroAgent:
         agent_cls = Agent.get_cls(self._metadata.agent)
         assert agent_cls is not None
         # Make sure the environment variables are set
-        for env_var in self._metadata.require_env_var:
+        for env_var, instruction in self._metadata.require_env_var.items():
             if env_var not in os.environ:
                 raise MicroAgentValidationError(
-                    f'Environment variable [{env_var}] is required by micro agent [{self._metadata.name}] but not set'
+                    f'Environment variable [{env_var}] is required by micro agent [{self._metadata.name}] but not set. {instruction}'
                 )

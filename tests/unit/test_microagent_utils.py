@@ -23,7 +23,7 @@ def test_micro_agent_load(tmp_path, monkeypatch: MonkeyPatch):
                 'name: dummy\n'
                 'agent: CodeActAgent\n'
                 'require_env_var:\n'
-                '  - SANDBOX_OPENHANDS_TEST_ENV_VAR\n'
+                '  SANDBOX_OPENHANDS_TEST_ENV_VAR: "Set this environment variable for testing purposes"\n'
                 '---\n' + CONTENT
             )
         )
@@ -44,7 +44,7 @@ def test_not_existing_agent(tmp_path, monkeypatch: MonkeyPatch):
                 'name: dummy\n'
                 'agent: NotExistingAgent\n'
                 'require_env_var:\n'
-                '  - SANDBOX_OPENHANDS_TEST_ENV_VAR\n'
+                '  SANDBOX_OPENHANDS_TEST_ENV_VAR: "Set this environment variable for testing purposes"\n'
                 '---\n' + CONTENT
             )
         )
@@ -62,10 +62,12 @@ def test_not_existing_env_var(tmp_path):
                 'name: dummy\n'
                 'agent: CodeActAgent\n'
                 'require_env_var:\n'
-                '  - SANDBOX_OPENHANDS_TEST_ENV_VAR\n'
+                '  SANDBOX_OPENHANDS_TEST_ENV_VAR: "Set this environment variable for testing purposes"\n'
                 '---\n' + CONTENT
             )
         )
 
-    with pytest.raises(MicroAgentValidationError):
+    with pytest.raises(MicroAgentValidationError) as excinfo:
         MicroAgent(os.path.join(tmp_path, 'dummy.md'))
+
+    assert 'Set this environment variable for testing purposes' in str(excinfo.value)
