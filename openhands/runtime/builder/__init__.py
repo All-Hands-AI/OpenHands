@@ -1,4 +1,4 @@
-from .base import RuntimeBuilder
-from .docker import DockerRuntimeBuilder
+from openhands.runtime.builder.base import RuntimeBuilder
+from openhands.runtime.builder.docker import DockerRuntimeBuilder
 
 __all__ = ['RuntimeBuilder', 'DockerRuntimeBuilder']
