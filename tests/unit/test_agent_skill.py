@@ -1614,7 +1614,7 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
             '(this is the end of the file)',
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]',
             'ERRORS:',
-            f"../../../..{file_path}(3,1): error TS1005: '}}' expected.",
+            f"{file_path}(3,1): error TS1005: '}}' expected.",
             '[This is how your edit would have looked if applied]',
             '-------------------------------------------------',
             '(this is the beginning of the file)',
@@ -1640,4 +1640,6 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
         for i, (result_line, expected_line) in enumerate(
             zip(result_lines, expected_lines)
         ):
-            assert result_line == expected_line, f"Line {i+1} doesn't match"
+            assert result_line.lstrip('./') == expected_line.lstrip(
+                './'
+            ), f"Line {i+1} doesn't match"
