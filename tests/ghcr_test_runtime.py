@@ -90,6 +90,8 @@ def container_image(request):
     if env_image:
         request.param = env_image
     else:
+        if not hasattr(request, 'param'):  # prevent runtime AttributeError
+            request.param = None
         if request.param is None:
             request.param = request.config.getoption('--container-image')
         if request.param is None:
