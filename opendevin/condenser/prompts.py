@@ -13,7 +13,7 @@ WORD_LIMIT = 200
 MESSAGE_SUMMARY_WARNING_FRAC = 0.75
 
 SUMMARY_PROMPT_SYSTEM = """
-Your job is to summarize a history of previous messages in a conversation between an AI persona and a human. The conversation you are given is a from a fixed context window and may not be complete. Keep your summary less than {WORD_LIMIT} words, do NOT exceed this word limit.
+Your job is to summarize a history of previous messages in a conversation between an AI persona and a human. The conversation you are given is a from a fixed context window and may not be complete. Keep your summary less than {WORD_LIMIT} words, do NOT exceed this word limit. Include all the critical information in conversation till now in the summary.
 Only output the summary, do NOT include anything else in your output.
 Given the following actions and observations, create a JSON response with:
     - "action": "summarize"

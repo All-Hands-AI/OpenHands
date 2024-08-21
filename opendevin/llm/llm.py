@@ -58,7 +58,6 @@ class LLM(BaseLLM, CondenserMixin):
                     raise ContextWindowLimitExceededError()
 
             text_messages = [message.model_dump() for message in messages]
-            print('No of tokens, ' + str(self.get_token_count(text_messages)) + '\n')
 
             # log the prompt
             debug_message = ''

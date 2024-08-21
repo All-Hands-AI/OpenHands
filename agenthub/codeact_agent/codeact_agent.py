@@ -210,6 +210,11 @@ class CodeActAgent(Agent):
         while not response and attempt < self.llm.config.attempts_to_condense:
             # prepare what we want to send to the LLM
             messages = self._get_messages(state)
+            print(
+                'No of tokens, '
+                + str(self.llm.get_token_count(self.llm.get_text_messages(messages)))
+                + '\n'
+            )
             response = self.llm.completion(
                 messages=messages,
                 stop=[
@@ -240,6 +245,7 @@ class CodeActAgent(Agent):
             summary_message = self.get_action_message(state.history.summary)
             if summary_message:
                 messages.append(summary_message)
+                print(summary_message.model_dump())
         for event in state.history.get_events():
             if event.id > state.history.last_summarized_event_id:
                 # create a regular message from an event
