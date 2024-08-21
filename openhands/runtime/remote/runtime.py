@@ -8,10 +8,10 @@ from zipfile import ZipFile
 import aiohttp
 import tenacity
 
-from opendevin.core.config import AppConfig
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events import EventStream
-from opendevin.events.action import (
+from openhands.core.config import AppConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.events import EventStream
+from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -19,18 +19,18 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from opendevin.events.action.action import Action
-from opendevin.events.observation import (
+from openhands.events.action.action import Action
+from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
 )
-from opendevin.events.serialization import event_to_dict, observation_from_dict
-from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.runtime.builder.remote import RemoteRuntimeBuilder
-from opendevin.runtime.plugins import PluginRequirement
-from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.utils.runtime_build import build_runtime_image
+from openhands.events.serialization import event_to_dict, observation_from_dict
+from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.runtime.builder.remote import RemoteRuntimeBuilder
+from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime import Runtime
+from openhands.runtime.utils.runtime_build import build_runtime_image
 
 
 class RemoteRuntime(Runtime):
@@ -84,22 +84,22 @@ class RemoteRuntime(Runtime):
             response_json = await response.json()
             registry_prefix = response_json['registry_prefix']
             os.environ['OD_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-                registry_prefix.rstrip('/') + '/od_runtime'
+                registry_prefix.rstrip('/') + '/runtime'
             )
             logger.info(
                 f'Runtime image repo: {os.environ["OD_RUNTIME_RUNTIME_IMAGE_REPO"]}'
             )
 
-        if self.config.sandbox.od_runtime_extra_deps:
+        if self.config.sandbox.runtime_extra_deps:
             logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.od_runtime_extra_deps}'
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
         # Build the container image
         self.container_image = build_runtime_image(
             self.container_image,
             self.runtime_builder,
-            extra_deps=self.config.sandbox.od_runtime_extra_deps,
+            extra_deps=self.config.sandbox.runtime_extra_deps,
         )
 
         # Use the /image_exists endpoint to check if the image exists
@@ -127,16 +127,16 @@ class RemoteRuntime(Runtime):
         start_request = {
             'image': self.container_image,
             'command': (
-                f'/opendevin/miniforge3/bin/mamba run --no-capture-output -n base '
+                f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                 'PYTHONUNBUFFERED=1 poetry run '
-                f'python -u -m opendevin.runtime.client.client {self.port} '
+                f'python -u -m openhands.runtime.client.client {self.port} '
                 f'--working-dir {self.sandbox_workspace_dir} '
                 f'{plugin_arg}'
-                f'--username {"opendevin" if self.config.run_as_devin else "root"} '
+                f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                 f'--user-id {self.config.sandbox.user_id} '
                 f'{browsergym_arg}'
             ),
-            'working_dir': '/opendevin/code/',
+            'working_dir': '/openhands/code/',
             'name': self.container_name,
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
         }
