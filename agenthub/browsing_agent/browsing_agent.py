@@ -4,24 +4,24 @@ from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
 
 from agenthub.browsing_agent.response_parser import BrowsingResponseParser
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.message import Message, TextContent
-from opendevin.events.action import (
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.message import Message, TextContent
+from openhands.events.action import (
     Action,
     AgentFinishAction,
     BrowseInteractiveAction,
     MessageAction,
 )
-from opendevin.events.event import EventSource
-from opendevin.events.observation import BrowserOutputObservation
-from opendevin.events.observation.observation import Observation
-from opendevin.llm.llm import LLM
-from opendevin.runtime.plugins import (
+from openhands.events.event import EventSource
+from openhands.events.observation import BrowserOutputObservation
+from openhands.events.observation.observation import Observation
+from openhands.llm.llm import LLM
+from openhands.runtime.plugins import (
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 
 USE_NAV = (
     os.environ.get('USE_NAV', 'true') == 'true'
@@ -93,19 +93,19 @@ class BrowsingAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = []
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = BrowsingResponseParser()
 
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """Initializes a new instance of the BrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']
@@ -165,7 +165,7 @@ class BrowsingAgent(Agent):
 
         prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
-        # we should also send a message back to the user in OpenDevin and call it a day
+        # we should also send a message back to the user in OpenHands and call it a day
         if (
             isinstance(last_action, BrowseInteractiveAction)
             and last_action.browsergym_send_msg_to_user

@@ -1,17 +1,17 @@
 from jinja2 import BaseLoader, Environment
 
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.message import ImageContent, Message, TextContent
-from opendevin.core.utils import json
-from opendevin.events.action import Action
-from opendevin.events.serialization.action import action_from_dict
-from opendevin.events.serialization.event import event_to_memory
-from opendevin.llm.llm import LLM
-from opendevin.memory.history import ShortTermHistory
-
-from .instructions import instructions
-from .registry import all_microagents
+from agenthub.micro.instructions import instructions
+from agenthub.micro.registry import all_microagents
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.utils import json
+from openhands.events.action import Action
+from openhands.events.serialization.action import action_from_dict
+from openhands.events.serialization.event import event_to_memory
+from openhands.llm.llm import LLM
+from openhands.memory.history import ShortTermHistory
 
 
 def parse_response(orig_response: str) -> Action:
@@ -54,8 +54,8 @@ class MicroAgent(Agent):
 
         return json.dumps(processed_history, **kwargs)
 
-    def __init__(self, llm: LLM):
-        super().__init__(llm)
+    def __init__(self, llm: LLM, config: AgentConfig):
+        super().__init__(llm, config)
         if 'name' not in self.agent_definition:
             raise ValueError('Agent definition must contain a name')
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)

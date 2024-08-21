@@ -1,12 +1,11 @@
+from agenthub.planner_agent.prompt import get_prompt_and_images
 from agenthub.planner_agent.response_parser import PlannerResponseParser
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.message import ImageContent, Message, TextContent
-from opendevin.events.action import Action, AgentFinishAction
-from opendevin.llm.llm import LLM
-from opendevin.runtime.tools import RuntimeTool
-
-from .prompt import get_prompt_and_images
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.core.message import ImageContent, Message, TextContent
+from openhands.events.action import Action, AgentFinishAction
+from openhands.llm.llm import LLM
 
 
 class PlannerAgent(Agent):
@@ -15,16 +14,15 @@ class PlannerAgent(Agent):
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
     """
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = PlannerResponseParser()
 
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, config: AgentConfig):
         """Initialize the Planner Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
 
     def step(self, state: State) -> Action:
         """Checks to see if current step is completed, returns AgentFinishAction if True.

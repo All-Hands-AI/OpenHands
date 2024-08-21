@@ -1,5 +1,4 @@
-from opendevin.controller.agent import Agent
-
-from .codeact_swe_agent import CodeActSWEAgent
+from agenthub.codeact_swe_agent.codeact_swe_agent import CodeActSWEAgent
+from openhands.controller.agent import Agent
 
 Agent.register('CodeActSWEAgent', CodeActSWEAgent)

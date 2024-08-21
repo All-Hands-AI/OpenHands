@@ -5,16 +5,21 @@ import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { listFiles, selectFile } from "#/services/fileService";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
+import {
+  setCode,
+  setActiveFilepath,
+  addOrUpdateFileState,
+} from "#/state/codeSlice";
 
 interface TitleProps {
   name: string;
   type: "folder" | "file";
   isOpen: boolean;
+  isUnsaved: boolean;
   onClick: () => void;
 }
 
-function Title({ name, type, isOpen, onClick }: TitleProps) {
+function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
   return (
     <div
       onClick={onClick}
@@ -24,7 +29,10 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
         {type === "folder" && <FolderIcon isOpen={isOpen} />}
         {type === "file" && <FileIcon filename={name} />}
       </div>
-      <div className="flex-grow">{name}</div>
+      <div className="flex-grow">
+        {name}
+        {isUnsaved && "*"}
+      </div>
     </div>
   );
 }
@@ -39,6 +47,9 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
+  const fileStates = useSelector((state: RootState) => state.code.fileStates);
+  const fileState = fileStates.find((f) => f.path === path);
+  const isUnsaved = fileState?.savedContent !== fileState?.unsavedContent;
 
   const dispatch = useDispatch();
 
@@ -67,8 +78,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      const newCode = await selectFile(path);
-      dispatch(setCode(newCode));
+      let newFileState = fileStates.find((f) => f.path === path);
+      if (!newFileState) {
+        const code = await selectFile(path);
+        newFileState = { path, savedContent: code, unsavedContent: code };
+      }
+      dispatch(addOrUpdateFileState(newFileState));
+      dispatch(setCode(newFileState.unsavedContent));
       dispatch(setActiveFilepath(path));
     }
   };
@@ -84,6 +100,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         name={filename}
         type={isDirectory ? "folder" : "file"}
         isOpen={isOpen}
+        isUnsaved={isUnsaved}
         onClick={handleClick}
       />
 

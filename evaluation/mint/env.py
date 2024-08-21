@@ -1,11 +1,10 @@
 import re
 import traceback
-from typing import Dict, Optional
 
 from datatypes import ParseError, StepOutput, TaskState
 from tasks.base import Task
 
-from opendevin.controller.state.state import State
+from openhands.controller.state.state import State
 
 
 class SimplifiedEnv:
@@ -16,7 +15,7 @@ class SimplifiedEnv:
         'For example: The answer to the question is <solution> 42 </solution>. \n'
     )
 
-    def __init__(self, agent_state: State, task: Task, task_config: Dict[str, int]):
+    def __init__(self, agent_state: State, task: Task, task_config: dict[str, int]):
         self.agent_state = agent_state
         self.task = task
 
@@ -58,7 +57,7 @@ class SimplifiedEnv:
         self.log_output(output)
         return self.task_state
 
-    def handle_propose_solution(self, lm_message) -> Optional[str]:
+    def handle_propose_solution(self, lm_message) -> str | None:
         """Propose answer to check the task success.
 
         It might set self.state.finished = True if the task is successful.

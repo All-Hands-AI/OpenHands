@@ -1,8 +1,9 @@
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
-from opendevin.events.observation import AgentDelegateObservation
-from opendevin.llm.llm import LLM
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.events.action import Action, AgentDelegateAction, AgentFinishAction
+from openhands.events.observation import AgentDelegateObservation
+from openhands.llm.llm import LLM
 
 
 class DelegatorAgent(Agent):
@@ -13,13 +14,13 @@ class DelegatorAgent(Agent):
 
     current_delegate: str = ''
 
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, config: AgentConfig):
         """Initialize the Delegator Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
 
     def step(self, state: State) -> Action:
         """Checks to see if current step is completed, returns AgentFinishAction if True.

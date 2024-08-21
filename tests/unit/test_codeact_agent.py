@@ -3,20 +3,20 @@ from unittest.mock import Mock
 import pytest
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
-from opendevin.core.config import LLMConfig
-from opendevin.core.message import TextContent
-from opendevin.events.observation.commands import (
+from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.message import TextContent
+from openhands.events.observation.commands import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.delegate import AgentDelegateObservation
-from opendevin.events.observation.error import ErrorObservation
-from opendevin.llm.llm import LLM
+from openhands.events.observation.delegate import AgentDelegateObservation
+from openhands.events.observation.error import ErrorObservation
+from openhands.llm.llm import LLM
 
 
 @pytest.fixture
 def agent() -> CodeActAgent:
-    agent = CodeActAgent(llm=LLM(LLMConfig()))
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
     agent.llm = Mock()
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 100

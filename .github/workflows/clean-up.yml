@@ -1,6 +1,7 @@
 # Workflow that cleans up outdated and old workflows to prevent out of disk issues
 name: Delete old workflow runs
 
+# This workflow is currently only triggered manually
 on:
   workflow_dispatch:
     inputs:

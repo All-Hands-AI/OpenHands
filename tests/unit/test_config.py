@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from opendevin.core.config import (
+from openhands.core.config import (
     AgentConfig,
     AppConfig,
     LLMConfig,
@@ -46,7 +46,7 @@ def default_config(monkeypatch):
 
 def test_compat_env_to_config(monkeypatch, setup_env):
     # Use `monkeypatch` to set environment variables for this specific test
-    monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
+    monkeypatch.setenv('WORKSPACE_BASE', '/repos/openhands/workspace')
     monkeypatch.setenv('LLM_API_KEY', 'sk-proj-rgMV0...')
     monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
@@ -57,7 +57,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     config = AppConfig()
     load_from_env(config, os.environ)
 
-    assert config.workspace_base == '/repos/opendevin/workspace'
+    assert config.workspace_base == '/repos/openhands/workspace'
     assert isinstance(config.get_llm_config(), LLMConfig)
     assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
     assert config.get_llm_config().model == 'gpt-4o'
@@ -538,3 +538,27 @@ embedding_model="openai"
     llm_config = get_llm_config_arg('gpt3', temp_toml_file)
     assert llm_config.model == 'gpt-3.5-turbo'
     assert llm_config.embedding_model == 'openai'
+
+
+def test_get_agent_configs(default_config, temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 100
+max_budget_per_task = 4.0
+
+[agent.CodeActAgent]
+memory_enabled = true
+
+[agent.PlannerAgent]
+memory_max_threads = 10
+"""
+
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    load_from_toml(default_config, temp_toml_file)
+
+    codeact_config = default_config.get_agent_configs().get('CodeActAgent')
+    assert codeact_config.memory_enabled is True
+    planner_config = default_config.get_agent_configs().get('PlannerAgent')
+    assert planner_config.memory_max_threads == 10

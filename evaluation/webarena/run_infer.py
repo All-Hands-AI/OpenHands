@@ -15,26 +15,26 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
     BrowseInteractiveAction,
     CmdRunAction,
     MessageAction,
 )
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.browser.browser_env import (
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
-from opendevin.runtime.runtime import Runtime
+from openhands.runtime.runtime import Runtime
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
@@ -50,7 +50,7 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -58,7 +58,7 @@ def get_config(
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,
-            od_runtime_startup_env_vars={
+            runtime_startup_env_vars={
                 'BASE_URL': base_url,
                 'OPENAI_API_KEY': openai_api_key,
                 'SHOPPING': f'{base_url}:7770/',

@@ -5,30 +5,30 @@ from agenthub.codeact_swe_agent.prompt import (
     SYSTEM_SUFFIX,
 )
 from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.core.message import ImageContent, Message, TextContent
-from opendevin.events.action import (
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.core.message import ImageContent, Message, TextContent
+from openhands.events.action import (
     Action,
     AgentFinishAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
-from opendevin.events.observation import (
+from openhands.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.error import ErrorObservation
-from opendevin.events.observation.observation import Observation
-from opendevin.events.serialization.event import truncate_content
-from opendevin.llm.llm import LLM
-from opendevin.runtime.plugins import (
+from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.observation import Observation
+from openhands.events.serialization.event import truncate_content
+from openhands.llm.llm import LLM
+from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
 
 
 def get_system_message() -> str:
@@ -42,7 +42,7 @@ def get_in_context_example() -> str:
 class CodeActSWEAgent(Agent):
     VERSION = '1.6'
     """
-    This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of OpenDevin.
+    This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of OpenHands.
 
     It is intended use is **solving Github issues**.
 
@@ -56,7 +56,6 @@ class CodeActSWEAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    runtime_tools: list[RuntimeTool] = []
 
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
@@ -66,13 +65,14 @@ class CodeActSWEAgent(Agent):
     def __init__(
         self,
         llm: LLM,
+        config: AgentConfig,
     ) -> None:
         """Initializes a new instance of the CodeActSWEAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm)
+        super().__init__(llm, config)
         self.reset()
 
     def action_to_str(self, action: Action) -> str:

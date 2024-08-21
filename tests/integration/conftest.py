@@ -12,7 +12,7 @@ from threading import Thread
 import pytest
 from litellm import completion
 
-from opendevin.llm.llm import message_separator
+from openhands.llm.llm import message_separator
 
 script_dir = os.environ.get('SCRIPT_DIR')
 project_root = os.environ.get('PROJECT_ROOT')
@@ -47,8 +47,18 @@ def pytest_exception_interact(node, call, report):
 
 def filter_out_symbols(input):
     # remove shell hostname patterns (e.g., will change between each run)
-    # opendevin@379c7fce40b4:/workspace $
-    input = re.sub(r'(opendevin|root)@.*(:/.*)', r'\1[DUMMY_HOSTNAME]\2', input)
+    # openhands@379c7fce40b4:/workspace $
+    input = re.sub(r'(openhands|root)@.*(:/.*)', r'\1[DUMMY_HOSTNAME]\2', input)
+
+    # mask the specific part in a poetry path
+    input = re.sub(
+        r'(/open[a-z]{5}/poetry/open[a-z]{5}-)[a-zA-Z0-9-]+(-py3\.\d+/bin/python)',
+        r'\1[DUMMY_STRING]\2',
+        input,
+    )
+
+    # handle size param
+    input = re.sub(r' size=\d+ ', ' size=[DUMMY_SIZE] ', input)
 
     # handle sha256 hashes
     # sha256=4ecf8be428f55981e2a188f510ba5f9022bed88f5fb404d7d949f44382201e3d
@@ -202,13 +212,13 @@ def patch_completion(monkeypatch, request):
     test_name = request.node.name
     # Mock LLM completion
     monkeypatch.setattr(
-        'opendevin.llm.llm.litellm_completion',
+        'openhands.llm.llm.litellm_completion',
         partial(mock_completion, test_name=test_name),
     )
 
     # Mock LLM completion cost (1 USD per conversation)
     monkeypatch.setattr(
-        'opendevin.llm.llm.litellm_completion_cost',
+        'openhands.llm.llm.litellm_completion_cost',
         lambda completion_response, **extra_kwargs: 1,
     )
 

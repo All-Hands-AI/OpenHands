@@ -13,23 +13,23 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
     AgentFinishAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -45,14 +45,14 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
-            od_runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
+            runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
         ),
         # do not mount workspace
         workspace_base=None,

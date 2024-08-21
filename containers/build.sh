@@ -8,7 +8,7 @@ platform=$3
 echo "Building: $image_name for platform: $platform"
 tags=()
 
-OPEN_DEVIN_BUILD_VERSION="dev"
+OPENHANDS_BUILD_VERSION="dev"
 
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
@@ -19,21 +19,21 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     tags+=("latest")
   fi
   sanitized=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
-  OPEN_DEVIN_BUILD_VERSION=$sanitized
+  OPENHANDS_BUILD_VERSION=$sanitized
   tag=$(echo "$sanitized" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
   tags+=("$tag")
 fi
 echo "Tags: ${tags[@]}"
 
-if [[ "$image_name" == "opendevin" ]]; then
+if [[ "$image_name" == "openhands" ]]; then
   dir="./containers/app"
-elif [[ "$image_name" == "od_runtime" ]]; then
+elif [[ "$image_name" == "runtime" ]]; then
   dir="./containers/runtime"
 else
   dir="./containers/$image_name"
 fi
 
-if [[ (! -f "$dir/Dockerfile") && "$image_name" != "od_runtime" ]]; then
+if [[ (! -f "$dir/Dockerfile") && "$image_name" != "runtime" ]]; then
   # Allow runtime to be built without a Dockerfile
   echo "No Dockerfile found"
   exit 1
@@ -49,15 +49,14 @@ if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
 
-# If $DOCKER_IMAGE_TAG is set, add it to the tags
-if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
-  tags+=("$DOCKER_IMAGE_TAG")
-fi
 # If $DOCKER_IMAGE_HASH_TAG is set, add it to the tags
 if [[ -n "$DOCKER_IMAGE_HASH_TAG" ]]; then
   tags+=("$DOCKER_IMAGE_HASH_TAG")
 fi
-
+# If $DOCKER_IMAGE_TAG is set, add it to the tags
+if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
+  tags+=("$DOCKER_IMAGE_TAG")
+fi
 
 DOCKER_REPOSITORY="$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE"
 DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase
@@ -69,11 +68,12 @@ for tag in "${tags[@]}"; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
 done
 
-output_image="/tmp/${image_name}_image_${platform}.tar"
+output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
+echo "Output image will be saved to: $output_image"
 
 docker buildx build \
   $args \
-  --build-arg OPEN_DEVIN_BUILD_VERSION="$OPEN_DEVIN_BUILD_VERSION" \
+  --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
   --platform linux/$platform \
   --provenance=false \
   -f "$dir/Dockerfile" \

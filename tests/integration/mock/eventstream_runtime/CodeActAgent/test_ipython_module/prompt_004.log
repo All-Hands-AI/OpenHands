@@ -14,15 +14,12 @@ Important, however: do not run interactive commands. You do not have access to s
 Also, you need to handle commands that may run indefinitely and not return a result. For such cases, you should redirect the output to a file and run the command in the background to avoid blocking the execution.
 For example, to run a Python script that might run indefinitely without returning immediately, you can use the following format: <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
 Also, if a command execution result saying like: Command: "npm start" timed out. Sending SIGINT to the process, you should also retry with running the command in the background.
+
 The assistant can browse the Internet with <execute_browse> and </execute_browse>.
 For example, <execute_browse> Tell me the usa's president using google search </execute_browse>.
 Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
-The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
-To interact with GitHub, use the $GITHUB_TOKEN environment variable.
-For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
-<execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
-If $GITHUB_TOKEN is not set, ask the user to set it.
 
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
@@ -126,19 +123,19 @@ search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
     Args:
     search_term: str: The term to search for.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
-search_file(search_term: str, file_path: Optional[str] = None) -> None:
+search_file(search_term: str, file_path: str | None = None) -> None:
     Searches for search_term in file. If file is not provided, searches in the current open file.
     Args:
     search_term: str: The term to search for.
-    file_path: Optional[str]: The path to the file to search.
+    file_path: str | None: The path to the file to search.
 
 find_file(file_name: str, dir_path: str = './') -> None:
     Finds all files with the given name in the specified directory.
     Args:
     file_name: str: The name of the file to find.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
 parse_pdf(file_path: str) -> None:
     Parses the content of a PDF file and prints it.
@@ -160,6 +157,7 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
+
 Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 Responses should be concise.
@@ -167,8 +165,7 @@ The assistant should attempt fewer things at a time instead of putting too many 
 Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
 If the assistant is finished with the task you MUST include <finish></finish> in your response.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
-When handling files, try to use full paths and pwd to avoid errors.
-
+The assistant should utilize full file paths and the 'pwd' command to prevent path-related errors. The assistant should refrain from excessive apologies in its responses.
 
 ----------
 
@@ -270,8 +267,8 @@ Collecting click>=8.1.3
   Using cached click-8.1.7-py3-none-any.whl (97 kB)
 Collecting itsdangerous>=2.1.2
   Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
-Requirement already satisfied: Jinja2>=3.1.2 in /home/opendevin/.local/lib/python3.10/site-packages (from flask) (3.1.3)
-Requirement already satisfied: MarkupSafe>=2.0 in /home/opendevin/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Requirement already satisfied: Jinja2>=3.1.2 in /home/openhands/.local/lib/python3.10/site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
 Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
 Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
 
@@ -394,6 +391,7 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 --- END OF EXAMPLE ---
 
 
+
 NOW, LET'S START!
 
 ----------
@@ -412,13 +410,13 @@ Sure! Let's start by installing the `pymsgbox` package.
 OBSERVATION:
 Collecting pymsgbox==1.0.9
   Downloading PyMsgBox-1.0.9.tar.gz (18 kB)
-  Installing build dependencies ... [?25l- \ | / - \ | / - \ | / - \ | / - done
+  Installing build dependencies ... [?25l- \ | / - \ done
 [?25h  Getting requirements to build wheel ... [?25l- done
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=0aa91e03ed30fdcf42db3522fd0444c80951cccb215529a6ed9a95fc2b8a6f0c
-  Stored in directory: /home/opendevin/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7407 sha256=aca10c2c34795d92bcf85b43c34a0f7eb39d1cf3a4edf8f69f65ed206619ae51
+  Stored in directory: /home/openhands/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox
 Successfully installed pymsgbox-1.0.9
@@ -458,7 +456,7 @@ cat /workspace/test.txt
 OBSERVATION:
 pymsgbox version: 1.0.9
 
-opendevin@docker-desktop:/workspace $
+openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 
 ENVIRONMENT REMINDER: You have 11 turns left to complete the task. When finished reply with <finish></finish>.
