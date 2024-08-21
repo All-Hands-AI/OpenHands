@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ModelSelector } from "./ModelSelector";
@@ -21,7 +21,8 @@ describe("ModelSelector", () => {
   };
 
   it("should display the provider selector", () => {
-    render(<ModelSelector models={models} />);
+    const onModelChange = vi.fn();
+    render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
     const selector = screen.getByLabelText("Provider");
     expect(selector).toBeInTheDocument();
@@ -33,7 +34,8 @@ describe("ModelSelector", () => {
 
   it("should disable the model selector if the provider is not selected", async () => {
     const user = userEvent.setup();
-    render(<ModelSelector models={models} />);
+    const onModelChange = vi.fn();
+    render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
     const modelSelector = screen.getByLabelText("Model");
     expect(modelSelector).toBeDisabled();
@@ -46,7 +48,8 @@ describe("ModelSelector", () => {
 
   it("should display the model selector", async () => {
     const user = userEvent.setup();
-    render(<ModelSelector models={models} />);
+    const onModelChange = vi.fn();
+    render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
     const providerSelector = screen.getByLabelText("Provider");
     await user.selectOptions(providerSelector, "azure");
@@ -62,7 +65,8 @@ describe("ModelSelector", () => {
 
   it("should display the actual litellm model ID as the user is making the selections", async () => {
     const user = userEvent.setup();
-    render(<ModelSelector models={models} />);
+    const onModelChange = vi.fn();
+    render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
     const id = screen.getByTestId("model-id");
     const providerSelector = screen.getByLabelText("Provider");
@@ -81,5 +85,31 @@ describe("ModelSelector", () => {
 
     await user.selectOptions(modelSelector, "command-r-v1:0");
     expect(id).toHaveTextContent("cohere.command-r-v1:0");
+  });
+
+  it("should call onModelChange when the model is changed", async () => {
+    const user = userEvent.setup();
+    const onModelChange = vi.fn();
+    render(<ModelSelector models={models} onModelChange={onModelChange} />);
+
+    const providerSelector = screen.getByLabelText("Provider");
+    const modelSelector = screen.getByLabelText("Model");
+
+    await user.selectOptions(providerSelector, "azure");
+    await user.selectOptions(modelSelector, "ada");
+
+    expect(onModelChange).toHaveBeenCalledTimes(1);
+    expect(onModelChange).toHaveBeenCalledWith("azure/ada");
+
+    await user.selectOptions(modelSelector, "gpt-35-turbo");
+
+    expect(onModelChange).toHaveBeenCalledTimes(2);
+    expect(onModelChange).toHaveBeenCalledWith("azure/gpt-35-turbo");
+
+    await user.selectOptions(providerSelector, "cohere");
+    await user.selectOptions(modelSelector, "command-r-v1:0");
+
+    expect(onModelChange).toHaveBeenCalledTimes(3);
+    expect(onModelChange).toHaveBeenCalledWith("cohere.command-r-v1:0");
   });
 });
