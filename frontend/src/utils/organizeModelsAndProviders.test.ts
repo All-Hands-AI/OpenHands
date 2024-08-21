@@ -39,7 +39,7 @@ test("organizeModelsAndProviders", () => {
       separator: "/",
       models: ["@cf/mistral/mistral-7b-instruct-v0.1"],
     },
-    "": {
+    other: {
       separator: "",
       models: ["gpt-4o", "together-ai-21.1b-41b", "gpt-3.5-turbo"],
     },

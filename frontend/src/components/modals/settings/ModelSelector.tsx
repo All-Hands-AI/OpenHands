@@ -27,41 +27,45 @@ export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
   };
 
   return (
-    <div>
-      <span data-testid="model-id">{litellmId || "No model selected"}</span>
+    <div className="flex flex-col gap-2">
+      <span className="text-center italic text-gray-500" data-testid="model-id">
+        {litellmId?.replace("other", "") || "No model selected"}
+      </span>
 
-      <Autocomplete
-        label="Provider"
-        onSelectionChange={(e) => {
-          if (e?.toString()) handleChangeProvider(e.toString());
-        }}
-      >
-        {Object.keys(models).map((provider) => (
-          <AutocompleteItem key={provider} value={provider}>
-            {provider}
-          </AutocompleteItem>
-        ))}
-      </Autocomplete>
-
-      <Autocomplete
-        label="Model"
-        onSelectionChange={(e) => {
-          if (e?.toString()) handleChangeModel(e.toString());
-        }}
-        isDisabled={!selectedProvider}
-      >
-        {selectedProvider ? (
-          models[selectedProvider].models.map((model) => (
-            <AutocompleteItem key={model} value={model}>
-              {model}
+      <div className="flex flex-col gap-3">
+        <Autocomplete
+          label="Provider"
+          onSelectionChange={(e) => {
+            if (e?.toString()) handleChangeProvider(e.toString());
+          }}
+        >
+          {Object.keys(models).map((provider) => (
+            <AutocompleteItem key={provider} value={provider}>
+              {provider}
             </AutocompleteItem>
-          ))
-        ) : (
-          <AutocompleteItem key="" value="">
-            Select a model
-          </AutocompleteItem>
-        )}
-      </Autocomplete>
+          ))}
+        </Autocomplete>
+
+        <Autocomplete
+          label="Model"
+          onSelectionChange={(e) => {
+            if (e?.toString()) handleChangeModel(e.toString());
+          }}
+          isDisabled={!selectedProvider}
+        >
+          {selectedProvider ? (
+            models[selectedProvider].models.map((model) => (
+              <AutocompleteItem key={model} value={model}>
+                {model}
+              </AutocompleteItem>
+            ))
+          ) : (
+            <AutocompleteItem key="" value="">
+              Select a model
+            </AutocompleteItem>
+          )}
+        </Autocomplete>
+      </div>
     </div>
   );
 }

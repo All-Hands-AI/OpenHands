@@ -32,10 +32,11 @@ export const organizeModelsAndProviders = (models: string[]) => {
       provider,
       model: modelId,
     } = extractModelAndProvider(model);
-    if (!object[provider]) {
-      object[provider] = { separator, models: [] };
+    const key = provider || "other";
+    if (!object[key]) {
+      object[key] = { separator, models: [] };
     }
-    object[provider].models.push(modelId);
+    object[key].models.push(modelId);
   });
   return object;
 };
