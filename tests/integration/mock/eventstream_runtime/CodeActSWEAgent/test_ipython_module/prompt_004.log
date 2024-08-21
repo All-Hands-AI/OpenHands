@@ -603,7 +603,7 @@ Understood. Let's start by installing the `pymsgbox` package.
 OBSERVATION:
 Collecting pymsgbox==1.0.9
   Downloading PyMsgBox-1.0.9.tar.gz (18 kB)
-  Installing build dependencies ... [?25l- \ | / - \ | done
+  Installing build dependencies ... [?25l- \ | / - done
 [?25h  Getting requirements to build wheel ... [?25l- done
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
