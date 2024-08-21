@@ -49,6 +49,10 @@ class JupyterPlugin(Plugin):
         logger.info(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
+        _obs = await self.run(
+            IPythonRunCellAction(code='import sys; print(sys.executable)')
+        )
+        self.python_interpreter_path = _obs.content.strip()
 
     async def _run(self, action: Action) -> IPythonRunCellObservation:
         """Internal method to run a code cell in the jupyter kernel."""

@@ -102,4 +102,4 @@ Si vous voyez un message d'erreur indiquant que le port est utilisé ou indispon
 
 ## Discuter
 
-Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!
+Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!
