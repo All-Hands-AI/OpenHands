@@ -52,7 +52,7 @@ def filter_out_symbols(input):
 
     # mask the specific part in a poetry path
     input = re.sub(
-        r'(/opendevin/poetry/opendevin-)[a-zA-Z0-9-]+(-py3\.\d+/bin/python)',
+        r'(/open[a-z]{5}/poetry/open[a-z]{5}-)[a-zA-Z0-9-]+(-py3\.\d+/bin/python)',
         r'\1[DUMMY_STRING]\2',
         input,
     )
