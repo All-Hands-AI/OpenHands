@@ -50,6 +50,13 @@ def filter_out_symbols(input):
     # openhands@379c7fce40b4:/workspace $
     input = re.sub(r'(openhands|root)@.*(:/.*)', r'\1[DUMMY_HOSTNAME]\2', input)
 
+    # mask the specific part in a poetry path
+    input = re.sub(
+        r'(/opendevin/poetry/opendevin-)[a-zA-Z0-9-]+(-py3\.\d+/bin/python)',
+        r'\1[DUMMY_STRING]\2',
+        input,
+    )
+
     # handle size param
     input = re.sub(r' size=\d+ ', ' size=[DUMMY_SIZE] ', input)
 
