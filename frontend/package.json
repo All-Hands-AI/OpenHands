@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.1.0",
+  "version": "0.8.3",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,7 +16,7 @@
     "@xterm/xterm": "^5.4.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "i18next": "^23.12.3",
+    "i18next": "^23.14.0",
     "i18next-browser-languagedetector": "^8.0.0",
     "i18next-http-backend": "^2.6.0",
     "jose": "^5.7.0",
@@ -32,7 +32,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.0",
     "tailwind-merge": "^2.5.2",
-    "vite": "^5.4.1",
+    "vite": "^5.4.2",
     "web-vitals": "^3.5.2"
   },
   "scripts": {
