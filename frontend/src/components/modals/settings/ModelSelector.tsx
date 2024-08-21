@@ -1,3 +1,4 @@
+import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import React from "react";
 
 interface ModelSelectorProps {
@@ -11,53 +12,56 @@ export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
     null,
   );
 
-  const handleChangeProvider = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const provider = e.target.value;
+  const handleChangeProvider = (provider: string) => {
     setSelectedProvider(provider);
 
     const separator = models[provider]?.separator || "";
     setLitellmId(provider + separator);
   };
 
-  const handleChangeModel = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleChangeModel = (model: string) => {
     const separator = models[selectedProvider || ""]?.separator || "";
-    const model = selectedProvider + separator + e.target.value;
-    setLitellmId(model);
-    onModelChange(model);
+    const fullModel = selectedProvider + separator + model;
+    setLitellmId(fullModel);
+    onModelChange(fullModel);
   };
 
   return (
     <div>
       <span data-testid="model-id">{litellmId || "No model selected"}</span>
 
-      <label>
-        Provider
-        <select id="provider" onChange={handleChangeProvider}>
-          <option value="">Select a provider</option>
-          {Object.keys(models).map((provider) => (
-            <option key={provider} value={provider}>
-              {provider}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Autocomplete
+        label="Provider"
+        onSelectionChange={(e) => {
+          if (e?.toString()) handleChangeProvider(e.toString());
+        }}
+      >
+        {Object.keys(models).map((provider) => (
+          <AutocompleteItem key={provider} value={provider}>
+            {provider}
+          </AutocompleteItem>
+        ))}
+      </Autocomplete>
 
-      <label>
-        Model
-        <select
-          id="model"
-          onChange={handleChangeModel}
-          disabled={!selectedProvider}
-        >
-          <option value="">Select a model</option>
-          {selectedProvider &&
-            models[selectedProvider].models.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-        </select>
-      </label>
+      <Autocomplete
+        label="Model"
+        onSelectionChange={(e) => {
+          if (e?.toString()) handleChangeModel(e.toString());
+        }}
+        isDisabled={!selectedProvider}
+      >
+        {selectedProvider ? (
+          models[selectedProvider].models.map((model) => (
+            <AutocompleteItem key={model} value={model}>
+              {model}
+            </AutocompleteItem>
+          ))
+        ) : (
+          <AutocompleteItem key="" value="">
+            Select a model
+          </AutocompleteItem>
+        )}
+      </Autocomplete>
     </div>
   );
 }
