@@ -50,6 +50,9 @@ def filter_out_symbols(input):
     # openhands@379c7fce40b4:/workspace $
     input = re.sub(r'(openhands|root)@.*(:/.*)', r'\1[DUMMY_HOSTNAME]\2', input)
 
+    # handle size param
+    input = re.sub(r' size=\d+ ', ' size=[DUMMY_SIZE] ', input)
+
     # handle sha256 hashes
     # sha256=4ecf8be428f55981e2a188f510ba5f9022bed88f5fb404d7d949f44382201e3d
     input = re.sub(r'sha256=[a-z0-9]+', 'sha256=[DUMMY_HASH]', input)
