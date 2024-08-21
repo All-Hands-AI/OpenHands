@@ -1,12 +1,10 @@
 # Workflow that builds, tests and then pushes the runtime docker images to the ghcr.io repository
 name: Build, Test and Publish Runtime Image
 
-# Only run one workflow of the same group at a time.
-# There can be at most one running and one pending job in a concurrency group at any time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
+# Always run on "main"
+# Always run on tags
+# Always run on PRs
+# Can also be triggered manually
 on:
   push:
     branches:
@@ -132,7 +130,7 @@ jobs:
           echo "test_image_tags=$matrix" >> $GITHUB_OUTPUT
           echo "Generated test_image_tags: $matrix"
 
-  # Run unit tests with the EventStream and Server runtime Docker images
+  # Run unit tests with the EventStream runtime Docker images
   test_runtime:
     name: Test Runtime
     runs-on: ubuntu-latest
@@ -191,7 +189,7 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/unit/test_runtime.py
+          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -249,7 +247,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # New job to indicate all runtime tests have passed
+  # Checks that all runtime tests have passed
   all_runtime_tests_passed:
     name: All Runtime Tests Passed
     runs-on: ubuntu-latest
@@ -263,7 +261,7 @@ jobs:
     name: Push Image
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime, prepare_test_image_tags, all_runtime_tests_passed]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     env:
       RUNTIME_TAGS: ${{ needs.ghcr_build_runtime.outputs.tags }}
     permissions:
@@ -320,42 +318,8 @@ jobs:
             if [ -n "$image_name" ] && [ -n "$tag" ]; then
               docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
               docker push $image_name:${tag}_${{ matrix.platform }}
+              docker buildx imagetools create --tag $image_name:$tag $image_name:${tag}_${{ matrix.platform }}
             else
               echo "Skipping tag and push due to empty image_name or tag"
             fi
-          done
-
-  # Creates and pushes the runtime Docker image manifest
-  create_manifest_runtime:
-    name: Create Manifest
-    runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, prepare_test_image_tags, ghcr_push_runtime]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
-    env:
-      tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
-    strategy:
-      matrix:
-        image: ['runtime']
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create and push multi-platform manifest
-        run: |
-          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
-          echo "image name = $image_name"
-          tags=$(echo ${tags} | tr ' ' '\n')
-          for tag in $tags; do
-            echo 'tag = $tag'
-            docker buildx imagetools create --tag $image_name:$tag \
-              $image_name:${tag}_amd64 \
-              $image_name:${tag}_arm64
           done
