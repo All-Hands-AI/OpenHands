@@ -301,7 +301,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhan
     assert obs.content.strip() == (
         'Hello, `World`!\n'
         '[Jupyter current working directory: /workspace]\n'
-        '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+        '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
     )
 
     # Test read file (file should not exist)
@@ -772,7 +772,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
         == (
             '/workspace\n'
             '[Jupyter current working directory: /workspace]\n'
-            '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+            '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
         ).strip()
     )
 
@@ -788,7 +788,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
         == (
             '[Code executed successfully with no output]\n'
             '[Jupyter current working directory: /workspace]\n'
-            '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+            '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
         ).strip()
     )
 
@@ -834,7 +834,7 @@ async def test_ipython_simple(temp_dir, box_class):
         == (
             '1\n'
             '[Jupyter current working directory: /workspace]\n'
-            '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+            '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
         ).strip()
     )
 
@@ -871,7 +871,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
         '[Jupyter current working directory: /workspace]\n'
-        '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+        '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
     action = CmdRunAction(command='cd test')
@@ -895,7 +895,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
         '[Jupyter current working directory: /workspace/test]\n'
-        '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+        '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
     if enable_auto_lint:
@@ -929,7 +929,7 @@ Your changes have NOT been applied. Please fix your edit command and try again.
 You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
 DO NOT re-run the same failed edit command. Running it again will lead to the same error.
 [Jupyter current working directory: /workspace/test]
-[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]
+[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]
 """
         ).strip().split('\n')
 
@@ -949,7 +949,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 (this is the end of the file)
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 [Jupyter current working directory: /workspace/test]
-[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]
+[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]
 """
     ).strip().split('\n')
 
@@ -1017,7 +1017,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
         '[Jupyter current working directory: /root]\n'
-        '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+        '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
     action = CmdRunAction(command='cd test')
@@ -1041,7 +1041,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '(this is the end of the file)\n'
         '[File hello.py created.]\n'
         '[Jupyter current working directory: /root/test]\n'
-        '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+        '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
     await runtime.close()
@@ -1078,7 +1078,7 @@ async def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
     assert obs.content.strip() == (
         '[Code executed successfully with no output]\n'
         '[Jupyter current working directory: /workspace]\n'
-        '[Jupyter Python interpreter: /opendevin/poetry/opendevin-w8YlaYp7-py3.11/bin/python]'
+        '[Jupyter Python interpreter: /opendevin/poetry/openhands-5O4_aCHf-py3.11/bin/python]'
     )
 
     await runtime.close()
