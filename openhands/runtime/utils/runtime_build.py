@@ -144,7 +144,7 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
-    logger.info(
+    logger.debug(
         (
             f'===== Dockerfile content start =====\n'
             f'{dockerfile_content}\n'
