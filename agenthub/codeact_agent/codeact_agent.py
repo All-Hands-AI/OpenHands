@@ -198,7 +198,7 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.system_message,
-                        cache_prompt=self.llm.supports_prompt_caching,  # Cache system prompt
+                        cache_prompt=self.llm.supports_prompt_caching,  # cache system prompt
                     )
                 ],
             ),
@@ -207,7 +207,7 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.initial_user_message,
-                        cache_prompt=self.llm.supports_prompt_caching,  # if the user asks the same query,
+                        cache_prompt=self.llm.supports_prompt_caching,  # cache initial user message
                     )
                 ],
             ),
@@ -232,31 +232,47 @@ class CodeActAgent(Agent):
                 else:
                     messages.append(message)
 
-        # Add caching to the last 2 user messages
-        if self.llm.supports_prompt_caching:
-            user_turns_processed = 0
-            for message in reversed(messages):
-                if message.role == 'user' and user_turns_processed < 2:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    user_turns_processed += 1
+        reminder_added = False
+        user_messages_processed = 0
 
-        # the latest user message is important:
-        # we want to remind the agent of the environment constraints
-        latest_user_message = next(
-            (
-                m
-                for m in reversed(messages)
-                if m.role == 'user'
-                and any(isinstance(c, TextContent) for c in m.content)
-            ),
-            None,
-        )
-        if latest_user_message:
-            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-            latest_user_message.content.append(
-                Message(role='user', content=[TextContent(text=reminder_text)])
-            )
+        for message in reversed(messages):
+            if not reminder_added and message.role == 'user':
+                # add reminder to the last TextContent in the last user message
+                reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+                last_text_content = next(
+                    (
+                        c
+                        for c in reversed(message.content)
+                        if isinstance(c, TextContent)
+                    ),
+                    None,
+                )
+                if last_text_content:
+                    last_text_content.text += reminder_text
+                else:
+                    message.content.append(TextContent(text=reminder_text))
+                reminder_added = True
+            elif (
+                self.llm.supports_prompt_caching
+                and message.role == 'user'
+                and user_messages_processed < 2
+            ):
+                # add cache_prompt to the last TextContent in the previous two user messages
+                last_text_content = next(
+                    (
+                        c
+                        for c in reversed(message.content)
+                        if isinstance(c, TextContent)
+                    ),
+                    None,
+                )
+                if last_text_content:
+                    last_text_content.cache_prompt = True
+                    user_messages_processed += 1
+
+            if reminder_added and (
+                not self.llm.supports_prompt_caching or user_messages_processed >= 2
+            ):
+                break
 
         return messages
