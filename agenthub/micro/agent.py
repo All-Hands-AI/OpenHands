@@ -1,5 +1,7 @@
 from jinja2 import BaseLoader, Environment
 
+from agenthub.micro.instructions import instructions
+from agenthub.micro.registry import all_microagents
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -10,9 +12,6 @@ from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.event import event_to_memory
 from openhands.llm.llm import LLM
 from openhands.memory.history import ShortTermHistory
-
-from .instructions import instructions
-from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:

@@ -1,17 +1,17 @@
-from .action import Action, ActionConfirmationStatus
-from .agent import (
+from openhands.events.action.action import Action, ActionConfirmationStatus
+from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
     AgentSummarizeAction,
     ChangeAgentStateAction,
 )
-from .browse import BrowseInteractiveAction, BrowseURLAction
-from .commands import CmdRunAction, IPythonRunCellAction
-from .empty import NullAction
-from .files import FileReadAction, FileWriteAction
-from .message import MessageAction
-from .tasks import AddTaskAction, ModifyTaskAction
+from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
+from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
+from openhands.events.action.empty import NullAction
+from openhands.events.action.files import FileReadAction, FileWriteAction
+from openhands.events.action.message import MessageAction
+from openhands.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 __all__ = [
     'Action',

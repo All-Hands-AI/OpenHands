@@ -603,12 +603,12 @@ Understood. Let's start by installing the `pymsgbox` package.
 OBSERVATION:
 Collecting pymsgbox==1.0.9
   Downloading PyMsgBox-1.0.9.tar.gz (18 kB)
-  Installing build dependencies ... [?25l- \ | / - \ | done
+  Installing build dependencies ... [?25l- \ | / - done
 [?25h  Getting requirements to build wheel ... [?25l- done
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7404 sha256=be36b3efa774cde835b0dd6e5839825cbb4dfe740798f5be111a0ade675d35dd
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7407 sha256=65f1e9e680d728456ab0dc9e66affd01d7ade89ec5a2a8c3aa80ab24a71247ac
   Stored in directory: /home/openhands/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox

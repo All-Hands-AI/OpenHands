@@ -519,17 +519,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.0"
+version = "1.35.1"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.0-py3-none-any.whl", hash = "sha256:ada32dab854c46a877cf967b8a55ab1a7d356c3c87f1c8bd556d446ff03dfd95"},
-    {file = "boto3-1.35.0.tar.gz", hash = "sha256:bdc242e3ea81decc6ea551b04b2c122f088c29269d8e093b55862946aa0fcfc6"},
+    {file = "boto3-1.35.1-py3-none-any.whl", hash = "sha256:9fe1a97de136a89d2957e41e3591a7648a6e08d63165255b4cc69c5ba1e2a177"},
+    {file = "boto3-1.35.1.tar.gz", hash = "sha256:9028dd814c7f06bc92822d1fabdd8b68fe39b5993da5ca7acd7f7c6f7c7c332f"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.0,<1.36.0"
+botocore = ">=1.35.1,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -538,13 +538,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.0"
+version = "1.35.1"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.0-py3-none-any.whl", hash = "sha256:a3c96fe0b6afe7d00bad6ffbe73f2610953065fcdf0ed697eba4e1e5287cc84f"},
-    {file = "botocore-1.35.0.tar.gz", hash = "sha256:6ab2f5a5cbdaa639599e3478c65462c6d6a10173dc8b941bfc69b0c9eb548f45"},
+    {file = "botocore-1.35.1-py3-none-any.whl", hash = "sha256:bce42967d0f03b79cf25b2b6a36221fb2fb15f98e6fa4155b66b672ab192013b"},
+    {file = "botocore-1.35.1.tar.gz", hash = "sha256:e599cef6305e950a212f85adb86c1f4713d4b2678b3c2ec54df6b8e2dbe9ef2f"},
 ]
 
 [package.dependencies]
@@ -3084,13 +3084,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.28.1"
+version = "0.28.3"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json_repair-0.28.1-py3-none-any.whl", hash = "sha256:f1d3f2d1f47080a085fba5cca1f5780d1e514094f0fbc480c105bc2daa61abd8"},
-    {file = "json_repair-0.28.1.tar.gz", hash = "sha256:4e7bfdf4606bd124819b529ec767c0b511d9078823429367f1d9c6ef19df22e2"},
+    {file = "json_repair-0.28.3-py3-none-any.whl", hash = "sha256:d4e428308714c36b7dcce5349e285f598c2691ad670750f0b849930127d21d87"},
+    {file = "json_repair-0.28.3.tar.gz", hash = "sha256:72987221fcca196ccbb99528d0874baed1bcce4e11018bee9c68fe8bb971111a"},
 ]
 
 [[package]]
@@ -5141,13 +5141,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.41.0"
+version = "1.41.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.41.0-py3-none-any.whl", hash = "sha256:3b6cca4571667f3e0800442ef8f2bfa6a6f3301c51776bc7626159a4d81c242c"},
-    {file = "openai-1.41.0.tar.gz", hash = "sha256:26b81f39b49dce92ff5d30c373625ddb212c2f1050e1574e456d18423730cdd0"},
+    {file = "openai-1.41.1-py3-none-any.whl", hash = "sha256:56fb04105263f79559aff3ceea2e1dd16f8c5385e8238cb66cf0e6888fa8bfcf"},
+    {file = "openai-1.41.1.tar.gz", hash = "sha256:e38e376efd91e0d4db071e2a6517b6b4cac1c2a6fd63efdc5ec6be10c5967c1b"},
 ]
 
 [package.dependencies]
