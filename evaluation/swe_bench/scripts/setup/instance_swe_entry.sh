@@ -1,12 +1,6 @@
 #!/bin/bash
 
-# set -e
-
-# assert user name is `root`
-if [ "$USER" != "root" ]; then
-    echo "Error: This script is intended to be run by the 'root' user only." >&2
-    exit 1
-fi
+set -e
 
 source ~/.bashrc
 
