@@ -40,8 +40,8 @@ class LogBuffer:
     Synchronous buffer for Docker container logs.
 
     This class provides a thread-safe way to collect, store, and retrieve logs
-    from a Docker container. It uses a deque with a maximum length to store log
-    lines and provides methods for appending, retrieving, and clearing logs.
+    from a Docker container. It uses a list to store log lines and provides methods
+    for appending, retrieving, and clearing logs.
     """
 
     def __init__(self, container: docker.models.containers.Container):
@@ -93,7 +93,7 @@ class LogBuffer:
 
 class EventStreamRuntime(Runtime):
     """This runtime will subscribe the event stream.
-    When receive an event, it will send the event to od-runtime-client which run inside the docker environment.
+    When receive an event, it will send the event to runtime-client which run inside the docker environment.
     """
 
     container_name_prefix = 'openhands-sandbox-'
