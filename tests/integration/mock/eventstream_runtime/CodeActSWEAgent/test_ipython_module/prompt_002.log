@@ -608,7 +608,7 @@ Collecting pymsgbox==1.0.9
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7407 sha256=65f1e9e680d728456ab0dc9e66affd01d7ade89ec5a2a8c3aa80ab24a71247ac
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7407 sha256=cd01971247caa14ba55cb76b476c8c2659d10c03ec9da34ba3a8bdb4bb626438
   Stored in directory: /home/openhands/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox
@@ -618,5 +618,6 @@ Successfully installed pymsgbox-1.0.9
 [notice] To update, run: pip install --upgrade pip
 Note: you may need to restart the kernel to use updated packages.
 [Jupyter current working directory: /workspace]
+[Jupyter Python interpreter: /openhands/poetry/openhands-5O4_aCHf-py3.11/bin/python]
 
 ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.

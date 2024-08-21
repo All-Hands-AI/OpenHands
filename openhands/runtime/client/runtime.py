@@ -1,6 +1,7 @@
 import asyncio
 import os
 import tempfile
+import threading
 import uuid
 from zipfile import ZipFile
 
@@ -34,9 +35,65 @@ from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.runtime_build import build_runtime_image
 
 
+class LogBuffer:
+    """
+    Synchronous buffer for Docker container logs.
+
+    This class provides a thread-safe way to collect, store, and retrieve logs
+    from a Docker container. It uses a list to store log lines and provides methods
+    for appending, retrieving, and clearing logs.
+    """
+
+    def __init__(self, container: docker.models.containers.Container):
+        self.buffer: list[str] = []
+        self.lock = threading.Lock()
+        self.log_generator = container.logs(stream=True, follow=True)
+        self.log_stream_thread = threading.Thread(target=self.stream_logs)
+        self.log_stream_thread.daemon = True
+        self.log_stream_thread.start()
+        self._stop_event = threading.Event()
+
+    def append(self, log_line: str):
+        with self.lock:
+            self.buffer.append(log_line)
+
+    def get_and_clear(self) -> list[str]:
+        with self.lock:
+            logs = list(self.buffer)
+            self.buffer.clear()
+            return logs
+
+    def stream_logs(self):
+        """
+        Stream logs from the Docker container in a separate thread.
+
+        This method runs in its own thread to handle the blocking
+        operation of reading log lines from the Docker SDK's synchronous generator.
+        """
+        try:
+            for log_line in self.log_generator:
+                if self._stop_event.is_set():
+                    break
+                if log_line:
+                    self.append(log_line.decode('utf-8').rstrip())
+        except Exception as e:
+            logger.error(f'Error in stream_logs: {e}')
+
+    def __del__(self):
+        if self.log_stream_thread.is_alive():
+            logger.warn(
+                "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown."
+            )
+            self.close(timeout=5)
+
+    def close(self, timeout: float = 10.0):
+        self._stop_event.set()
+        self.log_stream_thread.join(timeout)
+
+
 class EventStreamRuntime(Runtime):
     """This runtime will subscribe the event stream.
-    When receive an event, it will send the event to od-runtime-client which run inside the docker environment.
+    When receive an event, it will send the event to runtime-client which run inside the docker environment.
     """
 
     container_name_prefix = 'openhands-sandbox-'
@@ -73,6 +130,9 @@ class EventStreamRuntime(Runtime):
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
         logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
+
+        # Buffer for container logs
+        self.log_buffer: LogBuffer | None = None
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         if self.config.sandbox.runtime_extra_deps:
@@ -174,6 +234,7 @@ class EventStreamRuntime(Runtime):
                 environment={'DEBUG': 'true'} if self.config.debug else None,
                 volumes=volumes,
             )
+            self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
             return container
         except Exception as e:
@@ -193,20 +254,24 @@ class EventStreamRuntime(Runtime):
     )
     async def _wait_until_alive(self):
         logger.debug('Getting container logs...')
-        container = self.docker_client.containers.get(self.container_name)
-        # get logs
-        _logs = container.logs(tail=10).decode('utf-8').split('\n')
-        # add indent
-        _logs = '\n'.join([f'    |{log}' for log in _logs])
-        logger.info(
-            '\n'
-            + '-' * 30
-            + 'Container logs (last 10 lines):'
-            + '-' * 30
-            + f'\n{_logs}'
-            + '\n'
-            + '-' * 90
-        )
+
+        # Print and clear the log buffer
+        assert (
+            self.log_buffer is not None
+        ), 'Log buffer is expected to be initialized when container is started'
+        logs = self.log_buffer.get_and_clear()
+        if logs:
+            formatted_logs = '\n'.join([f'    |{log}' for log in logs])
+            logger.info(
+                '\n'
+                + '-' * 30
+                + 'Container logs:'
+                + '-' * 30
+                + f'\n{formatted_logs}'
+                + '\n'
+                + '-' * 90
+            )
+
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:
                 if response.status == 200:
@@ -221,6 +286,9 @@ class EventStreamRuntime(Runtime):
         return self.config.workspace_mount_path_in_sandbox
 
     async def close(self, close_client: bool = True):
+        if self.log_buffer:
+            self.log_buffer.close()
+
         if self.session is not None and not self.session.closed:
             await self.session.close()
 

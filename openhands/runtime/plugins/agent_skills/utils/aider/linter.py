@@ -26,8 +26,11 @@ class Linter:
 
         self.languages = dict(
             python=self.py_lint,
+            javascript=self.ts_lint,
+            typescript=self.ts_lint,
         )
         self.all_lint_cmd = None
+        self.ts_installed = self.check_ts_installed()
 
     def set_linter(self, lang, cmd):
         if lang:
@@ -47,9 +50,15 @@ class Linter:
         cmd = cmd.split()
 
         process = subprocess.Popen(
-            cmd, cwd=self.root, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            cmd,
+            cwd=self.root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,  # Add stdin parameter
         )
-        stdout, _ = process.communicate()
+        stdout, _ = process.communicate(
+            input=code.encode()
+        )  # Pass the code to the process
         errors = stdout.decode().strip()
         self.returncode = process.returncode
         if self.returncode == 0:
@@ -109,6 +118,64 @@ class Linter:
             error = basic_lint(rel_fname, code)
         return error
 
+    def check_ts_installed(self):
+        """Check if TypeScript is installed."""
+        try:
+            subprocess.run(
+                ['tsc', '--version'],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
+    def ts_lint(self, fname, rel_fname, code):
+        """Use typescript compiler to check for errors. If TypeScript is not installed return None."""
+        if self.ts_installed:
+            tsc_cmd = 'tsc --noEmit --allowJs --checkJs --strict --noImplicitAny --strictNullChecks --strictFunctionTypes --strictBindCallApply --strictPropertyInitialization --noImplicitThis --alwaysStrict'
+            try:
+                tsc_res = self.run_cmd(tsc_cmd, rel_fname, code)
+                if tsc_res:
+                    # Parse the TSC output
+                    error_lines = []
+                    for line in tsc_res.text.split('\n'):
+                        # Extract lines and column numbers
+                        if ': error TS' in line or ': warning TS' in line:
+                            try:
+                                location_part = line.split('(')[1].split(')')[0]
+                                line_num, _ = map(int, location_part.split(','))
+                                error_lines.append(line_num)
+                            except (IndexError, ValueError):
+                                continue
+                    return LintResult(text=tsc_res.text, lines=error_lines)
+            except FileNotFoundError:
+                pass
+
+        # If still no errors, check for missing semicolons
+        lines = code.split('\n')
+        error_lines = []
+        for i, line in enumerate(lines):
+            stripped_line = line.strip()
+            if (
+                stripped_line
+                and not stripped_line.endswith(';')
+                and not stripped_line.endswith('{')
+                and not stripped_line.endswith('}')
+                and not stripped_line.startswith('//')
+            ):
+                error_lines.append(i + 1)
+
+        if error_lines:
+            error_message = (
+                f"{rel_fname}({error_lines[0]},1): error TS1005: ';' expected."
+            )
+            return LintResult(text=error_message, lines=error_lines)
+
+        # If tsc is not available return None (basic_lint causes other problems!)
+        return None
+
 
 def lint_python_compile(fname, code):
     try:
@@ -137,10 +204,7 @@ def lint_python_compile(fname, code):
 
 
 def basic_lint(fname, code):
-    """
-    Use tree-sitter to look for syntax errors, display them with tree context.
-    """
-
+    """Use tree-sitter to look for syntax errors, display them with tree context."""
     lang = filename_to_lang(fname)
     if not lang:
         return
@@ -151,11 +215,19 @@ def basic_lint(fname, code):
     errors = traverse_tree(tree.root_node)
     if not errors:
         return
-    return LintResult(text=f'{fname}:{errors[0]}', lines=errors)
+
+    error_messages = [
+        f'{fname}:{line}:{col}: {error_details}' for line, col, error_details in errors
+    ]
+    return LintResult(
+        text='\n'.join(error_messages), lines=[line for line, _, _ in errors]
+    )
 
 
 def extract_error_line_from(lint_error):
-    # moved from openhands.agentskills#_lint_file
+    # TODO: this is a temporary fix to extract the error line from the error message
+    # it should be replaced with a more robust/unified solution
+    first_error_line = None
     for line in lint_error.splitlines(True):
         if line.strip():
             # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
@@ -191,12 +263,14 @@ def tree_context(fname, code, line_nums):
     return output
 
 
-# Traverse the tree to find errors
 def traverse_tree(node):
+    """Traverses the tree to find errors"""
     errors = []
     if node.type == 'ERROR' or node.is_missing:
         line_no = node.start_point[0] + 1
-        errors.append(line_no)
+        col_no = node.start_point[1] + 1
+        error_type = 'Missing node' if node.is_missing else 'Syntax error'
+        errors.append((line_no, col_no, error_type))
 
     for child in node.children:
         errors += traverse_tree(child)
@@ -205,9 +279,7 @@ def traverse_tree(node):
 
 
 def main():
-    """
-    Main function to parse files provided as command line arguments.
-    """
+    """Main function to parse files provided as command line arguments."""
     if len(sys.argv) < 2:
         print('Usage: python linter.py <file1> <file2> ...')
         sys.exit(1)
