@@ -102,4 +102,4 @@ sandbox_user_id="1001"
 
 ## 讨论
 
-对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) 或 [Discord](https://discord.gg/ESHStjSjD4)，并提问！
+对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) 或 [Discord](https://discord.gg/ESHStjSjD4)，并提问！

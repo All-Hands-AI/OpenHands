@@ -55,13 +55,21 @@ export const useTerminal = (commands: Command[] = []) => {
         }
       });
       terminal.current.attachCustomKeyEventHandler((arg) => {
-        if (arg.ctrlKey && arg.code === "KeyV" && arg.type === "keydown") {
+        if (
+          (arg.ctrlKey || arg.metaKey) &&
+          arg.code === "KeyV" &&
+          arg.type === "keydown"
+        ) {
           navigator.clipboard.readText().then((text) => {
             terminal.current?.write(text);
             commandBuffer += text;
           });
         }
-        if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
+        if (
+          (arg.ctrlKey || arg.metaKey) &&
+          arg.code === "KeyC" &&
+          arg.type === "keydown"
+        ) {
           const selection = terminal.current?.getSelection();
           if (selection) {
             const clipboardItem = new ClipboardItem({

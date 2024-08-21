@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action, IPythonRunCellAction
 from openhands.events.observation import IPythonRunCellObservation
+from openhands.runtime.plugins.jupyter.execute_server import JupyterKernel
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-
-from .execute_server import JupyterKernel
 
 
 @dataclass
@@ -50,6 +49,10 @@ class JupyterPlugin(Plugin):
         logger.info(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
+        _obs = await self.run(
+            IPythonRunCellAction(code='import sys; print(sys.executable)')
+        )
+        self.python_interpreter_path = _obs.content.strip()
 
     async def _run(self, action: Action) -> IPythonRunCellObservation:
         """Internal method to run a code cell in the jupyter kernel."""

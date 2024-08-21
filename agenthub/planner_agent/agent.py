@@ -1,3 +1,4 @@
+from agenthub.planner_agent.prompt import get_prompt_and_images
 from agenthub.planner_agent.response_parser import PlannerResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -5,8 +6,6 @@ from openhands.core.config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import Action, AgentFinishAction
 from openhands.llm.llm import LLM
-
-from .prompt import get_prompt_and_images
 
 
 class PlannerAgent(Agent):

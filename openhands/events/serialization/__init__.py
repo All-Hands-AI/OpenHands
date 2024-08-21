@@ -1,12 +1,12 @@
-from .action import (
+from openhands.events.serialization.action import (
     action_from_dict,
 )
-from .event import (
+from openhands.events.serialization.event import (
     event_from_dict,
     event_to_dict,
     event_to_memory,
 )
-from .observation import (
+from openhands.events.serialization.observation import (
     observation_from_dict,
 )
 

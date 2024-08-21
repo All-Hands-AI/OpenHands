@@ -20,9 +20,8 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.server.session.agent import AgentSession
 from openhands.storage.files import FileStore
-
-from .agent import AgentSession
 
 DEL_DELT_SEC = 60 * 60 * 5
 

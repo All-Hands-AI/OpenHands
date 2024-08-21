@@ -14,7 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/openhands/runtime'
+    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime'
 )
 
 
@@ -144,7 +144,7 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
-    logger.info(
+    logger.debug(
         (
             f'===== Dockerfile content start =====\n'
             f'{dockerfile_content}\n'

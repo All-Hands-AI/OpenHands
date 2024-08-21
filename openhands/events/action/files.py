@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
-
-from .action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSecurityRisk
 
 
 @dataclass
