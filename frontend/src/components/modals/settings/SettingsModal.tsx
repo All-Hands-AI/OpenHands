@@ -25,6 +25,7 @@ import {
 import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
+import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -63,7 +64,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        setModels(await fetchModels());
+        const fetchedModels = await fetchModels();
+        console.log(fetchedModels);
+        console.log(organizeModelsAndProviders(fetchedModels));
+        setModels(fetchedModels);
         setAgents(await fetchAgents());
         setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
