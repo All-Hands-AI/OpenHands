@@ -189,7 +189,7 @@ jobs:
           # Print the full name of the image
           echo "Loaded Docker image: $image_name"
 
-          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/unit/test_runtime.py
+          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
