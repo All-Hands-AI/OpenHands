@@ -24,7 +24,7 @@ def _get_package_version():
     Returns:
     - The version specified in pyproject.toml under [tool.poetry]
     """
-    project_root = _dir_path()
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     pyproject_path = os.path.join(project_root, 'pyproject.toml')
     with open(pyproject_path, 'r') as f:
         pyproject_data = toml.load(f)
@@ -37,10 +37,8 @@ def _create_project_source_dist():
     Returns:
     - str: The path to the project tarball
     """
-    project_root = _dir_path()
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     logger.info(f'Using project root: {project_root}')
-
-
 
     # run "python -m build -s" on project_root to create project tarball
     result = subprocess.run(f'python -m build -s {project_root}', shell=True)
@@ -107,7 +105,7 @@ def _generate_dockerfile(
     """
     env = Environment(
         loader=FileSystemLoader(
-            searchpath=os.path.join(os.path.dirname(__file__).replace(' ', '\\ '), 'runtime_templates')
+            searchpath=os.path.join(os.path.dirname(__file__), 'runtime_templates')
         )
     )
     template = env.get_template('Dockerfile.j2')
@@ -368,10 +366,6 @@ def _build_sandbox_image(
         raise
 
     return target_image_hash_name
-
-
-def _dir_path():
-    return os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__))).replace(' ', '\\ ')
 
 
 if __name__ == '__main__':
