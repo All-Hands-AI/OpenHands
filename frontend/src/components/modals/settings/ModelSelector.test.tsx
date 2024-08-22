@@ -34,8 +34,9 @@ describe("ModelSelector", () => {
 
     await user.click(selector);
 
-    expect(screen.getByText("azure")).toBeInTheDocument();
-    expect(screen.getByText("vertex_ai")).toBeInTheDocument();
+    expect(screen.getByText("OpenAI")).toBeInTheDocument();
+    expect(screen.getByText("Azure")).toBeInTheDocument();
+    expect(screen.getByText("VertexAI")).toBeInTheDocument();
     expect(screen.getByText("cohere")).toBeInTheDocument();
   });
 
@@ -50,7 +51,7 @@ describe("ModelSelector", () => {
     const providerSelector = screen.getByLabelText("Provider");
     await user.click(providerSelector);
 
-    const vertexAI = screen.getByText("vertex_ai");
+    const vertexAI = screen.getByText("VertexAI");
     await user.click(vertexAI);
 
     expect(modelSelector).not.toBeDisabled();
@@ -64,7 +65,7 @@ describe("ModelSelector", () => {
     const providerSelector = screen.getByLabelText("Provider");
     await user.click(providerSelector);
 
-    const azureProvider = screen.getByText("azure");
+    const azureProvider = screen.getByText("Azure");
     await user.click(azureProvider);
 
     const modelSelector = screen.getByLabelText("Model");
@@ -74,7 +75,7 @@ describe("ModelSelector", () => {
     expect(screen.getByText("gpt-35-turbo")).toBeInTheDocument();
 
     await user.click(providerSelector);
-    const vertexProvider = screen.getByText("vertex_ai");
+    const vertexProvider = screen.getByText("VertexAI");
     await user.click(vertexProvider);
 
     await user.click(modelSelector);
@@ -95,7 +96,7 @@ describe("ModelSelector", () => {
     expect(id).toHaveTextContent("No model selected");
 
     await user.click(providerSelector);
-    await user.click(screen.getByText("azure"));
+    await user.click(screen.getByText("Azure"));
 
     expect(id).toHaveTextContent("azure/");
 
@@ -121,7 +122,7 @@ describe("ModelSelector", () => {
     const modelSelector = screen.getByLabelText("Model");
 
     await user.click(providerSelector);
-    await user.click(screen.getByText("azure"));
+    await user.click(screen.getByText("Azure"));
 
     await user.click(modelSelector);
     await user.click(screen.getByText("ada"));
@@ -144,4 +145,32 @@ describe("ModelSelector", () => {
     expect(onModelChange).toHaveBeenCalledTimes(3);
     expect(onModelChange).toHaveBeenCalledWith("cohere.command-r-v1:0");
   });
+
+  it("should clear the model ID when the provider is cleared", async () => {
+    const user = userEvent.setup();
+    const onModelChange = vi.fn();
+    render(<ModelSelector models={models} onModelChange={onModelChange} />);
+
+    const providerSelector = screen.getByLabelText("Provider");
+    const modelSelector = screen.getByLabelText("Model");
+
+    await user.click(providerSelector);
+    await user.click(screen.getByText("Azure"));
+
+    await user.click(modelSelector);
+    await user.click(screen.getByText("ada"));
+
+    expect(screen.getByTestId("model-id")).toHaveTextContent("azure/ada");
+
+    await user.clear(providerSelector);
+
+    expect(screen.getByTestId("model-id")).toHaveTextContent(
+      "No model selected",
+    );
+  });
+
+  it.todo(
+    "should display the verified models in the correct order",
+    async () => {},
+  );
 });

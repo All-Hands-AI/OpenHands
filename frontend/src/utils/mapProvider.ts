@@ -1,4 +1,4 @@
-const MAP_PROVIDER = {
+export const MAP_PROVIDER = {
   openai: "OpenAI",
   azure: "Azure",
   azure_ai: "Azure AI Studio",
@@ -25,4 +25,4 @@ const MAP_PROVIDER = {
 };
 
 export const mapProvider = (provider: keyof typeof MAP_PROVIDER) =>
-  MAP_PROVIDER[provider];
+  MAP_PROVIDER[provider] || provider;

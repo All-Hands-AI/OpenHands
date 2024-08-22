@@ -1,5 +1,11 @@
-import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
+import {
+  Autocomplete,
+  AutocompleteItem,
+  AutocompleteSection,
+} from "@nextui-org/react";
 import React from "react";
+import { mapProvider } from "#/utils/mapProvider";
+import { VERIFIED_PROVIDERS } from "#/utils/verified-models";
 
 interface ModelSelectorProps {
   models: Record<string, { separator: string; models: string[] }>;
@@ -26,6 +32,11 @@ export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
     onModelChange(fullModel);
   };
 
+  const clear = () => {
+    setSelectedProvider(null);
+    setLitellmId(null);
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <span className="text-center italic text-gray-500" data-testid="model-id">
@@ -35,19 +46,36 @@ export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
       <div className="flex flex-col gap-3">
         <Autocomplete
           label="Provider"
+          placeholder="Select a provider"
+          isClearable={false}
           onSelectionChange={(e) => {
             if (e?.toString()) handleChangeProvider(e.toString());
           }}
+          onInputChange={(value) => !value && clear()}
         >
-          {Object.keys(models).map((provider) => (
-            <AutocompleteItem key={provider} value={provider}>
-              {provider}
-            </AutocompleteItem>
-          ))}
+          <AutocompleteSection title="Verified">
+            {Object.keys(models)
+              .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
+              .map((provider) => (
+                <AutocompleteItem key={provider} value={provider}>
+                  {mapProvider(provider)}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+          <AutocompleteSection title="Others">
+            {Object.keys(models)
+              .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
+              .map((provider) => (
+                <AutocompleteItem key={provider} value={provider}>
+                  {mapProvider(provider)}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
         </Autocomplete>
 
         <Autocomplete
           label="Model"
+          placeholder="Select a model"
           onSelectionChange={(e) => {
             if (e?.toString()) handleChangeModel(e.toString());
           }}

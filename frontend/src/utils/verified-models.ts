@@ -1,3 +1,5 @@
+export const VERIFIED_PROVIDERS = ["openai", "azure", "anthropic", "palm"];
+
 export const VERIFIED_OPENAI_MODELS = [
   "gpt-4o",
   "gpt-4o-mini",
