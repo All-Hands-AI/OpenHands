@@ -25,9 +25,6 @@ jobs:
   ghcr_build:
     name: Build App Image
     runs-on: ubuntu-latest
-    outputs:
-      tags: ${{ steps.capture-tags.outputs.tags }}
-      last_tag: ${{ steps.capture-last-tag.outputs.last_tag }}
     permissions:
       contents: read
       packages: write
