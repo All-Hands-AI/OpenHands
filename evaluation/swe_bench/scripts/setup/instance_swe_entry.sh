@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 source ~/.bashrc
 
 SWEUTIL_DIR=/swe_util
