@@ -29,9 +29,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['runtime']
         base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
-        platform: ['amd64', 'arm64']
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
     steps:
@@ -72,9 +70,7 @@ jobs:
         run: |
           if [ -f 'containers/runtime/Dockerfile' ]; then
             echo 'Dockerfile detected, building runtime image...'
-            ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
-            # Capture the last tag to use in the artifact name
-            last_tag=$(cat tags.txt | awk '{print $NF}')
+            ./containers/build.sh runtime ${{ github.repository_owner }} --push
           else
             echo 'No Dockerfile detected which means an exact image is already built. Pulling the image and saving it to a tar file...'
             source containers/runtime/config.sh

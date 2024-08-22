@@ -3,7 +3,10 @@ set -eo pipefail
 
 image_name=$1
 org_name=$2
-platform=$3
+push=0
+if [[ $3 == "--push" ]]; then
+  push=1
+fi
 
 echo "Building: $image_name for platform: $platform"
 tags=()
@@ -68,16 +71,21 @@ for tag in "${tags[@]}"; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
 done
 
-output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
-echo "Output image will be saved to: $output_image"
+if [[ $push -eq 1 ]]; then
+  args+=" --push"
+  args+=" --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max"
+fi
 
 docker buildx build \
   $args \
   --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
-  --platform linux/$platform \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag_base-main \
+  --platform linux/amd64,linux/arm64 \
   --provenance=false \
   -f "$dir/Dockerfile" \
-  --output type=docker,dest="$output_image" \
   "$DOCKER_BASE_DIR"
 
-echo "${tags[*]}" > tags.txt
+output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
+echo "Output image will be saved to: $output_image"
+docker image save -o "$output_image" "$DOCKER_REPOSITORY:${tags[-1]}"
