@@ -74,7 +74,7 @@ jobs:
       - name: Build and export image
         id: build
         run: |
-          suffix=$(echo "${{ matrix.base_image }}" | cut -d '[:/]' -f 1)
+          suffix=$(echo "${{ matrix.base_image }}" | cut -d '[:]' -f 1 | cut -d '[/]' -f 1)
           ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
 
   # Run unit tests with the EventStream runtime Docker images
