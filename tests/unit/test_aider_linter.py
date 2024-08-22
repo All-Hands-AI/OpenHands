@@ -6,6 +6,10 @@ import pytest
 from openhands.runtime.plugins.agent_skills.utils.aider import Linter, LintResult
 
 
+def pytest_configure(config):
+    config.option.verbose = 1  # Enable verbose output (-v)
+
+
 def get_parent_directory(levels=3):
     current_file = os.path.abspath(__file__)
     parent_directory = current_file
