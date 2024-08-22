@@ -25,8 +25,6 @@ import {
 import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
-import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
-import { ModelSelector } from "./ModelSelector";
 
 interface SettingsProps {
   isOpen: boolean;
