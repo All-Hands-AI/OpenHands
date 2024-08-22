@@ -8,10 +8,13 @@ if [[ $3 == "--push" ]]; then
   push=1
 fi
 
-echo "Building: $image_name for platform: $platform"
+echo "Building: $image_name"
 tags=()
 
 OPENHANDS_BUILD_VERSION="dev"
+
+cache_tag_base="buildcache"
+cache_tag="$cache_tag_base"
 
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
@@ -21,10 +24,11 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     tags+=("$major_version" "$minor_version")
     tags+=("latest")
   fi
-  sanitized=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
-  OPENHANDS_BUILD_VERSION=$sanitized
-  tag=$(echo "$sanitized" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
-  tags+=("$tag")
+  sanitized_ref_name=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
+  OPENHANDS_BUILD_VERSION=$sanitized_ref_name
+  sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
+  tags+=("$sanitized_ref_name")
+  cache_tag+="-${sanitized_ref_name}"
 fi
 echo "Tags: ${tags[@]}"
 
@@ -75,6 +79,8 @@ if [[ $push -eq 1 ]]; then
   args+=" --push"
   args+=" --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max"
 fi
+
+echo "Args: $args"
 
 docker buildx build \
   $args \
