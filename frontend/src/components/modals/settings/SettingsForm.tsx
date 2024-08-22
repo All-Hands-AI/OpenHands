@@ -44,6 +44,7 @@ function SettingsForm({
   return (
     <>
       <ModelSelector
+        isDisabled={disabled}
         models={organizeModelsAndProviders(models)}
         onModelChange={onModelChange}
         defaultValue={settings.LLM_MODEL}

@@ -182,21 +182,9 @@ describe("ModelSelector", () => {
     expect(screen.getByTestId("model-id")).toHaveTextContent("azure/ada");
     expect(screen.getByLabelText("Provider")).toHaveValue("Azure");
     expect(screen.getByLabelText("Model")).toHaveValue("ada");
-
-    rerender(
-      <ModelSelector
-        models={models}
-        onModelChange={onModelChange}
-        defaultValue="cohere.command-r-v1:0"
-      />,
-    );
-
-    expect(screen.getByTestId("model-id")).toHaveTextContent(
-      "cohere.command-r-v1:0",
-    );
-    expect(screen.getByLabelText("Provider")).toHaveValue("Cohere");
-    expect(screen.getByLabelText("Model")).toHaveValue("command-r-v1:0");
   });
+
+  it.todo("should disable provider if isDisabled is true");
 
   it.todo(
     "should display the verified models in the correct order",

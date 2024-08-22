@@ -9,12 +9,14 @@ import { VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 
 interface ModelSelectorProps {
+  isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   onModelChange: (model: string) => void;
   defaultValue?: string;
 }
 
 export function ModelSelector({
+  isDisabled,
   models,
   onModelChange,
   defaultValue,
@@ -53,6 +55,7 @@ export function ModelSelector({
 
       <div className="flex flex-col gap-3">
         <Autocomplete
+          isDisabled={isDisabled}
           label="Provider"
           placeholder="Select a provider"
           isClearable={false}
@@ -88,7 +91,7 @@ export function ModelSelector({
           onSelectionChange={(e) => {
             if (e?.toString()) handleChangeModel(e.toString());
           }}
-          isDisabled={!selectedProvider}
+          isDisabled={isDisabled || !selectedProvider}
           defaultSelectedKey={
             extractModelAndProvider(defaultValue ?? "")?.model ?? undefined
           }
