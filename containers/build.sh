@@ -82,19 +82,18 @@ fi
 
 echo "Args: $args"
 
+echo "Image will be saved to: $output_image"
+output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
+
 docker buildx build \
   $args \
   --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag_base-main \
   --platform linux/amd64,linux/arm64 \
+  --output type=docker,dest="$output_image" \
   --provenance=false \
   -f "$dir/Dockerfile" \
   "$DOCKER_BASE_DIR"
-
-input_image="$DOCKER_REPOSITORY:${tags[-1]}"
-output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
-echo "Image $input_image will be saved to: $output_image"
-docker image save -o "$output_image" "$DOCKER_REPOSITORY:${tags[-1]}"
 
 echo "${tags[*]}" > tags.txt
