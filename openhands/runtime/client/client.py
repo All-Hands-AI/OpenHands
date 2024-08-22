@@ -210,7 +210,7 @@ class RuntimeClient:
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
 
-        # begin at the last occurence of '[PEXPECT_BEGIN]'.
+        # begin at the last occurrence of '[PEXPECT_BEGIN]'.
         # In multi-line bash commands, the prompt will be repeated
         # and the matched regex captures all of them
         # - we only want the last one (newest prompt)
