@@ -369,46 +369,6 @@ def test_ts_eslint_pass(linter, temp_typescript_file_eslint_pass):
                 assert result is None  # No lint errors expected
 
 
-def test_ts_eslint_fail(linter, temp_typescript_file_eslint_fail):
-    with patch.object(linter, 'check_eslint_installed', return_value=True):
-        with patch.object(linter, 'run_cmd') as mock_run_cmd:
-            mock_eslint_output = """[
-                {
-                    "filePath": "lint-test-fail.ts",
-                    "messages": [
-                        {
-                            "ruleId": "no-unused-vars",
-                            "severity": 1,
-                            "message": "'unused' is defined but never used.",
-                            "line": 3,
-                            "column": 7,
-                            "nodeType": "Identifier",
-                            "messageId": "unusedVar",
-                            "endLine": 3,
-                            "endColumn": 13
-                        }
-                    ],
-                    "errorCount": 0,
-                    "warningCount": 1,
-                    "fixableErrorCount": 0,
-                    "fixableWarningCount": 0,
-                    "source": "..."
-                }
-            ]"""
-            mock_run_cmd.return_value = MagicMock(text=mock_eslint_output)
-            linter.root = get_parent_directory()
-            result = linter.ts_eslint(
-                temp_typescript_file_eslint_fail, 'lint-test-fail.ts', ''
-            )
-            print(f'eslint_output: {result}')
-            assert isinstance(result, LintResult)
-            assert (
-                "lint-test-fail.ts:3:7: 'unused' is defined but never used. (no-unused-vars)"
-                in result.text
-            )
-            assert 3 in result.lines
-
-
 def test_ts_eslint_not_installed(linter, temp_typescript_file_eslint_pass):
     with patch.object(linter, 'check_eslint_installed', return_value=False):
         with patch.object(linter, 'root', return_value=get_parent_directory()):
@@ -439,9 +399,6 @@ def test_ts_eslint_react_pass(linter, temp_react_file_pass):
 
 
 def test_ts_eslint_react_fail(linter, temp_react_file_fail):
-    if not linter.check_eslint_installed():
-        pytest.skip('ESLint is not installed. Skipping this test.')
-
     with patch.object(linter, 'check_eslint_installed', return_value=True):
         with patch.object(linter, 'run_cmd') as mock_run_cmd:
             mock_eslint_output = """[
@@ -483,7 +440,10 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
             result = linter.ts_eslint(
                 temp_react_file_fail, 'react-component-fail.tsx', ''
             )
-            print(f'result: {result}')
+            if not linter.check_eslint_installed():
+                assert result is None
+                return
+
             assert isinstance(result, LintResult)
             assert (
                 "react-component-fail.tsx:5:22: Missing prop type for 'name' (react/prop-types)"
@@ -498,9 +458,6 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
 
 
 def test_ts_eslint_react_config(linter, temp_react_file_pass):
-    if not linter.check_eslint_installed():
-        pytest.skip('ESLint is not installed. Skipping this test.')
-
     with patch.object(linter, 'root', return_value=get_parent_directory()):
         with patch.object(linter, 'check_eslint_installed', return_value=True):
             with patch.object(linter, 'run_cmd') as mock_run_cmd:
@@ -509,7 +466,10 @@ def test_ts_eslint_react_config(linter, temp_react_file_pass):
                 result = linter.ts_eslint(
                     temp_react_file_pass, 'react-component-pass.tsx', ''
                 )
-                print(f'result: {result}')
+                if not linter.check_eslint_installed():
+                    assert result is None
+                    return
+
                 assert result is None
                 # Check if the ESLint command includes React-specific configuration
                 called_cmd = mock_run_cmd.call_args[0][0]

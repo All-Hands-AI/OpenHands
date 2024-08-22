@@ -38,8 +38,6 @@ class Linter:
         elif self.ts_installed:
             self.languages['javascript'] = self.ts_tsc_lint
             self.languages['typescript'] = self.ts_tsc_lint
-        else:
-            print('No linting tools installed\n')
         self.all_lint_cmd = None
 
     def set_linter(self, lang, cmd):
