@@ -16,6 +16,11 @@ OPENHANDS_BUILD_VERSION="dev"
 cache_tag_base="buildcache"
 cache_tag="$cache_tag_base"
 
+if [[ -n $GITHUB_SHA ]]; then
+  git_hash=$(git rev-parse --short "$GITHUB_SHA")
+  tags+=("$git_hash")
+fi
+
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
   if [[ $GITHUB_REF_NAME =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
