@@ -399,83 +399,81 @@ def test_ts_eslint_react_pass(linter, temp_react_file_pass):
 
 
 def test_ts_eslint_react_fail(linter, temp_react_file_fail):
-    with patch.object(linter, 'check_eslint_installed', return_value=True):
-        with patch.object(linter, 'run_cmd') as mock_run_cmd:
-            mock_eslint_output = """[
-                {
-                    "filePath": "react-component-fail.tsx",
-                    "messages": [
-                        {
-                            "ruleId": "react/prop-types",
-                            "severity": 1,
-                            "message": "Missing prop type for 'name'",
-                            "line": 5,
-                            "column": 22,
-                            "nodeType": "Identifier",
-                            "messageId": "missingPropType",
-                            "endLine": 5,
-                            "endColumn": 26
-                        },
-                        {
-                            "ruleId": "no-console",
-                            "severity": 1,
-                            "message": "Unexpected console statement.",
-                            "line": 7,
-                            "column": 29,
-                            "nodeType": "MemberExpression",
-                            "messageId": "unexpected",
-                            "endLine": 7,
-                            "endColumn": 40
-                        }
-                    ],
-                    "errorCount": 0,
-                    "warningCount": 2,
-                    "fixableErrorCount": 0,
-                    "fixableWarningCount": 0,
-                    "source": "..."
-                }
-            ]"""
-            mock_run_cmd.return_value = MagicMock(text=mock_eslint_output)
-            linter.root = get_parent_directory()
-            result = linter.ts_eslint(
-                temp_react_file_fail, 'react-component-fail.tsx', ''
-            )
-            if not linter.check_eslint_installed():
-                assert result is None
-                return
+    if not linter.check_eslint_installed():
+        pytest.skip('ESLint is not installed. Skipping this test.')
 
-            assert isinstance(result, LintResult)
-            assert (
-                "react-component-fail.tsx:5:22: Missing prop type for 'name' (react/prop-types)"
-                in result.text
-            )
-            assert (
-                'react-component-fail.tsx:7:29: Unexpected console statement. (no-console)'
-                in result.text
-            )
-            assert 5 in result.lines
-            assert 7 in result.lines
+    with patch.object(linter, 'run_cmd') as mock_run_cmd:
+        mock_eslint_output = """[
+            {
+                "filePath": "react-component-fail.tsx",
+                "messages": [
+                    {
+                        "ruleId": "react/prop-types",
+                        "severity": 1,
+                        "message": "Missing prop type for 'name'",
+                        "line": 5,
+                        "column": 22,
+                        "nodeType": "Identifier",
+                        "messageId": "missingPropType",
+                        "endLine": 5,
+                        "endColumn": 26
+                    },
+                    {
+                        "ruleId": "no-console",
+                        "severity": 1,
+                        "message": "Unexpected console statement.",
+                        "line": 7,
+                        "column": 29,
+                        "nodeType": "MemberExpression",
+                        "messageId": "unexpected",
+                        "endLine": 7,
+                        "endColumn": 40
+                    }
+                ],
+                "errorCount": 0,
+                "warningCount": 2,
+                "fixableErrorCount": 0,
+                "fixableWarningCount": 0,
+                "source": "..."
+            }
+        ]"""
+        mock_run_cmd.return_value = MagicMock(text=mock_eslint_output)
+        linter.root = get_parent_directory()
+        result = linter.ts_eslint(temp_react_file_fail, 'react-component-fail.tsx', '')
+        if not linter.check_eslint_installed():
+            assert result is None
+            return
+
+        assert isinstance(result, LintResult)
+        assert (
+            "react-component-fail.tsx:5:22: Missing prop type for 'name' (react/prop-types)"
+            in result.text
+        )
+        assert (
+            'react-component-fail.tsx:7:29: Unexpected console statement. (no-console)'
+            in result.text
+        )
+        assert 5 in result.lines
+        assert 7 in result.lines
 
 
 def test_ts_eslint_react_config(linter, temp_react_file_pass):
-    with patch.object(linter, 'root', return_value=get_parent_directory()):
-        with patch.object(linter, 'check_eslint_installed', return_value=True):
-            with patch.object(linter, 'run_cmd') as mock_run_cmd:
-                mock_run_cmd.return_value = MagicMock(text='[]')  # Empty ESLint output
-                linter.root = get_parent_directory()
-                result = linter.ts_eslint(
-                    temp_react_file_pass, 'react-component-pass.tsx', ''
-                )
-                if not linter.check_eslint_installed():
-                    assert result is None
-                    return
+    if not linter.check_eslint_installed():
+        pytest.skip('ESLint is not installed. Skipping this test.')
 
-                assert result is None
-                # Check if the ESLint command includes React-specific configuration
-                called_cmd = mock_run_cmd.call_args[0][0]
-                assert 'resolve-plugins-relative-to' in called_cmd
-                # Additional assertions to ensure React configuration is present
-                assert '--config /tmp/' in called_cmd
+    with patch.object(linter, 'root', return_value=get_parent_directory()):
+        with patch.object(linter, 'run_cmd') as mock_run_cmd:
+            mock_run_cmd.return_value = MagicMock(text='[]')  # Empty ESLint output
+            linter.root = get_parent_directory()
+            result = linter.ts_eslint(
+                temp_react_file_pass, 'react-component-pass.tsx', ''
+            )
+            assert result is None
+            # Check if the ESLint command includes React-specific configuration
+            called_cmd = mock_run_cmd.call_args[0][0]
+            assert 'resolve-plugins-relative-to' in called_cmd
+            # Additional assertions to ensure React configuration is present
+            assert '--config /tmp/' in called_cmd
 
 
 def test_ts_eslint_react_missing_semicolon(linter, tmp_path):
