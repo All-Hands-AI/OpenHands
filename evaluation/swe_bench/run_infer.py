@@ -198,8 +198,9 @@ async def initialize_runtime(
         assert obs.exit_code == 0
     else:
         action = CmdRunAction(command='source /swe_util/swe_entry.sh')
+        action.timeout = 1800
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action, timeout=600)
+        obs = await runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.exit_code == 0
@@ -329,6 +330,8 @@ async def process_instance(
     logger.info(
         f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
     )
+
+    await runtime.close()
     # ==========================================
 
     # ======= Attempt to evaluate the agent's edits =======
