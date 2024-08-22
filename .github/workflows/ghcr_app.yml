@@ -79,7 +79,7 @@ jobs:
           path: /tmp/${{ matrix.image }}_${{ steps.capture-last-tag.outputs.last_tag }}_${{ matrix.platform }}.tar
           retention-days: 14
 
-  # Push the OpenHands and sandbox Docker images to the ghcr.io repository
+  # Push the OpenHands Docker images to the ghcr.io repository
   ghcr_push:
     name: Push App Image
     runs-on: ubuntu-latest
