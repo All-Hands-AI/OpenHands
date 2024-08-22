@@ -7,9 +7,9 @@ push=0
 if [[ $3 == "--push" ]]; then
   push=1
 fi
+tag_suffix=$4
 
 echo "Building: $image_name"
-tags=()
 
 OPENHANDS_BUILD_VERSION="dev"
 
@@ -35,6 +35,14 @@ if [[ -n $GITHUB_REF_NAME ]]; then
   tags+=("$sanitized_ref_name")
   cache_tag+="-${sanitized_ref_name}"
 fi
+
+if [[ -n $tag_suffix ]]; then
+  cache_tag+="-${tag_suffix}"
+  for i in "${!tags[@]}"; do
+    tags[$i]="${tags[$i]}-$tag_suffix"
+  done
+fi
+
 echo "Tags: ${tags[@]}"
 
 if [[ "$image_name" == "openhands" ]]; then

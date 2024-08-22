@@ -74,7 +74,8 @@ jobs:
       - name: Build and export image
         id: build
         run: |
-          ./containers/build.sh runtime ${{ github.repository_owner }} --push
+          suffix=$(echo "${{ matrix.base_image }}" | cut -d '[:/]' -f 1)
+          ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
 
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
@@ -104,7 +105,7 @@ jobs:
       - name: Load Runtime image and run runtime tests
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash-python
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
@@ -138,7 +139,7 @@ jobs:
       - name: Run integration tests
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash-python
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
