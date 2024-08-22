@@ -63,8 +63,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        setModels(await fetchModels());
-        setAgents(await fetchAgents());
+        const fetchedModels = await fetchModels();
+        const fetchedAgents = await fetchAgents();
+        setModels(fetchedModels);
+        setAgents(fetchedAgents);
         setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
         toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));

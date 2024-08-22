@@ -5,7 +5,7 @@ import {
 } from "@nextui-org/react";
 import React from "react";
 import { mapProvider } from "#/utils/mapProvider";
-import { VERIFIED_PROVIDERS } from "#/utils/verified-models";
+import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 
 interface ModelSelectorProps {
@@ -96,17 +96,24 @@ export function ModelSelector({
             extractModelAndProvider(defaultModel ?? "")?.model ?? undefined
           }
         >
-          {selectedProvider ? (
-            models[selectedProvider].models.map((model) => (
-              <AutocompleteItem key={model} value={model}>
-                {model}
-              </AutocompleteItem>
-            ))
-          ) : (
-            <AutocompleteItem key="" value="">
-              Select a model
-            </AutocompleteItem>
-          )}
+          <AutocompleteSection title="Verified">
+            {models[selectedProvider || ""]?.models
+              .filter((model) => VERIFIED_MODELS.includes(model))
+              .map((model) => (
+                <AutocompleteItem key={model} value={model}>
+                  {model}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+          <AutocompleteSection title="Others">
+            {models[selectedProvider || ""]?.models
+              .filter((model) => !VERIFIED_MODELS.includes(model))
+              .map((model) => (
+                <AutocompleteItem key={model} value={model}>
+                  {model}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
         </Autocomplete>
       </div>
     </div>
