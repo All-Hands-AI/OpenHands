@@ -6,6 +6,10 @@ import { ModelSelector } from "./ModelSelector";
 
 describe("ModelSelector", () => {
   const models = {
+    openai: {
+      separator: "/",
+      models: ["gpt-4o", "gpt-3.5-turbo"],
+    },
     azure: {
       separator: "/",
       models: ["ada", "gpt-35-turbo"],

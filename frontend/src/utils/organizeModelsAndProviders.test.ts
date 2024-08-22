@@ -39,9 +39,13 @@ test("organizeModelsAndProviders", () => {
       separator: "/",
       models: ["@cf/mistral/mistral-7b-instruct-v0.1"],
     },
+    openai: {
+      separator: "/",
+      models: ["gpt-4o", "gpt-3.5-turbo"],
+    },
     other: {
       separator: "",
-      models: ["gpt-4o", "together-ai-21.1b-41b", "gpt-3.5-turbo"],
+      models: ["together-ai-21.1b-41b"],
     },
   });
 });

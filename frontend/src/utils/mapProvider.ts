@@ -1,4 +1,5 @@
 const MAP_PROVIDER = {
+  openai: "OpenAI",
   azure: "Azure",
   azure_ai: "Azure AI Studio",
   vertex_ai: "VertexAI",
