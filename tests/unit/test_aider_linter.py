@@ -426,6 +426,9 @@ def test_ts_eslint_run_cmd_error(linter, temp_typescript_file_eslint_pass):
 
 
 def test_ts_eslint_react_pass(linter, temp_react_file_pass):
+    if not linter.check_eslint_installed():
+        pytest.skip('ESLint is not installed. Skipping this test.')
+
     with patch.object(linter, 'check_eslint_installed', return_value=True):
         with patch.object(linter, 'run_cmd') as mock_run_cmd:
             mock_run_cmd.return_value = MagicMock(text='[]')  # Empty ESLint output
@@ -436,6 +439,9 @@ def test_ts_eslint_react_pass(linter, temp_react_file_pass):
 
 
 def test_ts_eslint_react_fail(linter, temp_react_file_fail):
+    if not linter.check_eslint_installed():
+        pytest.skip('ESLint is not installed. Skipping this test.')
+
     with patch.object(linter, 'check_eslint_installed', return_value=True):
         with patch.object(linter, 'run_cmd') as mock_run_cmd:
             mock_eslint_output = """[
@@ -492,6 +498,9 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
 
 
 def test_ts_eslint_react_config(linter, temp_react_file_pass):
+    if not linter.check_eslint_installed():
+        pytest.skip('ESLint is not installed. Skipping this test.')
+
     with patch.object(linter, 'root', return_value=get_parent_directory()):
         with patch.object(linter, 'check_eslint_installed', return_value=True):
             with patch.object(linter, 'run_cmd') as mock_run_cmd:
