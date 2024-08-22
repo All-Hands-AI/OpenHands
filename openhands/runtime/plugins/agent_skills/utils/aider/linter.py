@@ -26,14 +26,19 @@ class Linter:
         self.encoding = encoding
         self.root = root
 
-        self.languages = dict(
-            python=self.py_lint,
-            javascript=self.ts_tsc_lint,
-            typescript=self.ts_eslint,
-        )
-        self.all_lint_cmd = None
         self.ts_installed = self.check_ts_installed()
         self.eslint_installed = self.check_eslint_installed()
+
+        self.languages = dict(
+            python=self.py_lint,
+        )
+        if self.eslint_installed:
+            self.languages['javascript'] = self.ts_eslint
+            self.languages['typescript'] = self.ts_eslint
+        else:
+            self.languages['javascript'] = self.ts_tsc_lint
+            self.languages['typescript'] = self.ts_tsc_lint
+        self.all_lint_cmd = None
 
     def set_linter(self, lang, cmd):
         if lang:
@@ -152,69 +157,77 @@ class Linter:
 
     def ts_eslint(self, fname, rel_fname, code):
         """Use ESLint to check for errors. If ESLint is not installed return None."""
-        if self.eslint_installed:
-            # Enhanced ESLint configuration with React support
-            eslint_config = {
-                'env': {'es6': True, 'browser': True, 'node': True},
-                'extends': ['eslint:recommended', 'plugin:react/recommended'],
-                'parserOptions': {
-                    'ecmaVersion': 2021,
-                    'sourceType': 'module',
-                    'ecmaFeatures': {'jsx': True},
-                },
-                'plugins': ['react'],
-                'rules': {
-                    'no-unused-vars': 'warn',
-                    'no-console': 'off',
-                    'react/prop-types': 'warn',
-                    'semi': ['error', 'always'],
-                },
-                'settings': {'react': {'version': 'detect'}},
-            }
+        if not self.eslint_installed:
+            return None
 
-            # Write config to a temporary file
-            with tempfile.NamedTemporaryFile(
-                mode='w', suffix='.json', delete=False
-            ) as temp_config:
-                json.dump(eslint_config, temp_config)
-                temp_config_path = temp_config.name
+        # Enhanced ESLint configuration with React support
+        eslint_config = {
+            'env': {'es6': True, 'browser': True, 'node': True},
+            'extends': ['eslint:recommended', 'plugin:react/recommended'],
+            'parserOptions': {
+                'ecmaVersion': 2021,
+                'sourceType': 'module',
+                'ecmaFeatures': {'jsx': True},
+            },
+            'plugins': ['react'],
+            'rules': {
+                'no-unused-vars': 'warn',
+                'no-console': 'off',
+                'react/prop-types': 'warn',
+                'semi': ['error', 'always'],
+            },
+            'settings': {'react': {'version': 'detect'}},
+        }
 
-            # Specify the custom plugin directory
+        # Write config to a temporary file
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.json', delete=False
+        ) as temp_config:
+            json.dump(eslint_config, temp_config)
+            temp_config_path = temp_config.name
+
+        # Specify the custom plugin directory
+        if self.root:
             plugin_path = f'{self.root}/frontend/node_modules/'
+        else:
+            # If we can't determine a valid plugin path, skip the ESLint check
+            os.unlink(temp_config_path)
+            return None
 
-            eslint_cmd = f'eslint --no-eslintrc --config {temp_config_path} --resolve-plugins-relative-to {plugin_path} --format json'
-            eslint_res = ''
-            try:
-                eslint_res = self.run_cmd(eslint_cmd, rel_fname, code)
-                if eslint_res and hasattr(eslint_res, 'text'):
-                    # Parse the ESLint JSON output
-                    eslint_output = json.loads(eslint_res.text)
-                    error_lines = []
-                    error_messages = []
-                    for result in eslint_output:
-                        for message in result.get('messages', []):
-                            line = message.get('line', 0)
-                            error_lines.append(line)
-                            error_messages.append(
-                                f"{rel_fname}:{line}:{message.get('column', 0)}: {message.get('message')} ({message.get('ruleId')})"
-                            )
+        eslint_cmd = f'eslint --no-eslintrc --config {temp_config_path} --resolve-plugins-relative-to {plugin_path} --format json'
+        eslint_res = ''
+        try:
+            eslint_res = self.run_cmd(eslint_cmd, rel_fname, code)
+            if eslint_res and hasattr(eslint_res, 'text'):
+                # Parse the ESLint JSON output
+                eslint_output = json.loads(eslint_res.text)
+                error_lines = []
+                error_messages = []
+                for result in eslint_output:
+                    for message in result.get('messages', []):
+                        line = message.get('line', 0)
+                        error_lines.append(line)
+                        error_messages.append(
+                            f"{rel_fname}:{line}:{message.get('column', 0)}: {message.get('message')} ({message.get('ruleId')})"
+                        )
 
-                    # Remove the temporary config file
-                    os.unlink(temp_config_path)
-
-                    # Return None if there are no errors or warnings
-                    if not error_messages:
-                        return None
-
-                    return LintResult(text='\n'.join(error_messages), lines=error_lines)
-            except json.JSONDecodeError as e:
                 # Remove the temporary config file
                 os.unlink(temp_config_path)
-                return LintResult(text=f'\nJSONDecodeError: {e}', lines=[eslint_res])
-            except FileNotFoundError:
-                # Remove the temporary config file
-                os.unlink(temp_config_path)
-                return None
+
+                # Return None if there are no errors or warnings
+                if not error_messages:
+                    return None
+
+                return LintResult(text='\n'.join(error_messages), lines=error_lines)
+        except json.JSONDecodeError as e:
+            os.unlink(temp_config_path)
+            return LintResult(text=f'\nJSONDecodeError: {e}', lines=[])
+        except FileNotFoundError:
+            os.unlink(temp_config_path)
+            return None
+        except Exception as e:
+            os.unlink(temp_config_path)
+            return LintResult(text=f'\nUnexpected error: {str(e)}', lines=[])
 
         # If ESLint is not available or fails, return None
         return None

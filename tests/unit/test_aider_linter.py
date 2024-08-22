@@ -391,6 +391,7 @@ def test_ts_eslint_fail(linter, temp_typescript_file_eslint_fail):
                 }
             ]"""
             mock_run_cmd.return_value = MagicMock(text=mock_eslint_output)
+            linter.root = get_parent_directory()
             result = linter.ts_eslint(
                 temp_typescript_file_eslint_fail, 'lint-test-fail.ts', ''
             )
@@ -466,6 +467,7 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
                 }
             ]"""
             mock_run_cmd.return_value = MagicMock(text=mock_eslint_output)
+            linter.root = get_parent_directory()
             result = linter.ts_eslint(
                 temp_react_file_fail, 'react-component-fail.tsx', ''
             )
@@ -487,6 +489,7 @@ def test_ts_eslint_react_config(linter, temp_react_file_pass):
         with patch.object(linter, 'check_eslint_installed', return_value=True):
             with patch.object(linter, 'run_cmd') as mock_run_cmd:
                 mock_run_cmd.return_value = MagicMock(text='[]')  # Empty ESLint output
+                linter.root = get_parent_directory()
                 result = linter.ts_eslint(
                     temp_react_file_pass, 'react-component-pass.tsx', ''
                 )
