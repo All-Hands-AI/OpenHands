@@ -199,7 +199,7 @@ async def initialize_runtime(
     else:
         action = CmdRunAction(command='source /swe_util/swe_entry.sh')
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = await runtime.run_action(action, timeout=600)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.exit_code == 0
