@@ -169,7 +169,7 @@ describe("ModelSelector", () => {
     );
   });
 
-  it.only("should have a default value if passed", async () => {
+  it("should have a default value if passed", async () => {
     const onModelChange = vi.fn();
     render(
       <ModelSelector
