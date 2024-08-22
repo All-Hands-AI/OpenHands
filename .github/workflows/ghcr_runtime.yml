@@ -1,10 +1,12 @@
 # Workflow that builds, tests and then pushes the runtime docker images to the ghcr.io repository
 name: Build, Test and Publish Runtime Image
 
-# Always run on "main"
-# Always run on tags
-# Always run on PRs
-# Can also be triggered manually
+# Only run one workflow of the same group at a time.
+# There can be at most one running and one pending job in a concurrency group at any time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   push:
     branches:
