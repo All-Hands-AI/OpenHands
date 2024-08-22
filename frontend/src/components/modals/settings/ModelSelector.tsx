@@ -6,16 +6,24 @@ import {
 import React from "react";
 import { mapProvider } from "#/utils/mapProvider";
 import { VERIFIED_PROVIDERS } from "#/utils/verified-models";
+import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 
 interface ModelSelectorProps {
   models: Record<string, { separator: string; models: string[] }>;
   onModelChange: (model: string) => void;
+  defaultValue?: string;
 }
 
-export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
-  const [litellmId, setLitellmId] = React.useState<string | null>(null);
+export function ModelSelector({
+  models,
+  onModelChange,
+  defaultValue,
+}: ModelSelectorProps) {
+  const [litellmId, setLitellmId] = React.useState<string | null>(
+    defaultValue ?? null,
+  );
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
-    null,
+    extractModelAndProvider(defaultValue ?? "")?.provider ?? null,
   );
 
   const handleChangeProvider = (provider: string) => {
@@ -52,6 +60,7 @@ export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
             if (e?.toString()) handleChangeProvider(e.toString());
           }}
           onInputChange={(value) => !value && clear()}
+          defaultSelectedKey={selectedProvider ?? undefined}
         >
           <AutocompleteSection title="Verified">
             {Object.keys(models)
@@ -80,6 +89,9 @@ export function ModelSelector({ models, onModelChange }: ModelSelectorProps) {
             if (e?.toString()) handleChangeModel(e.toString());
           }}
           isDisabled={!selectedProvider}
+          defaultSelectedKey={
+            extractModelAndProvider(defaultValue ?? "")?.model ?? undefined
+          }
         >
           {selectedProvider ? (
             models[selectedProvider].models.map((model) => (

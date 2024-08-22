@@ -6,6 +6,8 @@ import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
+import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import { ModelSelector } from "./ModelSelector";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -41,16 +43,10 @@ function SettingsForm({
 
   return (
     <>
-      <AutocompleteCombobox
-        ariaLabel="model"
-        items={models.map((model) => ({ value: model, label: model }))}
-        defaultKey={settings.LLM_MODEL}
-        onChange={(e) => {
-          onModelChange(e);
-        }}
-        tooltip={t(I18nKey.SETTINGS$MODEL_TOOLTIP)}
-        allowCustomValue // user can type in a custom LLM model that is not in the list
-        disabled={disabled}
+      <ModelSelector
+        models={organizeModelsAndProviders(models)}
+        onModelChange={onModelChange}
+        defaultValue={settings.LLM_MODEL}
       />
       <Input
         label="API Key"

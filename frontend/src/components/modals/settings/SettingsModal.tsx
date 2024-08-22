@@ -65,10 +65,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        const fetchedModels = await fetchModels();
-        console.log(fetchedModels);
-        console.log(organizeModelsAndProviders(fetchedModels));
-        setModels(fetchedModels);
+        setModels(await fetchModels());
         setAgents(await fetchAgents());
         setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
@@ -185,10 +182,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         },
       ]}
     >
-      <ModelSelector
-        models={organizeModelsAndProviders(models)}
-        onModelChange={handleModelChange}
-      />
       {loading && <Spinner />}
       {!loading && (
         <SettingsForm
