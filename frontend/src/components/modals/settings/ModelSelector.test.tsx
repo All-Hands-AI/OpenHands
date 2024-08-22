@@ -175,7 +175,7 @@ describe("ModelSelector", () => {
       <ModelSelector
         models={models}
         onModelChange={onModelChange}
-        defaultValue="azure/ada"
+        defaultModel="azure/ada"
       />,
     );
 

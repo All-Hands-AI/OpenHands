@@ -12,20 +12,20 @@ interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   onModelChange: (model: string) => void;
-  defaultValue?: string;
+  defaultModel?: string;
 }
 
 export function ModelSelector({
   isDisabled,
   models,
   onModelChange,
-  defaultValue,
+  defaultModel,
 }: ModelSelectorProps) {
   const [litellmId, setLitellmId] = React.useState<string | null>(
-    defaultValue ?? null,
+    defaultModel ?? null,
   );
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
-    extractModelAndProvider(defaultValue ?? "")?.provider ?? null,
+    extractModelAndProvider(defaultModel ?? "")?.provider ?? null,
   );
 
   const handleChangeProvider = (provider: string) => {
@@ -48,7 +48,7 @@ export function ModelSelector({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div data-testid="model-selector" className="flex flex-col gap-2">
       <span className="text-center italic text-gray-500" data-testid="model-id">
         {litellmId?.replace("other", "") || "No model selected"}
       </span>
@@ -93,7 +93,7 @@ export function ModelSelector({
           }}
           isDisabled={isDisabled || !selectedProvider}
           defaultSelectedKey={
-            extractModelAndProvider(defaultValue ?? "")?.model ?? undefined
+            extractModelAndProvider(defaultModel ?? "")?.model ?? undefined
           }
         >
           {selectedProvider ? (

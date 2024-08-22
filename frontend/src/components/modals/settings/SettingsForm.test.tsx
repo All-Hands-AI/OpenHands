@@ -6,6 +6,8 @@ import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
+const onCustomModelChangeMock = vi.fn();
+const onModelTypeChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
@@ -19,6 +21,8 @@ const renderSettingsForm = (settings?: Settings) => {
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
+          CUSTOM_LLM_MODEL: "",
+          USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -30,6 +34,8 @@ const renderSettingsForm = (settings?: Settings) => {
       agents={["agent1", "agent2", "agent3"]}
       securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
+      onCustomModelChange={onCustomModelChangeMock}
+      onModelTypeChange={onModelTypeChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
@@ -65,6 +71,8 @@ describe("SettingsForm", () => {
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "gpt-3.5-turbo",
+      CUSTOM_LLM_MODEL: "",
+      USING_CUSTOM_MODEL: false,
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -92,6 +100,8 @@ describe("SettingsForm", () => {
       <SettingsForm
         settings={{
           LLM_MODEL: "gpt-4o",
+          CUSTOM_LLM_MODEL: "",
+          USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -103,6 +113,8 @@ describe("SettingsForm", () => {
         securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
         onModelChange={onModelChangeMock}
+        onCustomModelChange={onCustomModelChangeMock}
+        onModelTypeChange={onModelTypeChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
@@ -171,6 +183,78 @@ describe("SettingsForm", () => {
       });
 
       expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
+    });
+  });
+
+  describe("Setting a custom LLM model", () => {
+    it("should display the fetched models by default", () => {
+      renderSettingsForm();
+
+      const modelSelector = screen.getByTestId("model-selector");
+      expect(modelSelector).toBeInTheDocument();
+
+      const customModelInput = screen.queryByTestId("custom-model-input");
+      expect(customModelInput).not.toBeInTheDocument();
+    });
+
+    it("should switch to the custom model input when the custom model toggle is clicked", async () => {
+      const user = userEvent.setup();
+      renderSettingsForm();
+
+      const customModelToggle = screen.getByTestId("custom-model-toggle");
+      await user.click(customModelToggle);
+
+      const modelSelector = screen.queryByTestId("model-selector");
+      expect(modelSelector).not.toBeInTheDocument();
+
+      const customModelInput = screen.getByTestId("custom-model-input");
+      expect(customModelInput).toBeInTheDocument();
+    });
+
+    it("should call the onCustomModelChange handler when the custom model input changes", async () => {
+      const user = userEvent.setup();
+      renderSettingsForm();
+
+      const customModelToggle = screen.getByTestId("custom-model-toggle");
+      await user.click(customModelToggle);
+
+      const customModelInput = screen.getByTestId("custom-model-input");
+      await userEvent.type(customModelInput, "my/custom-model");
+
+      expect(onCustomModelChangeMock).toHaveBeenCalledWith("my/custom-model");
+      expect(onModelTypeChangeMock).toHaveBeenCalledWith("custom");
+    });
+
+    it("should have custom model switched if using custom model", () => {
+      renderWithProviders(
+        <SettingsForm
+          settings={{
+            LLM_MODEL: "gpt-4o",
+            CUSTOM_LLM_MODEL: "CUSTOM_MODEL",
+            USING_CUSTOM_MODEL: true,
+            AGENT: "agent1",
+            LANGUAGE: "en",
+            LLM_API_KEY: "sk-...",
+            CONFIRMATION_MODE: true,
+            SECURITY_ANALYZER: "analyzer1",
+          }}
+          models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
+          agents={["agent1", "agent2", "agent3"]}
+          securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
+          disabled
+          onModelChange={onModelChangeMock}
+          onCustomModelChange={onCustomModelChangeMock}
+          onModelTypeChange={onModelTypeChangeMock}
+          onAgentChange={onAgentChangeMock}
+          onLanguageChange={onLanguageChangeMock}
+          onAPIKeyChange={onAPIKeyChangeMock}
+          onConfirmationModeChange={onConfirmationModeChangeMock}
+          onSecurityAnalyzerChange={onSecurityAnalyzerChangeMock}
+        />,
+      );
+
+      const customModelToggle = screen.getByTestId("custom-model-toggle");
+      expect(customModelToggle).toHaveAttribute("aria-checked", "true");
     });
   });
 });
