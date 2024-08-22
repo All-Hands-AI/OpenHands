@@ -14,7 +14,7 @@ export type Settings = {
 type SettingsInput = Settings[keyof Settings];
 
 export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "gpt-4o",
+  LLM_MODEL: "openai/gpt-4o",
   CUSTOM_LLM_MODEL: "",
   USING_CUSTOM_MODEL: false,
   AGENT: "CodeActAgent",

@@ -21,15 +21,26 @@ export function ModelSelector({
   onModelChange,
   defaultModel,
 }: ModelSelectorProps) {
-  const [litellmId, setLitellmId] = React.useState<string | null>(
-    defaultModel ?? null,
-  );
+  const [litellmId, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
-    extractModelAndProvider(defaultModel ?? "")?.provider ?? null,
+    null,
   );
+  const [selectedModel, setSelectedModel] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (defaultModel) {
+      // runs when resetting to defaults
+      const { provider, model } = extractModelAndProvider(defaultModel);
+
+      setLitellmId(defaultModel);
+      setSelectedProvider(provider);
+      setSelectedModel(model);
+    }
+  }, [defaultModel]);
 
   const handleChangeProvider = (provider: string) => {
     setSelectedProvider(provider);
+    setSelectedModel(null);
 
     const separator = models[provider]?.separator || "";
     setLitellmId(provider + separator);
@@ -40,6 +51,7 @@ export function ModelSelector({
     const fullModel = selectedProvider + separator + model;
     setLitellmId(fullModel);
     onModelChange(fullModel);
+    setSelectedModel(model);
   };
 
   const clear = () => {
@@ -64,6 +76,7 @@ export function ModelSelector({
           }}
           onInputChange={(value) => !value && clear()}
           defaultSelectedKey={selectedProvider ?? undefined}
+          selectedKey={selectedProvider}
         >
           <AutocompleteSection title="Verified">
             {Object.keys(models)
@@ -92,9 +105,8 @@ export function ModelSelector({
             if (e?.toString()) handleChangeModel(e.toString());
           }}
           isDisabled={isDisabled || !selectedProvider}
-          defaultSelectedKey={
-            extractModelAndProvider(defaultModel ?? "")?.model ?? undefined
-          }
+          selectedKey={selectedModel}
+          defaultSelectedKey={selectedModel ?? undefined}
         >
           <AutocompleteSection title="Verified">
             {models[selectedProvider || ""]?.models
