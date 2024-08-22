@@ -179,10 +179,10 @@ class RemoteRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=4, max=60),
+        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
-        logger.info('Checking if sandbox is alive')
+        logger.info('Waiting for sandbox to be alive...')
         session = await self._ensure_session()
         async with session.get(
             f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/alive'
@@ -234,9 +234,11 @@ class RemoteRuntime(Runtime):
 
             try:
                 logger.info('Executing action')
+                request_body = {'action': event_to_dict(action)}
+                logger.debug(f'Request body: {request_body}')
                 async with session.post(
                     f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/execute_action',
-                    json={'action': event_to_dict(action)},
+                    json=request_body,
                     timeout=action.timeout,
                 ) as response:
                     if response.status == 200:
