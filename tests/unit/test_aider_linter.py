@@ -19,7 +19,7 @@ def get_parent_directory(levels=3):
     return parent_directory
 
 
-print(rf'\Root folder: {get_parent_directory()}\n')
+print(f'\nRoot folder: {get_parent_directory()}\n')
 
 
 @pytest.fixture
@@ -400,6 +400,7 @@ def test_ts_eslint_fail(linter, temp_typescript_file_eslint_fail):
             result = linter.ts_eslint(
                 temp_typescript_file_eslint_fail, 'lint-test-fail.ts', ''
             )
+            print(f'eslint_output: {result}')
             assert isinstance(result, LintResult)
             assert (
                 "lint-test-fail.ts:3:7: 'unused' is defined but never used. (no-unused-vars)"
@@ -476,6 +477,7 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
             result = linter.ts_eslint(
                 temp_react_file_fail, 'react-component-fail.tsx', ''
             )
+            print(f'result: {result}')
             assert isinstance(result, LintResult)
             assert (
                 "react-component-fail.tsx:5:22: Missing prop type for 'name' (react/prop-types)"
@@ -498,6 +500,7 @@ def test_ts_eslint_react_config(linter, temp_react_file_pass):
                 result = linter.ts_eslint(
                     temp_react_file_pass, 'react-component-pass.tsx', ''
                 )
+                print(f'result: {result}')
                 assert result is None
                 # Check if the ESLint command includes React-specific configuration
                 called_cmd = mock_run_cmd.call_args[0][0]
