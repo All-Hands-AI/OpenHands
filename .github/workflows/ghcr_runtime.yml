@@ -132,7 +132,7 @@ jobs:
           echo "test_image_tags=$matrix" >> $GITHUB_OUTPUT
           echo "Generated test_image_tags: $matrix"
 
-  # Run unit tests with the EventStream and Server runtime Docker images
+  # Run unit tests with the EventStream runtime Docker images
   test_runtime:
     name: Test Runtime
     runs-on: ubuntu-latest
