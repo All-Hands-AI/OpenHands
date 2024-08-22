@@ -81,11 +81,6 @@ jobs:
     name: Test Runtime
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime]
-    strategy:
-      matrix:
-        image: ['runtime']
-        runtime_type: ['eventstream']
-        platform: ['amd64']
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -110,8 +105,9 @@ jobs:
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash
+          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          TEST_RUNTIME=${{ matrix.runtime_type }} \
+          TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
@@ -128,10 +124,6 @@ jobs:
     needs: [ghcr_build_runtime]
     strategy:
       fail-fast: false
-      matrix:
-        image: ['runtime']
-        runtime_type: ['eventstream']
-        platform: ['amd64']
     steps:
       - uses: actions/checkout@v4
       - name: Install poetry via pipx
@@ -147,8 +139,9 @@ jobs:
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash
+          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          TEST_RUNTIME=${{ matrix.runtime_type }} \
+          TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
