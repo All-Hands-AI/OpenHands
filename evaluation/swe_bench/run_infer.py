@@ -141,6 +141,12 @@ async def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
+    action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
     if USE_INSTANCE_IMAGE:
         # inject the init script
         script_dir = os.path.dirname(__file__)
