@@ -86,7 +86,7 @@ Congratulations!
 
 ## Technical Explanation
 
-Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
+Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
 
 ## Troubleshooting / Errors
 
