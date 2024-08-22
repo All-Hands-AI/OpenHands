@@ -245,7 +245,6 @@ class CodeActAgent(Agent):
             summary_message = self.get_action_message(state.history.summary)
             if summary_message:
                 messages.append(summary_message)
-                print(summary_message.model_dump())
         for event in state.history.get_events():
             if event.id > state.history.last_summarized_event_id:
                 # create a regular message from an event
