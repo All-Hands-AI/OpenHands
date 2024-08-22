@@ -80,6 +80,7 @@ jobs:
   test_runtime:
     name: Test Runtime
     runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime]
     strategy:
       matrix:
         image: ['runtime']
@@ -124,6 +125,7 @@ jobs:
   runtime_integration_tests_on_linux:
     name: Runtime Integration Tests on Linux
     runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime]
     strategy:
       fail-fast: false
       matrix:
