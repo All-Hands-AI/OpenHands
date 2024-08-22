@@ -92,8 +92,9 @@ docker buildx build \
   -f "$dir/Dockerfile" \
   "$DOCKER_BASE_DIR"
 
+input_image="$DOCKER_REPOSITORY:${tags[-1]}"
 output_image="/tmp/${image_name}_${tags[-1]}_${platform}.tar"
-echo "Output image will be saved to: $output_image"
+echo "Image $input_image will be saved to: $output_image"
 docker image save -o "$output_image" "$DOCKER_REPOSITORY:${tags[-1]}"
 
 echo "${tags[*]}" > tags.txt
