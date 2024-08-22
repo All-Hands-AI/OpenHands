@@ -249,7 +249,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # New job to indicate all runtime tests have passed
+  # Checks that all runtime tests have passed
   all_runtime_tests_passed:
     name: All Runtime Tests Passed
     runs-on: ubuntu-latest
