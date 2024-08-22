@@ -24,5 +24,7 @@ export const MAP_PROVIDER = {
   openrouter: "OpenRouter",
 };
 
-export const mapProvider = (provider: keyof typeof MAP_PROVIDER) =>
-  MAP_PROVIDER[provider] || provider;
+export const mapProvider = (provider: string) =>
+  Object.keys(MAP_PROVIDER).includes(provider)
+    ? MAP_PROVIDER[provider as keyof typeof MAP_PROVIDER]
+    : provider;
