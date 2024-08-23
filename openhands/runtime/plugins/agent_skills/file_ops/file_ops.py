@@ -592,7 +592,7 @@ def _edit_file_impl(
 
 
 def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
-    """Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with `new_content`.
+    """Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with `new_content`. Use `append_file` method for writing after `create_file`!
 
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
