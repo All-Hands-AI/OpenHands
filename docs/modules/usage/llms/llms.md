@@ -26,8 +26,10 @@ The following environment variables might be necessary for some LLMs/providers:
 
 We have a few guides for running OpenHands with specific model providers:
 
+- [OpenAI](llms/openai-llms)
 - [ollama](llms/local-llms)
 - [Azure](llms/azure-llms)
+- [Google](llms/google-llms)
 
 If you're using another provider, we encourage you to open a PR to share your setup!
 
