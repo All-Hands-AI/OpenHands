@@ -84,9 +84,7 @@ jobs:
     needs: [ghcr_build_runtime]
     strategy:
       matrix:
-        # TODO: these tests take too long, let's not do all 3 for now
-        # base_image: ['nikolaik', 'python', 'node']
-        base_image: ['python']
+        base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -131,9 +129,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: these tests take too long, let's not do all 3 for now
-        # base_image: ['nikolaik', 'python', 'node']
-        base_image: ['python']
+        base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
       - name: Install poetry via pipx
