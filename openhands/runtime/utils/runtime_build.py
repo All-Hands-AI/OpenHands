@@ -42,8 +42,16 @@ def _create_project_source_dist():
 
     # run "python -m build -s" on project_root to create project tarball
     result = subprocess.run(
-        f'python -m build -s ' + project_root.replace(" ", r"\ "), shell=True
+        'python -m build -s ' + project_root.replace(' ', r'\ '),
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
+    logger.info(result.stdout.decode())
+    err_logs = result.stderr.decode()
+    if err_logs:
+        logger.error(err_logs)
+
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
         raise Exception(f'Build failed: {result}')
