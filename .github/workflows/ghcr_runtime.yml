@@ -31,11 +31,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        image: ['runtime']
         base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
-        platform: ['amd64', 'arm64']
-    outputs:
-      tags: ${{ steps.capture-tags.outputs.tags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,6 +51,12 @@ jobs:
           swap-storage: true
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -72,77 +74,17 @@ jobs:
       - name: Build and export image
         id: build
         run: |
-          if [ -f 'containers/runtime/Dockerfile' ]; then
-            echo 'Dockerfile detected, building runtime image...'
-            ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} ${{ matrix.platform }}
-            # Capture the last tag to use in the artifact name
-            last_tag=$(cat tags.txt | awk '{print $NF}')
-          else
-            echo 'No Dockerfile detected which means an exact image is already built. Pulling the image and saving it to a tar file...'
-            source containers/runtime/config.sh
-            echo "$DOCKER_IMAGE_HASH_TAG $DOCKER_IMAGE_TAG" >> tags.txt
-            export last_tag=$DOCKER_IMAGE_TAG
-            echo "Pulling image $DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG to /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar"
-            docker pull $DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG
-            docker save $DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE:$DOCKER_IMAGE_HASH_TAG -o /tmp/${{ matrix.image }}_${last_tag}_${{ matrix.platform }}.tar
-          fi
-          echo "last_tag=${last_tag}" >> $GITHUB_OUTPUT
-      - name: Capture tags
-        id: capture-tags
-        run: |
-          tags=$(cat tags.txt)
-          echo "tags=$tags"
-          echo "tags=$tags" >> $GITHUB_OUTPUT
-      - name: Upload Docker image as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}
-          path: /tmp/${{ matrix.image }}_${{ steps.build.outputs.last_tag }}_${{ matrix.platform }}.tar
-          retention-days: 14
-      - name: Capture last tag
-        id: capture-last-tag
-        run: |
-          last_tag=$(cat tags.txt | awk '{print $NF}')
-          echo "$last_tag" > /tmp/last-tag-${{ matrix.image }}-${{ matrix.platform }}-${{ steps.build.outputs.last_tag }}.txt
-          echo "Saved last tag to /tmp/last-tag-${{ matrix.image }}-${{ matrix.platform }}-${{ steps.build.outputs.last_tag }}.txt"
-      - name: Upload last tag as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: last-tag-${{ matrix.image }}-${{ matrix.platform }}-${{ steps.build.outputs.last_tag }}
-          path: /tmp/last-tag-${{ matrix.image }}-${{ matrix.platform }}-${{ steps.build.outputs.last_tag }}.txt
-          retention-days: 1
-
-  prepare_test_image_tags:
-    name: Prepare Test Images Tags
-    needs: ghcr_build_runtime
-    runs-on: ubuntu-latest
-    outputs:
-      test_image_tags: ${{ steps.set-matrix.outputs.test_image_tags }}
-    steps:
-      - name: Download last tags
-        uses: actions/download-artifact@v4
-        with:
-          pattern: last-tag-*
-          path: /tmp/
-          merge-multiple: true
-      - name: Set up test matrix
-        id: set-matrix
-        run: |
-          matrix=$(cat /tmp/last-tag-*.txt | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "test_image_tags=$matrix" >> $GITHUB_OUTPUT
-          echo "Generated test_image_tags: $matrix"
+          suffix=$(echo "${{ matrix.base_image }}" | cut -d ':' -f 1 | cut -d '/' -f 1)
+          ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
 
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
     name: Test Runtime
     runs-on: ubuntu-latest
-    needs: prepare_test_image_tags
+    needs: [ghcr_build_runtime]
     strategy:
       matrix:
-        image: ['runtime']
-        runtime_type: ['eventstream']
-        platform: ['amd64']
-        last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
+        base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -163,35 +105,17 @@ jobs:
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Download Runtime Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
-          path: /tmp/
-      - name: Load Runtime image and run runtime tests
+      - name: Run runtime tests
         run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash-${{ matrix.base_image }}
+          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
-            exit 1
-          fi
-
-          echo "Loading image from file: $image_file"
-          output=$(docker load -i "$image_file")
-
-          # Extract the image name from the output
-          # Print all tags
-          echo "All tags:"
-          all_tags=$(echo "$output" | grep -oP 'Loaded image: \K.*')
-          echo "$all_tags"
-          # Choose the last tag
-          image_name=$(echo "$all_tags" | tail -n 1)
-
-          # Print the full name of the image
-          echo "Loaded Docker image: $image_name"
-
-          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          TEST_RUNTIME=eventstream \
+          SANDBOX_USER_ID=$(id -u) \
+          SANDBOX_CONTAINER_IMAGE=$image_name \
+          TEST_IN_CI=true \
+          poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -201,14 +125,11 @@ jobs:
   runtime_integration_tests_on_linux:
     name: Runtime Integration Tests on Linux
     runs-on: ubuntu-latest
-    needs: prepare_test_image_tags
+    needs: [ghcr_build_runtime]
     strategy:
       fail-fast: false
       matrix:
-        image: ['runtime']
-        runtime_type: ['eventstream']
-        platform: ['amd64']
-        last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
+        base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
       - name: Install poetry via pipx
@@ -220,30 +141,18 @@ jobs:
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Download Runtime Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
-          path: /tmp/
-      - name: Load runtime image and run integration tests
+      - name: Run integration tests
         run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash-${{ matrix.base_image }}
+          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
-            exit 1
-          fi
-
-          echo "Loading image from file: $image_file"
-          output=$(docker load -i "$image_file")
-
-          # Extract the image name from the output
-          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*' | head -n 1)
-
-          # Print the full name of the image
-          echo "Loaded Docker image: $image_name"
-
-          TEST_RUNTIME=${{ matrix.runtime_type }} SANDBOX_USER_ID=$(id -u) SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+          TEST_RUNTIME=eventstream \
+          SANDBOX_USER_ID=$(id -u) \
+          SANDBOX_CONTAINER_IMAGE=$image_name \
+          TEST_IN_CI=true \
+          TEST_ONLY=true \
+          ./tests/integration/regenerate.sh
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -257,105 +166,3 @@ jobs:
     steps:
       - name: All tests passed
         run: echo "All runtime tests have passed successfully!"
-
-  # Push the runtime Docker images to the ghcr.io repository
-  ghcr_push_runtime:
-    name: Push Image
-    runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, prepare_test_image_tags, all_runtime_tests_passed]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
-    env:
-      RUNTIME_TAGS: ${{ needs.ghcr_build_runtime.outputs.tags }}
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        image: ['runtime']
-        runtime_type: ['eventstream']
-        platform: ['amd64', 'arm64']
-        last_tag: ${{ fromJson(needs.prepare_test_image_tags.outputs.test_image_tags) }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download Docker images
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}
-          path: /tmp/
-      - name: Load images and push to registry
-        run: |
-          image_file=$(find /tmp -name "${{ matrix.image }}_${{ matrix.last_tag }}_${{ matrix.platform }}.tar" | head -n 1)
-          if [ -z "$image_file" ]; then
-            echo "No matching image file found for tag: ${{ matrix.last_tag }}"
-            exit 1
-          fi
-
-          echo "Loading image from file: $image_file"
-          if ! loaded_image=$(docker load -i "$image_file" | grep "Loaded image:" | head -n 1 | awk '{print $3}'); then
-            echo "Failed to load Docker image"
-            exit 1
-          fi
-          echo "loaded image = $loaded_image"
-          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
-          echo "image name = $image_name"
-          echo "$RUNTIME_TAGS" | tr ' ' '\n' | while read -r tag; do
-            echo "tag = $tag"
-            if [ -n "$image_name" ] && [ -n "$tag" ]; then
-              docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
-              docker push $image_name:${tag}_${{ matrix.platform }}
-            else
-              echo "Skipping tag and push due to empty image_name or tag"
-            fi
-          done
-
-  # Creates and pushes the runtime Docker image manifest
-  create_manifest_runtime:
-    name: Create Manifest
-    runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime, prepare_test_image_tags, ghcr_push_runtime]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main')
-    env:
-      tags: ${{ needs.ghcr_build_runtime.outputs.tags }}
-    strategy:
-      matrix:
-        image: ['runtime']
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create and push multi-platform manifest
-        run: |
-          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
-          echo "image name = $image_name"
-          tags=$(echo ${tags} | tr ' ' '\n')
-          for tag in $tags; do
-            echo 'tag = $tag'
-            docker buildx imagetools create --tag $image_name:$tag \
-              $image_name:${tag}_amd64 \
-              $image_name:${tag}_arm64
-          done
