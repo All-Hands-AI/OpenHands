@@ -177,6 +177,8 @@ openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
 openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')
 
+if LOG_TO_FILE or DEBUG:
+    openhands_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
 
 # Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True
