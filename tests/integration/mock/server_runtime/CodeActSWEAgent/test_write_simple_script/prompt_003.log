@@ -147,7 +147,7 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run. `edit_file_by_replace` is not for removing-only content.
+Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run. Use `append_file` after `create_file` to write content!
 
 The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
