@@ -31,15 +31,20 @@ from openhands.storage import get_file_store
 
 
 def display_message(message: str):
-    print(colored(message, 'yellow'))
+    print(colored('🤖 ' + message + '\n', 'yellow'))
 
 
 def display_command(command: str):
-    print(colored(command, 'green'))
+    print('❯ ' + colored(command + '\n', 'green'))
 
 
 def display_command_output(output: str):
-    print(colored(output, 'blue'))
+    lines = output.split('\n')
+    for line in lines:
+        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
+            continue
+        print(colored(line, 'blue'))
+    print('\n')
 
 
 def display_event(event: Event):
