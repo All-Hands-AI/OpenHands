@@ -179,6 +179,8 @@ openhands_logger.debug('Logging initialized')
 
 if LOG_TO_FILE or DEBUG:
     openhands_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
+    if DEBUG:
+        openhands_logger.info('DEBUG mode enabled')
 
 # Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True
