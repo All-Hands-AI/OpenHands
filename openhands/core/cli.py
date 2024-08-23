@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import sys
 from typing import Type
 
 from termcolor import colored
@@ -14,7 +13,12 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
-from openhands.events.action import Action, CmdRunAction, MessageAction
+from openhands.events.action import (
+    Action,
+    ChangeAgentStateAction,
+    CmdRunAction,
+    MessageAction,
+)
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -77,7 +81,6 @@ async def main():
     )
     await runtime.ainit()
 
-    # init controller with this initial state
     controller = AgentController(
         agent=agent,
         max_iterations=config.max_iterations,
@@ -89,23 +92,23 @@ async def main():
     async def prompt_for_next_task():
         next_message = input('How can I help? >> ')
         if next_message == 'exit':
-            print('Exiting...')
-            await controller.close()
-            sys.exit(0)
+            event_stream.add_event(
+                ChangeAgentStateAction(AgentState.STOPPED), EventSource.USER
+            )
+            return
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
 
     async def on_event(event: Event):
         display_event(event)
         if isinstance(event, AgentStateChangedObservation):
-            if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                message = input('Request user input >> ')
-                action = MessageAction(content=message)
-                event_stream.add_event(action, EventSource.USER)
-            elif event.agent_state == AgentState.FINISHED:
-                await prompt_for_next_task()
-            elif event.agent_state == AgentState.ERROR:
+            if event.agent_state == AgentState.ERROR:
                 print('An error occurred. Please try again.')
+            if event.agent_state in [
+                AgentState.AWAITING_USER_INPUT,
+                AgentState.FINISHED,
+                AgentState.ERROR,
+            ]:
                 await prompt_for_next_task()
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
@@ -113,13 +116,11 @@ async def main():
     await prompt_for_next_task()
 
     while controller.state.agent_state not in [
-        AgentState.REJECTED,
-        AgentState.ERROR,
         AgentState.STOPPED,
     ]:
-        print('tick')
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
+    print('Exiting...')
     await controller.close()
 
 
