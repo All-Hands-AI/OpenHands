@@ -198,6 +198,10 @@ class RemoteRuntime(Runtime):
     def sandbox_workspace_dir(self):
         return self.config.workspace_mount_path_in_sandbox
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(10),
+        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
+    )
     async def close(self):
         if self.runtime_id:
             session = await self._ensure_session()
@@ -314,6 +318,9 @@ class RemoteRuntime(Runtime):
                 params=params,
             ) as response:
                 if response.status == 200:
+                    logger.info(
+                        f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {await response.text()}'
+                    )
                     return
                 else:
                     error_message = await response.text()
