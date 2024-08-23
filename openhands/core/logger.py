@@ -167,7 +167,7 @@ LOG_DIR = os.path.join(
 if DEBUG:
     openhands_logger.setLevel(logging.DEBUG)
 
-if LOG_TO_FILE:
+if LOG_TO_FILE or DEBUG:
     # default log to project root
     openhands_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
     openhands_logger.addHandler(get_file_handler(LOG_DIR))
