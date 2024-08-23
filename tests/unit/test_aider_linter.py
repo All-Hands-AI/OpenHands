@@ -472,6 +472,9 @@ def test_ts_eslint_react_config(linter, temp_react_file_pass):
 
 
 def test_ts_eslint_react_missing_semicolon(linter, tmp_path):
+    if not linter.eslint_installed:
+        pytest.skip('ESLint is not installed. Skipping this test.')
+
     temp_react_file = tmp_path / 'App.tsx'
     temp_react_file.write_text("""import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
