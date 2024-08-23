@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 from typing import Type
 
@@ -51,6 +52,7 @@ def display_event(event: Event):
 
 async def main():
     """Runs the agent in CLI mode"""
+    logger.setLevel(logging.WARNING)
     config = load_app_config()
     sid = 'cli'
 
@@ -66,7 +68,6 @@ async def main():
     event_stream = EventStream(sid, file_store)
 
     runtime_cls = get_runtime_cls(config.runtime)
-    logger.info(f'Initializing runtime: {runtime_cls}')
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
