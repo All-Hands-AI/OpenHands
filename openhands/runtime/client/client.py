@@ -605,10 +605,8 @@ if __name__ == '__main__':
             full_path = os.path.join(client.initial_pwd, path)
 
         if not os.path.exists(full_path):
-            return JSONResponse(
-                content={'error': f'Directory {full_path} does not exist'},
-                status_code=400,
-            )
+            # if user just removed a folder, prevent server error 500 in UI
+            return []
 
         try:
             # Check if the directory exists
