@@ -24,7 +24,7 @@ The assistant can install Python packages using the %pip magic command in an IPy
 {% set COMMAND_DOCS %}
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 {{ agent_skills_docs }}
-Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run. `edit_file_by_replace` is not for creating new files.
+Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run. `edit_file_by_replace` is not for removing-only content.
 {% endset %}
 {% set SYSTEM_SUFFIX %}
 Responses should be concise.
