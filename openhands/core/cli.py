@@ -2,6 +2,8 @@ import asyncio
 import sys
 from typing import Type
 
+from termcolor import colored
+
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
@@ -11,13 +13,40 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
-from openhands.events.action import MessageAction
+from openhands.events.action import Action, CmdRunAction, MessageAction
 from openhands.events.event import Event
-from openhands.events.observation import AgentStateChangedObservation
+from openhands.events.observation import (
+    AgentStateChangedObservation,
+    CmdOutputObservation,
+)
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
+
+
+def display_message(message: str):
+    print(colored(message, 'yellow'))
+
+
+def display_command(command: str):
+    print(colored(command, 'green'))
+
+
+def display_command_output(output: str):
+    print(colored(output, 'blue'))
+
+
+def display_event(event: Event):
+    if isinstance(event, Action):
+        if hasattr(event, 'thought'):
+            display_message(event.thought)
+    if isinstance(event, MessageAction):
+        display_message(event.content)
+    if isinstance(event, CmdRunAction):
+        display_command(event.command)
+    if isinstance(event, CmdOutputObservation):
+        display_command_output(event.content)
 
 
 async def main():
@@ -64,7 +93,7 @@ async def main():
         event_stream.add_event(action, EventSource.USER)
 
     async def on_event(event: Event):
-        print(event)
+        display_event(event)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 message = input('Request user input >> ')
