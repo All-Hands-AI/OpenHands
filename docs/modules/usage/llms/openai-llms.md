@@ -38,7 +38,7 @@ docker run -it \
 
 ### UI Configuration
 
-You can also directly set the `LLM_MODEL` and `LLM_API_KEY` in the OpenHands client itself. Follow [this guide](how-to/setup-ui-client) to get up and running with the OpenHands client.
+You can also directly set the `LLM_MODEL` and `LLM_API_KEY` in the OpenHands client itself. Follow this guide to get up and running with the OpenHands client.
 
 From there, you can set your model and API key in the settings window.
 
