@@ -190,7 +190,7 @@ class RemoteRuntime(Runtime):
             if response.status == 200:
                 return
             else:
-                msg = f'Sandbox is not alive. Response: {response}'
+                msg = f'Sandbox is not alive. Status: {response.status}. Response: {await response.json()}'
                 logger.error(msg)
                 raise RuntimeError(msg)
 
