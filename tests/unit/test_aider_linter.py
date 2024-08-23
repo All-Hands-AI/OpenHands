@@ -6,11 +6,6 @@ import pytest
 from openhands.runtime.plugins.agent_skills.utils.aider import Linter, LintResult
 
 
-def pytest_configure(config):
-    config.option.verbose = 1  # Enable verbose output (-v)
-    config.option.capture = 'no'  # Disable output capturing (-s)
-
-
 def get_parent_directory(levels=3):
     current_file = os.path.abspath(__file__)
     parent_directory = current_file
@@ -19,7 +14,7 @@ def get_parent_directory(levels=3):
     return parent_directory
 
 
-print(f'\nRoot folder: {get_parent_directory()}\n')
+print(f'\nRepo root folder: {get_parent_directory()}\n')
 
 
 @pytest.fixture
@@ -359,7 +354,7 @@ def test_lint_fail_typescript_missing_semicolon(
 
 
 def test_ts_eslint_pass(linter, temp_typescript_file_eslint_pass):
-    with patch.object(linter, 'check_eslint_installed', return_value=True):
+    with patch.object(linter, 'eslint_installed', return_value=True):
         with patch.object(linter, 'root', return_value=get_parent_directory()):
             with patch.object(linter, 'run_cmd') as mock_run_cmd:
                 mock_run_cmd.return_value = MagicMock(text='[]')  # Empty ESLint output
@@ -370,14 +365,14 @@ def test_ts_eslint_pass(linter, temp_typescript_file_eslint_pass):
 
 
 def test_ts_eslint_not_installed(linter, temp_typescript_file_eslint_pass):
-    with patch.object(linter, 'check_eslint_installed', return_value=False):
+    with patch.object(linter, 'eslint_installed', return_value=False):
         with patch.object(linter, 'root', return_value=get_parent_directory()):
             result = linter.lint(temp_typescript_file_eslint_pass)
             assert result is None  # Should return None when ESLint is not installed
 
 
 def test_ts_eslint_run_cmd_error(linter, temp_typescript_file_eslint_pass):
-    with patch.object(linter, 'check_eslint_installed', return_value=True):
+    with patch.object(linter, 'eslint_installed', return_value=True):
         with patch.object(linter, 'run_cmd', side_effect=FileNotFoundError):
             result = linter.ts_eslint(
                 temp_typescript_file_eslint_pass, 'lint-test-pass.ts', ''
@@ -386,10 +381,10 @@ def test_ts_eslint_run_cmd_error(linter, temp_typescript_file_eslint_pass):
 
 
 def test_ts_eslint_react_pass(linter, temp_react_file_pass):
-    if not linter.check_eslint_installed():
+    if not linter.eslint_installed:
         pytest.skip('ESLint is not installed. Skipping this test.')
 
-    with patch.object(linter, 'check_eslint_installed', return_value=True):
+    with patch.object(linter, 'eslint_installed', return_value=True):
         with patch.object(linter, 'run_cmd') as mock_run_cmd:
             mock_run_cmd.return_value = MagicMock(text='[]')  # Empty ESLint output
             result = linter.ts_eslint(
@@ -399,7 +394,7 @@ def test_ts_eslint_react_pass(linter, temp_react_file_pass):
 
 
 def test_ts_eslint_react_fail(linter, temp_react_file_fail):
-    if not linter.check_eslint_installed():
+    if not linter.eslint_installed:
         pytest.skip('ESLint is not installed. Skipping this test.')
 
     with patch.object(linter, 'run_cmd') as mock_run_cmd:
@@ -440,7 +435,7 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
         mock_run_cmd.return_value = MagicMock(text=mock_eslint_output)
         linter.root = get_parent_directory()
         result = linter.ts_eslint(temp_react_file_fail, 'react-component-fail.tsx', '')
-        if not linter.check_eslint_installed():
+        if not linter.eslint_installed:
             assert result is None
             return
 
@@ -458,7 +453,7 @@ def test_ts_eslint_react_fail(linter, temp_react_file_fail):
 
 
 def test_ts_eslint_react_config(linter, temp_react_file_pass):
-    if not linter.check_eslint_installed():
+    if not linter.eslint_installed:
         pytest.skip('ESLint is not installed. Skipping this test.')
 
     with patch.object(linter, 'root', return_value=get_parent_directory()):
@@ -477,9 +472,6 @@ def test_ts_eslint_react_config(linter, temp_react_file_pass):
 
 
 def test_ts_eslint_react_missing_semicolon(linter, tmp_path):
-    if not linter.check_eslint_installed():
-        pytest.skip('ESLint is not installed. Skipping this test.')
-
     temp_react_file = tmp_path / 'App.tsx'
     temp_react_file.write_text("""import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
