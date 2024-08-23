@@ -63,8 +63,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        setModels(await fetchModels());
-        setAgents(await fetchAgents());
+        const fetchedModels = await fetchModels();
+        const fetchedAgents = await fetchAgents();
+        setModels(fetchedModels);
+        setAgents(fetchedAgents);
         setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
         toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));
@@ -78,6 +80,20 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     setSettings((prev) => ({
       ...prev,
       LLM_MODEL: model,
+    }));
+  };
+
+  const handleCustomModelChange = (model: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      CUSTOM_LLM_MODEL: model,
+    }));
+  };
+
+  const handleModelTypeChange = (type: "custom" | "default") => {
+    setSettings((prev) => ({
+      ...prev,
+      USING_CUSTOM_MODEL: type === "custom",
     }));
   };
 
@@ -189,6 +205,8 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           agents={agents}
           securityAnalyzers={securityAnalyzers}
           onModelChange={handleModelChange}
+          onCustomModelChange={handleCustomModelChange}
+          onModelTypeChange={handleModelTypeChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
