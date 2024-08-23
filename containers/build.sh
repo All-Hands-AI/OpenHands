@@ -10,6 +10,7 @@ fi
 tag_suffix=$4
 
 echo "Building: $image_name"
+tags=()
 
 OPENHANDS_BUILD_VERSION="dev"
 
