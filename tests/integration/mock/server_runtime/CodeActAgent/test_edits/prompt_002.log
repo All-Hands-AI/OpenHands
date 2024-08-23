@@ -27,8 +27,7 @@ If $GITHUB_TOKEN is not set, ask the user to set it.
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
-    to view the file if you want to see more.
+    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 2000. Use `scroll_up` and `scroll_down` to view more content up or down.
     Args:
     path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
@@ -55,7 +54,7 @@ create_file(filename: str) -> None:
     filename: str: The name of the file to create.
 
 edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
-    Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
+    Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with `new_content`. Use `append_file` method for writing after `create_file`!
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
     For example, given a file "/workspace/example.txt" with the following content:
@@ -160,7 +159,7 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
+Please note that THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run. Use `append_file` after `create_file` to write content!
 
 Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
