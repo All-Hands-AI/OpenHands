@@ -49,7 +49,7 @@ Just as for OpenAI Chat completions, we use LiteLLM for OpenAI-compatible endpoi
 When running the OpenHands Docker image, you'll need to set the following environment variables:
 
 ```sh
-LLM_BASE_URL="<api-base-url>" # e.g. "http://0.0.0.0:4000"
+LLM_BASE_URL="<api-base-url>" # e.g. "http://0.0.0.0:3000"
 LLM_MODEL="openai/<model-name>" # e.g. "openai/mistral"
 LLM_API_KEY="<your-api-key>"
 ```
