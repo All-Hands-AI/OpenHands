@@ -67,7 +67,7 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/opendevin:0.9
+    ghcr.io/all-hands-ai/openhands:0.9
 ```
 
 > [!NOTE]
