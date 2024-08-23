@@ -43,7 +43,8 @@ def display_event(event: Event):
         if hasattr(event, 'thought'):
             display_message(event.thought)
     if isinstance(event, MessageAction):
-        display_message(event.content)
+        if event.source != EventSource.USER:
+            display_message(event.content)
     if isinstance(event, CmdRunAction):
         display_command(event.command)
     if isinstance(event, CmdOutputObservation):
