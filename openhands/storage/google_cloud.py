@@ -26,6 +26,10 @@ class GoogleCloudFileStore(FileStore):
             return f.read()
 
     def list(self, path: str) -> List[str]:
+        if not path or path == "/":
+            path = ""
+        elif not path.endswith("/"):
+            path += "/"
         # The delimiter logic screens out directories, so we can't use it. :(
         # For example, given a structure:
         #   foo/bar/zap.txt
@@ -33,15 +37,19 @@ class GoogleCloudFileStore(FileStore):
         # prefix=None, delimiter="/" yields []
         # prefix="foo", delimiter="/" yields []
         blobs = set()
+        prefix_len = len(path)
         for blob in self.bucket.list_blobs(prefix=path):
             name = blob.name
+            if name == path:
+                continue
             try:
-                index = name.index("/", len(path))
-                name = name[:index]
+                index = name.index("/", prefix_len + 1)
+                if index != prefix_len:
+                    blobs.add(name[:index + 1])
             except ValueError:
-                pass
-            blobs.add(name)
+                blobs.add(name)
         return list(blobs)
 
     def delete(self, path: str) -> None:
-        self.bucket.delete(path)
+        blob = self.bucket.blob(path)
+        blob.delete()
