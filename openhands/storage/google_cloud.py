@@ -43,6 +43,5 @@ class GoogleCloudFileStore(FileStore):
             blobs.add(name)
         return list(blobs)
 
-
     def delete(self, path: str) -> None:
         self.bucket.delete(path)
