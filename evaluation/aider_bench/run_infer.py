@@ -120,11 +120,15 @@ async def complete_runtime(
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
+    exit_code = 1
+    if isinstance(obs, CmdOutputObservation):
+        exit_code = obs.exit_code
+
     logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
 
     return {
         'test_output': obs.content,
-        'exit_code': obs.exit_code,
+        'exit_code': exit_code,
     }
 
 
