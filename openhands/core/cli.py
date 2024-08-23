@@ -84,10 +84,11 @@ async def main():
         event_stream=event_stream,
     )
 
-    def prompt_for_next_task():
+    async def prompt_for_next_task():
         next_message = input('How can I help? >> ')
         if next_message == 'exit':
             print('Exiting...')
+            await controller.close()
             sys.exit(0)
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
@@ -100,24 +101,29 @@ async def main():
                 action = MessageAction(content=message)
                 event_stream.add_event(action, EventSource.USER)
             elif event.agent_state == AgentState.FINISHED:
-                prompt_for_next_task()
+                await prompt_for_next_task()
             elif event.agent_state == AgentState.ERROR:
                 print('An error occurred. Please try again.')
-                prompt_for_next_task()
+                await prompt_for_next_task()
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
 
-    prompt_for_next_task()
+    await prompt_for_next_task()
 
     while controller.state.agent_state not in [
         AgentState.REJECTED,
         AgentState.ERROR,
         AgentState.STOPPED,
     ]:
+        print('tick')
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
     await controller.close()
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    finally:
+        pass
