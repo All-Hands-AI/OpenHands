@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -188,3 +188,31 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
 
     # reminder is added to the last user message
     assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[0].text
+
+
+def test_prompt_caching_headers(codeact_agent, mock_event_stream):
+    # Setup
+    mock_event_stream.add_event(MessageAction('Hello, agent!'), EventSource.USER)
+    mock_event_stream.add_event(MessageAction('Hello, user!'), EventSource.AGENT)
+
+    mock_short_term_history = MagicMock()
+    mock_short_term_history.get_last_user_message.return_value = 'Hello, agent!'
+
+    mock_state = Mock()
+    mock_state.history = mock_short_term_history
+    mock_state.max_iterations = 5
+    mock_state.iteration = 0
+
+    codeact_agent.reset()
+
+    # Replace mock LLM completion with a function that checks headers
+    def check_headers(**kwargs):
+        assert 'extra_headers' in kwargs
+        assert 'anthropic-beta' in kwargs['extra_headers']
+        assert kwargs['extra_headers']['anthropic-beta'] == 'prompt-caching-2024-07-31'
+        return Mock()  # Return a mock response
+
+    codeact_agent.llm.completion = check_headers
+
+    # Act
+    codeact_agent.step(mock_state)
