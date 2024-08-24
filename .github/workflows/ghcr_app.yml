@@ -58,4 +58,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build and export image
         id: build
-        run: ./containers/build.sh openhands ${{ github.repository_owner }} --push
+        run: |
+          # Only if the push is to the main branch or a manual trigger, push the image to ghcr.io
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ./containers/build.sh openhands ${{ github.repository_owner }} --push
+          else
+            ./containers/build.sh openhands ${{ github.repository_owner }}
+          fi
