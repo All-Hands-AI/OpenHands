@@ -75,11 +75,7 @@ jobs:
         id: build
         run: |
           suffix=$(echo "${{ matrix.base_image }}" | cut -d ':' -f 1 | cut -d '/' -f 1)
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
-          else
-            ./containers/build.sh runtime ${{ github.repository_owner }} $suffix
-          fi
+          ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
 
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
