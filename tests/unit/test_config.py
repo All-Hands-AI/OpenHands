@@ -75,7 +75,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('DEFAULT_AGENT', 'PlannerAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
-    monkeypatch.setenv('BASE_CONTAINER_IMAGE', 'custom_image')
+    monkeypatch.setenv('SANDBOX_BASE_CONTAINER_IMAGE', 'custom_image')
 
     load_from_env(default_config, os.environ)
 

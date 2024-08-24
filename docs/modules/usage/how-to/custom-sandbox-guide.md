@@ -67,10 +67,10 @@ Create a `config.toml` file in the OpenHands directory and enter these contents:
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-base_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 ```
 
-For `base_container_image`, you can specify either:
+For `sandbox_base_container_image`, you can specify either:
 
 1. The name of your custom image that you built in the previous step (e.g., `”custom_image”`)
 2. A pre-existing image from Docker Hub (e.g., `”node:20”` if you want a sandbox with Node.js pre-installed)
