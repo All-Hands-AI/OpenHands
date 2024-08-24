@@ -10,7 +10,6 @@ from conftest import _load_runtime
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.client.runtime import EventStreamRuntime
 
 # ============================================================================================================================
 # Bash-specific tests
@@ -517,10 +516,11 @@ async def test_copy_non_existent_file(temp_dir, box_class):
 
 
 @pytest.mark.asyncio
-async def test_keep_prompt(temp_dir):
-    # only EventStreamRuntime supports keep_prompt
+async def test_keep_prompt(box_class, temp_dir):
     runtime = await _load_runtime(
-        temp_dir, box_class=EventStreamRuntime, run_as_openhands=False
+        temp_dir,
+        box_class=box_class,
+        run_as_openhands=False,
     )
 
     action = CmdRunAction(command='touch /workspace/test_file.txt')
