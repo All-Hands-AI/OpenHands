@@ -24,6 +24,8 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
   getSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
+    CUSTOM_LLM_MODEL: "",
+    USING_CUSTOM_MODEL: false,
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
@@ -32,6 +34,8 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
+    CUSTOM_LLM_MODEL: "",
+    USING_CUSTOM_MODEL: false,
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "",
@@ -46,7 +50,14 @@ vi.mock("#/services/options", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/options")>()),
   fetchModels: vi
     .fn()
-    .mockResolvedValue(Promise.resolve(["model1", "model2", "model3"])),
+    .mockResolvedValue(
+      Promise.resolve([
+        "gpt-4o",
+        "gpt-3.5-turbo",
+        "azure/ada",
+        "cohere.command-r-v1:0",
+      ]),
+    ),
   fetchAgents: vi
     .fn()
     .mockResolvedValue(Promise.resolve(["agent1", "agent2", "agent3"])),
@@ -104,6 +115,8 @@ describe("SettingsModal", () => {
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
       LLM_MODEL: "gpt-4o",
+      CUSTOM_LLM_MODEL: "",
+      USING_CUSTOM_MODEL: false,
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
@@ -122,17 +135,22 @@ describe("SettingsModal", () => {
       await assertModelsAndAgentsFetched();
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const modelInput = screen.getByRole("combobox", { name: "model" });
+      const providerInput = screen.getByRole("combobox", { name: "Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "Model" });
+
+      await user.click(providerInput);
+      const azure = screen.getByText("Azure");
+      await user.click(azure);
 
       await user.click(modelInput);
-      const model3 = screen.getByText("model3");
-
+      const model3 = screen.getByText("ada");
       await user.click(model3);
+
       await user.click(saveButton);
 
       expect(saveSettings).toHaveBeenCalledWith({
         ...initialSettings,
-        LLM_MODEL: "model3",
+        LLM_MODEL: "azure/ada",
       });
     });
 
@@ -146,12 +164,17 @@ describe("SettingsModal", () => {
       );
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const modelInput = screen.getByRole("combobox", { name: "model" });
+      const providerInput = screen.getByRole("combobox", { name: "Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "Model" });
+
+      await user.click(providerInput);
+      const openai = screen.getByText("OpenAI");
+      await user.click(openai);
 
       await user.click(modelInput);
-      const model3 = screen.getByText("model3");
-
+      const model3 = screen.getByText("gpt-3.5-turbo");
       await user.click(model3);
+
       await user.click(saveButton);
 
       expect(startNewSessionSpy).toHaveBeenCalled();
@@ -167,12 +190,17 @@ describe("SettingsModal", () => {
       );
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const modelInput = screen.getByRole("combobox", { name: "model" });
+      const providerInput = screen.getByRole("combobox", { name: "Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "Model" });
+
+      await user.click(providerInput);
+      const cohere = screen.getByText("cohere");
+      await user.click(cohere);
 
       await user.click(modelInput);
-      const model3 = screen.getByText("model3");
-
+      const model3 = screen.getByText("command-r-v1:0");
       await user.click(model3);
+
       await user.click(saveButton);
 
       expect(toastSpy).toHaveBeenCalledTimes(4);
@@ -213,12 +241,17 @@ describe("SettingsModal", () => {
       });
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const modelInput = screen.getByRole("combobox", { name: "model" });
+      const providerInput = screen.getByRole("combobox", { name: "Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "Model" });
+
+      await user.click(providerInput);
+      const cohere = screen.getByText("cohere");
+      await user.click(cohere);
 
       await user.click(modelInput);
-      const model3 = screen.getByText("model3");
-
+      const model3 = screen.getByText("command-r-v1:0");
       await user.click(model3);
+
       await user.click(saveButton);
 
       expect(onOpenChangeMock).toHaveBeenCalledWith(false);

@@ -41,7 +41,9 @@ def _create_project_source_dist():
     logger.info(f'Using project root: {project_root}')
 
     # run "python -m build -s" on project_root to create project tarball
-    result = subprocess.run(f'python -m build -s {project_root}', shell=True)
+    result = subprocess.run(
+        f'python -m build -s ' + project_root.replace(" ", r"\ "), shell=True
+    )
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
         raise Exception(f'Build failed: {result}')
@@ -144,7 +146,7 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
-    logger.info(
+    logger.debug(
         (
             f'===== Dockerfile content start =====\n'
             f'{dockerfile_content}\n'
@@ -216,7 +218,7 @@ def build_runtime_image(
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
 
-    See https://docs.all-hands.dev/modules/usage/runtime for more details.
+    See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
     """
     # Calculate the hash for the docker build folder (source code and Dockerfile)
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -241,7 +243,7 @@ def build_runtime_image(
 
     # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
     # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if runtime_builder.image_exists(hash_runtime_image_name):
+    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
         logger.info(
             f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
         )
