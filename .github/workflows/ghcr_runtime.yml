@@ -29,6 +29,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pull-requests: write
     strategy:
       matrix:
         base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
