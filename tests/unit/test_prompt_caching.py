@@ -59,7 +59,7 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     assert messages[4].content[0].text == 'Hello, user!'
     assert messages[5].role == 'user'
     assert messages[5].content[0].text.startswith('Laaaaaaaast!')
-    assert not messages[5].content[0].cache_prompt
+    assert messages[5].content[0].cache_prompt
     assert (
         messages[5]
         .content[0]
@@ -84,16 +84,16 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
         Mock(history=mock_event_stream, max_iterations=10, iteration=5)
     )
 
-    # Check that only the previous-to-last two user messages have cache_prompt=True
+    # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
         msg for msg in messages if msg.role == 'user' and msg.content[0].cache_prompt
     ]
-    assert len(cached_user_messages) == 3
+    assert len(cached_user_messages) == 3  # Including the initial system message
 
-    # Verify that these are indeed the previous-to-last two user messages
+    # Verify that these are indeed the last two user messages
     assert cached_user_messages[0].content[0].text.startswith('Here is an example')
-    assert cached_user_messages[1].content[0].text == 'User message 12'
-    assert cached_user_messages[2].content[0].text == 'User message 13'
+    assert cached_user_messages[1].content[0].text == 'User message 13'
+    assert cached_user_messages[2].content[0].text.startswith('User message 14')
 
 
 def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
@@ -163,10 +163,10 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     # prompt cache is added to the system message
     assert messages[0].content[0].cache_prompt
     # and the first initial user message
-    assert messages[1].content[1].cache_prompt
-    # and to the two user messages before the last user message
-    assert messages[3].content[0].cache_prompt
     assert messages[1].content[0].cache_prompt
+    # and to the last two user messages
+    assert messages[3].content[0].cache_prompt
+    assert messages[5].content[0].cache_prompt
 
     # reminder is added to the last user message
     assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[0].text
