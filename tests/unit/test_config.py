@@ -178,7 +178,7 @@ memory_enabled = true
 [core]
 workspace_base = "/opt/files2/workspace"
 sandbox_timeout = 500
-sanbox_base_container_image = "node:14"
+sandbox_base_container_image = "node:14"
 sandbox_user_id = 1001
 default_agent = "TestAgent"
 """
