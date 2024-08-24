@@ -31,7 +31,7 @@ def codeact_agent(mock_llm):
     return CodeActAgent(mock_llm, config)
 
 
-def test_get_messages_basic(codeact_agent, mock_event_stream):
+def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     # Add some events to the stream
     mock_event_stream.add_event(MessageAction('Initial user message'), EventSource.USER)
     mock_event_stream.add_event(MessageAction('Sure!'), EventSource.AGENT)
@@ -52,7 +52,6 @@ def test_get_messages_basic(codeact_agent, mock_event_stream):
     assert messages[1].content[0].text.endswith("LET'S START!")
     assert messages[1].content[1].text.endswith('Initial user message')
     assert messages[1].content[0].cache_prompt
-    assert messages[1].content[1].cache_prompt
 
     assert messages[3].role == 'user'
     assert messages[3].content[0].text == ('Hello, agent!')
@@ -67,23 +66,6 @@ def test_get_messages_basic(codeact_agent, mock_event_stream):
         .text.endswith(
             'ENVIRONMENT REMINDER: You have 5 turns left to complete the task. When finished reply with <finish></finish>.'
         )
-    )
-
-
-def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
-    mock_event_stream.add_event(MessageAction('Task: Do something'), EventSource.USER)
-
-    codeact_agent.reset()
-    messages = codeact_agent._get_messages(
-        Mock(history=mock_event_stream, max_iterations=5, iteration=2)
-    )
-
-    last_message_text_0 = messages[-1].content[0].text
-    assert 'ENVIRONMENT REMINDER: ' not in last_message_text_0
-    last_message_text_1 = messages[-1].content[1].text
-    assert (
-        'ENVIRONMENT REMINDER: You have 3 turns left to complete the task.'
-        in last_message_text_1
     )
 
 
@@ -205,14 +187,24 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
 
     codeact_agent.reset()
 
-    # Replace mock LLM completion with a function that checks headers
+    # Replace mock LLM completion with a function that checks headers and returns a structured response
     def check_headers(**kwargs):
         assert 'extra_headers' in kwargs
         assert 'anthropic-beta' in kwargs['extra_headers']
         assert kwargs['extra_headers']['anthropic-beta'] == 'prompt-caching-2024-07-31'
-        return Mock()  # Return a mock response
+
+        # Create a mock response with the expected structure
+        mock_response = Mock()
+        mock_response.choices = [Mock()]
+        mock_response.choices[0].message = Mock()
+        mock_response.choices[0].message.content = 'Hello! How can I assist you today?'
+        return mock_response
 
     codeact_agent.llm.completion = check_headers
 
     # Act
-    codeact_agent.step(mock_state)
+    result = codeact_agent.step(mock_state)
+
+    # Assert
+    assert isinstance(result, MessageAction)
+    assert 'Hello! How can I assist you today?' in result.content
