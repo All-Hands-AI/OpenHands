@@ -220,6 +220,8 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, ErrorObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
+                if self.state.agent_state == AgentState.ERROR:
+                    self.state.metrics.merge(self.state.local_metrics)
 
     def reset_task(self):
         """Resets the agent's task."""
