@@ -62,7 +62,7 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     assert messages[5].content[0].cache_prompt
     assert (
         messages[5]
-        .content[0]
+        .content[1]
         .text.endswith(
             'ENVIRONMENT REMINDER: You have 5 turns left to complete the task. When finished reply with <finish></finish>.'
         )
@@ -169,7 +169,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     assert messages[5].content[0].cache_prompt
 
     # reminder is added to the last user message
-    assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[0].text
+    assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[1].text
 
 
 def test_prompt_caching_headers(codeact_agent, mock_event_stream):
