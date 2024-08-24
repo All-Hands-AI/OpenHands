@@ -42,7 +42,7 @@ def _create_project_source_dist():
 
     # run "python -m build -s" on project_root to create project tarball
     result = subprocess.run(
-        f'python -m build -s ' + project_root.replace(" ", r"\ "), shell=True
+        'python -m build -s ' + project_root.replace(' ', r'\ '), shell=True
     )
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
@@ -51,7 +51,7 @@ def _create_project_source_dist():
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
     tarball_path = os.path.join(
-        project_root, 'dist', f'openhands-{package_version}.tar.gz'
+        project_root, 'dist', f'openhands_ai-{package_version}.tar.gz'
     )
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
