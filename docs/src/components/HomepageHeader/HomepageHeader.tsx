@@ -21,7 +21,7 @@ export function HomepageHeader() {
           <a href="https://github.com/All-Hands-AI/OpenHands">
             <img src="https://img.shields.io/badge/Code-Github-purple?logo=github&logoColor=white&style=for-the-badge" alt="Code" />
           </a>
-          <a href="https://join.slack.com/t/openhands/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA">
+          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA">
             <img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community" />
           </a>
           <a href="https://discord.gg/ESHStjSjD4">
