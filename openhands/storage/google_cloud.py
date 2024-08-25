@@ -34,8 +34,9 @@ class GoogleCloudFileStore(FileStore):
         # For example, given a structure:
         #   foo/bar/zap.txt
         #   foo/bar/bang.txt
-        # prefix=None, delimiter="/" yields []
-        # prefix="foo", delimiter="/" yields []
+        #   ping.txt
+        # prefix=None, delimiter="/"   yields  ["ping.txt"]  # :(
+        # prefix="foo", delimiter="/"  yields  []  # :(
         blobs = set()
         prefix_len = len(path)
         for blob in self.bucket.list_blobs(prefix=path):
