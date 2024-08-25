@@ -116,7 +116,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
            runtime='eventstream',
            max_iterations=metadata.max_iterations,
            sandbox=SandboxConfig(
-               container_image='your_container_image',
+               base_container_image='your_container_image',
                enable_auto_lint=True,
                timeout=300,
            ),
