@@ -198,12 +198,8 @@ class RemoteRuntime(Runtime):
     def sandbox_workspace_dir(self):
         return self.config.workspace_mount_path_in_sandbox
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
-    )
     async def close(self):
-        if self.runtime_id:
+        async def _retry_stop_runtime():
             session = await self._ensure_session()
             async with session.post(
                 f'{self.api_url}/stop', json={'runtime_id': self.runtime_id}
@@ -213,8 +209,16 @@ class RemoteRuntime(Runtime):
                 else:
                     logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
 
+        if self.runtime_id:
+            await tenacity.retry(
+                _retry_stop_runtime,
+                stop=tenacity.stop_after_attempt(10),
+                wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
+            )
+
         if self.session is not None and not self.session.closed:
             await self.session.close()
+            self.session = None  # Set session to None after closing
 
     async def run_action(self, action: Action) -> Observation:
         if action.timeout is None:
