@@ -214,7 +214,7 @@ class RemoteRuntime(Runtime):
                 _retry_stop_runtime,
                 stop=tenacity.stop_after_attempt(10),
                 wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
-            )
+            )()
 
         if self.session is not None and not self.session.closed:
             await self.session.close()
