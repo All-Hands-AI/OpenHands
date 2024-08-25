@@ -200,7 +200,7 @@ default_agent = "TestAgent"
 
     # app config doesn't have fields sandbox_*
     assert not hasattr(default_config, 'sandbox_timeout')
-    assert not hasattr(default_config, 'base_container_image')
+    assert not hasattr(default_config, 'sandbox_base_container_image')
     assert not hasattr(default_config, 'sandbox_user_id')
 
     # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
