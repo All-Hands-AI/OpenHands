@@ -26,7 +26,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         for log in build_logs:
             if 'stream' in log:
-                print(log['stream'].strip())
+                logger.info(log['stream'].strip())
             elif 'error' in log:
                 logger.error(log['error'].strip())
             else:
