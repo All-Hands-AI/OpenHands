@@ -1,4 +1,5 @@
-from typing import List
+import os
+from typing import List, Optional
 
 from google.cloud import storage
 
@@ -6,12 +7,14 @@ from openhands.storage.files import FileStore
 
 
 class GoogleCloudFileStore(FileStore):
-    def __init__(self, bucket_name: str) -> None:
+    def __init__(self, bucket_name: Optional[str] = None) -> None:
         """
         Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
         environment it will be used for authentication. Otherwise access will be 
         anonymous.
         """
+        if bucket_name is None:
+            bucket_name = os.environ['GOOGLE_CLOUD_BUCKET_NAME']
         self.storage_client = storage.Client()
         self.bucket = self.storage_client.bucket(bucket_name)
 
