@@ -21,70 +21,69 @@ class _StorageTest(ABC):
         return self.store
 
     def test_basic_fileops(self):
-        filename = 'test.txt'
+        filename = "test.txt"
         store = self.get_store()
-        store.write(filename, 'Hello, world!')
-        self.assertEqual(store.read(filename), 'Hello, world!')
-        self.assertEqual(store.list(''), [filename])
+        store.write(filename, "Hello, world!")
+        self.assertEqual(store.read(filename), "Hello, world!")
+        self.assertEqual(store.list(""), [filename])
         store.delete(filename)
         with self.assertRaises(FileNotFoundError):
             store.read(filename)
 
     def test_complex_path_fileops(self):
-        filenames = ['foo.bar.baz', './foo/bar/baz', 'foo/bar/baz', '/foo/bar/baz']
+        filenames = ["foo.bar.baz", "./foo/bar/baz", "foo/bar/baz", "/foo/bar/baz"]
         store = self.get_store()
         for filename in filenames:
-            store.write(filename, 'Hello, world!')
-            self.assertEqual(store.read(filename), 'Hello, world!')
+            store.write(filename, "Hello, world!")
+            self.assertEqual(store.read(filename), "Hello, world!")
             store.delete(filename)
             with self.assertRaises(FileNotFoundError):
                 store.read(filename)
 
     def test_list(self):
         store = self.get_store()
-        store.write('foo.txt', 'Hello, world!')
-        store.write('bar.txt', 'Hello, world!')
-        store.write('baz.txt', 'Hello, world!')
-        file_names = store.list('')
+        store.write("foo.txt", "Hello, world!")
+        store.write("bar.txt", "Hello, world!")
+        store.write("baz.txt", "Hello, world!")
+        file_names = store.list("")
         file_names.sort()
-        self.assertEqual(file_names, ['bar.txt', 'baz.txt', 'foo.txt'])
-        store.delete('foo.txt')
-        store.delete('bar.txt')
-        store.delete('baz.txt')
+        self.assertEqual(file_names, ["bar.txt", "baz.txt", "foo.txt"])
+        store.delete("foo.txt")
+        store.delete("bar.txt")
+        store.delete("baz.txt")
 
     def test_deep_list(self):
         store = self.get_store()
-        store.write('foo/bar/baz.txt', 'Hello, world!')
-        store.write('foo/bar/qux.txt', 'Hello, world!')
-        store.write('foo/bar/quux.txt', 'Hello, world!')
-        self.assertEqual(store.list(''), ['foo/'])
-        self.assertEqual(store.list('foo'), ['foo/bar/'])
-        file_names = store.list('foo/bar')
+        store.write("foo/bar/baz.txt", "Hello, world!")
+        store.write("foo/bar/qux.txt", "Hello, world!")
+        store.write("foo/bar/quux.txt", "Hello, world!")
+        self.assertEqual(store.list(""), ["foo/"])
+        self.assertEqual(store.list("foo"), ["foo/bar/"])
+        file_names = store.list("foo/bar")
         file_names.sort()
-        self.assertEqual(file_names, ['foo/bar/baz.txt', 'foo/bar/quux.txt', 'foo/bar/qux.txt'])
-        store.delete('foo/bar/baz.txt')
-        store.delete('foo/bar/qux.txt')
-        store.delete('foo/bar/quux.txt')
+        self.assertEqual(
+            file_names, ["foo/bar/baz.txt", "foo/bar/quux.txt", "foo/bar/qux.txt"]
+        )
+        store.delete("foo/bar/baz.txt")
+        store.delete("foo/bar/qux.txt")
+        store.delete("foo/bar/quux.txt")
 
 
 class TestLocalFileStore(TestCase, _StorageTest):
-
     def setUp(self):
-        os.makedirs('./_test_files_tmp', exist_ok=True)
-        self.store = LocalFileStore('./_test_files_tmp')
+        os.makedirs("./_test_files_tmp", exist_ok=True)
+        self.store = LocalFileStore("./_test_files_tmp")
 
     def tearDown(self):
-        shutil.rmtree('./_test_files_tmp')
-        
+        shutil.rmtree("./_test_files_tmp")
+
 
 class TestInMemoryFileStore(TestCase, _StorageTest):
-
     def setUp(self):
         self.store = InMemoryFileStore()
 
 
 class TestGoogleCloudFileStore(TestCase, _StorageTest):
-
     def setUp(self):
         with patch("google.cloud.storage.Client", _MockGoogleCloudClient):
             self.store = GoogleCloudFileStore("dear-liza")
@@ -93,7 +92,6 @@ class TestGoogleCloudFileStore(TestCase, _StorageTest):
 # I would have liked to use cloud-storage-mocker here but the python versions were incompatible :(
 # If we write tests for the S3 storage class I would definitely recommend we use moto.
 class _MockGoogleCloudClient:
-
     def bucket(self, name: str):
         assert name == "dear-liza"
         return _MockGoogleCloudBucket()
@@ -126,7 +124,7 @@ class _MockGoogleCloudBlob:
             return StringIO(self.content)
         if op == "w":
             return _MockGoogleCloudBlobWriter(self)
-        
+
     def delete(self):
         del self.bucket.blobs_by_path[self.name]
 
@@ -138,9 +136,11 @@ class _MockGoogleCloudBlobWriter:
 
     def __enter__(self):
         return self
-    
+
     def write(self, __b):
-        assert self.content is None   # We don't support buffered writes in this mock for now, as it is not needed
+        assert (
+            self.content is None
+        )  # We don't support buffered writes in this mock for now, as it is not needed
         self.content = __b
 
     def __exit__(self, exc_type, exc_val, exc_tb):
