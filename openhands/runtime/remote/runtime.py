@@ -59,7 +59,6 @@ class RemoteRuntime(Runtime):
             self.api_url, self.config.sandbox.api_key
         )
         self.runtime_id: str | None = None
-        self.sandbox_url: str | None = None
 
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
@@ -150,11 +149,8 @@ class RemoteRuntime(Runtime):
                 raise RuntimeError(f'Failed to start sandbox: {await response.text()}')
             start_response = await response.json()
             self.runtime_id = start_response['runtime_id']
-            self.sandbox_url = start_response['url']
 
-        logger.info(
-            f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.sandbox_url}'
-        )
+        logger.info(f'Sandbox started. Runtime ID: {self.runtime_id}')
 
         # Initialize environment variables
         await super().ainit(env_vars)
@@ -166,9 +162,6 @@ class RemoteRuntime(Runtime):
         assert (
             self.runtime_id is not None
         ), 'Runtime ID is not set. This should never happen.'
-        assert (
-            self.sandbox_url is not None
-        ), 'Sandbox URL is not set. This should never happen.'
 
     async def _ensure_session(self):
         if self.session is None or self.session.closed:
