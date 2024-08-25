@@ -99,7 +99,9 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     return 'ERRORS:\n' + lint_error.text, first_error_line
 
 
-def _print_window(file_path, targeted_line, window, return_str=False):
+def _print_window(
+    file_path, targeted_line, window, return_str=False, ignore_window=False
+):
     global CURRENT_LINE
     _check_current_file(file_path)
     with open(file_path) as file:
@@ -115,10 +117,14 @@ def _print_window(file_path, targeted_line, window, return_str=False):
         # cover edge cases
         CURRENT_LINE = _clamp(targeted_line, 1, total_lines)
         half_window = max(1, window // 2)
-
-        # Ensure at least one line above and below the targeted line
-        start = max(1, CURRENT_LINE - half_window)
-        end = min(total_lines, CURRENT_LINE + half_window)
+        if ignore_window:
+            # Use CURRENT_LINE as starting line (for e.g. scroll_down)
+            start = max(1, CURRENT_LINE)
+            end = min(total_lines, CURRENT_LINE + window)
+        else:
+            # Ensure at least one line above and below the targeted line
+            start = max(1, CURRENT_LINE - half_window)
+            end = min(total_lines, CURRENT_LINE + half_window)
 
         # Adjust start and end to ensure at least one line above and below
         if start == 1:
@@ -186,8 +192,14 @@ def open_file(
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
-        CURRENT_FILE, CURRENT_LINE, _clamp(context_lines, 1, 2000), return_str=True
+        CURRENT_FILE,
+        CURRENT_LINE,
+        _clamp(context_lines, 1, 300),
+        return_str=True,
+        ignore_window=False,
     )
+    if output.strip().endswith('more lines below)'):
+        output += '\n[Use `scroll_down` to view the next 100 lines of the file!]'
     print(output)
 
 
@@ -208,7 +220,9 @@ def goto_line(line_number: int) -> None:
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    output += _print_window(
+        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=False
+    )
     print(output)
 
 
@@ -225,7 +239,9 @@ def scroll_down() -> None:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    output += _print_window(
+        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
+    )
     print(output)
 
 
@@ -242,7 +258,9 @@ def scroll_up() -> None:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    output += _print_window(
+        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
+    )
     print(output)
 
 
@@ -638,7 +656,7 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         new_content: str: The new content to replace the old content with.
     """
     # FIXME: support replacing *all* occurrences
-    if to_replace.strip() == '':
+    if to_replace is None or to_replace.strip() == '':
         raise ValueError('`to_replace` must not be empty.')
 
     if to_replace == new_content:

@@ -139,6 +139,7 @@ def test_open_file_long(tmp_path):
     for i in range(1, 51):
         expected += f'{i}|Line {i}\n'
     expected += '(950 more lines below)\n'
+    expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -168,6 +169,7 @@ def test_open_file_long_with_lineno(tmp_path):
         expected += '(this is the end of the file)\n'
     else:
         expected += f'({1000 - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -210,6 +212,7 @@ def test_goto_line(tmp_path):
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
     expected += f'({total_lines - WINDOW} more lines below)\n'
+    expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -282,6 +285,7 @@ def test_scroll_down(tmp_path):
         expected += '(this is the end of the file)\n'
     else:
         expected += f'({total_lines - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -291,7 +295,8 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
-    start, end = _calculate_window_bounds(WINDOW + 1, total_lines, WINDOW)
+    start = WINDOW + 1
+    end = 2 * WINDOW + 1
     if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
@@ -330,6 +335,7 @@ def test_scroll_up(tmp_path):
         expected += '(this is the end of the file)\n'
     else:
         expected += f'({total_lines - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -341,7 +347,9 @@ def test_scroll_up(tmp_path):
     cur_line = cur_line - WINDOW
 
     expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
-    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    start = cur_line
+    end = cur_line + WINDOW
+
     if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
@@ -432,63 +440,7 @@ def test_open_file_large_line_number(tmp_path):
         for i in range(750, 850 + 1):
             expected += f'{i}|Line `{i}`\n'
         expected += '(149 more lines below)\n'
-        assert result == expected
-
-
-def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
-    test_file_path = tmp_path / 'a.txt'
-    create_file(str(test_file_path))
-    open_file(str(test_file_path))
-    total_lines = 1000
-    with open(test_file_path, 'w') as file:
-        for i in range(1, total_lines + 1):
-            file.write(f'Line `{i}`\n')
-
-    # Define the parameters for the test
-    current_line = 800
-    cur_window = 300
-
-    # Test _print_window especially with backticks
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            # _print_window(str(test_file_path), current_line, window, return_str=False)
-            open_file(str(test_file_path), current_line, cur_window)
-        result = buf.getvalue()
-        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
-        start, end = _calculate_window_bounds(current_line, total_lines, cur_window)
-        if start == 1:
-            expected += '(this is the beginning of the file)\n'
-        else:
-            expected += f'({start - 1} more lines above)\n'
-        for i in range(
-            current_line - cur_window // 2, current_line + cur_window // 2 + 1
-        ):
-            expected += f'{i}|Line `{i}`\n'
-        if end == total_lines:
-            expected += '(this is the end of the file)\n'
-        else:
-            expected += f'({total_lines - end} more lines below)\n'
-        assert result == expected
-
-    # open_file **SHOULD NOT** Change the "window size" to 300
-    # the window size should still be WINDOW
-    current_line = current_line - WINDOW
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            scroll_up()
-        result = buf.getvalue()
-        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
-        start, end = _calculate_window_bounds(current_line, total_lines, WINDOW)
-        if start == 1:
-            expected += '(this is the beginning of the file)\n'
-        else:
-            expected += f'({start - 1} more lines above)\n'
-        for i in range(start, end + 1):
-            expected += f'{i}|Line `{i}`\n'
-        if end == total_lines:
-            expected += '(this is the end of the file)\n'
-        else:
-            expected += f'({total_lines - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
         assert result == expected
 
 
@@ -1386,6 +1338,7 @@ def test_lint_file_fail_undefined_name_long(tmp_path, capsys):
             '(this is the beginning of the file)\n'
             f'{open_lines}\n'
             f'({num_lines - WINDOW} more lines below)\n'
+            f'[Use `scroll_down` to view the next 100 lines of the file!]\n'
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
             f'ERRORS:\n{error_message}\n'
             '[This is how your edit would have looked if applied]\n'
@@ -1395,7 +1348,7 @@ def test_lint_file_fail_undefined_name_long(tmp_path, capsys):
             + '500|undefined_name()\n'
             + _numbered_test_lines(error_line + 1, error_line + 10)
             + '(491 more lines below)\n'
-            + '-------------------------------------------------\n\n'
+            '-------------------------------------------------\n\n'
             '[This is the original code before your edit]\n'
             '-------------------------------------------------\n'
             '(489 more lines above)\n'

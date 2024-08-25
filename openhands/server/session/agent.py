@@ -47,7 +47,7 @@ class AgentSession:
             start_event: The start event data (optional).
         """
         if self.controller or self.runtime:
-            raise Exception(
+            raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
         await self._create_security_analyzer(config.security.security_analyzer)
@@ -87,7 +87,7 @@ class AgentSession:
         if self.runtime is not None:
             raise Exception('Runtime already created')
 
-        logger.info(f'Using runtime: {runtime_name}')
+        logger.info(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(
             config=config,
@@ -96,6 +96,7 @@ class AgentSession:
             plugins=agent.sandbox_plugins,
         )
         await self.runtime.ainit()
+        logger.info(f'Runtime {runtime_name} initialized.')
 
     async def _create_controller(
         self,
@@ -108,9 +109,11 @@ class AgentSession:
     ):
         """Creates an AgentController instance."""
         if self.controller is not None:
-            raise Exception('Controller already created')
+            raise RuntimeError('Controller already created')
         if self.runtime is None:
-            raise Exception('Runtime must be initialized before the agent controller')
+            raise RuntimeError(
+                'Runtime must be initialized before the agent controller'
+            )
 
         logger.info(f'Agents: {agent_configs}')
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
@@ -136,3 +139,4 @@ class AgentSession:
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             logger.info(f'Error restoring state: {e}')
+        logger.info('Agent controller initialized.')
