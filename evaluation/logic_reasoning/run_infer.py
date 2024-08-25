@@ -49,7 +49,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
+            base_container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
             runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
