@@ -80,7 +80,7 @@ async def test_browsergym_eval_env(temp_dir):
         # only supported in event stream runtime
         box_class=EventStreamRuntime,
         run_as_openhands=False,  # need root permission to access file
-        container_image='xingyaoww/od-eval-miniwob:v1.0',
+        base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
     )
     from openhands.runtime.browser.browser_env import (
