@@ -164,7 +164,12 @@ def make_metadata(
     return metadata
 
 
-def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
+def prepare_dataset(
+    dataset: pd.DataFrame,
+    output_file: str,
+    eval_n_limit: int,
+    eval_ids: list[str] | None = None,
+):
     assert (
         'instance_id' in dataset.columns
     ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
@@ -180,7 +185,11 @@ def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
             f'Output file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
         )
 
-    if eval_n_limit:
+    if eval_ids:
+        eval_ids_converted = [dataset[id_column].dtype.type(id) for id in eval_ids]
+        dataset = dataset[dataset[id_column].isin(eval_ids_converted)]
+        logger.info(f'Limiting evaluation to {len(eval_ids)} specific instances.')
+    elif eval_n_limit:
         dataset = dataset.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
