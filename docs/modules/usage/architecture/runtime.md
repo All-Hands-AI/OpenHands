@@ -3,7 +3,6 @@
 The OpenHands EventStream Runtime is the core component that enables secure and flexible execution of AI agent's action.
 It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
 
-
 ## Why do we need a sandboxed runtime?
 
 OpenHands needs to execute arbitrary code in a secure, isolated environment for several reasons:
@@ -25,7 +24,7 @@ The OpenHands Runtime system uses a client-server architecture implemented with 
 ```mermaid
 graph TD
     A[User-provided Custom Docker Image] --> B[OpenHands Backend]
-    B -->|Builds| C[OD Runtime Image]
+    B -->|Builds| C[OH Runtime Image]
     C -->|Launches| D[Runtime Client]
     D -->|Initializes| E[Browser]
     D -->|Initializes| F[Bash Shell]
@@ -53,9 +52,9 @@ graph TD
 
 1. User Input: The user provides a custom base Docker image.
 
-2. Image Building: OpenHands builds a new Docker image (the "OD runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client."
+2. Image Building: OpenHands builds a new Docker image (the "OH Runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client."
 
-3. Container Launch: When OpenHands starts, it launches a Docker container using the OD runtime image.
+3. Container Launch: When OpenHands starts, it launches a Docker container using the OH Runtime image.
 
 4. Client Initialization: The runtime client initializes inside the container, setting up necessary components like a bash shell and loading any specified plugins.
 
@@ -67,13 +66,13 @@ graph TD
 
 
 The role of the client is crucial:
+
 - It acts as an intermediary between the OpenHands backend and the sandboxed environment.
 - It executes various types of actions (shell commands, file operations, Python code, etc.) safely within the container.
 - It manages the state of the sandboxed environment, including the current working directory and loaded plugins.
 - It formats and returns observations to the backend, ensuring a consistent interface for processing results.
 
-
-## Advanced: How OpenHands builds and maintains OD Runtime images
+## Advanced: How OpenHands builds and maintains OH Runtime images
 
 OpenHands uses a sophisticated approach to build and manage runtime images. This process ensures efficiency, consistency, and flexibility in creating and maintaining Docker images for both production and development environments.
 
@@ -108,7 +107,7 @@ The hash-based tag ensures exact reproducibility, while the generic tag provides
      Example: `runtime:od_v0.8.3_ubuntu_tag_22.04`
 
 2. Build Process:
-   - a. Convert the base image name to an OD runtime image name.
+   - a. Convert the base image name to an OH Runtime image name.
       Example: `ubuntu:22.04` -> `runtime:od_v0.8.3_ubuntu_tag_22.04`
    - b. Generate a build context (Dockerfile and OpenHands source code) and calculate its hash.
    - c. Check for an existing image with the calculated hash.
@@ -154,7 +153,6 @@ This approach ensures that:
 3. The generic tag (e.g., `runtime:od_v0.8.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenHands version combination.
 
 By using this method, OpenHands maintains an efficient and flexible system for building and managing runtime images, adapting to both development needs and production requirements.
-
 
 ## Advanced: Runtime Plugin System
 

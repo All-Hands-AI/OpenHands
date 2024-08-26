@@ -3,6 +3,7 @@
 ## Introduction
 
 The OpenHands Runtime folder contains the core components responsible for executing actions and managing the runtime environment for the OpenHands project. This README provides an overview of the main components and their interactions.
+You can learn more about how the runtime works in the [EventStream Runtime](https://docs.all-hands.dev/modules/usage/architecture/runtime) documentation.
 
 ## Main Components
 
@@ -80,81 +81,3 @@ Key features of the `RuntimeClient` class:
 - Logging is handled through `openhands.core.logger`.
 
 This section provides an overview of the OpenHands Runtime folder. For more detailed information on specific components or usage, please refer to the individual files and their docstrings.
-
-## Server Components
-
-The following section describes the server-side components of the OpenHands project.
-
-### 1. session/session.py
-
-The `session.py` file defines the `Session` class, which represents a WebSocket session with a client. Key features include:
-
-- Handling WebSocket connections and disconnections
-- Initializing and managing the agent session
-- Dispatching events between the client and the agent
-- Sending messages and errors to the client
-
-### 2. session/agent.py
-
-The `agent.py` file contains the `AgentSession` class, which manages the lifecycle of an agent within a session. Key features include:
-
-- Creating and managing the runtime environment
-- Initializing the agent controller
-- Handling security analysis
-- Managing the event stream
-
-### 3. session/manager.py
-
-The `manager.py` file defines the `SessionManager` class, which is responsible for managing multiple client sessions. Key features include:
-
-- Adding and restarting sessions
-- Sending messages to specific sessions
-- Cleaning up inactive sessions
-
-### 4. listen.py
-
-The `listen.py` file is the main server file that sets up the FastAPI application and defines various API endpoints. Key features include:
-
-- Setting up CORS middleware
-- Handling WebSocket connections
-- Managing file uploads
-- Providing API endpoints for agent interactions, file operations, and security analysis
-- Serving static files for the frontend
-
-## Workflow Description
-
-1. **Server Initialization**:
-   - The FastAPI application is created and configured in `listen.py`.
-   - CORS middleware and static file serving are set up.
-   - The `SessionManager` is initialized.
-
-2. **Client Connection**:
-   - When a client connects via WebSocket, a new `Session` is created or an existing one is restarted.
-   - The `Session` initializes an `AgentSession`, which sets up the runtime environment and agent controller.
-
-3. **Agent Initialization**:
-   - The client sends an initialization request.
-   - The server creates and configures the agent based on the provided parameters.
-   - The runtime environment is set up, and the agent controller is initialized.
-
-4. **Event Handling**:
-   - The `Session` manages the event stream between the client and the agent.
-   - Events from the client are dispatched to the agent.
-   - Observations from the agent are sent back to the client.
-
-5. **File Operations**:
-   - The server handles file uploads, ensuring they meet size and type restrictions.
-   - File read and write operations are performed through the runtime environment.
-
-6. **Security Analysis**:
-   - If configured, a security analyzer is initialized for each session.
-   - Security-related API requests are forwarded to the security analyzer.
-
-7. **Session Management**:
-   - The `SessionManager` periodically cleans up inactive sessions.
-   - It also handles sending messages to specific sessions when needed.
-
-8. **API Endpoints**:
-   - Various API endpoints are provided for agent interactions, file operations, and retrieving configuration defaults.
-
-This server architecture allows for managing multiple client sessions, each with its own agent instance, runtime environment, and security analyzer. The event-driven design facilitates real-time communication between clients and agents, while the modular structure allows for easy extension and maintenance of different components.
