@@ -165,6 +165,19 @@ jobs:
         base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
+
+      # Forked repos can't push to GHCR, so we need to download the image as an artifact
+      - name: Download runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        uses: actions/download-artifact@v4
+        with:
+          name: runtime-${{ matrix.base_image }}
+          path: /tmp
+      - name: Load runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        run: |
+          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
