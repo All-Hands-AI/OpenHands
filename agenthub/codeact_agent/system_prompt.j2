@@ -28,7 +28,7 @@ IMPORTANT:
 - The assistant shall adhere to THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRING PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write the line out, with all leading spaces before the code!
 - Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 - After EVERY `create_file` the method `append_file` shall be used to write the FIRST content!
-- For `edit_file_by_replace` only variables with the corresponding context as parameters are to be used and NEVER an empty `to_replace`!
+- For `edit_file_by_replace` only use variables with the corresponding context as parameters but NEVER with an empty `to_replace` and `to_replace` and `new_content` must be different!!
 - For `edit_file_by_replace` do not assume content and specify the FULL content that is to be replaced! If necessary, re-read the file!
 - Only for smaller files the bash command `cat` may be used.
 {% endset %}
