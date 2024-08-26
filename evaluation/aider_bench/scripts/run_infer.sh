@@ -8,6 +8,7 @@ COMMIT_HASH=$2
 AGENT=$3
 EVAL_LIMIT=$4
 NUM_WORKERS=$5
+EVAL_IDS=$6
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -37,6 +38,11 @@ COMMAND="export PYTHONPATH=evaluation/aider_bench:\$PYTHONPATH && poetry run pyt
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
   COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+fi
+
+if [ -n "$EVAL_IDS" ]; then
+  echo "EVAL_IDS: $EVAL_IDS"
+  COMMAND="$COMMAND --eval-ids $EVAL_IDS"
 fi
 
 # Run the command
