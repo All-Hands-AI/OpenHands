@@ -93,9 +93,9 @@ def get_config(
     SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
-        container_image = 'sweb.eval.x86_64.' + instance['instance_id']
+        base_container_image = 'sweb.eval.x86_64.' + instance['instance_id']
     else:
-        container_image = SWE_BENCH_CONTAINER_IMAGE
+        base_container_image = SWE_BENCH_CONTAINER_IMAGE
 
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -104,7 +104,7 @@ def get_config(
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image=container_image,
+            base_container_image=base_container_image,
             enable_auto_lint=True,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
