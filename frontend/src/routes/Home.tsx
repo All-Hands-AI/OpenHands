@@ -53,10 +53,13 @@ function TaskForm() {
           </button>
         )}
       </Form>
-      <span className="flex items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]">
+      <button
+        type="button"
+        className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]"
+      >
         <Clip width={16} height={16} />
         Attach a file
-      </span>
+      </button>
     </div>
   );
 }
@@ -68,12 +71,15 @@ interface SuggestionBoxProps {
 
 function SuggestionBox({ title, description }: SuggestionBoxProps) {
   return (
-    <div className="w-[304px] h-[100px] border border-[#525252] rounded-xl flex flex-col items-center justify-center">
+    <button
+      type="button"
+      className="w-[304px] h-[100px] border border-[#525252] rounded-xl flex flex-col items-center justify-center"
+    >
       <span className="text-[16px] leading-6 -tracking-[0.01em] font-[600]">
         {title}
       </span>
       <span className="text-sm">{description}</span>
-    </div>
+    </button>
   );
 }
 
@@ -86,6 +92,10 @@ function Home() {
         <SuggestionBox
           title="Make a To-do List App"
           description="Track your daily work"
+        />
+        <SuggestionBox
+          title="Connect to GitHub"
+          description="Create your token here"
         />
         <SuggestionBox
           title="+ Import Project"
