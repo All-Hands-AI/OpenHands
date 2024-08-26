@@ -14,7 +14,7 @@ from openhands.storage import get_file_store
 
 
 @pytest.fixture(autouse=True)
-def print_methopenhands_name(request):
+def print_method_name(request):
     print('\n########################################################################')
     print(f'Running test: {request.node.name}')
     print('########################################################################')
