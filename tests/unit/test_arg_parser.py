@@ -104,7 +104,7 @@ def test_help_message(capsys):
         parser.parse_args(['--help'])
     captured = capsys.readouterr()
     help_output = captured.out
-
+    print(help_output)
     expected_elements = [
         'usage:',
         'Run an agent with a specific task',
@@ -120,6 +120,7 @@ def test_help_message(capsys):
         '--eval-n-limit EVAL_N_LIMIT',
         '--eval-num-workers EVAL_NUM_WORKERS',
         '--eval-note EVAL_NOTE',
+        '--eval-ids EVAL_IDS',
         '-l LLM_CONFIG, --llm-config LLM_CONFIG',
         '-n NAME, --name NAME',
     ]
@@ -128,4 +129,4 @@ def test_help_message(capsys):
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 13, f'Expected 13 options, found {option_count}'
+    assert option_count == 14, f'Expected 14 options, found {option_count}'
