@@ -63,14 +63,19 @@ def enable_auto_lint(request):
 @pytest.fixture(scope='module', params=None)
 def base_container_image(request):
     time.sleep(1)
-    env_image = os.environ.get('BASE_CONTAINER_IMAGE')
+    env_image = os.environ.get('SANDBOX_BASE_CONTAINER_IMAGE')
     if env_image:
         request.param = env_image
     else:
         if not hasattr(request, 'param'):  # prevent runtime AttributeError
             request.param = None
-        if request.param is None:
-            request.param = request.config.getoption('--container-image')
+        if request.param is None and hasattr(request.config, 'sandbox'):
+            try:
+                request.param = request.config.sandbox.getoption(
+                    '--base_container_image'
+                )
+            except ValueError:
+                request.param = None
         if request.param is None:
             request.param = pytest.param(
                 'nikolaik/python-nodejs:python3.11-nodejs22',
