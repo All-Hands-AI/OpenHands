@@ -9,7 +9,7 @@ import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
 import RootLayout from "./routes/RootLayout";
-import Home from "./routes/Home";
+import Home, { action as homeAction } from "./routes/Home/Home";
 
 const router = createBrowserRouter([
   {
@@ -19,12 +19,13 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: <Home />,
+        action: homeAction,
+      },
+      {
+        path: "/app",
+        element: <App />,
       },
     ],
-  },
-  {
-    path: "/app",
-    element: <App />,
   },
 ]);
 

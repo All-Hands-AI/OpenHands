@@ -101,7 +101,7 @@ function App(): JSX.Element {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col">
+    <div className="h-full flex flex-col">
       <div className="flex grow bg-neutral-900 text-white min-h-0">
         <Container
           orientation={Orientation.HORIZONTAL}
