@@ -130,8 +130,7 @@ class AgentController:
 
     async def update_state_after_step(self):
         # update metrics especially for cost
-        if hasattr(self.agent, 'llm'):  # for unit test
-            self.state.local_metrics = self.agent.llm.metrics
+        self.state.local_metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
         """Reports an error to the user and sends the exception to the LLM next step, in the hope it can self-correct.
