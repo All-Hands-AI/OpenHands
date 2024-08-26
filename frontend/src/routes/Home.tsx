@@ -23,7 +23,7 @@ function HeroHeading() {
   );
 }
 
-function TaskInput() {
+function TaskForm() {
   const [text, setText] = React.useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +81,7 @@ function Home() {
   return (
     <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center gap-16">
       <HeroHeading />
-      <TaskInput />
+      <TaskForm />
       <div className="flex gap-4">
         <SuggestionBox
           title="Make a To-do List App"
