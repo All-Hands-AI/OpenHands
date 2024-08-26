@@ -19,10 +19,10 @@ def extract_modified_files(patch):
     return modified_files
 
 
-def process_report(od_output_file):
+def process_report(openhands_output_file):
     succ = 0
     fail = 0
-    for line in open(od_output_file):
+    for line in open(openhands_output_file):
         line = json.loads(line)
         instance_id = line['instance_id']
         gold_patch = line['swe_instance']['patch']
@@ -48,7 +48,7 @@ def process_report(od_output_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--od_output_file', help='Path to the OD output file')
+    parser.add_argument('--openhands_output_file', help='Path to the OD output file')
     args = parser.parse_args()
 
-    process_report(args.od_output_file)
+    process_report(args.openhands_output_file)

@@ -61,7 +61,7 @@ Félicitations !
 
 Le code pertinent est défini dans [ssh_box.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/ssh_box.py) et [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py).
 
-En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox.base_container_image``` et ensuite tente de récupérer l'image à l'aide de [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72), qui est défini dans image_agnostic_util.py.
+En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox.base_container_image``` et ensuite tente de récupérer l'image à l'aide de [get_openhands_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72), qui est défini dans image_agnostic_util.py.
 
 Lorsqu'une image personnalisée est utilisée pour la première fois, elle ne sera pas trouvée et donc elle sera construite (à l'exécution ultérieure, l'image construite sera trouvée et renvoyée).
 

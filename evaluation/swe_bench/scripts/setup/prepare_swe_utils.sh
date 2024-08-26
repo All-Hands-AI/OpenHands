@@ -6,9 +6,9 @@ mkdir -p $EVAL_WORKSPACE
 
 # 1. Prepare REPO
 echo "==== Prepare SWE-bench repo ===="
-OD_SWE_BENCH_REPO_PATH="https://github.com/All-Hands-AI/OD-SWE-bench.git"
-OD_SWE_BENCH_REPO_BRANCH="eval"
-git clone -b $OD_SWE_BENCH_REPO_BRANCH $OD_SWE_BENCH_REPO_PATH $EVAL_WORKSPACE/OD-SWE-bench
+OPENHANDS_SWE_BENCH_REPO_PATH="https://github.com/All-Hands-AI/OD-SWE-bench.git"
+OPENHANDS_SWE_BENCH_REPO_BRANCH="eval"
+git clone -b $OPENHANDS_SWE_BENCH_REPO_BRANCH $OPENHANDS_SWE_BENCH_REPO_PATH $EVAL_WORKSPACE/OD-SWE-bench
 
 # 2. Prepare DATA
 echo "==== Prepare SWE-bench data ===="

@@ -14,7 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime'
+    'OPENHANDS_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime'
 )
 
 
@@ -200,8 +200,11 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
         repo = repo.replace('/', '___')
-        od_version = _get_package_version()
-        return RUNTIME_IMAGE_REPO, f'od_v{od_version}_image_{repo}_tag_{tag}'
+        openhands_version = _get_package_version()
+        return (
+            RUNTIME_IMAGE_REPO,
+            f'openhands_v{openhands_version}_image_{repo}_tag_{tag}',
+        )
 
 
 def build_runtime_image(
@@ -360,7 +363,7 @@ def _build_sandbox_image(
         on the contents of the docker build folder (source code and Dockerfile)
         e.g. 1234567890abcdef
     -target_image_tag (str): the tag for the target image that's generic and based on the base image name
-        e.g. od_v0.8.3_image_ubuntu_tag_22.04
+        e.g. openhands_v0.8.3_image_ubuntu_tag_22.04
     """
     target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'

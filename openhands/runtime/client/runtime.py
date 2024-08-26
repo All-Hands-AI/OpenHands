@@ -115,7 +115,7 @@ class EventStreamRuntime(Runtime):
         self.instance_id = (
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
+        # TODO: We can switch to aiodocker when `get_openhands_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image

@@ -58,7 +58,7 @@ else
 
     # ==== Convert OD format to SWE-bench format ====
     echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
-    poetry run python3 evaluation/swe_bench/scripts/eval/convert_od_output_to_swe_json.py $PROCESS_FILEPATH
+    poetry run python3 evaluation/swe_bench/scripts/eval/convert_openhands_output_to_swe_json.py $PROCESS_FILEPATH
     # replace .jsonl with .swebench.jsonl in filename
     SWEBENCH_FORMAT_JSONL=${PROCESS_FILEPATH/.jsonl/.swebench.jsonl}
     echo "SWEBENCH_FORMAT_JSONL: $SWEBENCH_FORMAT_JSONL"

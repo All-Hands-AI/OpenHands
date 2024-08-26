@@ -17,7 +17,7 @@ from openhands.runtime.utils.runtime_build import (
     prep_docker_build_folder,
 )
 
-OD_VERSION = f'od_v{_get_package_version()}'
+OPENHANDS_VERSION = f'openhands_v{_get_package_version()}'
 
 
 @pytest.fixture
@@ -176,7 +176,7 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
         img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_debian_tag_11'
+        and img_tag == f'{OPENHANDS_VERSION}_image_debian_tag_11'
     )
 
     base_image = 'nikolaik/python-nodejs:python3.11-nodejs22'
@@ -184,14 +184,14 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     assert (
         img_repo == f'{RUNTIME_IMAGE_REPO}'
         and img_tag
-        == f'{OD_VERSION}_image_nikolaik___python-nodejs_tag_python3.11-nodejs22'
+        == f'{OPENHANDS_VERSION}_image_nikolaik___python-nodejs_tag_python3.11-nodejs22'
     )
 
     base_image = 'ubuntu'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
         img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_ubuntu_tag_latest'
+        and img_tag == f'{OPENHANDS_VERSION}_image_ubuntu_tag_latest'
     )
 
 
@@ -215,7 +215,7 @@ def test_build_runtime_image_from_scratch(temp_dir):
         path=ANY,
         tags=[
             f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}',
-            f'{RUNTIME_IMAGE_REPO}:{OD_VERSION}_image_debian_tag_11',
+            f'{RUNTIME_IMAGE_REPO}:{OPENHANDS_VERSION}_image_debian_tag_11',
         ],
     )
     assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'

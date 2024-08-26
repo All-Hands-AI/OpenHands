@@ -91,9 +91,9 @@ OpenHands uses a dual-tagging system for its runtime images to balance reproduci
    - This ensures reproducibility: the same hash always means the same image contents.
 
 2. Generic tag: `{target_image_repo}:{target_image_tag}`
-   Example: `runtime:od_v0.8.3_ubuntu_tag_22.04`
+   Example: `runtime:openhands_v0.8.3_ubuntu_tag_22.04`
 
-   - This tag follows the format: `runtime:od_v{OD_VERSION}_{BASE_IMAGE_NAME}_tag_{BASE_IMAGE_TAG}`
+   - This tag follows the format: `runtime:openhands_v{OPENHANDS_VERSION}_{BASE_IMAGE_NAME}_tag_{BASE_IMAGE_TAG}`
    - It represents the latest build for a particular base image and OpenHands version combination.
    - This tag is updated whenever a new image is built from the same base image, even if the source code changes.
 
@@ -105,11 +105,11 @@ The hash-based tag ensures exact reproducibility, while the generic tag provides
    - Hash-based tag: `{target_image_repo}:{target_image_hash_tag}`
      Example: `runtime:abc123def456`
    - Generic tag: `{target_image_repo}:{target_image_tag}`
-     Example: `runtime:od_v0.8.3_ubuntu_tag_22.04`
+     Example: `runtime:openhands_v0.8.3_ubuntu_tag_22.04`
 
 2. Build Process:
    - a. Convert the base image name to an OD runtime image name.
-      Example: `ubuntu:22.04` -> `runtime:od_v0.8.3_ubuntu_tag_22.04`
+      Example: `ubuntu:22.04` -> `runtime:openhands_v0.8.3_ubuntu_tag_22.04`
    - b. Generate a build context (Dockerfile and OpenHands source code) and calculate its hash.
    - c. Check for an existing image with the calculated hash.
    - d. If not found, check for a recent compatible image to use as a base.
@@ -121,7 +121,7 @@ The hash-based tag ensures exact reproducibility, while the generic tag provides
 
    a. If an image exists with the same hash (e.g., `runtime:abc123def456`), it will be reused as is.
 
-   b. If the exact hash is not found, the system will try to rebuild using the latest generic image (e.g., `runtime:od_v0.8.3_ubuntu_tag_22.04`) as a base. This saves time by leveraging existing dependencies.
+   b. If the exact hash is not found, the system will try to rebuild using the latest generic image (e.g., `runtime:openhands_v0.8.3_ubuntu_tag_22.04`) as a base. This saves time by leveraging existing dependencies.
 
    c. If neither the hash-tagged nor the generic-tagged image is found, the system will build the image completely from scratch.
 
@@ -135,10 +135,10 @@ Here's a flowchart illustrating the build process:
 ```mermaid
 flowchart TD
     A[Start] --> B{Convert base image name}
-    B --> |ubuntu:22.04 -> runtime:od_v0.8.3_ubuntu_tag_22.04| C[Generate build context and hash]
+    B --> |ubuntu:22.04 -> runtime:openhands_v0.8.3_ubuntu_tag_22.04| C[Generate build context and hash]
     C --> D{Check for existing image with hash}
     D -->|Found runtime:abc123def456| E[Use existing image]
-    D -->|Not found| F{Check for runtime:od_v0.8.3_ubuntu_tag_22.04}
+    D -->|Not found| F{Check for runtime:openhands_v0.8.3_ubuntu_tag_22.04}
     F -->|Found| G[Rebuild based on recent image]
     F -->|Not found| H[Build from scratch]
     G --> I[Tag with hash and generic tags]
@@ -151,7 +151,7 @@ This approach ensures that:
 
 1. Identical source code and Dockerfile always produce the same image (via hash-based tags).
 2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images).
-3. The generic tag (e.g., `runtime:od_v0.8.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenHands version combination.
+3. The generic tag (e.g., `runtime:openhands_v0.8.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenHands version combination.
 
 By using this method, OpenHands maintains an efficient and flexible system for building and managing runtime images, adapting to both development needs and production requirements.
 
