@@ -744,7 +744,7 @@ def get_parser() -> argparse.ArgumentParser:
         '--eval-ids',
         default=None,
         type=str,
-        help='The comma-separatedIDs of the instances to evaluate',
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
     return parser
 
