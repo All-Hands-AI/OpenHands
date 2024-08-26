@@ -76,6 +76,14 @@ jobs:
         run: |
           suffix=$(echo "${{ matrix.base_image }}" | cut -d ':' -f 1 | cut -d '/' -f 1)
           ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
+      - name: Build and push runtime image ${{ matrix.base_image }}
+        if: "!github.event.pull_request.head.repo.fork"
+        run: |
+          ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
+      - name: Build runtime image ${{ matrix.base_image }}
+        if: "github.event.pull_request.head.repo.fork"
+        run: |
+          ./containers/build.sh runtime image ${{ github.repository_owner }} --nopush $suffix
 
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
