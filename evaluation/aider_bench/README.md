@@ -52,7 +52,13 @@ You can update the arguments in the script
 ## Summarize Results
 
 ```bash
-poetry run python ./evaluation/aider_bench/scripts/summarise_results.py [path_to_output_jsonl_file]
+poetry run python ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+```
+
+Full example:
+
+```bash
+poetry run python ./evaluation/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
 ```
 
 This will list the instances that passed and the instances that failed. For each
