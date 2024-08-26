@@ -15,7 +15,7 @@ The conceptual idea is illustrated below. At each turn, the agent can:
 
 To make the CodeAct agent more powerful with only access to `bash` action space, CodeAct agent leverages OpenHands's plugin system:
 - [Jupyter plugin](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/jupyter): for IPython execution via bash command
-- [SWE-agent tool plugin](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/swe_agent_commands): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
+- [Agent Skills plugin](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/plugins/agent_skills): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
 
 ## Demo
 
