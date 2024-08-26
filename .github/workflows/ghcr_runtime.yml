@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: runtime-${{ matrix.base_image.tag }}
-          path: /tmp/runtime.tar
+          path: /tmp/runtime-${{ matrix.base_image.tag }}.tar
 
 
   # Run unit tests with the EventStream runtime Docker images
@@ -123,12 +123,12 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         uses: actions/download-artifact@v4
         with:
-          name: runtime
+          name: runtime-${{ matrix.base_image }}
           path: /tmp
       - name: Load runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          docker load --input /tmp/runtime.tar
+          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
 
       - name: Install poetry via pipx
         run: pipx install poetry
