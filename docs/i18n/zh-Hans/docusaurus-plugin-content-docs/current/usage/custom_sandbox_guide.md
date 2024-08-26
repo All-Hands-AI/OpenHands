@@ -41,10 +41,10 @@ docker build -t custom_image .
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="custom_image"
+base_container_image="custom_image"
 ```
 
-> 确保 `sandbox_container_image` 设置为您前一步中自定义映像的名称。
+> 确保 `sandbox_base_container_image` 设置为您前一步中自定义映像的名称。
 
 ## 运行
 
@@ -60,7 +60,7 @@ sandbox_container_image="custom_image"
 
 相关代码定义在 [ssh_box.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/ssh_box.py) 和 [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py) 中。
 
-特别是 ssh_box.py 检查配置对象中的 ```config.sandbox_container_image```，然后尝试使用 [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72)，在 image_agnostic_util.py 定义中进行检索。
+特别是 ssh_box.py 检查配置对象中的 ```config.sandbox.base_container_image```，然后尝试使用 [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72)，在 image_agnostic_util.py 定义中进行检索。
 
 初次使用自定义映像时，该映像将不会被找到，因此将被构建（在后续运行中已构建的映像将被查找并返回）。
 
@@ -92,7 +92,7 @@ dockerfile_content = (
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 sandbox_user_id="1001"
 ```
 

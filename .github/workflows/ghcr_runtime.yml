@@ -113,7 +113,7 @@ jobs:
 
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_CONTAINER_IMAGE=$image_name \
+          SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
@@ -149,7 +149,7 @@ jobs:
 
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_CONTAINER_IMAGE=$image_name \
+          SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           TEST_ONLY=true \
           ./tests/integration/regenerate.sh
