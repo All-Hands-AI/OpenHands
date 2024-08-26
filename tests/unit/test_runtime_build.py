@@ -36,6 +36,7 @@ def _check_source_code_in_dir(temp_dir):
 
     # The source code should only include the `openhands` folder, but not the other folders
     assert set(os.listdir(code_dir)) == {
+        'agenthub',
         'openhands',
         'pyproject.toml',
         'poetry.lock',
@@ -51,7 +52,7 @@ def _check_source_code_in_dir(temp_dir):
         pyproject = toml.load(f)
 
     _pyproject_version = pyproject['tool']['poetry']['version']
-    assert _pyproject_version == version('openhands')
+    assert _pyproject_version == version('openhands-ai')
 
 
 def test_put_source_code_to_dir(temp_dir):
