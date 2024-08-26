@@ -59,7 +59,7 @@ def _create_project_source_dist():
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
     tarball_path = os.path.join(
-        project_root, 'dist', f'openhands-{package_version}.tar.gz'
+        project_root, 'dist', f'openhands_ai-{package_version}.tar.gz'
     )
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
