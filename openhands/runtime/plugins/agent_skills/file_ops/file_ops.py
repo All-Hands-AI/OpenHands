@@ -172,7 +172,8 @@ def _cur_file_header(current_file, total_lines) -> str:
 def open_file(
     path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
-    """Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
+    """Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
+    If line_number is provided, the window will be moved to include that line.
     It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
 
     Args:
@@ -556,7 +557,7 @@ def _edit_file_impl(
                 ret_str += lint_error + '\n'
 
                 editor_lines = n_added_lines + 20
-                sep = '-------------------------------------------------n'
+                sep = '-------------------------------------------------\n'
                 ret_str += (
                     f'[This is how your edit would have looked if applied]\n{sep}'
                 )
@@ -623,8 +624,8 @@ def _edit_file_impl(
 
 
 def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
-    """Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with `new_content`.
-    `to_replace` and `new_content` must be different!
+    """Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with non-empty `new_content`.
+    `to_replace` and `new_content` must be different! Split large edits into multiple smaller edits if necessary!
     Use `append_file` method for writing after `create_file`!
 
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
