@@ -59,6 +59,7 @@ class RemoteRuntime(Runtime):
             self.api_url, self.config.sandbox.api_key
         )
         self.runtime_id: str | None = None
+        self.runtime_url: str | None = None
 
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
@@ -149,8 +150,11 @@ class RemoteRuntime(Runtime):
                 raise RuntimeError(f'Failed to start sandbox: {await response.text()}')
             start_response = await response.json()
             self.runtime_id = start_response['runtime_id']
+            self.runtime_url = start_response['url']
 
-        logger.info(f'Sandbox started. Runtime ID: {self.runtime_id}')
+        logger.info(
+            f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
+        )
 
         # Initialize environment variables
         await super().ainit(env_vars)
@@ -162,6 +166,9 @@ class RemoteRuntime(Runtime):
         assert (
             self.runtime_id is not None
         ), 'Runtime ID is not set. This should never happen.'
+        assert (
+            self.runtime_url is not None
+        ), 'Runtime URL is not set. This should never happen.'
 
     async def _ensure_session(self):
         if self.session is None or self.session.closed:
@@ -177,9 +184,7 @@ class RemoteRuntime(Runtime):
     async def _wait_until_alive(self):
         logger.info('Waiting for sandbox to be alive...')
         session = await self._ensure_session()
-        async with session.get(
-            f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/alive'
-        ) as response:
+        async with session.get(f'{self.runtime_url}/alive') as response:
             if response.status == 200:
                 return
             else:
@@ -238,7 +243,7 @@ class RemoteRuntime(Runtime):
                 request_body = {'action': event_to_dict(action)}
                 logger.debug(f'Request body: {request_body}')
                 async with session.post(
-                    f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/execute_action',
+                    f'{self.runtime_url}/execute_action',
                     json=request_body,
                     timeout=action.timeout,
                 ) as response:
