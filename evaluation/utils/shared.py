@@ -32,6 +32,12 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
 
+    def model_dump(self, *args, **kwargs):
+        dumped_dict = super().model_dump(*args, **kwargs)
+        # avoid leaking sensitive information
+        dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        return dumped_dict
+
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
         dumped_dict = json.loads(dumped)
@@ -57,6 +63,12 @@ class EvalOutput(BaseModel):
 
     # Optionally save the input test instance
     instance: dict[str, Any] | None = None
+
+    def model_dump(self, *args, **kwargs):
+        dumped_dict = super().model_dump(*args, **kwargs)
+        # Apply custom serialization for metadata (to avoid leaking sensitive information)
+        dumped_dict['metadata'] = self.metadata.model_dump()
+        return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
