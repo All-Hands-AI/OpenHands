@@ -2,7 +2,7 @@ import asyncio
 import os
 import tempfile
 import uuid
-from typing import Optional
+from typing import Any, Optional, Type
 from zipfile import ZipFile
 
 import aiohttp
@@ -72,23 +72,55 @@ class RemoteRuntime(Runtime):
         self.container_name = 'od-remote-runtime-' + self.instance_id
         logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
 
+    async def _send_request(
+        self,
+        method: str,
+        url: str,
+        retry_exceptions: list[Type[Exception]] | None = None,
+        **kwargs: Any,
+    ) -> aiohttp.ClientResponse:
+        DEFAULT_RETRY_EXCEPTIONS = [
+            aiohttp.ClientError,
+            asyncio.TimeoutError,
+        ]
+        if retry_exceptions is None:
+            retry_exceptions = DEFAULT_RETRY_EXCEPTIONS
+
+        session = await self._ensure_session()
+
+        # Dynamically create a retry condition based on the provided exceptions
+        retry_condition = tenacity.retry_if_exception_type(tuple(retry_exceptions))
+
+        # Apply the retry condition to this specific call
+        retryer = tenacity.AsyncRetrying(
+            stop=tenacity.stop_after_attempt(5),
+            wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
+            retry=retry_condition,
+            reraise=True,
+        )
+
+        async for attempt in retryer:
+            with attempt:
+                async with session.request(method, url, **kwargs) as response:
+                    await response.read()
+                    return response
+
     async def ainit(self, env_vars: dict[str, str] | None = None):
         # Check if the container image exists
         # Use the /registry_prefix endpoint to get the registry prefix
-        session = await self._ensure_session()
-        async with session.get(f'{self.api_url}/registry_prefix') as response:
-            if response.status != 200:
-                raise RuntimeError(
-                    f'Failed to get registry prefix: {await response.text()}'
-                )
-            response_json = await response.json()
-            registry_prefix = response_json['registry_prefix']
-            os.environ['OD_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-                registry_prefix.rstrip('/') + '/runtime'
+        response = await self._send_request('GET', f'{self.api_url}/registry_prefix')
+        if response.status != 200:
+            raise RuntimeError(
+                f'Failed to get registry prefix: {await response.text()}'
             )
-            logger.info(
-                f'Runtime image repo: {os.environ["OD_RUNTIME_RUNTIME_IMAGE_REPO"]}'
-            )
+        response_json = await response.json()
+        registry_prefix = response_json['registry_prefix']
+        os.environ['OD_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+            registry_prefix.rstrip('/') + '/runtime'
+        )
+        logger.info(
+            f'Runtime image repo: {os.environ["OD_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+        )
 
         if self.config.sandbox.runtime_extra_deps:
             logger.info(
@@ -103,14 +135,13 @@ class RemoteRuntime(Runtime):
         )
 
         # Use the /image_exists endpoint to check if the image exists
-        session = await self._ensure_session()
-        async with session.get(
-            f'{self.api_url}/image_exists', params={'image': self.container_image}
-        ) as response:
-            if response.status != 200 or not (await response.json())['exists']:
-                raise RuntimeError(
-                    f'Container image {self.container_image} does not exist'
-                )
+        response = await self._send_request(
+            'GET',
+            f'{self.api_url}/image_exists',
+            params={'image': self.container_image},
+        )
+        if response.status != 200 or not (await response.json())['exists']:
+            raise RuntimeError(f'Container image {self.container_image} does not exist')
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
@@ -142,15 +173,14 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
-        session = await self._ensure_session()
-        async with session.post(
-            f'{self.api_url}/start', json=start_request
-        ) as response:
-            if response.status != 201:
-                raise RuntimeError(f'Failed to start sandbox: {await response.text()}')
-            start_response = await response.json()
-            self.runtime_id = start_response['runtime_id']
-            self.runtime_url = start_response['url']
+        response = await self._send_request(
+            'POST', f'{self.api_url}/start', json=start_request
+        )
+        if response.status != 201:
+            raise RuntimeError(f'Failed to start sandbox: {await response.text()}')
+        start_response = await response.json()
+        self.runtime_id = start_response['runtime_id']
+        self.runtime_url = start_response['url']
 
         logger.info(
             f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
@@ -177,20 +207,15 @@ class RemoteRuntime(Runtime):
             )
         return self.session
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
-    )
     async def _wait_until_alive(self):
         logger.info('Waiting for sandbox to be alive...')
-        session = await self._ensure_session()
-        async with session.get(f'{self.runtime_url}/alive') as response:
-            if response.status == 200:
-                return
-            else:
-                msg = f'Sandbox is not alive. Status: {response.status}. Response: {await response.json()}'
-                logger.error(msg)
-                raise RuntimeError(msg)
+        response = await self._send_request('GET', f'{self.runtime_url}/alive')
+        if response.status == 200:
+            return
+        else:
+            msg = f'Sandbox is not alive. Status: {response.status}. Response: {await response.json()}'
+            logger.error(msg)
+            raise RuntimeError(msg)
 
     @property
     def sandbox_workspace_dir(self):
@@ -198,14 +223,13 @@ class RemoteRuntime(Runtime):
 
     async def close(self):
         if self.runtime_id:
-            session = await self._ensure_session()
-            async with session.post(
-                f'{self.api_url}/stop', json={'runtime_id': self.runtime_id}
-            ) as response:
-                if response.status != 200:
-                    logger.error(f'Failed to stop sandbox: {await response.text()}')
-                else:
-                    logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
+            response = await self._send_request(
+                'POST', f'{self.api_url}/stop', json={'runtime_id': self.runtime_id}
+            )
+            if response.status != 200:
+                logger.error(f'Failed to stop sandbox: {await response.text()}')
+            else:
+                logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
 
         if self.session is not None and not self.session.closed:
             await self.session.close()
@@ -226,7 +250,6 @@ class RemoteRuntime(Runtime):
                     f'Action {action_type} is not supported in the current runtime.'
                 )
 
-            session = await self._ensure_session()
             await self._wait_until_alive()
 
             assert action.timeout is not None
@@ -235,22 +258,22 @@ class RemoteRuntime(Runtime):
                 logger.info('Executing action')
                 request_body = {'action': event_to_dict(action)}
                 logger.debug(f'Request body: {request_body}')
-                async with session.post(
+                response = await self._send_request(
+                    'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
                     timeout=action.timeout,
-                ) as response:
-                    if response.status == 200:
-                        output = await response.json()
-                        obs = observation_from_dict(output)
-                        obs._cause = action.id  # type: ignore[attr-defined]
-                        return obs
-                    else:
-                        error_message = await response.text()
-                        logger.error(f'Error from server: {error_message}')
-                        obs = ErrorObservation(
-                            f'Action execution failed: {error_message}'
-                        )
+                    retry_exceptions=[aiohttp.ClientError],
+                )
+                if response.status == 200:
+                    output = await response.json()
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
+                    return obs
+                else:
+                    error_message = await response.text()
+                    logger.error(f'Error from server: {error_message}')
+                    obs = ErrorObservation(f'Action execution failed: {error_message}')
             except asyncio.TimeoutError:
                 logger.error('No response received within the timeout period.')
                 obs = ErrorObservation('Action execution timed out')
@@ -283,7 +306,6 @@ class RemoteRuntime(Runtime):
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
-        session = await self._ensure_session()
         await self._wait_until_alive()
         try:
             if recursive:
@@ -307,20 +329,21 @@ class RemoteRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            async with session.post(
+            response = await self._send_request(
+                'POST',
                 f'{self.runtime_url}/upload_file',
                 data=upload_data,
                 params=params,
-            ) as response:
-                if response.status == 200:
-                    logger.info(
-                        f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {await response.text()}'
-                    )
-                    return
-                else:
-                    error_message = await response.text()
-                    raise Exception(f'Copy operation failed: {error_message}')
-
+                retry_exceptions=[aiohttp.ClientError],
+            )
+            if response.status == 200:
+                logger.info(
+                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {await response.text()}'
+                )
+                return
+            else:
+                error_message = await response.text()
+                raise Exception(f'Copy operation failed: {error_message}')
         except asyncio.TimeoutError:
             raise TimeoutError('Copy operation timed out')
         except Exception as e:
@@ -331,24 +354,25 @@ class RemoteRuntime(Runtime):
             logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
     async def list_files(self, path: str | None = None) -> list[str]:
-        session = await self._ensure_session()
         await self._wait_until_alive()
         try:
             data = {}
             if path is not None:
                 data['path'] = path
 
-            async with session.post(
+            response = await self._send_request(
+                'POST',
                 f'{self.runtime_url}/list_files',
                 json=data,
-            ) as response:
-                if response.status == 200:
-                    response_json = await response.json()
-                    assert isinstance(response_json, list)
-                    return response_json
-                else:
-                    error_message = await response.text()
-                    raise Exception(f'List files operation failed: {error_message}')
+                retry_exceptions=[aiohttp.ClientError],
+            )
+            if response.status == 200:
+                response_json = await response.json()
+                assert isinstance(response_json, list)
+                return response_json
+            else:
+                error_message = await response.text()
+                raise Exception(f'List files operation failed: {error_message}')
         except asyncio.TimeoutError:
             raise TimeoutError('List files operation timed out')
         except Exception as e:
