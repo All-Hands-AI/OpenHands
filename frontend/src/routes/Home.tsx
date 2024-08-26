@@ -1,6 +1,9 @@
 import React from "react";
+import clsx from "clsx";
+import { Form } from "react-router-dom";
 import BuildIt from "#/assets/build-it.svg?react";
 import Clip from "#/assets/clip.svg?react";
+import Send from "#/assets/send.svg?react";
 
 function HeroHeading() {
   return (
@@ -21,13 +24,35 @@ function HeroHeading() {
 }
 
 function TaskInput() {
+  const [text, setText] = React.useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+  };
+
   return (
     <div className="flex flex-col gap-2">
-      <input
-        type="text"
-        className="bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5"
-        placeholder="What do you want to build?"
-      />
+      <Form className="relative">
+        <input
+          type="text"
+          placeholder="What do you want to build?"
+          value={text}
+          onChange={handleChange}
+          className={clsx(
+            "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
+            "focus:bg-[#525252]",
+          )}
+        />
+        {text && (
+          <button
+            type="submit"
+            aria-label="Submit"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2"
+          >
+            <Send width={24} height={24} />
+          </button>
+        )}
+      </Form>
       <span className="flex items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]">
         <Clip width={16} height={16} />
         Attach a file
