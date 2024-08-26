@@ -10,7 +10,7 @@ class GoogleCloudFileStore(FileStore):
     def __init__(self, bucket_name: Optional[str] = None) -> None:
         """
         Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
-        environment it will be used for authentication. Otherwise access will be 
+        environment it will be used for authentication. Otherwise access will be
         anonymous.
         """
         if bucket_name is None:
@@ -20,19 +20,19 @@ class GoogleCloudFileStore(FileStore):
 
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)
-        with blob.open("w") as f:
+        with blob.open('w') as f:
             f.write(contents)
 
     def read(self, path: str) -> str:
         blob = self.bucket.blob(path)
-        with blob.open("r") as f:
+        with blob.open('r') as f:
             return f.read()
 
     def list(self, path: str) -> List[str]:
-        if not path or path == "/":
-            path = ""
-        elif not path.endswith("/"):
-            path += "/"
+        if not path or path == '/':
+            path = ''
+        elif not path.endswith('/'):
+            path += '/'
         # The delimiter logic screens out directories, so we can't use it. :(
         # For example, given a structure:
         #   foo/bar/zap.txt
@@ -47,9 +47,9 @@ class GoogleCloudFileStore(FileStore):
             if name == path:
                 continue
             try:
-                index = name.index("/", prefix_len + 1)
+                index = name.index('/', prefix_len + 1)
                 if index != prefix_len:
-                    blobs.add(name[:index + 1])
+                    blobs.add(name[: index + 1])
             except ValueError:
                 blobs.add(name)
         return list(blobs)
