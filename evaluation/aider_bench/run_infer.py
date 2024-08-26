@@ -245,7 +245,16 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(aider_bench_tests, output_file, args.eval_n_limit)
+
+    # Parse dataset IDs if provided
+    eval_ids = None
+    if args.eval_ids:
+        eval_ids = str(args.eval_ids).split(',')
+        logger.info(f'Using specific dataset IDs: {eval_ids}')
+
+    instances = prepare_dataset(
+        aider_bench_tests, output_file, args.eval_n_limit, eval_ids=eval_ids
+    )
 
     asyncio.run(
         run_evaluation(
