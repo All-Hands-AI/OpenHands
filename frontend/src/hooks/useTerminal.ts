@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { Command } from "#/state/commandSlice";
 import { sendTerminalCommand } from "#/services/terminalService";
+import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -101,14 +102,16 @@ export const useTerminal = (commands: Command[] = []) => {
       // Start writing commands from the last command index
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         const command = commands[i];
-        const lines = command.content.split("\n");
+        const lines = parseTerminalOutput(command.content).output.split("\n");
 
         lines.forEach((line: string) => {
-          terminal.current?.writeln(line);
+          terminal.current?.writeln(parseTerminalOutput(line).output);
         });
 
         if (command.type === "output") {
-          terminal.current.write("\n$ ");
+          terminal.current.write(
+            `\n${parseTerminalOutput(command.content).symbol} `,
+          );
         }
       }
 
