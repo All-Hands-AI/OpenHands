@@ -315,7 +315,7 @@ class RemoteRuntime(Runtime):
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
             async with session.post(
-                f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/upload_file',
+                f'{self.runtime_url}/upload_file',
                 data=upload_data,
                 params=params,
             ) as response:
@@ -346,7 +346,7 @@ class RemoteRuntime(Runtime):
                 data['path'] = path
 
             async with session.post(
-                f'{self.api_url}/runtime/{self.runtime_id}/{self.port}/list_files',
+                f'{self.runtime_url}/list_files',
                 json=data,
             ) as response:
                 if response.status == 200:
