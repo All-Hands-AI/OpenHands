@@ -83,10 +83,11 @@ jobs:
         run: |
           ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ matrix.base_image.tag }}
 
+      # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         uses: docker/build-push-action@v6
         with:
-          tags: ghcr.io/${{ github.repository_owner}}/runtime:${{ github.sha }}-${{ matrix.base_image.tag }}
+          tags: ghcr.io/all-hands-ai/runtime:${{ github.sha }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
       - name: Upload runtime image for fork
@@ -117,6 +118,7 @@ jobs:
           large-packages: true
           swap-storage: true
 
+      # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
         uses: actions/download-artifact@v4
