@@ -32,8 +32,15 @@ WINDOW = 100
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+
 
 # ==================================================================================================
+
+
+def _output_error(error_msg: str) -> bool:
+    print(f'ERROR: {error_msg}')
+    return False
 
 
 def _is_valid_filename(file_name) -> bool:
@@ -75,7 +82,7 @@ def _check_current_file(file_path: str | None = None) -> bool:
     if not file_path:
         file_path = CURRENT_FILE
     if not file_path or not os.path.isfile(file_path):
-        raise ValueError('No file open. Use the open_file function first.')
+        return _output_error('No file open. Use the open_file function first.')
     return True
 
 
@@ -176,14 +183,16 @@ def open_file(
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
     if not os.path.isfile(path):
-        raise FileNotFoundError(f'File {path} not found')
+        _output_error(f'File {path} not found')
+        return
 
     CURRENT_FILE = os.path.abspath(path)
     with open(CURRENT_FILE) as file:
         total_lines = max(1, sum(1 for _ in file))
 
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        raise ValueError(f'Line number must be between 1 and {total_lines}')
+        _output_error(f'Line number must be between 1 and {total_lines}')
+        return
     CURRENT_LINE = line_number
 
     # Override WINDOW with context_lines
@@ -215,7 +224,8 @@ def goto_line(line_number: int) -> None:
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        raise ValueError(f'Line number must be between 1 and {total_lines}')
+        _output_error(f'Line number must be between 1 and {total_lines}')
+        return
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
 
@@ -271,16 +281,14 @@ def create_file(filename: str) -> None:
         filename: str: The name of the file to create.
     """
     if os.path.exists(filename):
-        raise FileExistsError(f"File '{filename}' already exists.")
+        _output_error(f"File '{filename}' already exists.")
+        return
 
     with open(filename, 'w') as file:
         file.write('\n')
 
     open_file(filename)
     print(f'[File {filename} created.]')
-
-
-LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
 
 
 class LineNumberError(Exception):
@@ -403,7 +411,7 @@ def _edit_file_impl(
     content: str = '',
     is_insert: bool = False,
     is_append: bool = False,
-) -> str:
+) -> str | None:
     """Internal method to handle common logic for edit_/append_file methods.
 
     Args:
@@ -425,19 +433,24 @@ def _edit_file_impl(
     )
 
     if not _is_valid_filename(file_name):
-        raise FileNotFoundError('Invalid file name.')
+        _output_error('Invalid file name.')
+        return None
 
     if not _is_valid_path(file_name):
-        raise FileNotFoundError('Invalid path or file name.')
+        _output_error('Invalid path or file name.')
+        return None
 
     if not _create_paths(file_name):
-        raise PermissionError('Could not access or create directories.')
+        _output_error('Could not access or create directories.')
+        return None
 
     if not os.path.isfile(file_name):
-        raise FileNotFoundError(f'File {file_name} not found.')
+        _output_error(f'File {file_name} not found.')
+        return None
 
     if is_insert and is_append:
-        raise ValueError('Cannot insert and append at the same time.')
+        _output_error('Cannot insert and append at the same time.')
+        return None
 
     # Use a temporary file to write changes
     content = str(content or '')
@@ -543,17 +556,18 @@ def _edit_file_impl(
                 ret_str += lint_error + '\n'
 
                 editor_lines = n_added_lines + 20
-
-                ret_str += '[This is how your edit would have looked if applied]\n'
-                ret_str += '-------------------------------------------------\n'
+                sep = '-------------------------------------------------\n'
+                ret_str += (
+                    f'[This is how your edit would have looked if applied]\n{sep}'
+                )
                 ret_str += (
                     _print_window(file_name, show_line, editor_lines, return_str=True)
                     + '\n'
                 )
-                ret_str += '-------------------------------------------------\n\n'
+                ret_str += f'{sep}\n\n'
 
-                ret_str += '[This is the original code before your edit]\n'
-                ret_str += '-------------------------------------------------\n'
+                ret_str += f'[This is the original code before your edit]\n{sep}'
+                ret_str += f'{sep}\n'
                 ret_str += (
                     _print_window(
                         original_file_backup_path,
@@ -563,8 +577,7 @@ def _edit_file_impl(
                     )
                     + '\n'
                 )
-                ret_str += '-------------------------------------------------\n'
-
+                ret_str += f'{sep}\n'
                 ret_str += (
                     'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                     'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -657,10 +670,10 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     """
     # FIXME: support replacing *all* occurrences
     if to_replace is None or to_replace.strip() == '':
-        raise ValueError('`to_replace` must not be empty.')
+        _output_error('`to_replace` must not be empty.')
 
     if to_replace == new_content:
-        raise ValueError('`to_replace` and `new_content` must be different.')
+        _output_error('`to_replace` and `new_content` must be different.')
 
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
@@ -669,7 +682,7 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         file_content = file.read()
 
     if file_content.count(to_replace) > 1:
-        raise ValueError(
+        _output_error(
             '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
         )
 
@@ -707,7 +720,8 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     )
     # lint_error = bool(LINTER_ERROR_MSG in ret_str)
     # TODO: automatically tries to fix linter error (maybe involve some static analysis tools on the location near the edit to figure out indentation)
-    print(ret_str)
+    if ret_str is not None:
+        print(ret_str)
 
 
 def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
@@ -741,7 +755,8 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
         is_insert=True,
         is_append=False,
     )
-    print(ret_str)
+    if ret_str is not None:
+        print(ret_str)
 
 
 def append_file(file_name: str, content: str) -> None:
@@ -761,7 +776,8 @@ def append_file(file_name: str, content: str) -> None:
         is_insert=False,
         is_append=True,
     )
-    print(ret_str)
+    if ret_str is not None:
+        print(ret_str)
 
 
 def search_dir(search_term: str, dir_path: str = './') -> None:
@@ -772,7 +788,8 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
         dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f'Directory {dir_path} not found')
+        _output_error(f'Directory {dir_path} not found')
+        return
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
@@ -814,11 +831,11 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     if file_path is None:
         file_path = CURRENT_FILE
     if file_path is None:
-        raise FileNotFoundError(
-            'No file specified or open. Use the open_file function first.'
-        )
+        _output_error('No file specified or open. Use the open_file function first.')
+        return
     if not os.path.isfile(file_path):
-        raise FileNotFoundError(f'File {file_path} not found')
+        _output_error(f'File {file_path} not found')
+        return
 
     matches = []
     with open(file_path) as file:
@@ -843,7 +860,8 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f'Directory {dir_path} not found')
+        _output_error(f'Directory {dir_path} not found')
+        return
 
     matches = []
     for root, _, files in os.walk(dir_path):
