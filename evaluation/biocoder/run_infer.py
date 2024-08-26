@@ -62,7 +62,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
+            base_container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
             enable_auto_lint=True,
             use_host_network=False,
         ),

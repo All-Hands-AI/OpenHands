@@ -41,7 +41,17 @@ def _create_project_source_dist():
     logger.info(f'Using project root: {project_root}')
 
     # run "python -m build -s" on project_root to create project tarball
-    result = subprocess.run(f'python -m build -s {project_root}', shell=True)
+    result = subprocess.run(
+        'python -m build -s ' + project_root.replace(' ', r'\ '),
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    logger.info(result.stdout.decode())
+    err_logs = result.stderr.decode()
+    if err_logs:
+        logger.error(err_logs)
+
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
         raise Exception(f'Build failed: {result}')
@@ -49,7 +59,7 @@ def _create_project_source_dist():
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
     tarball_path = os.path.join(
-        project_root, 'dist', f'openhands-{package_version}.tar.gz'
+        project_root, 'dist', f'openhands_ai-{package_version}.tar.gz'
     )
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
@@ -241,7 +251,7 @@ def build_runtime_image(
 
     # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
     # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if runtime_builder.image_exists(hash_runtime_image_name):
+    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
         logger.info(
             f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
         )
