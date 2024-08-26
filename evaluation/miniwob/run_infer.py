@@ -49,7 +49,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='xingyaoww/od-eval-miniwob:v1.0',
+            base_container_image='xingyaoww/od-eval-miniwob:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,

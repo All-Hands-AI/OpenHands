@@ -80,7 +80,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='public.ecr.aws/i5g0m1f6/ml-bench',
+            base_container_image='public.ecr.aws/i5g0m1f6/ml-bench',
             enable_auto_lint=True,
             use_host_network=False,
         ),

@@ -61,16 +61,21 @@ def enable_auto_lint(request):
 
 
 @pytest.fixture(scope='module', params=None)
-def container_image(request):
+def base_container_image(request):
     time.sleep(1)
-    env_image = os.environ.get('SANDBOX_CONTAINER_IMAGE')
+    env_image = os.environ.get('SANDBOX_BASE_CONTAINER_IMAGE')
     if env_image:
         request.param = env_image
     else:
         if not hasattr(request, 'param'):  # prevent runtime AttributeError
             request.param = None
-        if request.param is None:
-            request.param = request.config.getoption('--container-image')
+        if request.param is None and hasattr(request.config, 'sandbox'):
+            try:
+                request.param = request.config.sandbox.getoption(
+                    '--base_container_image'
+                )
+            except ValueError:
+                request.param = None
         if request.param is None:
             request.param = pytest.param(
                 'nikolaik/python-nodejs:python3.11-nodejs22',
@@ -95,11 +100,12 @@ async def _load_runtime(
     box_class,
     run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
-    container_image: str | None = None,
+    base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
 ) -> Runtime:
     sid = 'test'
     cli_session = 'main_test'
+
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
@@ -114,19 +120,17 @@ async def _load_runtime(
     load_from_env(config, os.environ)
     config.run_as_openhands = run_as_openhands
     config.sandbox.enable_auto_lint = enable_auto_lint
+    if base_container_image is not None:
+        config.sandbox.base_container_image = base_container_image
 
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(cli_session, file_store)
-
-    if container_image is not None:
-        config.sandbox.container_image = container_image
 
     runtime = box_class(
         config=config,
         event_stream=event_stream,
         sid=sid,
         plugins=plugins,
-        container_image=container_image,
     )
     await runtime.ainit()
     await asyncio.sleep(1)
