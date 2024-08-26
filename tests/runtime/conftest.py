@@ -70,7 +70,7 @@ def base_container_image(request):
         if not hasattr(request, 'param'):  # prevent runtime AttributeError
             request.param = None
         if request.param is None:
-            request.param = request.config.getoption('--container-image')
+            request.param = request.config.getoption('--base_container_image')
         if request.param is None:
             request.param = pytest.param(
                 'nikolaik/python-nodejs:python3.11-nodejs22',
