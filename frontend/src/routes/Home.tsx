@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import { Form } from "react-router-dom";
+import { Form, Link } from "react-router-dom";
 import BuildIt from "#/assets/build-it.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import Send from "#/assets/send.svg?react";
@@ -15,9 +15,14 @@ function HeroHeading() {
       <p className="mx-4 text-sm">
         All Hands makes it easy to build and maintain software using a simple
         prompt. Not sure how to start?{" "}
-        <span className="text-hyperlink underline underline-offset-[3px]">
+        <Link
+          rel="noopener noreferrer"
+          target="_blank"
+          to="https://docs.all-hands.dev/modules/usage/agents"
+          className="text-hyperlink underline underline-offset-[3px]"
+        >
           Read this
-        </span>
+        </Link>
       </p>
     </div>
   );
