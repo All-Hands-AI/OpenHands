@@ -184,7 +184,7 @@ def open_file(
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
     if not os.path.isfile(path):
-        _output_error(f'File {path} not found')
+        _output_error(f'File {path} not found.')
         return
 
     CURRENT_FILE = os.path.abspath(path)
@@ -225,7 +225,7 @@ def goto_line(line_number: int) -> None:
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        _output_error(f'Line number must be between 1 and {total_lines}')
+        _output_error(f'Line number must be between 1 and {total_lines}.')
         return
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
@@ -567,7 +567,7 @@ def _edit_file_impl(
                 )
                 ret_str += f'{sep}\n'
 
-                ret_str += f'[This is the original code before your edit]\n{sep}'
+                ret_str += '[This is the original code before your edit]\n'
                 ret_str += f'{sep}'
                 ret_str += (
                     _print_window(
@@ -674,9 +674,15 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     # FIXME: support replacing *all* occurrences
     if to_replace is None or to_replace.strip() == '':
         _output_error('`to_replace` must not be empty.')
+        return
 
     if to_replace == new_content:
         _output_error('`to_replace` and `new_content` must be different.')
+        return
+
+    if not os.path.isfile(file_name):
+        _output_error(f'File {file_name} not found.')
+        return None
 
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
@@ -688,6 +694,7 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         _output_error(
             '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
         )
+        return
 
     start = file_content.find(to_replace)
     if start != -1:
@@ -764,7 +771,7 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
 
 def append_file(file_name: str, content: str) -> None:
     """Append content to the given file.
-    It appends text `content` to the end of the specified file.
+    It appends text `content` to the end of the specified file, ideal after a `create_file`!
 
     Args:
         file_name: str: The name of the file to edit.
@@ -837,7 +844,7 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
         _output_error('No file specified or open. Use the open_file function first.')
         return
     if not os.path.isfile(file_path):
-        _output_error(f'File {file_path} not found')
+        _output_error(f'File {file_path} not found.')
         return
 
     matches = []

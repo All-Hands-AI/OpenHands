@@ -74,9 +74,22 @@ def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
     return file_path
 
 
+def _capture_file_operation_error(operation, expected_error_msg):
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            operation()
+        result = buf.getvalue().strip()
+    assert result == expected_error_msg
+
+
+# =============================================================================
+
+
 def test_open_file_unexist_path():
-    with pytest.raises(FileNotFoundError):
-        open_file('/unexist/path/a.txt')
+    _capture_file_operation_error(
+        lambda: open_file('/unexist/path/a.txt'),
+        'ERROR: File /unexist/path/a.txt not found.',
+    )
 
 
 def test_open_file(tmp_path):
@@ -245,20 +258,24 @@ def test_goto_line_negative(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             open_file(str(temp_file_path))
-    with pytest.raises(ValueError):
-        goto_line(-1)
+
+    _capture_file_operation_error(
+        lambda: goto_line(-1), 'ERROR: Line number must be between 1 and 4.'
+    )
 
 
 def test_goto_line_out_of_bound(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 5)])
+    content = '\n'.join([f'Line {i}' for i in range(1, 10)])
     temp_file_path.write_text(content)
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             open_file(str(temp_file_path))
-    with pytest.raises(ValueError):
-        goto_line(100)
+
+    _capture_file_operation_error(
+        lambda: goto_line(100), 'ERROR: Line number must be between 1 and 9.'
+    )
 
 
 def test_scroll_down(tmp_path):
@@ -689,15 +706,15 @@ def test_edit_file_by_replace_multiline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            with pytest.raises(
-                ValueError,
-                match='`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique',
-            ):
-                edit_file_by_replace(
-                    file_name=str(temp_file_path),
-                    to_replace='Line 2',
-                    new_content='REPLACE TEXT',
-                )
+            edit_file_by_replace(
+                file_name=str(temp_file_path),
+                to_replace='Line 2',
+                new_content='REPLACE TEXT',
+            )
+            result = buf.getvalue()
+            assert result.strip().startswith(
+                'ERROR: `to_replace` appears more than once, please include enough lines to make code in `to_replace` unique'
+            )
 
 
 def test_edit_file_by_replace_no_diff(tmp_path):
@@ -709,14 +726,15 @@ def test_edit_file_by_replace_no_diff(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            with pytest.raises(
-                ValueError, match='`to_replace` and `new_content` must be different'
-            ):
-                edit_file_by_replace(
-                    file_name=str(temp_file_path),
-                    to_replace='Line 1',
-                    new_content='Line 1',
-                )
+            edit_file_by_replace(
+                file_name=str(temp_file_path),
+                to_replace='Line 1',
+                new_content='Line 1',
+            )
+            result = buf.getvalue()
+            assert result.strip().startswith(
+                'ERROR: `to_replace` and `new_content` must be different'
+            )
 
 
 def test_edit_file_by_replace_toreplace_empty(tmp_path):
@@ -726,23 +744,25 @@ def test_edit_file_by_replace_toreplace_empty(tmp_path):
 
     open_file(str(temp_file_path))
 
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            with pytest.raises(ValueError, match='`to_replace` must not be empty.'):
-                edit_file_by_replace(
-                    file_name=str(temp_file_path),
-                    to_replace='    ',
-                    new_content='Line 1',
-                )
+    _capture_file_operation_error(
+        lambda: edit_file_by_replace(
+            file_name=str(temp_file_path),
+            to_replace='',
+            new_content='Line 1',
+        ),
+        'ERROR: `to_replace` must not be empty.',
+    )
 
 
 def test_edit_file_by_replace_unknown_file():
-    with pytest.raises(FileNotFoundError):
-        edit_file_by_replace(
+    _capture_file_operation_error(
+        lambda: edit_file_by_replace(
             str('unknown file'),
             'ORIGINAL TEXT',
             'REPLACE TEXT',
-        )
+        ),
+        'ERROR: File unknown file not found.',
+    )
 
 
 def test_insert_content_at_line(tmp_path):
@@ -976,12 +996,14 @@ def test_insert_content_at_line_from_scratch_multiline(tmp_path):
 
 
 def test_insert_content_at_line_not_opened():
-    with pytest.raises(FileNotFoundError):
-        insert_content_at_line(
+    _capture_file_operation_error(
+        lambda: insert_content_at_line(
             str('unknown file'),
             1,
             'REPLACE TEXT',
-        )
+        ),
+        'ERROR: Invalid path or file name.',
+    )
 
 
 def test_append_file(tmp_path):
@@ -1077,8 +1099,10 @@ def test_append_file_from_scratch_multiline(tmp_path):
 
 
 def test_append_file_not_opened():
-    with pytest.raises(FileNotFoundError):
-        append_file(str('unknown file'), content='APPEND TEXT')
+    _capture_file_operation_error(
+        lambda: append_file('unknown file', content='APPENDED TEXT'),
+        'ERROR: Invalid path or file name.',
+    )
 
 
 def test_search_dir(tmp_path):
@@ -1195,8 +1219,10 @@ def test_search_file_not_exist_term(tmp_path):
 
 
 def test_search_file_not_exist_file():
-    with pytest.raises(FileNotFoundError):
-        search_file('Line 6', '/unexist/path/a.txt')
+    _capture_file_operation_error(
+        lambda: search_file('Line 6', '/unexist/path/a.txt'),
+        'ERROR: File /unexist/path/a.txt not found.',
+    )
 
 
 def test_find_file(tmp_path):
