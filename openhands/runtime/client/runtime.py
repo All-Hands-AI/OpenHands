@@ -104,7 +104,6 @@ class EventStreamRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
-        container_image: str | None = None,
     ):
         super().__init__(
             config, event_stream, sid, plugins
@@ -118,11 +117,8 @@ class EventStreamRuntime(Runtime):
         )
         # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
-        self.container_image = (
-            self.config.sandbox.container_image
-            if container_image is None
-            else container_image
-        )
+        self.base_container_image = self.config.sandbox.base_container_image
+        self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         self.container = None
@@ -140,11 +136,16 @@ class EventStreamRuntime(Runtime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
-        self.container_image = build_runtime_image(
-            self.container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-        )
+        if self.runtime_container_image is None:
+            if self.base_container_image is None:
+                raise ValueError(
+                    'Neither runtime container image nor base container image is set'
+                )
+            self.runtime_container_image = build_runtime_image(
+                self.base_container_image,
+                self.runtime_builder,
+                extra_deps=self.config.sandbox.runtime_extra_deps,
+            )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=self.config.workspace_mount_path,
@@ -181,7 +182,7 @@ class EventStreamRuntime(Runtime):
     ):
         try:
             logger.info(
-                f'Starting container with image: {self.container_image} and name: {self.container_name}'
+                f'Starting container with image: {self.runtime_container_image} and name: {self.container_name}'
             )
             plugin_arg = ''
             if plugins is not None and len(plugins) > 0:
@@ -215,7 +216,7 @@ class EventStreamRuntime(Runtime):
             else:
                 browsergym_arg = ''
             container = self.docker_client.containers.run(
-                self.container_image,
+                self.runtime_container_image,
                 command=(
                     f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                     'PYTHONUNBUFFERED=1 poetry run '

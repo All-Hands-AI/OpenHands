@@ -57,8 +57,8 @@ mkdir -p $WORKSPACE_BASE
 
 # use environmental variable if exists
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"
-if [ -z "$SANDBOX_CONTAINER_IMAGE" ]; then
-  SANDBOX_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
+if [ -z "$SANDBOX_BASE_CONTAINER_IMAGE" ]; then
+  SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
 fi
 
 MAX_ITERATIONS=15
@@ -114,7 +114,7 @@ run_test() {
     MAX_ITERATIONS=$MAX_ITERATIONS \
     DEFAULT_AGENT=$agent \
     TEST_RUNTIME="$TEST_RUNTIME" \
-    SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
+    SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
@@ -185,7 +185,7 @@ regenerate_without_llm() {
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
       TEST_RUNTIME="$TEST_RUNTIME" \
-      SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
+      SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
   set +x
 }
@@ -212,7 +212,7 @@ regenerate_with_llm() {
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
       DEFAULT_AGENT=$agent \
       RUNTIME="$TEST_RUNTIME" \
-      SANDBOX_CONTAINER_IMAGE="$SANDBOX_CONTAINER_IMAGE" \
+      SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run python "$PROJECT_ROOT/openhands/core/main.py" \
       -i $MAX_ITERATIONS \
       -t "$task Do not ask me for confirmation at any point." \
