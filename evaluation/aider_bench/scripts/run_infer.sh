@@ -35,6 +35,12 @@ COMMAND="export PYTHONPATH=evaluation/aider_bench:\$PYTHONPATH && poetry run pyt
   --eval-num-workers $NUM_WORKERS \
   --eval-note $AGENT_VERSION"
 
+# Default to NOT use unit tests.
+if [ -z "$USE_UNIT_TESTS" ]; then
+  export USE_UNIT_TESTS=false
+fi
+echo "USE_UNIT_TESTS: $USE_UNIT_TESTS"
+
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
   COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"

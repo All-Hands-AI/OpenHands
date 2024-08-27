@@ -6,7 +6,6 @@ INSTRUCTIONS_ADDENDUM = """
 Use the above instructions to modify the supplied files: {signature_file}
 Don't change the names of existing functions or classes, as they may be referenced from other code like unit tests, etc.
 
-Use the test_file: {test_file}, to verify the correctness of your solution. DO NOT EDIT the test file.
 Only use standard python libraries, don't suggest installing any packages.
 """
 
