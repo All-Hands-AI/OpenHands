@@ -35,7 +35,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.AWAITING_USER_CONFIRMATION]: [],
 };
 
-interface ButtonProps {
+interface ActionButtonProps {
   isDisabled: boolean;
   content: string;
   action: AgentState;
@@ -50,7 +50,7 @@ function ActionButton({
   handleAction,
   children,
   large = false,
-}: React.PropsWithChildren<ButtonProps>): React.ReactNode {
+}: React.PropsWithChildren<ActionButtonProps>) {
   return (
     <Tooltip content={content} closeDelay={100}>
       <button
@@ -104,7 +104,6 @@ function AgentControlBar() {
       setDesiredState(AgentState.RUNNING);
     }
     // We only want to run this effect when curAgentState changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curAgentState]);
 
   return (

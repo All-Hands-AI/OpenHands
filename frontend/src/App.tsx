@@ -18,8 +18,9 @@ import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import Security from "./components/modals/security/Security";
+import { ProjectMenuCard } from "./components/project-menu/ProjectMenuCard";
 
-interface Props {
+interface ControlsProps {
   setSettingOpen: (isOpen: boolean) => void;
   setSecurityOpen: (isOpen: boolean) => void;
   showSecurityLock: boolean;
@@ -29,12 +30,13 @@ function Controls({
   setSettingOpen,
   setSecurityOpen,
   showSecurityLock,
-}: Props): JSX.Element {
+}: ControlsProps) {
   return (
-    <div className="flex w-full p-4 bg-neutral-900 items-center shrink-0 justify-between">
+    <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
         <AgentControlBar />
       </div>
+
       <AgentStatusBar />
 
       <div style={{ display: "flex", alignItems: "center" }}>
@@ -57,6 +59,8 @@ function Controls({
           <CogTooth />
         </div>
       </div>
+
+      <ProjectMenuCard />
     </div>
   );
 }
@@ -99,11 +103,11 @@ function App(): JSX.Element {
   }, []);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex grow bg-neutral-900 text-white min-h-0">
+    <div className="h-full flex flex-col gap-[10px]">
+      <div className="flex grow text-white min-h-0">
         <Container
           orientation={Orientation.HORIZONTAL}
-          className="grow h-full min-h-0 min-w-0 px-3 pt-3"
+          className="grow h-full min-h-0 min-w-0"
           initialSize={500}
           firstChild={<ChatInterface />}
           firstClassName="rounded-xl overflow-hidden border border-neutral-600"
