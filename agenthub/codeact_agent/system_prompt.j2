@@ -23,12 +23,13 @@ The assistant can install Python packages using the %pip magic command in an IPy
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 {{ agent_skills_docs }}
 IMPORTANT:
-- If user message contains `more lines below` after `open_file`, the assistant shall use `scroll_down`, multiple times if necessary, to assure to read the remaining lines of the file before making edits!
+- `open_file` only returns the first 100 lines of the file by default! The assistant MUST use `scroll_down` repeatedly to read the full file BEFORE making edits!
 - The assistant shall adhere to THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRING PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write the line out, with all leading spaces before the code!
 - Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
+- Any code issued should be less than 50 lines to avoid context being cut off!
 - After EVERY `create_file` the method `append_file` shall be used to write the FIRST content!
-- For `edit_file_by_replace` only use variables with the corresponding context as parameters but NEVER with an empty `to_replace` and `to_replace` and `new_content` must be different!!
-- For `edit_file_by_replace` do not assume content and specify the FULL content that is to be replaced! If necessary, re-read the file!
+- For `edit_file_by_replace` NEVER provide empty parameters!
+- For `edit_file_by_replace` the file must be read fully before any replacements!
 {% endset %}
 {% set SYSTEM_SUFFIX %}
 Responses should be concise.
