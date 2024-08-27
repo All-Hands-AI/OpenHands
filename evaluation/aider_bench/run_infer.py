@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
     instances = prepare_dataset(
         aider_bench_tests, output_file, args.eval_n_limit, eval_ids=eval_ids
-    )[124:]
+    )
 
     asyncio.run(
         run_evaluation(
