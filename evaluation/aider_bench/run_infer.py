@@ -85,6 +85,13 @@ async def initialize_runtime(
             file_path,
             '/workspace',
         )
+        file_path = os.path.join(tmpdir, f'{instance.instance_name}_test.py')
+        with open(file_path, 'w') as f:
+            f.write(instance.test)
+        await runtime.copy_to(
+            file_path,
+            '/workspace',
+        )
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
@@ -101,6 +108,7 @@ async def complete_runtime(
     logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
     obs: CmdOutputObservation
 
+    # Rewriting the test file to ignore any changes Agent may have made.
     script_name = f'{instance.instance_name}_test.py'
     with tempfile.TemporaryDirectory() as tmpdir:
         file_path = os.path.join(tmpdir, script_name)
@@ -155,6 +163,7 @@ async def process_instance(
     instruction = instance.instruction
     instruction += INSTRUCTIONS_ADDENDUM.format(
         signature_file=f'{instance.instance_name}.py',
+        test_file=f'{instance.instance_name}_test.py',
     )
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided '

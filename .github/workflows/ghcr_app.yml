@@ -56,6 +56,11 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build and export image
-        id: build
-        run: ./containers/build.sh openhands ${{ github.repository_owner }} --push
+      - name: Build and push app image
+        if: "!github.event.pull_request.head.repo.fork"
+        run: |
+          ./containers/build.sh openhands ${{ github.repository_owner }} --push
+      - name: Build app image
+        if: "github.event.pull_request.head.repo.fork"
+        run: |
+          ./containers/build.sh openhands image ${{ github.repository_owner }}
