@@ -1,11 +1,13 @@
 import asyncio
 import os
+import ssl
 import tempfile
 import uuid
 from typing import Any, Optional, Type
 from zipfile import ZipFile
 
 import aiohttp
+import aiohttp.client_exceptions
 import tenacity
 
 from openhands.core.config import AppConfig
@@ -31,6 +33,14 @@ from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils.runtime_build import build_runtime_image
+
+DEFAULT_RETRY_EXCEPTIONS = [
+    ssl.SSLCertVerificationError,
+    aiohttp.ClientError,
+    aiohttp.client_exceptions.ClientConnectorCertificateError,
+    ssl.SSLCertVerificationError,
+    asyncio.TimeoutError,
+]
 
 
 class RemoteRuntime(Runtime):
@@ -79,31 +89,30 @@ class RemoteRuntime(Runtime):
         retry_exceptions: list[Type[Exception]] | None = None,
         **kwargs: Any,
     ) -> aiohttp.ClientResponse:
-        DEFAULT_RETRY_EXCEPTIONS = [
-            aiohttp.ClientError,
-            asyncio.TimeoutError,
-        ]
         if retry_exceptions is None:
             retry_exceptions = DEFAULT_RETRY_EXCEPTIONS
 
         session = await self._ensure_session()
 
-        # Dynamically create a retry condition based on the provided exceptions
-        retry_condition = tenacity.retry_if_exception_type(tuple(retry_exceptions))
+        def log_retry(retry_state):
+            exception = retry_state.outcome.exception()
+            logger.warning(
+                f'Retry attempt {retry_state.attempt_number} failed with exception: {exception}'
+            )
 
-        # Apply the retry condition to this specific call
-        retryer = tenacity.AsyncRetrying(
-            stop=tenacity.stop_after_attempt(5),
-            wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
-            retry=retry_condition,
+        @tenacity.retry(
+            stop=tenacity.stop_after_attempt(10),
+            wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+            retry=tenacity.retry_if_exception_type(tuple(retry_exceptions)),
             reraise=True,
+            after=log_retry,
         )
+        async def _send_request_with_retry():
+            async with session.request(method, url, **kwargs) as response:
+                await response.read()
+                return response
 
-        async for attempt in retryer:
-            with attempt:
-                async with session.request(method, url, **kwargs) as response:
-                    await response.read()
-                    return response
+        return await _send_request_with_retry()
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         # Check if the container image exists
@@ -263,7 +272,12 @@ class RemoteRuntime(Runtime):
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
                     timeout=action.timeout,
-                    retry_exceptions=[aiohttp.ClientError],
+                    retry_exceptions=list(
+                        filter(
+                            lambda e: e != asyncio.TimeoutError,
+                            DEFAULT_RETRY_EXCEPTIONS,
+                        )
+                    ),
                 )
                 if response.status == 200:
                     output = await response.json()
@@ -334,7 +348,11 @@ class RemoteRuntime(Runtime):
                 f'{self.runtime_url}/upload_file',
                 data=upload_data,
                 params=params,
-                retry_exceptions=[aiohttp.ClientError],
+                retry_exceptions=list(
+                    filter(
+                        lambda e: e != asyncio.TimeoutError, DEFAULT_RETRY_EXCEPTIONS
+                    )
+                ),
             )
             if response.status == 200:
                 logger.info(
@@ -364,7 +382,11 @@ class RemoteRuntime(Runtime):
                 'POST',
                 f'{self.runtime_url}/list_files',
                 json=data,
-                retry_exceptions=[aiohttp.ClientError],
+                retry_exceptions=list(
+                    filter(
+                        lambda e: e != asyncio.TimeoutError, DEFAULT_RETRY_EXCEPTIONS
+                    )
+                ),
             )
             if response.status == 200:
                 response_json = await response.json()
