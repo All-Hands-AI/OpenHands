@@ -557,7 +557,7 @@ def _edit_file_impl(
                 ret_str += lint_error + '\n'
 
                 editor_lines = n_added_lines + 20
-                sep = '-------------------------------------------------\n'
+                sep = '-' * 49 + '\n'
                 ret_str += (
                     f'[This is how your edit would have looked if applied]\n{sep}'
                 )
@@ -568,7 +568,7 @@ def _edit_file_impl(
                 ret_str += f'{sep}\n'
 
                 ret_str += '[This is the original code before your edit]\n'
-                ret_str += f'{sep}'
+                ret_str += sep
                 ret_str += (
                     _print_window(
                         original_file_backup_path,
@@ -578,7 +578,7 @@ def _edit_file_impl(
                     )
                     + '\n'
                 )
-                ret_str += f'{sep}'
+                ret_str += sep
                 ret_str += (
                     'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                     'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'

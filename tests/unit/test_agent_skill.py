@@ -82,7 +82,7 @@ def _capture_file_operation_error(operation, expected_error_msg):
     assert result == expected_error_msg
 
 
-SEP = '-------------------------------------------------\n'
+SEP = '-' * 49 + '\n'
 
 
 # =============================================================================
