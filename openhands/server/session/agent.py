@@ -49,7 +49,7 @@ class AgentSession:
         """
         if self.controller or self.runtime:
             raise Exception(
-                "Session already started. You need to close this session and start a new one."
+                'Session already started. You need to close this session and start a new one.'
             )
         await self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(runtime_name, config, agent, workspace_mount_path)
@@ -77,7 +77,7 @@ class AgentSession:
 
     async def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
-        logger.info(f"Using security analyzer: {security_analyzer}")
+        logger.info(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
@@ -92,9 +92,9 @@ class AgentSession:
     ):
         """Creates a runtime instance."""
         if self.runtime is not None:
-            raise Exception("Runtime already created")
+            raise Exception('Runtime already created')
 
-        logger.info(f"Using runtime: {runtime_name}")
+        logger.info(f'Using runtime: {runtime_name}')
         runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(
             config=config,
@@ -116,12 +116,12 @@ class AgentSession:
     ):
         """Creates an AgentController instance."""
         if self.controller is not None:
-            raise Exception("Controller already created")
+            raise Exception('Controller already created')
         if self.runtime is None:
-            raise Exception("Runtime must be initialized before the agent controller")
+            raise Exception('Runtime must be initialized before the agent controller')
 
-        logger.info(f"Agents: {agent_configs}")
-        logger.info(f"Creating agent {agent.name} using LLM {agent.llm.config.model}")
+        logger.info(f'Agents: {agent_configs}')
+        logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
 
         self.controller = AgentController(
             sid=self.sid,
@@ -141,6 +141,6 @@ class AgentSession:
             self.controller.set_initial_state(
                 agent_state, max_iterations, confirmation_mode
             )
-            logger.info(f"Restored agent state from session, sid: {self.sid}")
+            logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            logger.info(f"Error restoring state: {e}")
+            logger.info(f'Error restoring state: {e}')

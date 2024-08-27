@@ -57,32 +57,32 @@ class Session:
                 try:
                     data = await self.websocket.receive_json()
                 except ValueError:
-                    await self.send_error("Invalid JSON")
+                    await self.send_error('Invalid JSON')
                     continue
                 await self.dispatch(data)
         except WebSocketDisconnect:
             await self.close()
-            logger.info("WebSocket disconnected, sid: %s", self.sid)
+            logger.info('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
             await self.close()
-            logger.exception("Error in loop_recv: %s", e)
+            logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
             ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
         )
         self.agent_session.event_stream.add_event(
-            AgentStateChangedObservation("", AgentState.LOADING), EventSource.AGENT
+            AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
         )
         # Extract the agent-relevant arguments from the request
         args = {
-            key: value for key, value in data.get("args", {}).items() if value != ""
+            key: value for key, value in data.get('args', {}).items() if value != ''
         }
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
         self.config.security.confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
         )
-        self.config.security.security_analyzer = data.get("args", {}).get(
+        self.config.security.security_analyzer = data.get('args', {}).get(
             ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
         )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
@@ -120,9 +120,9 @@ class Session:
                 workspace_mount_path=workspace_mount_path,
             )
         except Exception as e:
-            logger.exception(f"Error creating controller: {e}")
+            logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                f"Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.."
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
         self.agent_session.event_stream.add_event(
@@ -140,7 +140,7 @@ class Session:
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
-            logger.info("Server event")
+            logger.info('Server event')
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER and isinstance(
             event, CmdOutputObservation
@@ -148,7 +148,7 @@ class Session:
             await self.send(event_to_dict(event))
 
     async def dispatch(self, data: dict):
-        action = data.get("action", "")
+        action = data.get('action', '')
         if action == ActionType.INIT:
             await self._initialize_agent(data)
             return
@@ -158,7 +158,7 @@ class Session:
             controller = self.agent_session.controller
             if controller and not controller.agent.llm.supports_vision():
                 await self.send_error(
-                    "Model does not support image upload, change to a different model or try without an image."
+                    'Model does not support image upload, change to a different model or try without an image.'
                 )
                 return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
@@ -177,11 +177,11 @@ class Session:
 
     async def send_error(self, message: str) -> bool:
         """Sends an error message to the client."""
-        return await self.send({"error": True, "message": message})
+        return await self.send({'error': True, 'message': message})
 
     async def send_message(self, message: str) -> bool:
         """Sends a message to the client."""
-        return await self.send({"message": message})
+        return await self.send({'message': message})
 
     def update_connection(self, ws: WebSocket):
         self.websocket = ws
@@ -189,8 +189,8 @@ class Session:
         self.last_active_ts = int(time.time())
 
     def load_from_data(self, data: dict) -> bool:
-        self.last_active_ts = data.get("last_active_ts", 0)
+        self.last_active_ts = data.get('last_active_ts', 0)
         if self.last_active_ts < int(time.time()) - DEL_DELT_SEC:
             return False
-        self.is_alive = data.get("is_alive", False)
+        self.is_alive = data.get('is_alive', False)
         return True
