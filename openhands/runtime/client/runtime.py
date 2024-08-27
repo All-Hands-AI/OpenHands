@@ -148,8 +148,6 @@ class EventStreamRuntime(Runtime):
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
             )
-        print(f'TRACE:workspace_mount_path:{self.workspace_mount_path}')
-        print(f'TRACE:config:workspace_mount_path:{self.config.workspace_mount_path}')
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=self.workspace_mount_path,
