@@ -8,5 +8,6 @@ describe("Home", () => {
     it.todo(
       "should not be able to submit the form with the enter key when text is empty",
     );
+    it.todo("should display an error if trying to submit no input");
   });
 });

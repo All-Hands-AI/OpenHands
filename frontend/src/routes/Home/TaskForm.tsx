@@ -15,6 +15,7 @@ export function TaskForm() {
     <div className="flex flex-col gap-2">
       <Form method="post" className="relative">
         <input
+          name="q"
           type="text"
           placeholder="What do you want to build?"
           value={text}

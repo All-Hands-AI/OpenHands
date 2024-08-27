@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
 import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
 import { useDisclosure } from "@nextui-org/react";
+import { useSearchParams } from "react-router-dom";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
@@ -21,7 +22,6 @@ interface ScrollButtonProps {
   onClick: () => void;
   icon: JSX.Element;
   label: string;
-  // eslint-disable-next-line react/require-default-props
   disabled?: boolean;
 }
 
@@ -46,6 +46,7 @@ function ScrollButton({
 }
 
 function ChatInterface() {
+  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -61,14 +62,22 @@ function ChatInterface() {
     onOpenChange: onFeedbackModalOpenChange,
   } = useDisclosure();
 
-  const shareFeedback = async (polarity: "positive" | "negative") => {
-    onFeedbackModalOpen();
-    setFeedbackPolarity(polarity);
-  };
-
   const handleSendMessage = (content: string, imageUrls: string[]) => {
     dispatch(addUserMessage({ content, imageUrls }));
     sendChatMessage(content, imageUrls);
+  };
+
+  React.useEffect(() => {
+    const q = searchParams.get("q");
+    if (q?.toString()) {
+      console.log("send", q.toString());
+      // handleSendMessage(q, []);
+    }
+  }, []);
+
+  const shareFeedback = async (polarity: "positive" | "negative") => {
+    onFeedbackModalOpen();
+    setFeedbackPolarity(polarity);
   };
 
   const { t } = useTranslation();

@@ -96,8 +96,6 @@ function App(): JSX.Element {
     } else {
       Session.startNewSession();
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

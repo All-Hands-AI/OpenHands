@@ -1,10 +1,19 @@
 import React from "react";
-import { redirect } from "react-router-dom";
+import { ActionFunctionArgs, json, redirect } from "react-router-dom";
 import { SuggestionBox } from "./SuggestionBox";
 import { TaskForm } from "./TaskForm";
 import { HeroHeading } from "./HeroHeading";
 
-export const action = () => redirect("/app");
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const q = formData.get("q");
+
+  if (q?.toString()) {
+    return redirect(`/app?q=${q.toString()}`);
+  }
+
+  return json(null);
+};
 
 function Home() {
   return (
