@@ -32,6 +32,9 @@ from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.runtime import Runtime
 
+# Configure visibility of unit tests to the Agent.
+USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
+
 
 def get_config(
     metadata: EvalMetadata,
@@ -85,13 +88,14 @@ async def initialize_runtime(
             file_path,
             '/workspace',
         )
-        file_path = os.path.join(tmpdir, f'{instance.instance_name}_test.py')
-        with open(file_path, 'w') as f:
-            f.write(instance.test)
-        await runtime.copy_to(
-            file_path,
-            '/workspace',
-        )
+        if USE_UNIT_TESTS:
+            file_path = os.path.join(tmpdir, f'{instance.instance_name}_test.py')
+            with open(file_path, 'w') as f:
+                f.write(instance.test)
+            await runtime.copy_to(
+                file_path,
+                '/workspace',
+            )
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
@@ -163,8 +167,13 @@ async def process_instance(
     instruction = instance.instruction
     instruction += INSTRUCTIONS_ADDENDUM.format(
         signature_file=f'{instance.instance_name}.py',
-        test_file=f'{instance.instance_name}_test.py',
     )
+    if USE_UNIT_TESTS:
+        instruction += (
+            f'Use the test_file: {instance.instance_name}_test.py, to verify '
+            'the correctness of your solution. DO NOT EDIT the test file.\n\n'
+        )
+
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided '
         'to you AND NEVER ASK FOR HUMAN HELP.\n'
