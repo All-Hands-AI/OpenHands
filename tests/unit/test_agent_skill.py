@@ -82,6 +82,9 @@ def _capture_file_operation_error(operation, expected_error_msg):
     assert result == expected_error_msg
 
 
+SEP = '-------------------------------------------------\n'
+
+
 # =============================================================================
 
 
@@ -517,8 +520,8 @@ check(any_int)"""
                 + ':9:9: '
                 + 'E999 IndentationError: unexpected indent\n'
                 '[This is how your edit would have looked if applied]\n'
-                '-------------------------------------------------\n'
-                '(this is the beginning of the file)\n'
+                + SEP
+                + '(this is the beginning of the file)\n'
                 '1|def any_int(a, b, c):\n'
                 '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
                 '3|\n'
@@ -540,12 +543,10 @@ check(any_int)"""
                 '19|    # Check some simple cases\n'
                 '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
                 '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
-                '(12 more lines below)\n'
-                '-------------------------------------------------\n'
-                '\n'
+                '(12 more lines below)\n' + SEP + '\n'
                 '[This is the original code before your edit]\n'
-                '-------------------------------------------------\n'
-                '(this is the beginning of the file)\n'
+                + SEP
+                + '(this is the beginning of the file)\n'
                 '1|def any_int(a, b, c):\n'
                 '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
                 '3|\n'
@@ -568,8 +569,8 @@ check(any_int)"""
                 '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
                 '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
                 '(12 more lines below)\n'
-                '-------------------------------------------------\n'
-                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                + SEP
+                + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                 'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
                 'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
             )
@@ -1323,18 +1324,18 @@ def test_lint_file_fail_undefined_name(tmp_path, capsys):
             'ERRORS:\n'
             f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
             '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|undefined_name()\n'
             '(this is the end of the file)\n'
-            '-------------------------------------------------\n\n'
-            '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '\n[This is the original code before your edit]\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|\n'
             '(this is the end of the file)\n'
-            '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            + SEP
+            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
@@ -1368,20 +1369,20 @@ def test_lint_file_fail_undefined_name_long(tmp_path, capsys):
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
             f'ERRORS:\n{error_message}\n'
             '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(489 more lines above)\n'
+            + SEP
+            + '(489 more lines above)\n'
             + _numbered_test_lines(error_line - 10, error_line - 1)
             + '500|undefined_name()\n'
             + _numbered_test_lines(error_line + 1, error_line + 10)
             + '(491 more lines below)\n'
-            '-------------------------------------------------\n\n'
-            '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(489 more lines above)\n'
+            + SEP
+            + '\n[This is the original code before your edit]\n'
+            + SEP
+            + '(489 more lines above)\n'
             + _numbered_test_lines(error_line - 10, error_line + 10)
             + '(490 more lines below)\n'
-            + '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            + SEP
+            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
@@ -1551,19 +1552,19 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             'ERRORS:\n'
             f'{file_path}:1:1: Syntax error\n'
             '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|def print_hello_world()\n'
             "2|    puts 'Hello World'\n"
             '(this is the end of the file)\n'
             '-------------------------------------------------\n\n'
             '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|\n'
             '(this is the end of the file)\n'
-            '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            + SEP
+            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
