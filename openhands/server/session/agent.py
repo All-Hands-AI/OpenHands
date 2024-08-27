@@ -3,7 +3,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -80,7 +80,10 @@ class AgentSession:
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
+            )()
+            self.event_stream.subscribe(
+                EventStreamSubscriber.SECURITY_ANALYZER, self.security_analyzer.on_event
+            )
 
     async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
         """Creates a runtime instance."""

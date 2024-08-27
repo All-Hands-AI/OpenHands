@@ -14,7 +14,6 @@ from openhands.events.action.action import (
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import Observation
 from openhands.events.serialization.action import action_from_dict
-from openhands.events.stream import EventStream
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
@@ -34,12 +33,10 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     def __init__(
         self,
-        event_stream: EventStream,
         policy: str | None = None,
         sid: str | None = None,
     ):
         """Initializes a new instance of the InvariantAnalzyer class."""
-        super().__init__(event_stream)
         self.trace = []
         self.input = []
         self.settings = {}

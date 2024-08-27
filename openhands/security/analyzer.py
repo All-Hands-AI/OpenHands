@@ -11,16 +11,9 @@ from openhands.events.stream import EventStream, EventStreamSubscriber
 class SecurityAnalyzer:
     """Security analyzer that receives all events and analyzes agent actions for security risks."""
 
-    def __init__(self, event_stream: EventStream):
-        """Initializes a new instance of the SecurityAnalyzer class.
+    def __init__(self):
+        """Initializes a new instance of the SecurityAnalyzer class."""
 
-        Args:
-            event_stream: The event stream to listen for events.
-        """
-        self.event_stream = event_stream
-        self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event
-        )
 
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
