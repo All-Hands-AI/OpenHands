@@ -187,7 +187,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
 
     if RUNTIME_IMAGE_REPO in base_image:
         logger.info(
-            f'The provided image [{base_image}] is a already a valid runtime image.\n'
+            f'The provided image [{base_image}] is already a valid runtime image.\n'
             f'Will try to reuse it as is.'
         )
 

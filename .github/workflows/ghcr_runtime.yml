@@ -31,7 +31,13 @@ jobs:
       packages: write
     strategy:
       matrix:
-        base_image: ['nikolaik/python-nodejs:python3.11-nodejs22', 'python:3.11-bookworm', 'node:22-bookworm']
+        base_image:
+          - image: 'nikolaik/python-nodejs:python3.11-nodejs22'
+            tag: nikolaik
+          - image: 'python:3.11-bookworm'
+            tag: python
+          - image: 'node:22-bookworm'
+            tag: node
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,12 +76,27 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image }} --build_folder containers/runtime --force_rebuild
-      - name: Build and export image
-        id: build
+        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+
+      - name: Build and push runtime image ${{ matrix.base_image.image }}
+        if: "!github.event.pull_request.head.repo.fork"
         run: |
-          suffix=$(echo "${{ matrix.base_image }}" | cut -d ':' -f 1 | cut -d '/' -f 1)
-          ./containers/build.sh runtime ${{ github.repository_owner }} --push $suffix
+          ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ matrix.base_image.tag }}
+
+      # Forked repos can't push to GHCR, so we need to upload the image as an artifact
+      - name: Build runtime image ${{ matrix.base_image.image }} for fork
+        uses: docker/build-push-action@v6
+        with:
+          tags: ghcr.io/all-hands-ai/runtime:${{ github.sha }}-${{ matrix.base_image.tag }}
+          outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
+          context: containers/runtime
+      - name: Upload runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-${{ matrix.base_image.tag }}
+          path: /tmp/runtime-${{ matrix.base_image.tag }}.tar
+
 
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
@@ -96,6 +117,19 @@ jobs:
           haskell: true
           large-packages: true
           swap-storage: true
+
+      # Forked repos can't push to GHCR, so we need to download the image as an artifact
+      - name: Download runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        uses: actions/download-artifact@v4
+        with:
+          name: runtime-${{ matrix.base_image }}
+          path: /tmp
+      - name: Load runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        run: |
+          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -107,8 +141,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          git_hash=$(git rev-parse --short "$GITHUB_SHA")
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
@@ -132,6 +165,19 @@ jobs:
         base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
+
+      # Forked repos can't push to GHCR, so we need to download the image as an artifact
+      - name: Download runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        uses: actions/download-artifact@v4
+        with:
+          name: runtime-${{ matrix.base_image }}
+          path: /tmp
+      - name: Load runtime image for fork
+        if: "github.event.pull_request.head.repo.fork"
+        run: |
+          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -143,8 +189,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run integration tests
         run: |
-          git_hash=$(git rev-parse --short "$GITHUB_SHA")
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$git_hash-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \

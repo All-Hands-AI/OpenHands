@@ -1,4 +1,4 @@
-**What is the problem that this fixes or functionality that this introduces? Does it fix any open issues?**
+**Short description of the problem this fixes or functionality that this introduces. This may be used for the CHANGELOG**
 
 
 
@@ -8,4 +8,4 @@
 
 
 ---
-**Other references**
+**Link of any specific issues this addresses**
