@@ -12,7 +12,6 @@ import toml
 from dotenv import load_dotenv
 
 from openhands.core import logger
-from openhands.core.utils import Singleton
 
 load_dotenv()
 
@@ -141,7 +140,7 @@ class AgentConfig:
 
 
 @dataclass
-class SecurityConfig(metaclass=Singleton):
+class SecurityConfig:
     """Configuration for security related functionalities.
 
     Attributes:
@@ -174,7 +173,7 @@ class SecurityConfig(metaclass=Singleton):
 
 
 @dataclass
-class SandboxConfig(metaclass=Singleton):
+class SandboxConfig:
     """Configuration for the sandbox.
 
     Attributes:
@@ -241,7 +240,7 @@ class UndefinedString(str, Enum):
 
 
 @dataclass
-class AppConfig(metaclass=Singleton):
+class AppConfig:
     """Configuration for the app.
 
     Attributes:
