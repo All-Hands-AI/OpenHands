@@ -29,6 +29,7 @@ from openhands.runtime.plugins.agent_skills.file_reader.file_readers import (
     parse_pdf,
     parse_pptx,
 )
+from openhands.runtime.plugins.agent_skills.utils.aider import Linter
 
 
 # CURRENT_FILE must be reset for each test
@@ -1277,22 +1278,22 @@ def test_find_file_cwd(tmp_path, monkeypatch):
 def test_find_file_not_exist_file():
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            find_file('unexist.txt')
+            find_file('nonexist.txt')
         result = buf.getvalue()
     assert result is not None
 
-    expected = '[No matches found for "unexist.txt" in ./]\n'
+    expected = '[No matches found for "nonexist.txt" in ./]\n'
     assert result.split('\n') == expected.split('\n')
 
 
 def test_find_file_not_exist_file_specific_path(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            find_file('unexist.txt', str(tmp_path))
+            find_file('nonexist.txt', str(tmp_path))
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'[No matches found for "unexist.txt" in {tmp_path}]\n'
+    expected = f'[No matches found for "nonexist.txt" in {tmp_path}]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -1569,7 +1570,7 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             '(this is the end of the file)\n'
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
             'ERRORS:\n'
-            f'{file_path}:1\n'
+            f'{file_path}:1:1: Syntax error\n'
             '[This is how your edit would have looked if applied]\n'
             '-------------------------------------------------\n'
             '(this is the beginning of the file)\n'
@@ -1588,3 +1589,61 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
         assert result.split('\n') == expected.split('\n')
+
+
+def test_lint_file_fail_typescript(tmp_path, capsys):
+    linter = Linter()
+    if not linter.ts_installed:
+        return
+    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
+        current_line = 1
+        file_path = tmp_path / 'test.ts'
+        file_path.write_text('')
+
+        open_file(str(file_path), current_line)
+        insert_content_at_line(
+            str(file_path),
+            1,
+            "function greet(name: string) {\n    console.log('Hello, ' + name)",
+        )
+        result = capsys.readouterr().out
+        assert result is not None
+
+        # Note: the tsc (typescript compiler) message is different from a
+        # compared to a python linter message, like line and column in brackets:
+        expected_lines = [
+            f'[File: {file_path} (1 lines total)]',
+            '(this is the beginning of the file)',
+            '1|',
+            '(this is the end of the file)',
+            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]',
+            'ERRORS:',
+            f"{file_path}(3,1): error TS1005: '}}' expected.",
+            '[This is how your edit would have looked if applied]',
+            '-------------------------------------------------',
+            '(this is the beginning of the file)',
+            '1|function greet(name: string) {',
+            "2|    console.log('Hello, ' + name)",
+            '(this is the end of the file)',
+            '-------------------------------------------------',
+            '',
+            '[This is the original code before your edit]',
+            '-------------------------------------------------',
+            '(this is the beginning of the file)',
+            '1|',
+            '(this is the end of the file)',
+            '-------------------------------------------------',
+            'Your changes have NOT been applied. Please fix your edit command and try again.',
+            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.',
+            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.',
+            '',
+        ]
+        result_lines = result.split('\n')
+        assert len(result_lines) == len(expected_lines), "Number of lines doesn't match"
+
+        for i, (result_line, expected_line) in enumerate(
+            zip(result_lines, expected_lines)
+        ):
+            assert result_line.lstrip('./') == expected_line.lstrip(
+                './'
+            ), f"Line {i+1} doesn't match"

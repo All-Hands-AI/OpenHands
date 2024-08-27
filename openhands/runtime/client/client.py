@@ -172,12 +172,15 @@ class RuntimeClient:
             encoding='utf-8',
             echo=False,
         )
-        self.__bash_PS1 = r'[PEXPECT_BEGIN] \u@\h:\w [PEXPECT_END]'
+        self.__bash_PS1 = (
+            r'[PEXPECT_BEGIN]\n'
+            r'$(which python >/dev/null 2>&1 && echo "[Python Interpreter: $(which python)]\n")'
+            r'\u@\h:\w\n'
+            r'[PEXPECT_END]'
+        )
 
         # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
-        self.__bash_expect_regex = (
-            r'\[PEXPECT_BEGIN\] ([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+) \[PEXPECT_END\]'
-        )
+        self.__bash_expect_regex = r'\[PEXPECT_BEGIN\]\s*(.*?)\s*([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+)\s*\[PEXPECT_END\]'
 
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
@@ -207,7 +210,7 @@ class RuntimeClient:
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
 
-        # begin at the last occurence of '[PEXPECT_BEGIN]'.
+        # begin at the last occurrence of '[PEXPECT_BEGIN]'.
         # In multi-line bash commands, the prompt will be repeated
         # and the matched regex captures all of them
         # - we only want the last one (newest prompt)
@@ -220,11 +223,12 @@ class RuntimeClient:
         assert (
             matched is not None
         ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
-        username, hostname, working_dir = matched.groups()
+        other_info, username, hostname, working_dir = matched.groups()
+        working_dir = working_dir.rstrip()
         self.pwd = os.path.expanduser(working_dir)
 
         # re-assemble the prompt
-        prompt = f'{username}@{hostname}:{working_dir} '
+        prompt = f'{other_info.strip()}\n{username}@{hostname}:{working_dir} '
         if username == 'root':
             prompt += '#'
         else:
@@ -273,7 +277,9 @@ class RuntimeClient:
 
     async def run_action(self, action) -> Observation:
         action_type = action.action
+        logger.debug(f'Running action: {action}')
         observation = await getattr(self, action_type)(action)
+        logger.debug(f'Action output: {observation}')
         return observation
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
@@ -327,6 +333,7 @@ class RuntimeClient:
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
             obs.content += f'\n[Jupyter current working directory: {self.pwd}]'
+            obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
         else:
             raise RuntimeError(
@@ -472,6 +479,7 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        logger.info('Runtime client initialized.')
         yield
         # Clean up & release the resources
         client.close()
@@ -597,10 +605,8 @@ if __name__ == '__main__':
             full_path = os.path.join(client.initial_pwd, path)
 
         if not os.path.exists(full_path):
-            return JSONResponse(
-                content={'error': f'Directory {full_path} does not exist'},
-                status_code=400,
-            )
+            # if user just removed a folder, prevent server error 500 in UI
+            return []
 
         try:
             # Check if the directory exists

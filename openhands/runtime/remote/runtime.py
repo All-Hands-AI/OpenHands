@@ -54,7 +54,6 @@ class RemoteRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
-        container_image: str | None = None,
     ):
         super().__init__(config, event_stream, sid, plugins)
         self.api_url = f'https://{self.config.sandbox.api_hostname.rstrip("/")}'
@@ -74,11 +73,11 @@ class RemoteRuntime(Runtime):
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        self.container_image = (
-            self.config.sandbox.container_image
-            if container_image is None
-            else container_image
-        )
+        if self.config.sandbox.runtime_container_image is not None:
+            raise ValueError(
+                'Setting runtime_container_image is not supported in the remote runtime.'
+            )
+        self.container_image: str = self.config.sandbox.base_container_image
         self.container_name = 'od-remote-runtime-' + self.instance_id
         logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
 

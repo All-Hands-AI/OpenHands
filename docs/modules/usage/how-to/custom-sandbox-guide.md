@@ -1,7 +1,6 @@
 # Create and Use a Custom Docker Sandbox
 
 The default OpenHands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
-
 Your use case may need additional software installed by default.
 
 There are two ways you can do so:
@@ -67,10 +66,10 @@ Create a `config.toml` file in the OpenHands directory and enter these contents:
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 ```
 
-For `sandbox_container_image`, you can specify either:
+For `sandbox_base_container_image`, you can specify either:
 
 1. The name of your custom image that you built in the previous step (e.g., `”custom_image”`)
 2. A pre-existing image from Docker Hub (e.g., `”node:20”` if you want a sandbox with Node.js pre-installed)
@@ -86,7 +85,7 @@ Congratulations!
 
 ## Technical Explanation
 
-Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
+Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
 
 ## Troubleshooting / Errors
 
@@ -98,7 +97,7 @@ If you see this error in the console output it is because OpenHands is trying to
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 sandbox_user_id="1001"
 ```
 
@@ -108,4 +107,4 @@ If you see an error about a port being in use or unavailable, try deleting all r
 
 ## Discuss
 
-For other issues or questions join the [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
+For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) or [Discord](https://discord.gg/ESHStjSjD4) and ask!

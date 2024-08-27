@@ -172,26 +172,44 @@ class CodeActAgent(Agent):
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
 
-        response = self.llm.completion(
-            messages=[message.model_dump() for message in messages],
-            stop=[
+        params = {
+            'messages': [message.model_dump() for message in messages],
+            'stop': [
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
             ],
-            temperature=0.0,
-        )
+            'temperature': 0.0,
+        }
+
+        if self.llm.supports_prompt_caching:
+            params['extra_headers'] = {
+                'anthropic-beta': 'prompt-caching-2024-07-31',
+            }
+
+        response = self.llm.completion(**params)
+
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
             Message(
                 role='system',
-                content=[TextContent(text=self.prompt_manager.system_message)],
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.system_message,
+                        cache_prompt=self.llm.supports_prompt_caching,  # Cache system prompt
+                    )
+                ],
             ),
             Message(
                 role='user',
-                content=[TextContent(text=self.prompt_manager.initial_user_message)],
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.initial_user_message,
+                        cache_prompt=self.llm.supports_prompt_caching,  # if the user asks the same query,
+                    )
+                ],
             ),
         ]
 
@@ -214,6 +232,16 @@ class CodeActAgent(Agent):
                 else:
                     messages.append(message)
 
+        # Add caching to the last 2 user messages
+        if self.llm.supports_prompt_caching:
+            user_turns_processed = 0
+            for message in reversed(messages):
+                if message.role == 'user' and user_turns_processed < 2:
+                    message.content[
+                        -1
+                    ].cache_prompt = True  # Last item inside the message content
+                    user_turns_processed += 1
+
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
@@ -225,25 +253,8 @@ class CodeActAgent(Agent):
             ),
             None,
         )
-
-        # Get the last user text inside content
         if latest_user_message:
-            latest_user_message_text = next(
-                (
-                    t
-                    for t in reversed(latest_user_message.content)
-                    if isinstance(t, TextContent)
-                )
-            )
-            # add a reminder to the prompt
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-
-            if latest_user_message_text:
-                latest_user_message_text.text = (
-                    latest_user_message_text.text + reminder_text
-                )
-            else:
-                latest_user_message_text = TextContent(text=reminder_text)
-                latest_user_message.content.append(latest_user_message_text)
+            latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages

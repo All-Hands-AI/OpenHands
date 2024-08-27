@@ -42,7 +42,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='python:3.11-bookworm',
+            base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
             timeout=100,
@@ -85,6 +85,13 @@ async def initialize_runtime(
             file_path,
             '/workspace',
         )
+        file_path = os.path.join(tmpdir, f'{instance.instance_name}_test.py')
+        with open(file_path, 'w') as f:
+            f.write(instance.test)
+        await runtime.copy_to(
+            file_path,
+            '/workspace',
+        )
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
@@ -101,6 +108,7 @@ async def complete_runtime(
     logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
     obs: CmdOutputObservation
 
+    # Rewriting the test file to ignore any changes Agent may have made.
     script_name = f'{instance.instance_name}_test.py'
     with tempfile.TemporaryDirectory() as tmpdir:
         file_path = os.path.join(tmpdir, script_name)
@@ -120,11 +128,15 @@ async def complete_runtime(
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
+    exit_code = 1
+    if isinstance(obs, CmdOutputObservation):
+        exit_code = obs.exit_code
+
     logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
 
     return {
         'test_output': obs.content,
-        'exit_code': obs.exit_code,
+        'exit_code': exit_code,
     }
 
 
@@ -151,6 +163,7 @@ async def process_instance(
     instruction = instance.instruction
     instruction += INSTRUCTIONS_ADDENDUM.format(
         signature_file=f'{instance.instance_name}.py',
+        test_file=f'{instance.instance_name}_test.py',
     )
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided '
@@ -241,7 +254,16 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(aider_bench_tests, output_file, args.eval_n_limit)
+
+    # Parse dataset IDs if provided
+    eval_ids = None
+    if args.eval_ids:
+        eval_ids = str(args.eval_ids).split(',')
+        logger.info(f'Using specific dataset IDs: {eval_ids}')
+
+    instances = prepare_dataset(
+        aider_bench_tests, output_file, args.eval_n_limit, eval_ids=eval_ids
+    )
 
     asyncio.run(
         run_evaluation(

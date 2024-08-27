@@ -179,7 +179,8 @@ class SandboxConfig(metaclass=Singleton):
 
     Attributes:
         api_hostname: The hostname for the EventStream Runtime API.
-        container_image: The container image to use for the sandbox.
+        base_container_image: The base container image from which to build the runtime image.
+        runtime_container_image: The runtime container image to use.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
         enable_auto_lint: Whether to enable auto-lint.
@@ -200,7 +201,8 @@ class SandboxConfig(metaclass=Singleton):
 
     api_hostname: str = 'localhost'
     api_key: str | None = None
-    container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    base_container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    runtime_container_image: str | None = None
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
     enable_auto_lint: bool = (
@@ -736,6 +738,12 @@ def get_parser() -> argparse.ArgumentParser:
         default='default',
         type=str,
         help='Name for the session',
+    )
+    parser.add_argument(
+        '--eval-ids',
+        default=None,
+        type=str,
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
     return parser
 
