@@ -14,11 +14,13 @@ export function GitHubRepositorySelector({
   const handleRepoSelection = (id: string | null) => {
     const repo = repositories.find((r) => r.id.toString() === id);
     if (repo) {
+      // set query param
       submit({ repo: repo.full_name }, { method: "get" });
     }
   };
 
   const handleClearSelection = () => {
+    // clear query param
     submit({ repo: "" }, { method: "get" });
   };
 
