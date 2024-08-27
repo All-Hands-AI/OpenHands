@@ -10,4 +10,11 @@ describe("Home", () => {
     );
     it.todo("should display an error if trying to submit no input");
   });
+
+  describe("Loading a repo from GH", () => {
+    it.todo("should display a success indicator if successfully retrieved");
+    it.todo("should display an error if it is a private repository");
+    it.todo("should be able to enter a PAT token");
+    it.todo("should handle invalid inputs");
+  });
 });
