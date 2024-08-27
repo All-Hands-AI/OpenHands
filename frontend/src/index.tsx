@@ -9,7 +9,10 @@ import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
 import RootLayout, { loader as rootLayoutLoader } from "./routes/RootLayout";
-import Home, { action as homeAction } from "./routes/Home/Home";
+import Home, {
+  action as homeAction,
+  loader as homeLoader,
+} from "./routes/Home/Home";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +24,7 @@ const router = createBrowserRouter([
         path: "/",
         element: <Home />,
         action: homeAction,
+        loader: homeLoader,
       },
       {
         path: "/app",

@@ -3,3 +3,8 @@ interface GitHubUser {
   login: string;
   avatar_url: string;
 }
+
+interface GitHubRepository {
+  id: number;
+  full_name: string;
+}

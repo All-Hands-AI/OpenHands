@@ -3,13 +3,17 @@ import { json, Link, Outlet, useLoaderData } from "react-router-dom";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ghClient } from "#/api/github";
 
+type LoaderReturnType = {
+  user: GitHubUser;
+};
+
 export const loader = async () => {
   const user = await ghClient.getUser();
-  return json(user);
+  return json({ user });
 };
 
 function RootLayout() {
-  const user = useLoaderData() as GitHubUser;
+  const { user } = useLoaderData() as LoaderReturnType;
 
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
