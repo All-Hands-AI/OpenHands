@@ -11,7 +11,11 @@ export function SuggestionBox({ title, content }: SuggestionBoxProps) {
       <span className="text-[16px] leading-6 -tracking-[0.01em] font-[600]">
         {title}
       </span>
-      <span className="text-sm w-full">{content}</span>
+      {typeof content === "string" ? (
+        <span className="text-sm">{content}</span>
+      ) : (
+        <div className="w-full">{content}</div>
+      )}
     </div>
   );
 }
