@@ -32,6 +32,11 @@ development environment and LLM.
 - `eval_ids`, e.g. `"1,3,10"`, limits the evaluation to instances with the
     given IDs (comma separated).
 
+There are also following optional environment variables you can set:
+```
+export USE_UNIT_TESTS=true # if you want to allow the Agent to verify correctness using unittests. Default to false.
+```
+
 Following is the basic command to start the evaluation.
 
 You can update the arguments in the script
