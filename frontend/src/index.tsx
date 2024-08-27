@@ -8,13 +8,14 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
-import RootLayout from "./routes/RootLayout";
+import RootLayout, { loader as rootLayoutLoader } from "./routes/RootLayout";
 import Home, { action as homeAction } from "./routes/Home/Home";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
+    loader: rootLayoutLoader,
     children: [
       {
         path: "/",

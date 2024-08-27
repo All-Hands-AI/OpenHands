@@ -12,9 +12,8 @@ describe("Home", () => {
   });
 
   describe("Loading a repo from GH", () => {
-    it.todo("should display a success indicator if successfully retrieved");
-    it.todo("should display an error if it is a private repository");
-    it.todo("should be able to enter a PAT token");
-    it.todo("should handle invalid inputs");
+    it.todo("should display all the available repos");
+    it.todo("should filter through the repos when typing");
+    it.todo("should fetch a repo if it is not owned by the user");
   });
 });
