@@ -1,7 +1,6 @@
 # Create and Use a Custom Docker Sandbox
 
 The default OpenHands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
-
 Your use case may need additional software installed by default.
 
 There are two ways you can do so:

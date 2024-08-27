@@ -4,7 +4,11 @@ sidebar_position: 2
 
 # 🤖 LLM Backends
 
-OpenHands can work with any LLM backend.
+OpenHands can connect to many LLMs. However, the recommended models to use are GPT-4 and Claude 3.5.
+
+Current local and open source models are not nearly as powerful. When using an alternative model, you may see long
+wait times between messages, poor responses, or errors about malformed JSON. OpenHands can only be as powerful as the
+models driving it.
 For a full list of the LM providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
 
@@ -33,17 +37,10 @@ We have a few guides for running OpenHands with specific model providers:
 
 If you're using another provider, we encourage you to open a PR to share your setup!
 
-## Note on Alternative Models
-
-The best models are GPT-4 and Claude 3. Current local and open source models are
-not nearly as powerful. When using an alternative model,
-you may see long wait times between messages,
-poor responses, or errors about malformed JSON. OpenHands
-can only be as powerful as the models driving it--fortunately folks on our team
-are actively working on building better open source models!
-
 ## API retries and rate limits
 
 Some LLMs have rate limits and may require retries. OpenHands will automatically retry requests if it receives a 429 error or API connection error.
-You can set `LLM_NUM_RETRIES`, `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` environment variables to control the number of retries and the time between retries.
-By default, `LLM_NUM_RETRIES` is 5 and `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` are 3 seconds and 60 seconds respectively.
+You can set the following environment variables to control the number of retries and the time between retries:
+* `LLM_NUM_RETRIES` (Default of 5)
+* `LLM_RETRY_MIN_WAIT` (Default of 3 seconds)
+* `LLM_RETRY_MAX_WAIT` (Default of 60 seconds)
