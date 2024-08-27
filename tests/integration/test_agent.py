@@ -15,11 +15,16 @@ from openhands.events.action import (
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
+from openhands.runtime import get_runtime_cls
+
+TEST_RUNTIME = os.getenv('TEST_RUNTIME')
+assert TEST_RUNTIME in ['eventstream']
+_ = get_runtime_cls(TEST_RUNTIME)  # make sure it does not raise an error
 
 CONFIG = AppConfig(
     max_iterations=int(os.getenv('MAX_ITERATIONS', 15)),
     max_budget_per_task=int(os.getenv('MAX_BUDGET_PER_TASK', 15)),
-    runtime='eventstream',
+    runtime=TEST_RUNTIME,
     default_agent=os.getenv('DEFAULT_AGENT'),
     workspace_base=os.getenv('WORKSPACE_BASE'),
     workspace_mount_path=os.getenv('WORKSPACE_MOUNT_PATH'),
@@ -40,7 +45,7 @@ def get_number_of_prompts(test_name: str):
     mock_dir = os.path.join(
         os.environ['SCRIPT_DIR'],
         'mock',
-        'eventstream_runtime',
+        f'{TEST_RUNTIME}_runtime',
         os.environ['DEFAULT_AGENT'],
         test_name,
     )

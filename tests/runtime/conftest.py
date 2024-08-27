@@ -26,8 +26,16 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime'))
 
 
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
+
+
+# Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_box_classes():
-    return [EventStreamRuntime]
+    runtime = TEST_RUNTIME
+    if runtime.lower() == 'eventstream':
+        return [EventStreamRuntime]
+    else:
+        raise ValueError(f'Invalid runtime: {runtime}')
 
 
 # This assures that all tests run together per runtime, not alternating between them,
