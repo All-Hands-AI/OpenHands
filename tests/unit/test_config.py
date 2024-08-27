@@ -508,11 +508,7 @@ max_budget_per_task = 4.7
     with open(temp_toml_file, 'w') as f:
         f.write(temp_toml)
 
-    print(f"{config.max_iterations=}, {config.max_budget_per_task=}")
-
     load_from_toml(config, temp_toml_file)
-
-    print(f"{config.max_iterations=}, {config.max_budget_per_task=}")
 
     assert config.max_iterations == 42
     assert config.max_budget_per_task == 4.7
