@@ -8,7 +8,6 @@ import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
-import SettingsModal from "#/components/modals/settings/SettingsModal";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
@@ -129,10 +128,6 @@ function App(): JSX.Element {
         setSettingOpen={onSettingsModalOpen}
         setSecurityOpen={onSecurityModalOpen}
         showSecurityLock={!!SECURITY_ANALYZER}
-      />
-      <SettingsModal
-        isOpen={settingsModalIsOpen}
-        onOpenChange={onSettingsModalOpenChange}
       />
       <Security
         isOpen={securityModalIsOpen}
