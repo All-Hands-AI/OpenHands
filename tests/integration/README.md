@@ -57,10 +57,8 @@ how integration tests are launched in a CI environment.
 You can run:
 
 ```bash
-# for server runtime
-TEST_RUNTIME=server TEST_ONLY=true ./tests/integration/regenerate.sh
 # for event stream
-TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
+TEST_ONLY=true ./tests/integration/regenerate.sh
 ```
 
 to run all integration tests until the first failure occurs.
@@ -80,8 +78,7 @@ When you make changes to an agent's prompt, the integration tests will fail. You
 by running the following command from OpenHands's project root directory:
 
 ```bash
-TEST_RUNTIME=server ./tests/integration/regenerate.sh
-TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
+./tests/integration/regenerate.sh
 ```
 
 Please note that this will:

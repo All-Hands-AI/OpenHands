@@ -1,8 +1,0 @@
-{
-  "action": "reject",
-  "args": {
-    "outputs": {
-      "reason": "CommitWriterAgent failed because it is not a valid git repository. No other agents can resolve this issue."
-    }
-  }
-}

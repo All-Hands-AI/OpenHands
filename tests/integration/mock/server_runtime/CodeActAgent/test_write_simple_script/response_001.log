@@ -1,5 +1,0 @@
-Sure! Let's create the shell script `hello.sh` that prints 'hello'.
-
-First, I'll create the file:
-<execute_ipython>
-create_file('hello.sh')

@@ -55,14 +55,13 @@ cd "$PROJECT_ROOT" || exit 1
 
 mkdir -p $WORKSPACE_BASE
 
-# use environmental variable if exists
-TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"
+# we only have one runtime now, so not pulling from env var
+TEST_RUNTIME="eventstream"
 if [ -z "$SANDBOX_BASE_CONTAINER_IMAGE" ]; then
   SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
 fi
 
 MAX_ITERATIONS=15
-echo "TEST_RUNTIME: $TEST_RUNTIME"
 
 agents=(
   "DelegatorAgent"
@@ -113,7 +112,6 @@ run_test() {
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     DEFAULT_AGENT=$agent \
-    TEST_RUNTIME="$TEST_RUNTIME" \
     SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
@@ -170,7 +168,7 @@ cleanup() {
 # Trap the EXIT signal to run the cleanup function
 trap cleanup EXIT
 
-# generate prompts again, using existing LLM responses under tests/integration/mock/[test_runtime]_runtime/[agent]/[test_name]/response_*.log
+# generate prompts again, using existing LLM responses under tests/integration/mock/eventstream_runtime/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
 # respond to the prompts. The benefit is developers don't have to regenerate real responses from LLM, if they only
 # apply a small change to prompts.
@@ -184,7 +182,6 @@ regenerate_without_llm() {
       MAX_ITERATIONS=$MAX_ITERATIONS \
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
-      TEST_RUNTIME="$TEST_RUNTIME" \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
   set +x
