@@ -188,12 +188,12 @@ def prepare_dataset(
     ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
     id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
-    finished_ids = set()
+    finished_ids: set[int] = set()
     if os.path.exists(output_file):
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_ids.add(data[id_column])
+                finished_ids.add(int(data[id_column]))
         logger.warning(
             f'\nOutput file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
         )
@@ -203,13 +203,13 @@ def prepare_dataset(
         dataset = dataset[dataset[id_column].isin(eval_ids_converted)]
         logger.info(f'Limiting evaluation to {len(eval_ids)} specific instances.')
     elif start_id and start_id >= 0:
-        dataset = dataset[dataset[id_column] >= start_id]
+        dataset = dataset[dataset[id_column].astype(int) >= int(start_id)]
         logger.info(
             f'Starting evaluation at instance id {start_id} ({len(dataset)} instances to run).'
         )
         if eval_n_limit and eval_n_limit > 0:
             dataset = dataset.head(eval_n_limit)
-            logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+            logger.info(f'Limiting evaluation to {eval_n_limit} instances.')
     elif eval_n_limit and eval_n_limit > 0:
         dataset = dataset.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
@@ -217,7 +217,7 @@ def prepare_dataset(
     new_dataset = [
         instance
         for _, instance in dataset.iterrows()
-        if instance[id_column] not in finished_ids
+        if int(instance[id_column]) not in finished_ids
     ]
     logger.info(
         f'Finished instances: {len(finished_ids)}, Remaining instances: {len(new_dataset)}'
