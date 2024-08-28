@@ -37,7 +37,6 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 DEFAULT_RETRY_EXCEPTIONS = [
     ssl.SSLCertVerificationError,
     aiohttp.ClientError,
-    aiohttp.client_exceptions.ContentTypeError,
     aiohttp.client_exceptions.ClientConnectorCertificateError,
     ssl.SSLCertVerificationError,
     asyncio.TimeoutError,
@@ -143,14 +142,13 @@ class RemoteRuntime(Runtime):
             extra_deps=self.config.sandbox.runtime_extra_deps,
         )
 
-        # Use the /image_exists endpoint to check if the image exists
-        response = await self._send_request(
-            'GET',
-            f'{self.api_url}/image_exists',
-            params={'image': self.container_image},
-        )
-        if response.status != 200 or not (await response.json())['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+        # Check if the container image exists
+        try:
+            await self._check_image_exists(self.container_image)
+        except tenacity.RetryError:
+            raise RuntimeError(
+                f'Container image {self.container_image} does not exist after multiple attempts'
+            )
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
@@ -216,13 +214,23 @@ class RemoteRuntime(Runtime):
             )
         return self.session
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(10),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+        retry=tenacity.retry_if_exception_type(RuntimeError),
+        reraise=True,
+    )
     async def _wait_until_alive(self):
         logger.info('Waiting for sandbox to be alive...')
         response = await self._send_request('GET', f'{self.runtime_url}/alive')
         if response.status == 200:
             return
         else:
-            msg = f'Sandbox is not alive. Status: {response.status}. Response: {await response.json()}'
+            msg = f'Sandbox is not alive. Status: {response.status}.'
+            try:
+                msg += f' Response: {await response.json()}'
+            except aiohttp.client_exceptions.ContentTypeError:
+                msg += f' Response: {await response.text()}'
             logger.error(msg)
             raise RuntimeError(msg)
 
@@ -399,3 +407,19 @@ class RemoteRuntime(Runtime):
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(6),
+        wait=tenacity.wait_fixed(5),
+        retry=tenacity.retry_if_result(lambda x: x is False),
+        reraise=True,
+    )
+    async def _check_image_exists(self, image: str) -> bool:
+        response = await self._send_request(
+            'GET',
+            f'{self.api_url}/image_exists',
+            params={'image': image},
+        )
+        if response.status == 200 and (await response.json())['exists']:
+            return True
+        return False
