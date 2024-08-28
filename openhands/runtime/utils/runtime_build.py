@@ -246,9 +246,9 @@ def build_runtime_image(
     # Scenario 2: If a Docker image with the exact hash is not found, we will FIRST try to re-build it
     # by leveraging the `generic_runtime_image_name` to save some time
     # from re-building the dependencies (e.g., poetry install, apt install)
-    elif runtime_builder.image_exists(generic_runtime_image_name) and not force_rebuild:
+    if not force_rebuild and runtime_builder.image_exists(generic_runtime_image_name):
         logger.info(
-            f'Cannot find docker Image [{hash_runtime_image_name}]\n'
+            f'Could not find docker image [{hash_runtime_image_name}]\n'
             f'Will try to re-build it from latest [{generic_runtime_image_name}] image to potentially save '
             f'time for dependencies installation.\n'
         )
