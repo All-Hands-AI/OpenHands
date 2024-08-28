@@ -247,11 +247,11 @@ class RemoteRuntime(Runtime):
                 else:
                     logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
             except Exception as e:
-                logger.error(f'Error stopping sandbox: {str(e)}')
-
-        if self.session is not None:
-            await self.session.close()
-            self.session = None
+                raise e
+            finally:
+                if self.session is not None:
+                    await self.session.close()
+                self.session = None
 
     async def run_action(self, action: Action) -> Observation:
         if action.timeout is None:
