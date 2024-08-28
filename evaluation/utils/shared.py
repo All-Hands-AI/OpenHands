@@ -181,19 +181,19 @@ def prepare_dataset(
     output_file: str,
     eval_n_limit: int,
     eval_ids: list[str] | None = None,
-    start_id: int | None = None,
+    skip_num: int | None = None,
 ):
     assert (
         'instance_id' in dataset.columns
     ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
     id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
-    finished_ids: set[int] = set()
+    finished_ids: set[str] = set()
     if os.path.exists(output_file):
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_ids.add(int(data[id_column]))
+                finished_ids.add(str(data[id_column]))
         logger.warning(
             f'\nOutput file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
         )
@@ -202,10 +202,11 @@ def prepare_dataset(
         eval_ids_converted = [dataset[id_column].dtype.type(id) for id in eval_ids]
         dataset = dataset[dataset[id_column].isin(eval_ids_converted)]
         logger.info(f'Limiting evaluation to {len(eval_ids)} specific instances.')
-    elif start_id and start_id >= 0:
-        dataset = dataset[dataset[id_column].astype(int) >= int(start_id)]
+    elif skip_num and skip_num >= 0:
+        skip_num = min(skip_num, len(dataset))
+        dataset = dataset.iloc[skip_num:]
         logger.info(
-            f'Starting evaluation at instance id {start_id} ({len(dataset)} instances to run).'
+            f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).'
         )
         if eval_n_limit and eval_n_limit > 0:
             dataset = dataset.head(eval_n_limit)
@@ -217,7 +218,7 @@ def prepare_dataset(
     new_dataset = [
         instance
         for _, instance in dataset.iterrows()
-        if int(instance[id_column]) not in finished_ids
+        if str(instance[id_column]) not in finished_ids
     ]
     logger.info(
         f'Finished instances: {len(finished_ids)}, Remaining instances: {len(new_dataset)}'

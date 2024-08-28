@@ -35,9 +35,9 @@ from openhands.runtime.utils.system import display_number_matrix
 
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
-START_ID = os.environ.get('START_ID')
-START_ID = (
-    int(START_ID) if START_ID and START_ID.isdigit() and int(START_ID) >= 0 else None
+SKIP_NUM = os.environ.get('SKIP_NUM')
+SKIP_NUM = (
+    int(SKIP_NUM) if SKIP_NUM and SKIP_NUM.isdigit() and int(SKIP_NUM) >= 0 else None
 )
 
 
@@ -285,7 +285,7 @@ if __name__ == '__main__':
         output_file,
         args.eval_n_limit,
         eval_ids=eval_ids,
-        start_id=START_ID,
+        skip_num=SKIP_NUM,
     )
 
     asyncio.run(
