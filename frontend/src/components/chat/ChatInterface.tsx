@@ -11,11 +11,11 @@ import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
+import { useSession } from "#/context/session";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -46,6 +46,7 @@ function ScrollButton({
 }
 
 function ChatInterface() {
+  const { sendUserMessage } = useSession();
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -68,7 +69,7 @@ function ChatInterface() {
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
     dispatch(addUserMessage({ content, imageUrls }));
-    sendChatMessage(content, imageUrls);
+    sendUserMessage(content, imageUrls);
   };
 
   const { t } = useTranslation();

@@ -1,12 +1,12 @@
 import React from "react";
 import { getToken } from "#/services/auth";
 import { handleAssistantMessage } from "#/services/actions";
-import { generateAgentInitEvent } from "./utils";
+import { generateAgentInitEvent, generateUserMessageEvent } from "./utils";
 
 const HOST = "localhost:3000";
 
 interface SessionContextType {
-  sendMessageToSocket: (message: string) => void;
+  sendUserMessage: (message: string, images_urls: string[]) => void;
   eventLog: string[];
 }
 
@@ -27,38 +27,56 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     const websocket = new WebSocket(url.toString());
     setSocket(websocket);
 
-    websocket.onopen = () => {
-      // initialize agent
-      const event = generateAgentInitEvent();
-      websocket.send(event);
-    };
-
-    websocket.onmessage = (event) => {
-      setEventLog((prev) => [...prev, event.data]);
-      // TODO: better handle the messages
-      handleAssistantMessage(JSON.parse(event.data));
-    };
-
-    websocket.onerror = () => {
-      // TODO: handle error
-    };
-
-    websocket.onclose = () => {
-      // TODO: reconnect
-    };
-
     return () => {
       websocket.close();
     };
   }, []);
 
-  const sendMessageToSocket = React.useCallback((message: string) => {
+  React.useEffect(() => {
+    if (socket) {
+      socket.onopen = () => {
+        // initialize agent
+        const event = generateAgentInitEvent();
+        socket.send(event);
+      };
+
+      socket.onmessage = (event) => {
+        console.log(event.data);
+        setEventLog((prev) => [...prev, event.data]);
+        // TODO: better handle the messages; e.g. use eventLog directly in the UI
+        handleAssistantMessage(JSON.parse(event.data));
+      };
+
+      socket.onerror = () => {
+        // TODO: handle error
+      };
+
+      socket.onclose = () => {
+        // TODO: reconnect
+      };
+    }
+  }, [socket]);
+
+  const sendMessageToSocket = (message: string) => {
     if (socket) socket.send(message);
-  }, []);
+  };
+
+  /**
+   * Send a message to the assistant
+   * @param message The message to send
+   * @param images_urls Array of image urls
+   */
+  const sendUserMessage = (message: string, images_urls: string[]) => {
+    const event = generateUserMessageEvent(message, images_urls);
+    sendMessageToSocket(event);
+  };
+
+  // TODO: sendTerminalCommand
+  // TODO: sendAgentStateChange
 
   const value = React.useMemo(
-    () => ({ sendMessageToSocket, eventLog }),
-    [sendMessageToSocket, eventLog],
+    () => ({ sendUserMessage, eventLog }),
+    [sendUserMessage, eventLog],
   );
 
   return (

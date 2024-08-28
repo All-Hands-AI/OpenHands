@@ -3,7 +3,7 @@ import ActionType from "#/types/ActionType";
 
 export const generateAgentInitEvent = () => {
   const settings = getSettings();
-  const rawEvent = {
+  const event = {
     action: ActionType.INIT,
     args: {
       ...settings,
@@ -12,5 +12,16 @@ export const generateAgentInitEvent = () => {
         : settings.LLM_MODEL,
     },
   };
-  return JSON.stringify(rawEvent);
+  return JSON.stringify(event);
+};
+
+export const generateUserMessageEvent = (
+  message: string,
+  images_urls: string[],
+) => {
+  const event = {
+    action: ActionType.MESSAGE,
+    args: { content: message, images_urls },
+  };
+  return JSON.stringify(event);
 };

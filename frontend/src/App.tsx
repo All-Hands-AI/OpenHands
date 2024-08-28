@@ -14,7 +14,6 @@ import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import VolumeIcon from "./components/VolumeIcon";
 import Terminal from "./components/terminal/Terminal";
-import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import Security from "./components/modals/security/Security";
@@ -92,12 +91,10 @@ function App(): JSX.Element {
     if (!settingsAreUpToDate()) {
       onSettingsModalOpen();
     } else if (getToken()) {
-      onLoadPreviousSessionModalOpen();
+      // onLoadPreviousSessionModalOpen();
     } else {
-      Session.startNewSession();
+      // Session.startNewSession();
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

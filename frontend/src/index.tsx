@@ -8,6 +8,7 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
+import { SessionProvider } from "./context/session";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
@@ -15,9 +16,11 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <NextUIProvider>
-        <App />
-      </NextUIProvider>
+      <SessionProvider>
+        <NextUIProvider>
+          <App />
+        </NextUIProvider>
+      </SessionProvider>
     </Provider>
   </React.StrictMode>,
 );

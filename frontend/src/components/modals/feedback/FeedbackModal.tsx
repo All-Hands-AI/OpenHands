@@ -94,7 +94,7 @@ function FeedbackModal({
       feedback: polarity,
       email,
       permissions,
-      token: getToken(),
+      token: getToken() || "",
       trajectory: removeApiKey(Session._history),
     };
 
