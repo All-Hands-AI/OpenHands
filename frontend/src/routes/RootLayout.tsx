@@ -73,21 +73,23 @@ function RootLayout() {
       </aside>
       <div className="w-full relative">
         <Outlet />
-        <div className="absolute top-1/2 right-1/2 transform translate-x-1/2 -translate-y-1/2">
-          <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
-            <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
-              AI Provider Configuration
-            </span>
-            <p className="text-xs text-[#A3A3A3]">
-              To continue, connect an OpenAI, Anthropic, or other LLM account
-            </p>
-            <SettingsForm
-              settings={{ LLM_MODEL: "openai/gpt-4o", AGENT: "CodeActAgent" }}
-              models={models}
-              agents={agents}
-            />
+        {settingsModalIsOpen && (
+          <div className="absolute top-1/2 right-1/2 transform translate-x-1/2 -translate-y-1/2">
+            <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
+              <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
+                AI Provider Configuration
+              </span>
+              <p className="text-xs text-[#A3A3A3]">
+                To continue, connect an OpenAI, Anthropic, or other LLM account
+              </p>
+              <SettingsForm
+                settings={{ LLM_MODEL: "openai/gpt-4o", AGENT: "CodeActAgent" }}
+                models={models}
+                agents={agents}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
