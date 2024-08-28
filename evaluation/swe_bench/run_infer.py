@@ -93,9 +93,9 @@ def get_config(
     SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
-        container_image = 'sweb.eval.x86_64.' + instance['instance_id']
+        base_container_image = 'sweb.eval.x86_64.' + instance['instance_id']
     else:
-        container_image = SWE_BENCH_CONTAINER_IMAGE
+        base_container_image = SWE_BENCH_CONTAINER_IMAGE
 
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -104,7 +104,7 @@ def get_config(
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image=container_image,
+            base_container_image=base_container_image,
             enable_auto_lint=True,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
@@ -136,6 +136,12 @@ async def initialize_runtime(
     action = CmdRunAction(
         command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
     )
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = await runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = await runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -192,6 +198,7 @@ async def initialize_runtime(
         assert obs.exit_code == 0
     else:
         action = CmdRunAction(command='source /swe_util/swe_entry.sh')
+        action.timeout = 1800
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = await runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -323,6 +330,8 @@ async def process_instance(
     logger.info(
         f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
     )
+
+    await runtime.close()
     # ==========================================
 
     # ======= Attempt to evaluate the agent's edits =======

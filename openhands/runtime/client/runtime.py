@@ -104,7 +104,6 @@ class EventStreamRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
-        container_image: str | None = None,
     ):
         super().__init__(
             config, event_stream, sid, plugins
@@ -116,13 +115,10 @@ class EventStreamRuntime(Runtime):
         self.instance_id = (
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        # TODO: We can switch to aiodocker when `get_od_sandbox_image` is updated to use aiodocker
+        # TODO: We can switch to aiodocker when `build_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
-        self.container_image = (
-            self.config.sandbox.container_image
-            if container_image is None
-            else container_image
-        )
+        self.base_container_image = self.config.sandbox.base_container_image
+        self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         self.container = None
@@ -133,6 +129,7 @@ class EventStreamRuntime(Runtime):
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
+        self.startup_done = False
 
     async def ainit(self, env_vars: dict[str, str] | None = None):
         if self.config.sandbox.runtime_extra_deps:
@@ -140,11 +137,16 @@ class EventStreamRuntime(Runtime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
-        self.container_image = build_runtime_image(
-            self.container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-        )
+        if self.runtime_container_image is None:
+            if self.base_container_image is None:
+                raise ValueError(
+                    'Neither runtime container image nor base container image is set'
+                )
+            self.runtime_container_image = build_runtime_image(
+                self.base_container_image,
+                self.runtime_builder,
+                extra_deps=self.config.sandbox.runtime_extra_deps,
+            )
         self.container = await self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=self.config.workspace_mount_path,
@@ -181,7 +183,7 @@ class EventStreamRuntime(Runtime):
     ):
         try:
             logger.info(
-                f'Starting container with image: {self.container_image} and name: {self.container_name}'
+                f'Starting container with image: {self.runtime_container_image} and name: {self.container_name}'
             )
             plugin_arg = ''
             if plugins is not None and len(plugins) > 0:
@@ -215,7 +217,7 @@ class EventStreamRuntime(Runtime):
             else:
                 browsergym_arg = ''
             container = self.docker_client.containers.run(
-                self.container_image,
+                self.runtime_container_image,
                 command=(
                     f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                     'PYTHONUNBUFFERED=1 poetry run '
@@ -253,12 +255,15 @@ class EventStreamRuntime(Runtime):
         wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
     async def _wait_until_alive(self):
+        init_msg = 'Runtime client initialized.'
         logger.debug('Getting container logs...')
 
         # Print and clear the log buffer
         assert (
             self.log_buffer is not None
         ), 'Log buffer is expected to be initialized when container is started'
+
+        # Always process logs, regardless of startup_done status
         logs = self.log_buffer.get_and_clear()
         if logs:
             formatted_logs = '\n'.join([f'    |{log}' for log in logs])
@@ -271,6 +276,30 @@ class EventStreamRuntime(Runtime):
                 + '\n'
                 + '-' * 90
             )
+            # Check for initialization message even if startup_done is True
+            if any(init_msg in log for log in logs):
+                self.startup_done = True
+
+        if not self.startup_done:
+            attempts = 0
+            while not self.startup_done and attempts < 10:
+                attempts += 1
+                await asyncio.sleep(1)
+                logs = self.log_buffer.get_and_clear()
+                if logs:
+                    formatted_logs = '\n'.join([f'    |{log}' for log in logs])
+                    logger.info(
+                        '\n'
+                        + '-' * 30
+                        + 'Container logs:'
+                        + '-' * 30
+                        + f'\n{formatted_logs}'
+                        + '\n'
+                        + '-' * 90
+                    )
+                    if any(init_msg in log for log in logs):
+                        self.startup_done = True
+                        break
 
         async with aiohttp.ClientSession() as session:
             async with session.get(f'{self.api_url}/alive') as response:

@@ -16,42 +16,54 @@ development environment and LLM.
 ## Start the evaluation
 
 ```bash
-./evaluation/agent_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+./evaluation/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
 ```
 
--   `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for
+- `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for
     your LLM settings, as defined in your `config.toml`.
--   `git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version
-    you would like to evaluate. It could also be a release tag like `0.6.2`.
--   `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks,
+- `git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version
+    you would like to evaluate. It could also be a release tag like `0.9.0`.
+- `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks,
     defaulting to `CodeActAgent`.
--   `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit`
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit`
     instances. By default, the script evaluates the entire Exercism test set
     (133 issues). Note: in order to use `eval_limit`, you must also set `agent`.
+- `eval-num-workers`: the number of workers to use for evaluation. Default: `1`.
+- `eval_ids`, e.g. `"1,3,10"`, limits the evaluation to instances with the
+    given IDs (comma separated).
+
+There are also following optional environment variables you can set:
+```
+export USE_UNIT_TESTS=true # if you want to allow the Agent to verify correctness using unittests. Default to false.
+```
 
 Following is the basic command to start the evaluation.
 
 You can update the arguments in the script
-`evaluation/agent_bench/scripts/run_infer.sh`, such as `--max-iterations`,
-`--eval-num-workers` and so on.
+`evaluation/aider_bench/scripts/run_infer.sh`, such as `--max-iterations`,
+`--eval-num-workers` and so on:
 
--   `--agent-cls`, the agent to use. For example, `CodeActAgent`.
--   `--llm-config`: the LLM configuration to use. For example,
-    `eval_gpt4_1106_preview`.
--   `--max-iterations`: the number of iterations to run the evaluation. For
-    example, `30`.
--   `--eval-num-workers`: the number of workers to use for evaluation. For
-    example, `5`.
--   `--eval-n-limit`: the number of examples to evaluate. For example, `100`.
+- `--agent-cls`, the agent to use. For example, `CodeActAgent`.
+- `--llm-config`: the LLM configuration to use. For example, `eval_gpt4_1106_preview`.
+- `--max-iterations`: the max allowed number of iterations to run the evaluation. Default: `30`.
+- `--eval-num-workers`: the number of workers to use for evaluation. Default: `1`.
+- `--eval-n-limit`: the number of examples to evaluate. For example, `100`.
+- `--eval-ids`: the IDs of the examples to evaluate (comma separated). For example, `"1,3,10"`.
 
 ```bash
-./evaluation/aider_bench/scripts/run_infer.sh eval_gpt35_turbo HEAD CodeActAgent 1
+./evaluation/aider_bench/scripts/run_infer.sh eval_gpt35_turbo HEAD CodeActAgent 100 1 "1,3,10"
 ```
 
 ## Summarize Results
 
 ```bash
-poetry run python ./evaluation/agent_bench/scripts/summarise_results.py [path_to_output_jsonl_file]
+poetry run python ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+```
+
+Full example:
+
+```bash
+poetry run python ./evaluation/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
 ```
 
 This will list the instances that passed and the instances that failed. For each
