@@ -62,6 +62,11 @@ class RemoteRuntime(Runtime):
 
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
 
+        if self.config.workspace_base is not None:
+            logger.warning(
+                'Setting workspace_base is not supported in the remote runtime.'
+            )
+
         assert (
             self.config.sandbox.api_key is not None
         ), 'API key is required to use the remote runtime.'
