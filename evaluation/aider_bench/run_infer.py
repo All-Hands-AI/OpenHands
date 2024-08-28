@@ -142,6 +142,8 @@ async def complete_runtime(
 
     logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
 
+    await runtime.close()
+
     return {
         'test_output': obs.content,
         'exit_code': exit_code,
