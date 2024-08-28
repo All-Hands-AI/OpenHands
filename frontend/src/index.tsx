@@ -6,6 +6,7 @@ import { NextUIProvider } from "@nextui-org/react";
 import {
   ActionFunctionArgs,
   createBrowserRouter,
+  json,
   RouterProvider,
 } from "react-router-dom";
 import App from "./App";
@@ -17,6 +18,11 @@ import Home, {
   action as homeAction,
   loader as homeLoader,
 } from "./routes/Home/Home";
+import {
+  getDefaultSettings,
+  saveSettings,
+  Settings,
+} from "./services/settings";
 
 const router = createBrowserRouter([
   {
@@ -25,8 +31,36 @@ const router = createBrowserRouter([
       const formData = await request.formData();
       const entries = Object.fromEntries(formData.entries());
 
+      const intent = formData.get("intent")?.toString();
+
+      if (intent === "reset") {
+        saveSettings(getDefaultSettings());
+        return json(null);
+      }
+
+      const USING_CUSTOM_MODEL =
+        Object.keys(entries).includes("use-custom-model");
+      const CUSTOM_LLM_MODEL = USING_CUSTOM_MODEL
+        ? formData.get("custom-model")?.toString()
+        : undefined;
+      const LLM_MODEL = formData.get("model")?.toString();
+      const LLM_API_KEY = formData.get("api-key")?.toString();
+      const AGENT = formData.get("agent")?.toString();
+
+      const settings: Partial<Settings> = {
+        USING_CUSTOM_MODEL,
+        CUSTOM_LLM_MODEL,
+        LLM_MODEL,
+        LLM_API_KEY,
+        AGENT,
+      };
+
+      console.log(settings);
+
+      saveSettings(settings);
+
       console.log(entries);
-      return null;
+      return json(null);
     },
   },
   {

@@ -14,14 +14,27 @@ interface SettingsFormProps {
   settings: {
     LLM_MODEL: string;
     AGENT: string;
+    LLM_API_KEY: string;
+    USING_CUSTOM_MODEL: boolean;
+    CUSTOM_LLM_MODEL: string;
   };
   models: string[];
   agents: string[];
+  onClose: () => void;
 }
 
-export function SettingsForm({ settings, models, agents }: SettingsFormProps) {
+export function SettingsForm({
+  settings,
+  models,
+  agents,
+  onClose,
+}: SettingsFormProps) {
   const fetcher = useFetcher();
   const [isCustomModel, setIsCustomModel] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsCustomModel(settings.USING_CUSTOM_MODEL);
+  }, [settings.USING_CUSTOM_MODEL]);
 
   return (
     <fetcher.Form
@@ -66,6 +79,7 @@ export function SettingsForm({ settings, models, agents }: SettingsFormProps) {
               id="custom-model"
               name="custom-model"
               aria-label="Custom Model"
+              defaultValue={settings.CUSTOM_LLM_MODEL}
               classNames={{
                 inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
               }}
@@ -92,6 +106,7 @@ export function SettingsForm({ settings, models, agents }: SettingsFormProps) {
             name="api-key"
             aria-label="API Key"
             type="password"
+            defaultValue={settings.LLM_API_KEY}
             classNames={{
               inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
             }}
@@ -139,11 +154,18 @@ export function SettingsForm({ settings, models, agents }: SettingsFormProps) {
         </button>
         <button
           type="button"
+          data-testid="close-button"
           className="bg-[#737373] text-sm font-[500] py-[10px] rounded"
+          onClick={onClose}
         >
           Close
         </button>
-        <button type="button" className="text-sm text-[#EF3744] self-start">
+        <button
+          type="submit"
+          name="intent"
+          value="reset"
+          className="text-sm text-[#EF3744] self-start"
+        >
           Reset to defaults
         </button>
       </div>

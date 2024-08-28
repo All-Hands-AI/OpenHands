@@ -201,7 +201,6 @@ function SettingsModal({
           models={models}
           agents={agents}
           securityAnalyzers={securityAnalyzers}
-          onModelChange={handleModelChange}
           onCustomModelChange={handleCustomModelChange}
           onModelTypeChange={handleModelTypeChange}
           onAgentChange={handleAgentChange}

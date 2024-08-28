@@ -5,6 +5,7 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ghClient } from "#/api/github";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "./SettingsForm";
+import { getSettings, Settings } from "#/services/settings";
 
 const getModels = async () => {
   try {
@@ -28,18 +29,21 @@ type LoaderReturnType = {
   user: GitHubUser;
   models: string[];
   agents: string[];
+  settings: Settings;
 };
 
 export const loader = async () => {
   const user = await ghClient.getUser();
   const models = await getModels();
   const agents = await getAgents();
+  const settings = getSettings();
 
-  return json({ user, models, agents });
+  return json({ user, models, agents, settings });
 };
 
 function RootLayout() {
-  const { user, models, agents } = useLoaderData() as LoaderReturnType;
+  const { user, models, agents, settings } =
+    useLoaderData() as LoaderReturnType;
 
   const {
     isOpen: settingsModalIsOpen,
@@ -83,9 +87,10 @@ function RootLayout() {
                 To continue, connect an OpenAI, Anthropic, or other LLM account
               </p>
               <SettingsForm
-                settings={{ LLM_MODEL: "openai/gpt-4o", AGENT: "CodeActAgent" }}
+                settings={settings}
                 models={models}
                 agents={agents}
+                onClose={onSettingsModalOpenChange}
               />
             </div>
           </div>
