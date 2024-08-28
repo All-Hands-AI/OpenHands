@@ -34,6 +34,10 @@ from openhands.runtime.runtime import Runtime
 
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
+START_ID = os.environ.get('START_ID')
+START_ID = (
+    int(START_ID) if START_ID and START_ID.isdigit() and int(START_ID) >= 0 else None
+)
 
 
 def get_config(
@@ -66,7 +70,7 @@ async def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f"\n{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}\n")
     obs: CmdOutputObservation
 
     # Set instance id
@@ -96,7 +100,7 @@ async def initialize_runtime(
                 file_path,
                 '/workspace',
             )
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f"\n{'-' * 50} END Runtime Initialization Fn {'-' * 50}\n")
 
 
 async def complete_runtime(
@@ -109,7 +113,7 @@ async def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f"\n{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}\n")
     obs: CmdOutputObservation
 
     # Rewriting the test file to ignore any changes Agent may have made.
@@ -136,7 +140,7 @@ async def complete_runtime(
     if isinstance(obs, CmdOutputObservation):
         exit_code = obs.exit_code
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
 
     return {
         'test_output': obs.content,
@@ -156,7 +160,9 @@ async def process_instance(
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, str(instance.instance_id), log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {str(instance.instance_id)}.')
+        logger.info(
+            f'\nStarting evaluation for instance {str(instance.instance_id)}.\n'
+        )
 
     # =============================================
     # build instruction
@@ -268,10 +274,14 @@ if __name__ == '__main__':
     eval_ids = None
     if args.eval_ids:
         eval_ids = str(args.eval_ids).split(',')
-        logger.info(f'Using specific dataset IDs: {eval_ids}')
+        logger.info(f'\nUsing specific dataset IDs: {eval_ids}\n')
 
     instances = prepare_dataset(
-        aider_bench_tests, output_file, args.eval_n_limit, eval_ids=eval_ids
+        aider_bench_tests,
+        output_file,
+        args.eval_n_limit,
+        eval_ids=eval_ids,
+        start_id=START_ID,
     )
 
     asyncio.run(

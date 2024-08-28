@@ -181,6 +181,7 @@ def prepare_dataset(
     output_file: str,
     eval_n_limit: int,
     eval_ids: list[str] | None = None,
+    start_id: int | None = None,
 ):
     assert (
         'instance_id' in dataset.columns
@@ -194,14 +195,22 @@ def prepare_dataset(
                 data = json.loads(line)
                 finished_ids.add(data[id_column])
         logger.warning(
-            f'Output file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
+            f'\nOutput file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
         )
 
     if eval_ids:
         eval_ids_converted = [dataset[id_column].dtype.type(id) for id in eval_ids]
         dataset = dataset[dataset[id_column].isin(eval_ids_converted)]
         logger.info(f'Limiting evaluation to {len(eval_ids)} specific instances.')
-    elif eval_n_limit:
+    elif start_id and start_id >= 0:
+        dataset = dataset[dataset[id_column] >= start_id]
+        logger.info(
+            f'Starting evaluation at instance id {start_id} ({len(dataset)} instances to run).'
+        )
+        if eval_n_limit and eval_n_limit > 0:
+            dataset = dataset.head(eval_n_limit)
+            logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+    elif eval_n_limit and eval_n_limit > 0:
         dataset = dataset.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
@@ -228,8 +237,8 @@ async def run_evaluation(
 ):
     use_multiprocessing = num_workers > 1
     logger.info(
-        f'Evaluation started with Agent {metadata.agent_class}, '
-        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.'
+        f'Evaluation started with Agent {metadata.agent_class}:\n'
+        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
     )
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')
@@ -241,7 +250,7 @@ async def run_evaluation(
         pbar.set_description(f'Instance {output.instance_id}')
         pbar.set_postfix_str(f'Test Result: {output.test_result}')
         logger.info(
-            f'Finished evaluation for instance {output.instance_id}: {output.test_result}'
+            f'Finished evaluation for instance {output.instance_id}: {output.test_result}\n'
         )
         output_fp.write(json.dumps(output.model_dump()) + '\n')
         output_fp.flush()
@@ -270,11 +279,11 @@ async def run_evaluation(
                 await update_progress(output)
 
     except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
+        print('\nKeyboardInterrupt received. Cleaning up...\n')
         cleanup()
 
     output_fp.close()
-    logger.info('Evaluation finished.')
+    logger.info('\nEvaluation finished.\n')
 
 
 def reset_logger_for_multiprocessing(
