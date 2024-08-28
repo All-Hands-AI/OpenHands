@@ -54,7 +54,6 @@ python-pptx = "*"
 pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
-matplotlib = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -124,3 +123,5 @@ swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
 gdown = "*"
+matplotlib = "*"
+seaborn = "*"
