@@ -27,6 +27,7 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
+from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -73,10 +74,21 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm, config)
         self.reset()
+
+        self.micro_agent = (
+            MicroAgent(
+                os.path.join(
+                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
+                )
+            )
+            if config.micro_agent_name
+            else None
+        )
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__)),
             agent_skills_docs=AgentSkillsRequirement.documentation,
-            micro_agent_name=None,  # TODO: implement micro-agent
+            micro_agent=self.micro_agent,
         )
 
     def action_to_str(self, action: Action) -> str:
