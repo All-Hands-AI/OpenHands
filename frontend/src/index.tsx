@@ -55,11 +55,7 @@ const router = createBrowserRouter([
         AGENT,
       };
 
-      console.log(settings);
-
       saveSettings(settings);
-
-      console.log(entries);
       return json(null);
     },
   },
