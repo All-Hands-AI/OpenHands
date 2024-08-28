@@ -228,8 +228,8 @@ class RemoteRuntime(Runtime):
         if response.status == 200:
             return
         else:
-            msg = f'Sandbox is not alive. Status: {response.status}.'
-            logger.error(msg)
+            msg = f'Runtime is not alive (id={self.runtime_id}). Status: {response.status}.'
+            logger.warning(msg)
             raise RuntimeError(msg)
 
     @property
@@ -238,17 +238,20 @@ class RemoteRuntime(Runtime):
 
     async def close(self):
         if self.runtime_id:
-            response = await self._send_request(
-                'POST', f'{self.api_url}/stop', json={'runtime_id': self.runtime_id}
-            )
-            if response.status != 200:
-                logger.error(f'Failed to stop sandbox: {await response.text()}')
-            else:
-                logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
+            try:
+                response = await self._send_request(
+                    'POST', f'{self.api_url}/stop', json={'runtime_id': self.runtime_id}
+                )
+                if response.status != 200:
+                    logger.error(f'Failed to stop sandbox: {await response.text()}')
+                else:
+                    logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
+            except Exception as e:
+                logger.error(f'Error stopping sandbox: {str(e)}')
 
-        if self.session is not None and not self.session.closed:
+        if self.session is not None:
             await self.session.close()
-            self.session = None  # Set session to None after closing
+            self.session = None
 
     async def run_action(self, action: Action) -> Observation:
         if action.timeout is None:
