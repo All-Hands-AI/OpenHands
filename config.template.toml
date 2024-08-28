@@ -64,6 +64,15 @@ workspace_base = "./workspace"
 # Name of the default agent
 #default_agent = "CodeActAgent"
 
+# JWT secret for authentication
+#jwt_secret = ""
+
+# Restrict file types for file uploads
+#file_uploads_restrict_file_types = false
+
+# List of allowed file extensions for uploads
+#file_uploads_allowed_extensions = [".*"]
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
@@ -126,6 +135,15 @@ model = "gpt-4o"
 # Retry minimum wait time
 #retry_min_wait = 3
 
+# Retry multiplier for exponential backoff
+#retry_multiplier = 2.0
+
+# Drop any unmapped (unsupported) params without causing an exception
+#drop_params = false
+
+# Base URL for the OLLAMA API
+#ollama_base_url = ""
+
 # Temperature for the API
 #temperature = 0.0
 
@@ -149,6 +167,9 @@ model = "gpt-3.5"
 # agent.CodeActAgent
 ##############################################################################
 [agent]
+# Name of the micro agent to use for this agent
+#micro_agent_name = ""
+
 # Memory enabled
 #memory_enabled = false
 
@@ -181,6 +202,18 @@ llm_config = 'gpt3'
 
 # Enable auto linting after editing
 #enable_auto_lint = false
+
+# Whether to initialize plugins
+#initialize_plugins = true
+
+# Extra dependencies to install in the runtime image
+#runtime_extra_deps = ""
+
+# Environment variables to set at the launch of the runtime
+#runtime_startup_env_vars = {}
+
+# BrowserGym environment to use for evaluation
+#browsergym_eval_env = ""
 
 #################################### Security ###################################
 # Configuration for security features
