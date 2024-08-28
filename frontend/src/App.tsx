@@ -2,7 +2,6 @@ import { useDisclosure } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { IoLockClosed } from "react-icons/io5";
-import CogTooth from "#/assets/cog-tooth";
 import ChatInterface from "#/components/chat/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
@@ -15,21 +14,16 @@ import VolumeIcon from "./components/VolumeIcon";
 import Terminal from "./components/terminal/Terminal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
-import { getSettings, settingsAreUpToDate } from "#/services/settings";
+import { getSettings } from "#/services/settings";
 import Security from "./components/modals/security/Security";
 import { ProjectMenuCard } from "./components/project-menu/ProjectMenuCard";
 
 interface ControlsProps {
-  setSettingOpen: (isOpen: boolean) => void;
   setSecurityOpen: (isOpen: boolean) => void;
   showSecurityLock: boolean;
 }
 
-function Controls({
-  setSettingOpen,
-  setSecurityOpen,
-  showSecurityLock,
-}: ControlsProps) {
+function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -51,12 +45,6 @@ function Controls({
             <IoLockClosed size={20} />
           </div>
         )}
-        <div
-          className="cursor-pointer hover:opacity-80 transition-all"
-          onClick={() => setSettingOpen(true)}
-        >
-          <CogTooth />
-        </div>
       </div>
 
       <ProjectMenuCard />
@@ -68,12 +56,6 @@ function Controls({
 let initOnce = false;
 
 function App(): JSX.Element {
-  const {
-    isOpen: settingsModalIsOpen,
-    onOpen: onSettingsModalOpen,
-    onOpenChange: onSettingsModalOpenChange,
-  } = useDisclosure();
-
   const {
     isOpen: loadPreviousSessionModalIsOpen,
     onOpen: onLoadPreviousSessionModalOpen,
@@ -92,9 +74,7 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    if (!settingsAreUpToDate()) {
-      onSettingsModalOpen();
-    } else if (getToken()) {
+    if (getToken()) {
       onLoadPreviousSessionModalOpen();
     } else {
       Session.startNewSession();
@@ -125,7 +105,6 @@ function App(): JSX.Element {
         />
       </div>
       <Controls
-        setSettingOpen={onSettingsModalOpen}
         setSecurityOpen={onSecurityModalOpen}
         showSecurityLock={!!SECURITY_ANALYZER}
       />

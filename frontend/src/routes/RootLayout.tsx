@@ -6,17 +6,40 @@ import { ghClient } from "#/api/github";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
 import CogTooth from "#/assets/cog-tooth";
 
+const getModels = async () => {
+  try {
+    const response = await fetch("/api/options/models");
+    return await response.json();
+  } catch (error) {
+    return [];
+  }
+};
+
+const getAgents = async () => {
+  try {
+    const response = await fetch("/api/options/agents");
+    return await response.json();
+  } catch (error) {
+    return [];
+  }
+};
+
 type LoaderReturnType = {
   user: GitHubUser;
+  models: string[];
+  agents: string[];
 };
 
 export const loader = async () => {
   const user = await ghClient.getUser();
-  return json({ user });
+  const models = await getModels();
+  const agents = await getAgents();
+
+  return json({ user, models, agents });
 };
 
 function RootLayout() {
-  const { user } = useLoaderData() as LoaderReturnType;
+  const { user, models, agents } = useLoaderData() as LoaderReturnType;
 
   const {
     isOpen: settingsModalIsOpen,
@@ -51,6 +74,8 @@ function RootLayout() {
       <div className="w-full">
         <Outlet />
         <SettingsModal
+          models={models}
+          agents={agents}
           isOpen={settingsModalIsOpen}
           onOpenChange={onSettingsModalOpenChange}
         />
