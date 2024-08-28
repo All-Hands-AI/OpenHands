@@ -3,7 +3,6 @@
 The OpenHands EventStream Runtime is the core component that enables secure and flexible execution of AI agent's action.
 It creates a sandboxed environment using Docker, where arbitrary code can be run safely without risking the host system.
 
-
 ## Why do we need a sandboxed runtime?
 
 OpenHands needs to execute arbitrary code in a secure, isolated environment for several reasons:
@@ -21,7 +20,7 @@ The OpenHands Runtime system uses a client-server architecture implemented with 
 ```mermaid
 graph TD
     A[User-provided Custom Docker Image] --> B[OpenHands Backend]
-    B -->|Builds| C[OD Runtime Image]
+    B -->|Builds| C[OH Runtime Image]
     C -->|Launches| D[Runtime Client]
     D -->|Initializes| E[Browser]
     D -->|Initializes| F[Bash Shell]
