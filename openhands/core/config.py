@@ -740,6 +740,12 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help='Name for the session',
     )
+    parser.add_argument(
+        '--eval-ids',
+        default=None,
+        type=str,
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
+    )
     return parser
 
 

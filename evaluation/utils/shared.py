@@ -32,6 +32,12 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
 
+    def model_dump(self, *args, **kwargs):
+        dumped_dict = super().model_dump(*args, **kwargs)
+        # avoid leaking sensitive information
+        dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        return dumped_dict
+
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
         dumped_dict = json.loads(dumped)
@@ -57,6 +63,12 @@ class EvalOutput(BaseModel):
 
     # Optionally save the input test instance
     instance: dict[str, Any] | None = None
+
+    def model_dump(self, *args, **kwargs):
+        dumped_dict = super().model_dump(*args, **kwargs)
+        # Apply custom serialization for metadata (to avoid leaking sensitive information)
+        dumped_dict['metadata'] = self.metadata.model_dump()
+        return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
@@ -164,7 +176,12 @@ def make_metadata(
     return metadata
 
 
-def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
+def prepare_dataset(
+    dataset: pd.DataFrame,
+    output_file: str,
+    eval_n_limit: int,
+    eval_ids: list[str] | None = None,
+):
     assert (
         'instance_id' in dataset.columns
     ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
@@ -180,7 +197,11 @@ def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
             f'Output file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
         )
 
-    if eval_n_limit:
+    if eval_ids:
+        eval_ids_converted = [dataset[id_column].dtype.type(id) for id in eval_ids]
+        dataset = dataset[dataset[id_column].isin(eval_ids_converted)]
+        logger.info(f'Limiting evaluation to {len(eval_ids)} specific instances.')
+    elif eval_n_limit:
         dataset = dataset.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
