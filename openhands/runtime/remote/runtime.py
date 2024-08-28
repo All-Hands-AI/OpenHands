@@ -37,6 +37,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 DEFAULT_RETRY_EXCEPTIONS = [
     ssl.SSLCertVerificationError,
     aiohttp.ClientError,
+    aiohttp.client_exceptions.ContentTypeError,
     aiohttp.client_exceptions.ClientConnectorCertificateError,
     ssl.SSLCertVerificationError,
     asyncio.TimeoutError,
