@@ -31,18 +31,27 @@ def _get_package_version():
     return pyproject_data['tool']['poetry']['version']
 
 
-def _create_project_source_dist():
-    """Create a source distribution of the project.
+def _put_source_code_to_dir(temp_dir: str):
+    """Builds the project source tarball directly in temp_dir and unpacks it.
+    The OpenHands source code ends up in the temp_dir/code directory.
 
-    Returns:
-    - str: The path to the project tarball
+    Parameters:
+    - temp_dir (str): The directory to put the source code in
     """
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     logger.info(f'Using project root: {project_root}')
 
-    # run "python -m build -s" on project_root to create project tarball
+    # Fetch the correct version from pyproject.toml
+    package_version = _get_package_version()
+    tarball_filename = f'openhands_ai-{package_version}.tar.gz'
+    tarball_path = os.path.join(temp_dir, tarball_filename)
+
+    # Run "python -m build -s" on project_root to create project tarball directly in temp_dir
+    _cleaned_project_root = project_root.replace(
+        ' ', r'\ '
+    )  # escape spaces in the project root
     result = subprocess.run(
-        'python -m build -s ' + project_root.replace(' ', r'\ '),
+        f'python -m build -s -o {temp_dir} {_cleaned_project_root}',
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -56,45 +65,20 @@ def _create_project_source_dist():
         logger.error(f'Build failed: {result}')
         raise Exception(f'Build failed: {result}')
 
-    # Fetch the correct version from pyproject.toml
-    package_version = _get_package_version()
-    tarball_path = os.path.join(
-        project_root, 'dist', f'openhands_ai-{package_version}.tar.gz'
-    )
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
         raise Exception(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
-    return tarball_path
-
-
-def _put_source_code_to_dir(temp_dir: str):
-    """Builds the project source tarball. Copies it to temp_dir and unpacks it.
-    The OpenHands source code ends up in the temp_dir/code directory
-
-    Parameters:
-    - temp_dir (str): The directory to put the source code in
-    """
-    # Build the project source tarball
-    tarball_path = _create_project_source_dist()
-    filename = os.path.basename(tarball_path)
-    filename = filename.removesuffix('.tar.gz')
-
-    # Move the project tarball to temp_dir
-    _res = shutil.copy(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
-    if _res:
-        os.remove(tarball_path)
-    logger.info(
-        f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
-    )
-
     # Unzip the tarball
-    shutil.unpack_archive(os.path.join(temp_dir, 'project.tar.gz'), temp_dir)
+    shutil.unpack_archive(tarball_path, temp_dir)
     # Remove the tarball
-    os.remove(os.path.join(temp_dir, 'project.tar.gz'))
+    os.remove(tarball_path)
     # Rename the directory containing the code to 'code'
-    os.rename(os.path.join(temp_dir, filename), os.path.join(temp_dir, 'code'))
+    os.rename(
+        os.path.join(temp_dir, f'openhands_ai-{package_version}'),
+        os.path.join(temp_dir, 'code'),
+    )
     logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
 
 
