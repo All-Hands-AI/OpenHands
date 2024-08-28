@@ -209,6 +209,9 @@ class RuntimeClient:
 
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
+        if ps1 == pexpect.EOF:
+            logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
+            raise RuntimeError('Bash shell EOF')
 
         # begin at the last occurrence of '[PEXPECT_BEGIN]'.
         # In multi-line bash commands, the prompt will be repeated
