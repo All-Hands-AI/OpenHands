@@ -216,13 +216,23 @@ class RemoteRuntime(Runtime):
             )
         return self.session
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(10),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+        retry=tenacity.retry_if_exception_type(RuntimeError),
+        reraise=True,
+    )
     async def _wait_until_alive(self):
         logger.info('Waiting for sandbox to be alive...')
         response = await self._send_request('GET', f'{self.runtime_url}/alive')
         if response.status == 200:
             return
         else:
-            msg = f'Sandbox is not alive. Status: {response.status}. Response: {await response.json()}'
+            msg = f'Sandbox is not alive. Status: {response.status}.'
+            try:
+                msg += f' Response: {await response.json()}'
+            except aiohttp.client_exceptions.ContentTypeError:
+                msg += f' Response: {await response.text()}'
             logger.error(msg)
             raise RuntimeError(msg)
 
