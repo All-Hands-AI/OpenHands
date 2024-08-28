@@ -31,7 +31,6 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.runtime import Runtime
-from openhands.runtime.utils.system import display_number_matrix
 
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
@@ -166,7 +165,6 @@ async def process_instance(
         logger.info(
             f'\nStarting evaluation for instance {str(instance.instance_id)}.\n'
         )
-        logger.info(display_number_matrix(instance.instance_id))
 
     # =============================================
     # build instruction
