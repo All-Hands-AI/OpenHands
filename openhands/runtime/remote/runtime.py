@@ -57,7 +57,14 @@ class RemoteRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
     ):
         super().__init__(config, event_stream, sid, plugins)
+        if self.config.sandbox.api_hostname == 'localhost':
+            self.config.sandbox.api_hostname = 'api.all-hands.dev/v0/runtime'
+            logger.warning(
+                'Using localhost as the API hostname is not supported in the RemoteRuntime. Please set a proper hostname.\n'
+                'Setting it to default value: api.all-hands.dev/v0/runtime'
+            )
         self.api_url = f'https://{self.config.sandbox.api_hostname.rstrip("/")}'
+
         self.session: Optional[aiohttp.ClientSession] = None
 
         self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
@@ -67,9 +74,11 @@ class RemoteRuntime(Runtime):
                 'Setting workspace_base is not supported in the remote runtime.'
             )
 
-        assert (
-            self.config.sandbox.api_key is not None
-        ), 'API key is required to use the remote runtime.'
+        if self.config.sandbox.api_key is None:
+            raise ValueError(
+                'API key is required to use the remote runtime. '
+                'Please set the API key in the config (config.toml) or as an environment variable (SANDBOX_API_KEY).'
+            )
         self.runtime_builder = RemoteRuntimeBuilder(
             self.api_url, self.config.sandbox.api_key
         )
