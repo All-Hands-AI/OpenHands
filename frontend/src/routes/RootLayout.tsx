@@ -3,15 +3,15 @@ import { json, Link, Outlet, useLoaderData } from "react-router-dom";
 import { useDisclosure } from "@nextui-org/react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ghClient } from "#/api/github";
-import SettingsModal from "#/components/modals/settings/SettingsModal";
 import CogTooth from "#/assets/cog-tooth";
+import { SettingsForm } from "./SettingsForm";
 
 const getModels = async () => {
   try {
     const response = await fetch("/api/options/models");
     return await response.json();
   } catch (error) {
-    return [];
+    return ["openai/gpt-4o", "openai/gpt-3.5-turbo"];
   }
 };
 
@@ -20,7 +20,7 @@ const getAgents = async () => {
     const response = await fetch("/api/options/agents");
     return await response.json();
   } catch (error) {
-    return [];
+    return ["CodeActAgent", "MonologueAgent", "DummyAgent"];
   }
 };
 
@@ -71,14 +71,17 @@ function RootLayout() {
           <div className="w-8 h-8 rounded-full bg-blue-100" />
         </nav>
       </aside>
-      <div className="w-full">
+      <div className="w-full relative">
         <Outlet />
-        <SettingsModal
-          models={models}
-          agents={agents}
-          isOpen={settingsModalIsOpen}
-          onOpenChange={onSettingsModalOpenChange}
-        />
+        <div className="absolute top-1/2 right-1/2 transform translate-x-1/2 -translate-y-1/2">
+          <div className="bg-root-primary">
+            <SettingsForm
+              settings={{ LLM_MODEL: "openai/gpt-4o", AGENT: "CodeActAgent" }}
+              models={models}
+              agents={agents}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

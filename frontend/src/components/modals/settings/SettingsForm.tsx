@@ -16,7 +16,6 @@ interface SettingsFormProps {
   securityAnalyzers: string[];
   disabled: boolean;
 
-  onModelChange: (model: string) => void;
   onCustomModelChange: (model: string) => void;
   onModelTypeChange: (type: "custom" | "default") => void;
   onAPIKeyChange: (apiKey: string) => void;
@@ -32,7 +31,6 @@ function SettingsForm({
   agents,
   securityAnalyzers,
   disabled,
-  onModelChange,
   onCustomModelChange,
   onModelTypeChange,
   onAPIKeyChange,
@@ -80,7 +78,6 @@ function SettingsForm({
         <ModelSelector
           isDisabled={disabled}
           models={organizeModelsAndProviders(models)}
-          onModelChange={onModelChange}
           defaultModel={settings.LLM_MODEL}
         />
       )}

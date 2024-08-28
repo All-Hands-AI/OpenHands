@@ -11,14 +11,12 @@ import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
-  onModelChange: (model: string) => void;
   defaultModel?: string;
 }
 
 export function ModelSelector({
   isDisabled,
   models,
-  onModelChange,
   defaultModel,
 }: ModelSelectorProps) {
   const [litellmId, setLitellmId] = React.useState<string | null>(null);
@@ -50,7 +48,6 @@ export function ModelSelector({
     const separator = models[selectedProvider || ""]?.separator || "";
     const fullModel = selectedProvider + separator + model;
     setLitellmId(fullModel);
-    onModelChange(fullModel);
     setSelectedModel(model);
   };
 
@@ -65,10 +62,20 @@ export function ModelSelector({
         {litellmId?.replace("other", "") || "No model selected"}
       </span>
 
+      <input
+        type="text"
+        hidden
+        aria-hidden
+        name="model"
+        defaultValue={litellmId || ""}
+      />
+
       <div className="flex flex-col gap-3">
+        <label htmlFor="provider">Provider</label>
         <Autocomplete
+          id="provider"
           isDisabled={isDisabled}
-          label="Provider"
+          aria-label="Provider"
           placeholder="Select a provider"
           isClearable={false}
           onSelectionChange={(e) => {
@@ -98,8 +105,10 @@ export function ModelSelector({
           </AutocompleteSection>
         </Autocomplete>
 
+        <label htmlFor="model">Model</label>
         <Autocomplete
-          label="Model"
+          id="model"
+          aria-label="Model"
           placeholder="Select a model"
           onSelectionChange={(e) => {
             if (e?.toString()) handleChangeModel(e.toString());

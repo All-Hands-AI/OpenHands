@@ -3,7 +3,11 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { Provider } from "react-redux";
 import { NextUIProvider } from "@nextui-org/react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  ActionFunctionArgs,
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
@@ -16,6 +20,16 @@ import Home, {
 
 const router = createBrowserRouter([
   {
+    path: "/settings",
+    action: async ({ request }: ActionFunctionArgs) => {
+      const formData = await request.formData();
+      const entries = Object.fromEntries(formData.entries());
+
+      console.log(entries);
+      return null;
+    },
+  },
+  {
     path: "/",
     element: <RootLayout />,
     loader: rootLayoutLoader,
@@ -23,8 +37,8 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: <Home />,
-        action: homeAction,
         loader: homeLoader,
+        action: homeAction,
       },
       {
         path: "/app",
