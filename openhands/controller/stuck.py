@@ -1,5 +1,3 @@
-from typing import cast
-
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
@@ -16,6 +14,13 @@ from openhands.events.observation.observation import Observation
 
 
 class StuckDetector:
+    SYNTAX_ERROR_MESSAGES = [
+        'SyntaxError: unterminated string literal (detected at line',
+        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
+        'SyntaxError: incomplete input',
+        "E999 SyntaxError: unmatched ')'",
+    ]
+
     def __init__(self, state: State):
         self.state = state
 
@@ -119,35 +124,49 @@ class StuckDetector:
 
     def _is_stuck_repeating_action_error(self, last_actions, last_observations):
         # scenario 2: same action, errors
-        # it takes 4 actions and 4 observations to detect a loop
-        # check if the last four actions are the same and result in errors
+        # it takes 3 actions and 3 observations to detect a loop
+        # check if the last three actions are the same and result in errors
 
-        # are the last four actions the same?
-        if len(last_actions) == 4 and all(
-            self._eq_no_pid(last_actions[0], action) for action in last_actions
-        ):
-            # and the last four observations all errors?
-            if all(isinstance(obs, ErrorObservation) for obs in last_observations):
-                logger.warning('Action, ErrorObservation loop detected')
-                return True
-            # or, are the last four observations all IPythonRunCellObservation with SyntaxError?
-            elif all(
-                isinstance(obs, IPythonRunCellObservation) for obs in last_observations
-            ) and all(
-                cast(IPythonRunCellObservation, obs)
-                .content[-100:]
-                .find('SyntaxError: unterminated string literal (detected at line')
-                != -1
-                and len(
-                    cast(IPythonRunCellObservation, obs).content.split(
-                        'SyntaxError: unterminated string literal (detected at line'
-                    )[-1]
-                )
-                < 10
-                for obs in last_observations
+        if len(last_actions) >= 3 and len(last_observations) >= 3:
+            # are the last three actions the same?
+            if all(
+                self._eq_no_pid(last_actions[0], action) for action in last_actions[:3]
             ):
-                logger.warning('Action, IPythonRunCellObservation loop detected')
+                # and the last three observations all errors?
+                if all(
+                    isinstance(obs, ErrorObservation) for obs in last_observations[:3]
+                ):
+                    logger.warning('Action, ErrorObservation loop detected')
+                    return True
+                # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
+                elif all(
+                    isinstance(obs, IPythonRunCellObservation)
+                    for obs in last_observations[:3]
+                ):
+                    for error_message in self.SYNTAX_ERROR_MESSAGES:
+                        if all(
+                            self._check_for_error_message(obs, error_message)
+                            for obs in last_observations[:3]
+                        ):
+                            logger.warning(
+                                'Action, IPythonRunCellObservation loop detected'
+                            )
+                            return True
+        return False
+
+    def _check_for_error_message(
+        self, obs: IPythonRunCellObservation, error_message: str
+    ) -> bool:
+        content = obs.content
+        # 4 lines, because the last 2 lines can be about interpreter and prompts
+        # since the introduction of the EventStreamRuntime
+        lines = content.strip().split('\n')
+        last_four_lines = lines[-4:]
+
+        for line in last_four_lines:
+            if error_message in line:
                 return True
+
         return False
 
     def _is_stuck_monologue(self, filtered_history):

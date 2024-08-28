@@ -241,8 +241,6 @@ class TestStuckDetector:
         ipython_observation_4._cause = ipython_action_4._id
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
-        # stuck_detector.state.history.set_event_stream(event_stream)
-
         last_observations = [
             ipython_observation_1,
             ipython_observation_2,
@@ -314,8 +312,10 @@ class TestStuckDetector:
         event_stream.add_event(ipython_observation_4, EventSource.USER)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector.is_stuck() is False
-            mock_warning.assert_not_called()
+            assert stuck_detector.is_stuck() is True
+            mock_warning.assert_called_once_with(
+                'Action, IPythonRunCellObservation loop detected'
+            )
 
     def test_is_stuck_repeating_action_observation_pattern(
         self, stuck_detector: StuckDetector, event_stream: EventStream
