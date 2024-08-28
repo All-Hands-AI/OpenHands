@@ -12,7 +12,6 @@ import toml
 from dotenv import load_dotenv
 
 from openhands.core import logger
-from openhands.core.utils import Singleton
 
 load_dotenv()
 
@@ -123,11 +122,13 @@ class AgentConfig:
     """Configuration for the agent.
 
     Attributes:
+        micro_agent_name: The name of the micro agent to use for this agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
+    micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | None = None
@@ -141,7 +142,7 @@ class AgentConfig:
 
 
 @dataclass
-class SecurityConfig(metaclass=Singleton):
+class SecurityConfig:
     """Configuration for security related functionalities.
 
     Attributes:
@@ -174,7 +175,7 @@ class SecurityConfig(metaclass=Singleton):
 
 
 @dataclass
-class SandboxConfig(metaclass=Singleton):
+class SandboxConfig:
     """Configuration for the sandbox.
 
     Attributes:
@@ -241,7 +242,7 @@ class UndefinedString(str, Enum):
 
 
 @dataclass
-class AppConfig(metaclass=Singleton):
+class AppConfig:
     """Configuration for the app.
 
     Attributes:
@@ -565,7 +566,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
 
         # update the config object with the new values
-        AppConfig(sandbox=sandbox_config, **core_config)
+        cfg.sandbox = sandbox_config
+        for key, value in core_config.items():
+            if hasattr(cfg, key):
+                setattr(cfg, key, value)
+            else:
+                logger.openhands_logger.warning(f'Unknown core config key: {key}')
     except (TypeError, KeyError) as e:
         logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',

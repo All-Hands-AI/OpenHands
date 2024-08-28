@@ -31,7 +31,7 @@ export function HomepageHeader() {
           <a href="https://arxiv.org/abs/2407.16741">
             <img src="https://img.shields.io/badge/Paper-%20on%20Arxiv-red?logo=arxiv&style=for-the-badge" alt="Paper on Arxiv" />
           </a>
-          <a href="https://huggingface.co/spaces/OpenHands/evaluation">
+          <a href="https://huggingface.co/spaces/OpenDevin/evaluation">
             <img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark" />
           </a>
         </div>
