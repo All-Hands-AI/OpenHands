@@ -1,12 +1,12 @@
 const TOKEN_KEY = "token";
 
-const getToken = (): string => localStorage.getItem(TOKEN_KEY) ?? "";
+const getToken = () => localStorage.getItem(TOKEN_KEY);
 
-const clearToken = (): void => {
+const clearToken = () => {
   localStorage.removeItem(TOKEN_KEY);
 };
 
-const setToken = (token: string): void => {
+const setToken = (token: string) => {
   localStorage.setItem(TOKEN_KEY, token);
 };
 
