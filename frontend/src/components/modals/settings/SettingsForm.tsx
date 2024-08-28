@@ -78,7 +78,7 @@ function SettingsForm({
         <ModelSelector
           isDisabled={disabled}
           models={organizeModelsAndProviders(models)}
-          defaultModel={settings.LLM_MODEL}
+          currentModel={settings.LLM_MODEL}
         />
       )}
       <Input

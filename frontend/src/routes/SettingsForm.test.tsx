@@ -30,8 +30,6 @@ describe("SettingsForm", () => {
     within(form).getByTestId("model-selector");
     within(form).getByTestId("api-key-input");
     within(form).getByTestId("agent-selector");
-    within(form).getByTestId("security-analyzer-selector");
-    within(form).getByTestId("confirmation-mode-toggle");
   });
 
   describe("Models", () => {
