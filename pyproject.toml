@@ -47,6 +47,7 @@ tree-sitter = "0.21.3"
 bashlex = "^0.18"
 pyjwt = "^2.9.0"
 dirhash = "*"
+python-frontmatter = "^1.1.0"
 python-docx = "*"
 PyPDF2 = "*"
 python-pptx = "*"
@@ -83,6 +84,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -112,6 +114,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
