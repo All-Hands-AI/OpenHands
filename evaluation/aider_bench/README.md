@@ -33,8 +33,10 @@ development environment and LLM.
     given IDs (comma separated).
 
 There are also following optional environment variables you can set:
-```
+
+```bash
 export USE_UNIT_TESTS=true # if you want to allow the Agent to verify correctness using unittests. Default to false.
+export SKIP_NUM=12 # skip the first 12 instances from the dataset
 ```
 
 Following is the basic command to start the evaluation.
@@ -58,6 +60,8 @@ You can update the arguments in the script
 
 ```bash
 poetry run python ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+# with optional SKIP_NUM
+poetry run python SKIP_NUM=12 ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
 ```
 
 Full example:

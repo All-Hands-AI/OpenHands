@@ -7,6 +7,7 @@ This folder contains evaluation for [WebArena](https://github.com/web-arena-x/we
 Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
 
 ## Setup WebArena Environment
+
 WebArena requires you to set up websites containing pre-populated content that is accessible via URL to the machine running the OpenHands agents.
 Follow [this document](https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md) to set up your own WebArena environment through local servers or AWS EC2 instances.
 Take note of the base URL (`$WEBARENA_BASE_URL`) of the machine where the environment is installed.
@@ -36,8 +37,7 @@ poetry run python evaluation/webarena/get_success_rate.py evaluation/evaluation_
 
 ## Submit your evaluation results
 
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
-
+You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
 
 ## BrowsingAgent V1.0 result
 

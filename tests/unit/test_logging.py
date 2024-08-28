@@ -87,9 +87,6 @@ def test_app_config_attributes_masking(test_handler):
     assert 'e2b-xyz789' not in log_output
     assert 'ghp_abcdefghijklmnopqrstuvwxyz' not in log_output
 
-    # reset the AppConfig
-    AppConfig.reset()
-
 
 def test_sensitive_env_vars_masking(test_handler):
     logger, stream = test_handler
