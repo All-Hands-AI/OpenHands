@@ -229,10 +229,6 @@ class RemoteRuntime(Runtime):
             return
         else:
             msg = f'Sandbox is not alive. Status: {response.status}.'
-            try:
-                msg += f' Response: {await response.json()}'
-            except aiohttp.client_exceptions.ContentTypeError:
-                msg += f' Response: {await response.text()}'
             logger.error(msg)
             raise RuntimeError(msg)
 
