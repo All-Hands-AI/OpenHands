@@ -9,6 +9,7 @@ from openhands.core.config import AppConfig, SandboxConfig, load_from_env
 from openhands.events import EventStream
 from openhands.runtime.client.runtime import EventStreamRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from openhands.runtime.remote.runtime import RemoteRuntime
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
@@ -34,6 +35,8 @@ def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
+    elif runtime.lower() == 'remote':
+        return [RemoteRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
