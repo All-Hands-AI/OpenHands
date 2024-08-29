@@ -337,7 +337,7 @@ class RemoteRuntime(Runtime):
             response = self._send_request(
                 'POST',
                 f'{self.runtime_url}/upload_file',
-                data=upload_data,
+                files=upload_data,
                 params=params,
                 retry_exceptions=list(
                     filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
