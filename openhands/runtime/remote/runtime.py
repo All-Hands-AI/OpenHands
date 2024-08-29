@@ -131,10 +131,8 @@ class RemoteRuntime(Runtime):
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_arg = (
-                f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
-            )
+        if plugins is not None and len(plugins) > 0:
+            plugin_arg = f'--plugins {" ".join([plugin.name for plugin in plugins])} '
         browsergym_arg = (
             f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
             if self.config.sandbox.browsergym_eval_env is not None
