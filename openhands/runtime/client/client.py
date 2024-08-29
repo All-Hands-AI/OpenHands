@@ -62,6 +62,7 @@ INIT_COMMANDS = [
     'git config --global user.email "openhands@all-hands.dev"',
     "alias git='git --no-pager'",
 ]
+SOFT_TIMEOUT_SECONDS = 5
 
 
 class RuntimeClient:
@@ -315,14 +316,18 @@ class RuntimeClient:
             for command in commands:
                 if command == '':
                     output, exit_code = self._continue_bash(
-                        timeout=5, keep_prompt=action.keep_prompt, kill_on_timeout=False
+                        timeout=SOFT_TIMEOUT_SECONDS,
+                        keep_prompt=action.keep_prompt,
+                        kill_on_timeout=False,
                     )
                 elif command == 'ctrl+c':
-                    output, exit_code = self._interrupt_bash(timeout=5)
+                    output, exit_code = self._interrupt_bash(
+                        timeout=SOFT_TIMEOUT_SECONDS
+                    )
                 else:
                     output, exit_code = self._execute_bash(
                         command,
-                        timeout=5,
+                        timeout=SOFT_TIMEOUT_SECONDS,
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False,
                     )
