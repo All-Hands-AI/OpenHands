@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import traceback
 from typing import Type
 
@@ -12,7 +11,6 @@ from openhands.core.exceptions import (
     LLMNoActionError,
     LLMResponseError,
 )
-from openhands.core.logger import current_log_level
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -115,7 +113,6 @@ class AgentController:
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
-        self._last_pending_action: Action | None = None
 
         if not is_delegate:
             self.agent_task = asyncio.create_task(self._start_step_loop())
@@ -354,22 +351,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            current_pending_action = self._pending_action
-
-            # New: Check if the pending action has changed
-            if (
-                not hasattr(self, '_last_pending_action')
-                or self._last_pending_action != current_pending_action
-            ):
-                logger.debug(
-                    f'[Agent Controller {self.id}] waiting for pending action...'
-                )
-                self._last_pending_action = current_pending_action
-            else:
-                # If the pending action hasn't changed, just print a dot
-                if current_log_level <= logging.DEBUG:
-                    print('.', end='', flush=True)
-
             await asyncio.sleep(1)
             return
 
