@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import os
 from typing import Any
@@ -176,11 +177,13 @@ def process_instance(
     runtime = create_runtime(config, sid=instance.instance_id)
     initialize_runtime(runtime)
 
-    state: State | None = run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=fake_user_response_fn,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=fake_user_response_fn,
+        )
     )
 
     if state is None:

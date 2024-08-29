@@ -1,3 +1,4 @@
+import asyncio
 import os
 import tempfile
 from typing import Any
@@ -197,11 +198,13 @@ def process_instance(
     initialize_runtime(runtime, instance=instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+        )
     )
     if state is None:
         raise ValueError('State should not be None.')

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from typing import Any
@@ -144,12 +145,13 @@ def process_instance(
     runtime = create_runtime(config, sid=env_id)
     task_str = initialize_runtime(runtime)
 
-    state: State | None = run_controller(
-        config=config,
-        task_str=task_str,
-        runtime=runtime,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=task_str,
+            runtime=runtime,
+        )
     )
-
     # ======= Attempt to evaluate the agent's environment impact =======
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)

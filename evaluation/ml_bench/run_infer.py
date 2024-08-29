@@ -13,6 +13,7 @@ TODOs:
 - Clean up the code and docker image used for evaluation.
 """
 
+import asyncio
 import os
 from typing import Any
 
@@ -238,13 +239,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     initialize_runtime(runtime, instance)
 
     # Run the agent
-    state: State | None = run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-            metadata.agent_class
-        ),
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                metadata.agent_class
+            ),
+        )
     )
     assert state is not None
     metrics = state.metrics.get() if state.metrics else {}

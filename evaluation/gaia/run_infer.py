@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import os
 import re
@@ -144,11 +145,15 @@ def process_instance(
     initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+        )
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)

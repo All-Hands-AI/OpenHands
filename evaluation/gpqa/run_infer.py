@@ -16,6 +16,7 @@ TODOs:
 - Batch inference and evaluation of agents on the GPQA Benchmark.
 """
 
+import asyncio
 import os
 import random
 import re
@@ -215,13 +216,15 @@ Ok now its time to start solving the question. Good luck!
 
     runtime = create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
 
-    state: State | None = run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-            metadata.agent_class
-        ),
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                metadata.agent_class
+            ),
+        )
     )
     assert state is not None, 'State should not be None.'
 

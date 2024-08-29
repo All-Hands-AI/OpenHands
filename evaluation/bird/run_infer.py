@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import pathlib
@@ -405,11 +406,15 @@ def process_instance(
     initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = run_controller(
-        config=config,
-        task_str=instruction,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
-        runtime=runtime,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+            runtime=runtime,
+        )
     )
 
     # ======= Attempt to evaluate the agent's edits =======
