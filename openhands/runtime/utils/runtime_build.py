@@ -76,23 +76,25 @@ def _put_source_code_to_dir(temp_dir: str):
     Parameters:
     - temp_dir (str): The directory to put the source code in
     """
+    project_tar = 'project.tar.gz'
+    project_path = os.path.join(temp_dir, project_tar)
+    logger.info('Building source distribution...')
+
     # Build the project source tarball
     tarball_path = _create_project_source_dist()
     filename = os.path.basename(tarball_path)
     filename = filename.removesuffix('.tar.gz')
 
     # Move the project tarball to temp_dir
-    _res = shutil.copy(tarball_path, os.path.join(temp_dir, 'project.tar.gz'))
+    _res = shutil.copy(tarball_path, project_path)
     if _res:
         os.remove(tarball_path)
-    logger.info(
-        f'Source distribution moved to {os.path.join(temp_dir, "project.tar.gz")}'
-    )
+    logger.info('Source distribution moved to ' + project_path)
 
     # Unzip the tarball
-    shutil.unpack_archive(os.path.join(temp_dir, 'project.tar.gz'), temp_dir)
+    shutil.unpack_archive(project_path, temp_dir)
     # Remove the tarball
-    os.remove(os.path.join(temp_dir, 'project.tar.gz'))
+    os.remove(project_path)
     # Rename the directory containing the code to 'code'
     os.rename(os.path.join(temp_dir, filename), os.path.join(temp_dir, 'code'))
     logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
@@ -260,9 +262,9 @@ def build_runtime_image(
     # Scenario 2: If a Docker image with the exact hash is not found, we will FIRST try to re-build it
     # by leveraging the `generic_runtime_image_name` to save some time
     # from re-building the dependencies (e.g., poetry install, apt install)
-    elif runtime_builder.image_exists(generic_runtime_image_name) and not force_rebuild:
+    if not force_rebuild and runtime_builder.image_exists(generic_runtime_image_name):
         logger.info(
-            f'Cannot find docker Image [{hash_runtime_image_name}]\n'
+            f'Could not find docker image [{hash_runtime_image_name}]\n'
             f'Will try to re-build it from latest [{generic_runtime_image_name}] image to potentially save '
             f'time for dependencies installation.\n'
         )

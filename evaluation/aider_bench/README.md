@@ -59,25 +59,43 @@ You can update the arguments in the script
 ## Summarize Results
 
 ```bash
-poetry run python ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+poetry run python ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file] [model_name]
 # with optional SKIP_NUM
-poetry run python SKIP_NUM=12 ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+poetry run python SKIP_NUM=12 ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file] [model_name]
 ```
 
 Full example:
 
 ```bash
-poetry run python ./evaluation/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
+poetry run python ./evaluation/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl claude-3-5-sonnet@20240620
 ```
 
 This will list the instances that passed and the instances that failed. For each
 instance, the corresponding set of test cases (which can vary for each instance)
 are run on the file edited by the agent. We consider an instance to be passed
 only if ALL test cases are passed. Sometimes even a single failed test case will
-cause the entire instance to be marked as filed.
+cause the entire instance to be marked as failed.
 
-You can inspect the test_results field in the output json file to know the exact
+You can inspect the `test_results` field in the `output.jsonl` file to find the exact
 outcome of the tests. If there are no syntax or indentation errors, you can
-expect to see something like "..F...EF..", where "." means the test case
-passed, "E" means there was an error while executing the test case and "F"
-means some assertion failed and returned output was not as expected.
+expect to see something like "`..F...EF..`", where "`.`" means the test case
+passed, "`E`" means there was an error while executing the test case and "`F`"
+means some assertion failed and some returned output was not as expected.
+
+## Visualization
+
+If the required Python libraries are installed (`matplotlib.pyplot` and `seaborn`),
+the `summarize_results.py` script will also generate two histograms to
+the output folder.
+
+### Cost Histogram
+
+The cost histogram shows the number of successful and failed instances per cost point.
+
+![Cost Histogram](./examples/cost_histogram.png)
+
+### Actions Histogram
+
+The actions histogram shows per number of actions the number of successful and failed instances.
+
+![Actions Histogram](./examples/actions_histogram.png)

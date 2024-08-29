@@ -38,7 +38,7 @@ minio = "^7.2.8"
 gevent = "^24.2.1"
 pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
-zope-interface = "7.0.2"
+zope-interface = "7.0.3"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
@@ -84,7 +84,6 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -115,7 +114,6 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -125,3 +123,5 @@ swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
 gdown = "*"
+matplotlib = "*"
+seaborn = "*"
