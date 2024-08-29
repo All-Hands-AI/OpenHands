@@ -79,7 +79,6 @@ async def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
     )
-    await runtime.ainit()
 
     return runtime
 

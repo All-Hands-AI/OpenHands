@@ -406,7 +406,7 @@ async def list_files(request: Request, path: str | None = None):
             content={'error': 'Runtime not yet initialized'},
         )
     runtime: Runtime = request.state.session.agent_session.runtime
-    file_list = await runtime.list_files(path)
+    file_list = runtime.list_files(path)
     return file_list
 
 
@@ -440,7 +440,7 @@ async def select_file(file: str, request: Request):
         )
 
     read_action = FileReadAction(file)
-    observation = await runtime.run_action(read_action)
+    observation = runtime.run_action(read_action)
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
@@ -519,7 +519,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
                     tmp_file.flush()
 
                 runtime: Runtime = request.state.session.agent_session.runtime
-                await runtime.copy_to(
+                runtime.copy_to(
                     tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
                 )
             uploaded_files.append(safe_filename)
@@ -686,7 +686,7 @@ async def save_file(request: Request):
         # Save the file to the agent's runtime file store
         runtime: Runtime = request.state.session.agent_session.runtime
         write_action = FileWriteAction(file_path, content)
-        observation = await runtime.run_action(write_action)
+        observation = runtime.run_action(write_action)
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(
