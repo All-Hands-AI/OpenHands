@@ -249,8 +249,8 @@ class RuntimeClient:
         kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
-        self.shell.sendline(command)
         print('exec bash', command)
+        self.shell.sendline(command)
         return self._continue_bash(
             timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
         )
@@ -272,8 +272,10 @@ class RuntimeClient:
         print('continue bash', timeout)
         try:
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+            print('got expect regex')
 
             output = self.shell.before
+            print('output', output)
 
             # Get exit code
             self.shell.sendline('echo $?')
@@ -317,7 +319,6 @@ class RuntimeClient:
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                print('COMMAND', command)
                 if command == '':
                     output, exit_code = self._continue_bash(timeout=5)
                 elif command == 'ctrl+c':
