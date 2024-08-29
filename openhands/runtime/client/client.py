@@ -320,7 +320,9 @@ class RuntimeClient:
             all_output = ''
             for command in commands:
                 if command == '':
-                    output, exit_code = self._continue_bash(timeout=5)
+                    output, exit_code = self._continue_bash(
+                        timeout=5, keep_prompt=action.keep_prompt, kill_on_timeout=False
+                    )
                 elif command == 'ctrl+c':
                     output, exit_code = self._interrupt_bash(timeout=5)
                 else:
