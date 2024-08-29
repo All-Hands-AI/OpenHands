@@ -61,22 +61,29 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         return target_image_hash_name
 
     def image_exists(self, image_name: str) -> bool:
-        """Check if the image exists in the registry (try to pull it first) AND in the local store.
+        """Check if the image exists in the registry (try to pull it first) or in the local store.
 
         Args:
             image_name (str): The Docker image to check (<image repo>:<image tag>)
         Returns:
-            bool: Whether the Docker image exists in the registry and in the local store
+            bool: Whether the Docker image exists in the registry or in the local store
         """
-        # Try to pull the Docker image from the registry
         try:
-            self.docker_client.images.pull(image_name)
-        except Exception:
-            logger.info(f'Cannot pull image {image_name} directly')
-
-        images = self.docker_client.images.list()
-        if images:
-            for image in images:
-                if image_name in image.tags:
-                    return True
-        return False
+            logger.info(f'Checking, if image {image_name} exists locally.')
+            self.docker_client.images.get(image_name)
+            logger.info(f'Image {image_name} found locally.')
+            return True
+        except docker.errors.ImageNotFound:
+            try:
+                logger.info(
+                    'Image not found locally. Trying to pull it, please wait...'
+                )
+                self.docker_client.images.pull(image_name)
+                logger.info(f'Image {image_name} pulled successfully.')
+                return True
+            except docker.errors.ImageNotFound:
+                logger.info('Could not find image locally or in registry.')
+                return False
+            except Exception:
+                logger.info('Could not pull image directly.')
+                return False

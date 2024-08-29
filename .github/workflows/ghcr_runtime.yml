@@ -7,6 +7,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Always run on "main"
+# Always run on tags
+# Always run on PRs
+# Can also be triggered manually
 on:
   push:
     branches:
@@ -77,12 +81,10 @@ jobs:
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
-
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: "!github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ matrix.base_image.tag }}
-
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         uses: docker/build-push-action@v6
@@ -96,7 +98,6 @@ jobs:
         with:
           name: runtime-${{ matrix.base_image.tag }}
           path: /tmp/runtime-${{ matrix.base_image.tag }}.tar
-
 
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
@@ -117,7 +118,6 @@ jobs:
           haskell: true
           large-packages: true
           swap-storage: true
-
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
@@ -129,7 +129,6 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
-
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -165,7 +164,6 @@ jobs:
         base_image: ['nikolaik', 'python', 'node']
     steps:
       - uses: actions/checkout@v4
-
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
@@ -177,7 +175,6 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
-
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python

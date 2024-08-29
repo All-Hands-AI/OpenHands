@@ -40,7 +40,6 @@ def temp_toml_file(tmp_path):
 @pytest.fixture
 def default_config(monkeypatch):
     # Fixture to provide a default AppConfig instance
-    AppConfig.reset()
     yield AppConfig()
 
 
@@ -501,8 +500,8 @@ def test_api_keys_repr_str():
 def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):
     temp_toml = """
 [core]
-max_iterations = 100
-max_budget_per_task = 4.0
+max_iterations = 42
+max_budget_per_task = 4.7
 """
 
     config = AppConfig()
@@ -511,8 +510,8 @@ max_budget_per_task = 4.0
 
     load_from_toml(config, temp_toml_file)
 
-    assert config.max_iterations == 100
-    assert config.max_budget_per_task == 4.0
+    assert config.max_iterations == 42
+    assert config.max_budget_per_task == 4.7
 
 
 def test_get_llm_config_arg(temp_toml_file):
