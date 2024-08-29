@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -511,7 +511,9 @@ if __name__ == '__main__':
 
     @app.post('/upload_file')
     async def upload_file(
-        file: UploadFile, destination: str = '/', recursive: bool = False
+        file: UploadFile,
+        destination: str = Query(default='/'),
+        recursive: bool = Query(default=False),
     ):
         assert client is not None
 
