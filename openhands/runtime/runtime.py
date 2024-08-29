@@ -107,7 +107,7 @@ class Runtime:
                 f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
             )
 
-    def on_event(self, event: Event) -> None:
+    async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
             # set timeout to default if not set
             if event.timeout is None:
