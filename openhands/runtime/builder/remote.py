@@ -50,7 +50,13 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         logger.info(f'Build initiated with ID: {build_id}')
 
         # Poll /build_status until the build is complete
+        start_time = time.time()
+        timeout = 30 * 60  # 20 minutes in seconds
         while True:
+            if time.time() - start_time > timeout:
+                logger.error('Build timed out after 30 minutes')
+                raise RuntimeError('Build timed out after 30 minutes')
+
             status_response = requests.get(
                 f'{self.api_url}/build_status',
                 params={'build_id': build_id},
