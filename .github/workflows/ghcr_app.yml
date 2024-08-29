@@ -1,7 +1,6 @@
 # Workflow that builds, tests and then pushes the app docker images to the ghcr.io repository
 name: Build and Publish App Image
 
-
 # Always run on "main"
 # Always run on tags
 # Always run on PRs

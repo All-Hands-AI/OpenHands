@@ -87,16 +87,16 @@ class Runtime:
 
     def close_sync(self) -> None:
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # No running event loop, use asyncio.run()
-            asyncio.run(self.close())
-        else:
-            # There is a running event loop, create a task
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                return
             if loop.is_running():
                 loop.create_task(self.close())
             else:
                 loop.run_until_complete(self.close())
+        except RuntimeError:
+            # Event loop is already closed, nothing to do
+            pass
 
     # ====================================================================
 

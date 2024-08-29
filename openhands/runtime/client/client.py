@@ -58,9 +58,7 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    'git config --global user.name "openhands"',
-    'git config --global user.email "openhands@all-hands.dev"',
-    "alias git='git --no-pager'",
+    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
 
 
@@ -187,7 +185,9 @@ class RuntimeClient:
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
-        self.shell.sendline(f'cd {work_dir}')
+        self.shell.sendline(
+            f'if [ ! -d "{work_dir}" ]; then mkdir -p "{work_dir}"; fi && cd "{work_dir}"'
+        )
         self.shell.expect(self.__bash_expect_regex)
         logger.debug(
             f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
