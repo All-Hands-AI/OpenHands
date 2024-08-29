@@ -59,6 +59,7 @@ class RemoteRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
     ):
+        self.config = config
         if self.config.sandbox.api_hostname == 'localhost':
             self.config.sandbox.api_hostname = 'api.all-hands.dev/v0/runtime'
             logger.warning(
