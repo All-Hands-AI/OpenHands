@@ -1,4 +1,3 @@
-import asyncio
 import os
 from typing import Any
 
@@ -208,8 +207,6 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

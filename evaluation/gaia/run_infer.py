@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import os
 import re
@@ -257,12 +256,10 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            dataset=prepared_dataset,
-            metadata=metadata,
-            output_file=output_file,
-            num_workers=args.eval_num_workers,
-            process_instance_func=process_instance,
-        )
+    run_evaluation(
+        dataset=prepared_dataset,
+        metadata=metadata,
+        output_file=output_file,
+        num_workers=args.eval_num_workers,
+        process_instance_func=process_instance,
     )

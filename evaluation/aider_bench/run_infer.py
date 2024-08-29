@@ -1,4 +1,3 @@
-import asyncio
 import os
 import tempfile
 from typing import Any
@@ -286,12 +285,10 @@ if __name__ == '__main__':
         skip_num=SKIP_NUM,
     )
 
-    asyncio.run(
-        run_evaluation(
-            instances,
-            metadata,
-            output_file,
-            args.eval_num_workers,
-            process_instance,
-        )
+    run_evaluation(
+        instances,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
     )

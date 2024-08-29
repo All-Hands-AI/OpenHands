@@ -16,7 +16,6 @@ TODOs:
 - Batch inference and evaluation of agents on the GPQA Benchmark.
 """
 
-import asyncio
 import os
 import random
 import re
@@ -355,12 +354,10 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gpqa_dataset, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            dataset=prepared_dataset,
-            metadata=metadata,
-            output_file=output_file,
-            num_workers=args.eval_num_workers,
-            process_instance_func=process_instance,
-        )
+    run_evaluation(
+        dataset=prepared_dataset,
+        metadata=metadata,
+        output_file=output_file,
+        num_workers=args.eval_num_workers,
+        process_instance_func=process_instance,
     )

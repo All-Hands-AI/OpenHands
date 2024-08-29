@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 from typing import Any
@@ -222,12 +221,10 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            instances,
-            metadata,
-            output_file,
-            args.eval_num_workers,
-            process_instance,
-        )
+    run_evaluation(
+        instances,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
     )

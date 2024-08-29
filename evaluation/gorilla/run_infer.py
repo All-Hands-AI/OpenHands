@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 
@@ -179,14 +178,12 @@ if __name__ == '__main__':
     else:
         print('File already exists, skipping download.')
 
-    asyncio.run(
-        run_evaluation(
-            dataset=dataset,
-            metadata=metadata,
-            output_file=output_file,
-            num_workers=args.eval_num_workers,
-            process_instance_func=process_instance,
-        )
+    run_evaluation(
+        dataset=dataset,
+        metadata=metadata,
+        output_file=output_file,
+        num_workers=args.eval_num_workers,
+        process_instance_func=process_instance,
     )
 
     # Read the output file and calculate the accuracy

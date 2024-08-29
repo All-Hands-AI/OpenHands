@@ -1,4 +1,3 @@
-import asyncio
 import os
 
 import pandas as pd
@@ -214,12 +213,10 @@ if __name__ == '__main__':
         eda_dataset.to_pandas(), output_file, args.eval_n_limit
     )
 
-    asyncio.run(
-        run_evaluation(
-            prepared_dataset,
-            metadata,
-            output_file,
-            args.eval_num_workers,
-            process_instance,
-        )
+    run_evaluation(
+        prepared_dataset,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
     )
