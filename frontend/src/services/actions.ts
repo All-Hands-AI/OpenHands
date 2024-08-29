@@ -1,4 +1,4 @@
-import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
+import { addAssistantMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
@@ -18,39 +18,29 @@ const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.message));
   },
-  [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
-      store.dispatch(addAssistantMessage(message.message));
-    }
+  [ActionType.BROWSE_INTERACTIVE]: () => {
+    // now handled by the Session context
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));
     store.dispatch(setCode(content));
   },
-  [ActionType.MESSAGE]: (message: ActionMessage) => {
-    if (message.source === "user") {
-      store.dispatch(
-        addUserMessage({ content: message.args.content, imageUrls: [] }),
-      );
-    } else {
-      store.dispatch(addAssistantMessage(message.args.content));
-    }
+  [ActionType.MESSAGE]: () => {
+    // now handled by the Session context
   },
-  [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
+  [ActionType.FINISH]: () => {
+    // now handled by the Session context
   },
   [ActionType.REJECT]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.message));
   },
-  [ActionType.DELEGATE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
+  [ActionType.DELEGATE]: () => {
+    // now handled by the Session context
   },
   [ActionType.RUN]: (message: ActionMessage) => {
     if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      // now handled by the Session context
     }
     if (
       !message.args.is_confirmed ||
@@ -61,7 +51,7 @@ const messageActions = {
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+      // now handled by the Session context
     }
     if (
       !message.args.is_confirmed ||

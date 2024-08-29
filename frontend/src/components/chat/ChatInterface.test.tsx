@@ -6,8 +6,6 @@ import { renderWithProviders } from "test-utils";
 import ChatInterface from "./ChatInterface";
 import Session from "#/services/session";
 import ActionType from "#/types/ActionType";
-import { addAssistantMessage } from "#/state/chatSlice";
-import AgentState from "#/types/AgentState";
 
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
@@ -32,7 +30,7 @@ describe("ChatInterface", () => {
   });
 
   it("should render user and assistant messages", () => {
-    const { store } = renderWithProviders(<ChatInterface />, {
+    renderWithProviders(<ChatInterface />, {
       preloadedState: {
         chat: {
           messages: [{ sender: "user", content: "Hello", imageUrls: [] }],
@@ -45,7 +43,6 @@ describe("ChatInterface", () => {
 
     act(() => {
       // simulate assistant response
-      store.dispatch(addAssistantMessage("Hello to you!"));
     });
 
     expect(screen.getAllByTestId("message")).toHaveLength(2);
@@ -54,13 +51,7 @@ describe("ChatInterface", () => {
 
   it("should send the user message as an event to the Session when the agent state is INIT", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        agent: {
-          curAgentState: AgentState.INIT,
-        },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     const input = screen.getByRole("textbox");
     await user.type(input, "my message");
@@ -73,13 +64,7 @@ describe("ChatInterface", () => {
 
   it("should send the user message as an event to the Session when the agent state is AWAITING_USER_INPUT", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        agent: {
-          curAgentState: AgentState.AWAITING_USER_INPUT,
-        },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     const input = screen.getByRole("textbox");
     await user.type(input, "my message");
@@ -92,13 +77,7 @@ describe("ChatInterface", () => {
 
   it("should disable the user input if agent is not initialized", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        agent: {
-          curAgentState: AgentState.LOADING,
-        },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     const input = screen.getByRole("textbox");
     await user.type(input, "my message");

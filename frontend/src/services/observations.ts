@@ -1,8 +1,6 @@
-import { setCurrentAgentState } from "#/state/agentSlice";
 import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/Message";
-import { appendOutput } from "#/state/commandSlice";
 import { appendJupyterOutput } from "#/state/jupyterSlice";
 import ObservationType from "#/types/ObservationType";
 import { addAssistantMessage } from "#/state/chatSlice";
@@ -10,7 +8,7 @@ import { addAssistantMessage } from "#/state/chatSlice";
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
     case ObservationType.RUN:
-      store.dispatch(appendOutput(message.content));
+      // now handled by the Session context
       break;
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
@@ -25,7 +23,7 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      // now handled by the Session context
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)

@@ -1,7 +1,7 @@
 import React from "react";
 import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
-import { Command, appendInput, appendOutput } from "#/state/commandSlice";
+import { Command } from "#/state/commandSlice";
 import Terminal from "./Terminal";
 
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
@@ -25,13 +25,7 @@ vi.mock("@xterm/xterm", async (importOriginal) => ({
 }));
 
 const renderTerminal = (commands: Command[] = []) =>
-  renderWithProviders(<Terminal />, {
-    preloadedState: {
-      cmd: {
-        commands,
-      },
-    },
-  });
+  renderWithProviders(<Terminal />);
 
 describe("Terminal", () => {
   afterEach(() => {
@@ -58,25 +52,25 @@ describe("Terminal", () => {
   });
 
   it("should write commands to the terminal", () => {
-    const { store } = renderTerminal();
+    renderTerminal();
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
-      store.dispatch(appendOutput("Hello"));
+      // append input
+      // append output
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo Hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
 
     act(() => {
-      store.dispatch(appendInput("echo World"));
+      // append input
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(3, "echo World");
   });
 
   it("should load and write commands to the terminal", () => {
-    const { store } = renderTerminal([
+    renderTerminal([
       { type: "input", content: "echo Hello" },
       { type: "output", content: "Hello" },
     ]);
@@ -85,17 +79,17 @@ describe("Terminal", () => {
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
+      // append input
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(3, "echo Hello");
   });
 
   it("should end the line with a dollar sign after writing a command", () => {
-    const { store } = renderTerminal();
+    renderTerminal();
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
+      // append input
     });
 
     expect(mockTerminal.writeln).toHaveBeenCalledWith("echo Hello");

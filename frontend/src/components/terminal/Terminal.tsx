@@ -1,14 +1,41 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { VscTerminal } from "react-icons/vsc";
-import { RootState } from "#/store";
 import { useTerminal } from "../../hooks/useTerminal";
+import { useSession } from "#/context/session";
 
 import "@xterm/xterm/css/xterm.css";
 
+const isCommandAction = (message: object): message is CommandAction =>
+  "action" in message && message.action === "run";
+
+const isCommandObservation = (message: object): message is CommandObservation =>
+  "observation" in message && message.observation === "run";
+
+const simplifyTerminalMessages = (messages: TrajectoryItem[]) => {
+  const filteredMessages = messages.filter(
+    (message) => isCommandAction(message) || isCommandObservation(message),
+  );
+
+  return filteredMessages.map((message) => {
+    if (isCommandAction(message)) {
+      return {
+        type: "input",
+        content: message.args.command,
+      } as const;
+    }
+
+    return {
+      type: "output",
+      content: message.content,
+    } as const;
+  });
+};
+
 function Terminal() {
-  const { commands } = useSelector((state: RootState) => state.cmd);
-  const ref = useTerminal(commands);
+  const { eventLog } = useSession();
+  const ref = useTerminal(
+    simplifyTerminalMessages(eventLog.map((message) => JSON.parse(message))),
+  );
 
   return (
     <div className="flex flex-col h-full">

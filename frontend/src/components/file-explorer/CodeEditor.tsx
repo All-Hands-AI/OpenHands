@@ -17,16 +17,15 @@ import {
 import toast from "#/utils/toast";
 import { saveFile } from "#/services/fileService";
 import AgentState from "#/types/AgentState";
+import { useSession } from "#/context/session";
 
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
+  const { agentState } = useSession();
   const dispatch = useDispatch();
   const fileStates = useSelector((state: RootState) => state.code.fileStates);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
   const fileState = fileStates.find((f) => f.path === activeFilepath);
-  const agentState = useSelector(
-    (state: RootState) => state.agent.curAgentState,
-  );
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");

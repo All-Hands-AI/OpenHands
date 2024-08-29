@@ -16,12 +16,9 @@ export const commandSlice = createSlice({
     appendInput: (state, action) => {
       state.commands.push({ content: action.payload, type: "input" });
     },
-    appendOutput: (state, action) => {
-      state.commands.push({ content: action.payload, type: "output" });
-    },
   },
 });
 
-export const { appendInput, appendOutput } = commandSlice.actions;
+export const { appendInput } = commandSlice.actions;
 
 export default commandSlice.reducer;

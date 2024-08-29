@@ -1,5 +1,4 @@
 import React, { useRef } from "react";
-import { useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
@@ -9,7 +8,6 @@ import { useDisclosure } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
-import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
@@ -53,9 +51,8 @@ function ChatInterface() {
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { sendUserMessage, eventLog } = useSession();
+  const { sendUserMessage, agentState, eventLog } = useSession();
   const [messages, setMessages] = React.useState<SimplifiedMessage[]>([]);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
@@ -100,7 +97,7 @@ function ChatInterface() {
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
-          <Chat messages={messages} curAgentState={curAgentState} />
+          <Chat messages={messages} curAgentState={agentState} />
         </div>
       </div>
 
@@ -115,7 +112,7 @@ function ChatInterface() {
           )}
           {hitBottom && (
             <>
-              {curAgentState === AgentState.AWAITING_USER_INPUT && (
+              {agentState === AgentState.AWAITING_USER_INPUT && (
                 <ScrollButton
                   onClick={handleSendContinueMsg}
                   icon={
@@ -124,7 +121,7 @@ function ChatInterface() {
                   label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
                 />
               )}
-              {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+              {agentState === AgentState.RUNNING && <TypingIndicator />}
             </>
           )}
         </div>
@@ -147,8 +144,8 @@ function ChatInterface() {
 
       <ChatInput
         disabled={
-          curAgentState === AgentState.LOADING ||
-          curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+          agentState === AgentState.LOADING ||
+          agentState === AgentState.AWAITING_USER_CONFIRMATION
         }
         onSendMessage={handleSendMessage}
       />

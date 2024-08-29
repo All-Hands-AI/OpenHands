@@ -6,7 +6,6 @@ import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
 import { uploadFiles, listFiles } from "#/services/fileService";
 import toast from "#/utils/toast";
-import AgentState from "#/types/AgentState";
 
 const toastSpy = vi.spyOn(toast, "error");
 
@@ -25,13 +24,7 @@ vi.mock("../../services/fileService", async () => ({
 }));
 
 const renderFileExplorerWithRunningAgentState = () =>
-  renderWithProviders(<FileExplorer />, {
-    preloadedState: {
-      agent: {
-        curAgentState: AgentState.RUNNING,
-      },
-    },
-  });
+  renderWithProviders(<FileExplorer />);
 
 describe("FileExplorer", () => {
   afterEach(() => {

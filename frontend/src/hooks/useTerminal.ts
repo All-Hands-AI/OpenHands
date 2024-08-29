@@ -2,8 +2,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { Command } from "#/state/commandSlice";
-import { sendTerminalCommand } from "#/services/terminalService";
 import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
+import { useSession } from "#/context/session";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -11,6 +11,7 @@ import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
 */
 
 export const useTerminal = (commands: Command[] = []) => {
+  const { sendTerminalCommand } = useSession();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);

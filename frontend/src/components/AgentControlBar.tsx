@@ -1,38 +1,46 @@
 import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
-import { useSelector } from "react-redux";
 import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
-import { changeAgentState } from "#/services/agentStateService";
-import store, { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
+import store from "#/store";
 import { clearMessages } from "#/state/chatSlice";
 import Session from "#/services/session";
+import { useSession } from "#/context/session";
 
-const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
-  [AgentState.PAUSED]: [
-    AgentState.INIT,
-    AgentState.PAUSED,
-    AgentState.STOPPED,
-    AgentState.FINISHED,
-    AgentState.REJECTED,
-    AgentState.AWAITING_USER_INPUT,
-    AgentState.AWAITING_USER_CONFIRMATION,
+type IgnoreTaskStateMapKeys = Extract<
+  AgentState,
+  | "paused"
+  | "running"
+  | "stopped"
+  | "user_confirmed"
+  | "user_rejected"
+  | "awaiting_user_confirmation"
+>;
+
+const IgnoreTaskStateMap: Record<IgnoreTaskStateMapKeys, AgentState[]> = {
+  paused: [
+    "init",
+    "paused",
+    "stopped",
+    "finished",
+    "rejected",
+    "awaiting_user_input",
+    "awaiting_user_confirmation",
   ],
-  [AgentState.RUNNING]: [
-    AgentState.INIT,
-    AgentState.RUNNING,
-    AgentState.STOPPED,
-    AgentState.FINISHED,
-    AgentState.REJECTED,
-    AgentState.AWAITING_USER_INPUT,
-    AgentState.AWAITING_USER_CONFIRMATION,
+  running: [
+    "init",
+    "running",
+    "stopped",
+    "finished",
+    "rejected",
+    "awaiting_user_input",
+    "awaiting_user_confirmation",
   ],
-  [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
-  [AgentState.USER_CONFIRMED]: [AgentState.RUNNING],
-  [AgentState.USER_REJECTED]: [AgentState.RUNNING],
-  [AgentState.AWAITING_USER_CONFIRMATION]: [],
+  stopped: ["init", "stopped"],
+  user_confirmed: ["running"],
+  user_rejected: ["running"],
+  awaiting_user_confirmation: [],
 };
 
 interface ButtonProps {
@@ -74,16 +82,21 @@ function ActionButton({
 }
 
 function AgentControlBar() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
+  const { agentState, triggerAgentStateChange } = useSession();
+  const [desiredState, setDesiredState] = React.useState<AgentState>("init");
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleAction = (action: AgentState) => {
-    if (IgnoreTaskStateMap[action].includes(curAgentState)) {
+    if (
+      action in Object.keys(IgnoreTaskStateMap) &&
+      IgnoreTaskStateMap[action as keyof typeof IgnoreTaskStateMap].includes(
+        agentState,
+      )
+    ) {
       return;
     }
 
-    if (action === AgentState.STOPPED) {
+    if (action === "stopped") {
       Session._history = [];
       store.dispatch(clearMessages());
     } else {
@@ -91,33 +104,30 @@ function AgentControlBar() {
     }
 
     setDesiredState(action);
-    changeAgentState(action);
+    triggerAgentStateChange(action);
   };
 
   useEffect(() => {
-    if (curAgentState === desiredState) {
-      if (curAgentState === AgentState.STOPPED) {
+    if (agentState === desiredState) {
+      if (agentState === "stopped") {
         store.dispatch(clearMessages());
       }
       setIsLoading(false);
-    } else if (curAgentState === AgentState.RUNNING) {
-      setDesiredState(AgentState.RUNNING);
+    } else if (agentState === "running") {
+      setDesiredState("running");
     }
-    // We only want to run this effect when curAgentState changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [curAgentState]);
+  }, [agentState]);
 
   return (
     <div className="flex justify-between items-center gap-20">
       <div className="flex items-center gap-3">
-        {curAgentState === AgentState.PAUSED ? (
+        {agentState === "paused" ? (
           <ActionButton
             isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
+              isLoading || IgnoreTaskStateMap.running.includes(agentState)
             }
             content="Resume the agent task"
-            action={AgentState.RUNNING}
+            action="running"
             handleAction={handleAction}
             large
           >
@@ -126,11 +136,10 @@ function AgentControlBar() {
         ) : (
           <ActionButton
             isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
+              isLoading || IgnoreTaskStateMap.paused.includes(agentState)
             }
             content="Pause the current task"
-            action={AgentState.PAUSED}
+            action="paused"
             handleAction={handleAction}
             large
           >
@@ -140,7 +149,7 @@ function AgentControlBar() {
         <ActionButton
           isDisabled={isLoading}
           content="Start a new task"
-          action={AgentState.STOPPED}
+          action="stopped"
           handleAction={handleAction}
         >
           <ArrowIcon />

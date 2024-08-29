@@ -3,7 +3,15 @@ type AgentState =
   | "loading"
   | "running"
   | "awaiting_user_input"
-  | "finished";
+  | "finished"
+  | "paused"
+  | "stopped"
+  | "rejected"
+  | "error"
+  // user states (confirmation)
+  | "awaiting_user_confirmation"
+  | "user_confirmed"
+  | "user_rejected";
 
 interface Config {
   action: "initialize";

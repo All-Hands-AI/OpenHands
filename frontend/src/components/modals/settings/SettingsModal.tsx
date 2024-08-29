@@ -2,7 +2,6 @@ import { Spinner } from "@nextui-org/react";
 import i18next from "i18next";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import {
   fetchAgents,
   fetchModels,
@@ -11,7 +10,6 @@ import {
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import Session from "#/services/session";
-import { RootState } from "../../../store";
 import AgentState from "../../../types/AgentState";
 import {
   Settings,
@@ -25,6 +23,7 @@ import {
 import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
+import { useSession } from "#/context/session";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -44,7 +43,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [settings, setSettings] = React.useState<Settings>({} as Settings);
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useSession();
 
   useEffect(() => {
     maybeMigrateSettings();
@@ -53,12 +52,12 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   useEffect(() => {
     const isRunning =
-      curAgentState === AgentState.RUNNING ||
-      curAgentState === AgentState.PAUSED ||
-      curAgentState === AgentState.AWAITING_USER_INPUT ||
-      curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
+      agentState === AgentState.RUNNING ||
+      agentState === AgentState.PAUSED ||
+      agentState === AgentState.AWAITING_USER_INPUT ||
+      agentState === AgentState.AWAITING_USER_CONFIRMATION;
     setAgentIsRunning(isRunning);
-  }, [curAgentState]);
+  }, [agentState]);
 
   React.useEffect(() => {
     (async () => {

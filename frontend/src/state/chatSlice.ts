@@ -10,18 +10,6 @@ export const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
-    addUserMessage(
-      state,
-      action: PayloadAction<{ content: string; imageUrls: string[] }>,
-    ) {
-      const message: Message = {
-        sender: "user",
-        content: action.payload.content,
-        imageUrls: action.payload.imageUrls,
-      };
-      state.messages.push(message);
-    },
-
     addAssistantMessage(state, action: PayloadAction<string>) {
       const message: Message = {
         sender: "assistant",
@@ -37,6 +25,5 @@ export const chatSlice = createSlice({
   },
 });
 
-export const { addUserMessage, addAssistantMessage, clearMessages } =
-  chatSlice.actions;
+export const { addAssistantMessage, clearMessages } = chatSlice.actions;
 export default chatSlice.reducer;

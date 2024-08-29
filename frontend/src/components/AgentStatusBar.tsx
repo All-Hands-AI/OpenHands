@@ -1,10 +1,9 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
+import { useSession } from "#/context/session";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -17,11 +16,12 @@ enum IndicatorColor {
 
 function AgentStatusBar() {
   const { t } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useSession();
 
-  const AgentStatusMap: {
-    [k: string]: { message: string; indicator: IndicatorColor };
-  } = {
+  const AgentStatusMap: Record<
+    AgentState,
+    { message: string; indicator: IndicatorColor }
+  > = {
     [AgentState.INIT]: {
       message: t(I18nKey.CHAT_INTERFACE$AGENT_INIT_MESSAGE),
       indicator: IndicatorColor.BLUE,
@@ -82,21 +82,21 @@ function AgentStatusBar() {
   // - Agent is not available
   useEffect(() => {
     if (
-      curAgentState === AgentState.AWAITING_USER_INPUT ||
-      curAgentState === AgentState.ERROR ||
-      curAgentState === AgentState.INIT
+      agentState === AgentState.AWAITING_USER_INPUT ||
+      agentState === AgentState.ERROR ||
+      agentState === AgentState.INIT
     ) {
       if (document.cookie.indexOf("audio") !== -1) beep();
     }
-  }, [curAgentState]);
+  }, [agentState]);
 
   return (
     <div className="flex items-center">
       <div
-        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
+        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[agentState].indicator}`}
       />
       <span className="text-sm text-stone-400">
-        {AgentStatusMap[curAgentState].message}
+        {AgentStatusMap[agentState].message}
       </span>
     </div>
   );

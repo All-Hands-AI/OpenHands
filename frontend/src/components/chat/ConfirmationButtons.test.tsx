@@ -4,12 +4,10 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import ConfirmationButtons from "./ConfirmationButtons";
 import AgentState from "#/types/AgentState";
-import { changeAgentState } from "#/services/agentStateService";
 
 describe("ConfirmationButtons", () => {
-  vi.mock("#/services/agentStateService", () => ({
-    changeAgentState: vi.fn(),
-  }));
+  // FIXME: mocked changeAgentState after its removal; need to update this test
+  const changeAgentState = vi.fn();
 
   it("should change agent state appropriately on button click", async () => {
     const user = userEvent.setup();

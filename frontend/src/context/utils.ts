@@ -25,3 +25,16 @@ export const generateUserMessageEvent = (
   };
   return JSON.stringify(event);
 };
+
+export const generateUserTerminalCommandEvent = (command: string) => {
+  const event = { action: ActionType.RUN, args: { command } };
+  return JSON.stringify(event);
+};
+
+export const generateAgentStateChangeEvent = (agent_state: AgentState) => {
+  const event = {
+    action: ActionType.CHANGE_AGENT_STATE,
+    args: { agent_state },
+  };
+  return JSON.stringify(event);
+};

@@ -4,7 +4,6 @@ import { Toaster } from "react-hot-toast";
 import { IoLockClosed } from "react-icons/io5";
 import CogTooth from "#/assets/cog-tooth";
 import ChatInterface from "#/components/chat/ChatInterface";
-import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
@@ -137,7 +136,6 @@ function App(): JSX.Element {
         isOpen={loadPreviousSessionModalIsOpen}
         onOpenChange={onLoadPreviousSessionModalOpenChange}
       />
-      <Errors />
       <Toaster />
     </div>
   );

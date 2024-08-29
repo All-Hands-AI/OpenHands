@@ -5,7 +5,7 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
@@ -15,8 +15,8 @@ import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
-import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
+import { useSession } from "#/context/session";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -91,7 +91,7 @@ function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { agentState } = useSession();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -101,8 +101,8 @@ function FileExplorer() {
 
   const refreshWorkspace = async () => {
     if (
-      curAgentState === AgentState.LOADING ||
-      curAgentState === AgentState.STOPPED
+      agentState === AgentState.LOADING ||
+      agentState === AgentState.STOPPED
     ) {
       return;
     }
@@ -165,7 +165,7 @@ function FileExplorer() {
     (async () => {
       await refreshWorkspace();
     })();
-  }, [curAgentState]);
+  }, [agentState]);
 
   React.useEffect(() => {
     const enableDragging = () => {
