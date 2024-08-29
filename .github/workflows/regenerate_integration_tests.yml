@@ -14,12 +14,13 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Add newline to README
-      run: echo "" >> README.md
+      # TODO: change this to regenerate the tests once this workflow is verified as working
+      run: echo "hello world" >> README.md
 
     - name: Commit changes
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add README.md
-        git commit -m "Add newline to README"
+        git add .
+        git commit -m "Regenerate integration tests"
         git push
