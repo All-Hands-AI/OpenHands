@@ -126,3 +126,5 @@ swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
 gdown = "*"
+matplotlib = "*"
+seaborn = "*"

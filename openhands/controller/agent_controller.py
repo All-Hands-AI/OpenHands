@@ -351,9 +351,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.debug(
-                f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
-            )
             await asyncio.sleep(1)
             return
 
