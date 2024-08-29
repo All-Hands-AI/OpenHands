@@ -141,7 +141,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
         if (isAgentStateChangeEvent(message)) {
           setData((prev) => ({
             ...prev,
-            agentState: message.args.agent_state,
+            agentState: message.extras.agent_state,
           }));
         }
 
