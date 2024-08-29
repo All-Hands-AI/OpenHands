@@ -72,6 +72,12 @@ then your command would be:
 ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
 ```
 
+**Evaluate on `RemoteRuntime` (alpha)** (contact Xingyao over slack if you want to try this out!)
+```bash
+SANDBOX_API_KEY="CONTACT-XINGYAO-TO-GET-A-TESTING-API-KEY" RUNTIME=remote EVAL_DOCKER_IMAGE_PREFIX="us-docker.pkg.dev/evaluation-428620/swe-bench-images" ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300
+```
+Multi-processing is still WIP.
+
 ### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could

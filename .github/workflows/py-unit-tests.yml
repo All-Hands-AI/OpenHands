@@ -111,7 +111,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml ./tests/unit
+        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml -svv ./tests/unit
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
