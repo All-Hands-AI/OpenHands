@@ -107,6 +107,9 @@ async def _load_runtime(
     browsergym_eval_env: str | None = None,
 ) -> Runtime:
     sid = 'test'
+    # add random number to sid
+    sid = f'{sid}_{int(time.time())}'
+    sid = sid.replace('.', '-')
     cli_session = 'main_test'
 
     # AgentSkills need to be initialized **before** Jupyter
