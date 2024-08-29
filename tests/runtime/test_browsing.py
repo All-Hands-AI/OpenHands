@@ -16,7 +16,6 @@ from openhands.events.observation import (
     BrowserOutputObservation,
     CmdOutputObservation,
 )
-from openhands.runtime.client.runtime import EventStreamRuntime
 
 # ============================================================================================================================
 # Browsing tests
@@ -74,11 +73,10 @@ async def test_simple_browse(temp_dir, box_class, run_as_openhands):
 
 
 @pytest.mark.asyncio
-async def test_browsergym_eval_env(temp_dir):
+async def test_browsergym_eval_env(box_class, temp_dir):
     runtime = await _load_runtime(
         temp_dir,
-        # only supported in event stream runtime
-        box_class=EventStreamRuntime,
+        box_class=box_class,
         run_as_openhands=False,  # need root permission to access file
         base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',

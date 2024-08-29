@@ -13,9 +13,9 @@ import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
-RUNTIME_IMAGE_REPO = os.getenv(
-    'OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime'
-)
+
+def get_runtime_image_repo():
+    return os.getenv('OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
 
 
 def _get_package_version():
@@ -31,18 +31,27 @@ def _get_package_version():
     return pyproject_data['tool']['poetry']['version']
 
 
-def _create_project_source_dist():
-    """Create a source distribution of the project.
+def _put_source_code_to_dir(temp_dir: str):
+    """Builds the project source tarball directly in temp_dir and unpacks it.
+    The OpenHands source code ends up in the temp_dir/code directory.
 
-    Returns:
-    - str: The path to the project tarball
+    Parameters:
+    - temp_dir (str): The directory to put the source code in
     """
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     logger.info(f'Using project root: {project_root}')
 
-    # run "python -m build -s" on project_root to create project tarball
+    # Fetch the correct version from pyproject.toml
+    package_version = _get_package_version()
+    tarball_filename = f'openhands_ai-{package_version}.tar.gz'
+    tarball_path = os.path.join(temp_dir, tarball_filename)
+
+    # Run "python -m build -s" on project_root to create project tarball directly in temp_dir
+    _cleaned_project_root = project_root.replace(
+        ' ', r'\ '
+    )  # escape spaces in the project root
     result = subprocess.run(
-        'python -m build -s ' + project_root.replace(' ', r'\ '),
+        f'python -m build -s -o {temp_dir} {_cleaned_project_root}',
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -56,47 +65,20 @@ def _create_project_source_dist():
         logger.error(f'Build failed: {result}')
         raise Exception(f'Build failed: {result}')
 
-    # Fetch the correct version from pyproject.toml
-    package_version = _get_package_version()
-    tarball_path = os.path.join(
-        project_root, 'dist', f'openhands_ai-{package_version}.tar.gz'
-    )
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
         raise Exception(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
-    return tarball_path
-
-
-def _put_source_code_to_dir(temp_dir: str):
-    """Builds the project source tarball. Copies it to temp_dir and unpacks it.
-    The OpenHands source code ends up in the temp_dir/code directory
-
-    Parameters:
-    - temp_dir (str): The directory to put the source code in
-    """
-    project_tar = 'project.tar.gz'
-    project_path = os.path.join(temp_dir, project_tar)
-    logger.info('Building source distribution...')
-
-    # Build the project source tarball
-    tarball_path = _create_project_source_dist()
-    filename = os.path.basename(tarball_path)
-    filename = filename.removesuffix('.tar.gz')
-
-    # Move the project tarball to temp_dir
-    _res = shutil.copy(tarball_path, project_path)
-    if _res:
-        os.remove(tarball_path)
-    logger.info('Source distribution moved to ' + project_path)
-
     # Unzip the tarball
-    shutil.unpack_archive(project_path, temp_dir)
+    shutil.unpack_archive(tarball_path, temp_dir)
     # Remove the tarball
-    os.remove(project_path)
+    os.remove(tarball_path)
     # Rename the directory containing the code to 'code'
-    os.rename(os.path.join(temp_dir, filename), os.path.join(temp_dir, 'code'))
+    os.rename(
+        os.path.join(temp_dir, f'openhands_ai-{package_version}'),
+        os.path.join(temp_dir, 'code'),
+    )
     logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
 
 
@@ -187,7 +169,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     - tuple[str, str]: The Docker repo and tag of the Docker image
     """
 
-    if RUNTIME_IMAGE_REPO in base_image:
+    if get_runtime_image_repo() in base_image:
         logger.info(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
             f'Will try to reuse it as is.'
@@ -201,9 +183,11 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         if ':' not in base_image:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
-        repo = repo.replace('/', '___')
+        # replace '/' with '_s_' to avoid '/' in the image name
+        # while make it a valid docker image name
+        repo = repo.replace('/', '_s_')
         od_version = _get_package_version()
-        return RUNTIME_IMAGE_REPO, f'od_v{od_version}_image_{repo}_tag_{tag}'
+        return get_runtime_image_repo(), f'od_v{od_version}_image_{repo}_tag_{tag}'
 
 
 def build_runtime_image(
@@ -368,16 +352,16 @@ def _build_sandbox_image(
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
 
     try:
-        success = runtime_builder.build(
+        image_name = runtime_builder.build(
             path=docker_folder, tags=[target_image_hash_name, target_image_generic_name]
         )
-        if not success:
+        if not image_name:
             raise RuntimeError(f'Build failed for image {target_image_hash_name}')
     except Exception as e:
         logger.error(f'Sandbox image build failed: {e}')
         raise
 
-    return target_image_hash_name
+    return image_name
 
 
 if __name__ == '__main__':
