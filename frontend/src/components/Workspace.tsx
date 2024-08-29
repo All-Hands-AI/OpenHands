@@ -5,20 +5,33 @@ import { IoIosGlobe } from "react-icons/io";
 import { VscCode, VscListOrdered } from "react-icons/vsc";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { initialState as initialBrowserState } from "#/state/browserSlice";
 import { initialState as initialCodeState } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import { TabOption, TabType } from "#/types/TabOption";
 import Browser from "./Browser";
 import CodeEditor from "./file-explorer/CodeEditor";
-import Planner from "./Planner";
+import Planner, { isAddTaskAction } from "./Planner";
 import Jupyter from "./Jupyter";
 import { getSettings } from "#/services/settings";
+import { useSession } from "#/context/session";
+import { extractJupyterCells } from "#/utils/extractJupyterCells";
 
 function Workspace() {
   const { t } = useTranslation();
-  const task = useSelector((state: RootState) => state.task.task);
   const code = useSelector((state: RootState) => state.code.code);
+
+  const { eventLog } = useSession();
+  const [task, setTask] = React.useState<AddTaskAction | undefined>(undefined);
+
+  React.useEffect(() => {
+    const addTaskAction = eventLog
+      .map((msg) => JSON.parse(msg))
+      .find(isAddTaskAction);
+
+    if (addTaskAction) {
+      setTask(addTaskAction);
+    }
+  }, [eventLog]);
 
   const { AGENT } = getSettings();
   const baseTabs = [TabOption.CODE, TabOption.BROWSER];
@@ -29,10 +42,8 @@ function Workspace() {
   const extraTabs = extraTabsMap[AGENT] || [];
   const showTabs = [...baseTabs, ...extraTabs];
 
-  const screenshotSrc = useSelector(
-    (state: RootState) => state.browser.screenshotSrc,
-  );
-  const jupyterCells = useSelector((state: RootState) => state.jupyter.cells);
+  // FIXME: Type this
+  const [jupyterCells, setJupyterCells] = React.useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
   const [changes, setChanges] = useState<Record<TabType, boolean>>({
     [TabOption.PLANNER]: false,
@@ -40,6 +51,11 @@ function Workspace() {
     [TabOption.BROWSER]: false,
     [TabOption.JUPYTER]: false,
   });
+
+  React.useEffect(() => {
+    const cells = extractJupyterCells(eventLog.map((msg) => JSON.parse(msg)));
+    setJupyterCells(cells);
+  }, [eventLog]);
 
   const iconSize = 18;
   const tabData = useMemo(
@@ -72,25 +88,13 @@ function Workspace() {
     if (activeTab !== TabOption.PLANNER && task) {
       setChanges((prev) => ({ ...prev, [TabOption.PLANNER]: true }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task]);
 
   useEffect(() => {
     if (activeTab !== TabOption.CODE && code !== initialCodeState.code) {
       setChanges((prev) => ({ ...prev, [TabOption.CODE]: true }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task]);
-
-  useEffect(() => {
-    if (
-      activeTab !== TabOption.BROWSER &&
-      screenshotSrc !== initialBrowserState.screenshotSrc
-    ) {
-      setChanges((prev) => ({ ...prev, [TabOption.BROWSER]: true }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenshotSrc]);
 
   useEffect(() => {
     if (activeTab !== TabOption.JUPYTER && jupyterCells.length > 0) {

@@ -1,8 +1,8 @@
 import React from "react";
 import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
-import { Command } from "#/state/commandSlice";
 import Terminal from "./Terminal";
+import { Command } from "#/hooks/useTerminal";
 
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),

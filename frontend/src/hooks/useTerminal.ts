@@ -1,9 +1,13 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { Command } from "#/state/commandSlice";
 import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
 import { useSession } from "#/context/session";
+
+export type Command = {
+  content: string;
+  type: "input" | "output";
+};
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.

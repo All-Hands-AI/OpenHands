@@ -1,14 +1,16 @@
 import React, { useRef } from "react";
-import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { VscArrowDown } from "react-icons/vsc";
 import { useTranslation } from "react-i18next";
-import { RootState } from "#/store";
-import { Cell } from "#/state/jupyterSlice";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { I18nKey } from "#/i18n/declaration";
+import { useSession } from "#/context/session";
+import { extractJupyterCells } from "#/utils/extractJupyterCells";
+
+// TODO: Type this
+type Cell = any;
 
 interface IJupyterCell {
   cell: Cell;
@@ -80,9 +82,16 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
 
 function Jupyter(): JSX.Element {
   const { t } = useTranslation();
-
-  const { cells } = useSelector((state: RootState) => state.jupyter);
+  const { eventLog } = useSession();
+  const [cells, setCells] = React.useState<Cell[]>([]);
   const jupyterRef = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const simplifiedCells = extractJupyterCells(
+      eventLog.map((msg) => JSON.parse(msg)),
+    );
+    setCells(simplifiedCells);
+  }, [eventLog]);
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);

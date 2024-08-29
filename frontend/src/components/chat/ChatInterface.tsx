@@ -13,10 +13,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useSession } from "#/context/session";
-import {
-  SimplifiedMessage,
-  simplifyMessage,
-} from "#/utils/simplifyEventMessage";
+import { SimplifiedMessage, extractMessage } from "#/utils/extractMessage";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -67,7 +64,7 @@ function ChatInterface() {
   React.useEffect(() => {
     const simplifiedMessages = eventLog
       .map((msg) => JSON.parse(msg))
-      .map(simplifyMessage)
+      .map(extractMessage)
       .filter((msg): msg is SimplifiedMessage => msg !== null);
     setMessages(simplifiedMessages);
   }, [eventLog]);

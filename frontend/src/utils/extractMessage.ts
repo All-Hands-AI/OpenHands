@@ -21,10 +21,21 @@ const isFinishAction = (message: object): message is FinishAction =>
 const isDelegateAction = (message: object): message is DelegateAction =>
   "action" in message && message.action === "delegate";
 
+const isBrowseAction = (message: object): message is BrowseAction =>
+  "action" in message && message.action === "browse";
+
 const isBrowseInteractiveAction = (
   message: object,
 ): message is BrowseInteractiveAction =>
   "action" in message && message.action === "browse_interactive";
+
+const isRejectAction = (message: object): message is RejectAction =>
+  "action" in message && message.action === "reject";
+
+const isDelegateObservation = (
+  message: object,
+): message is DelegateObservation =>
+  "observation" in message && message.observation === "delegate";
 
 export interface SimplifiedMessage {
   source: "assistant" | "user";
@@ -32,7 +43,7 @@ export interface SimplifiedMessage {
   imageUrls: string[];
 }
 
-export const simplifyMessage = (
+export const extractMessage = (
   message: TrajectoryItem,
 ): SimplifiedMessage | null => {
   if (isMessage(message)) {
@@ -85,10 +96,34 @@ export const simplifyMessage = (
     };
   }
 
+  if (isBrowseAction(message)) {
+    return {
+      source: "assistant",
+      content: message.message,
+      imageUrls: [],
+    };
+  }
+
   if (isBrowseInteractiveAction(message)) {
     return {
       source: "assistant",
       content: message.args.thought || message.message,
+      imageUrls: [],
+    };
+  }
+
+  if (isRejectAction(message)) {
+    return {
+      source: "assistant",
+      content: message.message,
+      imageUrls: [],
+    };
+  }
+
+  if (isDelegateObservation(message)) {
+    return {
+      source: "assistant",
+      content: message.content,
       imageUrls: [],
     };
   }

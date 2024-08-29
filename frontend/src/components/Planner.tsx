@@ -9,10 +9,9 @@ import {
   FaRegTimesCircle,
 } from "react-icons/fa";
 import { VscListOrdered } from "react-icons/vsc";
-import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { Task, TaskState } from "#/services/taskService";
-import { RootState } from "#/store";
+import { useSession } from "#/context/session";
 
 function StatusIcon({ status }: { status: TaskState }): JSX.Element {
   switch (status) {
@@ -53,11 +52,25 @@ function TaskCard({ task, level }: { task: Task; level: number }): JSX.Element {
   );
 }
 
+export const isAddTaskAction = (message: object): message is AddTaskAction =>
+  "action" in message && message.action === "add_task";
+
 function Planner(): JSX.Element {
   const { t } = useTranslation();
-  const task = useSelector((state: RootState) => state.task.task);
+  const { eventLog } = useSession();
+  const [task, setTask] = React.useState<AddTaskAction | undefined>(undefined);
 
-  if (!task || !task.subtasks?.length) {
+  React.useEffect(() => {
+    const addTaskAction = eventLog
+      .map((msg) => JSON.parse(msg))
+      .find(isAddTaskAction);
+
+    if (addTaskAction) {
+      setTask(addTaskAction);
+    }
+  }, [eventLog]);
+
+  if (!task || !task.args.subtasks?.length) {
     return (
       <div className="w-full h-full flex flex-col text-neutral-400 items-center justify-center">
         <VscListOrdered size={100} />
@@ -69,7 +82,8 @@ function Planner(): JSX.Element {
   return (
     <div className="h-full w-full bg-neutral-800">
       <div className="p-2 overflow-y-auto h-full flex flex-col gap-2">
-        {task.subtasks.map((subtask) => (
+        {task.args.subtasks.map((subtask) => (
+          // @ts-expect-error - tasks are under development
           <TaskCard key={subtask.id} task={subtask} level={0} />
         ))}
       </div>

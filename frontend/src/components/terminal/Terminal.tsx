@@ -20,7 +20,10 @@ const simplifyTerminalMessages = (messages: TrajectoryItem[]) => {
     if (isCommandAction(message)) {
       return {
         type: "input",
-        content: message.args.command,
+        content:
+          message.args.is_confirmed !== "rejected"
+            ? message.args.command
+            : "<COMMAND_REJECTED>",
       } as const;
     }
 

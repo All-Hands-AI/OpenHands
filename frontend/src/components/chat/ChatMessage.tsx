@@ -8,7 +8,7 @@ import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
-import { SimplifiedMessage } from "#/utils/simplifyEventMessage";
+import { SimplifiedMessage } from "#/utils/extractMessage";
 
 interface MessageProps {
   message: SimplifiedMessage;

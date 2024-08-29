@@ -1,11 +1,10 @@
 import React from "react";
 import ChatMessage from "./ChatMessage";
-import AgentState from "#/types/AgentState";
-import { SimplifiedMessage } from "#/utils/simplifyEventMessage";
+import { SimplifiedMessage } from "#/utils/extractMessage";
 
 interface ChatProps {
   messages: SimplifiedMessage[];
-  curAgentState?: AgentState;
+  curAgentState: AgentState;
 }
 
 function Chat({ messages, curAgentState }: ChatProps) {
@@ -17,7 +16,7 @@ function Chat({ messages, curAgentState }: ChatProps) {
           message={message}
           isLastMessage={messages && index === messages.length - 1}
           awaitingUserConfirmation={
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+            curAgentState === "awaiting_user_confirmation"
           }
         />
       ))}

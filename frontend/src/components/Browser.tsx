@@ -1,29 +1,40 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { IoIosGlobe } from "react-icons/io";
-import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
+import { useSession } from "#/context/session";
+
+const isBrowseObservation = (message: object): message is BrowseObservation =>
+  "observation" in message && message.observation === "browse";
 
 function Browser(): JSX.Element {
   const { t } = useTranslation();
+  const { eventLog } = useSession();
+  const [browseState, setBrowseState] = React.useState<BrowseObservation>();
 
-  const { url, screenshotSrc } = useSelector(
-    (state: RootState) => state.browser,
-  );
+  React.useEffect(() => {
+    const browseObservation = eventLog
+      .map((msg) => JSON.parse(msg))
+      .find(isBrowseObservation);
+
+    if (browseObservation) {
+      setBrowseState(browseObservation);
+    }
+  }, [eventLog]);
 
   const imgSrc =
-    screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
-      ? screenshotSrc
-      : `data:image/png;base64,${screenshotSrc || ""}`;
+    browseState?.extras.screenshot &&
+    browseState.extras.screenshot.startsWith("data:image/png;base64,")
+      ? browseState.extras.screenshot
+      : `data:image/png;base64,${browseState?.extras.screenshot || ""}`;
 
   return (
     <div className="h-full w-full flex flex-col text-neutral-400">
       <div className="w-full p-2 truncate border-b border-neutral-600">
-        {url}
+        {browseState?.extras.url}
       </div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
-        {screenshotSrc ? (
+        {browseState?.extras.screenshot ? (
           <img
             src={imgSrc}
             style={{ objectFit: "contain", width: "100%", height: "auto" }}

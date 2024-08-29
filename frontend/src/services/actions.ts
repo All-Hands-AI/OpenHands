@@ -1,22 +1,16 @@
 import { addAssistantMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendInput } from "#/state/commandSlice";
-import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
 } from "#/state/securityAnalyzerSlice";
-import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage } from "#/types/Message";
-import { SocketMessage } from "#/types/ResponseType";
-import { handleObservationMessage } from "./observations";
-import { getRootTask } from "./taskService";
 
 const messageActions = {
-  [ActionType.BROWSE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
+  [ActionType.BROWSE]: () => {
+    // now handled by the Session context
   },
   [ActionType.BROWSE_INTERACTIVE]: () => {
     // now handled by the Session context
@@ -32,43 +26,23 @@ const messageActions = {
   [ActionType.FINISH]: () => {
     // now handled by the Session context
   },
-  [ActionType.REJECT]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
+  [ActionType.REJECT]: () => {
+    // now handled by the Session context
   },
   [ActionType.DELEGATE]: () => {
     // now handled by the Session context
   },
-  [ActionType.RUN]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      // now handled by the Session context
-    }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      store.dispatch(appendInput(message.args.command));
-    }
+  [ActionType.RUN]: () => {
+    // now handled by the Session context
   },
-  [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      // now handled by the Session context
-    }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      store.dispatch(appendJupyterInput(message.args.code));
-    }
+  [ActionType.RUN_IPYTHON]: () => {
+    // now handled by the Session context
   },
   [ActionType.ADD_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
+    // now handled by the Session context
   },
   [ActionType.MODIFY_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
+    // now handled by the Session context
   },
 };
 
@@ -124,18 +98,10 @@ export function handleActionMessage(message: ActionMessage) {
   }
 }
 
-export function handleAssistantMessage(data: string | SocketMessage) {
-  let socketMessage: SocketMessage;
-
-  if (typeof data === "string") {
-    socketMessage = JSON.parse(data) as SocketMessage;
-  } else {
-    socketMessage = data;
-  }
+export function handleAssistantMessage(data: string) {
+  const socketMessage = JSON.parse(data);
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else {
-    handleObservationMessage(socketMessage);
   }
 }

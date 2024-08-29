@@ -68,7 +68,7 @@ interface CommandAction {
   timestamp: string;
   args: {
     command: string;
-    is_confirmed: "confirmed";
+    is_confirmed: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;
   };
 }
@@ -96,7 +96,7 @@ interface IPythonAction {
   timestamp: string;
   args: {
     code: string;
-    is_confirmed: "confirmed";
+    is_confirmed: "confirmed" | "rejected" | "awaiting_confirmation";
     kernel_init_code: string;
     thought: string;
   };
@@ -164,6 +164,18 @@ interface DelegateObservation {
   };
 }
 
+interface BrowseAction {
+  id: number;
+  timestamp: string;
+  source: "agent";
+  message: string;
+  action: "browse";
+  args: {
+    url: string;
+    thought: string;
+  };
+}
+
 interface BrowseInteractiveAction {
   id: number;
   timestamp: string;
@@ -201,6 +213,44 @@ interface BrowseObservation {
   };
 }
 
+interface RejectAction {
+  id: number;
+  timestamp: string;
+  source: "agent";
+  message: string;
+  action: "reject";
+  args: {
+    thought: string;
+  };
+}
+
+interface AddTaskAction {
+  id: number;
+  timestamp: string;
+  source: "agent";
+  message: string;
+  action: "add_task";
+  args: {
+    parent: string;
+    goal: string;
+    subtasks: unknown[];
+    thought: string;
+  };
+}
+
+interface ModifyTaskAction {
+  id: number;
+  timestamp: string;
+  source: "agent";
+  message: string;
+  action: "modify_task";
+  args: {
+    task_id: string;
+    state: string;
+    thought: string;
+  };
+}
+
 type TrajectoryItem =
   | AgentStateChange
   | UserMessage
@@ -214,5 +264,9 @@ type TrajectoryItem =
   | ErrorObservation
   | DelegateAction
   | DelegateObservation
+  | BrowseAction
   | BrowseInteractiveAction
-  | BrowseObservation;
+  | BrowseObservation
+  | RejectAction
+  | AddTaskAction
+  | ModifyTaskAction;
