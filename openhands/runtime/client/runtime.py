@@ -147,7 +147,7 @@ class EventStreamRuntime(Runtime):
         self.container = self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=self.config.workspace_mount_path,
-            plugins=self.plugins,
+            plugins=plugins,
         )
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
