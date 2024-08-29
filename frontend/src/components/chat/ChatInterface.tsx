@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
@@ -11,17 +11,19 @@ import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useSession } from "#/context/session";
+import {
+  SimplifiedMessage,
+  simplifyMessage,
+} from "#/utils/simplifyEventMessage";
 
 interface ScrollButtonProps {
   onClick: () => void;
   icon: JSX.Element;
   label: string;
-  // eslint-disable-next-line react/require-default-props
   disabled?: boolean;
 }
 
@@ -46,11 +48,14 @@ function ScrollButton({
 }
 
 function ChatInterface() {
-  const { sendUserMessage } = useSession();
-  const dispatch = useDispatch();
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { t } = useTranslation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
+    useScrollToBottom(scrollRef);
 
+  const { sendUserMessage, eventLog } = useSession();
+  const [messages, setMessages] = React.useState<SimplifiedMessage[]>([]);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
@@ -62,31 +67,26 @@ function ChatInterface() {
     onOpenChange: onFeedbackModalOpenChange,
   } = useDisclosure();
 
+  React.useEffect(() => {
+    const simplifiedMessages = eventLog
+      .map((msg) => JSON.parse(msg))
+      .map(simplifyMessage)
+      .filter((msg): msg is SimplifiedMessage => msg !== null);
+    setMessages(simplifiedMessages);
+  }, [eventLog]);
+
   const shareFeedback = async (polarity: "positive" | "negative") => {
     onFeedbackModalOpen();
     setFeedbackPolarity(polarity);
   };
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
-    dispatch(addUserMessage({ content, imageUrls }));
     sendUserMessage(content, imageUrls);
   };
 
-  const { t } = useTranslation();
   const handleSendContinueMsg = () => {
     handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE), []);
   };
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
-
-  React.useEffect(() => {
-    if (curAgentState === AgentState.INIT && messages.length === 0) {
-      dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
-    }
-  }, [curAgentState, dispatch, messages.length, t]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">

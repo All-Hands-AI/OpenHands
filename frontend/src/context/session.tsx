@@ -18,6 +18,11 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = React.useState<WebSocket | null>(null);
   const [eventLog, setEventLog] = React.useState<string[]>([]);
 
+  const pushToEventLog = (message: string) => {
+    console.log(message);
+    setEventLog((prev) => [...prev, message]);
+  };
+
   React.useEffect(() => {
     const url = new URL(`ws://${HOST}/ws`);
 
@@ -41,8 +46,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       };
 
       socket.onmessage = (event) => {
-        console.log(event.data);
-        setEventLog((prev) => [...prev, event.data]);
+        pushToEventLog(event.data);
         // TODO: better handle the messages; e.g. use eventLog directly in the UI
         handleAssistantMessage(JSON.parse(event.data));
       };
@@ -58,7 +62,10 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [socket]);
 
   const sendMessageToSocket = (message: string) => {
-    if (socket) socket.send(message);
+    if (socket) {
+      pushToEventLog(message);
+      socket.send(message);
+    }
   };
 
   /**

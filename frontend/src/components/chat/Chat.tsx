@@ -1,9 +1,10 @@
 import React from "react";
 import ChatMessage from "./ChatMessage";
 import AgentState from "#/types/AgentState";
+import { SimplifiedMessage } from "#/utils/simplifyEventMessage";
 
 interface ChatProps {
-  messages: Message[];
+  messages: SimplifiedMessage[];
   curAgentState?: AgentState;
 }
 

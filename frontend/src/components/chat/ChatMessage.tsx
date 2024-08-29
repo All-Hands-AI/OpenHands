@@ -8,9 +8,10 @@ import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
+import { SimplifiedMessage } from "#/utils/simplifyEventMessage";
 
 interface MessageProps {
-  message: Message;
+  message: SimplifiedMessage;
   isLastMessage?: boolean;
   awaitingUserConfirmation?: boolean;
 }
@@ -42,7 +43,7 @@ function ChatMessage({
   const className = twMerge(
     "markdown-body",
     "p-3 text-white max-w-[90%] overflow-y-auto rounded-lg relative",
-    message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
+    message.source === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
   );
 
   const copyToClipboard = async () => {
@@ -93,7 +94,7 @@ function ChatMessage({
         </div>
       )}
       {isLastMessage &&
-        message.sender === "assistant" &&
+        message.source === "assistant" &&
         awaitingUserConfirmation && <ConfirmationButtons />}
     </div>
   );
