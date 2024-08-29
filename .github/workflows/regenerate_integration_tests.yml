@@ -15,7 +15,7 @@ jobs:
 
     - name: Add newline to README
       # TODO: change this to regenerate the tests once this workflow is verified as working
-      run: echo "hello world" >> README.md
+      run: echo "hello world!" >> README.md
 
     - name: Commit changes
       run: |
