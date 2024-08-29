@@ -4,7 +4,7 @@ The assistant can use an interactive Python (Jupyter Notebook) environment, exec
 <execute_ipython>
 print("Hello World!")
 </execute_ipython>
-The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
+The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>. If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second <execute_bash> with text to be sent to STDIN of the running process, or the text `ctrl+c` to interrupt the process.
 
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
 Important, however: do not run interactive commands. You do not have access to stdin.

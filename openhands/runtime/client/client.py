@@ -212,6 +212,9 @@ class RuntimeClient:
         if ps1 == pexpect.EOF:
             logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
             raise RuntimeError('Bash shell EOF')
+        if ps1 == pexpect.TIMEOUT:
+            logger.warning('Bash shell timeout')
+            return ''
 
         # begin at the last occurrence of '[PEXPECT_BEGIN]'.
         # In multi-line bash commands, the prompt will be repeated
@@ -243,6 +246,7 @@ class RuntimeClient:
         command: str,
         timeout: int | None,
         keep_prompt: bool = True,
+        kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
         try:
@@ -260,15 +264,19 @@ class RuntimeClient:
             exit_code = int(_exit_code_output.strip().split()[0])
 
         except pexpect.TIMEOUT as e:
-            self.shell.sendintr()  # send SIGINT to the shell
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-            output = self.shell.before
-            output += (
-                '\r\n\r\n'
-                + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
-            )
-            exit_code = 130  # SIGINT
-            logger.error(f'Failed to execute command: {command}. Error: {e}')
+            if kill_on_timeout:
+                self.shell.sendintr()  # send SIGINT to the shell
+                self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+                output = self.shell.before
+                output += (
+                    '\r\n\r\n'
+                    + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
+                )
+                exit_code = 130  # SIGINT
+                logger.error(f'Failed to execute command: {command}. Error: {e}')
+            else:
+                output = self.shell.before or ''
+                exit_code = -1
 
         finally:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
@@ -295,8 +303,9 @@ class RuntimeClient:
             for command in commands:
                 output, exit_code = self._execute_bash(
                     command,
-                    timeout=action.timeout,
+                    timeout=5,
                     keep_prompt=action.keep_prompt,
+                    kill_on_timeout=False,
                 )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
@@ -690,5 +699,4 @@ if __name__ == '__main__':
             return []
 
     logger.info(f'Starting action execution API on port {args.port}')
-    print(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
