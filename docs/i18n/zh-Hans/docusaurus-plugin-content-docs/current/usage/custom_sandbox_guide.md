@@ -2,13 +2,30 @@
 
 默认的 OpenHands 沙箱包含一个[最小化 ubuntu 配置](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile)。您的应用场景可能需要在默认状态下安装额外的软件。本指南将教您如何通过使用自定义 Docker 映像来实现这一目标。
 
+目前提供两种实现方案：
+1. 从 Docker Hub 拉取已有镜像。例如，如果您想安装 `nodejs` ，您可以通过使用 `node:20` 镜像来实现。
+2. 创建并使用您自定义 Docker 镜像。
+
+若选择第一种方案，您可以直接略过 `Create Your Docker Image` 部分。
+
+为了获得功能更丰富的环境，您可能想要考虑使用预构建的镜像，比如 [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)，这个镜像预装了 Python 和 Node.js，同时还包含了许多其他有用的工具和库，比如：
+
+- Node.js: 22.x
+- npm: 10.x
+- yarn: stable
+- Python: latest
+- pip: latest
+- pipenv: latest
+- poetry: latest
+- uv: latest
+
 ## 环境设置
 
 确保您能够首先通过 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 运行 OpenHands。
 
 ## 创建您的 Docker 映像
 
-接下来，您必须创建一个自定义的 Docker 映像，该映像是基于 Debian 或 Ubuntu 的。例如，如果我们希望 OpenHands 能够访问 "node" 可执行文件，我们可以使用以下 `Dockerfile`:
+接下来，您可以开始创建一个自定义的 Docker 映像，该映像必须是基于 Debian 或 Ubuntu 的。例如，如果我们希望 OpenHands 能够访问 `node` 可执行文件，我们可以使用以下 `Dockerfile`:
 
 ```bash
 # 从最新版 ubuntu 开始
@@ -21,7 +38,7 @@ RUN apt-get update && apt-get install
 RUN apt-get install -y nodejs
 ```
 
-然后构建您选择的映像，例如“custom_image”。为此可以在目录中创建文件夹并将 `Dockerfile` 放入其中，并在该目录内运行以下命令：
+然后命名并构建您选择的映像，例如“custom_image”。为此可以创建一个文件夹并将 `Dockerfile` 放入其中，并在该文件夹内运行以下命令：
 
 ```bash
 docker build -t custom_image .
@@ -31,7 +48,7 @@ docker build -t custom_image .
 
 > 注意：在本文档描述的配置中，OpenHands 将在沙箱内部以“openhands”用户身份运行。因此，通过 Dockerfile 安装的所有包应可供系统上的所有用户使用，而不仅仅是 root 用户。
 
-> 使用 `apt-get` 上面安装的 node 是为所有用户安装的。
+> `Dockerfile`中，使用 `apt-get` 安装的 node 是为所有用户安装的。
 
 ## 在 config.toml 文件中指定自定义映像
 
@@ -41,46 +58,26 @@ docker build -t custom_image .
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-base_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 ```
 
-> 确保 `sandbox_base_container_image` 设置为您前一步中自定义映像的名称。
+对于 `sandbox_base_container_image` 的值, 您可以选择以下任意一项：
+1. 在上一步中您构建的自定义镜像的名称（例如，`“custom_image”`）
+2. 从 Docker Hub 拉取的镜像（例如，`“node:20”`，如果你需要一个预装 `Node.js` 的沙箱环境）
 
 ## 运行
 
-通过运行 ```make run``` 在顶层目录下运行 OpenHands。
+在顶层目录下通过执行 ```make run``` 运行 OpenHands。
 
 导航至 ```localhost:3001``` 并检查所需依赖是否可用。
 
-在上述示例的情况下，终端中运行 `node -v` 会输出 `v18.19.1`。
+在上述示例的情况下，终端中运行 `node -v` 会输出 `v20.15.0`。
 
 恭喜您！
 
 ## 技术解释
 
-相关代码定义在 [ssh_box.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/ssh_box.py) 和 [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py) 中。
-
-特别是 ssh_box.py 检查配置对象中的 ```config.sandbox.base_container_image```，然后尝试使用 [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72)，在 image_agnostic_util.py 定义中进行检索。
-
-初次使用自定义映像时，该映像将不会被找到，因此将被构建（在后续运行中已构建的映像将被查找并返回）。
-
-自定义映像是通过 `_build_sandbox_image()` 构建的，在 [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L29) 中，使用您的 custom_image 作为基础，并为 OpenHands 配置环境。例如：
-
-```python
-dockerfile_content = (
-        f'FROM {base_image}\n'
-        'RUN apt update && apt install -y openssh-server wget sudo\n'
-        'RUN mkdir -p -m0755 /var/run/sshd\n'
-        'RUN mkdir -p /openhands && mkdir -p /openhands/logs && chmod 777 /openhands/logs\n'
-        'RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"\n'
-        'RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /openhands/miniforge3\n'
-        'RUN bash -c ". /openhands/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"\n'
-        'RUN echo "export PATH=/openhands/miniforge3/bin:$PATH" >> ~/.bashrc\n'
-        'RUN echo "export PATH=/openhands/miniforge3/bin:$PATH" >> /openhands/bash.bashrc\n'
-    ).strip()
-```
-
-> 注意：映像名称通过 [_get_new_image_name()](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L63) 修改，并且是后续运行中搜索的修改后的名称。
+请参考[运行时文档中自定义 Docker 镜像的章节](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images)获取更详细的解释。
 
 ## 故障排除 / 错误
 
@@ -98,8 +95,8 @@ sandbox_user_id="1001"
 
 ### 端口使用错误
 
-如果您看到关于端口被占用或不可用的错误，请尝试删除所有正在运行的 Docker 容器（通过运行 `docker ps` 和 `docker rm` 相关容器），然后重新运行 ```make run```。
+如果您遇到端口被占用或不可用的错误提示，可以尝试先用`docker ps`命令列出所有运行中的 Docker 容器，然后使用`docker rm`命令删除相关容器，最后再重新执行```make run```命令。
 
 ## 讨论
 
-对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) 或 [Discord](https://discord.gg/ESHStjSjD4)，并提问！
+对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) 或 [Discord](https://discord.gg/ESHStjSjD4) 提问！
