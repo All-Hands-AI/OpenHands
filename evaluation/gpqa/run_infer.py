@@ -169,7 +169,7 @@ def convert_instance_dict(instance):
     return out_instance_dict
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -214,9 +214,9 @@ Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
 """
 
-    runtime = await create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
+    runtime = create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
 
-    state: State | None = await run_controller(
+    state: State | None = run_controller(
         config=config,
         task_str=instruction,
         runtime=runtime,

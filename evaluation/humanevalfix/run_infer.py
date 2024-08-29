@@ -102,7 +102,7 @@ def _get_instance_id(instance: pd.Series) -> str:
     return instance.task_id.replace('/', '__')
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -115,12 +115,12 @@ async def initialize_runtime(
 
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     problem_statement = (
@@ -131,20 +131,20 @@ async def initialize_runtime(
         host_script_path = os.path.join(tmpdir, filename)
         with open(host_script_path, 'w') as f:
             f.write(problem_statement)
-        await runtime.copy_to(
+        runtime.copy_to(
             host_script_path,
             '/workspace',
         )
 
     # check file exists
     action = CmdRunAction(command=f'ls /workspace/{_get_instance_id(instance)}.py')
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime(
+def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -170,7 +170,7 @@ async def complete_runtime(
     action = CmdRunAction(
         command=f'cat /workspace/{_get_instance_id(instance)}.py', keep_prompt=False
     )
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     function = obs.content.replace('\r\n', '\n')
@@ -194,7 +194,7 @@ async def complete_runtime(
     return test_result
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -232,9 +232,9 @@ async def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = await create_runtime(config, sid=sid)
-    await initialize_runtime(runtime, instance)
-    state: State | None = await run_controller(
+    runtime = create_runtime(config, sid=sid)
+    initialize_runtime(runtime, instance)
+    state: State | None = run_controller(
         config=config,
         task_str=instruction,
         runtime=runtime,
@@ -246,7 +246,7 @@ async def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
     metrics = state.metrics.get() if state.metrics else None
-    test_result = await complete_runtime(runtime, instance)
+    test_result = complete_runtime(runtime, instance)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

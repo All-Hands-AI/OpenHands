@@ -51,7 +51,7 @@ def get_config(
     return config
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -71,9 +71,9 @@ async def process_instance(
         f'NOTE: You should copy the "query" as is into the <execute_browse> tag. DO NOT change ANYTHING in the query.'
     )
 
-    runtime = await create_runtime(config, sid=instance.instance_id)
+    runtime = create_runtime(config, sid=instance.instance_id)
 
-    state: State | None = await run_controller(
+    state: State | None = run_controller(
         config=config,
         task_str=instruction,
         runtime=runtime,

@@ -47,10 +47,9 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def create_runtime(
+def create_runtime(
     config: AppConfig,
     sid: str | None = None,
-    runtime_tools_config: dict | None = None,
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
@@ -120,7 +119,7 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if runtime is None:
-        runtime = await create_runtime(config, sid=sid)
+        runtime = create_runtime(config, sid=sid)
 
     event_stream = runtime.event_stream
     # restore cli session if enabled

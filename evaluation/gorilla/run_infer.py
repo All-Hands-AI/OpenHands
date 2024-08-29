@@ -55,7 +55,7 @@ def get_config(
     return config
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -79,8 +79,8 @@ async def process_instance(
     # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = await create_runtime(config, sid=instance_id)
-    state: State | None = await run_controller(
+    runtime = create_runtime(config, sid=instance_id)
+    state: State | None = run_controller(
         config=config,
         task_str=instruction,
         runtime=runtime,

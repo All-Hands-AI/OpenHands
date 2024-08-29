@@ -63,7 +63,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -76,7 +76,7 @@ async def initialize_runtime(
 
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     if instance['file_name'] != '':
@@ -87,7 +87,7 @@ async def initialize_runtime(
         )
         assert os.path.exists(src_file)
         dest_file = os.path.join('/workspace', instance['file_name'])
-        await runtime.copy_to(src_file, dest_file)
+        runtime.copy_to(src_file, dest_file)
 
         # rename to file.extension_name
         extension_name = instance['file_name'].split('.')[-1]
@@ -95,18 +95,18 @@ async def initialize_runtime(
             command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -141,11 +141,11 @@ async def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
-    runtime = await create_runtime(config, sid=instance['instance_id'])
-    await initialize_runtime(runtime, instance)
+    runtime = create_runtime(config, sid=instance['instance_id'])
+    initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = await run_controller(
+    state: State | None = run_controller(
         config=config,
         task_str=instruction,
         runtime=runtime,
