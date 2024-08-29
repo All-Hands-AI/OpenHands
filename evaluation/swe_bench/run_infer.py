@@ -24,6 +24,7 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
+    load_from_env,
     parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -86,6 +87,19 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     return instruction
 
 
+# TODO: migrate all swe-bench docker to ghcr.io/openhands
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
+logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
+
+
+def get_instance_docker_image(instance_id: str) -> str:
+    image_name = 'sweb.eval.x86_64.' + instance_id
+    image_name = image_name.replace(
+        '__', '_s_'
+    )  # to comply with docker image naming convention
+    return DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name
+
+
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
@@ -93,14 +107,14 @@ def get_config(
     SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
-        base_container_image = 'sweb.eval.x86_64.' + instance['instance_id']
+        base_container_image = get_instance_docker_image(instance['instance_id'])
     else:
         base_container_image = SWE_BENCH_CONTAINER_IMAGE
+        logger.info(f'Using swe-bench container image: {base_container_image}')
 
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -114,6 +128,15 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    selected_env_vars = {'runtime', 'sandbox_api_key'}
+    selected_env_vars = {
+        k: v for k, v in os.environ.items() if k.lower() in selected_env_vars
+    }
+    if selected_env_vars:
+        logger.info(
+            f'Loading config keys from env vars: {list(selected_env_vars.keys())}'
+        )
+        load_from_env(config, selected_env_vars)
     config.set_llm_config(metadata.llm_config)
     return config
 
