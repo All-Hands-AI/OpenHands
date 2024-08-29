@@ -29,7 +29,7 @@ CONFIG = AppConfig(
     workspace_base=os.getenv('WORKSPACE_BASE'),
     workspace_mount_path=os.getenv('WORKSPACE_MOUNT_PATH'),
     sandbox=SandboxConfig(
-        use_host_network=True,
+        use_host_network=False,
     ),
 )
 load_from_env(CONFIG, os.environ)
