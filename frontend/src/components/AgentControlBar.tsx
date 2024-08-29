@@ -82,7 +82,7 @@ function ActionButton({
 }
 
 function AgentControlBar() {
-  const { agentState, triggerAgentStateChange } = useSession();
+  const { data, triggerAgentStateChange } = useSession();
   const [desiredState, setDesiredState] = React.useState<AgentState>("init");
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -90,7 +90,7 @@ function AgentControlBar() {
     if (
       action in Object.keys(IgnoreTaskStateMap) &&
       IgnoreTaskStateMap[action as keyof typeof IgnoreTaskStateMap].includes(
-        agentState,
+        data.agentState,
       )
     ) {
       return;
@@ -108,23 +108,23 @@ function AgentControlBar() {
   };
 
   useEffect(() => {
-    if (agentState === desiredState) {
-      if (agentState === "stopped") {
+    if (data.agentState === desiredState) {
+      if (data.agentState === "stopped") {
         store.dispatch(clearMessages());
       }
       setIsLoading(false);
-    } else if (agentState === "running") {
+    } else if (data.agentState === "running") {
       setDesiredState("running");
     }
-  }, [agentState]);
+  }, [data.agentState]);
 
   return (
     <div className="flex justify-between items-center gap-20">
       <div className="flex items-center gap-3">
-        {agentState === "paused" ? (
+        {data.agentState === "paused" ? (
           <ActionButton
             isDisabled={
-              isLoading || IgnoreTaskStateMap.running.includes(agentState)
+              isLoading || IgnoreTaskStateMap.running.includes(data.agentState)
             }
             content="Resume the agent task"
             action="running"
@@ -136,7 +136,7 @@ function AgentControlBar() {
         ) : (
           <ActionButton
             isDisabled={
-              isLoading || IgnoreTaskStateMap.paused.includes(agentState)
+              isLoading || IgnoreTaskStateMap.paused.includes(data.agentState)
             }
             content="Pause the current task"
             action="paused"

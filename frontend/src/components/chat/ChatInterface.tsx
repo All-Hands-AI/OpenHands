@@ -47,7 +47,7 @@ function ChatInterface() {
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { sendUserMessage, agentState, data } = useSession();
+  const { sendUserMessage, data } = useSession();
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
@@ -84,7 +84,7 @@ function ChatInterface() {
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
-          <Chat messages={data.messages} curAgentState={agentState} />
+          <Chat messages={data.messages} curAgentState={data.agentState} />
         </div>
       </div>
 
@@ -99,7 +99,7 @@ function ChatInterface() {
           )}
           {hitBottom && (
             <>
-              {agentState === AgentState.AWAITING_USER_INPUT && (
+              {data.agentState === AgentState.AWAITING_USER_INPUT && (
                 <ScrollButton
                   onClick={handleSendContinueMsg}
                   icon={
@@ -108,7 +108,7 @@ function ChatInterface() {
                   label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
                 />
               )}
-              {agentState === AgentState.RUNNING && <TypingIndicator />}
+              {data.agentState === AgentState.RUNNING && <TypingIndicator />}
             </>
           )}
         </div>
@@ -132,8 +132,8 @@ function ChatInterface() {
 
       <ChatInput
         disabled={
-          agentState === AgentState.LOADING ||
-          agentState === AgentState.AWAITING_USER_CONFIRMATION
+          data.agentState === AgentState.LOADING ||
+          data.agentState === AgentState.AWAITING_USER_CONFIRMATION
         }
         onSendMessage={handleSendMessage}
       />

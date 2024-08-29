@@ -31,6 +31,7 @@ interface ParsedData {
   // individual data
   browseState: BrowseObservation | null;
   taskState: AddTaskAction | null;
+  agentState: AgentState;
 }
 
 const HOST = "localhost:3000";
@@ -39,7 +40,6 @@ interface SessionContextType {
   sendUserMessage: (message: string, images_urls: string[]) => void;
   sendTerminalCommand: (command: string) => void;
   triggerAgentStateChange: (agent_state: AgentState) => void;
-  agentState: AgentState;
   eventLog: string[];
   data: ParsedData;
 }
@@ -50,7 +50,6 @@ const SessionContext = React.createContext<SessionContextType | undefined>(
 
 function SessionProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = React.useState<WebSocket | null>(null);
-  const [agentState, setAgentState] = React.useState<AgentState>("loading");
   const [eventLog, setEventLog] = React.useState<string[]>([]);
 
   // parsed data that is used throughout the app
@@ -60,6 +59,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     jupyterCells: [],
     browseState: null,
     taskState: null,
+    agentState: "loading",
   });
 
   const pushToEventLog = (message: string) => {
@@ -139,9 +139,13 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (isAgentStateChangeEvent(message)) {
-          setAgentState(message.extras.agent_state);
+          setData((prev) => ({
+            ...prev,
+            agentState: message.args.agent_state,
+          }));
         }
-        // TODO: better handle the messages; e.g. use eventLog directly in the UI
+
+        // TODO: remove after full replacement
         handleAssistantMessage(message);
       };
 
@@ -209,7 +213,6 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
-      agentState,
       eventLog,
       data,
     }),
@@ -217,7 +220,6 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
-      agentState,
       eventLog,
       data,
     ],

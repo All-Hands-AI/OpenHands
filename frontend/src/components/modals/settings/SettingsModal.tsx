@@ -43,7 +43,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [settings, setSettings] = React.useState<Settings>({} as Settings);
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
-  const { agentState } = useSession();
+  const { data } = useSession();
 
   useEffect(() => {
     maybeMigrateSettings();
@@ -52,12 +52,12 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   useEffect(() => {
     const isRunning =
-      agentState === AgentState.RUNNING ||
-      agentState === AgentState.PAUSED ||
-      agentState === AgentState.AWAITING_USER_INPUT ||
-      agentState === AgentState.AWAITING_USER_CONFIRMATION;
+      data.agentState === AgentState.RUNNING ||
+      data.agentState === AgentState.PAUSED ||
+      data.agentState === AgentState.AWAITING_USER_INPUT ||
+      data.agentState === AgentState.AWAITING_USER_CONFIRMATION;
     setAgentIsRunning(isRunning);
-  }, [agentState]);
+  }, [data.agentState]);
 
   React.useEffect(() => {
     (async () => {

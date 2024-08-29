@@ -91,7 +91,7 @@ function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
-  const { agentState } = useSession();
+  const { data } = useSession();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -101,8 +101,8 @@ function FileExplorer() {
 
   const refreshWorkspace = async () => {
     if (
-      agentState === AgentState.LOADING ||
-      agentState === AgentState.STOPPED
+      data.agentState === AgentState.LOADING ||
+      data.agentState === AgentState.STOPPED
     ) {
       return;
     }
@@ -165,7 +165,7 @@ function FileExplorer() {
     (async () => {
       await refreshWorkspace();
     })();
-  }, [agentState]);
+  }, [data.agentState]);
 
   React.useEffect(() => {
     const enableDragging = () => {

@@ -21,7 +21,7 @@ import { useSession } from "#/context/session";
 
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
-  const { agentState } = useSession();
+  const { data } = useSession();
   const dispatch = useDispatch();
   const fileStates = useSelector((state: RootState) => state.code.fileStates);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
@@ -40,11 +40,11 @@ function CodeEditor(): JSX.Element {
 
   const isEditingAllowed = useMemo(
     () =>
-      agentState === AgentState.INIT ||
-      agentState === AgentState.PAUSED ||
-      agentState === AgentState.FINISHED ||
-      agentState === AgentState.AWAITING_USER_INPUT,
-    [agentState],
+      data.agentState === AgentState.INIT ||
+      data.agentState === AgentState.PAUSED ||
+      data.agentState === AgentState.FINISHED ||
+      data.agentState === AgentState.AWAITING_USER_INPUT,
+    [data.agentState],
   );
 
   useEffect(() => {

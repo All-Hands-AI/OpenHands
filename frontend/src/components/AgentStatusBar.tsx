@@ -16,7 +16,7 @@ enum IndicatorColor {
 
 function AgentStatusBar() {
   const { t } = useTranslation();
-  const { agentState } = useSession();
+  const { data } = useSession();
 
   const AgentStatusMap: Record<
     AgentState,
@@ -82,21 +82,21 @@ function AgentStatusBar() {
   // - Agent is not available
   useEffect(() => {
     if (
-      agentState === AgentState.AWAITING_USER_INPUT ||
-      agentState === AgentState.ERROR ||
-      agentState === AgentState.INIT
+      data.agentState === AgentState.AWAITING_USER_INPUT ||
+      data.agentState === AgentState.ERROR ||
+      data.agentState === AgentState.INIT
     ) {
       if (document.cookie.indexOf("audio") !== -1) beep();
     }
-  }, [agentState]);
+  }, [data.agentState]);
 
   return (
     <div className="flex items-center">
       <div
-        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[agentState].indicator}`}
+        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[data.agentState].indicator}`}
       />
       <span className="text-sm text-stone-400">
-        {AgentStatusMap[agentState].message}
+        {AgentStatusMap[data.agentState].message}
       </span>
     </div>
   );
