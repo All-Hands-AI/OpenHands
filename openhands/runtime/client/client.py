@@ -249,14 +249,12 @@ class RuntimeClient:
         kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
-        print('exec bash', command)
         self.shell.sendline(command)
         return self._continue_bash(
             timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
         )
 
     def _interrupt_bash(self, timeout: int | None = None) -> tuple[str, int]:
-        print('interrupt bash', timeout)
         self.shell.sendintr()  # send SIGINT to the shell
         self.shell.expect(self.__bash_expect_regex, timeout=timeout)
         output = self.shell.before
@@ -269,20 +267,16 @@ class RuntimeClient:
         keep_prompt: bool = True,
         kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
-        print('continue bash', timeout)
         try:
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-            print('got expect regex')
 
             output = self.shell.before
-            print('output', output)
 
             # Get exit code
             self.shell.sendline('echo $?')
             logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             _exit_code_output = self.shell.before
-            print(f'Exit code output: {_exit_code_output}')
             exit_code = int(_exit_code_output.strip().split()[0])
 
         except pexpect.TIMEOUT as e:
@@ -537,7 +531,6 @@ if __name__ == '__main__':
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
-            print('RUNACTION', action)
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
