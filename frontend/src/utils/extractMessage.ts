@@ -1,13 +1,7 @@
-const isMessage = (message: object): message is TrajectoryItem =>
+const isMessage = (
+  message: object,
+): message is UserMessage | AssistantMessage =>
   "action" in message && message.action === "message";
-
-const isAssistantMessage = (message: object): message is AssistantMessage =>
-  "source" in message && message.source === "agent";
-
-const isUserMessage = (message: object): message is UserMessage =>
-  // if message is received from ws, it contains source field
-  ("source" in message && message.source === "user") ||
-  !isAssistantMessage(message);
 
 const isIPythonAction = (message: object): message is IPythonAction =>
   "action" in message && message.action === "run_ipython";
@@ -37,7 +31,7 @@ const isDelegateObservation = (
 ): message is DelegateObservation =>
   "observation" in message && message.observation === "delegate";
 
-export interface SimplifiedMessage {
+export interface ParsedMessage {
   source: "assistant" | "user";
   content: string;
   imageUrls: string[];
@@ -45,66 +39,20 @@ export interface SimplifiedMessage {
 
 export const extractMessage = (
   message: TrajectoryItem,
-): SimplifiedMessage | null => {
+): ParsedMessage | null => {
   if (isMessage(message)) {
-    if (isAssistantMessage(message)) {
-      return {
-        source: "assistant",
-        content: message.args.content,
-        imageUrls: message.args.images_urls ?? [],
-      };
-    }
-
-    if (isUserMessage(message)) {
-      return {
-        source: "user",
-        content: message.args.content,
-        imageUrls: message.args.images_urls,
-      };
-    }
-  }
-
-  if (isIPythonAction(message)) {
     return {
-      source: "assistant",
-      content: message.args.thought,
-      imageUrls: [],
+      source: message.source === "agent" ? "assistant" : "user",
+      content: message.args.content,
+      imageUrls: message.args.images_urls ?? [],
     };
   }
 
-  if (isCommandAction(message)) {
-    return {
-      source: "assistant",
-      content: message.args.thought,
-      imageUrls: [],
-    };
-  }
-
-  if (isFinishAction(message)) {
-    return {
-      source: "assistant",
-      content: message.message,
-      imageUrls: [],
-    };
-  }
-
-  if (isDelegateAction(message)) {
-    return {
-      source: "assistant",
-      content: message.message,
-      imageUrls: [],
-    };
-  }
-
-  if (isBrowseAction(message)) {
-    return {
-      source: "assistant",
-      content: message.message,
-      imageUrls: [],
-    };
-  }
-
-  if (isBrowseInteractiveAction(message)) {
+  if (
+    isIPythonAction(message) ||
+    isCommandAction(message) ||
+    isBrowseInteractiveAction(message)
+  ) {
     return {
       source: "assistant",
       content: message.args.thought || message.message,
@@ -112,7 +60,12 @@ export const extractMessage = (
     };
   }
 
-  if (isRejectAction(message)) {
+  if (
+    isFinishAction(message) ||
+    isDelegateAction(message) ||
+    isBrowseAction(message) ||
+    isRejectAction(message)
+  ) {
     return {
       source: "assistant",
       content: message.message,

@@ -7,6 +7,7 @@ import {
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage } from "#/types/Message";
+import { SocketMessage } from "#/types/ResponseType";
 
 const messageActions = {
   [ActionType.BROWSE]: () => {
@@ -99,7 +100,13 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleAssistantMessage(data: string) {
-  const socketMessage = JSON.parse(data);
+  let socketMessage;
+
+  if (typeof data === "string") {
+    socketMessage = JSON.parse(data) as SocketMessage;
+  } else {
+    socketMessage = data;
+  }
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);

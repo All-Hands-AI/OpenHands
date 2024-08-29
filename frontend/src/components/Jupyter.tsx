@@ -7,19 +7,13 @@ import { useTranslation } from "react-i18next";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { I18nKey } from "#/i18n/declaration";
 import { useSession } from "#/context/session";
-import { extractJupyterCells } from "#/utils/extractJupyterCells";
+import { JupyterCell as JupyterCellInterface } from "#/utils/extractJupyterCells";
 
-// TODO: Type this
-type Cell = any;
-
-interface IJupyterCell {
-  cell: Cell;
-}
-
-function JupyterCell({ cell }: IJupyterCell): JSX.Element {
-  const code = cell.content;
-
-  if (cell.type === "input") {
+function JupyterCell({
+  type,
+  content: code,
+}: JupyterCellInterface): JSX.Element {
+  if (type === "input") {
     return (
       <div className="rounded-lg bg-gray-800 dark:bg-gray-900 p-2 text-xs">
         <div className="mb-1 text-gray-400">EXECUTE</div>
@@ -82,16 +76,8 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
 
 function Jupyter(): JSX.Element {
   const { t } = useTranslation();
-  const { eventLog } = useSession();
-  const [cells, setCells] = React.useState<Cell[]>([]);
+  const { data } = useSession();
   const jupyterRef = useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const simplifiedCells = extractJupyterCells(
-      eventLog.map((msg) => JSON.parse(msg)),
-    );
-    setCells(simplifiedCells);
-  }, [eventLog]);
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);
@@ -103,8 +89,8 @@ function Jupyter(): JSX.Element {
         ref={jupyterRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
       >
-        {cells.map((cell, index) => (
-          <JupyterCell key={index} cell={cell} />
+        {data.jupyterCells.map((cell, index) => (
+          <JupyterCell key={index} content={cell.content} type={cell.type} />
         ))}
       </div>
       {!hitBottom && (

@@ -4,25 +4,30 @@ const isIPythonAction = (message: object): message is IPythonAction =>
 const isIPythonObservation = (message: object): message is IPythonObservation =>
   "observation" in message && message.observation === "run_ipython";
 
-export const extractJupyterCells = (messages: TrajectoryItem[]) => {
-  const filteredMessages = messages.filter(
-    (message) => isIPythonAction(message) || isIPythonObservation(message),
-  );
+export interface JupyterCell {
+  type: "input" | "output";
+  content: string;
+}
 
-  return filteredMessages.map((message) => {
-    if (isIPythonAction(message)) {
-      return {
-        type: "input",
-        content:
-          message.args.is_confirmed !== "rejected"
-            ? message.args.code
-            : "<COMMAND_REJECTED>",
-      } as const;
-    }
+export const extractJupyterCell = (
+  message: TrajectoryItem,
+): JupyterCell | null => {
+  if (isIPythonAction(message)) {
+    return {
+      type: "input",
+      content:
+        message.args.is_confirmed !== "rejected"
+          ? message.args.code
+          : "<COMMAND_REJECTED>",
+    };
+  }
 
+  if (isIPythonObservation(message)) {
     return {
       type: "output",
       content: message.content,
-    } as const;
-  });
+    };
+  }
+
+  return null;
 };

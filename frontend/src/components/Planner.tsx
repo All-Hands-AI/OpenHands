@@ -52,25 +52,11 @@ function TaskCard({ task, level }: { task: Task; level: number }): JSX.Element {
   );
 }
 
-export const isAddTaskAction = (message: object): message is AddTaskAction =>
-  "action" in message && message.action === "add_task";
-
 function Planner(): JSX.Element {
   const { t } = useTranslation();
-  const { eventLog } = useSession();
-  const [task, setTask] = React.useState<AddTaskAction | undefined>(undefined);
+  const { data } = useSession();
 
-  React.useEffect(() => {
-    const addTaskAction = eventLog
-      .map((msg) => JSON.parse(msg))
-      .find(isAddTaskAction);
-
-    if (addTaskAction) {
-      setTask(addTaskAction);
-    }
-  }, [eventLog]);
-
-  if (!task || !task.args.subtasks?.length) {
+  if (!data.taskState || !data.taskState.args.subtasks?.length) {
     return (
       <div className="w-full h-full flex flex-col text-neutral-400 items-center justify-center">
         <VscListOrdered size={100} />
@@ -82,7 +68,7 @@ function Planner(): JSX.Element {
   return (
     <div className="h-full w-full bg-neutral-800">
       <div className="p-2 overflow-y-auto h-full flex flex-col gap-2">
-        {task.args.subtasks.map((subtask) => (
+        {data.taskState.args.subtasks.map((subtask) => (
           // @ts-expect-error - tasks are under development
           <TaskCard key={subtask.id} task={subtask} level={0} />
         ))}

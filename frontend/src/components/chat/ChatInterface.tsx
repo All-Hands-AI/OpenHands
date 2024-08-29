@@ -13,7 +13,6 @@ import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useSession } from "#/context/session";
-import { SimplifiedMessage, extractMessage } from "#/utils/extractMessage";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -48,8 +47,7 @@ function ChatInterface() {
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
 
-  const { sendUserMessage, agentState, eventLog } = useSession();
-  const [messages, setMessages] = React.useState<SimplifiedMessage[]>([]);
+  const { sendUserMessage, agentState, data } = useSession();
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
@@ -60,14 +58,6 @@ function ChatInterface() {
     onOpen: onFeedbackModalOpen,
     onOpenChange: onFeedbackModalOpenChange,
   } = useDisclosure();
-
-  React.useEffect(() => {
-    const simplifiedMessages = eventLog
-      .map((msg) => JSON.parse(msg))
-      .map(extractMessage)
-      .filter((msg): msg is SimplifiedMessage => msg !== null);
-    setMessages(simplifiedMessages);
-  }, [eventLog]);
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
     onFeedbackModalOpen();
@@ -94,7 +84,7 @@ function ChatInterface() {
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
-          <Chat messages={messages} curAgentState={agentState} />
+          <Chat messages={data.messages} curAgentState={agentState} />
         </div>
       </div>
 
@@ -123,20 +113,21 @@ function ChatInterface() {
           )}
         </div>
 
-        {feedbackShared !== messages.length && messages.length > 3 && (
-          <div className="flex justify-start gap-2 p-2">
-            <ScrollButton
-              onClick={() => shareFeedback("positive")}
-              icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
-              label=""
-            />
-            <ScrollButton
-              onClick={() => shareFeedback("negative")}
-              icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
-              label=""
-            />
-          </div>
-        )}
+        {feedbackShared !== data.messages.length &&
+          data.messages.length > 3 && (
+            <div className="flex justify-start gap-2 p-2">
+              <ScrollButton
+                onClick={() => shareFeedback("positive")}
+                icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
+                label=""
+              />
+              <ScrollButton
+                onClick={() => shareFeedback("negative")}
+                icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
+                label=""
+              />
+            </div>
+          )}
       </div>
 
       <ChatInput
@@ -150,7 +141,7 @@ function ChatInterface() {
         polarity={feedbackPolarity}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
-        onSendFeedback={() => setFeedbackShared(messages.length)}
+        onSendFeedback={() => setFeedbackShared(data.messages.length)}
       />
     </div>
   );

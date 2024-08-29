@@ -7,9 +7,31 @@ import {
   generateUserMessageEvent,
   generateUserTerminalCommandEvent,
 } from "./utils";
+import { extractMessage, ParsedMessage } from "#/utils/extractMessage";
+import {
+  extractTerminalStream,
+  TerminalStream,
+} from "#/utils/extractTerminalStream";
+import { extractJupyterCell, JupyterCell } from "#/utils/extractJupyterCells";
 
 const isAgentStateChangeEvent = (event: object): event is AgentStateChange =>
   "observation" in event && event.observation === "agent_state_changed";
+
+const isBrowseObservation = (message: object): message is BrowseObservation =>
+  "observation" in message && message.observation === "browse";
+
+export const isAddTaskAction = (message: object): message is AddTaskAction =>
+  "action" in message && message.action === "add_task";
+
+interface ParsedData {
+  // aggregated data
+  messages: ParsedMessage[];
+  terminalStreams: TerminalStream[];
+  jupyterCells: JupyterCell[];
+  // individual data
+  browseState: BrowseObservation | null;
+  taskState: AddTaskAction | null;
+}
 
 const HOST = "localhost:3000";
 
@@ -19,6 +41,7 @@ interface SessionContextType {
   triggerAgentStateChange: (agent_state: AgentState) => void;
   agentState: AgentState;
   eventLog: string[];
+  data: ParsedData;
 }
 
 const SessionContext = React.createContext<SessionContextType | undefined>(
@@ -30,9 +53,25 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   const [agentState, setAgentState] = React.useState<AgentState>("loading");
   const [eventLog, setEventLog] = React.useState<string[]>([]);
 
+  // parsed data that is used throughout the app
+  const [data, setData] = React.useState<ParsedData>({
+    messages: [],
+    terminalStreams: [],
+    jupyterCells: [],
+    browseState: null,
+    taskState: null,
+  });
+
   const pushToEventLog = (message: string) => {
     console.log(message);
     setEventLog((prev) => [...prev, message]);
+  };
+
+  const sendMessageToSocket = (message: string) => {
+    if (socket) {
+      pushToEventLog(message);
+      socket.send(message);
+    }
   };
 
   React.useEffect(() => {
@@ -59,7 +98,45 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
 
       socket.onmessage = (event) => {
         pushToEventLog(event.data);
-        const message = JSON.parse(event.data);
+        const message = JSON.parse(event.data) as TrajectoryItem;
+
+        const parsedMessage = extractMessage(message);
+        if (parsedMessage) {
+          setData((prev) => ({
+            ...prev,
+            messages: [...prev.messages, parsedMessage],
+          }));
+        }
+
+        const terminalStream = extractTerminalStream(message);
+        if (terminalStream) {
+          setData((prev) => ({
+            ...prev,
+            terminalStreams: [...prev.terminalStreams, terminalStream],
+          }));
+        }
+
+        const jupyterCell = extractJupyterCell(message);
+        if (jupyterCell) {
+          setData((prev) => ({
+            ...prev,
+            jupyterCells: [...prev.jupyterCells, jupyterCell],
+          }));
+        }
+
+        if (isBrowseObservation(message)) {
+          setData((prev) => ({
+            ...prev,
+            browseState: message,
+          }));
+        }
+
+        if (isAddTaskAction(message)) {
+          setData((prev) => ({
+            ...prev,
+            taskState: message,
+          }));
+        }
 
         if (isAgentStateChangeEvent(message)) {
           setAgentState(message.extras.agent_state);
@@ -69,22 +146,32 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       };
 
       socket.onerror = () => {
-        console.error("Socket error");
+        console.warn("Socket error");
         // TODO: handle error
       };
 
       socket.onclose = () => {
-        console.error("Socket closed");
+        console.warn("Socket closed");
         // TODO: reconnect
       };
     }
   }, [socket]);
 
-  const sendMessageToSocket = (message: string) => {
-    if (socket) {
-      pushToEventLog(message);
-      socket.send(message);
-    }
+  /**
+   * Append a user message to the message log. This is used when the user sends a message from the client.
+   * @param message The message to append
+   * @param images_urls Array of image urls
+   */
+  const appendUserMessage = (message: string, images_urls: string[]) => {
+    const parsed: ParsedMessage = {
+      source: "user",
+      content: message,
+      imageUrls: images_urls,
+    };
+    setData((prev) => ({
+      ...prev,
+      messages: [...prev.messages, parsed],
+    }));
   };
 
   /**
@@ -95,6 +182,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   const sendUserMessage = (message: string, images_urls: string[]) => {
     const event = generateUserMessageEvent(message, images_urls);
     sendMessageToSocket(event);
+    appendUserMessage(message, images_urls); // add the message to the message log since the socket doesn't return the message
   };
 
   /**
@@ -123,6 +211,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       triggerAgentStateChange,
       agentState,
       eventLog,
+      data,
     }),
     [
       sendUserMessage,
@@ -130,6 +219,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       triggerAgentStateChange,
       agentState,
       eventLog,
+      data,
     ],
   );
 

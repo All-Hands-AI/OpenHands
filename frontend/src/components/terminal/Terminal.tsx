@@ -5,40 +5,9 @@ import { useSession } from "#/context/session";
 
 import "@xterm/xterm/css/xterm.css";
 
-const isCommandAction = (message: object): message is CommandAction =>
-  "action" in message && message.action === "run";
-
-const isCommandObservation = (message: object): message is CommandObservation =>
-  "observation" in message && message.observation === "run";
-
-const simplifyTerminalMessages = (messages: TrajectoryItem[]) => {
-  const filteredMessages = messages.filter(
-    (message) => isCommandAction(message) || isCommandObservation(message),
-  );
-
-  return filteredMessages.map((message) => {
-    if (isCommandAction(message)) {
-      return {
-        type: "input",
-        content:
-          message.args.is_confirmed !== "rejected"
-            ? message.args.command
-            : "<COMMAND_REJECTED>",
-      } as const;
-    }
-
-    return {
-      type: "output",
-      content: message.content,
-    } as const;
-  });
-};
-
 function Terminal() {
-  const { eventLog } = useSession();
-  const ref = useTerminal(
-    simplifyTerminalMessages(eventLog.map((message) => JSON.parse(message))),
-  );
+  const { data } = useSession();
+  const ref = useTerminal(data.terminalStreams);
 
   return (
     <div className="flex flex-col h-full">

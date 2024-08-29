@@ -10,28 +10,16 @@ import { RootState } from "#/store";
 import { TabOption, TabType } from "#/types/TabOption";
 import Browser from "./Browser";
 import CodeEditor from "./file-explorer/CodeEditor";
-import Planner, { isAddTaskAction } from "./Planner";
+import Planner from "./Planner";
 import Jupyter from "./Jupyter";
 import { getSettings } from "#/services/settings";
 import { useSession } from "#/context/session";
-import { extractJupyterCells } from "#/utils/extractJupyterCells";
 
 function Workspace() {
   const { t } = useTranslation();
   const code = useSelector((state: RootState) => state.code.code);
 
-  const { eventLog } = useSession();
-  const [task, setTask] = React.useState<AddTaskAction | undefined>(undefined);
-
-  React.useEffect(() => {
-    const addTaskAction = eventLog
-      .map((msg) => JSON.parse(msg))
-      .find(isAddTaskAction);
-
-    if (addTaskAction) {
-      setTask(addTaskAction);
-    }
-  }, [eventLog]);
+  const { data } = useSession();
 
   const { AGENT } = getSettings();
   const baseTabs = [TabOption.CODE, TabOption.BROWSER];
@@ -43,7 +31,6 @@ function Workspace() {
   const showTabs = [...baseTabs, ...extraTabs];
 
   // FIXME: Type this
-  const [jupyterCells, setJupyterCells] = React.useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
   const [changes, setChanges] = useState<Record<TabType, boolean>>({
     [TabOption.PLANNER]: false,
@@ -51,11 +38,6 @@ function Workspace() {
     [TabOption.BROWSER]: false,
     [TabOption.JUPYTER]: false,
   });
-
-  React.useEffect(() => {
-    const cells = extractJupyterCells(eventLog.map((msg) => JSON.parse(msg)));
-    setJupyterCells(cells);
-  }, [eventLog]);
 
   const iconSize = 18;
   const tabData = useMemo(
@@ -85,24 +67,22 @@ function Workspace() {
   );
 
   useEffect(() => {
-    if (activeTab !== TabOption.PLANNER && task) {
+    if (activeTab !== TabOption.PLANNER && data.taskState) {
       setChanges((prev) => ({ ...prev, [TabOption.PLANNER]: true }));
     }
-  }, [task]);
 
-  useEffect(() => {
     if (activeTab !== TabOption.CODE && code !== initialCodeState.code) {
       setChanges((prev) => ({ ...prev, [TabOption.CODE]: true }));
     }
-  }, [task]);
+  }, [data.taskState]);
 
   useEffect(() => {
-    if (activeTab !== TabOption.JUPYTER && jupyterCells.length > 0) {
+    if (activeTab !== TabOption.JUPYTER && data.jupyterCells.length > 0) {
       // FIXME: This is a temporary solution to show the jupyter tab when the first cell is added
       // Only need to show the tab only when a cell is added
       setChanges((prev) => ({ ...prev, [TabOption.JUPYTER]: true }));
     }
-  }, [activeTab, jupyterCells]);
+  }, [activeTab, data.jupyterCells]);
 
   return (
     <div className="flex flex-col min-h-0 grow">
