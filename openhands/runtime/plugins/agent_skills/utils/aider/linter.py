@@ -1,10 +1,13 @@
+import json
 import os
 import subprocess
 import sys
+import tempfile
 import traceback
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from grep_ast import TreeContext, filename_to_lang
 from tree_sitter_languages import get_parser  # noqa: E402
@@ -24,13 +27,19 @@ class Linter:
         self.encoding = encoding
         self.root = root
 
+        self.ts_installed = self._check_tool_installed('tsc')
+        self.eslint_installed = self._check_tool_installed('eslint')
+
         self.languages = dict(
             python=self.py_lint,
-            javascript=self.ts_lint,
-            typescript=self.ts_lint,
         )
+        if self.eslint_installed:
+            self.languages['javascript'] = self.ts_eslint
+            self.languages['typescript'] = self.ts_eslint
+        elif self.ts_installed:
+            self.languages['javascript'] = self.ts_tsc_lint
+            self.languages['typescript'] = self.ts_tsc_lint
         self.all_lint_cmd = None
-        self.ts_installed = self.check_ts_installed()
 
     def set_linter(self, lang, cmd):
         if lang:
@@ -118,11 +127,11 @@ class Linter:
             error = basic_lint(rel_fname, code)
         return error
 
-    def check_ts_installed(self):
-        """Check if TypeScript is installed."""
+    def _check_tool_installed(self, tool_name: str) -> bool:
+        """Check if a tool is installed."""
         try:
             subprocess.run(
-                ['tsc', '--version'],
+                [tool_name, '--version'],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -131,7 +140,81 @@ class Linter:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
-    def ts_lint(self, fname, rel_fname, code):
+    def print_lint_result(self, lint_result: LintResult) -> None:
+        print(f'\n{lint_result.text.strip()}')
+        if isinstance(lint_result.lines, list) and lint_result.lines:
+            if isinstance(lint_result.lines[0], LintResult):
+                self.print_lint_result(lint_result.lines[0])
+
+    def ts_eslint(self, fname: str, rel_fname: str, code: str) -> Optional[LintResult]:
+        """Use ESLint to check for errors. If ESLint is not installed return None."""
+        if not self.eslint_installed:
+            return None
+
+        # Enhanced ESLint configuration with React support
+        eslint_config = {
+            'env': {'es6': True, 'browser': True, 'node': True},
+            'extends': ['eslint:recommended', 'plugin:react/recommended'],
+            'parserOptions': {
+                'ecmaVersion': 2021,
+                'sourceType': 'module',
+                'ecmaFeatures': {'jsx': True},
+            },
+            'plugins': ['react'],
+            'rules': {
+                'no-unused-vars': 'warn',
+                'no-console': 'off',
+                'react/prop-types': 'warn',
+                'semi': ['error', 'always'],
+            },
+            'settings': {'react': {'version': 'detect'}},
+        }
+
+        # Write config to a temporary file
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.json', delete=False
+        ) as temp_config:
+            json.dump(eslint_config, temp_config)
+            temp_config_path = temp_config.name
+
+        try:
+            # Point to frontend node_modules directory
+            if self.root:
+                plugin_path = f'{self.root}/frontend/node_modules/'
+            else:
+                return None
+
+            eslint_cmd = f'eslint --no-eslintrc --config {temp_config_path} --resolve-plugins-relative-to {plugin_path} --format json'
+            eslint_res = ''
+            try:
+                eslint_res = self.run_cmd(eslint_cmd, rel_fname, code)
+                if eslint_res and hasattr(eslint_res, 'text'):
+                    # Parse the ESLint JSON output
+                    eslint_output = json.loads(eslint_res.text)
+                    error_lines = []
+                    error_messages = []
+                    for result in eslint_output:
+                        for message in result.get('messages', []):
+                            line = message.get('line', 0)
+                            error_lines.append(line)
+                            error_messages.append(
+                                f"{rel_fname}:{line}:{message.get('column', 0)}: {message.get('message')} ({message.get('ruleId')})"
+                            )
+                    if not error_messages:
+                        return None
+
+                    return LintResult(text='\n'.join(error_messages), lines=error_lines)
+            except json.JSONDecodeError as e:
+                return LintResult(text=f'\nJSONDecodeError: {e}', lines=[eslint_res])
+            except FileNotFoundError:
+                return None
+            except Exception as e:
+                return LintResult(text=f'\nUnexpected error: {e}', lines=[])
+        finally:
+            os.unlink(temp_config_path)
+        return None
+
+    def ts_tsc_lint(self, fname, rel_fname, code):
         """Use typescript compiler to check for errors. If TypeScript is not installed return None."""
         if self.ts_installed:
             tsc_cmd = 'tsc --noEmit --allowJs --checkJs --strict --noImplicitAny --strictNullChecks --strictFunctionTypes --strictBindCallApply --strictPropertyInitialization --noImplicitThis --alwaysStrict'
