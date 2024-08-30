@@ -250,7 +250,7 @@ def run_evaluation(
         pbar.set_description(f'Instance {output.instance_id}')
         pbar.set_postfix_str(f'Test Result: {output.test_result}')
         logger.info(
-            f'Finished evaluation for instance {output.instance_id}: {output.test_result}\n'
+            f'Finished evaluation for instance {output.instance_id}: {str(output.test_result)[:300]}...\n'
         )
         output_fp.write(json.dumps(output.model_dump()) + '\n')
         output_fp.flush()
