@@ -3803,13 +3803,13 @@ wrapt = "*"
 
 [[package]]
 name = "llama-index-embeddings-azure-openai"
-version = "0.2.4"
+version = "0.2.5"
 description = "llama-index embeddings azure openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_azure_openai-0.2.4-py3-none-any.whl", hash = "sha256:90181a10de8873bfefd6e0cd1a6590482d2ceb6445f396b08e69d7c951fdafaf"},
-    {file = "llama_index_embeddings_azure_openai-0.2.4.tar.gz", hash = "sha256:f5d4c460f91f8bc587aa98b6e319d42f990c09afe2aa66c79750870e0029ea18"},
+    {file = "llama_index_embeddings_azure_openai-0.2.5-py3-none-any.whl", hash = "sha256:e3384002618d027c3d188134e7fe09ffb16029202db6b3e6955a9f1f6d591a3e"},
+    {file = "llama_index_embeddings_azure_openai-0.2.5.tar.gz", hash = "sha256:d8b2e3134c2b3510214f2260e6c17be18396d0c765f3edd6c3ffe6109528aed0"},
 ]
 
 [package.dependencies]
