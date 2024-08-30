@@ -116,7 +116,11 @@ class CodeActAgent(Agent):
         ):
             content = [TextContent(text=self.action_to_str(action))]
 
-            if isinstance(action, MessageAction) and action.images_urls:
+            if (
+                self.llm.vision_is_active()
+                and isinstance(action, MessageAction)
+                and action.images_urls
+            ):
                 content.append(ImageContent(image_urls=action.images_urls))
 
             return Message(
@@ -183,25 +187,8 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        vision_format = (
-            not self.llm.config.disable_vision and self.llm.supports_vision()
-        )
         params = {
-            'messages': (
-                [message.model_dump() for message in messages]
-                if vision_format
-                else [
-                    {
-                        'role': message.role,
-                        'content': ''.join(
-                            content.text
-                            for content in message.content
-                            if isinstance(content, TextContent)
-                        ),
-                    }
-                    for message in messages
-                ]
-            ),
+            'messages': self.llm.format_messages_for_llm(messages),
             'stop': [
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -209,11 +196,6 @@ class CodeActAgent(Agent):
             ],
             'temperature': 0.0,
         }
-
-        if self.llm.supports_prompt_caching:
-            params['extra_headers'] = {
-                'anthropic-beta': 'prompt-caching-2024-07-31',
-            }
 
         response = self.llm.completion(**params)
 

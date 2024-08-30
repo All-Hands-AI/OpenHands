@@ -73,26 +73,11 @@ class MicroAgent(Agent):
             latest_user_message=last_user_message,
         )
         content = [TextContent(text=prompt)]
-        if last_image_urls:
+        if self.llm.vision_is_active() and last_image_urls:
             content.append(ImageContent(image_urls=last_image_urls))
         message = Message(role='user', content=content)
-
-        vision_format = (
-            not self.llm.config.disable_vision and self.llm.supports_vision()
-        )
         resp = self.llm.completion(
-            messages=[message.model_dump()]
-            if vision_format
-            else [
-                {
-                    'role': message.role,
-                    'content': ''.join(
-                        content.text
-                        for content in message.content
-                        if isinstance(content, TextContent)
-                    ),
-                }
-            ],
+            messages=self.llm.format_messages_for_llm(message),
             temperature=0.0,
         )
         action_resp = resp['choices'][0]['message']['content']

@@ -2,6 +2,7 @@ import asyncio
 import copy
 import warnings
 from functools import partial
+from typing import Union
 
 from openhands.core.config import LLMConfig
 
@@ -29,6 +30,7 @@ from tenacity import (
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.message import Message, TextContent
 from openhands.core.metrics import Metrics
 
 __all__ = ['LLM']
@@ -169,7 +171,9 @@ class LLM:
                             if 'text' in element:
                                 content_str = element['text'].strip()
                             elif (
-                                'image_url' in element and 'url' in element['image_url']
+                                self.vision_is_active()
+                                and 'image_url' in element
+                                and 'url' in element['image_url']
                             ):
                                 content_str = element['image_url']['url']
                             else:
@@ -257,7 +261,9 @@ class LLM:
                             if 'text' in element:
                                 content_str = element['text']
                             elif (
-                                'image_url' in element and 'url' in element['image_url']
+                                self.vision_is_active()
+                                and 'image_url' in element
+                                and 'url' in element['image_url']
                             ):
                                 content_str = element['image_url']['url']
                             else:
@@ -427,7 +433,10 @@ class LLM:
         """
         return self._async_streaming_completion
 
-    def supports_vision(self):
+    def vision_is_active(self):
+        return not self.config.disable_vision and self._supports_vision()
+
+    def _supports_vision(self):
         """Acquire from litellm if model is vision capable.
 
         Returns:
@@ -561,3 +570,25 @@ class LLM:
 
     def reset(self):
         self.metrics = Metrics()
+
+    def format_messages_for_llm(
+        self, messages: Union[Message, list[Message]]
+    ) -> list[dict]:
+        if isinstance(messages, Message):
+            messages = [messages]
+
+        return (
+            [message.model_dump() for message in messages]
+            if self.vision_is_active()
+            else [
+                {
+                    'role': message.role,
+                    'content': ''.join(
+                        content.text
+                        for content in message.content
+                        if isinstance(content, TextContent)
+                    ),
+                }
+                for message in messages
+            ]
+        )

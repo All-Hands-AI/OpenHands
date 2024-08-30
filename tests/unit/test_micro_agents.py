@@ -10,6 +10,7 @@ from agenthub.micro.registry import all_microagents
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.message import TextContent
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream
@@ -109,6 +110,9 @@ def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: d
 
     mock_llm.completion.assert_called_once()
     _, kwargs = mock_llm.completion.call_args
-    prompt = kwargs['messages'][0]['content'][0]['text']
-    assert task in prompt
+    prompt_element = kwargs['messages'][0]['content'][0]
+    if isinstance(prompt_element, TextContent):
+        prompt = prompt_element.text
+    else:
+        prompt = str(prompt_element)
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt

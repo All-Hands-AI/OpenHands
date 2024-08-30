@@ -189,10 +189,6 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
 
     # Replace mock LLM completion with a function that checks headers and returns a structured response
     def check_headers(**kwargs):
-        assert 'extra_headers' in kwargs
-        assert 'anthropic-beta' in kwargs['extra_headers']
-        assert kwargs['extra_headers']['anthropic-beta'] == 'prompt-caching-2024-07-31'
-
         # Create a mock response with the expected structure
         mock_response = Mock()
         mock_response.choices = [Mock()]

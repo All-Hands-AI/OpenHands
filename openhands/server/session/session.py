@@ -158,7 +158,7 @@ class Session:
                         'Support for images is disabled for this model, try without an image.'
                     )
                     return
-                if not controller.agent.llm.supports_vision():
+                if not controller.agent.llm.vision_is_active():
                     await self.send_error(
                         'Model does not support image upload, change to a different model or try without an image.'
                     )
