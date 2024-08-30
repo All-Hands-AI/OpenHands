@@ -191,7 +191,7 @@ class CodeActAgent(Agent):
                 else [
                     {
                         'role': message.role,
-                        'content': '\n'.join(
+                        'content': ''.join(
                             content.text
                             for content in message.content
                             if isinstance(content, TextContent)

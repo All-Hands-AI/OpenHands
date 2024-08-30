@@ -51,6 +51,7 @@ class LLMConfig:
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
+        disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
     """
 
     model: str = 'gpt-4o'
@@ -78,6 +79,7 @@ class LLMConfig:
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
     drop_params: bool | None = None
+    disable_vision: bool | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

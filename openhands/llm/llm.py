@@ -428,7 +428,15 @@ class LLM:
         return self._async_streaming_completion
 
     def supports_vision(self):
-        return litellm.supports_vision(self.config.model)
+        """Acquire from litellm if model is vision capable.
+
+        Returns:
+            bool: True if model is vision capable. If model is not supported by litellm, it will return False.
+        """
+        try:
+            return litellm.supports_vision(self.config.model)
+        except Exception:
+            return False
 
     def _post_completion(self, response) -> None:
         """Post-process the completion response."""
@@ -484,7 +492,10 @@ class LLM:
         Returns:
             int: The number of tokens.
         """
-        return litellm.token_counter(model=self.config.model, messages=messages)
+        try:
+            return litellm.token_counter(model=self.config.model, messages=messages)
+        except Exception:
+            return 0
 
     def is_local(self):
         """Determines if the system is using a locally running LLM.
