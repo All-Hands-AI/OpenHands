@@ -75,12 +75,12 @@ class TestStuckDetector:
     def _impl_unterminated_string_error_events(
         self, event_stream: EventStream, random_line: bool
     ):
-        for _ in range(4):
+        for i in range(4):
             ipython_action = IPythonRunCellAction(code='print("hello')
             event_stream.add_event(ipython_action, EventSource.AGENT)
-            line_number = str(random.randint(1, 10)) if random_line else '1'
+            line_number = i * 10 if random_line else '1'
             ipython_observation = IPythonRunCellObservation(
-                content=f'print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
+                content=f'print("  Cell In[1], line {line_number}\nhello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
                 + jupyter_line_1
                 + jupyter_line_2,
                 code='print("hello',

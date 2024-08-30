@@ -1,8 +1,7 @@
 """Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
-import asyncio
+import time
 
-import pytest
 from conftest import _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
@@ -26,14 +25,13 @@ from openhands.runtime.client.runtime import EventStreamRuntime
 # ============================================================================================================================
 
 
-@pytest.mark.asyncio
-async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_cmd)
+    obs = runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert isinstance(obs, CmdOutputObservation)
@@ -44,7 +42,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhan
     test_code = "print('Hello, `World`!\\n')"
     action_ipython = IPythonRunCellAction(code=test_code)
     logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_ipython)
+    obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -57,7 +55,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhan
     # Test read file (file should not exist)
     action_read = FileReadAction(path='hello.sh')
     logger.info(action_read, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_read)
+    obs = runtime.run_action(action_read)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, ErrorObservation)
     assert 'File not found' in obs.content
@@ -65,7 +63,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhan
     # Test write file
     action_write = FileWriteAction(content='echo "Hello, World!"', path='hello.sh')
     logger.info(action_write, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_write)
+    obs = runtime.run_action(action_write)
     assert isinstance(obs, FileWriteObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
@@ -76,7 +74,7 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhan
     # Test read file (file should exist)
     action_read = FileReadAction(path='hello.sh')
     logger.info(action_read, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_read)
+    obs = runtime.run_action(action_read)
     assert isinstance(
         obs, FileReadObservation
     ), 'The observation should be a FileReadObservation.'
@@ -88,24 +86,23 @@ async def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhan
     # clean up
     action = CmdRunAction(command='rm -rf hello.sh')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-@pytest.mark.asyncio
-async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # Test run ipython
     # get username
     test_code = "import os; print(os.environ['USER'])"
     action_ipython = IPythonRunCellAction(code=test_code)
     logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_ipython)
+    obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -118,7 +115,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     test_code = 'import os; print(os.getcwd())'
     action_ipython = IPythonRunCellAction(code=test_code)
     logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_ipython)
+    obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert (
@@ -134,7 +131,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     test_code = "with open('test.txt', 'w') as f: f.write('Hello, world!')"
     action_ipython = IPythonRunCellAction(code=test_code)
     logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_ipython)
+    obs = runtime.run_action(action_ipython)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert (
@@ -149,7 +146,7 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     # check file owner via bash
     action = CmdRunAction(command='ls -alh test.txt')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
     if run_as_openhands:
@@ -163,24 +160,23 @@ async def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     # clean up
     action = CmdRunAction(command='rm -rf test')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-@pytest.mark.asyncio
-async def test_ipython_simple(temp_dir, box_class):
-    runtime = await _load_runtime(temp_dir, box_class)
+def test_ipython_simple(temp_dir, box_class):
+    runtime = _load_runtime(temp_dir, box_class)
 
     # Test run ipython
     # get username
     test_code = 'print(1)'
     action_ipython = IPythonRunCellAction(code=test_code)
     logger.info(action_ipython, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action_ipython)
+    obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert (
@@ -192,30 +188,30 @@ async def test_ipython_simple(temp_dir, box_class):
         ).strip()
     )
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-async def _test_ipython_agentskills_fileop_pwd_impl(
+def _test_ipython_agentskills_fileop_pwd_impl(
     runtime: EventStreamRuntime, enable_auto_lint: bool
 ):
     # remove everything in /workspace
     action = CmdRunAction(command='rm -rf /workspace/*')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='mkdir test')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
 
     action = IPythonRunCellAction(code="create_file('hello.py')")
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
@@ -230,7 +226,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
 
     action = CmdRunAction(command='cd test')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
@@ -239,7 +235,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
     # i.e., /workspace/test/hello.py instead of /workspace/hello.py
     action = IPythonRunCellAction(code="create_file('hello.py')")
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
@@ -258,7 +254,7 @@ async def _test_ipython_agentskills_fileop_pwd_impl(
             code="insert_content_at_line('hello.py', 1, '  print(\"hello world\")')"
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, IPythonRunCellObservation)
         assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
@@ -292,7 +288,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
         code="insert_content_at_line('hello.py', 1, 'print(\"hello world\")')"
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
@@ -309,38 +305,36 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 
     action = CmdRunAction(command='rm -rf /workspace/*')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-@pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd(
+def test_ipython_agentskills_fileop_pwd(
     temp_dir, box_class, run_as_openhands, enable_auto_lint
 ):
     """Make sure that cd in bash also update the current working directory in ipython."""
 
-    runtime = await _load_runtime(
+    runtime = _load_runtime(
         temp_dir, box_class, run_as_openhands, enable_auto_lint=enable_auto_lint
     )
-    await _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
+    _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-@pytest.mark.asyncio
-async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
+def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
     """Make sure that cd in bash also update the current working directory in ipython.
 
     Handle special case where the pwd is provided as "~", which should be expanded using os.path.expanduser
     on the client side.
     """
 
-    runtime = await _load_runtime(
+    runtime = _load_runtime(
         temp_dir,
         box_class,
         run_as_openhands=False,
@@ -348,20 +342,20 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
 
     action = CmdRunAction(command='cd ~')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='mkdir test && ls -la')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
 
     action = IPythonRunCellAction(code="create_file('hello.py')")
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
@@ -376,7 +370,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
 
     action = CmdRunAction(command='cd test')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
@@ -385,7 +379,7 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
     # i.e., /workspace/test/hello.py instead of /workspace/hello.py
     action = IPythonRunCellAction(code="create_file('hello.py')")
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
@@ -398,26 +392,25 @@ async def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-@pytest.mark.asyncio
-async def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
+def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert "ModuleNotFoundError: No module named 'pymsgbox'" in obs.content
 
     # Install pymsgbox in Jupyter
     action = IPythonRunCellAction(code='%pip install pymsgbox==1.0.9')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert (
         'Successfully installed pymsgbox-1.0.9' in obs.content
@@ -426,7 +419,7 @@ async def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
 
     action = IPythonRunCellAction(code='import pymsgbox')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     # import should not error out
     assert obs.content.strip() == (
@@ -435,5 +428,5 @@ async def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     )
 
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)

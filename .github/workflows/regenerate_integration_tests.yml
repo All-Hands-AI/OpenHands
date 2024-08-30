@@ -1,0 +1,41 @@
+
+name: Regenerate Integration Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  regenerate_integration_tests:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Install poetry via pipx
+      run: pipx install poetry
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'poetry'
+    - name: Install Python dependencies using Poetry
+      run: poetry install --without evaluation,llama-index
+    - name: Build Environment
+      run: make build
+
+    - name: Regenerate integration tests
+      run: ./tests/integration/regenerate.sh
+
+    - name: Commit changes
+      run: |
+        if git diff --quiet --exit-code; then
+          echo "No changes to commit"
+          exit 0
+        fi
+
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add .
+        git commit -m "Regenerate integration tests"
+        git push
