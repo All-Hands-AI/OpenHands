@@ -57,7 +57,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(runtime: Runtime):
+def initialize_runtime(runtime: Runtime):
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -68,22 +68,20 @@ async def initialize_runtime(runtime: Runtime):
     # Set instance id
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    await runtime.add_env_vars({'WOLFRAM_ALPHA_APPID': args.wolfram_alpha_appid})
+    runtime.add_env_vars({'WOLFRAM_ALPHA_APPID': args.wolfram_alpha_appid})
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def process_instance(
-    instance: Any, metadata: EvalMetadata, reset_logger: bool = True
-):
+def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
     config = get_config(metadata)
 
     qid = instance.qid
@@ -104,15 +102,19 @@ async def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
-    runtime = await create_runtime(config, sid=qid)
-    await initialize_runtime(runtime)
+    runtime = create_runtime(config, sid=qid)
+    initialize_runtime(runtime)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+        )
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -210,8 +212,6 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

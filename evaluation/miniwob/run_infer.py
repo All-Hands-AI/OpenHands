@@ -62,7 +62,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
 ) -> str:
     """Initialize the runtime for the agent.
@@ -75,12 +75,12 @@ async def initialize_runtime(
     # Set instance id
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     goal = obs.content
 
@@ -88,7 +88,7 @@ async def initialize_runtime(
     return goal
 
 
-async def complete_runtime(
+def complete_runtime(
     runtime: Runtime,
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
@@ -102,7 +102,7 @@ async def complete_runtime(
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
@@ -111,7 +111,7 @@ async def complete_runtime(
     }
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -126,8 +126,8 @@ async def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {env_id}.')
 
-    runtime = await create_runtime(config, sid=env_id)
-    task_str = await initialize_runtime(runtime)
+    runtime = create_runtime(config, sid=env_id)
+    task_str = initialize_runtime(runtime)
 
     state: State | None = asyncio.run(
         run_controller(
@@ -154,7 +154,7 @@ async def process_instance(
             instruction = event.content
             break
 
-    return_val = await complete_runtime(runtime)
+    return_val = complete_runtime(runtime)
     logger.info(f'Return value from complete_runtime: {return_val}')
     reward = max(return_val['rewards'])
 
@@ -208,8 +208,6 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

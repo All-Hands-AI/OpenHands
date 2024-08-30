@@ -55,7 +55,7 @@ def get_config(
     return config
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -79,14 +79,16 @@ async def process_instance(
     # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = await create_runtime(config, sid=instance_id)
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-            metadata.agent_class
-        ),
+    runtime = create_runtime(config, sid=instance_id)
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                metadata.agent_class
+            ),
+        )
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -179,14 +181,12 @@ if __name__ == '__main__':
     else:
         print('File already exists, skipping download.')
 
-    asyncio.run(
-        run_evaluation(
-            dataset=dataset,
-            metadata=metadata,
-            output_file=output_file,
-            num_workers=args.eval_num_workers,
-            process_instance_func=process_instance,
-        )
+    run_evaluation(
+        dataset=dataset,
+        metadata=metadata,
+        output_file=output_file,
+        num_workers=args.eval_num_workers,
+        process_instance_func=process_instance,
     )
 
     # Read the output file and calculate the accuracy

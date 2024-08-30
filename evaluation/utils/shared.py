@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import multiprocessing as mp
@@ -227,7 +226,7 @@ def prepare_dataset(
     return pd.DataFrame(new_dataset)
 
 
-async def run_evaluation(
+def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata,
     output_file: str,
@@ -244,14 +243,14 @@ async def run_evaluation(
     pbar = tqdm(total=len(dataset))
     output_fp = open(output_file, 'a')
 
-    async def update_progress(future):
+    def update_progress(future):
         pbar.update(1)
-        output: EvalOutput = await future if use_multiprocessing else future
+        output: EvalOutput = future.result() if use_multiprocessing else future
 
         pbar.set_description(f'Instance {output.instance_id}')
         pbar.set_postfix_str(f'Test Result: {output.test_result}')
         logger.info(
-            f'Finished evaluation for instance {output.instance_id}: {output.test_result}\n'
+            f'Finished evaluation for instance {output.instance_id}: {str(output.test_result)[:300]}...\n'
         )
         output_fp.write(json.dumps(output.model_dump()) + '\n')
         output_fp.flush()
@@ -259,25 +258,24 @@ async def run_evaluation(
     try:
         if use_multiprocessing:
             with ProcessPoolExecutor(num_workers) as executor:
-                loop = asyncio.get_event_loop()
                 futures = []
                 for _, instance in dataset.iterrows():
-                    future = loop.run_in_executor(
-                        executor,
+                    future = executor.submit(
                         process_instance_func,
                         instance,
                         metadata,
                         bool(num_workers > 1),
                     )
-                    futures.append(update_progress(future))
-
-                await asyncio.gather(*futures)
+                    future.add_done_callback(update_progress)
+                    futures.append(future)
+                for future in futures:
+                    future.result()
         # Use plain for loop for single process for easier debugging
         else:
             assert num_workers == 1
             for _, instance in dataset.iterrows():
-                output = await process_instance_func(instance, metadata, False)
-                await update_progress(output)
+                output = process_instance_func(instance, metadata, False)
+                update_progress(output)
 
     except KeyboardInterrupt:
         print('\nKeyboardInterrupt received. Cleaning up...\n')
