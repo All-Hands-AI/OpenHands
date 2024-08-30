@@ -1,6 +1,10 @@
 import { getSettings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
 
+/**
+ * Generate the agent init event given the current settings
+ * @returns JSON string of the agent init event
+ */
 export const generateAgentInitEvent = () => {
   const settings = getSettings();
   const event = {
@@ -38,3 +42,18 @@ export const generateAgentStateChangeEvent = (agent_state: AgentState) => {
   };
   return JSON.stringify(event);
 };
+
+/** TYPE UTILS */
+
+export const isAgentStateChangeEvent = (
+  event: object,
+): event is AgentStateChange =>
+  "observation" in event && event.observation === "agent_state_changed";
+
+export const isBrowseObservation = (
+  message: object,
+): message is BrowseObservation =>
+  "observation" in message && message.observation === "browse";
+
+export const isAddTaskAction = (message: object): message is AddTaskAction =>
+  "action" in message && message.action === "add_task";

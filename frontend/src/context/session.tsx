@@ -1,11 +1,13 @@
 import React from "react";
-import { getToken } from "#/services/auth";
 import { handleAssistantMessage } from "#/services/actions";
 import {
   generateAgentInitEvent,
   generateAgentStateChangeEvent,
   generateUserMessageEvent,
   generateUserTerminalCommandEvent,
+  isAddTaskAction,
+  isAgentStateChangeEvent,
+  isBrowseObservation,
 } from "./utils";
 import { extractMessage, ParsedMessage } from "#/utils/extractMessage";
 import {
@@ -13,15 +15,9 @@ import {
   TerminalStream,
 } from "#/utils/extractTerminalStream";
 import { extractJupyterCell, JupyterCell } from "#/utils/extractJupyterCells";
+import { useWebSocket } from "#/hooks/useWebSocket";
 
-const isAgentStateChangeEvent = (event: object): event is AgentStateChange =>
-  "observation" in event && event.observation === "agent_state_changed";
-
-const isBrowseObservation = (message: object): message is BrowseObservation =>
-  "observation" in message && message.observation === "browse";
-
-export const isAddTaskAction = (message: object): message is AddTaskAction =>
-  "action" in message && message.action === "add_task";
+const HOST = "localhost:3000";
 
 interface ParsedData {
   // aggregated data
@@ -34,9 +30,8 @@ interface ParsedData {
   agentState: AgentState;
 }
 
-const HOST = "localhost:3000";
-
 interface SessionContextType {
+  initializeAgent: () => void;
   sendUserMessage: (message: string, images_urls: string[]) => void;
   sendTerminalCommand: (command: string) => void;
   triggerAgentStateChange: (agent_state: AgentState) => void;
@@ -49,7 +44,7 @@ const SessionContext = React.createContext<SessionContextType | undefined>(
 );
 
 function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [socket, setSocket] = React.useState<WebSocket | null>(null);
+  const { socket } = useWebSocket(HOST);
   const [eventLog, setEventLog] = React.useState<string[]>([]);
 
   // parsed data that is used throughout the app
@@ -74,31 +69,25 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  React.useEffect(() => {
-    const url = new URL(`ws://${HOST}/ws`);
-
-    const token = getToken();
-    if (token) url.searchParams.set("token", token);
-
-    const websocket = new WebSocket(url.toString());
-    setSocket(websocket);
-
-    return () => {
-      websocket.close();
-    };
-  }, []);
+  /**
+   * Initialize the agent by sending an agent init event. Uses current settings.
+   */
+  const initializeAgent = () => {
+    const event = generateAgentInitEvent();
+    socket?.send(event);
+  };
 
   React.useEffect(() => {
     if (socket) {
       socket.onopen = () => {
-        // initialize agent
-        const event = generateAgentInitEvent();
-        socket.send(event);
+        initializeAgent();
       };
 
       socket.onmessage = (event) => {
         pushToEventLog(event.data);
         const message = JSON.parse(event.data) as TrajectoryItem;
+
+        /** HANDLE EVENT DATA */
 
         const parsedMessage = extractMessage(message);
         if (parsedMessage) {
@@ -161,11 +150,6 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [socket]);
 
-  /**
-   * Append a user message to the message log. This is used when the user sends a message from the client.
-   * @param message The message to append
-   * @param images_urls Array of image urls
-   */
   const appendUserMessage = (message: string, images_urls: string[]) => {
     const parsed: ParsedMessage = {
       source: "user",
@@ -210,6 +194,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const value = React.useMemo(
     () => ({
+      initializeAgent,
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
@@ -217,6 +202,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       data,
     }),
     [
+      initializeAgent,
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
