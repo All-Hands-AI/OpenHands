@@ -17,7 +17,7 @@ from openhands.events.observation import CmdOutputObservation
 
 
 def test_bash_command_pexcept(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands, reuse_id='bash')
 
     # We set env var PS1="\u@\h:\w $"
     # and construct the PEXCEPT prompt base on it.
@@ -47,7 +47,7 @@ def test_bash_command_pexcept(temp_dir, box_class, run_as_openhands):
 
 
 def test_single_multiline_command(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     action = CmdRunAction(command='echo \\\n -e "foo"')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -61,7 +61,7 @@ def test_single_multiline_command(temp_dir, box_class):
 
 
 def test_multiline_echo(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     action = CmdRunAction(command='echo -e "hello\nworld"')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -75,7 +75,7 @@ def test_multiline_echo(temp_dir, box_class):
 
 
 def test_runtime_whitespace(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     action = CmdRunAction(command='echo -e "\\n\\n\\n"')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -119,7 +119,7 @@ world "
     ]
     joined_cmds = '\n'.join(cmds)
 
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands, reuse_id='bash')
 
     action = CmdRunAction(command=joined_cmds)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -143,7 +143,7 @@ world "
 
 def test_no_ps2_in_output(temp_dir, box_class, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands, reuse_id='bash')
 
     action = CmdRunAction(command='echo -e "hello\nworld"')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -160,7 +160,7 @@ def test_no_ps2_in_output(temp_dir, box_class, run_as_openhands):
 def test_multiline_command_loop(temp_dir, box_class):
     # https://github.com/All-Hands-AI/OpenHands/issues/3143
 
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     init_cmd = """
 mkdir -p _modules && \
@@ -201,7 +201,7 @@ echo "success"
 
 
 def test_cmd_run(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands, reuse_id='bash')
 
     action = CmdRunAction(command='ls -l')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -260,7 +260,7 @@ def test_cmd_run(temp_dir, box_class, run_as_openhands):
 
 
 def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands, reuse_id='bash')
 
     action = CmdRunAction(command='cd ~ && pwd')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -278,7 +278,7 @@ def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
 
 
 def test_multi_cmd_run_in_single_line(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     action = CmdRunAction(command='pwd && ls -l')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -294,7 +294,7 @@ def test_multi_cmd_run_in_single_line(temp_dir, box_class):
 
 
 def test_stateful_cmd(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     action = CmdRunAction(command='mkdir test')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -323,7 +323,7 @@ def test_stateful_cmd(temp_dir, box_class):
 
 
 def test_failed_cmd(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     action = CmdRunAction(command='non_existing_command')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -343,7 +343,7 @@ def _create_test_file(host_temp_dir):
 
 
 def test_copy_single_file(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     with tempfile.TemporaryDirectory() as host_temp_dir:
         _create_test_file(host_temp_dir)
@@ -378,7 +378,7 @@ def _create_test_dir_with_files(host_temp_dir):
 
 
 def test_copy_directory_recursively(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     with tempfile.TemporaryDirectory() as host_temp_dir:
         # We need a separate directory, since temp_dir is mounted to /workspace
@@ -419,7 +419,7 @@ def test_copy_directory_recursively(temp_dir, box_class):
 
 
 def test_copy_to_non_existent_directory(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     with tempfile.TemporaryDirectory() as host_temp_dir:
         _create_test_file(host_temp_dir)
@@ -440,7 +440,7 @@ def test_copy_to_non_existent_directory(temp_dir, box_class):
 
 
 def test_overwrite_existing_file(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     # touch a file in /workspace
     action = CmdRunAction(command='touch /workspace/test_file.txt')
@@ -475,7 +475,7 @@ def test_overwrite_existing_file(temp_dir, box_class):
 
 
 def test_copy_non_existent_file(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, reuse_id='bash')
 
     with pytest.raises(FileNotFoundError):
         runtime.copy_to(
@@ -530,6 +530,7 @@ def test_git_operation(box_class):
         box_class=box_class,
         # Need to use non-root user to expose issues
         run_as_openhands=True,
+        reuse_id='bash',
     )
 
     # this will happen if permission of runtime is not properly configured

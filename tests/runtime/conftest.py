@@ -107,15 +107,13 @@ def _load_runtime(
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
+    reuse_id: str | None = None,
 ) -> Runtime:
+    if reuse_id is not None and reuse_id in runtimes:
+        return runtimes[reuse_id]
+
     sid = 'test'
-    # add random number to sid
-    sid = f'{sid}_{str(box_class)}'
-    sid = sid.replace('.', '-')
-    sid = sid.lower()
     cli_session = 'main_test'
-    if sid in runtimes:
-        return runtimes[sid]
 
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
@@ -144,7 +142,10 @@ def _load_runtime(
         plugins=plugins,
     )
     time.sleep(1)
-    runtimes[sid] = runtime
+
+    if reuse_id is not None:
+        runtimes[reuse_id] = runtime
+
     return runtime
 
 
