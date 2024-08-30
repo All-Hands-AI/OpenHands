@@ -320,7 +320,7 @@ class RuntimeClient:
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False,
                     )
-                elif command == 'ctrl+c':
+                elif command.lower() == 'ctrl+c':
                     output, exit_code = self._interrupt_bash(
                         timeout=SOFT_TIMEOUT_SECONDS
                     )
