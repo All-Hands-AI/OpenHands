@@ -1,5 +1,5 @@
 import React from "react";
-import { getToken, setToken } from "#/services/auth";
+import { clearToken, getToken, setToken } from "#/services/auth";
 
 export const useWebSocket = (host: string) => {
   const [socket, setSocket] = React.useState<WebSocket | null>(null);
@@ -10,6 +10,7 @@ export const useWebSocket = (host: string) => {
   const initializeWebSocket = React.useCallback(() => {
     if (socket) {
       socket.close();
+      clearToken();
       setSocket(null);
     }
 

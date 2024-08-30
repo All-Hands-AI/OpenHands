@@ -43,7 +43,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [settings, setSettings] = React.useState<Settings>({} as Settings);
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
-  const { data } = useSession();
+  const { data, reinitializeSocket } = useSession();
 
   useEffect(() => {
     maybeMigrateSettings();
@@ -133,7 +133,8 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
-    Session.startNewSession();
+    reinitializeSocket();
+    // Session.startNewSession();
 
     const sensitiveKeys = ["LLM_API_KEY"];
 

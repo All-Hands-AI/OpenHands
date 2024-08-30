@@ -3,9 +3,6 @@ import React, { useEffect } from "react";
 import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
-import store from "#/store";
-import { clearMessages } from "#/state/chatSlice";
-import Session from "#/services/session";
 import { useSession } from "#/context/session";
 
 type IgnoreTaskStateMapKeys = Extract<
@@ -82,7 +79,7 @@ function ActionButton({
 }
 
 function AgentControlBar() {
-  const { data, triggerAgentStateChange } = useSession();
+  const { data, triggerAgentStateChange, clearEventLog } = useSession();
   const [desiredState, setDesiredState] = React.useState<AgentState>("init");
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -97,8 +94,7 @@ function AgentControlBar() {
     }
 
     if (action === "stopped") {
-      Session._history = [];
-      store.dispatch(clearMessages());
+      clearEventLog();
     } else {
       setIsLoading(true);
     }
@@ -110,7 +106,7 @@ function AgentControlBar() {
   useEffect(() => {
     if (data.agentState === desiredState) {
       if (data.agentState === "stopped") {
-        store.dispatch(clearMessages());
+        clearEventLog();
       }
       setIsLoading(false);
     } else if (data.agentState === "running") {

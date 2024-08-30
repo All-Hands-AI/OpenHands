@@ -30,11 +30,21 @@ interface ParsedData {
   agentState: AgentState;
 }
 
+const INITIAL_PARSED_DATA_STATE: ParsedData = {
+  messages: [],
+  terminalStreams: [],
+  jupyterCells: [],
+  browseState: null,
+  taskState: null,
+  agentState: "loading",
+};
+
 interface SessionContextType {
-  initializeAgent: () => void;
+  reinitializeSocket: () => void;
   sendUserMessage: (message: string, images_urls: string[]) => void;
   sendTerminalCommand: (command: string) => void;
   triggerAgentStateChange: (agent_state: AgentState) => void;
+  clearEventLog: () => void;
   eventLog: string[];
   data: ParsedData;
 }
@@ -44,18 +54,11 @@ const SessionContext = React.createContext<SessionContextType | undefined>(
 );
 
 function SessionProvider({ children }: { children: React.ReactNode }) {
-  const { socket } = useWebSocket(HOST);
+  const { socket, initializeWebSocket } = useWebSocket(HOST);
   const [eventLog, setEventLog] = React.useState<string[]>([]);
 
   // parsed data that is used throughout the app
-  const [data, setData] = React.useState<ParsedData>({
-    messages: [],
-    terminalStreams: [],
-    jupyterCells: [],
-    browseState: null,
-    taskState: null,
-    agentState: "loading",
-  });
+  const [data, setData] = React.useState<ParsedData>(INITIAL_PARSED_DATA_STATE);
 
   const pushToEventLog = (message: string) => {
     console.log(message);
@@ -75,6 +78,10 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   const initializeAgent = () => {
     const event = generateAgentInitEvent();
     socket?.send(event);
+  };
+
+  const reinitializeSocket = () => {
+    initializeWebSocket();
   };
 
   React.useEffect(() => {
@@ -162,6 +169,11 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const clearEventLog = () => {
+    setEventLog([]);
+    setData(INITIAL_PARSED_DATA_STATE);
+  };
+
   /**
    * Send a message to the assistant
    * @param message The message to send
@@ -194,18 +206,20 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const value = React.useMemo(
     () => ({
-      initializeAgent,
+      reinitializeSocket,
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
+      clearEventLog,
       eventLog,
       data,
     }),
     [
-      initializeAgent,
+      reinitializeSocket,
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
+      clearEventLog,
       eventLog,
       data,
     ],
