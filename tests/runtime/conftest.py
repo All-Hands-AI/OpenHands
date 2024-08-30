@@ -98,6 +98,9 @@ async def runtime(temp_dir, box_class, run_as_openhands):
     await asyncio.sleep(1)
 
 
+runtimes = {}
+
+
 async def _load_runtime(
     temp_dir,
     box_class,
@@ -108,9 +111,12 @@ async def _load_runtime(
 ) -> Runtime:
     sid = 'test'
     # add random number to sid
-    sid = f'{sid}_{int(time.time())}'
+    sid = f'{sid}_{str(box_class)}'
     sid = sid.replace('.', '-')
+    sid = sid.lower()
     cli_session = 'main_test'
+    if sid in runtimes:
+        return runtimes[sid]
 
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
@@ -140,6 +146,7 @@ async def _load_runtime(
     )
     await runtime.ainit()
     await asyncio.sleep(1)
+    runtimes[sid] = runtime
     return runtime
 
 
