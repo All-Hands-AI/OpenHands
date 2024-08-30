@@ -1,12 +1,12 @@
-import asyncio
 import os
 import tempfile
 import threading
+import time
 import uuid
 from zipfile import ZipFile
 
-import aiohttp
 import docker
+import requests
 import tenacity
 
 from openhands.core.config import AppConfig
@@ -104,25 +104,23 @@ class EventStreamRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
+        env_vars: dict[str, str] | None = None,
     ):
-        super().__init__(
-            config, event_stream, sid, plugins
-        )  # will initialize the event stream
+        self.config = config
         self._port = find_available_tcp_port()
         self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
-        self.session: aiohttp.ClientSession | None = None
+        self.session = requests.Session()
 
         self.instance_id = (
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        # TODO: We can switch to aiodocker when `build_sandbox_image` is updated to use aiodocker
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         self.container = None
-        self.action_semaphore = asyncio.Semaphore(1)  # Ensure one action at a time
+        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
         logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
@@ -131,7 +129,6 @@ class EventStreamRuntime(Runtime):
         self.log_buffer: LogBuffer | None = None
         self.startup_done = False
 
-    async def ainit(self, env_vars: dict[str, str] | None = None):
         if self.config.sandbox.runtime_extra_deps:
             logger.info(
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
@@ -147,14 +144,13 @@ class EventStreamRuntime(Runtime):
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
             )
-        self.container = await self._init_container(
+        self.container = self._init_container(
             self.sandbox_workspace_dir,
             mount_dir=self.config.workspace_mount_path,
-            plugins=self.plugins,
+            plugins=plugins,
         )
-        # MUST call super().ainit() to initialize both default env vars
-        # AND the ones in env vars!
-        await super().ainit(env_vars)
+        # will initialize both the event stream and the env vars
+        super().__init__(config, event_stream, sid, plugins, env_vars)
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
@@ -175,7 +171,7 @@ class EventStreamRuntime(Runtime):
         stop=tenacity.stop_after_attempt(5),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
     )
-    async def _init_container(
+    def _init_container(
         self,
         sandbox_workspace_dir: str,
         mount_dir: str | None = None,
@@ -242,19 +238,14 @@ class EventStreamRuntime(Runtime):
         except Exception as e:
             logger.error('Failed to start container')
             logger.exception(e)
-            await self.close(close_client=False)
+            self.close(close_client=False)
             raise e
-
-    async def _ensure_session(self):
-        if self.session is None or self.session.closed:
-            self.session = aiohttp.ClientSession()
-        return self.session
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
         wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
     )
-    async def _wait_until_alive(self):
+    def _wait_until_alive(self):
         init_msg = 'Runtime client initialized.'
         logger.debug('Getting container logs...')
 
@@ -284,7 +275,7 @@ class EventStreamRuntime(Runtime):
             attempts = 0
             while not self.startup_done and attempts < 10:
                 attempts += 1
-                await asyncio.sleep(1)
+                time.sleep(1)
                 logs = self.log_buffer.get_and_clear()
                 if logs:
                     formatted_logs = '\n'.join([f'    |{log}' for log in logs])
@@ -301,25 +292,24 @@ class EventStreamRuntime(Runtime):
                         self.startup_done = True
                         break
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'{self.api_url}/alive') as response:
-                if response.status == 200:
-                    return
-                else:
-                    msg = f'Action execution API is not alive. Response: {response}'
-                    logger.error(msg)
-                    raise RuntimeError(msg)
+        response = self.session.get(f'{self.api_url}/alive')
+        if response.status_code == 200:
+            return
+        else:
+            msg = f'Action execution API is not alive. Response: {response}'
+            logger.error(msg)
+            raise RuntimeError(msg)
 
     @property
     def sandbox_workspace_dir(self):
         return self.config.workspace_mount_path_in_sandbox
 
-    async def close(self, close_client: bool = True):
+    def close(self, close_client: bool = True):
         if self.log_buffer:
             self.log_buffer.close()
 
-        if self.session is not None and not self.session.closed:
-            await self.session.close()
+        if self.session:
+            self.session.close()
 
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
@@ -335,12 +325,12 @@ class EventStreamRuntime(Runtime):
         if close_client:
             self.docker_client.close()
 
-    async def run_action(self, action: Action) -> Observation:
+    def run_action(self, action: Action) -> Observation:
         # set timeout to default if not set
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout
 
-        async with self.action_semaphore:
+        with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
@@ -352,30 +342,26 @@ class EventStreamRuntime(Runtime):
                 )
 
             logger.info('Awaiting session')
-            session = await self._ensure_session()
-            await self._wait_until_alive()
+            self._wait_until_alive()
 
             assert action.timeout is not None
 
             try:
-                logger.info('Executing command')
-                async with session.post(
+                response = self.session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
                     timeout=action.timeout,
-                ) as response:
-                    if response.status == 200:
-                        output = await response.json()
-                        obs = observation_from_dict(output)
-                        obs._cause = action.id  # type: ignore[attr-defined]
-                        return obs
-                    else:
-                        error_message = await response.text()
-                        logger.error(f'Error from server: {error_message}')
-                        obs = ErrorObservation(
-                            f'Command execution failed: {error_message}'
-                        )
-            except asyncio.TimeoutError:
+                )
+                if response.status_code == 200:
+                    output = response.json()
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
+                    return obs
+                else:
+                    error_message = response.text
+                    logger.error(f'Error from server: {error_message}')
+                    obs = ErrorObservation(f'Command execution failed: {error_message}')
+            except requests.Timeout:
                 logger.error('No response received within the timeout period.')
                 obs = ErrorObservation('Command execution timed out')
             except Exception as e:
@@ -383,36 +369,35 @@ class EventStreamRuntime(Runtime):
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
             return obs
 
-    async def run(self, action: CmdRunAction) -> Observation:
-        return await self.run_action(action)
+    def run(self, action: CmdRunAction) -> Observation:
+        return self.run_action(action)
 
-    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        return await self.run_action(action)
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        return self.run_action(action)
 
-    async def read(self, action: FileReadAction) -> Observation:
-        return await self.run_action(action)
+    def read(self, action: FileReadAction) -> Observation:
+        return self.run_action(action)
 
-    async def write(self, action: FileWriteAction) -> Observation:
-        return await self.run_action(action)
+    def write(self, action: FileWriteAction) -> Observation:
+        return self.run_action(action)
 
-    async def browse(self, action: BrowseURLAction) -> Observation:
-        return await self.run_action(action)
+    def browse(self, action: BrowseURLAction) -> Observation:
+        return self.run_action(action)
 
-    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await self.run_action(action)
+    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return self.run_action(action)
 
     # ====================================================================
     # Implement these methods (for file operations) in the subclass
     # ====================================================================
 
-    async def copy_to(
+    def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ) -> None:
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
-        session = await self._ensure_session()
-        await self._wait_until_alive()
+        self._wait_until_alive()
         try:
             if recursive:
                 # For recursive copy, create a zip file
@@ -437,16 +422,16 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            async with session.post(
-                f'{self.api_url}/upload_file', data=upload_data, params=params
-            ) as response:
-                if response.status == 200:
-                    return
-                else:
-                    error_message = await response.text()
-                    raise Exception(f'Copy operation failed: {error_message}')
+            response = self.session.post(
+                f'{self.api_url}/upload_file', files=upload_data, params=params
+            )
+            if response.status_code == 200:
+                return
+            else:
+                error_message = response.text
+                raise Exception(f'Copy operation failed: {error_message}')
 
-        except asyncio.TimeoutError:
+        except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
         except Exception as e:
             raise RuntimeError(f'Copy operation failed: {str(e)}')
@@ -455,29 +440,26 @@ class EventStreamRuntime(Runtime):
                 os.unlink(temp_zip_path)
             logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
-    async def list_files(self, path: str | None = None) -> list[str]:
+    def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-        session = await self._ensure_session()
-        await self._wait_until_alive()
+        self._wait_until_alive()
         try:
             data = {}
             if path is not None:
                 data['path'] = path
 
-            async with session.post(
-                f'{self.api_url}/list_files', json=data
-            ) as response:
-                if response.status == 200:
-                    response_json = await response.json()
-                    assert isinstance(response_json, list)
-                    return response_json
-                else:
-                    error_message = await response.text()
-                    raise Exception(f'List files operation failed: {error_message}')
-        except asyncio.TimeoutError:
+            response = self.session.post(f'{self.api_url}/list_files', json=data)
+            if response.status_code == 200:
+                response_json = response.json()
+                assert isinstance(response_json, list)
+                return response_json
+            else:
+                error_message = response.text
+                raise Exception(f'List files operation failed: {error_message}')
+        except requests.Timeout:
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')

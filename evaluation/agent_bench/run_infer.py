@@ -56,7 +56,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -70,12 +70,12 @@ async def initialize_runtime(
     # Set instance id
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     init_cmd = instance.init
@@ -85,7 +85,7 @@ async def initialize_runtime(
         with tempfile.TemporaryDirectory() as tmpdir:
             host_script_path = os.path.join(tmpdir, script_name)
             create_sh_file(host_script_path, init_cmd)
-            await runtime.copy_to(
+            runtime.copy_to(
                 host_script_path,
                 '/workspace',
             )
@@ -93,14 +93,14 @@ async def initialize_runtime(
         logger.info(f'Running init script: {script_name}')
         action = CmdRunAction(command=f'chmod +x ./{script_name} && ./{script_name}')
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime(
+def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -121,7 +121,7 @@ async def complete_runtime(
         with tempfile.TemporaryDirectory() as tmpdir:
             host_script_path = os.path.join(tmpdir, script_name)
             create_sh_file(host_script_path, get_agent_result_cmd)
-            await runtime.copy_to(
+            runtime.copy_to(
                 host_script_path,
                 '/workspace',
             )
@@ -132,7 +132,7 @@ async def complete_runtime(
             keep_prompt=False,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
         agent_answer = obs.content
@@ -149,7 +149,7 @@ async def complete_runtime(
             with tempfile.TemporaryDirectory() as tmpdir:
                 host_script_path = os.path.join(tmpdir, script_name)
                 create_sh_file(host_script_path, get_ground_truth_cmd)
-                await runtime.copy_to(
+                runtime.copy_to(
                     host_script_path,
                     '/workspace',
                 )
@@ -160,7 +160,7 @@ async def complete_runtime(
                 keep_prompt=False,
             )
             logger.info(action, extra={'msg_type': 'ACTION'})
-            obs = await runtime.run_action(action)
+            obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
             final_ans = obs.content
 
@@ -171,7 +171,7 @@ async def complete_runtime(
     }
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -209,16 +209,18 @@ async def process_instance(
     # create sandbox and run the agent
     # =============================================
 
-    runtime: Runtime = await create_runtime(config, sid=instance.instance_id)
+    runtime: Runtime = create_runtime(config, sid=instance.instance_id)
 
-    await initialize_runtime(runtime, instance=instance)
+    initialize_runtime(runtime, instance=instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+        )
     )
     if state is None:
         raise ValueError('State should not be None.')
@@ -227,7 +229,7 @@ async def process_instance(
     # result evaluation
     # =============================================
 
-    return_val = await complete_runtime(runtime, instance)
+    return_val = complete_runtime(runtime, instance)
     agent_answer = return_val['agent_answer']
     final_ans = return_val['final_ans']
 
@@ -313,8 +315,6 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(agent_bench_tests, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )
