@@ -186,8 +186,10 @@ def mock_completion(*args, test_name, **kwargs):
     message_str = ''
     for message in messages:
         for m in message['content']:
-            if m['type'] == 'text':
+            if hasattr(m, 'type') and m['type'] == 'text':
                 message_str += message_separator + m['text']
+            else:
+                message_str += message_separator + str(m)
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':
