@@ -25,7 +25,7 @@ jobs:
       run: make build
 
     - name: Regenerate integration tests
-      run: LOG_TO_FILE=true FORCE_REGENERATE=true ./tests/integration/regenerate.sh
+      run: LOG_TO_FILE=true FORCE_USE_LLM=true ./tests/integration/regenerate.sh
 
     - name: Commit changes
       run: |
