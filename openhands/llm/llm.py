@@ -158,7 +158,7 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1]
+                messages = args[1] if len(args) > 1 else []
 
             # log the prompt
             debug_message = ''
