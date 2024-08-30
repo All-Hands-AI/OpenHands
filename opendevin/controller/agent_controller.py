@@ -444,7 +444,7 @@ class AgentController:
             action = self.agent.step(self.state)
             if isinstance(action, AgentSummarizeAction):
                 self.state.history.add_summary(action)
-                return
+                action = self.agent.step(self.state)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
