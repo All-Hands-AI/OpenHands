@@ -634,28 +634,27 @@ async def test_bash_timeout(box_class):
         run_as_openhands=True,
     )
     commands = [
-        'sudo apt-get install dnsutils',
+        'run sudo apt-get install dnsutils',
         'for i in {1..30}; do echo $i; sleep 1; done',
         'for i in {1..30}; do echo $i; sleep 1; done > log.txt &',
-        'ssh user@remote-server',
-        'sudo apt-get install package-name',
-        'passwd',
-        'scp file.txt user@remote-server:/path/to/destination',
-        'mysql -u username -p',
-        'git push origin main'
+        'run ssh root@example.com',
+        'run sudo apt-get install package-name',
+        'run passwd',
+        'run scp file.txt user@remote-server:/path/to/destination',
+        'run mysql -u username -p',
+        'run git push origin main'
     ]
     time_limit = 10
     for command in commands:
         action = CmdRunAction(command=command)
         logger.info(action, extra={'msg_type': 'ACTION'})
         start_time = time.time()
-
         try:
             obs = await runtime.run_action(action)
             end_time = time.time()
             elapsed_time = end_time - start_time
 
-            assert elapsed_time <= time_limit, f"the command '{command}' to take at least 10 seconds"
+            assert elapsed_time <= time_limit, f"the command '{command}' to take less 10 seconds"
             assert False, f"Expected the command '{command}' to timeout, but it completed successfully"
         except pexpect.TIMEOUT:
             end_time = time.time()
@@ -669,6 +668,7 @@ async def test_bash_timeout(box_class):
 
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-
+    await runtime.close()
+    await asyncio.sleep(1)
 
 
