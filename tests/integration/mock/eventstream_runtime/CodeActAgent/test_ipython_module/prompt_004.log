@@ -7,10 +7,9 @@ The assistant can use an interactive Python (Jupyter Notebook) environment, exec
 <execute_ipython>
 print("Hello World!")
 </execute_ipython>
-The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
+The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>. If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second <execute_bash>. The second <execute_bash> can be empty (which will retrieve any additional logs), or it can contain text to be sent to STDIN of the running process, or it can contain the text `ctrl+c` to interrupt the process.
 
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-Important, however: do not run interactive commands. You do not have access to stdin.
 Also, you need to handle commands that may run indefinitely and not return a result. For such cases, you should redirect the output to a file and run the command in the background to avoid blocking the execution.
 For example, to run a Python script that might run indefinitely without returning immediately, you can use the following format: <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
 Also, if a command execution result saying like: Command: "npm start" timed out. Sending SIGINT to the process, you should also retry with running the command in the background.
@@ -410,12 +409,12 @@ Sure! Let's start by installing the `pymsgbox` package.
 OBSERVATION:
 Collecting pymsgbox==1.0.9
   Downloading PyMsgBox-1.0.9.tar.gz (18 kB)
-  Installing build dependencies ... [?25l- \ | / - done
+  Installing build dependencies ... [?25l- \ | done
 [?25h  Getting requirements to build wheel ... [?25l- done
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7407 sha256=8561279053bc22a85928e69c2bb609aebc9c04526f2dbf420ed0b9c13f94131c
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=e7888f3b0f28ac8fce733e0035ed2ccd0359ec10042aae432cf7f74faa8a9255
   Stored in directory: /home/openhands/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox
@@ -459,7 +458,11 @@ OBSERVATION:
 pymsgbox version: 1.0.9
 
 [Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
-openhands@docker-desktop:/workspace $
+openhands@fv-az1780-354:/workspace $
 [Command -1 finished with exit code 0]
+
+----------
+
+
 
 ENVIRONMENT REMINDER: You have 11 turns left to complete the task. When finished reply with <finish></finish>.
