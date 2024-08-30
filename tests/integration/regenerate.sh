@@ -220,7 +220,7 @@ regenerate_with_llm() {
   set +x
 
   mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
-  mv logs/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
+  mv "$PROJECT_ROOT"/logs/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
   kill $HTTP_SERVER_PID || true
 }
