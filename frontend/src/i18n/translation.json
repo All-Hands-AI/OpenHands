@@ -196,7 +196,7 @@
     "es": "Editor de código"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
-    "en": "Browser",
+    "en": "Browser (Experimental)",
     "zh-CN": "浏览器",
     "de": "Browser",
     "ko-KR": "브라우저",
