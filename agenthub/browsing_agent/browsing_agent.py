@@ -207,8 +207,24 @@ class BrowsingAgent(Agent):
         prompt = get_prompt(error_prefix, cur_axtree_txt, prev_action_str)
         messages.append(Message(role='user', content=[TextContent(text=prompt)]))
         logger.debug(prompt)
+
+        vision_format = (
+            not self.llm.config.disable_vision and self.llm.supports_vision()
+        )
         response = self.llm.completion(
-            messages=[message.model_dump() for message in messages],
+            messages=[message.model_dump() for message in messages]
+            if vision_format
+            else [
+                {
+                    'role': message.role,
+                    'content': ''.join(
+                        content.text
+                        for content in message.content
+                        if isinstance(content, TextContent)
+                    ),
+                }
+                for message in messages
+            ],
             temperature=0.0,
             stop=[')```', ')\n```'],
         )

@@ -183,11 +183,13 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-
+        vision_format = (
+            not self.llm.config.disable_vision and self.llm.supports_vision()
+        )
         params = {
             'messages': (
                 [message.model_dump() for message in messages]
-                if self.llm.supports_prompt_caching
+                if vision_format
                 else [
                     {
                         'role': message.role,
