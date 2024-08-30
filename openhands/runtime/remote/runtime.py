@@ -7,7 +7,7 @@ from typing import Any, Type
 from zipfile import ZipFile
 
 import requests
-from requests.exceptions import RequestException, Timeout
+from requests.exceptions import HTTPError, RequestException, Timeout
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -42,6 +42,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 DEFAULT_RETRY_EXCEPTIONS = [
     ssl.SSLCertVerificationError,
     RequestException,
+    HTTPError,
     Timeout,
 ]
 
