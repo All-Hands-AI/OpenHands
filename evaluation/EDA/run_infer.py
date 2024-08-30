@@ -74,7 +74,7 @@ def get_config(
     return config
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -117,13 +117,17 @@ async def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = await create_runtime(config, sid=instance['text'].strip())
+    runtime = create_runtime(config, sid=instance['text'].strip())
 
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+        )
     )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -214,12 +218,10 @@ if __name__ == '__main__':
         eda_dataset.to_pandas(), output_file, args.eval_n_limit
     )
 
-    asyncio.run(
-        run_evaluation(
-            prepared_dataset,
-            metadata,
-            output_file,
-            args.eval_num_workers,
-            process_instance,
-        )
+    run_evaluation(
+        prepared_dataset,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
     )
