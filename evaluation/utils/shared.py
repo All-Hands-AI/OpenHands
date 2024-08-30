@@ -139,13 +139,14 @@ def make_metadata(
     details: dict[str, Any] | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
+    model_path = model_name.replace(':', '_')
     eval_note = f'_N_{eval_note}' if eval_note else ''
 
     eval_output_path = os.path.join(
         eval_output_dir,
         dataset_name,
         agent_class,
-        f'{model_name}_maxiter_{max_iterations}{eval_note}',
+        f'{model_path}_maxiter_{max_iterations}{eval_note}',
     )
 
     pathlib.Path(eval_output_path).mkdir(parents=True, exist_ok=True)
