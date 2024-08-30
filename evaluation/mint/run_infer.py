@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import os
 from typing import Any
@@ -114,7 +115,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(runtime: Runtime):
+def initialize_runtime(runtime: Runtime):
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -125,18 +126,18 @@ async def initialize_runtime(runtime: Runtime):
     # Set instance id
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def process_instance(
+def process_instance(
     instance: Any,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -173,14 +174,16 @@ async def process_instance(
         },
     )
 
-    runtime = await create_runtime(config, sid=instance.instance_id)
-    await initialize_runtime(runtime)
+    runtime = create_runtime(config, sid=instance.instance_id)
+    initialize_runtime(runtime)
 
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=fake_user_response_fn,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=fake_user_response_fn,
+        )
     )
 
     if state is None:
