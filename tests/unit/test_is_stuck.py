@@ -1,5 +1,4 @@
 import logging
-import random
 from unittest.mock import Mock, patch
 
 import pytest
@@ -57,30 +56,29 @@ class TestStuckDetector:
     def _impl_syntax_error_events(
         self, event_stream: EventStream, error_message: str, random_line: bool
     ):
-        for _ in range(4):
+        for i in range(4):
             ipython_action = IPythonRunCellAction(code='print("hello')
             event_stream.add_event(ipython_action, EventSource.AGENT)
-            extra_number = random.randint(88, 222) if random_line else '42'
-            extra_line = '\n' * random.randint(2, 3) if random_line else ''
+            extra_number = (i + 1) * 10 if random_line else '42'
+            extra_line = '\n' * (i + 1) if random_line else ''
             ipython_observation = IPythonRunCellObservation(
                 content=f'  Cell In[1], line {extra_number}\n'
                 'to_replace="""def largest(min_factor, max_factor):\n            ^\n'
                 f'{error_message}{extra_line}' + jupyter_line_1 + jupyter_line_2,
                 code='print("hello',
             )
-            print(ipython_observation.content)
             ipython_observation._cause = ipython_action._id
             event_stream.add_event(ipython_observation, EventSource.USER)
 
     def _impl_unterminated_string_error_events(
         self, event_stream: EventStream, random_line: bool
     ):
-        for _ in range(4):
+        for i in range(4):
             ipython_action = IPythonRunCellAction(code='print("hello')
             event_stream.add_event(ipython_action, EventSource.AGENT)
-            line_number = str(random.randint(1, 10)) if random_line else '1'
+            line_number = (i + 1) * 10 if random_line else '1'
             ipython_observation = IPythonRunCellObservation(
-                content=f'print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
+                content=f'print("  Cell In[1], line {line_number}\nhello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
                 + jupyter_line_1
                 + jupyter_line_2,
                 code='print("hello',
@@ -533,6 +531,60 @@ class TestStuckDetector:
 
         with patch('logging.Logger.warning'):
             assert not stuck_detector.is_stuck()
+
+    def _read_observations(self, file_path):
+        observations = []
+        current_observation = []
+        capturing = False
+
+        with open(file_path, 'r') as file:
+            for line in file:
+                if line.strip() == '**IPythonRunCellObservation**':
+                    capturing = True
+                    current_observation = []
+                elif capturing and line.startswith('[Jupyter Python interpreter:'):
+                    current_observation.append(line.strip())
+                    observations.append('\n'.join(current_observation))
+                    capturing = False
+                elif capturing:
+                    current_observation.append(line.strip())
+
+        return observations
+
+    def create_ipython_run_cell_observation(self, content):
+        return IPythonRunCellObservation(content=content, code='')
+
+    def test_stuck_detector_with_log_file(self, stuck_detector, event_stream):
+        file_path = 'tests/unit/testdata/loops.log'
+        observations = self._read_observations(file_path)
+
+        state = State(inputs={}, max_iterations=50)
+        state.history.set_event_stream(event_stream)
+
+        stuck_count = 0
+        not_stuck_count = 0
+        for i in range(len(observations) - 3):
+            three_observations = observations[i : i + 4]
+            ipython_observations = [
+                self.create_ipython_run_cell_observation(obs)
+                for obs in three_observations
+            ]
+
+            # Add corresponding actions and observations to the event stream
+            for obs in ipython_observations:
+                action = IPythonRunCellAction(code='')
+                event_stream.add_event(action, EventSource.AGENT)
+                obs._cause = action._id
+                event_stream.add_event(obs, EventSource.USER)
+
+            is_stuck = stuck_detector.is_stuck()
+            if is_stuck:
+                stuck_count += 1
+            else:
+                not_stuck_count += 1
+            event_stream.clear()
+        assert stuck_count == 4
+        assert not_stuck_count == 5
 
 
 class TestAgentController:
