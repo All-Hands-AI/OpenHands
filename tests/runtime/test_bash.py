@@ -3,7 +3,9 @@
 import asyncio
 import os
 import tempfile
-
+import asyncio
+import pexpect
+import time
 import pytest
 from conftest import _load_runtime
 
@@ -622,3 +624,51 @@ async def test_git_operation(box_class):
 
     await runtime.close()
     await asyncio.sleep(1)
+
+
+@pytest.mark.asyncio
+async def test_bash_timeout(box_class):
+    runtime = await _load_runtime(
+        temp_dir=None,
+        box_class=box_class,
+        run_as_openhands=True,
+    )
+    commands = [
+        'sudo apt-get install dnsutils',
+        'for i in {1..30}; do echo $i; sleep 1; done',
+        'for i in {1..30}; do echo $i; sleep 1; done > log.txt &',
+        'ssh user@remote-server',
+        'sudo apt-get install package-name',
+        'passwd',
+        'scp file.txt user@remote-server:/path/to/destination',
+        'mysql -u username -p',
+        'git push origin main'
+    ]
+    time_limit = 10
+    for command in commands:
+        action = CmdRunAction(command=command)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        start_time = time.time()
+
+        try:
+            obs = await runtime.run_action(action)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+
+            assert elapsed_time <= time_limit, f"the command '{command}' to take at least 10 seconds"
+            assert False, f"Expected the command '{command}' to timeout, but it completed successfully"
+        except pexpect.TIMEOUT:
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            assert elapsed_time >= time_limit, f"Expected a timeout after at least 10 seconds for '{command}', but it occurred after {elapsed_time:.2f} seconds"
+            partial_output = runtime.shell.before
+            logger.warning(f"Command '{command}' timed out as expected, partial output: {partial_output}", extra={'msg_type': 'TIMEOUT'})
+            obs = CmdOutputObservation(output=partial_output, exit_code=-1)
+            assert isinstance(obs, CmdOutputObservation), f"Expected a CmdOutputObservation for '{command}'"
+            assert obs.exit_code == -1, f"Expected exit code -1 due to timeout for '{command}'"
+
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+
+
+
