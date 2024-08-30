@@ -185,7 +185,21 @@ class CodeActAgent(Agent):
         messages = self._get_messages(state)
 
         params = {
-            'messages': [message.model_dump() for message in messages],
+            'messages': (
+                [message.model_dump() for message in messages]
+                if self.llm.supports_prompt_caching
+                else [
+                    {
+                        'role': message.role,
+                        'content': '\n'.join(
+                            content.text
+                            for content in message.content
+                            if isinstance(content, TextContent)
+                        ),
+                    }
+                    for message in messages
+                ]
+            ),
             'stop': [
                 '</execute_ipython>',
                 '</execute_bash>',
