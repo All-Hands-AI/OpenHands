@@ -69,7 +69,7 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            await self.runtime.close()
+            self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
         self._closed = True
@@ -95,8 +95,6 @@ class AgentSession:
             sid=self.sid,
             plugins=agent.sandbox_plugins,
         )
-        await self.runtime.ainit()
-        logger.info(f'Runtime {runtime_name} initialized.')
 
     async def _create_controller(
         self,
