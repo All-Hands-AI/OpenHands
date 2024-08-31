@@ -270,7 +270,7 @@ for ((i = 0; i < num_of_tests; i++)); do
 
     echo -e "\n============================================================"
     echo -e "======== STEP 1: Running $test_name for $agent"
-    echo -e "============================================================\n"
+    echo -e "============================================================\n\n"
     rm -rf $WORKSPACE_BASE/*
     if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
       cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
@@ -296,15 +296,15 @@ for ((i = 0; i < num_of_tests; i++)); do
       if [ "$FORCE_USE_LLM" = true ]; then
         echo -e "\n============================================================"
         echo -e "======== FORCE_USE_LLM, skipping step 2 & 3"
-        echo -e "============================================================\n"
+        echo -e "============================================================\n\n"
       elif [ ! -d "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name" ]; then
         echo -e "\n============================================================"
         echo -e "======== No existing mock responses for ${TEST_RUNTIME}_runtime/$agent/$test_name, skipping step 2 & 3"
-        echo -e "============================================================\n"
+        echo -e "============================================================\n\n"
       else
         echo -e "\n============================================================"
         echo -e "======== STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost"
-        echo -e "============================================================\n"
+        echo -e "============================================================\n\n"
 
         # Temporarily disable 'exit on error'
         set +e
@@ -312,7 +312,7 @@ for ((i = 0; i < num_of_tests; i++)); do
 
         echo -e "\n============================================================"
         echo -e "======== STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify"
-        echo -e "============================================================\n"
+        echo -e "============================================================\n\n"
         run_test
         TEST_STATUS=$?
         # Re-enable 'exit on error'
@@ -322,13 +322,13 @@ for ((i = 0; i < num_of_tests; i++)); do
       if [[ $TEST_STATUS -ne 0 ]]; then
         echo -e "\n============================================================"
         echo -e "======== STEP 4: $test_name failed, regenerating prompts and responses for $agent WITH money cost"
-        echo -e "============================================================\n"
+        echo -e "============================================================\n\n"
 
         regenerate_with_llm
 
         echo -e "\n============================================================"
         echo -e "======== STEP 5: $test_name prompts and responses regenerated for $agent, rerun test again to verify"
-        echo -e "============================================================\n"
+        echo -e "============================================================\n\n"
         # Temporarily disable 'exit on error'
         set +e
         run_test
@@ -351,19 +351,19 @@ for ((i = 0; i < num_of_tests; i++)); do
           exit 1
         else
           echo -e "\n\n============================================================"
-          echo -e "========$test_name for $agent RERUN PASSED========"
+          echo -e "========$test_name for $agent RERUN PASSED"
           echo -e "============================================================\n\n"
           sleep 1
         fi
       else
           echo -e "\n\n============================================================"
-          echo -e "========$test_name for $agent RERUN PASSED========"
+          echo -e "========$test_name for $agent RERUN PASSED"
           echo -e "============================================================\n\n"
           sleep 1
       fi
     else
       echo -e "\n\n============================================================"
-      echo -e "\n========== $test_name for $agent PASSED =========="
+      echo -e "\n========== $test_name for $agent PASSED"
       echo -e "\n============================================================\n\n"
       sleep 1
     fi
