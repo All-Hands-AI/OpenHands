@@ -4,7 +4,6 @@ from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -201,8 +200,7 @@ class CodeActAgent(Agent):
             }
         try:
             response = self.llm.completion(**params)
-        except Exception as e:
-            logger.error(f'LLM completion failed: {e}')
+        except Exception:
             return AgentFinishAction(
                 thought='Agent encountered an error. Please try again.'
             )
