@@ -79,7 +79,7 @@ function ActionButton({
 }
 
 function AgentControlBar() {
-  const { data, triggerAgentStateChange, clearEventLog } = useSession();
+  const { data, triggerAgentStateChange } = useSession();
   const [desiredState, setDesiredState] = React.useState<AgentState>("init");
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -93,9 +93,7 @@ function AgentControlBar() {
       return;
     }
 
-    if (action === "stopped") {
-      clearEventLog();
-    } else {
+    if (action !== "stopped") {
       setIsLoading(true);
     }
 
@@ -105,9 +103,6 @@ function AgentControlBar() {
 
   useEffect(() => {
     if (data.agentState === desiredState) {
-      if (data.agentState === "stopped") {
-        clearEventLog();
-      }
       setIsLoading(false);
     } else if (data.agentState === "running") {
       setDesiredState("running");

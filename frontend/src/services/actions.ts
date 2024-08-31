@@ -10,40 +10,10 @@ import { ActionMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 
 const messageActions = {
-  [ActionType.BROWSE]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.BROWSE_INTERACTIVE]: () => {
-    // now handled by the Session context
-  },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));
     store.dispatch(setCode(content));
-  },
-  [ActionType.MESSAGE]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.FINISH]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.REJECT]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.DELEGATE]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.RUN]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.RUN_IPYTHON]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.ADD_TASK]: () => {
-    // now handled by the Session context
-  },
-  [ActionType.MODIFY_TASK]: () => {
-    // now handled by the Session context
   },
 };
 

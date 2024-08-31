@@ -9,7 +9,6 @@ import {
 } from "#/services/options";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import Session from "#/services/session";
 import AgentState from "../../../types/AgentState";
 import {
   Settings,
@@ -134,7 +133,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
     reinitializeSocket();
-    // Session.startNewSession();
 
     const sensitiveKeys = ["LLM_API_KEY"];
 

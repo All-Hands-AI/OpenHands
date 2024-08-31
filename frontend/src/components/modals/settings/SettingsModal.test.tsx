@@ -11,14 +11,11 @@ import {
   saveSettings,
   getDefaultSettings,
 } from "#/services/settings";
-import Session from "#/services/session";
 import { fetchAgents, fetchModels } from "#/services/options";
 import SettingsModal from "./SettingsModal";
 
 const toastSpy = vi.spyOn(toast, "settingsChanged");
 const i18nSpy = vi.spyOn(i18next, "changeLanguage");
-const startNewSessionSpy = vi.spyOn(Session, "startNewSession");
-vi.spyOn(Session, "isConnected").mockImplementation(() => true);
 
 vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
@@ -177,7 +174,8 @@ describe("SettingsModal", () => {
 
       await user.click(saveButton);
 
-      expect(startNewSessionSpy).toHaveBeenCalled();
+      // FIXME: Session spy has been removed
+      expect(false).toHaveBeenCalled();
     });
 
     it("should display a toast for every change", async () => {

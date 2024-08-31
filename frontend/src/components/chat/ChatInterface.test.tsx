@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import ChatInterface from "./ChatInterface";
-import Session from "#/services/session";
 import ActionType from "#/types/ActionType";
 
 // This is for the scrollview ref in Chat.tsx
@@ -12,17 +11,10 @@ import ActionType from "#/types/ActionType";
 HTMLElement.prototype.scrollTo = vi.fn().mockImplementation(() => {});
 
 describe("ChatInterface", () => {
-  const sessionSendSpy = vi.spyOn(Session, "send");
-  vi.spyOn(Session, "isConnected").mockReturnValue(true);
-
   const userMessageEvent = {
     action: ActionType.MESSAGE,
     args: { content: "my message", images_urls: [] },
   };
-
-  afterEach(() => {
-    sessionSendSpy.mockClear();
-  });
 
   it("should render empty message list and input", () => {
     renderWithProviders(<ChatInterface />);
@@ -57,9 +49,8 @@ describe("ChatInterface", () => {
     await user.type(input, "my message");
     await user.keyboard("{Enter}");
 
-    expect(sessionSendSpy).toHaveBeenCalledWith(
-      JSON.stringify(userMessageEvent),
-    );
+    // FIXME: Session has been removed
+    expect(false).toHaveBeenCalledWith(JSON.stringify(userMessageEvent));
   });
 
   it("should send the user message as an event to the Session when the agent state is AWAITING_USER_INPUT", async () => {
@@ -70,9 +61,8 @@ describe("ChatInterface", () => {
     await user.type(input, "my message");
     await user.keyboard("{Enter}");
 
-    expect(sessionSendSpy).toHaveBeenCalledWith(
-      JSON.stringify(userMessageEvent),
-    );
+    // FIXME: Session has been removed
+    expect(false).toHaveBeenCalledWith(JSON.stringify(userMessageEvent));
   });
 
   it("should disable the user input if agent is not initialized", async () => {
@@ -87,7 +77,8 @@ describe("ChatInterface", () => {
     );
 
     expect(submitButton).toBeDisabled();
-    expect(sessionSendSpy).not.toHaveBeenCalled();
+    // FIXME: Session has been removed
+    expect(false).not.toHaveBeenCalled();
   });
 
   it.todo("test scroll-related behaviour");

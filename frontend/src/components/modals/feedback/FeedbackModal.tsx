@@ -7,8 +7,8 @@ import BaseModal from "../base-modal/BaseModal";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
 import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
-import Session from "#/services/session";
 import { removeApiKey } from "#/utils/utils";
+import { useSession } from "#/context/session";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format
@@ -33,6 +33,7 @@ function FeedbackModal({
   onSendFeedback,
 }: FeedbackModalProps) {
   const { t } = useTranslation();
+  const { eventLog } = useSession();
 
   const [email, setEmail] = React.useState("");
   const [permissions, setPermissions] = React.useState<"public" | "private">(
@@ -95,7 +96,7 @@ function FeedbackModal({
       email,
       permissions,
       token: getToken() || "",
-      trajectory: removeApiKey(Session._history),
+      trajectory: removeApiKey(eventLog.map((msg) => JSON.parse(msg))),
     };
 
     try {

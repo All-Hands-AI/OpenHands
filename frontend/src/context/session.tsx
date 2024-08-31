@@ -44,7 +44,6 @@ interface SessionContextType {
   sendUserMessage: (message: string, images_urls: string[]) => void;
   sendTerminalCommand: (command: string) => void;
   triggerAgentStateChange: (agent_state: AgentState) => void;
-  clearEventLog: () => void;
   eventLog: string[];
   data: ParsedData;
 }
@@ -196,12 +195,16 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * Send a change in agent state to the assistant
+   * Send a change in agent state to the assistant. If the agent state is "stopped", a new session is started.
    * @param agent_state The new agent state
    */
   const triggerAgentStateChange = (agent_state: AgentState) => {
     const event = generateAgentStateChangeEvent(agent_state);
     sendMessageToSocket(event);
+    if (agent_state === "stopped") {
+      clearEventLog();
+      initializeWebSocket();
+    }
   };
 
   const value = React.useMemo(
@@ -210,7 +213,6 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
-      clearEventLog,
       eventLog,
       data,
     }),
@@ -219,7 +221,6 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
-      clearEventLog,
       eventLog,
       data,
     ],

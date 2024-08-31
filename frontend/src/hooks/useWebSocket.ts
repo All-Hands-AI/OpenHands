@@ -29,7 +29,7 @@ export const useWebSocket = (host: string) => {
         setToken(message.token);
       }
     };
-  }, []);
+  }, [socket]);
 
   React.useEffect(() => {
     initializeWebSocket();
@@ -39,7 +39,7 @@ export const useWebSocket = (host: string) => {
         socket.close();
       }
     };
-  }, [initializeWebSocket]);
+  }, []);
 
   return { socket, initializeWebSocket };
 };
