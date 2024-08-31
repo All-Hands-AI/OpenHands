@@ -276,7 +276,7 @@ for ((i = 0; i < num_of_tests; i++)); do
       cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
     fi
 
-    if [ "$TEST_ONLY" = true ]; then
+    if [ "$TEST_ONLY" ]; then
       set -e
     else
       # Temporarily disable 'exit on error'
@@ -284,7 +284,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     TEST_STATUS=1
-    if [ -z "$FORCE_REGENERATE" = true ]; then
+    if [ -z "$FORCE_REGENERATE" ]; then
       run_test
       TEST_STATUS=$?
     fi
@@ -293,7 +293,7 @@ for ((i = 0; i < num_of_tests; i++)); do
 
     if [[ $TEST_STATUS -ne 0 ]]; then
 
-      if [ "$FORCE_USE_LLM" = true ]; then
+      if [ "$FORCE_USE_LLM" ]; then
         echo -e "\n============================================================"
         echo -e "======== FORCE_USE_LLM, skipping step 2 & 3"
         echo -e "============================================================\n\n"
