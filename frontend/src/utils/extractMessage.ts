@@ -1,33 +1,58 @@
+import { OpenHandsParsedEvent } from "#/types/core";
+import {
+  UserMessageAction,
+  AssistantMessageAction,
+  IPythonAction,
+  FinishAction,
+  CommandAction,
+  DelegateAction,
+  BrowseAction,
+  BrowseInteractiveAction,
+  RejectAction,
+} from "#/types/core/actions";
+import { DelegateObservation } from "#/types/core/observations";
+
 const isMessage = (
-  message: object,
-): message is UserMessage | AssistantMessage =>
+  message: OpenHandsParsedEvent,
+): message is UserMessageAction | AssistantMessageAction =>
   "action" in message && message.action === "message";
 
-const isIPythonAction = (message: object): message is IPythonAction =>
+const isIPythonAction = (
+  message: OpenHandsParsedEvent,
+): message is IPythonAction =>
   "action" in message && message.action === "run_ipython";
 
-const isCommandAction = (message: object): message is CommandAction =>
-  "action" in message && message.action === "run";
+const isCommandAction = (
+  message: OpenHandsParsedEvent,
+): message is CommandAction => "action" in message && message.action === "run";
 
-const isFinishAction = (message: object): message is FinishAction =>
+const isFinishAction = (
+  message: OpenHandsParsedEvent,
+): message is FinishAction =>
   "action" in message && message.action === "finish";
 
-const isDelegateAction = (message: object): message is DelegateAction =>
+const isDelegateAction = (
+  message: OpenHandsParsedEvent,
+): message is DelegateAction =>
   "action" in message && message.action === "delegate";
 
-const isBrowseAction = (message: object): message is BrowseAction =>
+const isBrowseAction = (
+  message: OpenHandsParsedEvent,
+): message is BrowseAction =>
   "action" in message && message.action === "browse";
 
 const isBrowseInteractiveAction = (
-  message: object,
+  message: OpenHandsParsedEvent,
 ): message is BrowseInteractiveAction =>
   "action" in message && message.action === "browse_interactive";
 
-const isRejectAction = (message: object): message is RejectAction =>
+const isRejectAction = (
+  message: OpenHandsParsedEvent,
+): message is RejectAction =>
   "action" in message && message.action === "reject";
 
 const isDelegateObservation = (
-  message: object,
+  message: OpenHandsParsedEvent,
 ): message is DelegateObservation =>
   "observation" in message && message.observation === "delegate";
 
@@ -38,7 +63,7 @@ export interface ParsedMessage {
 }
 
 export const extractMessage = (
-  message: TrajectoryItem,
+  message: OpenHandsParsedEvent,
 ): ParsedMessage | null => {
   if (isMessage(message)) {
     return {

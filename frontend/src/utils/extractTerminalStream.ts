@@ -1,7 +1,14 @@
-const isCommandAction = (message: object): message is CommandAction =>
-  "action" in message && message.action === "run";
+import { OpenHandsParsedEvent } from "#/types/core";
+import { CommandAction } from "#/types/core/actions";
+import { CommandObservation } from "#/types/core/observations";
 
-const isCommandObservation = (message: object): message is CommandObservation =>
+const isCommandAction = (
+  message: OpenHandsParsedEvent,
+): message is CommandAction => "action" in message && message.action === "run";
+
+const isCommandObservation = (
+  message: OpenHandsParsedEvent,
+): message is CommandObservation =>
   "observation" in message && message.observation === "run";
 
 export interface TerminalStream {
@@ -10,7 +17,7 @@ export interface TerminalStream {
 }
 
 export const extractTerminalStream = (
-  message: TrajectoryItem,
+  message: OpenHandsParsedEvent,
 ): TerminalStream | null => {
   if (isCommandAction(message)) {
     return {

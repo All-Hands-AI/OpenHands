@@ -1,7 +1,15 @@
-const isIPythonAction = (message: object): message is IPythonAction =>
+import { OpenHandsParsedEvent } from "#/types/core";
+import { IPythonAction } from "#/types/core/actions";
+import { IPythonObservation } from "#/types/core/observations";
+
+const isIPythonAction = (
+  message: OpenHandsParsedEvent,
+): message is IPythonAction =>
   "action" in message && message.action === "run_ipython";
 
-const isIPythonObservation = (message: object): message is IPythonObservation =>
+const isIPythonObservation = (
+  message: OpenHandsParsedEvent,
+): message is IPythonObservation =>
   "observation" in message && message.observation === "run_ipython";
 
 export interface JupyterCell {
@@ -10,7 +18,7 @@ export interface JupyterCell {
 }
 
 export const extractJupyterCell = (
-  message: TrajectoryItem,
+  message: OpenHandsParsedEvent,
 ): JupyterCell | null => {
   if (isIPythonAction(message)) {
     return {

@@ -1,5 +1,11 @@
 import { getSettings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
+import { OpenHandsParsedEvent } from "#/types/core";
+import { AddTaskAction } from "#/types/core/actions";
+import {
+  AgentStateChangeObservation,
+  BrowseObservation,
+} from "#/types/core/observations";
 
 /**
  * Generate the agent init event given the current settings
@@ -46,14 +52,16 @@ export const generateAgentStateChangeEvent = (agent_state: AgentState) => {
 /** TYPE UTILS */
 
 export const isAgentStateChangeEvent = (
-  event: object,
-): event is AgentStateChange =>
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
   "observation" in event && event.observation === "agent_state_changed";
 
 export const isBrowseObservation = (
-  message: object,
+  message: OpenHandsParsedEvent,
 ): message is BrowseObservation =>
   "observation" in message && message.observation === "browse";
 
-export const isAddTaskAction = (message: object): message is AddTaskAction =>
+export const isAddTaskAction = (
+  message: OpenHandsParsedEvent,
+): message is AddTaskAction =>
   "action" in message && message.action === "add_task";

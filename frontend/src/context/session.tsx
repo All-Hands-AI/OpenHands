@@ -16,6 +16,9 @@ import {
 } from "#/utils/extractTerminalStream";
 import { extractJupyterCell, JupyterCell } from "#/utils/extractJupyterCells";
 import { useWebSocket } from "#/hooks/useWebSocket";
+import { OpenHandsParsedEvent } from "#/types/core";
+import { AddTaskAction } from "#/types/core/actions";
+import { BrowseObservation } from "#/types/core/observations";
 
 const HOST = "localhost:3000";
 
@@ -97,7 +100,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
 
       socket.onmessage = (event) => {
         pushToEventLog(event.data);
-        const message = JSON.parse(event.data) as TrajectoryItem;
+        const message = JSON.parse(event.data) as OpenHandsParsedEvent;
 
         /** HANDLE EVENT DATA */
 
