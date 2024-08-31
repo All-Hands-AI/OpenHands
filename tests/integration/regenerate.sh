@@ -24,16 +24,16 @@ get_script_dir() {
 
 TMP_FILE="${TMP_FILE:-tmp.log}"
 
-if [ -z $WORKSPACE_MOUNT_PATH ]; then
+if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
   WORKSPACE_MOUNT_PATH=$(pwd)
 fi
-if [ -z $WORKSPACE_BASE ]; then
+if [ -z "$WORKSPACE_BASE" ]; then
   WORKSPACE_BASE=$(pwd)
 fi
-if [ -z $DEBUG ]; then
+if [ -z "$DEBUG" ]; then
   DEBUG=false
 fi
-if [ -z $LOG_TO_FILE=true ]; then
+if [ -z "$LOG_TO_FILE" ]; then
   LOG_TO_FILE=true
 fi
 
@@ -119,15 +119,15 @@ run_test() {
 
   env SCRIPT_DIR="$SCRIPT_DIR" \
     PROJECT_ROOT="$PROJECT_ROOT" \
-    WORKSPACE_BASE=$WORKSPACE_BASE \
-    WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-    MAX_ITERATIONS=$MAX_ITERATIONS \
+    WORKSPACE_BASE="$WORKSPACE_BASE" \
+    WORKSPACE_MOUNT_PATH="$WORKSPACE_MOUNT_PATH" \
+    MAX_ITERATIONS="$MAX_ITERATIONS" \
     DEFAULT_AGENT=$agent \
     TEST_RUNTIME="$TEST_RUNTIME" \
     DEBUG=$DEBUG \
     LOG_TO_FILE=$LOG_TO_FILE \
     SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
-    $pytest_cmd 2>&1 | tee $TMP_FILE
+    $pytest_cmd 2>&1 | tee "$TMP_FILE"
 
   # Capture the exit code of pytest
   pytest_exit_code=${PIPESTATUS[0]}
@@ -191,8 +191,8 @@ regenerate_without_llm() {
   set -x
   env SCRIPT_DIR="$SCRIPT_DIR" \
       PROJECT_ROOT="$PROJECT_ROOT" \
-      WORKSPACE_BASE=$WORKSPACE_BASE \
-      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+      WORKSPACE_BASE="$WORKSPACE_BASE" \
+      WORKSPACE_MOUNT_PATH="$WORKSPACE_MOUNT_PATH" \
       MAX_ITERATIONS=$MAX_ITERATIONS \
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
@@ -200,7 +200,7 @@ regenerate_without_llm() {
       DEBUG=$DEBUG \
       LOG_TO_FILE=$LOG_TO_FILE \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
-      poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
+      poetry run pytest -s "$SCRIPT_DIR/test_agent.py::$test_name"
   set +x
 }
 
@@ -221,8 +221,8 @@ regenerate_with_llm() {
   echo -e "/exit\n" | \
     env SCRIPT_DIR="$SCRIPT_DIR" \
       PROJECT_ROOT="$PROJECT_ROOT" \
-      WORKSPACE_BASE=$WORKSPACE_BASE \
-      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+      WORKSPACE_BASE="$WORKSPACE_BASE" \
+      WORKSPACE_MOUNT_PATH="$WORKSPACE_MOUNT_PATH" \
       DEFAULT_AGENT=$agent \
       RUNTIME="$TEST_RUNTIME" \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
@@ -284,7 +284,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     TEST_STATUS=1
-    if [ -z $FORCE_REGENERATE ]; then
+    if [ -z "$FORCE_REGENERATE" = true ]; then
       run_test
       TEST_STATUS=$?
     fi
@@ -312,7 +312,7 @@ for ((i = 0; i < num_of_tests; i++)); do
 
         echo -e "\n============================================================"
         echo -e "======== STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify"
-        echo -e "============================================================\n\n"
+        echo -e "============================================================\n\n\n"
         run_test
         TEST_STATUS=$?
         # Re-enable 'exit on error'
@@ -322,13 +322,13 @@ for ((i = 0; i < num_of_tests; i++)); do
       if [[ $TEST_STATUS -ne 0 ]]; then
         echo -e "\n============================================================"
         echo -e "======== STEP 4: $test_name failed, regenerating prompts and responses for $agent WITH money cost"
-        echo -e "============================================================\n\n"
+        echo -e "============================================================\n\n\n"
 
         regenerate_with_llm
 
         echo -e "\n============================================================"
         echo -e "======== STEP 5: $test_name prompts and responses regenerated for $agent, rerun test again to verify"
-        echo -e "============================================================\n\n"
+        echo -e "============================================================\n\n\n"
         # Temporarily disable 'exit on error'
         set +e
         run_test
@@ -352,19 +352,19 @@ for ((i = 0; i < num_of_tests; i++)); do
         else
           echo -e "\n\n============================================================"
           echo -e "========$test_name for $agent RERUN PASSED"
-          echo -e "============================================================\n\n"
+          echo -e "============================================================\n\n\n"
           sleep 1
         fi
       else
           echo -e "\n\n============================================================"
           echo -e "========$test_name for $agent RERUN PASSED"
-          echo -e "============================================================\n\n"
+          echo -e "============================================================\n\n\n"
           sleep 1
       fi
     else
       echo -e "\n\n============================================================"
       echo -e "\n========== $test_name for $agent PASSED"
-      echo -e "\n============================================================\n\n"
+      echo -e "\n============================================================\n\n\n"
       sleep 1
     fi
   done
