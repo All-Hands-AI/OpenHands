@@ -90,7 +90,7 @@ function App(): JSX.Element {
     if (!settingsAreUpToDate()) {
       onSettingsModalOpen();
     } else if (getToken()) {
-      // onLoadPreviousSessionModalOpen();
+      onLoadPreviousSessionModalOpen();
     } else {
       // Session.startNewSession();
     }

@@ -7,29 +7,35 @@ export const useWebSocket = (host: string) => {
   /**
    * Initialize the WebSocket connection. Close the existing connection if it exists.
    */
-  const initializeWebSocket = React.useCallback(() => {
-    if (socket) {
-      socket.close();
-      clearToken();
-      setSocket(null);
-    }
-
-    const url = new URL(`ws://${host}/ws`);
-
-    const token = getToken();
-    if (token) url.searchParams.set("token", token);
-
-    const websocket = new WebSocket(url.toString());
-    setSocket(websocket);
-
-    websocket.onmessage = (event) => {
-      // set token if it is received from the server
-      const message = JSON.parse(event.data);
-      if (message.status === "ok" && message.token) {
-        setToken(message.token);
+  const initializeWebSocket = React.useCallback(
+    (reset_token = false) => {
+      if (reset_token) clearToken();
+      if (socket) {
+        socket.close();
+        setSocket(null);
       }
-    };
-  }, [socket]);
+
+      const url = new URL(`ws://${host}/ws`);
+
+      const token = getToken();
+      if (token) url.searchParams.set("token", token);
+
+      const websocket = new WebSocket(url.toString());
+      setSocket(websocket);
+
+      websocket.onmessage = (event) => {
+        // set token if it is received from the server
+        const message = JSON.parse(event.data);
+        if (message.status === "ok" && message.token) {
+          setToken(message.token);
+        } else if (message.error_code === 401) {
+          // invalid token
+          clearToken();
+        }
+      };
+    },
+    [socket],
+  );
 
   React.useEffect(() => {
     initializeWebSocket();

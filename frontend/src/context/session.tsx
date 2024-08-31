@@ -39,8 +39,12 @@ const INITIAL_PARSED_DATA_STATE: ParsedData = {
   agentState: "loading",
 };
 
+type ReinitializeSessionConfig = {
+  resetToken: boolean;
+};
+
 interface SessionContextType {
-  reinitializeSocket: () => void;
+  reinitializeSession: (config: ReinitializeSessionConfig) => void;
   sendUserMessage: (message: string, images_urls: string[]) => void;
   sendTerminalCommand: (command: string) => void;
   triggerAgentStateChange: (agent_state: AgentState) => void;
@@ -79,8 +83,10 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     socket?.send(event);
   };
 
-  const reinitializeSocket = () => {
-    initializeWebSocket();
+  const reinitializeSession = ({
+    resetToken = true,
+  }: ReinitializeSessionConfig) => {
+    initializeWebSocket(resetToken);
   };
 
   React.useEffect(() => {
@@ -203,13 +209,13 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
     sendMessageToSocket(event);
     if (agent_state === "stopped") {
       clearEventLog();
-      initializeWebSocket();
+      reinitializeSession({ resetToken: true });
     }
   };
 
   const value = React.useMemo(
     () => ({
-      reinitializeSocket,
+      reinitializeSession,
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
@@ -217,7 +223,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       data,
     }),
     [
-      reinitializeSocket,
+      reinitializeSession,
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
