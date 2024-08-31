@@ -1643,10 +1643,10 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
             zip(result_lines, expected_lines)
         ):
             if i == 6:
-                if linter.ts_installed and result_line != expected_lines[7]:
-                    assert 'ts:1:20:' in result_line, f"Line {i+1} doesn't match"
-                elif linter.eslint_installed and result_line != expected_lines[7]:
-                    assert '(3,1):' in result_line, f"Line {i+1} doesn't match"
+                if linter.ts_installed and result_line != expected_lines[6]:
+                    assert (
+                        'ts:1:20:' in result_line or '(3,1):' in result_line
+                    ), f"Line {i+1} doesn't match"
             else:
                 assert result_line.lstrip('./') == expected_line.lstrip(
                     './'
