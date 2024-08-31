@@ -12,6 +12,7 @@ from threading import Thread
 import pytest
 from litellm import completion
 
+from openhands.core.message import Message
 from openhands.llm.llm import message_separator
 
 script_dir = os.environ.get('SCRIPT_DIR')
@@ -184,12 +185,11 @@ def mock_completion(*args, test_name, **kwargs):
     global cur_id
     messages = kwargs['messages']
     message_str = ''
-    for message in messages:
-        for m in message['content']:
-            if hasattr(m, 'type') and m['type'] == 'text':
-                message_str += message_separator + m['text']
-            else:
-                message_str += message_separator + str(m)
+    # print(f'\n\n{messages}\n\n')
+    plain_messages = Message.format_messages(messages, with_images=False)
+    message_str = message_separator.join(msg['content'] for msg in plain_messages)
+    # print(f'\n\n{message_str}\n\n')
+
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':

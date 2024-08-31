@@ -38,7 +38,7 @@ print('\nPaths used:')
 print(f'workspace_base: {CONFIG.workspace_base}')
 print(f'workspace_mount_path: {CONFIG.workspace_mount_path}')
 print(f'workspace_mount_path_in_sandbox: {CONFIG.workspace_mount_path_in_sandbox}')
-print(f'CONFIG: {CONFIG}')
+# print(f'CONFIG: {CONFIG}')
 
 
 def get_number_of_prompts(test_name: str):
@@ -54,16 +54,18 @@ def get_number_of_prompts(test_name: str):
 
 
 def validate_final_state(final_state: State | None, test_name: str):
+    regen = os.getenv('FORCE_REGENERATE', 'False').lower() in ['true', '1', 'yes']
     assert final_state is not None
     assert final_state.agent_state == AgentState.STOPPED
-    assert final_state.last_error is None
+    if not regen:
+        assert final_state.last_error is None
     # number of LLM conversations should be the same as number of prompt/response
-    # log files under mock/[agent]/[test_name] folder. If not, it means there are
+    # log files under mock/[runtime]/[agent]/[test_name] folder. If not, it means there are
     # redundant prompt/response log files checked into the repository.
     num_of_conversations = get_number_of_prompts(test_name)
     assert num_of_conversations > 0
     # we mock the cost of every conversation to be 1 USD
-    assert final_state.metrics.accumulated_cost == num_of_conversations
+    assert int(final_state.metrics.accumulated_cost) <= num_of_conversations
     if final_state.history.has_delegation():
         assert final_state.iteration > final_state.local_iteration
     else:

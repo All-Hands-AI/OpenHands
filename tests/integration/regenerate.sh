@@ -30,9 +30,16 @@ fi
 if [ -z $WORKSPACE_BASE ]; then
   WORKSPACE_BASE=$(pwd)
 fi
+if [ -z $DEBUG ]; then
+  DEBUG=false
+fi
+if [ -z $LOG_TO_FILE=true ]; then
+  LOG_TO_FILE=true
+fi
 
 export SCRIPT_DIR=$(get_script_dir)
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
+export LOG_DIR=$PROJECT_ROOT/logs
 
 WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
 mkdir -p $WORKSPACE_BASE
@@ -47,8 +54,11 @@ WORKSPACE_MOUNT_PATH=$(realpath $WORKSPACE_MOUNT_PATH)
 echo "Current working directory: $(pwd)"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
+echo "LOG_DIR: $LOG_DIR"
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
+echo "DEBUG: $DEBUG"
+echo "LOG_TO_FILE: $LOG_TO_FILE"
 
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
@@ -114,6 +124,8 @@ run_test() {
     MAX_ITERATIONS=$MAX_ITERATIONS \
     DEFAULT_AGENT=$agent \
     TEST_RUNTIME="$TEST_RUNTIME" \
+    DEBUG=$DEBUG \
+    LOG_TO_FILE=$LOG_TO_FILE \
     SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
     $pytest_cmd 2>&1 | tee $TMP_FILE
 
@@ -185,6 +197,8 @@ regenerate_without_llm() {
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
       TEST_RUNTIME="$TEST_RUNTIME" \
+      DEBUG=$DEBUG \
+      LOG_TO_FILE=$LOG_TO_FILE \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s $SCRIPT_DIR/test_agent.py::$test_name
   set +x
@@ -207,12 +221,13 @@ regenerate_with_llm() {
   echo -e "/exit\n" | \
     env SCRIPT_DIR="$SCRIPT_DIR" \
       PROJECT_ROOT="$PROJECT_ROOT" \
-      DEBUG=true \
       WORKSPACE_BASE=$WORKSPACE_BASE \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
       DEFAULT_AGENT=$agent \
       RUNTIME="$TEST_RUNTIME" \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
+      DEBUG=$DEBUG \
+      LOG_TO_FILE=$LOG_TO_FILE \
       poetry run python "$PROJECT_ROOT/openhands/core/main.py" \
       -i $MAX_ITERATIONS \
       -t "$task Do not ask me for confirmation at any point." \
@@ -253,7 +268,9 @@ for ((i = 0; i < num_of_tests; i++)); do
       continue
     fi
 
-    echo -e "\n\n\n\n========STEP 1: Running $test_name for $agent========\n\n\n\n"
+    echo -e "\n============================================================"
+    echo -e "======== STEP 1: Running $test_name for $agent"
+    echo -e "============================================================\n"
     rm -rf $WORKSPACE_BASE/*
     if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
       cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
@@ -277,17 +294,25 @@ for ((i = 0; i < num_of_tests; i++)); do
     if [[ $TEST_STATUS -ne 0 ]]; then
 
       if [ "$FORCE_USE_LLM" = true ]; then
-        echo -e "\n\n\n\n========FORCE_USE_LLM, skipping step 2 & 3========\n\n\n\n"
+        echo -e "\n============================================================"
+        echo -e "======== FORCE_USE_LLM, skipping step 2 & 3"
+        echo -e "============================================================\n"
       elif [ ! -d "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name" ]; then
-        echo -e "\n\n\n\n========No existing mock responses for ${TEST_RUNTIME}_runtime/$agent/$test_name, skipping step 2 & 3========\n\n\n\n"
+        echo -e "\n============================================================"
+        echo -e "======== No existing mock responses for ${TEST_RUNTIME}_runtime/$agent/$test_name, skipping step 2 & 3"
+        echo -e "============================================================\n"
       else
-        echo -e "\n\n\n\n========STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost========\n\n\n\n"
+        echo -e "\n============================================================"
+        echo -e "======== STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost"
+        echo -e "============================================================\n"
 
         # Temporarily disable 'exit on error'
         set +e
         regenerate_without_llm
 
-        echo -e "\n\n\n\n========STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify========\n\n\n\n"
+        echo -e "\n============================================================"
+        echo -e "======== STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify"
+        echo -e "============================================================\n"
         run_test
         TEST_STATUS=$?
         # Re-enable 'exit on error'
@@ -295,11 +320,15 @@ for ((i = 0; i < num_of_tests; i++)); do
       fi
 
       if [[ $TEST_STATUS -ne 0 ]]; then
-        echo -e "\n\n\n\n========STEP 4: $test_name failed, regenerating prompts and responses for $agent WITH money cost========\n\n\n\n"
+        echo -e "\n============================================================"
+        echo -e "======== STEP 4: $test_name failed, regenerating prompts and responses for $agent WITH money cost"
+        echo -e "============================================================\n"
 
         regenerate_with_llm
 
-        echo -e "\n\n\n\n========STEP 5: $test_name prompts and responses regenerated for $agent, rerun test again to verify========\n\n\n\n"
+        echo -e "\n============================================================"
+        echo -e "======== STEP 5: $test_name prompts and responses regenerated for $agent, rerun test again to verify"
+        echo -e "============================================================\n"
         # Temporarily disable 'exit on error'
         set +e
         run_test
@@ -308,7 +337,9 @@ for ((i = 0; i < num_of_tests; i++)); do
         set -e
 
         if [[ $TEST_STATUS -ne 0 ]]; then
-          echo -e "\n\n\n\n========$test_name for $agent RERUN FAILED========\n\n\n\n"
+          echo -e "\n\n============================================================"
+          echo -e "========== $test_name for $agent RERUN FAILED"
+          echo -e "============================================================"
           echo -e "There are multiple possibilities:"
           echo -e "  1. The agent is unable to finish the task within $MAX_ITERATIONS steps."
           echo -e "  2. The agent thinks itself has finished the task, but fails the validation in the test code."
@@ -316,17 +347,24 @@ for ((i = 0; i < num_of_tests; i++)); do
           echo -e "  4. There is a bug in this script, or in OpenHands code."
           echo -e "NOTE: Some of the above problems could sometimes be fixed by a retry (with a more powerful LLM)."
           echo -e "      You could also consider improving the agent, increasing MAX_ITERATIONS, or skipping this test for this agent."
+          echo -e "============================================================\n\n"
           exit 1
         else
-          echo -e "\n\n\n\n========$test_name for $agent RERUN PASSED========\n\n\n\n"
+          echo -e "\n\n============================================================"
+          echo -e "========$test_name for $agent RERUN PASSED========"
+          echo -e "============================================================\n\n"
           sleep 1
         fi
       else
-          echo -e "\n\n\n\n========$test_name for $agent RERUN PASSED========\n\n\n\n"
+          echo -e "\n\n============================================================"
+          echo -e "========$test_name for $agent RERUN PASSED========"
+          echo -e "============================================================\n\n"
           sleep 1
       fi
     else
-      echo -e "\n\n\n\n========$test_name for $agent PASSED========\n\n\n\n"
+      echo -e "\n\n============================================================"
+      echo -e "\n========== $test_name for $agent PASSED =========="
+      echo -e "\n============================================================\n\n"
       sleep 1
     fi
   done

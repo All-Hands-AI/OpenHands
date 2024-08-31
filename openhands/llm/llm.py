@@ -30,7 +30,7 @@ from tenacity import (
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message
 from openhands.core.metrics import Metrics
 
 __all__ = ['LLM']
@@ -574,21 +574,4 @@ class LLM:
     def format_messages_for_llm(
         self, messages: Union[Message, list[Message]]
     ) -> list[dict]:
-        if isinstance(messages, Message):
-            messages = [messages]
-
-        return (
-            [message.model_dump() for message in messages]
-            if self.vision_is_active()
-            else [
-                {
-                    'role': message.role,
-                    'content': ''.join(
-                        content.text
-                        for content in message.content
-                        if isinstance(content, TextContent)
-                    ),
-                }
-                for message in messages
-            ]
-        )
+        return Message.format_messages(messages, self.vision_is_active())

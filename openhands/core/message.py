@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 from pydantic import BaseModel, Field, model_serializer
 from typing_extensions import Literal
@@ -66,3 +67,45 @@ class Message(BaseModel):
                 content.extend(item.model_dump())
 
         return {'role': self.role, 'content': content}
+
+    @staticmethod
+    def format_messages(
+        messages: Union['Message', 'list[Message]'], with_images: bool
+    ) -> list[dict]:
+        if not isinstance(messages, list):
+            messages = [messages]
+
+        if with_images:
+            return [message.model_dump() for message in messages]
+
+        formatted_messages = []
+        for message in messages:
+            if isinstance(message, dict):
+                # If it's already a dict, just extract the content
+                content = message.get('content', '')
+                if isinstance(content, list):
+                    # If content is a list, join the text parts
+                    formatted_content = ''.join(
+                        item.get('text', '')
+                        for item in content
+                        if item.get('type') == 'text'
+                    )
+                else:
+                    formatted_content = content
+            else:
+                # If it's a Message object, process as before
+                formatted_content = ''
+                for content in message.content:
+                    if isinstance(content, TextContent):
+                        formatted_content += content.text
+
+            formatted_messages.append(
+                {
+                    'role': message['role']
+                    if isinstance(message, dict)
+                    else message.role,
+                    'content': formatted_content,
+                }
+            )
+
+        return formatted_messages
