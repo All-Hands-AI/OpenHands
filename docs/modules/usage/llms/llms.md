@@ -44,6 +44,7 @@ The following environment variables might be necessary for some LLMs/providers:
 * `LLM_EMBEDDING_DEPLOYMENT_NAME`
 * `LLM_DROP_PARAMS`
 * `LLM_DISABLE_VISION`
+* `LLM_CACHING_PROMPT`
 
 We have a few guides for running OpenHands with specific model providers:
 
