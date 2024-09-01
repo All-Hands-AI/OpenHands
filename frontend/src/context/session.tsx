@@ -51,6 +51,7 @@ interface SessionContextType {
   sendUserMessage: (message: string, images_urls: string[]) => void;
   sendTerminalCommand: (command: string) => void;
   triggerAgentStateChange: (agent_state: AgentState) => void;
+  isConnected: boolean;
   eventLog: string[];
   data: ParsedData;
 }

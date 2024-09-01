@@ -2,7 +2,6 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
-import { useSession } from "#/context/session";
 
 export type Command = {
   content: string;
@@ -14,8 +13,10 @@ export type Command = {
   The reason for this is that the hook exposes a ref that requires a DOM element to be rendered.
 */
 
-export const useTerminal = (commands: Command[] = []) => {
-  const { sendTerminalCommand } = useSession();
+export const useTerminal = (
+  onSendTerminalCommand: (command: string) => void,
+  commands: Command[] = [],
+) => {
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -44,7 +45,7 @@ export const useTerminal = (commands: Command[] = []) => {
       terminal.current.onKey(({ key, domEvent }) => {
         if (domEvent.key === "Enter") {
           terminal.current?.write("\r\n");
-          sendTerminalCommand(commandBuffer);
+          onSendTerminalCommand(commandBuffer);
           commandBuffer = "";
         } else if (domEvent.key === "Backspace") {
           if (commandBuffer.length > 0) {

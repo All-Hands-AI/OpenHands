@@ -6,8 +6,8 @@ import { useSession } from "#/context/session";
 import "@xterm/xterm/css/xterm.css";
 
 function Terminal() {
-  const { data } = useSession();
-  const ref = useTerminal(data.terminalStreams);
+  const { data, sendTerminalCommand } = useSession();
+  const ref = useTerminal(sendTerminalCommand, data.terminalStreams);
 
   return (
     <div className="flex flex-col h-full">
