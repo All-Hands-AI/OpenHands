@@ -177,9 +177,10 @@ def process_instance(
         signature_file=f'{instance.instance_name}.py',
     )
     if USE_UNIT_TESTS:
+        print(f'\nInstruction to run test_file: {instance.instance_name}_test.py\n')
         instruction += (
-            f'Use the test_file: {instance.instance_name}_test.py, to verify '
-            'the correctness of your solution. DO NOT EDIT the test file.\n\n'
+            f'Use `python -m unittest {instance.instance_name}_test.py` to run the test_file '
+            'and verify the correctness of your solution. DO NOT EDIT the test file.\n\n'
         )
 
     instruction += (
