@@ -1,0 +1,26 @@
+name: Release workflow
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.4.1
+        with:
+          virtualenvs-in-project: true
+          virtualenvs-path: ~/.virtualenvs
+      - name: Install Poetry Dependencies
+        run: poetry install --no-interaction --no-root
+      - name: Build poetry project
+        run: poetry build -v
+      - name: publish
+        run: poetry publish -u __token__ -p ${{ secrets.PYPI_TOKEN }}
