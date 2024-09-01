@@ -1,5 +1,4 @@
 import { addAssistantMessage } from "#/state/chatSlice";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
@@ -8,14 +7,6 @@ import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
-
-const messageActions = {
-  [ActionType.WRITE]: (message: ActionMessage) => {
-    const { path, content } = message.args;
-    store.dispatch(setActiveFilepath(path));
-    store.dispatch(setCode(content));
-  },
-};
 
 function getRiskText(risk: ActionSecurityRisk) {
   switch (risk) {
@@ -59,13 +50,6 @@ export function handleActionMessage(message: ActionMessage) {
     } else {
       store.dispatch(addAssistantMessage(message.message));
     }
-    return;
-  }
-
-  if (message.action in messageActions) {
-    const actionFn =
-      messageActions[message.action as keyof typeof messageActions];
-    actionFn(message);
   }
 }
 

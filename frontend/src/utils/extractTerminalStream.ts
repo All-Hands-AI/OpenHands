@@ -31,7 +31,7 @@ export const extractTerminalStream = (
 
   if (isCommandObservation(message)) {
     return {
-      type: "input",
+      type: "output",
       content: message.content,
     };
   }
