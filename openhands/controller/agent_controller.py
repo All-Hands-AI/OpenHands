@@ -372,6 +372,7 @@ class AgentController:
                 await self.delegate.close()
                 self.delegate = None
                 self.delegateAction = None
+
                 await self.report_error('Delegator agent encounters an error')
                 return
             delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
