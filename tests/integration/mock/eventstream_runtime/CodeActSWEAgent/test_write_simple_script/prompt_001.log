@@ -114,19 +114,19 @@ search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
     Args:
     search_term: str: The term to search for.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
-search_file(search_term: str, file_path: Optional[str] = None) -> None:
+search_file(search_term: str, file_path: str | None = None) -> None:
     Searches for search_term in file. If file is not provided, searches in the current open file.
     Args:
     search_term: str: The term to search for.
-    file_path: Optional[str]: The path to the file to search.
+    file_path: str | None: The path to the file to search.
 
 find_file(file_name: str, dir_path: str = './') -> None:
     Finds all files with the given name in the specified directory.
     Args:
     file_name: str: The name of the file to find.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
 parse_pdf(file_path: str) -> None:
     Parses the content of a PDF file and prints it.
@@ -153,7 +153,6 @@ Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the as
 The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
-
 
 ----------
 
@@ -591,4 +590,4 @@ NOW, LET'S START!
 
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 14 turns left to complete the task. When finished reply with <finish></finish>.
+ENVIRONMENT REMINDER: You have 19 turns left to complete the task. When finished reply with <finish></finish>.

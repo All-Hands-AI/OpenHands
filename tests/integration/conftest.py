@@ -79,7 +79,9 @@ def get_log_id(prompt_log_name):
         return match.group(1)
 
 
-def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -> str:
+def apply_prompt_and_get_mock_response(
+    test_name: str, messages: str, id: int
+) -> str | None:
     """Apply the mock prompt, and find mock response based on id.
     If there is no matching response file, return None.
 
@@ -185,10 +187,8 @@ def mock_completion(*args, test_name, **kwargs):
     global cur_id
     messages = kwargs['messages']
     message_str = ''
-    # print(f'\n\n{messages}\n\n')
     plain_messages = Message.format_messages(messages, with_images=False)
     message_str = message_separator.join(msg['content'] for msg in plain_messages)
-    # print(f'\n\n{message_str}\n\n')
 
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
@@ -199,7 +199,7 @@ def mock_completion(*args, test_name, **kwargs):
     else:
         mock_response = get_mock_response(test_name, message_str, cur_id)
     if mock_response is None:
-        raise SecretExit('Mock response for prompt is not found')
+        raise SecretExit('\n***** Mock response for prompt is not found *****\n')
     response = completion(**kwargs, mock_response=mock_response)
     return response
 

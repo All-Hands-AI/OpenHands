@@ -38,7 +38,18 @@ print('\nPaths used:')
 print(f'workspace_base: {CONFIG.workspace_base}')
 print(f'workspace_mount_path: {CONFIG.workspace_mount_path}')
 print(f'workspace_mount_path_in_sandbox: {CONFIG.workspace_mount_path_in_sandbox}')
-# print(f'CONFIG: {CONFIG}')
+
+# Check if running in WSL environment
+if 'WSL_DISTRO_NAME' in os.environ:
+    if (
+        CONFIG.workspace_base
+        and CONFIG.workspace_mount_path
+        and CONFIG.workspace_base != CONFIG.workspace_mount_path
+    ):
+        print(
+            '\n**********\nWARNING: if WORKSPACE_MOUNT_PATH is set differently to'
+            '\nWORKSPACE_BASE some file operation tests may fail!\n**********\n'
+        )
 
 
 def get_number_of_prompts(test_name: str):

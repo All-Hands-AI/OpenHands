@@ -1,7 +1,3 @@
-
-
-----------
-
 A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 The assistant can use an interactive Python (Jupyter Notebook) environment, executing code with <execute_ipython>.
 <execute_ipython>
@@ -392,10 +388,6 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 
 
-NOW, LET'S START!
+NOW, LET'S START!Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point.
 
-----------
-
-Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point.
-
-ENVIRONMENT REMINDER: You have 14 turns left to complete the task. When finished reply with <finish></finish>.
+ENVIRONMENT REMINDER: You have 19 turns left to complete the task. When finished reply with <finish></finish>.

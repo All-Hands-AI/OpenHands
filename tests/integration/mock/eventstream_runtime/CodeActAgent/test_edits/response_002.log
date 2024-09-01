@@ -1,13 +1,14 @@
-I will correct the typos in the `bad.txt` file.
-
-1. "stupid typoo" -> "stupid typo"
-2. "No mor typos!" -> "No more typos!"
-
-Let's make these changes.
+Thank you for providing the content of bad.txt. I'll now proceed to fix the typos in the file without asking for confirmation.
 
 <execute_ipython>
 edit_file_by_replace(
     'bad.txt',
-    to_replace="This is a stupid typoo.",
-    new_content="This is a stupid typo."
+    to_replace="""This is a stupid typoo.
+Really?
+No mor typos!
+Enjoy!""",
+    new_content="""This is a stupid typo.
+Really?
+No more typos!
+Enjoy!"""
 )

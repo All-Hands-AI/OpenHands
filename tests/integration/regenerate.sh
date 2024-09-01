@@ -24,11 +24,11 @@ get_script_dir() {
 
 TMP_FILE="${TMP_FILE:-tmp.log}"
 
-if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
-  WORKSPACE_MOUNT_PATH=$(pwd)
-fi
 if [ -z "$WORKSPACE_BASE" ]; then
   WORKSPACE_BASE=$(pwd)
+fi
+if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
+  WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE
 fi
 if [ -z "$DEBUG" ]; then
   DEBUG=false
@@ -40,6 +40,12 @@ fi
 export SCRIPT_DIR=$(get_script_dir)
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
 export LOG_DIR=$PROJECT_ROOT/logs
+echo "Current working directory: $(pwd)"
+echo "SCRIPT_DIR: $SCRIPT_DIR"
+echo "PROJECT_ROOT: $PROJECT_ROOT"
+echo "LOG_DIR: $LOG_DIR"
+echo "DEBUG: $DEBUG"
+echo "LOG_TO_FILE: $LOG_TO_FILE"
 
 WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
 mkdir -p $WORKSPACE_BASE
@@ -51,14 +57,8 @@ mkdir -p $WORKSPACE_MOUNT_PATH
 chmod -R 777 $WORKSPACE_MOUNT_PATH
 WORKSPACE_MOUNT_PATH=$(realpath $WORKSPACE_MOUNT_PATH)
 
-echo "Current working directory: $(pwd)"
-echo "SCRIPT_DIR: $SCRIPT_DIR"
-echo "PROJECT_ROOT: $PROJECT_ROOT"
-echo "LOG_DIR: $LOG_DIR"
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
-echo "DEBUG: $DEBUG"
-echo "LOG_TO_FILE: $LOG_TO_FILE"
 
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
@@ -95,7 +95,7 @@ test_names=(
   "test_write_simple_script"
   "test_ipython"
   "test_simple_task_rejection"
-  "test_ipython_module"
+  #"test_ipython_module"  NOT DETERMINISTIC IN NUMBER OF LLM RESPONSES!
   "test_browse_internet"
 )
 
@@ -207,6 +207,9 @@ regenerate_without_llm() {
 }
 
 regenerate_with_llm() {
+  echo "cd project root"
+  cd "$PROJECT_ROOT"
+
   if [[ "$test_name" = "test_browse_internet" ]]; then
     launch_http_server
   fi
@@ -237,10 +240,14 @@ regenerate_with_llm() {
       -c $agent
   set +x
 
+  echo "calling mkdir"
   mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
-  mv "$PROJECT_ROOT"/logs/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
+  echo "calling mv $LOG_DIR/llm"
+  mv "$LOG_DIR"/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
-  kill $HTTP_SERVER_PID || true
+  if [[ "$test_name" = "test_browse_internet" ]]; then
+    kill $HTTP_SERVER_PID || true
+  fi
 }
 
 ##############################################################
@@ -324,7 +331,11 @@ for ((i = 0; i < num_of_tests; i++)); do
 
       if [[ $TEST_STATUS -ne 0 ]]; then
         echo -e "\n============================================================"
-        echo -e "======== STEP 4: $test_name failed, regenerating prompts and responses for $agent WITH money cost"
+        if [ "$FORCE_USE_LLM" ]; then
+          echo -e "======== STEP 4: $test_name REGENERATION for $agent WITH money cost"
+        else
+          echo -e "======== STEP 4: $test_name failed, regenerating prompts and responses for $agent WITH money cost"
+        fi
         echo -e "============================================================\n\n\n"
 
         regenerate_with_llm
@@ -376,3 +387,4 @@ done
 rm -rf logs
 rm -rf $WORKSPACE_BASE
 echo "Done!"
+cd "$PROJECT_ROOT"

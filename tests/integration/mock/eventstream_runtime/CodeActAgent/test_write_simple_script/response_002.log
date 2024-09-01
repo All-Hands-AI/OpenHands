@@ -1,4 +1,9 @@
-The shell script `hello.sh` has been created and made executable. Let's run it to ensure it prints "hello".
+I apologize for the permission error. Let's create the script without changing its permissions. We'll use the `cat` command to create and view the contents of the file:
 
 <execute_bash>
-./hello.sh
+cat << EOF > hello.sh
+#!/bin/bash
+echo "hello"
+EOF
+
+cat hello.sh
