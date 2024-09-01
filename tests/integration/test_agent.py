@@ -236,11 +236,8 @@ def test_ipython_module(current_test_name: str):
     reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 @pytest.mark.skipif(
-    (
-        os.getenv('DEFAULT_AGENT') == 'CodeActAgent'
-        or os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent'
-    ),
-    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
+    (os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent'),
+    reason='CodeActSWEAgent does not support browsing',
 )
 def test_browse_internet(http_server, current_test_name: str):
     # Execute the task
