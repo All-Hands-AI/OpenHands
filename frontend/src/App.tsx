@@ -16,6 +16,7 @@ import Terminal from "./components/terminal/Terminal";
 import { getToken } from "#/services/auth";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import Security from "./components/modals/security/Security";
+import { useSession } from "./context/session";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -63,6 +64,8 @@ function Controls({
 let initOnce = false;
 
 function App(): JSX.Element {
+  const { isConnected } = useSession();
+
   const {
     isOpen: settingsModalIsOpen,
     onOpen: onSettingsModalOpen,
@@ -112,7 +115,8 @@ function App(): JSX.Element {
               initialSize={window.innerHeight - 300}
               firstChild={<Workspace />}
               firstClassName="rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
-              secondChild={<Terminal />}
+              /** If Terminal is initialized before the socket connection is established, it is unable to send user commands */
+              secondChild={isConnected && <Terminal />}
               secondClassName="rounded-xl border border-neutral-600 bg-neutral-800"
             />
           }

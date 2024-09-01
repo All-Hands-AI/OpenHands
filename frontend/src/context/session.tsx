@@ -63,6 +63,7 @@ const SessionContext = React.createContext<SessionContextType | undefined>(
 function SessionProvider({ children }: { children: React.ReactNode }) {
   const { socket, initializeWebSocket } = useWebSocket(HOST);
   const [eventLog, setEventLog] = React.useState<string[]>([]);
+  const [isConnected, setIsConnected] = React.useState(false);
 
   // parsed data that is used throughout the app
   const [data, setData] = React.useState<ParsedData>(INITIAL_PARSED_DATA_STATE);
@@ -96,6 +97,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (socket) {
       socket.onopen = () => {
+        setIsConnected(true);
         initializeAgent();
       };
 
@@ -155,11 +157,13 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       };
 
       socket.onerror = () => {
+        setIsConnected(false);
         console.warn("Socket error");
         // TODO: handle error
       };
 
       socket.onclose = () => {
+        setIsConnected(false);
         console.warn("Socket closed");
         // TODO: reconnect
       };
@@ -223,6 +227,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
+      isConnected,
       eventLog,
       data,
     }),
@@ -231,6 +236,7 @@ function SessionProvider({ children }: { children: React.ReactNode }) {
       sendUserMessage,
       sendTerminalCommand,
       triggerAgentStateChange,
+      isConnected,
       eventLog,
       data,
     ],
