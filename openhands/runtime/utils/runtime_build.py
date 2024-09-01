@@ -38,8 +38,11 @@ def _put_source_code_to_dir(temp_dir: str):
     Parameters:
     - temp_dir (str): The directory to put the source code in
     """
+    if not os.path.exists(temp_dir):
+        raise RuntimeError(f'Temp directory {temp_dir} does not exist')
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    logger.info(f'Using project root: {project_root}')
+    logger.info(f'Building source distribution using project root: {project_root}')
 
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
@@ -63,11 +66,11 @@ def _put_source_code_to_dir(temp_dir: str):
 
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
-        raise Exception(f'Build failed: {result}')
+        raise RuntimeError(f'Build failed: {result}')
 
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
-        raise Exception(f'Source distribution not found at {tarball_path}')
+        raise RuntimeError(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
     # Unzip the tarball
@@ -149,14 +152,14 @@ def prep_docker_build_folder(
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    hash = dirhash(dir_path, 'md5')
+    dist_hash = dirhash(dir_path, 'md5', match=['*.py'])
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
         f'Extra deps: {extra_deps}\n'
-        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {dist_hash}\n'
     )
-    return hash
+    return dist_hash
 
 
 def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
@@ -191,6 +194,60 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
 
 
 def build_runtime_image(
+    base_image: str,
+    runtime_builder: RuntimeBuilder,
+    extra_deps: str | None = None,
+    docker_build_folder: str | None = None,
+    dry_run: bool = False,
+    force_rebuild: bool = False,
+) -> str:
+    runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(base_image)
+
+    generic_runtime_image_name = f'{runtime_image_repo}:{runtime_image_tag}'
+
+    # Prepare build folder only once
+    cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
+
+    if not force_rebuild and runtime_builder.image_exists(generic_runtime_image_name):
+        from_scratch_hash = prep_docker_build_folder(
+            cur_docker_build_folder,
+            base_image=generic_runtime_image_name,
+            skip_init=True,
+            extra_deps=extra_deps,
+        )
+    else:
+        from_scratch_hash = prep_docker_build_folder(
+            cur_docker_build_folder,
+            base_image=base_image,
+            skip_init=False,
+            extra_deps=extra_deps,
+        )
+
+    hash_runtime_image_name = f'{runtime_image_repo}:{from_scratch_hash}'
+
+    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
+        if docker_build_folder is None:
+            shutil.rmtree(cur_docker_build_folder)
+        return hash_runtime_image_name
+
+    if not dry_run:
+        _build_sandbox_image(
+            docker_folder=cur_docker_build_folder,
+            runtime_builder=runtime_builder,
+            target_image_repo=runtime_image_repo,
+            target_image_hash_tag=from_scratch_hash,
+            target_image_tag=runtime_image_tag,
+        )
+    else:
+        logger.info(f'Dry run: Skipping image build for [{generic_runtime_image_name}]')
+
+    if docker_build_folder is None:
+        shutil.rmtree(cur_docker_build_folder)
+
+    return hash_runtime_image_name
+
+
+def build_runtime_image_old(
     base_image: str,
     runtime_builder: RuntimeBuilder,
     extra_deps: str | None = None,
