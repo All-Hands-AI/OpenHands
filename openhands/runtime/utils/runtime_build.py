@@ -152,7 +152,7 @@ def prep_docker_build_folder(
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    dist_hash = dirhash(dir_path, 'md5', match=['*.py'])
+    dist_hash = dirhash(dir_path, 'md5')
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
