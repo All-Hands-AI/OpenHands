@@ -79,13 +79,12 @@ async def main():
     event_stream = EventStream(sid, file_store)
 
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime: Runtime = runtime_cls(
+    runtime: Runtime = runtime_cls(  # noqa: F841
         config=config,
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
     )
-    await runtime.ainit()
 
     controller = AgentController(
         agent=agent,

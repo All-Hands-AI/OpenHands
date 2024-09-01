@@ -1,4 +1,3 @@
-import asyncio
 import os
 import time
 
@@ -91,14 +90,14 @@ def base_container_image(request):
 
 
 @pytest.fixture
-async def runtime(temp_dir, box_class, run_as_openhands):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
+def runtime(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
-    await runtime.close()
-    await asyncio.sleep(1)
+    runtime.close()
+    time.sleep(1)
 
 
-async def _load_runtime(
+def _load_runtime(
     temp_dir,
     box_class,
     run_as_openhands: bool = True,
@@ -135,8 +134,7 @@ async def _load_runtime(
         sid=sid,
         plugins=plugins,
     )
-    await runtime.ainit()
-    await asyncio.sleep(1)
+    time.sleep(1)
     return runtime
 
 

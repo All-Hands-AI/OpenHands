@@ -74,7 +74,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: BiocoderData,  # this argument is not required
 ):
@@ -89,19 +89,19 @@ async def initialize_runtime(
 
     action = CmdRunAction(command='mkdir -p /workspace && mkdir -p /testing_files')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     with tempfile.TemporaryDirectory() as tmpdir:
         context_path = os.path.join(tmpdir, 'context.' + file_ext)
         with open(context_path, 'w') as f:
             f.write(instance.contextCode)
-        await runtime.copy_to(context_path, '/testing_files')
+        runtime.copy_to(context_path, '/testing_files')
 
         golden_path = os.path.join(tmpdir, 'golden.' + file_ext)
         with open(golden_path, 'w') as f:
             f.write(instance.goldenCode)
-        await runtime.copy_to(golden_path, '/testing_files')
+        runtime.copy_to(golden_path, '/testing_files')
 
         testcase_json = {
             'test_case_id': instance.test_case_id,
@@ -112,36 +112,36 @@ async def initialize_runtime(
         with open(testcase_path, 'w') as f:
             f.write(json.dumps(testcase_json, indent=4))
 
-        await runtime.copy_to(testcase_path, '/testing_files')
+        runtime.copy_to(testcase_path, '/testing_files')
 
     # setup paths
     remove_code_script = os.path.join(
         os.path.dirname(__file__), 'scripts', 'setup', 'remove_code.py'
     )
-    await runtime.copy_to(remove_code_script, '/testing_files')
+    runtime.copy_to(remove_code_script, '/testing_files')
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     # download repository archive
     repository_url = f"https://biocoder.lilbillbiscuit.com/repos/{instance.repository.split('/')[1]}.zip"
     action = CmdRunAction(command='wget -O repo.zip ' + repository_url)
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0, f'Failed to download the repository: {obs.content}'
 
     # unzip the repository
     action = CmdRunAction(command='unzip -o -q repo.zip && rm repo.zip')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0, f'Failed to unzip the repository: {obs.content}'
 
     # chmod 777
     action = CmdRunAction(command='chmod -R 777 /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0, f'Failed to chmod the files: {obs.content}'
 
     # remove code for evaluation instance
@@ -155,13 +155,13 @@ async def initialize_runtime(
         command=f'python3 /testing_files/remove_code.py --target_filepath {target_filepath} --line_start {line_start} --line_end {line_end} --language {language}'
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0, f'Failed to remove the code: {obs.content}'
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime(
+def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -179,7 +179,7 @@ async def complete_runtime(
     copy_changed_code_script = os.path.join(
         os.path.dirname(__file__), 'scripts', 'setup', 'copy_changed_code.py'
     )
-    await runtime.copy_to(copy_changed_code_script, '/testing_files')
+    runtime.copy_to(copy_changed_code_script, '/testing_files')
 
     file_ext = FILE_EXT_MAP[instance.language.lower()]
     target_filepath = os.path.join(
@@ -191,13 +191,13 @@ async def complete_runtime(
         command=f'python3 /testing_files/copy_changed_code.py --target_filepath {target_filepath} --generated_code_filepath {generated_path} --line_start {instance.lineStart} --include_signature'
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     if obs.exit_code == 0:
         test_result['metadata']['1_copy_change_success'] = True
 
         action = CmdRunAction(command=f'cat {generated_path}', keep_prompt=False)
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         assert obs.exit_code == 0
 
         code = obs.content
@@ -208,14 +208,14 @@ async def complete_runtime(
 
     action = CmdRunAction(command='cd /testing_files')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(
         command='/home/openhands/mambaforge/bin/mamba run -n test python3 /testing/start_test_openhands.py'
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
@@ -223,7 +223,7 @@ async def complete_runtime(
         command='cat /testing_files/results_biocoder.json', keep_prompt=False
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     if obs.exit_code == 0:
         test_result['metadata']['2_run_test_success'] = True
         test_result['metadata']['2_run_test_result'] = str(obs.content)
@@ -237,7 +237,7 @@ async def complete_runtime(
     return test_result
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -277,22 +277,26 @@ async def process_instance(
     # use a session id for concurrent evaluation
     sid = instance.instance_id.replace('/', '__')
 
-    runtime = await create_runtime(config, sid=sid)
+    runtime = create_runtime(config, sid=sid)
 
-    await initialize_runtime(runtime, instance)
+    initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+        )
     )
 
     if state is None:
         raise ValueError('State should not be None.')
 
-    test_result = await complete_runtime(runtime, instance)
+    test_result = complete_runtime(runtime, instance)
     metrics = state.metrics.get() if state.metrics else None
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -340,8 +344,6 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(biocoder_tests, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

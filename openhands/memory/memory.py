@@ -73,6 +73,10 @@ if LLAMA_INDEX_AVAILABLE:
                 'nomic-embed-text',
                 'all-minilm',
                 'stable-code',
+                'bge-m3',
+                'bge-large',
+                'paraphrase-multilingual',
+                'snowflake-arctic-embed',
             ]
             if strategy in supported_ollama_embed_models:
                 from llama_index.embeddings.ollama import OllamaEmbedding
