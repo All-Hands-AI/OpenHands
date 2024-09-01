@@ -126,6 +126,7 @@ run_test() {
     TEST_RUNTIME="$TEST_RUNTIME" \
     DEBUG=$DEBUG \
     LOG_TO_FILE=$LOG_TO_FILE \
+    FORCE_REGENERATE=$FORCE_REGENERATE \
     SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
     $pytest_cmd 2>&1 | tee "$TMP_FILE"
 
@@ -199,6 +200,7 @@ regenerate_without_llm() {
       TEST_RUNTIME="$TEST_RUNTIME" \
       DEBUG=$DEBUG \
       LOG_TO_FILE=$LOG_TO_FILE \
+      FORCE_REGENERATE=$FORCE_REGENERATE \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s "$SCRIPT_DIR/test_agent.py::$test_name"
   set +x
@@ -228,6 +230,7 @@ regenerate_with_llm() {
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       DEBUG=$DEBUG \
       LOG_TO_FILE=$LOG_TO_FILE \
+      FORCE_REGENERATE=$FORCE_REGENERATE \
       poetry run python "$PROJECT_ROOT/openhands/core/main.py" \
       -i $MAX_ITERATIONS \
       -t "$task Do not ask me for confirmation at any point." \
