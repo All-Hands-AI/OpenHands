@@ -24,7 +24,7 @@ class BrowsingResponseParser(ResponseParser):
         if action_str is None:
             return ''
         action_str = action_str.strip()
-        if not action_str.endswith('```'):
+        if action_str and not action_str.endswith('```'):
             action_str = action_str + ')```'
         logger.info(action_str)
         return action_str
