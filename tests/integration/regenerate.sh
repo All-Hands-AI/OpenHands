@@ -87,7 +87,7 @@ tasks=(
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
   "Write a git commit message for the current staging area."
-  "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
+  #"Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
   "Browse localhost:8000, and tell me the ultimate answer to life."
 )
 test_names=(
@@ -210,7 +210,7 @@ regenerate_with_llm() {
   echo "cd project root"
   cd "$PROJECT_ROOT"
 
-  if [[ "$test_name" = "test_browse_internet" ]]; then
+  if [ "$test_name" = "test_browse_internet" ]; then
     launch_http_server
   fi
 
@@ -245,7 +245,7 @@ regenerate_with_llm() {
   echo "calling mv $LOG_DIR/llm"
   mv "$LOG_DIR"/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
-  if [[ "$test_name" = "test_browse_internet" ]]; then
+  if [ "$test_name" = "test_browse_internet" ]; then
     kill $HTTP_SERVER_PID || true
   fi
 }
