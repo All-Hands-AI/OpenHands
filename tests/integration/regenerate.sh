@@ -71,7 +71,7 @@ if [ -z "$SANDBOX_BASE_CONTAINER_IMAGE" ]; then
   SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
 fi
 
-MAX_ITERATIONS=15
+MAX_ITERATIONS=20
 echo "TEST_RUNTIME: $TEST_RUNTIME"
 
 agents=(

@@ -365,6 +365,9 @@ class AgentController:
                 f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
             )
             if delegate_state == AgentState.ERROR:
+                # update iteration that shall be shared across agents
+                self.state.iteration = self.delegate.state.iteration
+
                 # close the delegate upon error
                 await self.delegate.close()
                 self.delegate = None
