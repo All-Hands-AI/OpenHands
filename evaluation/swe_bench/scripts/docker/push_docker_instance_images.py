@@ -42,11 +42,11 @@ args = parser.parse_args()
 dataset = load_dataset(args.dataset, split=args.split)
 client = docker.from_env()
 
-pbar = tqdm(dataset)
+pbar = tqdm(total=len(dataset))
 counter = {'success': 0, 'failed': 0}
 
 failed_instances = []
-for instance in pbar:
+for instance in dataset:
     instance_id = instance['instance_id']
     image_name = f'sweb.eval.x86_64.{instance_id}'
     target_image_name = get_instance_docker_image(instance_id)
