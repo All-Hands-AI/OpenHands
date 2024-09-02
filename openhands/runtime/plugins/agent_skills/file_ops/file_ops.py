@@ -465,7 +465,11 @@ def _edit_file_impl(
         # lint the original file
         enable_auto_lint = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
         if enable_auto_lint:
-            original_lint_error, _ = _lint_file(file_name)
+            # Copy the original file to a temporary file (with the same ext) and lint it
+            suffix = os.path.splitext(file_name)[1]
+            with tempfile.NamedTemporaryFile(suffix=suffix) as orig_file_clone:
+                shutil.copy2(file_name, orig_file_clone.name)
+                original_lint_error, _ = _lint_file(orig_file_clone.name)
 
         # Create a temporary file
         with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
