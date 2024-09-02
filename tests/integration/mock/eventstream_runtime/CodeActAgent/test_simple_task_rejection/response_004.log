@@ -1,0 +1,10 @@
+I have created a commit message for the hypothetical scenario of adding a new file called 'sample.txt' to a project. The commit message follows good practices by including:
+
+1. A concise summary line (feat: Add sample text file)
+2. A blank line separating the summary from the body
+3. A detailed description of the changes
+4. Bullet points listing the specific modifications
+
+This commit message is now saved in the file 'commit_message.txt' in the current directory. In a real git repository, you would use this message when committing the changes.
+
+<finish></finish>
