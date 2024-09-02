@@ -18,6 +18,8 @@ describe("getSettings", () => {
   it("should get the stored settings", () => {
     (localStorage.getItem as Mock)
       .mockReturnValueOnce("llm_value")
+      .mockReturnValueOnce("custom_llm_value")
+      .mockReturnValueOnce("true")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
@@ -28,6 +30,8 @@ describe("getSettings", () => {
 
     expect(settings).toEqual({
       LLM_MODEL: "llm_value",
+      CUSTOM_LLM_MODEL: "custom_llm_value",
+      USING_CUSTOM_MODEL: true,
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
@@ -43,12 +47,16 @@ describe("getSettings", () => {
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
       .mockReturnValueOnce(null);
 
     const settings = getSettings();
 
     expect(settings).toEqual({
       LLM_MODEL: DEFAULT_SETTINGS.LLM_MODEL,
+      CUSTOM_LLM_MODEL: "",
+      USING_CUSTOM_MODEL: DEFAULT_SETTINGS.USING_CUSTOM_MODEL,
       AGENT: DEFAULT_SETTINGS.AGENT,
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
       LLM_API_KEY: "",
@@ -62,6 +70,8 @@ describe("saveSettings", () => {
   it("should save the settings", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
+      CUSTOM_LLM_MODEL: "custom_llm_value",
+      USING_CUSTOM_MODEL: true,
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
@@ -72,6 +82,14 @@ describe("saveSettings", () => {
     saveSettings(settings);
 
     expect(localStorage.setItem).toHaveBeenCalledWith("LLM_MODEL", "llm_value");
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "CUSTOM_LLM_MODEL",
+      "custom_llm_value",
+    );
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "USING_CUSTOM_MODEL",
+      "true",
+    );
     expect(localStorage.setItem).toHaveBeenCalledWith("AGENT", "agent_value");
     expect(localStorage.setItem).toHaveBeenCalledWith(
       "LANGUAGE",
@@ -122,6 +140,8 @@ describe("getSettingsDifference", () => {
   beforeEach(() => {
     (localStorage.getItem as Mock)
       .mockReturnValueOnce("llm_value")
+      .mockReturnValueOnce("custom_llm_value")
+      .mockReturnValueOnce("false")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value");
   });
@@ -129,6 +149,8 @@ describe("getSettingsDifference", () => {
   it("should return updated settings", () => {
     const settings = {
       LLM_MODEL: "new_llm_value",
+      CUSTOM_LLM_MODEL: "custom_llm_value",
+      USING_CUSTOM_MODEL: true,
       AGENT: "new_agent_value",
       LANGUAGE: "language_value",
     };
@@ -136,6 +158,7 @@ describe("getSettingsDifference", () => {
     const updatedSettings = getSettingsDifference(settings);
 
     expect(updatedSettings).toEqual({
+      USING_CUSTOM_MODEL: true,
       LLM_MODEL: "new_llm_value",
       AGENT: "new_agent_value",
     });

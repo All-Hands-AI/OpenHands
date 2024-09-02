@@ -1,8 +1,7 @@
 import os
 
 from openhands.core.logger import openhands_logger as logger
-
-from .files import FileStore
+from openhands.storage.files import FileStore
 
 
 class InMemoryFileStore(FileStore):

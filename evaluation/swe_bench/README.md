@@ -79,6 +79,12 @@ then your command would be:
 ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
 ```
 
+**Evaluate on `RemoteRuntime` (alpha)** (contact Xingyao over slack if you want to try this out!)
+```bash
+SANDBOX_API_KEY="CONTACT-XINGYAO-TO-GET-A-TESTING-API-KEY" RUNTIME=remote EVAL_DOCKER_IMAGE_PREFIX="us-docker.pkg.dev/evaluation-428620/swe-bench-images" ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300
+```
+Multi-processing is still WIP.
+
 ### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
@@ -102,7 +108,7 @@ With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patc
 
 > If you want to evaluate existing results, you should first run this to clone existing outputs
 >```bash
->git clone https://huggingface.co/spaces/OpenHands/evaluation evaluation/evaluation_outputs
+>git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
 >```
 
 NOTE, you should have already pulled the instance-level OR env-level docker images following [this section](#openhands-swe-bench-instance-level-docker-support).
@@ -136,10 +142,10 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 
 ## Visualize Results
 
-First you need to clone `https://huggingface.co/spaces/OpenHands/evaluation` and add your own running results from openhands into the `outputs` of the cloned repo.
+First you need to clone `https://huggingface.co/spaces/OpenDevin/evaluation` and add your own running results from openhands into the `outputs` of the cloned repo.
 
 ```bash
-git clone https://huggingface.co/spaces/OpenHands/evaluation
+git clone https://huggingface.co/spaces/OpenDevin/evaluation
 ```
 
 **(optional) setup streamlit environment with conda**:
@@ -163,4 +169,4 @@ Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
 
 ## Submit your evaluation results
 
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
+You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).

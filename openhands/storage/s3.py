@@ -2,7 +2,7 @@ import os
 
 from minio import Minio
 
-from .files import FileStore
+from openhands.storage.files import FileStore
 
 AWS_S3_ENDPOINT = 's3.amazonaws.com'
 

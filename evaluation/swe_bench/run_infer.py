@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import tempfile
+import time
 from typing import Any
 
 import pandas as pd
@@ -25,6 +26,7 @@ from openhands.core.config import (
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
+    load_from_env,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -86,25 +88,38 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     return instruction
 
 
+# TODO: migrate all swe-bench docker to ghcr.io/openhands
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
+logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
+
+
+def get_instance_docker_image(instance_id: str) -> str:
+    image_name = 'sweb.eval.x86_64.' + instance_id
+    image_name = image_name.replace(
+        '__', '_s_'
+    )  # to comply with docker image naming convention
+    return DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name
+
+
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/openhands/eval-swe-bench:full-v1.2.1'
+    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
-        container_image = 'sweb.eval.x86_64.' + instance['instance_id']
+        base_container_image = get_instance_docker_image(instance['instance_id'])
     else:
-        container_image = SWE_BENCH_CONTAINER_IMAGE
+        base_container_image = SWE_BENCH_CONTAINER_IMAGE
+        logger.info(f'Using swe-bench container image: {base_container_image}')
 
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image=container_image,
+            base_container_image=base_container_image,
             enable_auto_lint=True,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
@@ -114,11 +129,20 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    selected_env_vars = {'runtime', 'sandbox_api_key'}
+    selected_env_vars = {
+        k: v for k, v in os.environ.items() if k.lower() in selected_env_vars
+    }
+    if selected_env_vars:
+        logger.info(
+            f'Loading config keys from env vars: {list(selected_env_vars.keys())}'
+        )
+        load_from_env(config, selected_env_vars)
     config.set_llm_config(metadata.llm_config)
     return config
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -137,7 +161,13 @@ async def initialize_runtime(
         command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
@@ -148,7 +178,7 @@ async def initialize_runtime(
         # inject the instance info
         action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.exit_code == 0
@@ -166,34 +196,35 @@ async def initialize_runtime(
                     json.dump([instance], f)
 
             # Copy the file to the desired location
-            await runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
+            runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
 
         # inject the instance swe entry
-        await runtime.copy_to(
+        runtime.copy_to(
             str(os.path.join(script_dir, 'scripts/setup/instance_swe_entry.sh')),
             '/swe_util/',
         )
         action = CmdRunAction(command='cat ~/.bashrc')
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
         action = CmdRunAction(command='source ~/.bashrc')
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
     else:
         action = CmdRunAction(command='source /swe_util/swe_entry.sh')
+        action.timeout = 1800
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.exit_code == 0
@@ -201,13 +232,13 @@ async def initialize_runtime(
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='git reset --hard')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
@@ -215,7 +246,7 @@ async def initialize_runtime(
         command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
@@ -224,7 +255,7 @@ async def initialize_runtime(
     logger.info('-' * 30)
 
 
-async def complete_runtime(
+def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -242,19 +273,19 @@ async def complete_runtime(
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='git config --global core.pager ""')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='git add -A')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
@@ -267,7 +298,7 @@ async def complete_runtime(
         )
         action.timeout = 600 + 100 * n_retries
         logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = await runtime.run_action(action)
+        obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         n_retries += 1
         if isinstance(obs, CmdOutputObservation):
@@ -276,10 +307,10 @@ async def complete_runtime(
                 break
             else:
                 logger.info('Failed to get git diff, retrying...')
-                await asyncio.sleep(10)
+                time.sleep(10)
         elif isinstance(obs, ErrorObservation):
             logger.error(f'Error occurred: {obs.content}. Retrying...')
-            await asyncio.sleep(10)
+            time.sleep(10)
         else:
             raise ValueError(f'Unexpected observation type: {type(obs)}')
 
@@ -289,7 +320,7 @@ async def complete_runtime(
     return {'git_patch': git_patch}
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -303,26 +334,32 @@ async def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    runtime = await create_runtime(config, sid=instance.instance_id)
-    await initialize_runtime(runtime, instance)
+    runtime = create_runtime(config, sid=instance.instance_id)
+    initialize_runtime(runtime, instance)
 
     instruction = get_instruction(instance, metadata)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+        )
     )
 
     # ======= THIS IS SWE-Bench specific =======
     # Get git patch
-    return_val = await complete_runtime(runtime, instance)
+    return_val = complete_runtime(runtime, instance)
     git_patch = return_val['git_patch']
     logger.info(
         f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
     )
+
+    runtime.close()
     # ==========================================
 
     # ======= Attempt to evaluate the agent's edits =======
@@ -376,24 +413,23 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
-        '-s',
-        '--set',
+        '--dataset',
         type=str,
-        default='lite',
-        choices=['lite-test', 'full-test'],
+        default='princeton-nlp/SWE-bench',
         help='data set to evaluate on, either full-test or lite-test',
+    )
+    parser.add_argument(
+        '--split',
+        type=str,
+        default='test',
+        help='split to evaluate on',
     )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
-    if args.set == 'full-test':
-        dataset = load_dataset('princeton-nlp/SWE-bench', split='test')
-    elif args.set == 'lite-test':
-        dataset = load_dataset('princeton-nlp/SWE-bench_Lite', split='test')
-    else:
-        raise ValueError(f'Unsupported set: {args.set}')
-
+    dataset = load_dataset(args.dataset, split=args.split)
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
 
     llm_config = None
@@ -423,8 +459,6 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

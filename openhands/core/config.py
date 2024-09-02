@@ -12,7 +12,6 @@ import toml
 from dotenv import load_dotenv
 
 from openhands.core import logger
-from openhands.core.utils import Singleton
 
 load_dotenv()
 
@@ -123,11 +122,13 @@ class AgentConfig:
     """Configuration for the agent.
 
     Attributes:
+        micro_agent_name: The name of the micro agent to use for this agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
+    micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | None = None
@@ -141,7 +142,7 @@ class AgentConfig:
 
 
 @dataclass
-class SecurityConfig(metaclass=Singleton):
+class SecurityConfig:
     """Configuration for security related functionalities.
 
     Attributes:
@@ -174,23 +175,24 @@ class SecurityConfig(metaclass=Singleton):
 
 
 @dataclass
-class SandboxConfig(metaclass=Singleton):
+class SandboxConfig:
     """Configuration for the sandbox.
 
     Attributes:
         api_hostname: The hostname for the EventStream Runtime API.
-        container_image: The container image to use for the sandbox.
+        base_container_image: The base container image from which to build the runtime image.
+        runtime_container_image: The runtime container image to use.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
-        od_runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
+        runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
             The path to the interpreter is available as $OD_INTERPRETER_PATH,
             which can be used to install dependencies for the OD-specific Python interpreter.
-        od_runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
+        runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
             This is a dictionary of key-value pairs.
             This is useful for setting environment variables that are needed by the runtime.
             For example, for specifying the base url of website for browsergym evaluation.
@@ -199,7 +201,9 @@ class SandboxConfig(metaclass=Singleton):
     """
 
     api_hostname: str = 'localhost'
-    container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    api_key: str | None = None
+    base_container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    runtime_container_image: str | None = None
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
     enable_auto_lint: bool = (
@@ -207,8 +211,8 @@ class SandboxConfig(metaclass=Singleton):
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
-    od_runtime_extra_deps: str | None = None
-    od_runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
+    runtime_extra_deps: str | None = None
+    runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
 
     def defaults_to_dict(self) -> dict:
@@ -237,7 +241,7 @@ class UndefinedString(str, Enum):
 
 
 @dataclass
-class AppConfig(metaclass=Singleton):
+class AppConfig:
     """Configuration for the app.
 
     Attributes:
@@ -561,7 +565,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             sandbox_config = SandboxConfig(**toml_config['sandbox'])
 
         # update the config object with the new values
-        AppConfig(sandbox=sandbox_config, **core_config)
+        cfg.sandbox = sandbox_config
+        for key, value in core_config.items():
+            if hasattr(cfg, key):
+                setattr(cfg, key, value)
+            else:
+                logger.openhands_logger.warning(f'Unknown core config key: {key}')
     except (TypeError, KeyError) as e:
         logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
@@ -735,6 +744,12 @@ def get_parser() -> argparse.ArgumentParser:
         default='default',
         type=str,
         help='Name for the session',
+    )
+    parser.add_argument(
+        '--eval-ids',
+        default=None,
+        type=str,
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
     return parser
 

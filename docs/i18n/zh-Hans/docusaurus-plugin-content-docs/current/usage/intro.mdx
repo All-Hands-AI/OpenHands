@@ -42,7 +42,7 @@ OpenHands 是一个**自主 AI 软件工程师**，能够执行复杂的工程�
   />
 </a>
 <br></br>
-<a href="https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw">
+<a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA">
   <img
     src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
     alt="Join our Slack community"
@@ -78,7 +78,7 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.6
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 你会发现 OpenHands 在 [http://localhost:3000](http://localhost:3000) 运行，并可以访问 `./workspace`。要让 OpenHands 操作你的代码，请将代码放在 `./workspace` 中。
@@ -86,7 +86,7 @@ docker run -it \
 OpenHands 只会访问这个工作区文件夹。它在一个安全的 docker 沙盒中运行，不会影响你系统的其他部分。
 
 :::tip
-如果你想使用**（不稳定！）**最新版本，可以使用 `ghcr.io/opendevin/opendevin:main` 作为镜像（最后一行）。
+如果你想使用**（不稳定！）**最新版本，可以使用 `ghcr.io/all-hands-ai/openhands:main` 作为镜像（最后一行）。
 :::
 
 有关开发工作流程，请参阅 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)。

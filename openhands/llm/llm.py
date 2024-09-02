@@ -14,6 +14,7 @@ from litellm.exceptions import (
     APIConnectionError,
     ContentPolicyViolationError,
     InternalServerError,
+    NotFoundError,
     OpenAIError,
     RateLimitError,
     ServiceUnavailableError,
@@ -34,6 +35,11 @@ from openhands.core.metrics import Metrics
 __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
+
+cache_prompting_supported_models = [
+    'claude-3-5-sonnet-20240620',
+    'claude-3-haiku-20240307',
+]
 
 
 class LLM:
@@ -58,6 +64,9 @@ class LLM:
         self.config = copy.deepcopy(config)
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
+        self.supports_prompt_caching = (
+            self.config.model in cache_prompting_supported_models
+        )
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
@@ -133,11 +142,11 @@ class LLM:
             ),
             retry=retry_if_exception_type(
                 (
-                    RateLimitError,
                     APIConnectionError,
-                    ServiceUnavailableError,
-                    InternalServerError,
                     ContentPolicyViolationError,
+                    InternalServerError,
+                    OpenAIError,
+                    RateLimitError,
                 )
             ),
             after=attempt_on_error,
@@ -184,6 +193,7 @@ class LLM:
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
+
             llm_response_logger.debug(message_back)
 
             # post-process to log costs
@@ -220,11 +230,11 @@ class LLM:
             ),
             retry=retry_if_exception_type(
                 (
-                    RateLimitError,
                     APIConnectionError,
-                    ServiceUnavailableError,
-                    InternalServerError,
                     ContentPolicyViolationError,
+                    InternalServerError,
+                    OpenAIError,
+                    RateLimitError,
                 )
             ),
             after=attempt_on_error,
@@ -294,14 +304,14 @@ class LLM:
             except UserCancelledError:
                 logger.info('LLM request cancelled by user.')
                 raise
-            except OpenAIError as e:
-                logger.error(f'OpenAIError occurred:\n{e}')
-                raise
             except (
-                RateLimitError,
                 APIConnectionError,
-                ServiceUnavailableError,
+                ContentPolicyViolationError,
                 InternalServerError,
+                NotFoundError,
+                OpenAIError,
+                RateLimitError,
+                ServiceUnavailableError,
             ) as e:
                 logger.error(f'Completion Error occurred:\n{e}')
                 raise
@@ -324,11 +334,11 @@ class LLM:
             ),
             retry=retry_if_exception_type(
                 (
-                    RateLimitError,
                     APIConnectionError,
-                    ServiceUnavailableError,
-                    InternalServerError,
                     ContentPolicyViolationError,
+                    InternalServerError,
+                    OpenAIError,
+                    RateLimitError,
                 )
             ),
             after=attempt_on_error,
@@ -372,14 +382,14 @@ class LLM:
             except UserCancelledError:
                 logger.info('LLM request cancelled by user.')
                 raise
-            except OpenAIError as e:
-                logger.error(f'OpenAIError occurred:\n{e}')
-                raise
             except (
-                RateLimitError,
                 APIConnectionError,
-                ServiceUnavailableError,
+                ContentPolicyViolationError,
                 InternalServerError,
+                NotFoundError,
+                OpenAIError,
+                RateLimitError,
+                ServiceUnavailableError,
             ) as e:
                 logger.error(f'Completion Error occurred:\n{e}')
                 raise
@@ -421,18 +431,50 @@ class LLM:
     def supports_vision(self):
         return litellm.supports_vision(self.config.model)
 
-    def _post_completion(self, response: str) -> None:
+    def _post_completion(self, response) -> None:
         """Post-process the completion response."""
         try:
             cur_cost = self.completion_cost(response)
         except Exception:
             cur_cost = 0
+
+        stats = ''
         if self.cost_metric_supported:
-            logger.info(
-                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+            stats = 'Cost: %.2f USD | Accumulated Cost: %.2f USD\n' % (
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
+
+        usage = response.get('usage')
+
+        if usage:
+            input_tokens = usage.get('prompt_tokens')
+            output_tokens = usage.get('completion_tokens')
+
+            if input_tokens:
+                stats += 'Input tokens: ' + str(input_tokens) + '\n'
+
+            if output_tokens:
+                stats += 'Output tokens: ' + str(output_tokens) + '\n'
+
+            model_extra = usage.get('model_extra', {})
+
+            cache_creation_input_tokens = model_extra.get('cache_creation_input_tokens')
+            if cache_creation_input_tokens:
+                stats += (
+                    'Input tokens (cache write): '
+                    + str(cache_creation_input_tokens)
+                    + '\n'
+                )
+
+            cache_read_input_tokens = model_extra.get('cache_read_input_tokens')
+            if cache_read_input_tokens:
+                stats += (
+                    'Input tokens (cache read): ' + str(cache_read_input_tokens) + '\n'
+                )
+
+        if stats:
+            logger.info(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.

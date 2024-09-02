@@ -12,7 +12,7 @@ git clone -b $OD_SWE_BENCH_REPO_BRANCH $OD_SWE_BENCH_REPO_PATH $EVAL_WORKSPACE/O
 
 # 2. Prepare DATA
 echo "==== Prepare SWE-bench data ===="
-EVAL_IMAGE=ghcr.io/openhands/eval-swe-bench:builder_with_conda
+EVAL_IMAGE=ghcr.io/all-hands-ai/eval-swe-bench:builder_with_conda
 EVAL_WORKSPACE=$(realpath $EVAL_WORKSPACE)
 chmod +x $EVAL_WORKSPACE/OD-SWE-bench/swebench/harness/prepare_data.sh
 if [ -d $EVAL_WORKSPACE/eval_data ]; then

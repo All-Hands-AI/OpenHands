@@ -8,12 +8,11 @@ Please be sure to run all commands inside your WSL terminal.
 ### Recommendation: Do not run as root user
 
 For security reasons, it is highly recommended to not run OpenHands as the root user, but a user with a non-zero UID.
-In addition, persistent sandboxes won't be supported when running as root and during start of OpenHands an appropriate message may appear.
 
 References:
 
 * [Why it is bad to login as root](https://askubuntu.com/questions/16178/why-is-it-bad-to-log-in-as-root)
-* [Set default user in WSL](https://www.tenforums.com/tutorials/128152-set-default-user-windows-subsystem-linux-distro-windows-10-a.html#option2)  
+* [Set default user in WSL](https://www.tenforums.com/tutorials/128152-set-default-user-windows-subsystem-linux-distro-windows-10-a.html#option2)
 Hint about the 2nd reference: for Ubuntu users, the command could actually be "ubuntupreview" instead of "ubuntu".
 
 ---
@@ -21,21 +20,6 @@ Hint about the 2nd reference: for Ubuntu users, the command could actually be "u
 
 If you are using Docker Desktop, make sure to start it before calling any docker command from inside WSL.
 Docker also needs to have the WSL integration option activated.
-
----
-### Failed to create openhands user
-
-If you encounter the following error during setup:
-
-```sh
-Exception: Failed to create openhands user in sandbox: 'useradd: UID 0 is not unique'
- ```
-
-You can resolve it by running:
-
-```sh
-export SANDBOX_USER_ID=1000
-```
 
 ---
 ### Poetry Installation
@@ -76,5 +60,5 @@ localhostForwarding=true
 
 * Save the `.wslconfig` file.
 * Restart WSL2 completely by exiting any running WSL2 instances and executing the command `wsl --shutdown` in your command prompt or terminal.
-* After restarting WSL, attempt to execute `make run` again.  
+* After restarting WSL, attempt to execute `make run` again.
 The networking issue should be resolved.
