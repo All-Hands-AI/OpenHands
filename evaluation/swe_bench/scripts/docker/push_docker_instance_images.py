@@ -57,8 +57,12 @@ for instance in pbar:
         image: docker.models.images.Image = client.images.get(image_name)
         image.tag(target_image_name)
         print(f'Image {image_name} -- tagging to --> {target_image_name}')
-        ret = client.images.push(target_image_name)
-        print(ret)
+        ret_push = client.images.push(target_image_name)
+        if isinstance(ret_push, str):
+            print(ret_push)
+        else:
+            for line in ret_push:
+                print(line)
         print(f'Image {image_name} -- pushed to --> {target_image_name}')
         counter['success'] += 1
     except docker.errors.ImageNotFound:
