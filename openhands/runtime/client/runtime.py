@@ -123,7 +123,7 @@ class EventStreamRuntime(Runtime):
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
-        logger.debug(f'EventStreamRuntime `{sid}`')  # config:\n{self.config}')
+        logger.debug(f'EventStreamRuntime `{sid}`')
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
