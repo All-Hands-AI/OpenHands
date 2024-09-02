@@ -1,4 +1,0 @@
-Now, I will write the content to the `hello.sh` file to print 'hello'.
-
-<execute_ipython>
-insert_content_at_line('hello.sh', 1, '#!/bin/bash\necho "hello"')

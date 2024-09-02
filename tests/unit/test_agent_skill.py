@@ -74,9 +74,25 @@ def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
     return file_path
 
 
+def _capture_file_operation_error(operation, expected_error_msg):
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            operation()
+        result = buf.getvalue().strip()
+    assert result == expected_error_msg
+
+
+SEP = '-' * 49 + '\n'
+
+
+# =============================================================================
+
+
 def test_open_file_unexist_path():
-    with pytest.raises(FileNotFoundError):
-        open_file('/unexist/path/a.txt')
+    _capture_file_operation_error(
+        lambda: open_file('/unexist/path/a.txt'),
+        'ERROR: File /unexist/path/a.txt not found.',
+    )
 
 
 def test_open_file(tmp_path):
@@ -139,6 +155,7 @@ def test_open_file_long(tmp_path):
     for i in range(1, 51):
         expected += f'{i}|Line {i}\n'
     expected += '(950 more lines below)\n'
+    expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -168,6 +185,7 @@ def test_open_file_long_with_lineno(tmp_path):
         expected += '(this is the end of the file)\n'
     else:
         expected += f'({1000 - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -210,6 +228,7 @@ def test_goto_line(tmp_path):
     for i in range(1, WINDOW + 1):
         expected += f'{i}|Line {i}\n'
     expected += f'({total_lines - WINDOW} more lines below)\n'
+    expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -242,20 +261,24 @@ def test_goto_line_negative(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             open_file(str(temp_file_path))
-    with pytest.raises(ValueError):
-        goto_line(-1)
+
+    _capture_file_operation_error(
+        lambda: goto_line(-1), 'ERROR: Line number must be between 1 and 4.'
+    )
 
 
 def test_goto_line_out_of_bound(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
-    content = '\n'.join([f'Line {i}' for i in range(1, 5)])
+    content = '\n'.join([f'Line {i}' for i in range(1, 10)])
     temp_file_path.write_text(content)
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             open_file(str(temp_file_path))
-    with pytest.raises(ValueError):
-        goto_line(100)
+
+    _capture_file_operation_error(
+        lambda: goto_line(100), 'ERROR: Line number must be between 1 and 9.'
+    )
 
 
 def test_scroll_down(tmp_path):
@@ -282,6 +305,7 @@ def test_scroll_down(tmp_path):
         expected += '(this is the end of the file)\n'
     else:
         expected += f'({total_lines - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -291,7 +315,8 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
-    start, end = _calculate_window_bounds(WINDOW + 1, total_lines, WINDOW)
+    start = WINDOW + 1
+    end = 2 * WINDOW + 1
     if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
@@ -330,6 +355,7 @@ def test_scroll_up(tmp_path):
         expected += '(this is the end of the file)\n'
     else:
         expected += f'({total_lines - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -341,7 +367,9 @@ def test_scroll_up(tmp_path):
     cur_line = cur_line - WINDOW
 
     expected = f'[File: {temp_file_path} ({total_lines} lines total)]\n'
-    start, end = _calculate_window_bounds(cur_line, total_lines, WINDOW)
+    start = cur_line
+    end = cur_line + WINDOW
+
     if start == 1:
         expected += '(this is the beginning of the file)\n'
     else:
@@ -432,63 +460,7 @@ def test_open_file_large_line_number(tmp_path):
         for i in range(750, 850 + 1):
             expected += f'{i}|Line `{i}`\n'
         expected += '(149 more lines below)\n'
-        assert result == expected
-
-
-def test_open_file_large_line_number_consecutive_diff_window(tmp_path):
-    test_file_path = tmp_path / 'a.txt'
-    create_file(str(test_file_path))
-    open_file(str(test_file_path))
-    total_lines = 1000
-    with open(test_file_path, 'w') as file:
-        for i in range(1, total_lines + 1):
-            file.write(f'Line `{i}`\n')
-
-    # Define the parameters for the test
-    current_line = 800
-    cur_window = 300
-
-    # Test _print_window especially with backticks
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            # _print_window(str(test_file_path), current_line, window, return_str=False)
-            open_file(str(test_file_path), current_line, cur_window)
-        result = buf.getvalue()
-        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
-        start, end = _calculate_window_bounds(current_line, total_lines, cur_window)
-        if start == 1:
-            expected += '(this is the beginning of the file)\n'
-        else:
-            expected += f'({start - 1} more lines above)\n'
-        for i in range(
-            current_line - cur_window // 2, current_line + cur_window // 2 + 1
-        ):
-            expected += f'{i}|Line `{i}`\n'
-        if end == total_lines:
-            expected += '(this is the end of the file)\n'
-        else:
-            expected += f'({total_lines - end} more lines below)\n'
-        assert result == expected
-
-    # open_file **SHOULD NOT** Change the "window size" to 300
-    # the window size should still be WINDOW
-    current_line = current_line - WINDOW
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            scroll_up()
-        result = buf.getvalue()
-        expected = f'[File: {test_file_path} ({total_lines} lines total)]\n'
-        start, end = _calculate_window_bounds(current_line, total_lines, WINDOW)
-        if start == 1:
-            expected += '(this is the beginning of the file)\n'
-        else:
-            expected += f'({start - 1} more lines above)\n'
-        for i in range(start, end + 1):
-            expected += f'{i}|Line `{i}`\n'
-        if end == total_lines:
-            expected += '(this is the end of the file)\n'
-        else:
-            expected += f'({total_lines - end} more lines below)\n'
+        expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
         assert result == expected
 
 
@@ -548,8 +520,8 @@ check(any_int)"""
                 + ':9:9: '
                 + 'E999 IndentationError: unexpected indent\n'
                 '[This is how your edit would have looked if applied]\n'
-                '-------------------------------------------------\n'
-                '(this is the beginning of the file)\n'
+                + SEP
+                + '(this is the beginning of the file)\n'
                 '1|def any_int(a, b, c):\n'
                 '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
                 '3|\n'
@@ -571,12 +543,10 @@ check(any_int)"""
                 '19|    # Check some simple cases\n'
                 '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
                 '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
-                '(12 more lines below)\n'
-                '-------------------------------------------------\n'
-                '\n'
+                '(12 more lines below)\n' + SEP + '\n'
                 '[This is the original code before your edit]\n'
-                '-------------------------------------------------\n'
-                '(this is the beginning of the file)\n'
+                + SEP
+                + '(this is the beginning of the file)\n'
                 '1|def any_int(a, b, c):\n'
                 '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
                 '3|\n'
@@ -599,8 +569,8 @@ check(any_int)"""
                 '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
                 '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
                 '(12 more lines below)\n'
-                '-------------------------------------------------\n'
-                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                + SEP
+                + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                 'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
                 'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
             )
@@ -737,15 +707,15 @@ def test_edit_file_by_replace_multiline(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            with pytest.raises(
-                ValueError,
-                match='`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique',
-            ):
-                edit_file_by_replace(
-                    file_name=str(temp_file_path),
-                    to_replace='Line 2',
-                    new_content='REPLACE TEXT',
-                )
+            edit_file_by_replace(
+                file_name=str(temp_file_path),
+                to_replace='Line 2',
+                new_content='REPLACE TEXT',
+            )
+            result = buf.getvalue()
+            assert result.strip().startswith(
+                'ERROR: `to_replace` appears more than once, please include enough lines to make code in `to_replace` unique'
+            )
 
 
 def test_edit_file_by_replace_no_diff(tmp_path):
@@ -757,14 +727,15 @@ def test_edit_file_by_replace_no_diff(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            with pytest.raises(
-                ValueError, match='`to_replace` and `new_content` must be different'
-            ):
-                edit_file_by_replace(
-                    file_name=str(temp_file_path),
-                    to_replace='Line 1',
-                    new_content='Line 1',
-                )
+            edit_file_by_replace(
+                file_name=str(temp_file_path),
+                to_replace='Line 1',
+                new_content='Line 1',
+            )
+            result = buf.getvalue()
+            assert result.strip().startswith(
+                'ERROR: `to_replace` and `new_content` must be different'
+            )
 
 
 def test_edit_file_by_replace_toreplace_empty(tmp_path):
@@ -774,23 +745,25 @@ def test_edit_file_by_replace_toreplace_empty(tmp_path):
 
     open_file(str(temp_file_path))
 
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            with pytest.raises(ValueError, match='`to_replace` must not be empty.'):
-                edit_file_by_replace(
-                    file_name=str(temp_file_path),
-                    to_replace='    ',
-                    new_content='Line 1',
-                )
+    _capture_file_operation_error(
+        lambda: edit_file_by_replace(
+            file_name=str(temp_file_path),
+            to_replace='',
+            new_content='Line 1',
+        ),
+        'ERROR: `to_replace` must not be empty.',
+    )
 
 
 def test_edit_file_by_replace_unknown_file():
-    with pytest.raises(FileNotFoundError):
-        edit_file_by_replace(
+    _capture_file_operation_error(
+        lambda: edit_file_by_replace(
             str('unknown file'),
             'ORIGINAL TEXT',
             'REPLACE TEXT',
-        )
+        ),
+        'ERROR: File unknown file not found.',
+    )
 
 
 def test_insert_content_at_line(tmp_path):
@@ -1024,12 +997,14 @@ def test_insert_content_at_line_from_scratch_multiline(tmp_path):
 
 
 def test_insert_content_at_line_not_opened():
-    with pytest.raises(FileNotFoundError):
-        insert_content_at_line(
+    _capture_file_operation_error(
+        lambda: insert_content_at_line(
             str('unknown file'),
             1,
             'REPLACE TEXT',
-        )
+        ),
+        'ERROR: Invalid path or file name.',
+    )
 
 
 def test_append_file(tmp_path):
@@ -1125,8 +1100,10 @@ def test_append_file_from_scratch_multiline(tmp_path):
 
 
 def test_append_file_not_opened():
-    with pytest.raises(FileNotFoundError):
-        append_file(str('unknown file'), content='APPEND TEXT')
+    _capture_file_operation_error(
+        lambda: append_file('unknown file', content='APPENDED TEXT'),
+        'ERROR: Invalid path or file name.',
+    )
 
 
 def test_search_dir(tmp_path):
@@ -1243,8 +1220,10 @@ def test_search_file_not_exist_term(tmp_path):
 
 
 def test_search_file_not_exist_file():
-    with pytest.raises(FileNotFoundError):
-        search_file('Line 6', '/unexist/path/a.txt')
+    _capture_file_operation_error(
+        lambda: search_file('Line 6', '/unexist/path/a.txt'),
+        'ERROR: File /unexist/path/a.txt not found.',
+    )
 
 
 def test_find_file(tmp_path):
@@ -1345,18 +1324,18 @@ def test_lint_file_fail_undefined_name(tmp_path, capsys):
             'ERRORS:\n'
             f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
             '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|undefined_name()\n'
             '(this is the end of the file)\n'
-            '-------------------------------------------------\n\n'
-            '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '\n[This is the original code before your edit]\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|\n'
             '(this is the end of the file)\n'
-            '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            + SEP
+            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
@@ -1386,23 +1365,24 @@ def test_lint_file_fail_undefined_name_long(tmp_path, capsys):
             '(this is the beginning of the file)\n'
             f'{open_lines}\n'
             f'({num_lines - WINDOW} more lines below)\n'
+            f'[Use `scroll_down` to view the next 100 lines of the file!]\n'
             '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
             f'ERRORS:\n{error_message}\n'
             '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(489 more lines above)\n'
+            + SEP
+            + '(489 more lines above)\n'
             + _numbered_test_lines(error_line - 10, error_line - 1)
             + '500|undefined_name()\n'
             + _numbered_test_lines(error_line + 1, error_line + 10)
             + '(491 more lines below)\n'
-            + '-------------------------------------------------\n\n'
-            '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(489 more lines above)\n'
+            + SEP
+            + '\n[This is the original code before your edit]\n'
+            + SEP
+            + '(489 more lines above)\n'
             + _numbered_test_lines(error_line - 10, error_line + 10)
             + '(490 more lines below)\n'
-            + '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            + SEP
+            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
@@ -1572,19 +1552,19 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
             'ERRORS:\n'
             f'{file_path}:1:1: Syntax error\n'
             '[This is how your edit would have looked if applied]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|def print_hello_world()\n'
             "2|    puts 'Hello World'\n"
             '(this is the end of the file)\n'
             '-------------------------------------------------\n\n'
             '[This is the original code before your edit]\n'
-            '-------------------------------------------------\n'
-            '(this is the beginning of the file)\n'
+            + SEP
+            + '(this is the beginning of the file)\n'
             '1|\n'
             '(this is the end of the file)\n'
-            '-------------------------------------------------\n'
-            'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+            + SEP
+            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )

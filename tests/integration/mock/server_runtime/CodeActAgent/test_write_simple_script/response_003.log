@@ -1,5 +1,0 @@
-The `hello.sh` script has been created and updated to print 'hello'. Now, let's make the script executable and run it.
-
-<execute_bash>
-chmod +x hello.sh
-./hello.sh
