@@ -1,9 +1,6 @@
-I apologize for the permission error. Let's create the script without changing its permissions. We'll use the `cat` command to create and view the contents of the file:
+I apologize for the permission error. Let's create the script without changing permissions. We'll use the `cat` command to view the contents of the file to confirm it was created correctly:
 
 <execute_bash>
-cat << EOF > hello.sh
-#!/bin/bash
-echo "hello"
-EOF
-
+echo '#!/bin/bash' > hello.sh
+echo 'echo "hello"' >> hello.sh
 cat hello.sh

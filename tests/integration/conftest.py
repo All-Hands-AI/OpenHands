@@ -2,6 +2,7 @@ import io
 import os
 import re
 import shutil
+import socket
 import subprocess
 import tempfile
 import time
@@ -231,20 +232,33 @@ def patch_completion(monkeypatch, request):
         monkeypatch.setattr('sys.stdin', user_responses)
 
 
+class MultiAddressServer(HTTPServer):
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
+
+
+class LoggingHTTPRequestHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        print(
+            f'Request received: {self.address_string()} - {self.log_date_time_string()} - {format % args}'
+        )
+
+
 @pytest.fixture
 def http_server():
     web_dir = os.path.join(os.path.dirname(__file__), 'static')
     os.chdir(web_dir)
-    handler = SimpleHTTPRequestHandler
+    handler = LoggingHTTPRequestHandler
 
     # Start the server
-    server = HTTPServer(('localhost', 8000), handler)
+    server = MultiAddressServer(('', 8000), handler)
     thread = Thread(target=server.serve_forever)
     thread.setDaemon(True)
     thread.start()
     time.sleep(1)
 
-    print('HTTP server started...')
+    print('HTTP server started on http://localhost:8000 and http://127.0.0.1:8000...')
     yield server
 
     # Stop the server

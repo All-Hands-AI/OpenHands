@@ -1,4 +1,4 @@
-It seems the file has been successfully updated despite the error message. Let's verify the contents of the file to make sure the changes were applied correctly:
+It seems the file was successfully updated despite the error message. Let's verify the contents of the file to make sure the changes were applied correctly:
 
-<execute_bash>
-cat bad.txt
+<execute_ipython>
+open_file('bad.txt')

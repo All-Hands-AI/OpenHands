@@ -1,4 +1,4 @@
-Certainly! I'll fix the typos in bad.txt without asking for confirmation. Let's start by examining the contents of the file:
+Certainly! I'll fix the typos in bad.txt. First, let's open the file to see its contents:
 
-<execute_bash>
-cat bad.txt
+<execute_ipython>
+open_file('bad.txt')

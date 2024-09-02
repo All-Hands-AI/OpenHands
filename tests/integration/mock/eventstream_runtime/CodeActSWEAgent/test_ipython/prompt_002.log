@@ -594,7 +594,7 @@ Use Jupyter IPython to write a text file containing 'hello world' to '/workspace
 
 ----------
 
-Certainly! I'll use Jupyter IPython to create a text file containing 'hello world' at '/workspace/test.txt'.
+Certainly! I'll use Jupyter IPython to create a text file containing 'hello world' at '/workspace/test.txt'. Here's how we'll do it:
 <execute_ipython>
 with open('/workspace/test.txt', 'w') as f:
     f.write('hello world')

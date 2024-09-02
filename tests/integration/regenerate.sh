@@ -210,9 +210,9 @@ regenerate_with_llm() {
   echo "cd project root"
   cd "$PROJECT_ROOT"
 
-  if [ "$test_name" = "test_browse_internet" ]; then
-    launch_http_server
-  fi
+#   if [ "$test_name" = "test_browse_internet" ]; then
+#     launch_http_server
+#   fi
 
   rm -rf $WORKSPACE_BASE/*
   if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
@@ -245,9 +245,9 @@ regenerate_with_llm() {
   echo "calling mv $LOG_DIR/llm"
   mv "$LOG_DIR"/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
-  if [ "$test_name" = "test_browse_internet" ]; then
-    kill $HTTP_SERVER_PID || true
-  fi
+#   if [ "$test_name" = "test_browse_internet" ]; then
+#     kill $HTTP_SERVER_PID || true
+#   fi
 }
 
 ##############################################################

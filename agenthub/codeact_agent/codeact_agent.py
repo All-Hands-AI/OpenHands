@@ -15,6 +15,7 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
+    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -130,14 +131,15 @@ class CodeActAgent(Agent):
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
+        obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = 'OBSERVATION:\n' + obs.content
+            text = obs_prefix + obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
@@ -149,13 +151,14 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            text = 'OBSERVATION:\n' + truncate_content(
-                str(obs.outputs), max_message_chars
-            )
+            text = obs_prefix + truncate_content(str(obs.outputs), max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
+            return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, BrowserOutputObservation):
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
