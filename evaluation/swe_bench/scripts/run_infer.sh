@@ -9,7 +9,8 @@ AGENT=$3
 EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
-SUBSET=$7
+DATASET=$7
+SPLIT=$8
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -66,7 +67,8 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE \
-  --set $SUBSET"
+  --dataset $DATASET \
+  --split $SPLIT"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

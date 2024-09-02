@@ -109,6 +109,11 @@ def get_config(
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
         base_container_image = get_instance_docker_image(instance['instance_id'])
+        logger.info(
+            f'Using instance container image: {base_container_image}. '
+            f'Please make sure this image exists. '
+            f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
+        )
     else:
         base_container_image = SWE_BENCH_CONTAINER_IMAGE
         logger.info(f'Using swe-bench container image: {base_container_image}')
