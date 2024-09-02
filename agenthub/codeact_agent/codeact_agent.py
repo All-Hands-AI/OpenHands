@@ -17,6 +17,7 @@ from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
+    UserRejectObservation,
 )
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
@@ -152,6 +153,10 @@ class CodeActAgent(Agent):
         elif isinstance(obs, ErrorObservation):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
+            return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, UserRejectObservation):
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += '\n[Last action has been rejected by the user]'
             return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
