@@ -15,7 +15,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
-    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -157,9 +156,6 @@ class CodeActAgent(Agent):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
             return Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, BrowserOutputObservation):
-            text = obs_prefix + truncate_content(obs.content, max_message_chars)
-            return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
@@ -199,7 +195,10 @@ class CodeActAgent(Agent):
             ],
             'temperature': 0.0,
         }
-
+        if self.llm.supports_prompt_caching:
+            params['extra_headers'] = {
+                'anthropic-beta': 'prompt-caching-2024-07-31',
+            }
         response = self.llm.completion(**params)
 
         return self.action_parser.parse(response)

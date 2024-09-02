@@ -22,7 +22,7 @@ assert TEST_RUNTIME in ['eventstream', 'remote']
 _ = get_runtime_cls(TEST_RUNTIME)  # make sure it does not raise an error
 
 CONFIG = AppConfig(
-    max_iterations=int(os.getenv('MAX_ITERATIONS', 15)),
+    max_iterations=int(os.getenv('MAX_ITERATIONS', 20)),
     max_budget_per_task=int(os.getenv('MAX_BUDGET_PER_TASK', 15)),
     runtime=TEST_RUNTIME,
     default_agent=os.getenv('DEFAULT_AGENT'),
@@ -235,9 +235,8 @@ def test_ipython_module(current_test_name: str):
     reason='currently only BrowsingAgent is capable of searching the internet',
 )
 @pytest.mark.skipif(
-    os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent'
-    or os.getenv('DEFAULT_AGENT') == 'CodeActAgent',
-    reason='CodeActAgent/CodeActSWEAgent do not support browsing',
+    os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent',
+    reason='CodeActSWEAgent does not support browsing',
 )
 def test_browse_internet(http_server, current_test_name: str):
     # Execute the task
