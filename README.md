@@ -17,13 +17,10 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
-<div style="text-align: center;">
-  <a href="https://trendshift.io/repositories/8648">
-    <img src="https://trendshift.io/api/badge/repositories/8648" alt="GitHub Trend">
-  </a>
-</div>
-
 <div align="center">
+  <a href="https://trendshift.io/repositories/8648">
+    <img src="https://trendshift.io/api/badge/repositories/8648" alt="GitHub Trend" style="display: block; margin: auto;">
+  </a>
   <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/network/members"><img src="https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Forks"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
