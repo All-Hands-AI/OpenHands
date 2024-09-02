@@ -17,6 +17,12 @@
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
 
+<div style="text-align: center;">
+  <a href="https://trendshift.io/repositories/8648">
+    <img src="https://trendshift.io/api/badge/repositories/8648" alt="GitHub Trend">
+  </a>
+</div>
+
 <div align="center">
   <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/network/members"><img src="https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Forks"></a>
@@ -40,8 +46,6 @@
   <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark"></a>
 </div>
 <hr>
-
-[![GitHub Tread](https://trendshift.io/api/badge/repositories/8648)](https://trendshift.io/repositories/8648)
 
 
 Welcome to OpenHands, a platform for autonomous software engineers, powered by AI and LLMs (previously called "OpenDevin").
