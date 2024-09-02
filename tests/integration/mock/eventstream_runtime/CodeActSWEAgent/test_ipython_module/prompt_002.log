@@ -14,9 +14,9 @@ The assistant can install Python packages using the %pip magic command in an IPy
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
-    Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
-    to view the file if you want to see more.
+    Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
+    If line_number is provided, the window will be moved to include that line.
+    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
     Args:
     path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
@@ -43,7 +43,9 @@ create_file(filename: str) -> None:
     filename: str: The name of the file to create.
 
 edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
-    Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
+    Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with non-empty `new_content`.
+    `to_replace` and `new_content` must be different! Split large edits into multiple smaller edits if necessary!
+    Use `append_file` method for writing after `create_file`!
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
     For example, given a file "/workspace/example.txt" with the following content:
@@ -104,7 +106,7 @@ insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
 
 append_file(file_name: str, content: str) -> None:
     Append content to the given file.
-    It appends text `content` to the end of the specified file.
+    It appends text `content` to the end of the specified file, ideal after a `create_file`!
     Args:
     file_name: str: The name of the file to edit.
     line_number: int: The line number (starting from 1) to insert the content after.
@@ -608,7 +610,7 @@ Collecting pymsgbox==1.0.9
 [?25h  Preparing metadata (pyproject.toml) ... [?25l- done
 [?25hBuilding wheels for collected packages: pymsgbox
   Building wheel for pymsgbox (pyproject.toml) ... [?25l- done
-[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7407 sha256=cd01971247caa14ba55cb76b476c8c2659d10c03ec9da34ba3a8bdb4bb626438
+[?25h  Created wheel for pymsgbox: filename=PyMsgBox-1.0.9-py3-none-any.whl size=7406 sha256=6e89bf986ad6b7e002cd66505d4e7cc6b354f93f609c8b95a84dd54c077ae1df
   Stored in directory: /home/openhands/.cache/pip/wheels/85/92/63/e126ee5f33d8f2ed04f96e43ef5df7270a2f331848752e8662
 Successfully built pymsgbox
 Installing collected packages: pymsgbox
