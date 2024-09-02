@@ -32,8 +32,15 @@ WINDOW = 100
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+
 
 # ==================================================================================================
+
+
+def _output_error(error_msg: str) -> bool:
+    print(f'ERROR: {error_msg}')
+    return False
 
 
 def _is_valid_filename(file_name) -> bool:
@@ -75,7 +82,7 @@ def _check_current_file(file_path: str | None = None) -> bool:
     if not file_path:
         file_path = CURRENT_FILE
     if not file_path or not os.path.isfile(file_path):
-        raise ValueError('No file open. Use the open_file function first.')
+        return _output_error('No file open. Use the open_file function first.')
     return True
 
 
@@ -99,7 +106,9 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     return 'ERRORS:\n' + lint_error.text, first_error_line
 
 
-def _print_window(file_path, targeted_line, window, return_str=False):
+def _print_window(
+    file_path, targeted_line, window, return_str=False, ignore_window=False
+):
     global CURRENT_LINE
     _check_current_file(file_path)
     with open(file_path) as file:
@@ -115,10 +124,14 @@ def _print_window(file_path, targeted_line, window, return_str=False):
         # cover edge cases
         CURRENT_LINE = _clamp(targeted_line, 1, total_lines)
         half_window = max(1, window // 2)
-
-        # Ensure at least one line above and below the targeted line
-        start = max(1, CURRENT_LINE - half_window)
-        end = min(total_lines, CURRENT_LINE + half_window)
+        if ignore_window:
+            # Use CURRENT_LINE as starting line (for e.g. scroll_down)
+            start = max(1, CURRENT_LINE)
+            end = min(total_lines, CURRENT_LINE + window)
+        else:
+            # Ensure at least one line above and below the targeted line
+            start = max(1, CURRENT_LINE - half_window)
+            end = min(total_lines, CURRENT_LINE + half_window)
 
         # Adjust start and end to ensure at least one line above and below
         if start == 1:
@@ -159,9 +172,9 @@ def _cur_file_header(current_file, total_lines) -> str:
 def open_file(
     path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
-    """Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
-    to view the file if you want to see more.
+    """Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
+    If line_number is provided, the window will be moved to include that line.
+    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
 
     Args:
         path: str: The path to the file to open, preferred absolute path.
@@ -171,14 +184,16 @@ def open_file(
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
     if not os.path.isfile(path):
-        raise FileNotFoundError(f'File {path} not found')
+        _output_error(f'File {path} not found.')
+        return
 
     CURRENT_FILE = os.path.abspath(path)
     with open(CURRENT_FILE) as file:
         total_lines = max(1, sum(1 for _ in file))
 
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        raise ValueError(f'Line number must be between 1 and {total_lines}')
+        _output_error(f'Line number must be between 1 and {total_lines}')
+        return
     CURRENT_LINE = line_number
 
     # Override WINDOW with context_lines
@@ -187,8 +202,14 @@ def open_file(
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
-        CURRENT_FILE, CURRENT_LINE, _clamp(context_lines, 1, 2000), return_str=True
+        CURRENT_FILE,
+        CURRENT_LINE,
+        _clamp(context_lines, 1, 300),
+        return_str=True,
+        ignore_window=False,
     )
+    if output.strip().endswith('more lines below)'):
+        output += '\n[Use `scroll_down` to view the next 100 lines of the file!]'
     print(output)
 
 
@@ -204,12 +225,15 @@ def goto_line(line_number: int) -> None:
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        raise ValueError(f'Line number must be between 1 and {total_lines}')
+        _output_error(f'Line number must be between 1 and {total_lines}.')
+        return
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    output += _print_window(
+        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=False
+    )
     print(output)
 
 
@@ -226,7 +250,9 @@ def scroll_down() -> None:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    output += _print_window(
+        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
+    )
     print(output)
 
 
@@ -243,7 +269,9 @@ def scroll_up() -> None:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    output += _print_window(
+        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
+    )
     print(output)
 
 
@@ -254,16 +282,14 @@ def create_file(filename: str) -> None:
         filename: str: The name of the file to create.
     """
     if os.path.exists(filename):
-        raise FileExistsError(f"File '{filename}' already exists.")
+        _output_error(f"File '{filename}' already exists.")
+        return
 
     with open(filename, 'w') as file:
         file.write('\n')
 
     open_file(filename)
     print(f'[File {filename} created.]')
-
-
-LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
 
 
 class LineNumberError(Exception):
@@ -386,7 +412,7 @@ def _edit_file_impl(
     content: str = '',
     is_insert: bool = False,
     is_append: bool = False,
-) -> str:
+) -> str | None:
     """Internal method to handle common logic for edit_/append_file methods.
 
     Args:
@@ -408,19 +434,24 @@ def _edit_file_impl(
     )
 
     if not _is_valid_filename(file_name):
-        raise FileNotFoundError('Invalid file name.')
+        _output_error('Invalid file name.')
+        return None
 
     if not _is_valid_path(file_name):
-        raise FileNotFoundError('Invalid path or file name.')
+        _output_error('Invalid path or file name.')
+        return None
 
     if not _create_paths(file_name):
-        raise PermissionError('Could not access or create directories.')
+        _output_error('Could not access or create directories.')
+        return None
 
     if not os.path.isfile(file_name):
-        raise FileNotFoundError(f'File {file_name} not found.')
+        _output_error(f'File {file_name} not found.')
+        return None
 
     if is_insert and is_append:
-        raise ValueError('Cannot insert and append at the same time.')
+        _output_error('Cannot insert and append at the same time.')
+        return None
 
     # Use a temporary file to write changes
     content = str(content or '')
@@ -434,7 +465,11 @@ def _edit_file_impl(
         # lint the original file
         enable_auto_lint = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
         if enable_auto_lint:
-            original_lint_error, _ = _lint_file(file_name)
+            # Copy the original file to a temporary file (with the same ext) and lint it
+            suffix = os.path.splitext(file_name)[1]
+            with tempfile.NamedTemporaryFile(suffix=suffix) as orig_file_clone:
+                shutil.copy2(file_name, orig_file_clone.name)
+                original_lint_error, _ = _lint_file(orig_file_clone.name)
 
         # Create a temporary file
         with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
@@ -526,17 +561,18 @@ def _edit_file_impl(
                 ret_str += lint_error + '\n'
 
                 editor_lines = n_added_lines + 20
-
-                ret_str += '[This is how your edit would have looked if applied]\n'
-                ret_str += '-------------------------------------------------\n'
+                sep = '-' * 49 + '\n'
+                ret_str += (
+                    f'[This is how your edit would have looked if applied]\n{sep}'
+                )
                 ret_str += (
                     _print_window(file_name, show_line, editor_lines, return_str=True)
                     + '\n'
                 )
-                ret_str += '-------------------------------------------------\n\n'
+                ret_str += f'{sep}\n'
 
                 ret_str += '[This is the original code before your edit]\n'
-                ret_str += '-------------------------------------------------\n'
+                ret_str += sep
                 ret_str += (
                     _print_window(
                         original_file_backup_path,
@@ -546,8 +582,7 @@ def _edit_file_impl(
                     )
                     + '\n'
                 )
-                ret_str += '-------------------------------------------------\n'
-
+                ret_str += sep
                 ret_str += (
                     'Your changes have NOT been applied. Please fix your edit command and try again.\n'
                     'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -593,7 +628,9 @@ def _edit_file_impl(
 
 
 def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
-    """Edit a file. This will search for `to_replace` in the given file and replace it with `new_content`.
+    """Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with non-empty `new_content`.
+    `to_replace` and `new_content` must be different! Split large edits into multiple smaller edits if necessary!
+    Use `append_file` method for writing after `create_file`!
 
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
 
@@ -639,11 +676,17 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         new_content: str: The new content to replace the old content with.
     """
     # FIXME: support replacing *all* occurrences
-    if to_replace.strip() == '':
-        raise ValueError('`to_replace` must not be empty.')
+    if to_replace is None or to_replace.strip() == '':
+        _output_error('`to_replace` must not be empty.')
+        return
 
     if to_replace == new_content:
-        raise ValueError('`to_replace` and `new_content` must be different.')
+        _output_error('`to_replace` and `new_content` must be different.')
+        return
+
+    if not os.path.isfile(file_name):
+        _output_error(f'File {file_name} not found.')
+        return None
 
     # search for `to_replace` in the file
     # if found, replace it with `new_content`
@@ -652,9 +695,10 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         file_content = file.read()
 
     if file_content.count(to_replace) > 1:
-        raise ValueError(
+        _output_error(
             '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
         )
+        return
 
     start = file_content.find(to_replace)
     if start != -1:
@@ -690,7 +734,8 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     )
     # lint_error = bool(LINTER_ERROR_MSG in ret_str)
     # TODO: automatically tries to fix linter error (maybe involve some static analysis tools on the location near the edit to figure out indentation)
-    print(ret_str)
+    if ret_str is not None:
+        print(ret_str)
 
 
 def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
@@ -724,12 +769,13 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
         is_insert=True,
         is_append=False,
     )
-    print(ret_str)
+    if ret_str is not None:
+        print(ret_str)
 
 
 def append_file(file_name: str, content: str) -> None:
     """Append content to the given file.
-    It appends text `content` to the end of the specified file.
+    It appends text `content` to the end of the specified file, ideal after a `create_file`!
 
     Args:
         file_name: str: The name of the file to edit.
@@ -744,7 +790,8 @@ def append_file(file_name: str, content: str) -> None:
         is_insert=False,
         is_append=True,
     )
-    print(ret_str)
+    if ret_str is not None:
+        print(ret_str)
 
 
 def search_dir(search_term: str, dir_path: str = './') -> None:
@@ -755,7 +802,8 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
         dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f'Directory {dir_path} not found')
+        _output_error(f'Directory {dir_path} not found')
+        return
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
@@ -797,11 +845,11 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     if file_path is None:
         file_path = CURRENT_FILE
     if file_path is None:
-        raise FileNotFoundError(
-            'No file specified or open. Use the open_file function first.'
-        )
+        _output_error('No file specified or open. Use the open_file function first.')
+        return
     if not os.path.isfile(file_path):
-        raise FileNotFoundError(f'File {file_path} not found')
+        _output_error(f'File {file_path} not found.')
+        return
 
     matches = []
     with open(file_path) as file:
@@ -826,7 +874,8 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f'Directory {dir_path} not found')
+        _output_error(f'Directory {dir_path} not found')
+        return
 
     matches = []
     for root, _, files in os.walk(dir_path):

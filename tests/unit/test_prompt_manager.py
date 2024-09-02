@@ -34,7 +34,7 @@ def test_prompt_manager_without_micro_agent(prompt_dir, agent_skills_docs):
 
     assert isinstance(manager.system_message, str)
     assert (
-        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions."
+        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
         in manager.system_message
     )
     assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
@@ -74,7 +74,7 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
 
     assert isinstance(manager.system_message, str)
     assert (
-        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions."
+        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
         in manager.system_message
     )
     assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
