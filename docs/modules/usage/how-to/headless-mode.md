@@ -39,3 +39,10 @@ docker run -it \
     python -m openhands.core.main \
     -t "Write a bash script that prints Hello World"
 ```
+
+## Difference Between Headless Mode and CLI Mode
+
+- **Headless Mode**: Non-interactive mode where tasks are executed without user interaction. It is suitable for automation and scripting purposes.
+- **CLI Mode**: Interactive mode where users can input tasks and receive responses in real-time. It is suitable for users who prefer or require a command-line interface.
+
+For more information on CLI mode, refer to the [CLI Mode documentation](./cli-mode.md).
