@@ -1,9 +1,10 @@
 import { Textarea } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { VscArrowUp, VscFileMedia } from "react-icons/vsc";
+import { VscArrowUp } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
 import { I18nKey } from "#/i18n/declaration";
+import Clip from "#/assets/clip.svg?react";
 
 const convertImageToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -82,6 +83,23 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
     <div className="w-full relative text-base flex pt-3">
       <Textarea
         value={message}
+        startContent={
+          <label
+            htmlFor="file-input"
+            className="cursor-pointer"
+            aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE)}
+          >
+            <Clip width={24} height={24} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              id="file-input"
+              multiple
+            />
+          </label>
+        }
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={onKeyPress}
         onCompositionStart={() => setIsComposing(true)}
@@ -97,26 +115,6 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
         minRows={1}
         variant="bordered"
       />
-      <label
-        htmlFor="file-input"
-        className={twMerge(
-          "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-16 bottom-[19px] transition active:bg-white active:text-black",
-          disabled
-            ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500",
-        )}
-        aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE)}
-      >
-        <VscFileMedia />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-          id="file-input"
-          multiple
-        />
-      </label>
       <button
         type="button"
         onClick={handleSendChatMessage}
