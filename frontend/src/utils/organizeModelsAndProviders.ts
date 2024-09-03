@@ -32,6 +32,13 @@ export const organizeModelsAndProviders = (models: string[]) => {
       provider,
       model: modelId,
     } = extractModelAndProvider(model);
+
+    // Ignore "anthropic" providers with a separator of "."
+    // These are outdated and incompatible providers.
+    if (provider === "anthropic" && separator === ".") {
+      return;
+    }
+
     const key = provider || "other";
     if (!object[key]) {
       object[key] = { separator, models: [] };
