@@ -11,6 +11,7 @@ export default {
         'root-primary': '#171717',
         'root-secondary': '#262626',
         'hyperlink': '#4465DB',
+        'danger': '#AE0C2F',
       },
     },
   },
