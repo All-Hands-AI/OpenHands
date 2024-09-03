@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -195,8 +195,11 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
 
     codeact_agent.reset()
 
-    # Replace mock LLM completion with a function that checks headers and returns a structured response
+    # Create a mock for litellm_completion
     def check_headers(**kwargs):
+        assert 'extra_headers' in kwargs
+        assert 'anthropic-beta' in kwargs['extra_headers']
+        assert kwargs['extra_headers']['anthropic-beta'] == 'prompt-caching-2024-07-31'
         # Create a mock response with the expected structure
         mock_response = Mock()
         mock_response.choices = [Mock()]
@@ -204,11 +207,17 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
         mock_response.choices[0].message.content = 'Hello! How can I assist you today?'
         return mock_response
 
-    codeact_agent.llm.completion = check_headers
-
-    # Act
-    result = codeact_agent.step(mock_state)
+    # Use patch to replace litellm_completion with our check_headers function
+    with patch('openhands.llm.llm.litellm_completion', side_effect=check_headers):
+        # Also patch the action parser to return a MessageAction
+        with patch.object(
+            codeact_agent.action_parser,
+            'parse',
+            return_value=MessageAction('Hello! How can I assist you today?'),
+        ):
+            # Act
+            result = codeact_agent.step(mock_state)
 
     # Assert
     assert isinstance(result, MessageAction)
-    assert 'Hello! How can I assist you today?' in result.content
+    assert result.content == 'Hello! How can I assist you today?'
