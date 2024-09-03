@@ -107,7 +107,7 @@ jobs:
     needs: [ghcr_build_runtime]
     strategy:
       matrix:
-        base_image: ['nikolaik', 'python', 'node']
+        base_image: [1,2,3,4,5]
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -124,12 +124,12 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ matrix.base_image }}
+          name: runtime-nikolaik
           path: /tmp
       - name: Load runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+          docker load --input /tmp/runtime-nikolaik.tar
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -141,14 +141,14 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-nikolaik
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest --splits 5 --group ${{ matrix.group }} --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
