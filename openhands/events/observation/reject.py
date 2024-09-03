@@ -6,7 +6,7 @@ from openhands.events.observation.observation import Observation
 
 @dataclass
 class UserRejectObservation(Observation):
-    """This data class represents the result of a successful action."""
+    """This data class represents the result of a rejected action."""
 
     observation: str = ObservationType.USER_REJECTED
 
