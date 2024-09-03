@@ -4,6 +4,8 @@ from typing import Union
 from pydantic import BaseModel, Field, model_serializer
 from typing_extensions import Literal
 
+from openhands.core.logger import openhands_logger as logger
+
 
 class ContentType(Enum):
     TEXT = 'text'
@@ -11,7 +13,7 @@ class ContentType(Enum):
 
 
 class Content(BaseModel):
-    type: ContentType
+    type: str
     cache_prompt: bool = False
 
     @model_serializer
@@ -20,13 +22,13 @@ class Content(BaseModel):
 
 
 class TextContent(Content):
-    type: ContentType = ContentType.TEXT
+    type: str = ContentType.TEXT.value
     text: str
 
     @model_serializer
     def serialize_model(self):
         data: dict[str, str | dict[str, str]] = {
-            'type': self.type.value,
+            'type': self.type,
             'text': self.text,
         }
         if self.cache_prompt:
@@ -35,14 +37,14 @@ class TextContent(Content):
 
 
 class ImageContent(Content):
-    type: ContentType = ContentType.IMAGE_URL
+    type: str = ContentType.IMAGE_URL.value
     image_urls: list[str]
 
     @model_serializer
     def serialize_model(self):
         images: list[dict[str, str | dict[str, str]]] = []
         for url in self.image_urls:
-            images.append({'type': self.type.value, 'image_url': {'url': url}})
+            images.append({'type': self.type, 'image_url': {'url': url}})
         if self.cache_prompt and images:
             images[-1]['cache_control'] = {'type': 'ephemeral'}
         return images
@@ -66,46 +68,40 @@ class Message(BaseModel):
             elif isinstance(item, ImageContent):
                 content.extend(item.model_dump())
 
-        return {'role': self.role, 'content': content}
+        return {'content': content, 'role': self.role}
 
-    @staticmethod
-    def format_messages(
-        messages: Union['Message', 'list[Message]'], with_images: bool
-    ) -> list[dict]:
-        if not isinstance(messages, list):
-            messages = [messages]
 
-        if with_images:
-            return [message.model_dump() for message in messages]
+def format_messages(
+    messages: Union[Message, list[Message]], with_images: bool
+) -> list[dict]:
+    if not isinstance(messages, list):
+        messages = [messages]
 
-        formatted_messages = []
-        for message in messages:
-            if isinstance(message, dict):
-                # If it's already a dict, just extract the content
-                content = message.get('content', '')
-                if isinstance(content, list):
-                    # If content is a list, join the text parts
-                    formatted_content = ''.join(
-                        item.get('text', '')
-                        for item in content
-                        if item.get('type') == 'text'
-                    )
-                else:
-                    formatted_content = content
-            else:
-                # If it's a Message object, process as before
-                formatted_content = ''
-                for content in message.content:
-                    if isinstance(content, TextContent):
-                        formatted_content += content.text
+    if with_images:
+        logger.debug(f' >>>>>>>>>>>>>>>>>> with_images: {with_images}')
+        return [message.model_dump() for message in messages]
 
-            formatted_messages.append(
+    converted_messages = []
+    for message in messages:
+        content_str = ''
+        if isinstance(message, str):
+            content_str = content_str + message + '\n'
+            continue
+        if isinstance(message, dict):
+            content_str = content_str + message['content'] + '\n'
+            continue
+        for content in message.content:
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, TextContent):
+                        content_str = content_str + item.text + '\n'
+            elif isinstance(content, TextContent):
+                content_str = content_str + content.text + '\n'
+        if content_str:
+            converted_messages.append(
                 {
-                    'role': message['role']
-                    if isinstance(message, dict)
-                    else message.role,
-                    'content': formatted_content,
+                    'role': message.role,
+                    'content': content_str,
                 }
             )
-
-        return formatted_messages
+    return converted_messages

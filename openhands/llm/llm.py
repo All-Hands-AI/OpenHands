@@ -31,7 +31,7 @@ from tenacity import (
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message
+from openhands.core.message import Message, format_messages
 from openhands.core.metrics import Metrics
 
 __all__ = ['LLM']
@@ -63,15 +63,17 @@ class LLM:
         Args:
             config: The LLM configuration
         """
-        self.config = copy.deepcopy(config)
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
-        self.supports_prompt_caching = (
-            self.config.model in cache_prompting_supported_models
-        )
+        self.config = copy.deepcopy(config)
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
+
+        self.supports_prompt_caching = (
+            self.vision_is_active()
+            and self.config.model in cache_prompting_supported_models
+        )
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -164,6 +166,7 @@ class LLM:
             # log the prompt
             debug_message = ''
             for message in messages:
+                content_str = ''
                 content = message['content']
 
                 if isinstance(content, list):
@@ -181,18 +184,18 @@ class LLM:
                                 content_str = str(element)
                         else:
                             content_str = str(element)
-
-                        debug_message += message_separator + content_str
                 else:
                     content_str = str(content)
-                    debug_message += message_separator + content_str
 
-            llm_prompt_logger.debug(debug_message)
+                if content_str:
+                    debug_message += message_separator + content_str
 
             # skip if messages is empty (thus debug_message is empty)
             if debug_message:
+                llm_prompt_logger.debug(debug_message)
                 resp = completion_unwrapped(*args, **kwargs)
             else:
+                logger.debug('No completion messages!')
                 resp = {'choices': [{'message': {'content': ''}}]}
 
             # log the response
@@ -575,4 +578,4 @@ class LLM:
     def format_messages_for_llm(
         self, messages: Union[Message, list[Message]]
     ) -> list[dict]:
-        return Message.format_messages(messages, self.vision_is_active())
+        return format_messages(messages, self.vision_is_active())

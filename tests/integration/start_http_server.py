@@ -2,6 +2,9 @@ import os
 import socket
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
+web_dir = os.path.join(os.path.dirname(__file__), 'static')
+os.chdir(web_dir)
+
 
 class MultiAddressServer(HTTPServer):
     def server_bind(self):
@@ -16,8 +19,6 @@ class LoggingHTTPRequestHandler(SimpleHTTPRequestHandler):
         )
 
 
-web_dir = os.path.join(os.path.dirname(__file__), 'static')
-os.chdir(web_dir)
 handler = LoggingHTTPRequestHandler
 
 # Start the server

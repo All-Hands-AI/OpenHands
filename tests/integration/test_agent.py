@@ -238,7 +238,7 @@ def test_ipython_module(current_test_name: str):
     os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent',
     reason='CodeActSWEAgent does not support browsing',
 )
-def test_browse_internet(http_server, current_test_name: str):
+def test_browse_internet(current_test_name: str):
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(

@@ -5,15 +5,13 @@ import shutil
 import socket
 import subprocess
 import tempfile
-import time
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from threading import Thread
 
 import pytest
 from litellm import completion
 
-from openhands.core.message import Message
+from openhands.core.message import format_messages
 from openhands.llm.llm import message_separator
 
 script_dir = os.environ.get('SCRIPT_DIR')
@@ -187,8 +185,7 @@ def mock_user_response(*args, test_name, **kwargs):
 def mock_completion(*args, test_name, **kwargs):
     global cur_id
     messages = kwargs['messages']
-    message_str = ''
-    plain_messages = Message.format_messages(messages, with_images=False)
+    plain_messages = format_messages(messages, with_images=False)
     message_str = message_separator.join(msg['content'] for msg in plain_messages)
 
     # this assumes all response_(*).log filenames are in numerical order, starting from one
@@ -225,6 +222,12 @@ def patch_completion(monkeypatch, request):
         lambda completion_response, **extra_kwargs: 1,
     )
 
+    # Mock LLMConfig to disable vision support
+    monkeypatch.setattr(
+        'openhands.llm.llm.LLM.vision_is_active',
+        lambda self: False,
+    )
+
     # Mock user input (only for tests that have user_responses.log)
     user_responses_str = mock_user_response(test_name=test_name)
     if user_responses_str:
@@ -245,25 +248,26 @@ class LoggingHTTPRequestHandler(SimpleHTTPRequestHandler):
         )
 
 
-@pytest.fixture
-def http_server():
-    web_dir = os.path.join(os.path.dirname(__file__), 'static')
-    os.chdir(web_dir)
-    handler = LoggingHTTPRequestHandler
+# TODO: this only gives connection refused error!
+# @pytest.fixture
+# def http_server():
+#     web_dir = os.path.join(os.path.dirname(__file__), 'static')
+#     os.chdir(web_dir)
+#     handler = LoggingHTTPRequestHandler
 
-    # Start the server
-    server = MultiAddressServer(('', 8000), handler)
-    thread = Thread(target=server.serve_forever)
-    thread.setDaemon(True)
-    thread.start()
-    time.sleep(1)
+#     # Start the server
+#     server = MultiAddressServer(('', 8000), handler)
+#     thread = Thread(target=server.serve_forever)
+#     thread.setDaemon(True)
+#     thread.start()
+#     time.sleep(1)
 
-    print('HTTP server started on http://localhost:8000 and http://127.0.0.1:8000...')
-    yield server
+#     print('HTTP server started on http://localhost:8000 and http://127.0.0.1:8000...')
+#     yield server
 
-    # Stop the server
-    server.shutdown()
-    thread.join()
+#     # Stop the server
+#     server.shutdown()
+#     thread.join()
 
 
 def set_up():

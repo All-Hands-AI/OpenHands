@@ -125,6 +125,7 @@ run_test() {
     DEFAULT_AGENT=$agent \
     TEST_RUNTIME="$TEST_RUNTIME" \
     DEBUG=$DEBUG \
+    LLM=$LLM \
     LOG_TO_FILE=$LOG_TO_FILE \
     FORCE_REGENERATE=$FORCE_REGENERATE \
     SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
@@ -166,10 +167,12 @@ launch_http_server() {
   poetry run python $SCRIPT_DIR/start_http_server.py &
   HTTP_SERVER_PID=$!
   echo "Test http server launched, PID = $HTTP_SERVER_PID"
-  sleep 10
+  sleep 5
 }
 
 cleanup() {
+  cd "$PROJECT_ROOT/tests"
+  cd "$PROJECT_ROOT"
   echo "Cleaning up before exit..."
   if [ -n "$HTTP_SERVER_PID" ]; then
     echo "Killing HTTP server..."
@@ -181,13 +184,21 @@ cleanup() {
 }
 
 # Trap the EXIT signal to run the cleanup function
-trap cleanup EXIT
+if [ -z "$NOTRAP" ]; then
+  trap cleanup EXIT
+fi
 
 # generate prompts again, using existing LLM responses under tests/integration/mock/[test_runtime]_runtime/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
 # respond to the prompts. The benefit is developers don't have to regenerate real responses from LLM, if they only
 # apply a small change to prompts.
 regenerate_without_llm() {
+  cd "$PROJECT_ROOT"
+
+  if [ "$test_name" = "test_browse_internet" ]; then
+    launch_http_server
+  fi
+
   # set -x to print the command being executed
   set -x
   env SCRIPT_DIR="$SCRIPT_DIR" \
@@ -198,21 +209,25 @@ regenerate_without_llm() {
       FORCE_APPLY_PROMPTS=true \
       DEFAULT_AGENT=$agent \
       TEST_RUNTIME="$TEST_RUNTIME" \
+      LLM=$LLM \
       DEBUG=$DEBUG \
       LOG_TO_FILE=$LOG_TO_FILE \
       FORCE_REGENERATE=$FORCE_REGENERATE \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s "$SCRIPT_DIR/test_agent.py::$test_name"
   set +x
+
+  if [ "$test_name" = "test_browse_internet" ]; then
+    kill $HTTP_SERVER_PID || true
+  fi
 }
 
 regenerate_with_llm() {
-  echo "cd project root"
   cd "$PROJECT_ROOT"
 
-#   if [ "$test_name" = "test_browse_internet" ]; then
-#     launch_http_server
-#   fi
+  if [ "$test_name" = "test_browse_internet" ]; then
+    launch_http_server
+  fi
 
   rm -rf $WORKSPACE_BASE/*
   if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
@@ -231,6 +246,7 @@ regenerate_with_llm() {
       DEFAULT_AGENT=$agent \
       RUNTIME="$TEST_RUNTIME" \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
+      LLM=$LLM \
       DEBUG=$DEBUG \
       LOG_TO_FILE=$LOG_TO_FILE \
       FORCE_REGENERATE=$FORCE_REGENERATE \
@@ -240,14 +256,12 @@ regenerate_with_llm() {
       -c $agent
   set +x
 
-  echo "calling mkdir"
   mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
-  echo "calling mv $LOG_DIR/llm"
   mv "$LOG_DIR"/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
 
-#   if [ "$test_name" = "test_browse_internet" ]; then
-#     kill $HTTP_SERVER_PID || true
-#   fi
+  if [ "$test_name" = "test_browse_internet" ]; then
+    kill $HTTP_SERVER_PID || true
+  fi
 }
 
 ##############################################################
@@ -343,6 +357,8 @@ for ((i = 0; i < num_of_tests; i++)); do
         echo -e "\n============================================================"
         echo -e "======== STEP 5: $test_name prompts and responses regenerated for $agent, rerun test again to verify"
         echo -e "============================================================\n\n\n"
+        cd "$PROJECT_ROOT/tests"
+        cd "$PROJECT_ROOT"
         # Temporarily disable 'exit on error'
         set +e
         run_test
