@@ -166,29 +166,29 @@ class LLM:
             # log the prompt
             debug_message = ''
             for message in messages:
-                content_str = ''
+                debug_str = ''  # helper to prevent empty messages
                 content = message['content']
 
                 if isinstance(content, list):
                     for element in content:
                         if isinstance(element, dict):
                             if 'text' in element:
-                                content_str = element['text'].strip()
+                                debug_str = element['text'].strip()
                             elif (
                                 self.vision_is_active()
                                 and 'image_url' in element
                                 and 'url' in element['image_url']
                             ):
-                                content_str = element['image_url']['url']
+                                debug_str = element['image_url']['url']
                             else:
-                                content_str = str(element)
+                                debug_str = str(element)
                         else:
-                            content_str = str(element)
+                            debug_str = str(element)
                 else:
-                    content_str = str(content)
+                    debug_str = str(content)
 
-                if content_str:
-                    debug_message += message_separator + content_str
+                if debug_str:
+                    debug_message += message_separator + debug_str
 
             if self.supports_prompt_caching:
                 # Anthropic-specific prompt caching
@@ -270,23 +270,23 @@ class LLM:
                     for element in content:
                         if isinstance(element, dict):
                             if 'text' in element:
-                                content_str = element['text']
+                                debug_str = element['text']
                             elif (
                                 self.vision_is_active()
                                 and 'image_url' in element
                                 and 'url' in element['image_url']
                             ):
-                                content_str = element['image_url']['url']
+                                debug_str = element['image_url']['url']
                             else:
-                                content_str = str(element)
+                                debug_str = str(element)
                         else:
-                            content_str = str(element)
+                            debug_str = str(element)
 
-                        debug_message += message_separator + content_str
+                        debug_message += message_separator + debug_str
                 else:
-                    content_str = str(content)
+                    debug_str = str(content)
 
-                debug_message += message_separator + content_str
+                debug_message += message_separator + debug_str
 
             llm_prompt_logger.debug(debug_message)
 
@@ -515,6 +515,7 @@ class LLM:
         try:
             return litellm.token_counter(model=self.config.model, messages=messages)
         except Exception:
+            # TODO: this is to limit logspam in case token count is not supported
             return 0
 
     def is_local(self):
