@@ -19,27 +19,16 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 OpenHands now support using the [official evaluation docker](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md) for both **[inference](#run-inference-on-swe-bench-instances) and [evaluation](#evaluate-generated-patches)**.
 This is now the default behavior.
 
-### Download Docker Images
-
-**(Recommended for reproducibility)** If you have extra local space (e.g., 100GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared by running:
-
-```bash
-evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
-```
-
-If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
-
-```bash
-evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
-```
 
 ## Run Inference on SWE-Bench Instances
 
-Make sure your Docker daemon is running, and you have pulled the [instance-level docker image](#openhands-swe-bench-instance-level-docker-support).
+Make sure your Docker daemon is running, and you have ample disk space (at least 200-500GB, depends on the SWE-Bench set you are running on) for the [instance-level docker image](#openhands-swe-bench-instance-level-docker-support).
+
+When the `run_infer.sh` script is started, it will automatically pull the relavant SWE-Bench images. For example, for instance ID `django_django-11011`, it will try to pull our pre-build docker image `sweb.eval.x86_64.django_s_django-11011` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 300
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 300 30 1 princeton-nlp/SWE-bench_Lite test
 ```
 
 where `model_config` is mandatory, and the rest are optional.
@@ -57,6 +46,8 @@ in order to use `eval_limit`, you must also set `agent`.
 default, it is set to 30.
 - `num_workers`, e.g. `3`, is the number of parallel workers to run the evaluation. By
 default, it is set to 1.
+- `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench` or `princeton-nlp/SWE-bench_Lite`, specifies which dataset to evaluate on.
+- `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
 
 There are also two optional environment variables you can set.
 ```
@@ -94,6 +85,28 @@ In this case, `eval_limit` option applies to tasks that are in the `selected_ids
 After running the inference, you will obtain a `output.jsonl` (by default it will be saved to `evaluation/evaluation_outputs`).
 
 ## Evaluate Generated Patches
+
+### Download Docker Images
+
+**(Recommended for reproducibility)** If you have extra local space (e.g., 200GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared by running:
+
+```bash
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
+```
+
+If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
+
+```bash
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh env
+```
+
+If you want to evaluate on the full SWE-Bench test set:
+
+```bash
+evaluation/swe_bench/scripts/docker/pull_all_eval_docker.sh instance full
+```
+
+### Run evaluation
 
 With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patches, and produce a fine-grained report.
 
