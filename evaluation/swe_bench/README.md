@@ -74,6 +74,12 @@ SANDBOX_API_KEY="YOUR-API-KEY" RUNTIME=remote EVAL_DOCKER_IMAGE_PREFIX="us-docke
 # This example runs evaluation on CodeActAgent for 300 instances on "princeton-nlp/SWE-bench_Lite"'s test set, with max 30 iteration per instances, with 16 number of workers running in parallel
 ```
 
+To clean-up all existing runtime you've already started, run:
+
+```bash
+./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh "YOUR-API-KEY"
+```
+
 ### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
