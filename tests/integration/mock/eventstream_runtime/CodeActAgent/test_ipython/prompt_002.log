@@ -422,7 +422,6 @@ OBSERVATION:
 1|
 (this is the end of the file)
 [File /workspace/test.txt created.]
-An error occurred while handling the file: [Errno 1] Operation not permitted
 [File: /workspace/test.txt (1 lines total after edit)]
 (this is the beginning of the file)
 1|hello world

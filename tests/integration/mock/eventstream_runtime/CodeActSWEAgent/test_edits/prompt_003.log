@@ -627,7 +627,6 @@ new_content='This is a stupid typo.')
 ----------
 
 OBSERVATION:
-An error occurred while handling the file: [Errno 1] Operation not permitted
 [File: /workspace/bad.txt (4 lines total after edit)]
 (this is the beginning of the file)
 1|This is a stupid typo.
