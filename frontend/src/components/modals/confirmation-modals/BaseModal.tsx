@@ -1,10 +1,33 @@
 import React from "react";
 import ModalButton from "#/components/buttons/ModalButton";
+import ModalBody from "../ModalBody";
 
 interface ButtonConfig {
   text: string;
   onClick: () => void;
   className: React.HTMLProps<HTMLButtonElement>["className"];
+}
+
+interface BaseModalTitleProps {
+  title: string;
+}
+
+export function BaseModalTitle({ title }: BaseModalTitleProps) {
+  return (
+    <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
+      {title}
+    </span>
+  );
+}
+
+interface BaseModalDescriptionProps {
+  description: string;
+}
+
+export function BaseModalDescription({
+  description,
+}: BaseModalDescriptionProps) {
+  return <p className="text-xs text-[#A3A3A3]">{description}</p>;
 }
 
 interface BaseModalProps {
@@ -15,12 +38,10 @@ interface BaseModalProps {
 
 function BaseModal({ title, description, buttons }: BaseModalProps) {
   return (
-    <div className="flex flex-col gap-6 p-6 w-[384px] rounded-xl bg-root-primary">
+    <ModalBody>
       <div className="flex flex-col gap-2">
-        <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
-          {title}
-        </span>
-        <p className="text-xs text-[#A3A3A3]">{description}</p>
+        <BaseModalTitle title={title} />
+        <BaseModalDescription description={description} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -33,7 +54,7 @@ function BaseModal({ title, description, buttons }: BaseModalProps) {
           />
         ))}
       </div>
-    </div>
+    </ModalBody>
   );
 }
 

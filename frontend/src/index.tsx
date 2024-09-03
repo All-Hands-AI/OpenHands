@@ -14,7 +14,10 @@ import Home, {
   loader as homeLoader,
 } from "./routes/Home/Home";
 import { action as settingsAction } from "./routes/Settings";
-import LoadingProjectModal from "./components/modals/LoadingProject";
+import ConnectToGitHubModal from "./components/modals/ConnectToGitHubModal";
+import WaitlistModal from "./components/modals/WaitlistModal";
+import InactivityModal from "./components/modals/InactivityModal";
+import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 
 const router = createBrowserRouter([
   {
@@ -42,7 +45,7 @@ const router = createBrowserRouter([
     path: "/test",
     element: (
       <div className="flex items-center justify-center">
-        <LoadingProjectModal />
+        <AccountSettingsModal />
       </div>
     ),
   },

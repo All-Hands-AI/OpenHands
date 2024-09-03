@@ -1,6 +1,7 @@
 import React from "react";
 import ModalButton from "../buttons/ModalButton";
 import LoadingSpinnerOuter from "#/assets/loading-outer.svg?react";
+import ModalBody from "./ModalBody";
 
 function LoadingSpinner() {
   return (
@@ -13,7 +14,7 @@ function LoadingSpinner() {
 
 function LoadingProjectModal() {
   return (
-    <div className="bg-root-primary flex flex-col gap-6 items-center w-[384px] p-6 rounded-xl">
+    <ModalBody>
       <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
         Your project is loading...
       </span>
@@ -23,7 +24,7 @@ function LoadingProjectModal() {
         text="Cancel"
         className="bg-[#737373] w-full"
       />
-    </div>
+    </ModalBody>
   );
 }
 
