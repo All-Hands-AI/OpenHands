@@ -6,8 +6,11 @@ sidebar_position: 2
 
 OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
 The following are verified by the community to work with OpenHands:
-* GPT4
-* Claude 3.5
+* claude-3-5-sonnet
+* gemini-1.5-pro / gemini-1.5-flash
+* gpt-4 / gpt-4o
+* llama-3.1-405b / hermes-3-llama-3.1-405b
+* wizardlm-2-8x22b
 
 If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
 also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
@@ -16,7 +19,7 @@ For a full list of the providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
 
 ## Local and Open Source Models
-Current local and open source models are not as powerful. When using an alternative model, you may see long
+Most current local and open source models are not as powerful. When using such models, you may see long
 wait times between messages, poor responses, or errors about malformed JSON. OpenHands can only be as powerful as the
 models driving it. However, if you do find ones that work, please add them to the verified list above.
 
