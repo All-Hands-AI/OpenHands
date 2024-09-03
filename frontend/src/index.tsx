@@ -14,6 +14,7 @@ import Home, {
   loader as homeLoader,
 } from "./routes/Home/Home";
 import { action as settingsAction } from "./routes/Settings";
+import LoadingProjectModal from "./components/modals/LoadingProject";
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,14 @@ const router = createBrowserRouter([
         element: <App />,
       },
     ],
+  },
+  {
+    path: "/test",
+    element: (
+      <div className="flex items-center justify-center">
+        <LoadingProjectModal />
+      </div>
+    ),
   },
 ]);
 

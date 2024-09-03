@@ -1,5 +1,5 @@
 import React from "react";
-import clsx from "clsx";
+import ModalButton from "#/components/buttons/ModalButton";
 
 interface ButtonConfig {
   text: string;
@@ -25,17 +25,12 @@ function BaseModal({ title, description, buttons }: BaseModalProps) {
 
       <div className="flex flex-col gap-2">
         {buttons.map((button, index) => (
-          <button
+          <ModalButton
             key={index}
-            type="button"
             onClick={button.onClick}
-            className={clsx(
-              "text-sm text-[500] py-[10px] rounded",
-              button.className,
-            )}
-          >
-            {button.text}
-          </button>
+            text={button.text}
+            className={button.className}
+          />
         ))}
       </div>
     </div>
