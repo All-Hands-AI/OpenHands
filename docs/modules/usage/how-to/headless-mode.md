@@ -11,12 +11,12 @@ To run OpenHands in headless mode with Python,
 [follow the Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
 and then run:
 
-### Headless
+### Headless with Python
 ```bash
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
-### CLI
+### CLI with Python
 ```bash
 poetry run python -m openhands.core.cli
 
