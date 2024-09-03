@@ -6,7 +6,7 @@ to automate tasks with OpenHands. There are 2 main modes of operation:
 * **Headless** : Designed for use with scripts
 * **CLI** : Designed for interactive use via a console
 
-As with other modes, the environment is configurable via environment variables or by saving values into [config.toml](https://github.com/All-Hands-AI/OpenHands/blob/main/config.toml.template) 
+As with other modes, the environment is configurable via environment variables or by saving values into [config.toml](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) 
 
 ## With Python
 To run OpenHands in headless mode with Python,
