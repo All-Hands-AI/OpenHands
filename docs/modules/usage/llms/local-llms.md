@@ -1,5 +1,9 @@
 # Local LLM with Ollama
 
+:::warning
+When using a Local LLM, OpenHands may have limited functionality.
+:::
+
 Ensure that you have the Ollama server up and running.
 For detailed startup instructions, refer to [here](https://github.com/ollama/ollama)
 
@@ -198,7 +202,7 @@ custom_llm_provider="openai"
 
 Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
 
-# Note:
+# Note
 
 For WSL, run the following commands in cmd to set up the networking mode to mirrored:
 

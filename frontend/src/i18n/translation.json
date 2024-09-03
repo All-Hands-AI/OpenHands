@@ -196,18 +196,18 @@
     "es": "Editor de código"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
-    "en": "Browser",
-    "zh-CN": "浏览器",
-    "de": "Browser",
-    "ko-KR": "브라우저",
-    "no": "Nettleser",
-    "zh-TW": "瀏覽器",
-    "it": "Browser",
-    "pt": "Navegador",
-    "es": "Navegador",
-    "ar": "المتصفح",
-    "fr": "Navigateur",
-    "tr": "Tarayıcı"
+    "en": "Browser (Experimental)",
+    "zh-CN": "浏览器（实验性）",
+    "de": "Browser (Experimentell)",
+    "ko-KR": "브라우저 (실험적)",
+    "no": "Nettleser (Eksperimentell)",
+    "zh-TW": "瀏覽器 (實驗性)",
+    "it": "Browser (Sperimentale)",
+    "pt": "Navegador (Experimental)",
+    "es": "Navegador (Experimental)",
+    "ar": "المتصفح (تجريبي)",
+    "fr": "Navigateur (Expérimental)",
+    "tr": "Tarayıcı (Deneysel)"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
