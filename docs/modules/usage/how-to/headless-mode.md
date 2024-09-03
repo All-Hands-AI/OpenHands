@@ -1,10 +1,12 @@
-# Running in Headless Mode
+# Running in Headless / CLI Mode
 
 You can run OpenHands via a CLI, without starting the web application. This makes it easy
 to automate tasks with OpenHands. There are 2 main modes of operation:
 
 * **Headless** : Designed for use with scripts
 * **CLI** : Designed for interactive use via a console
+
+As with other modes, the environment is configurable via environment variables or by saving values into [config.toml](https://github.com/All-Hands-AI/OpenHands/blob/main/config.toml.template) 
 
 ## With Python
 To run OpenHands in headless mode with Python,
