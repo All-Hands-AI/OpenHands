@@ -1,4 +1,5 @@
 import os
+from itertools import islice
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
@@ -211,6 +212,7 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.system_message,
+                        cache_prompt=self.llm.supports_prompt_caching,
                     )
                 ],
             ),
@@ -219,6 +221,7 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.initial_user_message,
+                        cache_prompt=self.llm.supports_prompt_caching,
                     )
                 ],
             ),
@@ -245,22 +248,25 @@ class CodeActAgent(Agent):
 
         # Add caching to the last 2 user messages
         if self.llm.supports_prompt_caching:
-            user_turns_processed = 0
-            for message in reversed(messages):
-                if message.role == 'user' and user_turns_processed < 2:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    user_turns_processed += 1
+            user_messages = list(
+                islice((m for m in reversed(messages) if m.role == 'user'), 2)
+            )
+            for message in user_messages:
+                message.content[
+                    -1
+                ].cache_prompt = True  # Last item inside the message content
 
-        # the latest user message is important:
+        # The latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (
-                m
-                for m in reversed(messages)
-                if m.role == 'user'
-                and any(isinstance(c, TextContent) for c in m.content)
+            islice(
+                (
+                    m
+                    for m in reversed(messages)
+                    if m.role == 'user'
+                    and any(isinstance(c, TextContent) for c in m.content)
+                ),
+                1,
             ),
             None,
         )

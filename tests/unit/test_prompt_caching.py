@@ -47,7 +47,7 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     assert (
         len(messages) == 6
     )  # System, initial user + user message, agent message, last user message
-    assert messages[0].content[0].cache_prompt
+    assert messages[0].content[0].cache_prompt  # system message
     assert messages[1].role == 'user'
     assert messages[1].content[0].text.endswith("LET'S START!")
     assert messages[1].content[1].text.endswith('Initial user message')
@@ -55,8 +55,10 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
 
     assert messages[3].role == 'user'
     assert messages[3].content[0].text == ('Hello, agent!')
+    assert messages[3].content[0].cache_prompt
     assert messages[4].role == 'assistant'
     assert messages[4].content[0].text == 'Hello, user!'
+    assert not messages[4].content[0].cache_prompt
     assert messages[5].role == 'user'
     assert messages[5].content[0].text.startswith('Laaaaaaaast!')
     assert messages[5].content[0].cache_prompt
@@ -86,14 +88,20 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
-        msg for msg in messages if msg.role == 'user' and msg.content[0].cache_prompt
+        msg
+        for msg in messages
+        if msg.role in ('user', 'system') and msg.content[0].cache_prompt
     ]
-    assert len(cached_user_messages) == 3  # Including the initial system message
+    assert (
+        len(cached_user_messages) == 4
+    )  # Including the initial system+user + 2 last user message
 
-    # Verify that these are indeed the last two user messages
-    assert cached_user_messages[0].content[0].text.startswith('Here is an example')
-    assert cached_user_messages[1].content[0].text == 'User message 13'
-    assert cached_user_messages[2].content[0].text.startswith('User message 14')
+    # Verify that these are indeed the last two user messages (from start)
+    assert (
+        cached_user_messages[0].content[0].text.startswith('A chat between')
+    )  # system message
+    assert cached_user_messages[2].content[0].text.startswith('User message 1')
+    assert cached_user_messages[3].content[0].text.startswith('User message 1')
 
 
 def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
