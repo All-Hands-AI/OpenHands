@@ -48,7 +48,7 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.9 \ # TODO: pin a version here
+    ghcr.io/all-hands-ai/openhands:0.9 \
     poetry run python -m openhands.core.main \
     -t "Write a bash script that prints Hello World"
 ```
@@ -76,6 +76,6 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.9 \ # TODO: pin a version here
+    ghcr.io/all-hands-ai/openhands:0.9 \
     poetry run python -m openhands.core.cli
 ```
