@@ -13,6 +13,8 @@ on:
       image_tag:
         required: true
         type: string
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
 jobs:
   # Builds the runtime Docker images
