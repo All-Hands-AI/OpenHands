@@ -38,10 +38,6 @@ jobs:
         base_image:
           - image: 'nikolaik/python-nodejs:python3.11-nodejs22'
             tag: nikolaik
-          - image: 'python:3.11-bookworm'
-            tag: python
-          - image: 'node:22-bookworm'
-            tag: node
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,7 +103,7 @@ jobs:
     needs: [ghcr_build_runtime]
     strategy:
       matrix:
-        base_image: [1,2,3,4,5]
+        group: [1,2,3,4,5]
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
