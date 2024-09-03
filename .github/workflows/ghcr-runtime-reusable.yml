@@ -64,7 +64,7 @@ jobs:
       - name: Build and push runtime image ${{ inputs.base_image }}
         if: "!github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ input.image_tag }}
+          ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ inputs.image_tag }}
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ inputs.base_image }} for fork
         if: "github.event.pull_request.head.repo.fork"
