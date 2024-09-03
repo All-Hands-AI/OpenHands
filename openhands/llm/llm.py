@@ -26,7 +26,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from openhands.core.exceptions import UserCancelledError
+from openhands.core.exceptions import LLMResponseError, UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.metrics import Metrics
@@ -409,7 +409,10 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
-        return self._completion
+        try:
+            return self._completion
+        except Exception as e:
+            raise LLMResponseError(e)
 
     @property
     def async_completion(self):
