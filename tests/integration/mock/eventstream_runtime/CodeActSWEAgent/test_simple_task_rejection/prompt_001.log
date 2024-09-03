@@ -156,6 +156,8 @@ The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
+
+
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -587,9 +589,6 @@ exit
 
 
 NOW, LET'S START!
-
-----------
-
 Write a git commit message for the current staging area. Do not ask me for confirmation at any point.
 
 ENVIRONMENT REMINDER: You have 19 turns left to complete the task. When finished reply with <finish></finish>.

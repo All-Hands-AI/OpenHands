@@ -1,4 +1,4 @@
-Thank you for the update. It appears that all the typos in the bad.txt file have been successfully corrected. Let's verify the final content of the file to ensure everything is correct.
+Thank you for the update. It appears that all the typos in the file have been corrected. Let's verify the final content of the file.
 
 <execute_ipython>
 open_file('bad.txt')

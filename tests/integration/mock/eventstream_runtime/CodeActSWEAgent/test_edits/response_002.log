@@ -1,4 +1,4 @@
-Thank you for providing the contents of the file. I'll now proceed to fix the typos in the bad.txt file.
+Thank you for providing the contents of the file. I'll now proceed to fix the typos in bad.txt.
 
 <execute_ipython>
 edit_file_by_replace('bad.txt',

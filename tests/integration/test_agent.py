@@ -65,7 +65,7 @@ def get_number_of_prompts(test_name: str):
 
 
 def validate_final_state(final_state: State | None, test_name: str):
-    regen = os.getenv('FORCE_REGENERATE', 'False').lower() in ['true', '1', 'yes']
+    regen = os.getenv('FORCE_REGENERATE', False).lower() in ['true', '1', 'yes']
     assert final_state is not None
     assert final_state.agent_state == AgentState.STOPPED
     if not regen:

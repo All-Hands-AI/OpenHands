@@ -1,3 +1,4 @@
-To accomplish the goal of finding the ultimate answer to life, I need to click on the "Click me" button, which has the bid 10.
+To accomplish the goal of finding the ultimate answer to life, I need to click on the "Click me" button to reveal the answer. The button has a bid of 10.
 
-```click("10"
+```
+click("10"

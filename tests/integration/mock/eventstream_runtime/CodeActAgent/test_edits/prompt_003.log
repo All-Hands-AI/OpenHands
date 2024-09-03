@@ -175,6 +175,7 @@ IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_bro
 The assistant should utilize full file paths and the `pwd` command to prevent path-related errors.
 The assistant must avoid apologies and thanks in its responses.
 
+
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -401,17 +402,16 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 
 NOW, LET'S START!
-
-----------
-
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
+
 ----------
 
-Certainly! I'll fix the typos in bad.txt. First, let's open the file to see its contents:
+Certainly! I'll fix the typos in the bad.txt file. Let's start by opening the file and examining its contents.
 <execute_ipython>
 open_file('bad.txt')
 </execute_ipython>
+
 
 ----------
 
@@ -426,22 +426,18 @@ OBSERVATION:
 [Jupyter current working directory: /workspace]
 [Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 
+
 ----------
 
-Thank you for showing me the contents of the file. I'll now fix the typos in bad.txt:
+Thank you for providing the file contents. I'll now fix the typos in the bad.txt file.
 <execute_ipython>
 edit_file_by_replace(
     'bad.txt',
-    to_replace="""This is a stupid typoo.
-Really?
-No mor typos!
-Enjoy!""",
-    new_content="""This is a stupid typo.
-Really?
-No more typos!
-Enjoy!"""
+    to_replace="This is a stupid typoo.",
+    new_content="This is a stupid typo."
 )
 </execute_ipython>
+
 
 ----------
 
@@ -451,13 +447,12 @@ An error occurred while handling the file: [Errno 1] Operation not permitted
 (this is the beginning of the file)
 1|This is a stupid typo.
 2|Really?
-3|No more typos!
+3|No mor typos!
 4|Enjoy!
 (this is the end of the file)
 [File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 [Jupyter current working directory: /workspace]
 [Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 
-----------
 
 ENVIRONMENT REMINDER: You have 17 turns left to complete the task. When finished reply with <finish></finish>.

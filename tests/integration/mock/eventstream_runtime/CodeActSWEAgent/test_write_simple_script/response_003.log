@@ -1,3 +1,4 @@
-The shell script 'hello.sh' has been successfully created and its contents are correct. The script will print 'hello' when executed. Since we've completed the task of writing the shell script, we can finish here.
+The script has been successfully created. Let's verify its contents and then run it to make sure it works as expected.
 
-<finish></finish>
+<execute_bash>
+bash hello.sh

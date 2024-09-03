@@ -1,6 +1,5 @@
-Certainly! I'll use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'.
+Certainly! I'll use Jupyter IPython to create a text file containing 'hello world' in the specified location.
 
 <execute_ipython>
-with open('/workspace/test.txt', 'w') as f:
-    f.write('hello world')
-print("File created successfully.")
+create_file('/workspace/test.txt')
+append_file('/workspace/test.txt', 'hello world')
