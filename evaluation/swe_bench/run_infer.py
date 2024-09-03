@@ -25,8 +25,8 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
+    get_parser,
     load_from_env,
-    parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -109,6 +109,11 @@ def get_config(
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
         base_container_image = get_instance_docker_image(instance['instance_id'])
+        logger.info(
+            f'Using instance container image: {base_container_image}. '
+            f'Please make sure this image exists. '
+            f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
+        )
     else:
         base_container_image = SWE_BENCH_CONTAINER_IMAGE
         logger.info(f'Using swe-bench container image: {base_container_image}')
@@ -411,12 +416,26 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    parser = get_parser()
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default='princeton-nlp/SWE-bench',
+        help='data set to evaluate on, either full-test or lite-test',
+    )
+    parser.add_argument(
+        '--split',
+        type=str,
+        default='test',
+        help='split to evaluate on',
+    )
+    args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
-    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
+    dataset = load_dataset(args.dataset, split=args.split)
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
+    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
 
     llm_config = None
     if args.llm_config:

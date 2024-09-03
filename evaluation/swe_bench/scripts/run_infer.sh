@@ -9,6 +9,8 @@ AGENT=$3
 EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
+DATASET=$7
+SPLIT=$8
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -31,6 +33,17 @@ if [ -z "$USE_INSTANCE_IMAGE" ]; then
   USE_INSTANCE_IMAGE=true
 fi
 
+
+if [ -z "$DATASET" ]; then
+  echo "DATASET not specified, use default princeton-nlp/SWE-bench_Lite"
+  DATASET="princeton-nlp/SWE-bench_Lite"
+fi
+
+if [ -z "$SPLIT" ]; then
+  echo "SPLIT not specified, use default test"
+  SPLIT="test"
+fi
+
 export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
 echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
 
@@ -39,6 +52,8 @@ get_agent_version
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
+echo "DATASET: $DATASET"
+echo "SPLIT: $SPLIT"
 
 # Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
@@ -59,7 +74,9 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --max-iterations $MAX_ITER \
   --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
-  --eval-note $EVAL_NOTE"
+  --eval-note $EVAL_NOTE \
+  --dataset $DATASET \
+  --split $SPLIT"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

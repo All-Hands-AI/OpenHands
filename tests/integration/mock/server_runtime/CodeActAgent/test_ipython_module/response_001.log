@@ -1,4 +1,0 @@
-Certainly! I'll install pymsgbox, import it, and print its version to /workspace/test.txt. Let's start by installing pymsgbox:
-
-<execute_ipython>
-%pip install pymsgbox==1.0.9
