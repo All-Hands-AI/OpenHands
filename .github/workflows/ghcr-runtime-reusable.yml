@@ -14,7 +14,8 @@ on:
         required: true
         type: string
     secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      CODECOV_TOKEN:
+        required: true
 
 jobs:
   # Builds the runtime Docker images
