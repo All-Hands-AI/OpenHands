@@ -231,12 +231,9 @@ def test_ipython_module(current_test_name: str):
 
 
 @pytest.mark.skipif(
-    os.getenv('DEFAULT_AGENT') != 'BrowsingAgent',
-    reason='currently only BrowsingAgent is capable of searching the internet',
-)
-@pytest.mark.skipif(
-    os.getenv('DEFAULT_AGENT') == 'CodeActSWEAgent',
-    reason='CodeActSWEAgent does not support browsing',
+    os.getenv('DEFAULT_AGENT') != 'BrowsingAgent'
+    and os.getenv('DEFAULT_AGENT') != 'CodeActAgent',
+    reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 def test_browse_internet(current_test_name: str):
     # Execute the task

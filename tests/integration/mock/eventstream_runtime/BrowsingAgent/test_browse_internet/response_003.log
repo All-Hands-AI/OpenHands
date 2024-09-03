@@ -2,5 +2,4 @@ Based on the current Accessibility Tree and the previous actions taken, I can se
 
 To accomplish the goal of telling you the ultimate answer to life, I will now send a message to you with the revealed answer.
 
-```
-send_msg_to_user("The ultimate answer to life, according to the webpage, is: OpenHands is all you need!"
+```send_msg_to_user("The ultimate answer to life, according to the webpage, is: OpenHands is all you need!"

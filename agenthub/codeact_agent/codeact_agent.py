@@ -200,10 +200,6 @@ class CodeActAgent(Agent):
             ],
             'temperature': 0.0,
         }
-        if self.llm.supports_prompt_caching:
-            params['extra_headers'] = {
-                'anthropic-beta': 'prompt-caching-2024-07-31',
-            }
         response = self.llm.completion(**params)
 
         return self.action_parser.parse(response)
@@ -215,7 +211,6 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.system_message,
-                        cache_prompt=self.llm.supports_prompt_caching,  # Cache system prompt
                     )
                 ],
             ),
@@ -224,7 +219,6 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.initial_user_message,
-                        cache_prompt=self.llm.supports_prompt_caching,  # if the user asks the same query,
                     )
                 ],
             ),
@@ -243,7 +237,7 @@ class CodeActAgent(Agent):
             if message:
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                # there should not have two consecutive messages from the same role
+                # there shouldn't be two consecutive messages from the same role
                 if messages and messages[-1].role == message.role:
                     messages[-1].content.extend(message.content)
                 else:

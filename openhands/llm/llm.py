@@ -190,6 +190,13 @@ class LLM:
                 if content_str:
                     debug_message += message_separator + content_str
 
+            if self.supports_prompt_caching:
+                # Anthropic-specific prompt caching
+                if 'claude-3' in self.config.model:
+                    kwargs['extra_headers'] = {
+                        'anthropic-beta': 'prompt-caching-2024-07-31',
+                    }
+
             # skip if messages is empty (thus debug_message is empty)
             if debug_message:
                 llm_prompt_logger.debug(debug_message)

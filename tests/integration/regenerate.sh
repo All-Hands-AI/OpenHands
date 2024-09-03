@@ -195,10 +195,6 @@ fi
 regenerate_without_llm() {
   cd "$PROJECT_ROOT"
 
-  if [ "$test_name" = "test_browse_internet" ]; then
-    launch_http_server
-  fi
-
   # set -x to print the command being executed
   set -x
   env SCRIPT_DIR="$SCRIPT_DIR" \
@@ -216,18 +212,10 @@ regenerate_without_llm() {
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s "$SCRIPT_DIR/test_agent.py::$test_name"
   set +x
-
-  if [ "$test_name" = "test_browse_internet" ]; then
-    kill $HTTP_SERVER_PID || true
-  fi
 }
 
 regenerate_with_llm() {
   cd "$PROJECT_ROOT"
-
-  if [ "$test_name" = "test_browse_internet" ]; then
-    launch_http_server
-  fi
 
   rm -rf $WORKSPACE_BASE/*
   if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
@@ -258,10 +246,6 @@ regenerate_with_llm() {
 
   mkdir -p "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
   mv "$LOG_DIR"/llm/**/* "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/"
-
-  if [ "$test_name" = "test_browse_internet" ]; then
-    kill $HTTP_SERVER_PID || true
-  fi
 }
 
 ##############################################################
@@ -284,6 +268,10 @@ for ((i = 0; i < num_of_tests; i++)); do
     continue
   fi
 
+  if [ "$test_name" = "test_browse_internet" ]; then
+    launch_http_server
+  fi
+
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
 
@@ -295,6 +283,10 @@ for ((i = 0; i < num_of_tests; i++)); do
     echo -e "\n============================================================"
     echo -e "======== STEP 1: Running $test_name for $agent"
     echo -e "============================================================\n\n"
+    # reset dir so getcwd() shouldn't fail
+    cd "$PROJECT_ROOT/tests"
+    cd "$PROJECT_ROOT"
+
     rm -rf $WORKSPACE_BASE/*
     if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
       cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
@@ -398,6 +390,10 @@ for ((i = 0; i < num_of_tests; i++)); do
       sleep 1
     fi
   done
+
+  if [ "$test_name" = "test_browse_internet" ]; then
+    kill $HTTP_SERVER_PID || true
+  fi
 done
 
 rm -rf logs

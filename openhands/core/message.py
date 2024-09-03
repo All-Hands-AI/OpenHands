@@ -81,26 +81,42 @@ def format_messages(
         logger.debug(f' >>>>>>>>>>>>>>>>>> with_images: {with_images}')
         return [message.model_dump() for message in messages]
 
+    # logger.debug(f'>>>>>>>>>>>>>>>>>> formatting messages:\n{messages}\n\n')
+
     converted_messages = []
     for message in messages:
         content_str = ''
+        role = 'user'
+        if 'role' in message:
+            role = message['role']
         if isinstance(message, str):
             content_str = content_str + message + '\n'
+            # logger.debug('>>>>>>>>>>>>>>>>>> isinstance(message, str)\n\n')
             continue
+
         if isinstance(message, dict):
-            content_str = content_str + message['content'] + '\n'
-            continue
-        for content in message.content:
-            if isinstance(content, list):
-                for item in content:
-                    if isinstance(item, TextContent):
-                        content_str = content_str + item.text + '\n'
-            elif isinstance(content, TextContent):
-                content_str = content_str + content.text + '\n'
+            if 'content' in message:
+                content_str = content_str + message['content'] + '\n'
+            # logger.debug(f'>>>>>>>>>>>>>>>>>> isinstance(message, dict) for: `{role}`\n{content_str}\n\n')
+        elif isinstance(message, Message):
+            role = message.role
+            for content in message.content:
+                if isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, TextContent):
+                            content_str = content_str + item.text + '\n'
+                elif isinstance(content, TextContent):
+                    content_str = content_str + content.text + '\n'
+                # logger.debug(f'>>>>>>>>>>>>>>>>>> for loop for `{role}`:\n{content_str}\n\n')
+        else:
+            logger.error(
+                f'>>>>>>>>>>>>>>>>>> `message` is not a string, dict, or Message: {type(message)}'
+            )
+
         if content_str:
             converted_messages.append(
                 {
-                    'role': message.role,
+                    'role': role,
                     'content': content_str,
                 }
             )

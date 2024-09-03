@@ -123,8 +123,8 @@ RootWebArea 'The Ultimate Answer', focused
 	StaticText 'The answer is OpenHands is all you need!'
 
 # Previous Actions
-goto("http://localhost:8000")
-click("10")
+goto("http://localhost:8000")```
+click("10")```
 
 Here is an example with chain of thought of a valid action when clicking on a button:
 "
