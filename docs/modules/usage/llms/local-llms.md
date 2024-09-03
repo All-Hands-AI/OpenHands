@@ -1,5 +1,9 @@
 # Local LLM with Ollama
 
+:::warning
+When using a Local LLM, OpenHands may have limited functionality.
+:::
+
 Ensure that you have the Ollama server up and running.
 For detailed startup instructions, refer to [here](https://github.com/ollama/ollama)
 
