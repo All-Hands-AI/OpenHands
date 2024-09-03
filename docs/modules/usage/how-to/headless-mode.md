@@ -6,19 +6,22 @@ to automate tasks with OpenHands. There are 2 main modes of operation:
 * **Headless** : Designed for use with scripts
 * **CLI** : Designed for interactive use via a console
 
-As with other modes, the environment is configurable via environment variables or by saving values into [config.toml](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) 
+As with other modes, the environment is configurable via environment variables or by saving values into [config.toml](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml)
 
 ## With Python
+
 To run OpenHands in headless mode with Python,
 [follow the Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
 and then run:
 
 ### Headless with Python
+
 ```bash
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
 ### CLI with Python
+
 ```bash
 poetry run python -m openhands.core.cli
 
@@ -26,6 +29,7 @@ How can I help? >> write a bash script that prints hi
 ```
 
 ## Headless With Docker
+
 To run OpenHands in headless mode with Docker, run:
 
 ```bash
@@ -54,6 +58,7 @@ docker run -it \
 ```
 
 ## CLI With Docker
+
 To run OpenHands in cli mode with Docker, run:
 
 ```bash
