@@ -3,11 +3,19 @@ import { screen, act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import ChatInterface from "./ChatInterface";
 import Session from "#/services/session";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
+
+const router = createMemoryRouter([
+  {
+    path: "/",
+    element: <ChatInterface />,
+  },
+]);
 
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
@@ -27,12 +35,12 @@ describe("ChatInterface", () => {
   });
 
   it("should render empty message list and input", () => {
-    renderWithProviders(<ChatInterface />);
+    renderWithProviders(<RouterProvider router={router} />);
     expect(screen.queryAllByTestId("message")).toHaveLength(0);
   });
 
   it("should render user and assistant messages", () => {
-    const { store } = renderWithProviders(<ChatInterface />, {
+    const { store } = renderWithProviders(<RouterProvider router={router} />, {
       preloadedState: {
         chat: {
           messages: [{ sender: "user", content: "Hello", imageUrls: [] }],
@@ -54,7 +62,7 @@ describe("ChatInterface", () => {
 
   it("should send the user message as an event to the Session when the agent state is INIT", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ChatInterface />, {
+    renderWithProviders(<RouterProvider router={router} />, {
       preloadedState: {
         agent: {
           curAgentState: AgentState.INIT,
@@ -73,7 +81,7 @@ describe("ChatInterface", () => {
 
   it("should send the user message as an event to the Session when the agent state is AWAITING_USER_INPUT", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ChatInterface />, {
+    renderWithProviders(<RouterProvider router={router} />, {
       preloadedState: {
         agent: {
           curAgentState: AgentState.AWAITING_USER_INPUT,
@@ -92,7 +100,7 @@ describe("ChatInterface", () => {
 
   it("should disable the user input if agent is not initialized", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ChatInterface />, {
+    renderWithProviders(<RouterProvider router={router} />, {
       preloadedState: {
         agent: {
           curAgentState: AgentState.LOADING,

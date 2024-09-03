@@ -5,6 +5,16 @@ import { VscArrowUp, VscFileMedia } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
 import { I18nKey } from "#/i18n/declaration";
 
+const convertImageToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 interface ChatInputProps {
   disabled?: boolean;
   onSendMessage: (message: string, image_urls: string[]) => void;
@@ -17,16 +27,6 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   const [files, setFiles] = React.useState<File[]>([]);
   // This is true when the user is typing in an IME (e.g., Chinese, Japanese)
   const [isComposing, setIsComposing] = React.useState(false);
-
-  const convertImageToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
   const handleSendChatMessage = async () => {
     if (message.trim()) {
