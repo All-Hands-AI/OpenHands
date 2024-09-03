@@ -9,6 +9,8 @@ AGENT=$3
 EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
+DATASET=$7
+SPLIT=$8
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -29,6 +31,11 @@ fi
 if [ -z "$USE_INSTANCE_IMAGE" ]; then
   echo "USE_INSTANCE_IMAGE not specified, use default true"
   USE_INSTANCE_IMAGE=true
+fi
+
+if [ -z "$SUBSET" ]; then
+  echo "SUBSET not specified, use default lite-test"
+  SUBSET="lite-test"
 fi
 
 export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
@@ -59,7 +66,9 @@ COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --max-iterations $MAX_ITER \
   --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
-  --eval-note $EVAL_NOTE"
+  --eval-note $EVAL_NOTE \
+  --dataset $DATASET \
+  --split $SPLIT"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
