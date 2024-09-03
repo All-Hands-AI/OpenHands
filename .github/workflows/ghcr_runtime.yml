@@ -141,6 +141,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
+          poetry run pip install pytest-split
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-nikolaik
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
