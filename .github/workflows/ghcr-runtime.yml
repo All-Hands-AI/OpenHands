@@ -31,16 +31,16 @@ jobs:
     with:
       base_image: 'nikolaik/python-nodejs:python3.11-nodejs22'
       image_tag: nikolaik
-      secrets: inherit
+    secrets: inherit
   python-workflow:
     uses: ./.github/workflows/ghcr-runtime-reusable.yml
     with:
       base_image: 'python:3.11-bookworm'
       image_tag: python
-      secrets: inherit
+    secrets: inherit
   node-workflow:
     uses: ./.github/workflows/ghcr-runtime-reusable.yml
     with:
       base_image: 'node:22-bookworm'
       image_tag: node
-      secrets: inherit
+    secrets: inherit
