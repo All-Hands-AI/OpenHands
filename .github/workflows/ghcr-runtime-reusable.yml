@@ -104,12 +104,12 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ inputs.base_image }}
+          name: runtime-${{ inputs.image_tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          docker load --input /tmp/runtime-${{ inputs.base_image }}.tar
+          docker load --input /tmp/runtime-${{ inputs.image_tag }}.tar
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -121,7 +121,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ inputs.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ inputs.image_tag }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
@@ -146,12 +146,12 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         uses: actions/download-artifact@v4
         with:
-          name: runtime-${{ inputs.base_image }}
+          name: runtime-${{ inputs.image_tag }}
           path: /tmp
       - name: Load runtime image for fork
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          docker load --input /tmp/runtime-${{ inputs.base_image }}.tar
+          docker load --input /tmp/runtime-${{ inputs.image_tag }}.tar
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -163,7 +163,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run integration tests
         run: |
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ inputs.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ inputs.image_tag }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
