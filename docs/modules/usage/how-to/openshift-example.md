@@ -6,6 +6,7 @@ There are different ways this can be accomplished. This guide goes through one p
 3. Create a pod which contains two containers; the OpenHands and Sandbox containers
 
 ## Detailed Steps for the Example Above
+
 > Note: Make sure you are logged in to the cluster first with the proper account for each step. PV creation requires cluster administrator!
 
 > Make sure you have read/write permissions on the hostPath used below (i.e. /tmp/workspace)
