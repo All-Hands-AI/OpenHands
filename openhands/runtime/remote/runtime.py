@@ -195,7 +195,7 @@ class RemoteRuntime(Runtime):
             retry_exceptions = DEFAULT_RETRY_EXCEPTIONS
 
         @retry(
-            stop=stop_after_attempt(10),
+            stop=stop_after_attempt(30),
             wait=wait_exponential(multiplier=1, min=4, max=60),
             retry=retry_if_exception_type(tuple(retry_exceptions)),
             reraise=True,
