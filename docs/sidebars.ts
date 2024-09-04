@@ -23,6 +23,9 @@ const sidebars: SidebarsConfig = {
     label: 'How-to Guides',
       items: [{
         type: 'doc',
+        id: 'usage/how-to/cli-mode',
+      }, {
+        type: 'doc',
         id: 'usage/how-to/headless-mode',
       }, {
         type: 'doc',
