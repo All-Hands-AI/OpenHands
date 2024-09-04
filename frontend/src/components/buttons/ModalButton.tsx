@@ -3,10 +3,11 @@ import React from "react";
 
 interface ModalButtonProps {
   variant?: "default" | "text-like";
-  onClick: () => void;
+  onClick?: () => void;
   text: string;
   className: React.HTMLProps<HTMLButtonElement>["className"];
   icon?: React.ReactNode;
+  type?: "button" | "submit";
 }
 
 function ModalButton({
@@ -15,10 +16,11 @@ function ModalButton({
   text,
   className,
   icon,
+  type = "button",
 }: ModalButtonProps) {
   return (
     <button
-      type="button"
+      type={type === "submit" ? "submit" : "button"}
       onClick={onClick}
       className={clsx(
         variant === "default" && "text-sm text-[500] py-[10px] rounded",

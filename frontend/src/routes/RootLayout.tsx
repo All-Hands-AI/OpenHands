@@ -1,11 +1,32 @@
 import React from "react";
-import { json, Link, Outlet, useLoaderData } from "react-router-dom";
+import {
+  ActionFunctionArgs,
+  json,
+  Link,
+  Outlet,
+  useLoaderData,
+} from "react-router-dom";
 import { useDisclosure } from "@nextui-org/react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ghClient } from "#/api/github";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "./SettingsForm";
 import { getSettings, Settings } from "#/services/settings";
+import ConnectToGitHubByTokenModal from "#/components/modals/ConnectToGitHubByTokenModal";
+
+interface ModalBackdropProps {
+  children: React.ReactNode;
+}
+
+function ModalBackdrop({ children }: ModalBackdropProps) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div onClick={(e) => e.stopPropagation()} className="relative">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 const getModels = async () => {
   try {
@@ -39,6 +60,19 @@ export const loader = async () => {
   const settings = getSettings();
 
   return json({ user, models, agents, settings });
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const tos = formData.get("tos")?.toString();
+
+  if (!tos) return json({ error: "You must agree to the terms of service" });
+  localStorage.setItem("TOS", "true");
+
+  const token = formData.get("token")?.toString();
+  if (token) localStorage.setItem("GITHUB_TOKEN", token);
+
+  return json({ success: true });
 };
 
 function RootLayout() {
@@ -77,6 +111,9 @@ function RootLayout() {
       </aside>
       <div className="w-full relative">
         <Outlet />
+        <ModalBackdrop>
+          <ConnectToGitHubByTokenModal />
+        </ModalBackdrop>
         {settingsModalIsOpen && (
           <div className="absolute top-1/2 right-1/2 transform translate-x-1/2 -translate-y-1/2">
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
