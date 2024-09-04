@@ -1,3 +1,0 @@
-The content of `hello.sh` is correct. Now, let's execute the script to ensure it prints 'hello'.
-<execute_bash>
-bash hello.sh
