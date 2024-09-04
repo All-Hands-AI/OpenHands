@@ -16,7 +16,7 @@
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
   <br/>
-  <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
+  <a href="https://docs.all-hands.dev/modules/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
   <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
   <hr>
@@ -54,8 +54,12 @@ docker run -it --pull=always \
     ghcr.io/all-hands-ai/openhands:0.9
 ```
 
-You'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
-Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup.
+You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
+
+You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
+
+Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup instructions.
 
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
@@ -64,7 +68,7 @@ Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/us
 ## 📖 Documentation
 
 To learn more about the project, and for tips on using OpenHands,
-**check out our [documentation](https://docs.all-hands.dev/modules/usage/intro)**.
+**check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started)**.
 
 There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
 troubleshooting resources, and advanced configuration options.
