@@ -2,7 +2,7 @@
 
 OpenHands can be run in an interactive CLI mode, which allows users to start an interactive session via the command line.
 
-This mode is different from the [headless mode](headless-mode), which is non-interactive.
+This mode is different from the [headless mode](headless-mode), which is non-interactive and better for scripting.
 
 ## With Python
 
