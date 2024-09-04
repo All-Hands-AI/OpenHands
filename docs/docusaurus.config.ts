@@ -73,13 +73,13 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "docsSidebar",
           position: "left",
-          label: "Docs",
+          label: "User Guides",
         },
         {
           type: "docSidebar",
           sidebarId: "apiSidebar",
           position: "left",
-          label: "Codebase",
+          label: "Python API",
         },
         {
           type: 'localeDropdown',
