@@ -9,6 +9,12 @@
 
   }
 
+[data-theme="dark"] .custom-footer {
+  background-color: #000;
+  color: #fff;
+}
+
+
   .footer-content {
     display: flex;
     flex-direction: column;
