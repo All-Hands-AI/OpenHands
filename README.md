@@ -26,8 +26,8 @@
 <div align="center">
   <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <a href="https://codecov.io/github/All-Hands-AI/OpenHands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge&color=blue"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <br/>
   <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
@@ -43,12 +43,13 @@
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenHands: Code Less, Make More</h1>
 </div>
-<hr>
 
 
-Welcome to OpenHands, a platform for autonomous software engineers, powered by AI and LLMs (previously called "OpenDevin").
+Welcome to OpenHands (formerly OpenDevin), a platform for software development agents powered by AI and LLMs.
 
 OpenHands agents collaborate with human developers to write code, fix bugs, and ship features.
+They can do anything a human developer can: modify existing code, run commands, browse the web,
+call APIs, and yes--even copy code snippets from StackOverflow.
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
@@ -131,17 +132,6 @@ Let's make software engineering better together!
 ## 📜 License
 
 Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
-
-[contributors-shield]: https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge
-[contributors-url]: https://github.com/All-Hands-AI/OpenHands/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge
-[forks-url]: https://github.com/All-Hands-AI/OpenHands/network/members
-[stars-shield]: https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge
-[stars-url]: https://github.com/All-Hands-AI/OpenHands/stargazers
-[issues-shield]: https://img.shields.io/github/issues/All-Hands-AI/OpenHands?style=for-the-badge
-[issues-url]: https://github.com/All-Hands-AI/OpenHands/issues
-[license-shield]: https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge
-[license-url]: https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE
 
 ## 🙏 Acknowledgements
 
