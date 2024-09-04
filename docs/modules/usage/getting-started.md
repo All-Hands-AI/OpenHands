@@ -33,10 +33,10 @@ docker run -it --pull=always \
 
 > [!NOTE]
 > This command pulls the `0.9` tag, which represents the most recent stable release of OpenHands. You have other options as well:
-> - For a specific release version, use `ghcr.io/all-hands-ai/openhands:<OpenHands_version>` (replace <OpenHands_version> with the desired version number).
+> - For a specific release, use `ghcr.io/all-hands-ai/openhands:$VERSION`, replacing $VERSION with the version number.
 > - For the most up-to-date development version, use `ghcr.io/all-hands-ai/openhands:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
 >
-> Choose the tag that best suits your needs based on stability requirements and desired features.
+> You can choose the tag that best suits your needs based on stability requirements and desired features.
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenHands operate on your code, place it in `./workspace`.
 OpenHands will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
