@@ -257,5 +257,5 @@ def _setup_llm_logger(name: str, log_level: int):
     return logger
 
 
-llm_prompt_logger = _setup_llm_logger('prompt', logging.DEBUG)
-llm_response_logger = _setup_llm_logger('response', logging.DEBUG)
+llm_prompt_logger = _setup_llm_logger('prompt', current_log_level)
+llm_response_logger = _setup_llm_logger('response', current_log_level)

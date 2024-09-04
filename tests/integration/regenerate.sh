@@ -30,9 +30,9 @@ fi
 if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
   WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE
 fi
-if [ -z "$DEBUG" ]; then
-  DEBUG=false
-fi
+
+DEBUG=true  # needed for llm logging to create mock files!
+
 if [ -z "$LOG_TO_FILE" ]; then
   LOG_TO_FILE=true
 fi
@@ -44,7 +44,6 @@ echo "Current working directory: $(pwd)"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
 echo "LOG_DIR: $LOG_DIR"
-echo "DEBUG: $DEBUG"
 echo "LOG_TO_FILE: $LOG_TO_FILE"
 
 WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace

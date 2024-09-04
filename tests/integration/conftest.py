@@ -248,28 +248,6 @@ class LoggingHTTPRequestHandler(SimpleHTTPRequestHandler):
         )
 
 
-# TODO: this only gives connection refused error!
-# @pytest.fixture
-# def http_server():
-#     web_dir = os.path.join(os.path.dirname(__file__), 'static')
-#     os.chdir(web_dir)
-#     handler = LoggingHTTPRequestHandler
-
-#     # Start the server
-#     server = MultiAddressServer(('', 8000), handler)
-#     thread = Thread(target=server.serve_forever)
-#     thread.setDaemon(True)
-#     thread.start()
-#     time.sleep(1)
-
-#     print('HTTP server started on http://localhost:8000 and http://127.0.0.1:8000...')
-#     yield server
-
-#     # Stop the server
-#     server.shutdown()
-#     thread.join()
-
-
 def set_up():
     global cur_id
     cur_id = 0
