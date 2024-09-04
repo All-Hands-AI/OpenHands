@@ -1,6 +1,6 @@
-# Use OpenHands in OpenShift/K8S
+# Kubernetes
 
-There are different ways this can be accomplished. This guide goes through one possible way:
+There are different ways you might run OpenHands on Kubernetes or OpenShift. This guide goes through one possible way:
 1. Create a PV "as a cluster admin" to map workspace_base data and docker directory to the pod through the worker node
 2. Create a PVC to be able to mount those PVs to the pod
 3. Create a pod which contains two containers; the OpenHands and Sandbox containers

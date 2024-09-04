@@ -7,17 +7,6 @@ function CustomFooter() {
   return (
     <footer className="custom-footer">
       <div className="footer-content">
-        <div className="footer-top">
-          <div className="footer-title">
-            <Translate id="footer.title">OpenHands</Translate>
-          </div>
-          <div className="footer-link">
-            <a href="/modules/usage/intro">
-              <Translate id="footer.docs">Docs</Translate>
-            </a>
-          </div>
-        </div>
-
         <div className="footer-icons">
           <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA" target="_blank" rel="noopener noreferrer">
             <FaSlack />
@@ -32,7 +21,7 @@ function CustomFooter() {
         <div className="footer-bottom">
           <p>
             <Translate id="footer.copyright" values={{ year: new Date().getFullYear() }}>
-              {'Copyright © {year} OpenHands'}
+              {'Copyright © {year} All Hands AI, Inc'}
             </Translate>
           </p>
         </div>

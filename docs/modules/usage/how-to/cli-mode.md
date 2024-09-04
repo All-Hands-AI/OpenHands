@@ -1,8 +1,10 @@
-# Running in CLI Mode
+# CLI Mode
 
-OpenHands can be run in an interactive CLI mode, which allows users to start an interactive session via the command line. This mode is different from the headless mode, which is non-interactive.
+OpenHands can be run in an interactive CLI mode, which allows users to start an interactive session via the command line.
 
-## Starting an Interactive Session
+This mode is different from the [headless mode](headless-mode), which is non-interactive and better for scripting.
+
+## With Python
 
 To start an interactive OpenHands session via the command line, follow these steps:
 
@@ -16,7 +18,11 @@ poetry run python -m openhands.core.cli
 
 This command will start an interactive session where you can input tasks and receive responses from OpenHands.
 
-## Running in CLI Mode with Docker
+You'll need to be sure to set your model, API key, and other settings via environment variables
+[or the `config.toml` file](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml).
+
+
+## With Docker
 
 To run OpenHands in CLI mode with Docker, follow these steps:
 
@@ -26,16 +32,16 @@ To run OpenHands in CLI mode with Docker, follow these steps:
 WORKSPACE_BASE=$(pwd)/workspace
 ```
 
-2. Set `LLM_API_KEY` to an API key, e.g., for OpenAI or Anthropic:
+2. Set `LLM_MODEL` to the model you want to use:
+
+```bash
+LLM_MODEL="claude-3-5-sonnet-20240620"
+```
+
+3. Set `LLM_API_KEY` to an API key, e.g., for OpenAI or Anthropic:
 
 ```bash
 LLM_API_KEY="abcde"
-```
-
-3. Set `LLM_MODEL` to the model you want to use:
-
-```bash
-LLM_MODEL="gpt-4o"
 ```
 
 4. Run the following Docker command:
@@ -56,11 +62,6 @@ docker run -it \
 ```
 
 This command will start an interactive session in Docker where you can input tasks and receive responses from OpenHands.
-
-## Difference Between CLI Mode and Headless Mode
-
-- **CLI Mode**: Interactive mode where users can input tasks and receive responses in real-time. It is suitable for users who prefer or require a command-line interface.
-- **Headless Mode**: Non-interactive mode where tasks are executed without user interaction. It is suitable for automation and scripting purposes.
 
 ## Examples of CLI Commands and Expected Outputs
 

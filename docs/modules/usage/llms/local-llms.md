@@ -32,7 +32,7 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 
 ### Docker
 
-Use the instructions [here](../intro) to start OpenHands using Docker.
+Use the instructions [here](../getting-started) to start OpenHands using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash

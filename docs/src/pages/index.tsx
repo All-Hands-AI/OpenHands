@@ -20,8 +20,7 @@ export default function Home(): JSX.Element {
       title={`${siteConfig.title}`}
       description={translate({
         id: 'homepage.description',
-        message: 'An Open Platform for AI Software Developers as Generalist Agents',
-        description: 'The homepage description',
+        message: 'Code Less, Make More',
       })}
     >
     <HomepageHeader />
