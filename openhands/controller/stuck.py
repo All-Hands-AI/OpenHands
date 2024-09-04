@@ -42,6 +42,9 @@ class StuckDetector:
         # It takes 4 actions minimum to detect a loop, otherwise nothing to do here
         # Sonnet often changes approach after 3 errors on its own, so require 4!
         if len(filtered_history) < MAX_STUCK_ITERATIONS:
+            # scenario: monologue (x3)
+            if self._is_stuck_monologue(filtered_history):
+                return True
             return False
 
         # the first few scenarios detect MAX_STUCK_ITERATIONS repeated steps
@@ -71,10 +74,6 @@ class StuckDetector:
 
         # scenario 2: same action, same observation
         if self._is_stuck_repeating_action_observation(last_actions, last_observations):
-            return True
-
-        # scenario 3: monologue
-        if self._is_stuck_monologue(filtered_history):
             return True
 
         # scenario 4: action, observation pattern on the last six steps
