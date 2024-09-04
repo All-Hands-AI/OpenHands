@@ -1,4 +1,3 @@
-import asyncio
 import atexit
 import copy
 import json
@@ -58,6 +57,7 @@ class Runtime:
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
+        env_vars: dict[str, str] | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -66,41 +66,22 @@ class Runtime:
 
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
-        atexit.register(self.close_sync)
+        atexit.register(self.close)
         logger.debug(f'Runtime `{sid}` config:\n{self.config}')
 
-    async def ainit(self, env_vars: dict[str, str] | None = None) -> None:
-        """
-        Initialize the runtime (asynchronously).
-
-        This method should be called after the runtime's constructor.
-        """
         if self.DEFAULT_ENV_VARS:
             logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
-            await self.add_env_vars(self.DEFAULT_ENV_VARS)
+            self.add_env_vars(self.DEFAULT_ENV_VARS)
         if env_vars is not None:
             logger.debug(f'Adding provided env vars: {env_vars}')
-            await self.add_env_vars(env_vars)
+            self.add_env_vars(env_vars)
 
-    async def close(self) -> None:
+    def close(self) -> None:
         pass
-
-    def close_sync(self) -> None:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # No running event loop, use asyncio.run()
-            asyncio.run(self.close())
-        else:
-            # There is a running event loop, create a task
-            if loop.is_running():
-                loop.create_task(self.close())
-            else:
-                loop.run_until_complete(self.close())
 
     # ====================================================================
 
-    async def add_env_vars(self, env_vars: dict[str, str]) -> None:
+    def add_env_vars(self, env_vars: dict[str, str]) -> None:
         # Add env vars to the IPython shell (if Jupyter is used)
         if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
             code = 'import os\n'
@@ -108,7 +89,7 @@ class Runtime:
                 # Note: json.dumps gives us nice escaping for free
                 code += f'os.environ["{key}"] = {json.dumps(value)}\n'
             code += '\n'
-            obs = await self.run_ipython(IPythonRunCellAction(code))
+            obs = self.run_ipython(IPythonRunCellAction(code))
             logger.info(f'Added env vars to IPython: code={code}, obs={obs}')
 
         # Add env vars to the Bash shell
@@ -120,7 +101,7 @@ class Runtime:
             return
         cmd = cmd.strip()
         logger.debug(f'Adding env var: {cmd}')
-        obs = await self.run(CmdRunAction(cmd))
+        obs = self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
                 f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
@@ -132,12 +113,12 @@ class Runtime:
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = await self.run_action(event)
+            observation = self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    async def run_action(self, action: Action) -> Observation:
+    def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
@@ -163,35 +144,45 @@ class Runtime:
             return UserRejectObservation(
                 'Action has been rejected by the user! Waiting for further user input.'
             )
-        observation = await getattr(self, action_type)(action)
+        observation = getattr(self, action_type)(action)
         return observation
+
+    # ====================================================================
+    # Context manager
+    # ====================================================================
+
+    def __enter__(self) -> 'Runtime':
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
 
     # ====================================================================
     # Action execution
     # ====================================================================
 
     @abstractmethod
-    async def run(self, action: CmdRunAction) -> Observation:
+    def run(self, action: CmdRunAction) -> Observation:
         pass
 
     @abstractmethod
-    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         pass
 
     @abstractmethod
-    async def read(self, action: FileReadAction) -> Observation:
+    def read(self, action: FileReadAction) -> Observation:
         pass
 
     @abstractmethod
-    async def write(self, action: FileWriteAction) -> Observation:
+    def write(self, action: FileWriteAction) -> Observation:
         pass
 
     @abstractmethod
-    async def browse(self, action: BrowseURLAction) -> Observation:
+    def browse(self, action: BrowseURLAction) -> Observation:
         pass
 
     @abstractmethod
-    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
 
     # ====================================================================
@@ -199,11 +190,11 @@ class Runtime:
     # ====================================================================
 
     @abstractmethod
-    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    async def list_files(self, path: str | None = None) -> list[str]:
+    def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).

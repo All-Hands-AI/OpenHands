@@ -351,9 +351,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.debug(
-                f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
-            )
             await asyncio.sleep(1)
             return
 
@@ -368,10 +365,14 @@ class AgentController:
                 f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
             )
             if delegate_state == AgentState.ERROR:
+                # update iteration that shall be shared across agents
+                self.state.iteration = self.delegate.state.iteration
+
                 # close the delegate upon error
                 await self.delegate.close()
                 self.delegate = None
                 self.delegateAction = None
+
                 await self.report_error('Delegator agent encounters an error')
                 return
             delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)

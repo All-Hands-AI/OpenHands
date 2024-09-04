@@ -17,6 +17,7 @@ from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
+    UserRejectObservation,
 )
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
@@ -27,6 +28,7 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
+from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -73,10 +75,21 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm, config)
         self.reset()
+
+        self.micro_agent = (
+            MicroAgent(
+                os.path.join(
+                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
+                )
+            )
+            if config.micro_agent_name
+            else None
+        )
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__)),
             agent_skills_docs=AgentSkillsRequirement.documentation,
-            micro_agent_name=None,  # TODO: implement micro-agent
+            micro_agent=self.micro_agent,
         )
 
     def action_to_str(self, action: Action) -> str:
@@ -141,6 +154,10 @@ class CodeActAgent(Agent):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
             return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, UserRejectObservation):
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += '\n[Last action has been rejected by the user]'
+            return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
@@ -186,8 +203,12 @@ class CodeActAgent(Agent):
             params['extra_headers'] = {
                 'anthropic-beta': 'prompt-caching-2024-07-31',
             }
-
-        response = self.llm.completion(**params)
+        try:
+            response = self.llm.completion(**params)
+        except Exception:
+            return AgentFinishAction(
+                thought='Agent encountered an error while processing the last action. Please try again.'
+            )
 
         return self.action_parser.parse(response)
 

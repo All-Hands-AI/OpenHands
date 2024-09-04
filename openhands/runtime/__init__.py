@@ -11,6 +11,10 @@ def get_runtime_cls(name: str):
         from openhands.runtime.e2b.runtime import E2BRuntime
 
         return E2BRuntime
+    elif name == 'remote':
+        from openhands.runtime.remote.runtime import RemoteRuntime
+
+        return RemoteRuntime
     else:
         raise ValueError(f'Runtime {name} not supported')
 

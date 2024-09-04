@@ -16,7 +16,9 @@ class RuntimeBuilder(abc.ABC):
             tags (list[str]): The tags to apply to the runtime image (e.g., ["repo:my-repo", "sha:my-sha"]).
 
         Returns:
-            str: The name of the runtime image (e.g., "repo:sha").
+            str: The name:tag of the runtime image after build (e.g., "repo:sha").
+                This can be different from the tags input if the builder chooses to mutate the tags (e.g., adding a
+                registry prefix). This should be used for subsequent use (e.g., `docker run`).
 
         Raises:
             RuntimeError: If the build failed.

@@ -126,7 +126,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
 
 3. Initialize the runtime and set up the evaluation environment:
    ```python
-   async def initialize_runtime(runtime: Runtime, instance: pd.Series):
+   def initialize_runtime(runtime: Runtime, instance: pd.Series):
        # Set up your evaluation environment here
        # For example, setting environment variables, preparing files, etc.
        pass
@@ -134,14 +134,14 @@ To create an evaluation workflow for your benchmark, follow these steps:
 
 4. Create a function to process each instance:
    ```python
-   async def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
+   def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
        config = get_config(instance, metadata)
-       runtime = await create_runtime(config, sid=instance.instance_id)
-       await initialize_runtime(runtime, instance)
+       runtime = create_runtime(config, sid=instance.instance_id)
+       initialize_runtime(runtime, instance)
 
        instruction = get_instruction(instance, metadata)
 
-       state = await run_controller(
+       state = run_controller(
            config=config,
            task_str=instruction,
            runtime=runtime,
