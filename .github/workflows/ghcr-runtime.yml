@@ -1,0 +1,46 @@
+# Workflow that builds, tests and then pushes all the runtime docker images to the ghcr.io repository
+name: Build, Test and Publish Runtime Image
+
+# Only run one workflow of the same group at a time.
+# There can be at most one running and one pending job in a concurrency group at any time.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Always run on "main"
+# Always run on tags
+# Always run on PRs
+# Can also be triggered manually
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: true
+        default: ''
+
+jobs:
+  nikolaik:
+    uses: ./.github/workflows/ghcr-runtime-reusable.yml
+    with:
+      base_image: 'nikolaik/python-nodejs:python3.11-nodejs22'
+      image_tag: nikolaik
+    secrets: inherit
+  python:
+    uses: ./.github/workflows/ghcr-runtime-reusable.yml
+    with:
+      base_image: 'python:3.11-bookworm'
+      image_tag: python
+    secrets: inherit
+  node:
+    uses: ./.github/workflows/ghcr-runtime-reusable.yml
+    with:
+      base_image: 'node:22-bookworm'
+      image_tag: node
+    secrets: inherit
