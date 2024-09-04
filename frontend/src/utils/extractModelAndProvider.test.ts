@@ -58,5 +58,23 @@ describe("extractModelAndProvider", () => {
       model: "gpt-4o",
       separator: "/",
     });
+
+    expect(extractModelAndProvider("claude-3-5-sonnet-20240620")).toEqual({
+      provider: "anthropic",
+      model: "claude-3-5-sonnet-20240620",
+      separator: "/",
+    });
+
+    expect(extractModelAndProvider("claude-3-haiku-20240307")).toEqual({
+      provider: "anthropic",
+      model: "claude-3-haiku-20240307",
+      separator: "/",
+    });
+
+    expect(extractModelAndProvider("claude-2.1")).toEqual({
+      provider: "anthropic",
+      model: "claude-2.1",
+      separator: "/",
+    });
   });
 });
