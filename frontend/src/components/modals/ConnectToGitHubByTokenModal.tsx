@@ -6,7 +6,6 @@ import {
 } from "./confirmation-modals/BaseModal";
 import ModalButton from "../buttons/ModalButton";
 import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
-import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import ModalBody from "./ModalBody";
 
 interface CustomInputProps {

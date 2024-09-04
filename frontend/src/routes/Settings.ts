@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, json } from "react-router-dom";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 import {
   getDefaultSettings,
   saveSettings,

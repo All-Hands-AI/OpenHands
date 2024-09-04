@@ -1,13 +1,15 @@
 class GitHubClient {
   private url = "https://api.github.com";
 
-  private headers: HeadersInit = {
-    Accept: "application/vnd.github+json",
-    Authorization: `Bearer ${this.config.auth}`,
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
+  private headers: HeadersInit;
 
-  constructor(private config: { auth: string | null }) {}
+  constructor(private config: { auth: string | null }) {
+    this.headers = {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${this.config.auth}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+  }
 
   /**
    * https://docs.github.com/en/rest/users/users?apiVersion=2022-11-28#get-the-authenticated-user

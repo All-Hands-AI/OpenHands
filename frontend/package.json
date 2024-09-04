@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=14.8.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
     "@nextui-org/react": "^2.4.6",
     "@react-types/shared": "^3.24.1",
     "@reduxjs/toolkit": "^2.2.7",
+    "@remix-run/node": "^2.11.2",
+    "@remix-run/react": "^2.11.2",
+    "@remix-run/serve": "^2.11.2",
     "@vitejs/plugin-react": "^4.3.1",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
@@ -19,6 +22,7 @@
     "i18next": "^23.14.0",
     "i18next-browser-languagedetector": "^8.0.0",
     "i18next-http-backend": "^2.6.1",
+    "isbot": "^5.1.17",
     "jose": "^5.8.0",
     "monaco-editor": "^0.51.0",
     "react": "^18.3.1",
@@ -37,8 +41,9 @@
     "web-vitals": "^3.5.2"
   },
   "scripts": {
-    "start": "npm run make-i18n && vite",
-    "build": "npm run make-i18n && tsc && vite build",
+    "dev": "npm run make-i18n && remix vite:dev",
+    "build": "npm run make-i18n && tsc && remix vite:build",
+    "start": "remix-serve ./build/server/index.js",
     "test": "vitest run",
     "test:coverage": "npm run make-i18n && vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
@@ -61,6 +66,7 @@
     ]
   },
   "devDependencies": {
+    "@remix-run/dev": "^2.11.2",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
