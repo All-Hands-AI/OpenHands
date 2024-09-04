@@ -400,11 +400,7 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 
 
-NOW, LET'S START!
-
-----------
-
-Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point.
+NOW, LET'S START!Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point.
 
 ----------
 
@@ -470,8 +466,7 @@ pymsgbox version: 1.0.9
 openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 
+
+ENVIRONMENT REMINDER: You have 16 turns left to complete the task. When finished reply with <finish></finish>.
+
 ----------
-
-
-
-ENVIRONMENT REMINDER: You have 11 turns left to complete the task. When finished reply with <finish></finish>.
