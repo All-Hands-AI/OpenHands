@@ -40,7 +40,7 @@
 
 <!-- PROJECT LOGO -->
 <div align="center">
-  <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
+  <img src="./docs/static/img/logo.png" alt="Logo" width="200">
   <h1 align="center">OpenHands: Code Less, Make More</h1>
 </div>
 
