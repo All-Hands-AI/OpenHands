@@ -28,7 +28,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from openhands.core.exceptions import UserCancelledError
+from openhands.core.exceptions import LLMResponseError, UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, format_messages
@@ -426,7 +426,10 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
-        return self._completion
+        try:
+            return self._completion
+        except Exception as e:
+            raise LLMResponseError(e)
 
     @property
     def async_completion(self):
@@ -434,7 +437,10 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
-        return self._async_completion
+        try:
+            return self._async_completion
+        except Exception as e:
+            raise LLMResponseError(e)
 
     @property
     def async_streaming_completion(self):
@@ -442,7 +448,10 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
-        return self._async_streaming_completion
+        try:
+            return self._async_streaming_completion
+        except Exception as e:
+            raise LLMResponseError(e)
 
     def vision_is_active(self):
         return not self.config.disable_vision and self._supports_vision()
