@@ -23,10 +23,10 @@ const sidebars: SidebarsConfig = {
     label: 'How-to Guides',
       items: [{
         type: 'doc',
-        id: 'usage/how-to/custom-sandbox-guide',
+        id: 'usage/how-to/headless-mode',
       }, {
         type: 'doc',
-        id: 'usage/how-to/headless-mode',
+        id: 'usage/how-to/custom-sandbox-guide',
       }, {
         type: 'doc',
         id: 'usage/how-to/evaluation-harness',

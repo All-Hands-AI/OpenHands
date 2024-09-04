@@ -1,4 +1,4 @@
-# Running in Headless / CLI Mode
+# Headless / CLI Mode
 
 You can run OpenHands via a CLI, without starting the web application. This makes it easy
 to automate tasks with OpenHands. There are 2 main modes of operation:
