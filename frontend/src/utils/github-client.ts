@@ -7,7 +7,7 @@ class GitHubClient {
     "X-GitHub-Api-Version": "2022-11-28",
   };
 
-  constructor(private config: { auth: string }) {}
+  constructor(private config: { auth: string | null }) {}
 
   /**
    * https://docs.github.com/en/rest/users/users?apiVersion=2022-11-28#get-the-authenticated-user
@@ -28,6 +28,9 @@ class GitHubClient {
     const response = await fetch(`${this.url}/user/repos`, {
       headers: this.headers,
     });
+    if (response.status === 401) {
+      throw new Error("Unauthorized");
+    }
     return response.json();
   }
 }

@@ -8,15 +8,15 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
-import RootLayout, { loader as rootLayoutLoader } from "./routes/RootLayout";
+import RootLayout, {
+  loader as rootLayoutLoader,
+  action as rootLayoutAction,
+} from "./routes/RootLayout";
 import Home, {
   action as homeAction,
   loader as homeLoader,
 } from "./routes/Home/Home";
 import { action as settingsAction } from "./routes/Settings";
-import ConnectToGitHubModal from "./components/modals/ConnectToGitHubModal";
-import WaitlistModal from "./components/modals/WaitlistModal";
-import InactivityModal from "./components/modals/InactivityModal";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 
 const router = createBrowserRouter([
@@ -28,9 +28,10 @@ const router = createBrowserRouter([
     path: "/",
     element: <RootLayout />,
     loader: rootLayoutLoader,
+    action: rootLayoutAction,
     children: [
       {
-        path: "/",
+        path: "/home",
         element: <Home />,
         loader: homeLoader,
         action: homeAction,

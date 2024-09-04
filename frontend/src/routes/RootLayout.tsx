@@ -4,6 +4,7 @@ import {
   json,
   Link,
   Outlet,
+  redirect,
   useLoaderData,
 } from "react-router-dom";
 import { useDisclosure } from "@nextui-org/react";
@@ -47,36 +48,56 @@ const getAgents = async () => {
 };
 
 type LoaderReturnType = {
-  user: GitHubUser;
+  user: GitHubUser | null;
   models: string[];
   agents: string[];
   settings: Settings;
+  TOS: string | null;
 };
 
 export const loader = async () => {
-  const user = await ghClient.getUser();
+  redirect("/home");
+  let user: GitHubUser | null = null;
+
+  try {
+    user = await ghClient.getUser();
+  } catch (error) {
+    console.error("Failed to fetch user");
+  }
+
   const models = await getModels();
   const agents = await getAgents();
   const settings = getSettings();
 
-  return json({ user, models, agents, settings });
+  const TOS = localStorage.getItem("TOS");
+
+  return json({ user, models, agents, settings, TOS });
+};
+
+type ActionReturnType = {
+  status: "success" | "error";
+  message?: string;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const tos = formData.get("tos")?.toString();
 
-  if (!tos) return json({ error: "You must agree to the terms of service" });
+  if (!tos)
+    return json({
+      status: "error",
+      message: "You must agree to the terms of service",
+    });
   localStorage.setItem("TOS", "true");
 
   const token = formData.get("token")?.toString();
   if (token) localStorage.setItem("GITHUB_TOKEN", token);
 
-  return json({ success: true });
+  return json({ status: "success" });
 };
 
 function RootLayout() {
-  const { user, models, agents, settings } =
+  const { user, models, agents, settings, TOS } =
     useLoaderData() as LoaderReturnType;
 
   const {
@@ -93,8 +114,8 @@ function RootLayout() {
         </Link>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <img
-            src={user.avatar_url}
-            alt={`${user.login} avatar`}
+            src={user?.avatar_url}
+            alt={`${user?.login} avatar`}
             className="w-8 h-8 rounded-full"
           />
           <button
@@ -111,9 +132,11 @@ function RootLayout() {
       </aside>
       <div className="w-full relative">
         <Outlet />
-        <ModalBackdrop>
-          <ConnectToGitHubByTokenModal />
-        </ModalBackdrop>
+        {!TOS && (
+          <ModalBackdrop>
+            <ConnectToGitHubByTokenModal />
+          </ModalBackdrop>
+        )}
         {settingsModalIsOpen && (
           <div className="absolute top-1/2 right-1/2 transform translate-x-1/2 -translate-y-1/2">
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">

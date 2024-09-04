@@ -1,4 +1,6 @@
 import GitHubClient from "#/utils/github-client";
 
-const ghClient = new GitHubClient({ auth: import.meta.env.VITE_GITHUB_TOKEN });
+const ghClient = new GitHubClient({
+  auth: localStorage.getItem("GITHUB_TOKEN"),
+});
 export { ghClient };

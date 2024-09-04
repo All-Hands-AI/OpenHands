@@ -16,7 +16,12 @@ type LoaderReturnType = {
 };
 
 export const loader = async () => {
-  const repos = await ghClient.getRepositories();
+  let repos: GitHubRepository[] = [];
+  try {
+    repos = await ghClient.getRepositories();
+  } catch (error) {
+    console.error(error);
+  }
   return json({ repos });
 };
 
