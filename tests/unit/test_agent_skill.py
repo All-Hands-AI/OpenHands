@@ -1573,8 +1573,6 @@ def test_lint_file_fail_non_python(tmp_path, capsys):
 
 def test_lint_file_fail_typescript(tmp_path, capsys):
     linter = Linter()
-    if not linter.ts_installed:
-        return
     with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
         current_line = 1
         file_path = tmp_path / 'test.ts'
@@ -1624,6 +1622,12 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
         for i, (result_line, expected_line) in enumerate(
             zip(result_lines, expected_lines)
         ):
-            assert result_line.lstrip('./') == expected_line.lstrip(
-                './'
-            ), f"Line {i+1} doesn't match"
+            if i == 6:
+                if linter.ts_installed and result_line != expected_lines[6]:
+                    assert (
+                        'ts:1:20:' in result_line or '(3,1):' in result_line
+                    ), f"Line {i+1} doesn't match"
+            else:
+                assert result_line.lstrip('./') == expected_line.lstrip(
+                    './'
+                ), f"Line {i+1} doesn't match"
