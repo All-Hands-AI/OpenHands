@@ -16,6 +16,47 @@ poetry run python -m openhands.core.cli
 
 This command will start an interactive session where you can input tasks and receive responses from OpenHands.
 
+## Running in CLI Mode with Docker
+
+To run OpenHands in CLI mode with Docker, follow these steps:
+
+1. Set `WORKSPACE_BASE` to the directory you want OpenHands to edit:
+
+```bash
+WORKSPACE_BASE=$(pwd)/workspace
+```
+
+2. Set `LLM_API_KEY` to an API key, e.g., for OpenAI or Anthropic:
+
+```bash
+LLM_API_KEY="abcde"
+```
+
+3. Set `LLM_MODEL` to the model you want to use:
+
+```bash
+LLM_MODEL="gpt-4o"
+```
+
+4. Run the following Docker command:
+
+```bash
+docker run -it \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -e LLM_API_KEY=$LLM_API_KEY \
+    -e LLM_MODEL=$LLM_MODEL \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/all-hands-ai/openhands:0.9 \
+    poetry run python -m openhands.core.cli
+```
+
+This command will start an interactive session in Docker where you can input tasks and receive responses from OpenHands.
+
 ## Difference Between CLI Mode and Headless Mode
 
 - **CLI Mode**: Interactive mode where users can input tasks and receive responses in real-time. It is suitable for users who prefer or require a command-line interface.
