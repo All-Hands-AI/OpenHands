@@ -57,6 +57,9 @@ docker run -it --pull=always \
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
 Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup.
 
+You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
+
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
 Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting) can help.
