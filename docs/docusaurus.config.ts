@@ -4,7 +4,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
   title: "OpenHands",
-  tagline: "An Open Platform for AI Software Developers as Generalist Agents",
+  tagline: "Code Less, Make More",
   favicon: "img/logo.png",
 
   // Set the production url of your site here

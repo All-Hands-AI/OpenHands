@@ -2,8 +2,8 @@
 
 .homepage-header {
   height: 800px;
-  color: white;
-  background: linear-gradient(to top, #64748b, #000000);
+  color: #000;
+  background-color: #F1EAE0;
 }
 
 .header-content {
