@@ -203,9 +203,9 @@ class CodeActAgent(Agent):
         }
         try:
             response = self.llm.completion(**params)
-        except Exception:
+        except Exception as e:
             return AgentFinishAction(
-                thought='Agent encountered an error while processing the last action. Please try again.'
+                thought=f'Agent encountered an error while processing the last action.\nError: {str(e)}\nPlease try again.'
             )
 
         return self.action_parser.parse(response)
