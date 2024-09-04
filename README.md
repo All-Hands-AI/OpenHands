@@ -47,9 +47,10 @@
 
 Welcome to OpenHands (formerly OpenDevin), a platform for software development agents powered by AI and LLMs.
 
-OpenHands agents collaborate with human developers to write code, fix bugs, and ship features.
-They can do anything a human developer can: modify existing code, run commands, browse the web,
+OpenHands agents can do anything a human developer can: modify existing code, run commands, browse the web,
 call APIs, and yes--even copy code snippets from StackOverflow.
+
+Learn more at [all-hands.dev](https://all-hands.dev).
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
