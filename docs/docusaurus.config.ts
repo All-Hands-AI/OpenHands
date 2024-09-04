@@ -5,7 +5,7 @@ import { themes as prismThemes } from "prism-react-renderer";
 const config: Config = {
   title: "OpenHands",
   tagline: "Code Less, Make More",
-  favicon: "img/logo.png",
+  favicon: "img/logo-square.png",
 
   // Set the production url of your site here
   url: "https://docs.all-hands.dev",
