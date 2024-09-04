@@ -61,7 +61,7 @@ For the development workflow, see [Development.md](https://github.com/All-Hands-
 
 Having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
 
-## 🚀 Documentation
+## 📖 Documentation
 
 To learn more about the project, and for tips on using OpenHands,
 **check out our [documentation](https://docs.all-hands.dev/modules/usage/intro)**.

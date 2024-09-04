@@ -1,4 +1,8 @@
-# Getting Started
+---
+sidebar_position: 3
+---
+
+# ⚡Getting Started
 
 ## System Requirements
 * Docker version 26.0.0+ or Docker Desktop 4.31.0+
