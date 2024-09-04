@@ -5,31 +5,31 @@ const sidebars: SidebarsConfig = {
   docsSidebar: [{
     type: 'doc',
     label: 'Getting Started',
-    id: 'getting-started',
+    id: 'usage/getting-started',
   }, {
     type: 'doc',
     label: 'LLMs',
-    id: 'llms/llms',
+    id: 'usage/llms/llms',
   }, {
     type: 'doc',
     label: 'Troubleshooting',
-    id: 'troubleshooting/troubleshooting',
+    id: 'usage/troubleshooting/troubleshooting',
   }, {
     type: 'doc',
     label: 'Feedback',
-    id: 'feedback',
+    id: 'usage/feedback',
   }, {
     type: 'doc',
     label: 'How To',
-    id: 'how-to/how-to',
+    id: 'usage/how-to/how-to',
   }, {
     type: 'doc',
     label: 'Architecture',
-    id: 'architecture/architecture',
+    id: 'usage/architecture/architecture',
   }, {
     type: 'doc',
     label: 'About',
-    id: 'about',
+    id: 'usage/about',
   }],
 };
 
