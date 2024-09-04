@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 ---
 
 # ⚡Getting Started
@@ -10,11 +10,8 @@ sidebar_position: 3
   * If you are on Windows, you must use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)
 
 ## Installation
-The eaisest way to run OpenHands is in Docker. Use `WORKSPACE_BASE` below to
+The easiest way to run OpenHands is in Docker. Use `WORKSPACE_BASE` below to
 specify which folder the OpenHands agent should modify.
-
-See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) guide for
-system requirements and more information.
 
 ```bash
 WORKSPACE_BASE=$(pwd)/workspace
