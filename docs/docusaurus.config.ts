@@ -82,13 +82,18 @@ const config: Config = {
           label: "Codebase",
         },
         {
-          href: "https://github.com/All-Hands-AI/OpenHands",
-          label: "GitHub",
+          type: 'localeDropdown',
+          position: 'left',
+        },
+        {
+          href: "https://all-hands.dev",
+          label: "Company",
           position: "right",
         },
         {
-          type: 'localeDropdown',
-          position: 'left',
+          href: "https://github.com/All-Hands-AI/OpenHands",
+          label: "GitHub",
+          position: "right",
         },
       ],
     },
