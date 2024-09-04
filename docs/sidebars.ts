@@ -19,9 +19,21 @@ const sidebars: SidebarsConfig = {
     label: 'Feedback',
     id: 'usage/feedback',
   }, {
-    type: 'doc',
-    label: 'How To',
-    id: 'usage/how-to/how-to',
+    type: 'category',
+    label: 'How-to Guides',
+      items: [{
+        type: 'doc',
+        id: 'usage/how-to/custom-sandbox-guide',
+      }, {
+        type: 'doc',
+        id: 'usage/how-to/headless-mode',
+      }, {
+        type: 'doc',
+        id: 'usage/how-to/evaluation-harness',
+      }, {
+        type: 'doc',
+        id: 'usage/how-to/openshift-example',
+      }]
   }, {
     type: 'doc',
     label: 'Architecture',
