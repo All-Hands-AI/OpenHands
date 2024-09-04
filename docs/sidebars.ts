@@ -8,10 +8,6 @@ const sidebars: SidebarsConfig = {
     id: 'usage/getting-started',
   }, {
     type: 'doc',
-    label: 'LLMs',
-    id: 'usage/llms/llms',
-  }, {
-    type: 'doc',
     label: 'Troubleshooting',
     id: 'usage/troubleshooting/troubleshooting',
   }, {
@@ -37,6 +33,10 @@ const sidebars: SidebarsConfig = {
         type: 'doc',
         id: 'usage/how-to/openshift-example',
       }]
+  }, {
+    type: 'doc',
+    label: 'LLMs',
+    id: 'usage/llms/llms',
   }, {
     type: 'doc',
     label: 'Architecture',
