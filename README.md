@@ -27,14 +27,14 @@ Welcome to OpenHands (formerly OpenDevin), a platform for software development a
 OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
 call APIs, and yes—even copy code snippets from StackOverflow.
 
-Learn more at [all-hands.dev](https://all-hands.dev), or jump to the [Quick Start](#-quick-start).
+Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [Quick Start](#-quick-start).
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ⚡ Quick Start
 
-The eaisest way to run OpenHands is in Docker. Use `WORKSPACE_BASE` below to
-specify which folder the OpenHands agent should modify.
+The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` below to
+point OpenHands to existing code that you'd like to modify.
 
 See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) guide for
 system requirements and more information.
@@ -55,11 +55,11 @@ docker run -it --pull=always \
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
-See [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup.
+Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup.
 
-For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-Having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
+Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting) can help.
 
 ## 📖 Documentation
 
