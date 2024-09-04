@@ -13,6 +13,7 @@ from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
+    ActionConfirmationStatus,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -25,6 +26,7 @@ from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    UserRejectObservation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
@@ -333,12 +335,25 @@ class EventStreamRuntime(Runtime):
         with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
                 return ErrorObservation(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
                 return ErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
+                )
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed == ActionConfirmationStatus.REJECTED
+            ):
+                return UserRejectObservation(
+                    'Action has been rejected by the user! Waiting for further user input.'
                 )
 
             logger.info('Awaiting session')
