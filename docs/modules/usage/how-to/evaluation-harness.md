@@ -1,4 +1,4 @@
-# Contribute to OpenHands Evaluation Harness
+# Evaluation
 
 This guide provides an overview of how to integrate your own evaluation benchmark into the OpenHands framework.
 
