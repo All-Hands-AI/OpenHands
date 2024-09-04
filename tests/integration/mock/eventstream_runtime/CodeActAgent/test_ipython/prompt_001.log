@@ -175,6 +175,7 @@ IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_bro
 The assistant should utilize full file paths and the `pwd` command to prevent path-related errors.
 The assistant must avoid apologies and thanks in its responses.
 
+
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -401,13 +402,7 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 
 NOW, LET'S START!
-
-----------
-
 Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
 
-----------
 
-
-
-ENVIRONMENT REMINDER: You have 14 turns left to complete the task. When finished reply with <finish></finish>.
+ENVIRONMENT REMINDER: You have 19 turns left to complete the task. When finished reply with <finish></finish>.

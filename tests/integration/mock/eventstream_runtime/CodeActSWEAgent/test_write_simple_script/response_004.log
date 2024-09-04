@@ -1,1 +1,3 @@
-The `hello.sh` script executed successfully and printed "hello". The task is complete.
+Great! The script has been created successfully and is working as expected. It prints "hello" when executed. Since we have completed the task of writing a shell script 'hello.sh' that prints 'hello', we can finish now.
+
+<finish></finish>
