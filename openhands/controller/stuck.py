@@ -12,8 +12,6 @@ from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 
-MAX_STUCK_ITERATIONS = 4
-
 
 class StuckDetector:
     SYNTAX_ERROR_MESSAGES = [
@@ -39,55 +37,51 @@ class StuckDetector:
             )
         ]
 
-        # It takes 4 actions minimum to detect a loop, otherwise nothing to do here
-        # Sonnet often changes approach after 3 errors on its own, so require 4!
-        if len(filtered_history) < MAX_STUCK_ITERATIONS:
-            # scenario: monologue (x3)
-            if self._is_stuck_monologue(filtered_history):
-                return True
+        # it takes 3 actions minimum to detect a loop, otherwise nothing to do here
+        if len(filtered_history) < 3:
             return False
 
-        # the first few scenarios detect MAX_STUCK_ITERATIONS repeated steps
-        # prepare the last MAX_STUCK_ITERATIONS actions and observations, to check them out
+        # the first few scenarios detect 3 or 4 repeated steps
+        # prepare the last 4 actions and observations, to check them out
         last_actions: list[Event] = []
         last_observations: list[Event] = []
 
         # retrieve the last four actions and observations starting from the end of history, wherever they are
         for event in reversed(filtered_history):
-            if isinstance(event, Action) and len(last_actions) < MAX_STUCK_ITERATIONS:
+            if isinstance(event, Action) and len(last_actions) < 4:
                 last_actions.append(event)
-            elif (
-                isinstance(event, Observation)
-                and len(last_observations) < MAX_STUCK_ITERATIONS
-            ):
+            elif isinstance(event, Observation) and len(last_observations) < 4:
                 last_observations.append(event)
 
-            if (
-                len(last_actions) == MAX_STUCK_ITERATIONS
-                and len(last_observations) == MAX_STUCK_ITERATIONS
-            ):
+            if len(last_actions) == 4 and len(last_observations) == 4:
                 break
 
-        # scenario 1: same action, errors
+        # scenario 1: same action, same observation
+        if self._is_stuck_repeating_action_observation(last_actions, last_observations):
+            return True
+
+        # scenario 2: same action, errors
         if self._is_stuck_repeating_action_error(last_actions, last_observations):
             return True
 
-        # scenario 2: same action, same observation
-        if self._is_stuck_repeating_action_observation(last_actions, last_observations):
+        # scenario 3: monologue
+        if self._is_stuck_monologue(filtered_history):
             return True
 
         # scenario 4: action, observation pattern on the last six steps
         if len(filtered_history) < 6:
             return False
-
         if self._is_stuck_action_observation_pattern(filtered_history):
             return True
 
         return False
 
     def _is_stuck_repeating_action_observation(self, last_actions, last_observations):
+        # scenario 1: same action, same observation
+        # it takes 4 actions and 4 observations to detect a loop
+        # assert len(last_actions) == 4 and len(last_observations) == 4
+
         # reset almost_stuck reminder
-        # TODO: remove "almost_stuck" as it is ONLY here for unit test!
         self.state.almost_stuck = 0
 
         # almost stuck? if two actions, obs are the same, we're almost stuck
@@ -129,44 +123,42 @@ class StuckDetector:
 
     def _is_stuck_repeating_action_error(self, last_actions, last_observations):
         # scenario 2: same action, errors
-        # Check that all passed actions are the same error observations
-        # OR all have the same syntax error message
+        # it takes 3 actions and 3 observations to detect a loop
+        # check if the last three actions are the same and result in errors
 
-        if (
-            len(last_actions) < MAX_STUCK_ITERATIONS
-            or len(last_observations) < MAX_STUCK_ITERATIONS
-        ):
+        if len(last_actions) < 4 or len(last_observations) < 4:
             return False
 
-        # are the last actions the "same"?
-        if all(self._eq_no_pid(last_actions[0], action) for action in last_actions):
-            # and the last observations are all errors?
-            if all(isinstance(obs, ErrorObservation) for obs in last_observations):
+        # are the last three actions the "same"?
+        if all(self._eq_no_pid(last_actions[0], action) for action in last_actions[:3]):
+            # and the last three observations are all errors?
+            if all(isinstance(obs, ErrorObservation) for obs in last_observations[:3]):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
-        # or, are the last observations all IPythonRunCellObservation with SyntaxError?
-        elif all(
-            isinstance(obs, IPythonRunCellObservation) for obs in last_observations
-        ):
-            warning = 'Action, IPythonRunCellObservation loop detected'
-            for error_message in self.SYNTAX_ERROR_MESSAGES:
-                if error_message.startswith(
-                    'SyntaxError: unterminated string literal (detected at line'
-                ):
-                    if self._check_for_consistent_line_error(
-                        last_observations, error_message
+            # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
+            elif all(
+                isinstance(obs, IPythonRunCellObservation)
+                for obs in last_observations[:3]
+            ):
+                warning = 'Action, IPythonRunCellObservation loop detected'
+                for error_message in self.SYNTAX_ERROR_MESSAGES:
+                    if error_message.startswith(
+                        'SyntaxError: unterminated string literal (detected at line'
                     ):
-                        logger.warning(warning)
-                        return True
-                elif error_message in (
-                    'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-                    'SyntaxError: incomplete input',
-                ):
-                    if self._check_for_consistent_invalid_syntax(
-                        last_observations, error_message
+                        if self._check_for_consistent_line_error(
+                            last_observations[:3], error_message
+                        ):
+                            logger.warning(warning)
+                            return True
+                    elif error_message in (
+                        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
+                        'SyntaxError: incomplete input',
                     ):
-                        logger.warning(warning)
-                        return True
+                        if self._check_for_consistent_invalid_syntax(
+                            last_observations[:3], error_message
+                        ):
+                            logger.warning(warning)
+                            return True
         return False
 
     def _check_for_consistent_invalid_syntax(self, observations, error_message):
