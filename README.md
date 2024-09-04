@@ -54,11 +54,12 @@ docker run -it --pull=always \
     ghcr.io/all-hands-ai/openhands:0.9
 ```
 
-You'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
-Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup.
+You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
 You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
+
+Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup instructions.
 
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
