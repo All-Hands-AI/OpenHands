@@ -354,7 +354,7 @@ and executed by a program, make sure to follow the formatting instructions.
         self._prompt += '\n'.join(
             [
                 f"""\
- - [{msg['role']}] {msg['message']}"""
+ - [{msg['role']}], {msg['message']}"""
                 for msg in chat_messages
             ]
         )

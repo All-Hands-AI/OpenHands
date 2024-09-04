@@ -1,10 +1,8 @@
-The typos in `bad.txt` have been corrected successfully. The file now reads:
+Great! All the typos in the file have been fixed. The task is now complete. Here's a summary of the changes made:
 
-```
-1|This is a stupid typo.
-2|Really?
-3|No more typos!
-4|Enjoy!
-```
+1. Changed "typoo" to "typo" in the first line.
+2. Changed "mor" to "more" in the third line.
 
-The task is complete.
+The file now reads correctly without any typos. Since the task is finished, I'll end my response with the finish tag.
+
+<finish></finish>

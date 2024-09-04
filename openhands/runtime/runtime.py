@@ -67,7 +67,7 @@ class Runtime:
         self.config = copy.deepcopy(config)
         self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close)
-        logger.debug(f'Runtime `{sid}` config:\n{self.config}')
+        logger.debug(f'Runtime `{sid}`')
 
         if self.DEFAULT_ENV_VARS:
             logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')

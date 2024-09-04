@@ -1,0 +1,4 @@
+Certainly! I'll write a git commit message for the current staging area. To do this, I'll first need to check what changes are currently staged.
+
+<execute_bash>
+git status
