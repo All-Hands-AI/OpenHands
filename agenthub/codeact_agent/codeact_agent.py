@@ -1,4 +1,5 @@
 import os
+from itertools import islice
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
@@ -117,7 +118,11 @@ class CodeActAgent(Agent):
         ):
             content = [TextContent(text=self.action_to_str(action))]
 
-            if isinstance(action, MessageAction) and action.images_urls:
+            if (
+                self.llm.vision_is_active()
+                and isinstance(action, MessageAction)
+                and action.images_urls
+            ):
                 content.append(ImageContent(image_urls=action.images_urls))
 
             return Message(
@@ -127,14 +132,15 @@ class CodeActAgent(Agent):
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
+        obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = 'OBSERVATION:\n' + obs.content
+            text = obs_prefix + obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
@@ -146,12 +152,10 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            text = 'OBSERVATION:\n' + truncate_content(
-                str(obs.outputs), max_message_chars
-            )
+            text = obs_prefix + truncate_content(str(obs.outputs), max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
@@ -188,9 +192,8 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-
         params = {
-            'messages': [message.model_dump() for message in messages],
+            'messages': self.llm.format_messages_for_llm(messages),
             'stop': [
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -198,11 +201,6 @@ class CodeActAgent(Agent):
             ],
             'temperature': 0.0,
         }
-
-        if self.llm.supports_prompt_caching:
-            params['extra_headers'] = {
-                'anthropic-beta': 'prompt-caching-2024-07-31',
-            }
         try:
             response = self.llm.completion(**params)
         except Exception:
@@ -219,7 +217,7 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.system_message,
-                        cache_prompt=self.llm.supports_prompt_caching,  # Cache system prompt
+                        cache_prompt=self.llm.supports_prompt_caching,
                     )
                 ],
             ),
@@ -228,7 +226,7 @@ class CodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.initial_user_message,
-                        cache_prompt=self.llm.supports_prompt_caching,  # if the user asks the same query,
+                        cache_prompt=self.llm.supports_prompt_caching,
                     )
                 ],
             ),
@@ -247,7 +245,7 @@ class CodeActAgent(Agent):
             if message:
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                # there should not have two consecutive messages from the same role
+                # there shouldn't be two consecutive messages from the same role
                 if messages and messages[-1].role == message.role:
                     messages[-1].content.extend(message.content)
                 else:
@@ -255,22 +253,25 @@ class CodeActAgent(Agent):
 
         # Add caching to the last 2 user messages
         if self.llm.supports_prompt_caching:
-            user_turns_processed = 0
-            for message in reversed(messages):
-                if message.role == 'user' and user_turns_processed < 2:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    user_turns_processed += 1
+            user_messages = list(
+                islice((m for m in reversed(messages) if m.role == 'user'), 2)
+            )
+            for message in user_messages:
+                message.content[
+                    -1
+                ].cache_prompt = True  # Last item inside the message content
 
-        # the latest user message is important:
+        # The latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (
-                m
-                for m in reversed(messages)
-                if m.role == 'user'
-                and any(isinstance(c, TextContent) for c in m.content)
+            islice(
+                (
+                    m
+                    for m in reversed(messages)
+                    if m.role == 'user'
+                    and any(isinstance(c, TextContent) for c in m.content)
+                ),
+                1,
             ),
             None,
         )

@@ -153,6 +153,9 @@ model = "gpt-4o"
 # Top p for the API
 #top_p = 0.5
 
+# If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+#disable_vision = true
+
 [llm.gpt3]
 # API key to use
 api_key = "your-api-key"

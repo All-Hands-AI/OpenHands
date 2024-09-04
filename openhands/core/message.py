@@ -1,7 +1,10 @@
 from enum import Enum
+from typing import Union
 
 from pydantic import BaseModel, Field, model_serializer
 from typing_extensions import Literal
+
+from openhands.core.logger import openhands_logger as logger
 
 
 class ContentType(Enum):
@@ -10,7 +13,7 @@ class ContentType(Enum):
 
 
 class Content(BaseModel):
-    type: ContentType
+    type: str
     cache_prompt: bool = False
 
     @model_serializer
@@ -19,13 +22,13 @@ class Content(BaseModel):
 
 
 class TextContent(Content):
-    type: ContentType = ContentType.TEXT
+    type: str = ContentType.TEXT.value
     text: str
 
     @model_serializer
     def serialize_model(self):
         data: dict[str, str | dict[str, str]] = {
-            'type': self.type.value,
+            'type': self.type,
             'text': self.text,
         }
         if self.cache_prompt:
@@ -34,14 +37,14 @@ class TextContent(Content):
 
 
 class ImageContent(Content):
-    type: ContentType = ContentType.IMAGE_URL
+    type: str = ContentType.IMAGE_URL.value
     image_urls: list[str]
 
     @model_serializer
     def serialize_model(self):
         images: list[dict[str, str | dict[str, str]]] = []
         for url in self.image_urls:
-            images.append({'type': self.type.value, 'image_url': {'url': url}})
+            images.append({'type': self.type, 'image_url': {'url': url}})
         if self.cache_prompt and images:
             images[-1]['cache_control'] = {'type': 'ephemeral'}
         return images
@@ -65,4 +68,50 @@ class Message(BaseModel):
             elif isinstance(item, ImageContent):
                 content.extend(item.model_dump())
 
-        return {'role': self.role, 'content': content}
+        return {'content': content, 'role': self.role}
+
+
+def format_messages(
+    messages: Union[Message, list[Message]], with_images: bool
+) -> list[dict]:
+    if not isinstance(messages, list):
+        messages = [messages]
+
+    if with_images:
+        return [message.model_dump() for message in messages]
+
+    converted_messages = []
+    for message in messages:
+        content_str = ''
+        role = 'user'
+        if 'role' in message:
+            role = message['role']
+        if isinstance(message, str):
+            content_str = content_str + message + '\n'
+            continue
+
+        if isinstance(message, dict):
+            if 'content' in message:
+                content_str = content_str + message['content'] + '\n'
+        elif isinstance(message, Message):
+            role = message.role
+            for content in message.content:
+                if isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, TextContent):
+                            content_str = content_str + item.text + '\n'
+                elif isinstance(content, TextContent):
+                    content_str = content_str + content.text + '\n'
+        else:
+            logger.error(
+                f'>>> `message` is not a string, dict, or Message: {type(message)}'
+            )
+
+        if content_str:
+            converted_messages.append(
+                {
+                    'role': role,
+                    'content': content_str,
+                }
+            )
+    return converted_messages
