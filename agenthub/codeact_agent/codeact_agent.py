@@ -203,8 +203,12 @@ class CodeActAgent(Agent):
             params['extra_headers'] = {
                 'anthropic-beta': 'prompt-caching-2024-07-31',
             }
-
-        response = self.llm.completion(**params)
+        try:
+            response = self.llm.completion(**params)
+        except Exception:
+            return AgentFinishAction(
+                thought='Agent encountered an error while processing the last action. Please try again.'
+            )
 
         return self.action_parser.parse(response)
 
