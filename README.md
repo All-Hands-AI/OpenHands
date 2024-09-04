@@ -22,9 +22,9 @@
   <hr>
 </div>
 
-Welcome to OpenHands (formerly OpenDevin), a platform for software development agents powered by AI and LLMs.
+Welcome to OpenHands (formerly OpenDevin), a platform for software development agents powered by AI.
 
-OpenHands agents can do anything a human developer can: modify existing code, run commands, browse the web,
+OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
 call APIs, and yes—even copy code snippets from StackOverflow.
 
 Learn more at [all-hands.dev](https://all-hands.dev), or jump to the [Quick Start](#-quick-start).
