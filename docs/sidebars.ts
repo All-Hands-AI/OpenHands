@@ -58,9 +58,17 @@ const sidebars: SidebarsConfig = {
       id: 'usage/llms/local-llms',
     }],
   }, {
-    type: 'doc',
+    type: 'category',
     label: 'Architecture',
-    id: 'usage/architecture/architecture',
+    items: [{
+      type: 'doc',
+      label: 'Backend',
+      id: 'usage/architecture/backend',
+    }, {
+      type: 'doc',
+      label: 'Runtime',
+      id: 'usage/architecture/runtime',
+    }],
   }, {
     type: 'doc',
     label: 'About',
