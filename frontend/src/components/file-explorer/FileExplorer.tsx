@@ -186,7 +186,7 @@ function FileExplorer() {
   }, []);
 
   return (
-    <div className="relative h-full">
+    <div data-testid="file-explorer" className="relative h-full">
       {isDragging && (
         <div
           data-testid="dropzone"

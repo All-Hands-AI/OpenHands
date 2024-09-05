@@ -89,6 +89,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
 
   return (
     <div
+      data-testid="tree-node"
       className={twMerge(
         "text-sm text-neutral-400",
         path === activeFilepath ? "bg-gray-700" : "",
