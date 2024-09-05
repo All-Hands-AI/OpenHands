@@ -92,8 +92,6 @@ class LLM:
             RateLimitError,
         )
 
-        litellm.set_verbose = True
-
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
             if (
