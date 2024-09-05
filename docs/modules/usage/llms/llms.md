@@ -13,6 +13,11 @@ The following are verified by the community to work with OpenHands:
 * llama-3.1-405b / hermes-3-llama-3.1-405b
 * wizardlm-2-8x22b
 
+:::warning
+OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
+limits and monitor usage.
+:::
+
 If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
 also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
 
@@ -27,11 +32,6 @@ models driving it. However, if you do find ones that work, please add them to th
 
 ## LLM Configuration
 
-:::warning
-OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
-limits and monitor usage.
-:::
-
 The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
 But when using the OpenHands UI, you'll need to choose your model in the settings window.
 
@@ -44,6 +44,7 @@ The following environment variables might be necessary for some LLMs/providers:
 * `LLM_EMBEDDING_DEPLOYMENT_NAME`
 * `LLM_DROP_PARAMS`
 * `LLM_DISABLE_VISION`
+* `LLM_CACHING_PROMPT`
 
 We have a few guides for running OpenHands with specific model providers:
 
@@ -57,6 +58,6 @@ We have a few guides for running OpenHands with specific model providers:
 Some LLMs have rate limits and may require retries. OpenHands will automatically retry requests if it receives a 429 error or API connection error.
 You can set the following environment variables to control the number of retries and the time between retries:
 
-* `LLM_NUM_RETRIES` (Default of 5)
-* `LLM_RETRY_MIN_WAIT` (Default of 3 seconds)
-* `LLM_RETRY_MAX_WAIT` (Default of 60 seconds)
+* `LLM_NUM_RETRIES` (Default of 8)
+* `LLM_RETRY_MIN_WAIT` (Default of 15 seconds)
+* `LLM_RETRY_MAX_WAIT` (Default of 120 seconds)

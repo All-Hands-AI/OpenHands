@@ -126,20 +126,28 @@ embedding_model = ""
 # Model to use
 model = "gpt-4o"
 
-# Number of retries to attempt
-#num_retries = 5
+# Number of retries to attempt when an operation fails with the LLM.
+# Increase this value to allow more attempts before giving up
+#num_retries = 8
 
-# Retry maximum wait time
-#retry_max_wait = 60
+# Maximum wait time (in seconds) between retry attempts
+# This caps the exponential backoff to prevent excessively long
+#retry_max_wait = 120
 
-# Retry minimum wait time
-#retry_min_wait = 3
+# Minimum wait time (in seconds) between retry attempts
+# This sets the initial delay before the first retry
+#retry_min_wait = 15
 
-# Retry multiplier for exponential backoff
+# Multiplier for exponential backoff calculation
+# The wait time increases by this factor after each failed attempt
+# A value of 2.0 means each retry waits twice as long as the previous one
 #retry_multiplier = 2.0
 
 # Drop any unmapped (unsupported) params without causing an exception
 #drop_params = false
+
+# Using the prompt caching feature provided by the LLM
+#caching_prompt = false
 
 # Base URL for the OLLAMA API
 #ollama_base_url = ""
