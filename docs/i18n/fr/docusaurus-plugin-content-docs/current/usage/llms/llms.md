@@ -41,4 +41,4 @@ ne peut être aussi puissant que les modèles qui le pilotent -- heureusement, l
 
 Certains LLM ont des limites de taux et peuvent nécessiter des réessais. OpenHands réessaiera automatiquement les demandes s'il reçoit une erreur 429 ou une erreur de connexion API.
 Vous pouvez définir les variables d'environnement `LLM_NUM_RETRIES`, `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` pour contrôler le nombre de réessais et le temps entre les réessais.
-Par défaut, `LLM_NUM_RETRIES` est 5 et `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` sont respectivement de 3 secondes et 60 secondes.
+Par défaut, `LLM_NUM_RETRIES` est 8 et `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` sont respectivement de 15 secondes et 120 secondes.

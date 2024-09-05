@@ -58,6 +58,6 @@ We have a few guides for running OpenHands with specific model providers:
 Some LLMs have rate limits and may require retries. OpenHands will automatically retry requests if it receives a 429 error or API connection error.
 You can set the following environment variables to control the number of retries and the time between retries:
 
-* `LLM_NUM_RETRIES` (Default of 5)
-* `LLM_RETRY_MIN_WAIT` (Default of 3 seconds)
-* `LLM_RETRY_MAX_WAIT` (Default of 60 seconds)
+* `LLM_NUM_RETRIES` (Default of 8)
+* `LLM_RETRY_MIN_WAIT` (Default of 15 seconds)
+* `LLM_RETRY_MAX_WAIT` (Default of 120 seconds)
