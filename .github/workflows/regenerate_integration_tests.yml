@@ -3,6 +3,23 @@ name: Regenerate Integration Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug mode'
+        type: boolean
+        default: true
+      log_to_file:
+        description: 'Enable logging to file'
+        type: boolean
+        default: true
+      force_regenerate_tests:
+        description: 'Force regeneration of tests'
+        type: boolean
+        default: false
+      force_use_llm:
+        description: 'Force use of LLM'
+        type: boolean
+        default: false
 
 jobs:
   regenerate_integration_tests:
@@ -17,7 +34,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.11"
         cache: 'poetry'
     - name: Install Python dependencies using Poetry
       run: poetry install --without evaluation,llama-index
@@ -25,7 +42,12 @@ jobs:
       run: make build
 
     - name: Regenerate integration tests
-      run: ./tests/integration/regenerate.sh
+      run: |
+        DEBUG=${{ inputs.debug }} \
+        LOG_TO_FILE=${{ inputs.log_to_file }} \
+        FORCE_REGENERATE_TESTS=${{ inputs.force_regenerate_tests }} \
+        FORCE_USE_LLM=${{ inputs.force_use_llm }} \
+        ./tests/integration/regenerate.sh
 
     - name: Commit changes
       run: |

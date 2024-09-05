@@ -4,8 +4,8 @@ import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
   title: "OpenHands",
-  tagline: "An Open Platform for AI Software Developers as Generalist Agents",
-  favicon: "img/logo.png",
+  tagline: "Code Less, Make More",
+  favicon: "img/logo-square.png",
 
   // Set the production url of your site here
   url: "https://docs.all-hands.dev",
@@ -73,22 +73,27 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "docsSidebar",
           position: "left",
-          label: "Docs",
+          label: "User Guides",
         },
         {
           type: "docSidebar",
           sidebarId: "apiSidebar",
           position: "left",
-          label: "Codebase",
+          label: "Python API",
+        },
+        {
+          type: 'localeDropdown',
+          position: 'left',
+        },
+        {
+          href: "https://all-hands.dev",
+          label: "Company",
+          position: "right",
         },
         {
           href: "https://github.com/All-Hands-AI/OpenHands",
           label: "GitHub",
           position: "right",
-        },
-        {
-          type: 'localeDropdown',
-          position: 'left',
         },
       ],
     },

@@ -14,8 +14,9 @@ The assistant can install Python packages using the %pip magic command in an IPy
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
-    Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 2000. Use `scroll_up` and `scroll_down` to view more content up or down.
+    Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
+    If line_number is provided, the window will be moved to include that line.
+    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
     Args:
     path: str: The path to the file to open, preferred absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
@@ -42,7 +43,9 @@ create_file(filename: str) -> None:
     filename: str: The name of the file to create.
 
 edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
-    Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with `new_content`. Use `append_file` method for writing after `create_file`!
+    Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with non-empty `new_content`.
+    `to_replace` and `new_content` must be different! Split large edits into multiple smaller edits if necessary!
+    Use `append_file` method for writing after `create_file`!
     Every *to_replace* must *EXACTLY MATCH* the existing source code, character for character, including all comments, docstrings, etc.
     Include enough lines to make code in `to_replace` unique. `to_replace` should NOT be empty.
     For example, given a file "/workspace/example.txt" with the following content:
@@ -103,7 +106,7 @@ insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
 
 append_file(file_name: str, content: str) -> None:
     Append content to the given file.
-    It appends text `content` to the end of the specified file.
+    It appends text `content` to the end of the specified file, ideal after a `create_file`!
     Args:
     file_name: str: The name of the file to edit.
     line_number: int: The line number (starting from 1) to insert the content after.
@@ -113,19 +116,19 @@ search_dir(search_term: str, dir_path: str = './') -> None:
     Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
     Args:
     search_term: str: The term to search for.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
-search_file(search_term: str, file_path: Optional[str] = None) -> None:
+search_file(search_term: str, file_path: str | None = None) -> None:
     Searches for search_term in file. If file is not provided, searches in the current open file.
     Args:
     search_term: str: The term to search for.
-    file_path: Optional[str]: The path to the file to search.
+    file_path: str | None: The path to the file to search.
 
 find_file(file_name: str, dir_path: str = './') -> None:
     Finds all files with the given name in the specified directory.
     Args:
     file_name: str: The name of the file to find.
-    dir_path: Optional[str]: The path to the directory to search.
+    dir_path: str: The path to the directory to search.
 
 parse_pdf(file_path: str) -> None:
     Parses the content of a PDF file and prints it.
@@ -152,6 +155,7 @@ Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the as
 The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
+
 
 
 ----------
@@ -585,17 +589,16 @@ exit
 
 
 NOW, LET'S START!
-
-----------
-
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
+
 ----------
 
-Let's start by opening the `bad.txt` file to identify and fix the typos.
+Certainly! I'll fix the typos in bad.txt without asking for confirmation. Let's start by opening the file and examining its contents.
 <execute_ipython>
-open_file("bad.txt")
+open_file('bad.txt')
 </execute_ipython>
+
 
 ----------
 
@@ -607,6 +610,7 @@ OBSERVATION:
 3|No mor typos!
 4|Enjoy!
 (this is the end of the file)
+[Jupyter current working directory: /workspace]
+[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 
-
-ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
+ENVIRONMENT REMINDER: You have 18 turns left to complete the task. When finished reply with <finish></finish>.

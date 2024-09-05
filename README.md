@@ -1,72 +1,49 @@
 <a name="readme-top"></a>
 
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+<div align="center">
+  <img src="./docs/static/img/logo.png" alt="Logo" width="200">
+  <h1 align="center">OpenHands: Code Less, Make More</h1>
+</div>
 
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-
-<p align="center">
-  <a href="https://trendshift.io/repositories/8648">
-    <img src="https://trendshift.io/api/badge/repositories/8648" alt="GitHub Trend" style="display: block; margin: auto;">
-  </a>
-</p>
 
 <div align="center">
   <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/network/members"><img src="https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Forks"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/issues"><img src="https://img.shields.io/github/issues/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Issues"></a>
+  <a href="https://codecov.io/github/All-Hands-AI/OpenHands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge&color=blue"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=blue" alt="Credits"></a>
   <br/>
   <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
-  <a href="https://codecov.io/github/All-Hands-AI/OpenHands?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge"></a>
-</div>
-
-<!-- PROJECT LOGO -->
-<div align="center">
-  <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
-  <h1 align="center">OpenHands: Code Less, Make More</h1>
-  <a href="https://docs.all-hands.dev/modules/usage/intro"><img src="https://img.shields.io/badge/Documentation-OpenHands-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
-  <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper-%20on%20Arxiv-red?logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
+  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
   <br/>
-  <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Evaluation-Benchmark%20on%20HF%20Space-green?logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark"></a>
+  <a href="https://docs.all-hands.dev/modules/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
+  <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
+  <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
+  <hr>
 </div>
-<hr>
 
+Welcome to OpenHands (formerly OpenDevin), a platform for software development agents powered by AI.
 
-Welcome to OpenHands, a platform for autonomous software engineers, powered by AI and LLMs (previously called "OpenDevin").
+OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
+call APIs, and yes—even copy code snippets from StackOverflow.
 
-OpenHands agents collaborate with human developers to write code, fix bugs, and ship features.
+Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [Quick Start](#-quick-start).
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
-## ⚡ Getting Started
-OpenHands works best with Docker version 26.0.0+ (Docker Desktop 4.31.0+).
-You must be using Linux, Mac OS, or WSL on Windows.
+## ⚡ Quick Start
 
-To start OpenHands in a docker container, run the following commands in your terminal:
+The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` below to
+point OpenHands to existing code that you'd like to modify.
 
-> [!WARNING]
-> When you run the following command, files in `./workspace` may be modified or deleted.
+See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) guide for
+system requirements and more information.
 
 ```bash
 WORKSPACE_BASE=$(pwd)/workspace
-docker run -it \
-    --pull=always \
+
+docker run -it --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9.2-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
@@ -77,27 +54,21 @@ docker run -it \
     ghcr.io/all-hands-ai/openhands:0.9
 ```
 
-> [!NOTE]
-> This command pulls the `0.9` tag, which represents the most recent stable release of OpenHands. You have other options as well:
-> - For a specific release version, use `ghcr.io/all-hands-ai/openhands:<OpenHands_version>` (replace <OpenHands_version> with the desired version number).
-> - For the most up-to-date development version, use `ghcr.io/all-hands-ai/openhands:main`. This version may be **(unstable!)** and is recommended for testing or development purposes only.
->
-> Choose the tag that best suits your needs based on stability requirements and desired features.
+You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
-You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenHands operate on your code, place it in `./workspace`.
-OpenHands will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
+You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
 
-Upon opening OpenHands, you must select the appropriate `Model` and enter the `API Key` within the settings that should pop up automatically. These can be set at any time by selecting
-the `Settings` button (gear icon) in the UI. If the required `Model` does not exist in the list, you can manually enter it in the text box.
+Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup instructions.
 
-For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
+Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting) can help.
 
-## 🚀 Documentation
+## 📖 Documentation
 
 To learn more about the project, and for tips on using OpenHands,
-**check out our [documentation](https://docs.all-hands.dev/modules/usage/intro)**.
+**check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started)**.
 
 There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
 troubleshooting resources, and advanced configuration options.
@@ -133,17 +104,6 @@ Let's make software engineering better together!
 ## 📜 License
 
 Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
-
-[contributors-shield]: https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge
-[contributors-url]: https://github.com/All-Hands-AI/OpenHands/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge
-[forks-url]: https://github.com/All-Hands-AI/OpenHands/network/members
-[stars-shield]: https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge
-[stars-url]: https://github.com/All-Hands-AI/OpenHands/stargazers
-[issues-shield]: https://img.shields.io/github/issues/All-Hands-AI/OpenHands?style=for-the-badge
-[issues-url]: https://github.com/All-Hands-AI/OpenHands/issues
-[license-shield]: https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge
-[license-url]: https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE
 
 ## 🙏 Acknowledgements
 
