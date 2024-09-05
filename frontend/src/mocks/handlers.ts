@@ -18,15 +18,15 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]);
   }),
-  http.get("/api/list-files", () =>
+  http.get("http://localhost:3000/api/list-files", () =>
     HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]),
   ),
-  http.get("/api/select-file", ({ request }) => {
+  http.get("http://localhost:3000/api/select-file", ({ request }) => {
     const url = new URL(request.url);
     const file = url.searchParams.get("file")?.toString();
 
     if (file) {
-      return HttpResponse.json(`Content of ${file}`);
+      return HttpResponse.json({ code: `Content of ${file}` });
     }
 
     return HttpResponse.json(null, { status: 404 });

@@ -28,7 +28,6 @@ const retrieveFiles = async (): Promise<string[]> => {
 const retrieveFileContent = async (path: string): Promise<string> => {
   const url = new URL("http://localhost:3000/api/select-file");
   url.searchParams.append("file", path);
-  console.warn(url.toString());
   const response = await fetch(url.toString());
 
   const data = await response.json();
