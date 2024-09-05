@@ -204,6 +204,11 @@ class CodeActAgent(Agent):
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
+        delegated_task = ''
+        if state.inputs.get('task') is not None:
+            # CodeActAgent is delegated a task
+            delegated_task = state.inputs['task']
+
         messages: list[Message] = [
             Message(
                 role='system',
@@ -218,7 +223,9 @@ class CodeActAgent(Agent):
                 role='user',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.initial_user_message,
+                        text=self.prompt_manager.initial_user_message
+                        + '\n'
+                        + delegated_task,
                         cache_prompt=self.llm.supports_prompt_caching,  # if the user asks the same query,
                     )
                 ],
