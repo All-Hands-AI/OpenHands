@@ -140,7 +140,7 @@ describe("SettingsForm", () => {
       renderSettingsForm();
 
       // We need to enable the agent select
-      const agentSwitch = screen.getByTestId("enableagentselect");
+      const agentSwitch = screen.getByTestId("advanced-options-toggle");
       await user.click(agentSwitch);
 
       const agentInput = screen.getByRole("combobox", { name: "agent" });

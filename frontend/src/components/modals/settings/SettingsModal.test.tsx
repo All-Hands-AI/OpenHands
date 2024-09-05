@@ -262,7 +262,7 @@ describe("SettingsModal", () => {
     );
 
     // We need to enable the agent select first
-    const agentSwitch = screen.getByTestId("enableagentselect");
+    const agentSwitch = screen.getByTestId("advanced-options-toggle");
     await user.click(agentSwitch);
 
     const resetButton = screen.getByRole("button", {
