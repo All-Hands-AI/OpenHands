@@ -70,11 +70,6 @@ class LLM:
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
 
-        self.supports_prompt_caching = (
-            self.vision_is_active()
-            and self.config.model in cache_prompting_supported_models
-        )
-
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
@@ -190,7 +185,7 @@ class LLM:
                 if debug_str:
                     debug_message += message_separator + debug_str
 
-            if self.supports_prompt_caching:
+            if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching
                 if 'claude-3' in self.config.model:
                     kwargs['extra_headers'] = {
@@ -466,6 +461,17 @@ class LLM:
             return litellm.supports_vision(self.config.model)
         except Exception:
             return False
+
+    def is_caching_prompt_active(self) -> bool:
+        """Check if prompt caching is enabled and supported for current model.
+
+        Returns:
+            boolean: True if prompt caching is active for the given model.
+        """
+        return (
+            self.config.caching_prompt is True
+            and self.config.model in cache_prompting_supported_models
+        )
 
     def _post_completion(self, response) -> None:
         """Post-process the completion response."""
