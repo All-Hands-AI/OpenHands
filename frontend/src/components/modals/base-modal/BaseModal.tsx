@@ -58,7 +58,7 @@ function BaseModal({
             <ModalBody className={bodyClassName}>{children}</ModalBody>
 
             {actions && actions.length > 0 && (
-              <ModalFooter className="flex-col flex justify-start p-0">
+              <ModalFooter className="flex-row flex justify-start p-0">
                 <FooterContent actions={actions} closeModal={closeModal} />
               </ModalFooter>
             )}
