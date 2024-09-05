@@ -1,4 +1,3 @@
-import React from "react";
 import BuildIt from "#/assets/build-it.svg?react";
 
 export function HeroHeading() {

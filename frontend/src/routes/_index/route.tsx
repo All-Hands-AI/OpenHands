@@ -1,24 +1,25 @@
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
 import { GitHubRepositorySelector } from "./github-repo-selector";
+import { getSession } from "#/sessions";
+import { isGitHubErrorReponse, retrieveGitHubUserRepositories } from "#/api/github";
 
-export const loader = async () => {
-  const repos: GitHubRepository[] = [];
-  return json({ repos });
-};
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const session = await getSession(request.headers.get("Cookie"));
+  const ghToken = session.get("ghToken");
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData();
-  const q = formData.get("q");
-
-  if (q?.toString()) {
-    return redirect(`/app?q=${q.toString()}`);
+  let repos: GitHubRepository[] = [];
+  if (ghToken) {
+    const data = await retrieveGitHubUserRepositories(ghToken);
+    if (!isGitHubErrorReponse(data)) repos = data;
+    // TODO: display error message in the UI
+    else console.warn(data.status, data.message);
   }
 
-  return json(null);
+  return json({ repos });
 };
 
 function Home() {

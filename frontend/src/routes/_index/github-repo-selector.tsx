@@ -1,6 +1,5 @@
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { Form, useSubmit } from "@remix-run/react";
-import React from "react";
 
 interface GitHubRepositorySelectorProps {
   repositories: GitHubRepository[];
