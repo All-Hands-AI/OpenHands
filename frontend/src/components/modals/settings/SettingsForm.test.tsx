@@ -47,8 +47,8 @@ describe("SettingsForm", () => {
   it("should display the first values in the array by default", () => {
     renderSettingsForm();
 
-    const providerInput = screen.getByRole("combobox", { name: "Provider" });
-    const modelInput = screen.getByRole("combobox", { name: "Model" });
+    const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+    const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
@@ -76,8 +76,8 @@ describe("SettingsForm", () => {
       SECURITY_ANALYZER: "analyzer2",
     });
 
-    const providerInput = screen.getByRole("combobox", { name: "Provider" });
-    const modelInput = screen.getByRole("combobox", { name: "Model" });
+    const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+    const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const securityAnalyzerInput = screen.getByRole("combobox", {
@@ -117,8 +117,8 @@ describe("SettingsForm", () => {
       />,
     );
 
-    const providerInput = screen.getByRole("combobox", { name: "Provider" });
-    const modelInput = screen.getByRole("combobox", { name: "Model" });
+    const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+    const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const confirmationModeInput = screen.getByTestId("confirmationmode");
