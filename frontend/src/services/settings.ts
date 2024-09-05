@@ -9,8 +9,6 @@ export type Settings = {
   SECURITY_ANALYZER: string;
 };
 
-type SettingsInput = Settings[keyof Settings];
-
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "openai/gpt-4o",
   AGENT: "CodeActAgent",
