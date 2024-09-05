@@ -193,7 +193,11 @@ describe("SettingsForm", () => {
       const user = userEvent.setup();
       renderSettingsForm();
 
+      const advancedToggle = screen.getByTestId("advanced-options-toggle");
+      await user.click(advancedToggle);
+
       const customModelInput = screen.getByTestId("custom-model-input");
+      await userEvent.clear(customModelInput);
       await userEvent.type(customModelInput, "my/custom-model");
 
       expect(onModelChangeMock).toHaveBeenCalledWith("my/custom-model");
