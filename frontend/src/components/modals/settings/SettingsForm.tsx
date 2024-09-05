@@ -17,8 +17,6 @@ interface SettingsFormProps {
   disabled: boolean;
 
   onModelChange: (model: string) => void;
-  onCustomModelChange: (model: string) => void;
-  onModelTypeChange: (type: "custom" | "default") => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
@@ -33,8 +31,6 @@ function SettingsForm({
   securityAnalyzers,
   disabled,
   onModelChange,
-  onCustomModelChange,
-  onModelTypeChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
@@ -43,7 +39,8 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-  const advancedAlreadyInUse = settings.USING_CUSTOM_MODEL || !!settings.SECURITY_ANALYZER || !!settings.CONFIRMATION_MODE;
+  const advancedAlreadyInUse = !!settings.SECURITY_ANALYZER || !!settings.CONFIRMATION_MODE;
+  // TODO: || model is not in the list
   const [enableAdvanced, setEnableAdvanced] = React.useState(advancedAlreadyInUse);
 
   return (
@@ -60,8 +57,8 @@ function SettingsForm({
         <Input
           data-testid="custom-model-input"
           label="Custom Model"
-          onValueChange={onCustomModelChange}
-          defaultValue={settings.CUSTOM_LLM_MODEL}
+          onValueChange={onModelChange}
+          defaultValue={settings.LLM_MODEL}
         />
       )}
       {!enableAdvanced && (

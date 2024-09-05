@@ -21,8 +21,6 @@ const renderSettingsForm = (settings?: Settings) => {
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
-          CUSTOM_LLM_MODEL: "",
-          USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -71,8 +69,6 @@ describe("SettingsForm", () => {
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "gpt-3.5-turbo",
-      CUSTOM_LLM_MODEL: "",
-      USING_CUSTOM_MODEL: false,
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -100,8 +96,6 @@ describe("SettingsForm", () => {
       <SettingsForm
         settings={{
           LLM_MODEL: "gpt-4o",
-          CUSTOM_LLM_MODEL: "",
-          USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -230,8 +224,6 @@ describe("SettingsForm", () => {
         <SettingsForm
           settings={{
             LLM_MODEL: "gpt-4o",
-            CUSTOM_LLM_MODEL: "CUSTOM_MODEL",
-            USING_CUSTOM_MODEL: true,
             AGENT: "agent1",
             LANGUAGE: "en",
             LLM_API_KEY: "sk-...",

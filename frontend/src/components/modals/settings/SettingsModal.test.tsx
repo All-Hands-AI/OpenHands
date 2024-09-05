@@ -24,8 +24,6 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
   getSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
-    CUSTOM_LLM_MODEL: "",
-    USING_CUSTOM_MODEL: false,
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
@@ -34,8 +32,6 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
-    CUSTOM_LLM_MODEL: "",
-    USING_CUSTOM_MODEL: false,
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "",
@@ -115,8 +111,6 @@ describe("SettingsModal", () => {
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
       LLM_MODEL: "gpt-4o",
-      CUSTOM_LLM_MODEL: "",
-      USING_CUSTOM_MODEL: false,
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",

@@ -83,20 +83,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     }));
   };
 
-  const handleCustomModelChange = (model: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      CUSTOM_LLM_MODEL: model,
-    }));
-  };
-
-  const handleModelTypeChange = (type: "custom" | "default") => {
-    setSettings((prev) => ({
-      ...prev,
-      USING_CUSTOM_MODEL: type === "custom",
-    }));
-  };
-
   const handleAgentChange = (agent: string) => {
     setSettings((prev) => ({ ...prev, AGENT: agent }));
   };
@@ -205,8 +191,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           agents={agents}
           securityAnalyzers={securityAnalyzers}
           onModelChange={handleModelChange}
-          onCustomModelChange={handleCustomModelChange}
-          onModelTypeChange={handleModelTypeChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
