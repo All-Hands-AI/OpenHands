@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
+import { Form } from "@remix-run/react";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
@@ -95,13 +96,17 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         path === activeFilepath ? "bg-gray-700" : "",
       )}
     >
-      <Title
-        name={filename}
-        type={isDirectory ? "folder" : "file"}
-        isOpen={isOpen}
-        isUnsaved={isUnsaved}
-        onClick={handleClick}
-      />
+      <Form method="post">
+        <button type="submit" name="file" value={filename}>
+          <Title
+            name={filename}
+            type={isDirectory ? "folder" : "file"}
+            isOpen={isOpen}
+            isUnsaved={isUnsaved}
+            onClick={handleClick}
+          />
+        </button>
+      </Form>
 
       {isOpen && children && (
         <div className="ml-5">

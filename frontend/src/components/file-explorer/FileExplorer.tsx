@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
-import { listFiles, uploadFiles } from "#/services/fileService";
+import { uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
@@ -87,10 +87,13 @@ function ExplorerActions({
   );
 }
 
-function FileExplorer() {
+interface FileExplorerProps {
+  files: string[];
+}
+
+function FileExplorer({ files }: FileExplorerProps) {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
-  const [files, setFiles] = React.useState<string[]>([]);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
@@ -108,8 +111,8 @@ function FileExplorer() {
     }
     dispatch(setRefreshID(Math.random()));
     try {
-      const fileList = await listFiles();
-      setFiles(fileList);
+      // const fileList = await listFiles();
+      // setFiles(fileList);
     } catch (error) {
       toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
     }

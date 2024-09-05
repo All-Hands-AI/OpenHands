@@ -1,10 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Monaco } from "@monaco-editor/react";
+import { Editor, Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor";
-import { VscCheck, VscCode } from "react-icons/vsc";
+import { VscCheck, VscClose, VscCode, VscSave } from "react-icons/vsc";
 import { Button, Tab, Tabs } from "@nextui-org/react";
+import { json, useActionData, useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs } from "@remix-run/node";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import {
@@ -18,7 +20,56 @@ import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 
+const retrieveFiles = async (): Promise<string[]> => {
+  const response = await fetch("http://localhost:3000/api/list-files");
+  return response.json();
+};
+
+const retrieveFileContent = async (path: string): Promise<string> => {
+  const url = new URL("http://localhost:3000/api/select-file");
+  url.searchParams.append("file", path);
+  console.warn(url.toString());
+  const response = await fetch(url.toString());
+
+  const data = await response.json();
+  return data.code;
+};
+
+export const loader = async () => {
+  let files: string[] = [];
+
+  try {
+    files = await retrieveFiles();
+  } catch (error) {
+    // TODO: Display error in UI
+    console.error("Failed to retrieve files", error);
+  }
+
+  return json({ files });
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const file = formData.get("file")?.toString();
+
+  let selectedFileContent: string | null = null;
+
+  if (file) {
+    try {
+      selectedFileContent = await retrieveFileContent(file);
+    } catch (error) {
+      // TODO: Display error in UI
+      console.error("Failed to retrieve file content", error);
+    }
+  }
+
+  return json({ selectedFileContent });
+};
+
 function CodeEditor() {
+  const { files } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const fileStates = useSelector((state: RootState) => state.code.fileStates);
@@ -159,7 +210,7 @@ function CodeEditor() {
 
   return (
     <div className="flex h-full w-full bg-neutral-900 relative">
-      <FileExplorer />
+      <FileExplorer files={files} />
       <div className="flex flex-col min-h-0 w-full">
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4">
           <Tabs
@@ -204,13 +255,14 @@ function CodeEditor() {
           )}
         </div>
         <div className="flex grow items-center justify-center">
-          {!selectedFileName ? (
+          {!actionData?.selectedFileContent ? (
             <div className="flex flex-col items-center text-neutral-400">
               <VscCode size={100} />
               {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
             </div>
           ) : (
-            <CodeEditor
+            <Editor
+              data-testid="code-editor"
               height="100%"
               path={selectedFileName.toLowerCase()}
               defaultValue=""
