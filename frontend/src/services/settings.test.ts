@@ -93,7 +93,7 @@ describe("saveSettings", () => {
 
     expect(localStorage.setItem).toHaveBeenCalledTimes(2);
     expect(localStorage.setItem).toHaveBeenCalledWith("LLM_MODEL", "llm_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith("SETTINGS_VERSION", "1");
+    expect(localStorage.setItem).toHaveBeenCalledWith("SETTINGS_VERSION", "2");
   });
 
   it("should not save invalid settings", () => {
