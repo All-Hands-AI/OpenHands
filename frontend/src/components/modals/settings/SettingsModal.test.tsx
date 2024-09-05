@@ -224,6 +224,7 @@ describe("SettingsModal", () => {
       const model3 = screen.getByText("command-r-v1:0");
       await user.click(model3);
 
+      expect(saveButton).not.toBeDisabled();
       await user.click(saveButton);
 
       expect(onOpenChangeMock).toHaveBeenCalledWith(false);

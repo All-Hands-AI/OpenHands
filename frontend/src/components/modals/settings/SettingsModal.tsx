@@ -30,7 +30,7 @@ interface SettingsProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const REQUIRED_SETTINGS = ["LLM_MODEL", "AGENT"];
+const REQUIRED_SETTINGS = ["LLM_MODEL"];
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
