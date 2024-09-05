@@ -198,6 +198,7 @@ describe("SettingsModal", () => {
       const onOpenChangeMock = vi.fn();
       (getSettings as Mock).mockReturnValueOnce({
         LLM_MODEL: "gpt-4o",
+        LLM_API_KEY: "sk-...",
       });
       await act(async () =>
         renderWithProviders(

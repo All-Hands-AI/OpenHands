@@ -24,8 +24,8 @@ const renderSettingsForm = (settings?: Settings) => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
-          CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: "analyzer1",
+          CONFIRMATION_MODE: false,
+          SECURITY_ANALYZER: "",
         }
       }
       models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
@@ -185,7 +185,7 @@ describe("SettingsForm", () => {
       const user = userEvent.setup();
       renderSettingsForm();
 
-      const customModelToggle = screen.getByTestId("custom-model-toggle");
+      const customModelToggle = screen.getByTestId("advanced-options-toggle");
       await user.click(customModelToggle);
 
       const modelSelector = screen.queryByTestId("model-selector");
@@ -198,9 +198,6 @@ describe("SettingsForm", () => {
     it("should call the onCustomModelChange handler when the custom model input changes", async () => {
       const user = userEvent.setup();
       renderSettingsForm();
-
-      const customModelToggle = screen.getByTestId("custom-model-toggle");
-      await user.click(customModelToggle);
 
       const customModelInput = screen.getByTestId("custom-model-input");
       await userEvent.type(customModelInput, "my/custom-model");
@@ -235,7 +232,7 @@ describe("SettingsForm", () => {
         />,
       );
 
-      const customModelToggle = screen.getByTestId("custom-model-toggle");
+      const customModelToggle = screen.getByTestId("advanced-options-toggle");
       expect(customModelToggle).toHaveAttribute("aria-checked", "true");
     });
   });
