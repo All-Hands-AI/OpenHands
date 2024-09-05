@@ -21,7 +21,7 @@ export function ModelSelector({
   onModelChange,
   defaultModel,
 }: ModelSelectorProps) {
-  const [_, setLitellmId] = React.useState<string | null>(null);
+  const [, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
     null,
   );
