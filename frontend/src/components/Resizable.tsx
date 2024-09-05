@@ -26,7 +26,6 @@ type ContainerProps = {
   secondClassName: string | undefined;
   className: string | undefined;
   orientation: Orientation;
-  initialSize: number;
 };
 
 export function Container({
@@ -36,9 +35,7 @@ export function Container({
   secondClassName,
   className,
   orientation,
-  initialSize,
 }: ContainerProps): JSX.Element {
-  const [firstSize, setFirstSize] = useState<number>(initialSize);
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
   const firstRef = useRef<HTMLDivElement>(null);
   const secondRef = useRef<HTMLDivElement>(null);
@@ -49,24 +46,7 @@ export function Container({
     if (dividerPosition == null || !firstRef.current) {
       return undefined;
     }
-    const getFirstSizeFromEvent = (e: MouseEvent) => {
-      const position = isHorizontal ? e.clientX : e.clientY;
-      return firstSize + position - dividerPosition;
-    };
-    const onMouseMove = (e: MouseEvent) => {
-      e.preventDefault();
-      const newFirstSize = `${getFirstSizeFromEvent(e)}px`;
-      const { current } = firstRef;
-      if (current) {
-        if (isHorizontal) {
-          current.style.width = newFirstSize;
-          current.style.minWidth = newFirstSize;
-        } else {
-          current.style.height = newFirstSize;
-          current.style.minHeight = newFirstSize;
-        }
-      }
-    };
+
     const onMouseUp = (e: MouseEvent) => {
       e.preventDefault();
       if (firstRef.current) {
@@ -75,18 +55,14 @@ export function Container({
       if (secondRef.current) {
         secondRef.current.style.transition = "";
       }
-      setFirstSize(getFirstSizeFromEvent(e));
       setDividerPosition(null);
-      document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-    document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     return () => {
-      document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [dividerPosition, firstSize, orientation]);
+  }, [dividerPosition, orientation]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -108,15 +84,6 @@ export function Container({
       style.minWidth = 0;
       style.height = 0;
       style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      const firstSizePx = `${firstSize}px`;
-      if (isHorizontal) {
-        style.width = firstSizePx;
-        style.minWidth = firstSizePx;
-      } else {
-        style.height = firstSizePx;
-        style.minHeight = firstSizePx;
-      }
     } else {
       style.flexGrow = 1;
     }

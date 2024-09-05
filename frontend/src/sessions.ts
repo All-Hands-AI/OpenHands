@@ -1,11 +1,12 @@
 import { createCookieSessionStorage } from "@remix-run/node";
+import { Settings } from "./services/settings";
 
 type SessionData = {
   tosAccepted: boolean;
   ghToken: string;
 };
 
-const { getSession, commitSession, destroySession } =
+export const { getSession, commitSession, destroySession } =
   createCookieSessionStorage<SessionData>({
     cookie: {
       name: "__session",
@@ -13,4 +14,15 @@ const { getSession, commitSession, destroySession } =
     },
   });
 
-export { getSession, commitSession, destroySession };
+type SettingsSessionData = { settings: Settings };
+
+export const {
+  getSession: getSettingsSession,
+  commitSession: commitSettingsSession,
+  destroySession: destroySettingsSession,
+} = createCookieSessionStorage<SettingsSessionData>({
+  cookie: {
+    name: "__settings",
+    secrets: ["some_other_secret"],
+  },
+});

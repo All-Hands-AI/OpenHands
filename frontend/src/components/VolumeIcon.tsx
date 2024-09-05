@@ -1,19 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 import { IoMdVolumeHigh, IoMdVolumeOff } from "react-icons/io";
 import beep from "#/utils/beep";
 
+// TODO: Set prefs in cookie
 function VolumeIcon(): JSX.Element {
-  const [isMuted, setIsMuted] = useState(
-    document.cookie.indexOf("audio") === -1,
-  );
+  const [isMuted, setIsMuted] = React.useState(true);
 
   const toggleMute = () => {
-    const cookieName = "audio";
     setIsMuted(!isMuted);
     if (!isMuted) {
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      // document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
     } else {
-      document.cookie = `${cookieName}=on;`;
+      // document.cookie = `${cookieName}=on;`;
       beep();
     }
   };
