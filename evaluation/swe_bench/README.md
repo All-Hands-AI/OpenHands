@@ -77,7 +77,7 @@ ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote EVAL_DOCKER_IMAGE_PREFIX="us-dock
 To clean-up all existing runtime you've already started, run:
 
 ```bash
-./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh "YOUR-API-KEY"
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh
 ```
 
 ### Specify a subset of tasks to run infer
