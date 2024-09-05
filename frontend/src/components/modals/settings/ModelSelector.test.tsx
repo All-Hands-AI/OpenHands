@@ -29,7 +29,7 @@ describe("ModelSelector", () => {
     const onModelChange = vi.fn();
     render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
-    const selector = screen.getByLabelText("Provider");
+    const selector = screen.getByLabelText("LLM Provider");
     expect(selector).toBeInTheDocument();
 
     await user.click(selector);
@@ -45,10 +45,10 @@ describe("ModelSelector", () => {
     const onModelChange = vi.fn();
     render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
-    const modelSelector = screen.getByLabelText("Model");
+    const modelSelector = screen.getByLabelText("LLM Model");
     expect(modelSelector).toBeDisabled();
 
-    const providerSelector = screen.getByLabelText("Provider");
+    const providerSelector = screen.getByLabelText("LLM Provider");
     await user.click(providerSelector);
 
     const vertexAI = screen.getByText("VertexAI");
@@ -62,13 +62,13 @@ describe("ModelSelector", () => {
     const onModelChange = vi.fn();
     render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
-    const providerSelector = screen.getByLabelText("Provider");
+    const providerSelector = screen.getByLabelText("LLM Provider");
     await user.click(providerSelector);
 
     const azureProvider = screen.getByText("Azure");
     await user.click(azureProvider);
 
-    const modelSelector = screen.getByLabelText("Model");
+    const modelSelector = screen.getByLabelText("LLM Model");
     await user.click(modelSelector);
 
     expect(screen.getByText("ada")).toBeInTheDocument();
@@ -90,8 +90,8 @@ describe("ModelSelector", () => {
     render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
     const id = screen.getByTestId("model-id");
-    const providerSelector = screen.getByLabelText("Provider");
-    const modelSelector = screen.getByLabelText("Model");
+    const providerSelector = screen.getByLabelText("LLM Provider");
+    const modelSelector = screen.getByLabelText("LLM Model");
 
     expect(id).toHaveTextContent("No model selected");
 
@@ -118,8 +118,8 @@ describe("ModelSelector", () => {
     const onModelChange = vi.fn();
     render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
-    const providerSelector = screen.getByLabelText("Provider");
-    const modelSelector = screen.getByLabelText("Model");
+    const providerSelector = screen.getByLabelText("LLM Provider");
+    const modelSelector = screen.getByLabelText("LLM Model");
 
     await user.click(providerSelector);
     await user.click(screen.getByText("Azure"));
@@ -151,8 +151,8 @@ describe("ModelSelector", () => {
     const onModelChange = vi.fn();
     render(<ModelSelector models={models} onModelChange={onModelChange} />);
 
-    const providerSelector = screen.getByLabelText("Provider");
-    const modelSelector = screen.getByLabelText("Model");
+    const providerSelector = screen.getByLabelText("LLM Provider");
+    const modelSelector = screen.getByLabelText("LLM Model");
 
     await user.click(providerSelector);
     await user.click(screen.getByText("Azure"));
@@ -180,8 +180,8 @@ describe("ModelSelector", () => {
     );
 
     expect(screen.getByTestId("model-id")).toHaveTextContent("azure/ada");
-    expect(screen.getByLabelText("Provider")).toHaveValue("Azure");
-    expect(screen.getByLabelText("Model")).toHaveValue("ada");
+    expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
+    expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
   });
 
   it.todo("should disable provider if isDisabled is true");
