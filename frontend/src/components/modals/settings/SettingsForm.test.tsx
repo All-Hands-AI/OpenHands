@@ -179,8 +179,8 @@ describe("SettingsForm", () => {
       const user = userEvent.setup();
       renderSettingsForm();
 
-      const customModelToggle = screen.getByTestId("advanced-options-toggle");
-      await user.click(customModelToggle);
+      const advancedToggle = screen.getByTestId("advanced-options-toggle");
+      await user.click(advancedToggle);
 
       const modelSelector = screen.queryByTestId("model-selector");
       expect(modelSelector).not.toBeInTheDocument();
@@ -199,7 +199,7 @@ describe("SettingsForm", () => {
       expect(onModelChangeMock).toHaveBeenCalledWith("my/custom-model");
     });
 
-    it("should have custom model switched if using custom model", () => {
+    it("should have advanced options switched if using advanced options", () => {
       renderWithProviders(
         <SettingsForm
           settings={{
@@ -223,8 +223,8 @@ describe("SettingsForm", () => {
         />,
       );
 
-      const customModelToggle = screen.getByTestId("advanced-options-toggle");
-      expect(customModelToggle).toHaveAttribute("aria-checked", "true");
+      const advancedToggle = screen.getByTestId("advanced-options-toggle");
+      expect(advancedToggle).toHaveAttribute("aria-checked", "true");
     });
   });
 });
