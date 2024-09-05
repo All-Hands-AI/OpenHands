@@ -47,18 +47,7 @@ LLM_API_KEY="abcde"
 4. Run the following Docker command:
 
 ```bash
-docker run -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -e LLM_API_KEY=$LLM_API_KEY \
-    -e LLM_MODEL=$LLM_MODEL \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.9 \
-    poetry run python -m openhands.core.cli
+poetry run python -m openhands.core.cli
 ```
 
 This command will start an interactive session in Docker where you can input tasks and receive responses from OpenHands.

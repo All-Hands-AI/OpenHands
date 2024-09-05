@@ -5,7 +5,7 @@ When using a Local LLM, OpenHands may have limited functionality.
 :::
 
 Ensure that you have the Ollama server up and running.
-For detailed startup instructions, refer to [here](https://github.com/ollama/ollama)
+For detailed startup instructions, refer to [here](https://github.com/ollama/ollama).
 
 This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified. Please note that if you're running WSL the default ollama configuration blocks requests from docker containers. See [here](#configuring-ollama-service-wsl-en).
 
