@@ -17,26 +17,46 @@ const sidebars: SidebarsConfig = {
   }, {
     type: 'category',
     label: 'How-to Guides',
-      items: [{
-        type: 'doc',
-        id: 'usage/how-to/cli-mode',
-      }, {
-        type: 'doc',
-        id: 'usage/how-to/headless-mode',
-      }, {
-        type: 'doc',
-        id: 'usage/how-to/custom-sandbox-guide',
-      }, {
-        type: 'doc',
-        id: 'usage/how-to/evaluation-harness',
-      }, {
-        type: 'doc',
-        id: 'usage/how-to/openshift-example',
-      }]
+    items: [{
+      type: 'doc',
+      id: 'usage/how-to/cli-mode',
+    }, {
+      type: 'doc',
+      id: 'usage/how-to/headless-mode',
+    }, {
+      type: 'doc',
+      id: 'usage/how-to/custom-sandbox-guide',
+    }, {
+      type: 'doc',
+      id: 'usage/how-to/evaluation-harness',
+    }, {
+      type: 'doc',
+      id: 'usage/how-to/openshift-example',
+    }]
   }, {
-    type: 'doc',
+    type: 'category',
     label: 'LLMs',
-    id: 'usage/llms/llms',
+    items: [{
+      type: 'doc',
+      label: 'Overview',
+      id: 'usage/llms/llms',
+    }, {
+      type: 'doc',
+      label: 'OpenAI',
+      id: 'usage/llms/openai-llms',
+    }, {
+      type: 'doc',
+      label: 'Azure',
+      id: 'usage/llms/azure-llms',
+    }, {
+      type: 'doc',
+      label: 'Google',
+      id: 'usage/llms/google-llms',
+    }, {
+      type: 'doc',
+      label: 'Local/ollama',
+      id: 'usage/llms/local-llms',
+    }],
   }, {
     type: 'doc',
     label: 'Architecture',
