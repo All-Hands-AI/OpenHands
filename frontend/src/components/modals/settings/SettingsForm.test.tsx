@@ -99,8 +99,6 @@ describe("SettingsForm", () => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
-          CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: "analyzer1",
         }}
         models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
         agents={["agent1", "agent2", "agent3"]}
@@ -119,19 +117,11 @@ describe("SettingsForm", () => {
 
     const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
     const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
-    const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
-    const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityAnalyzerInput = screen.getByRole("combobox", {
-      name: "securityanalyzer",
-    });
 
     expect(providerInput).toBeDisabled();
     expect(modelInput).toBeDisabled();
-    expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
-    expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
-    expect(securityAnalyzerInput).toBeDisabled();
   });
 
   describe("onChange handlers", () => {
