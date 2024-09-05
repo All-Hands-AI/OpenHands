@@ -43,4 +43,4 @@ OpenHands 将向你配置的 LLM 发出许多提示。大多数这些 LLM 都是
 
 一些 LLM 有速率限制，可能需要重试操作。OpenHands 会在收到 429 错误或 API 连接错误时自动重试请求。
 你可以设置 `LLM_NUM_RETRIES`，`LLM_RETRY_MIN_WAIT`，`LLM_RETRY_MAX_WAIT` 环境变量来控制重试次数和重试之间的时间。
-默认情况下，`LLM_NUM_RETRIES` 为 5，`LLM_RETRY_MIN_WAIT` 和 `LLM_RETRY_MAX_WAIT` 分别为 3 秒和 60 秒。
+默认情况下，`LLM_NUM_RETRIES` 为 8，`LLM_RETRY_MIN_WAIT` 和 `LLM_RETRY_MAX_WAIT` 分别为 15 秒和 120 秒。

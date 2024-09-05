@@ -52,6 +52,7 @@ class LLMConfig:
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+        caching_prompt: Using the prompt caching feature provided by the LLM.
     """
 
     model: str = 'gpt-4o'
@@ -64,10 +65,10 @@ class LLMConfig:
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
-    num_retries: int = 10
+    num_retries: int = 8
     retry_multiplier: float = 2
-    retry_min_wait: int = 3
-    retry_max_wait: int = 300
+    retry_min_wait: int = 15
+    retry_max_wait: int = 120
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0
@@ -80,6 +81,7 @@ class LLMConfig:
     ollama_base_url: str | None = None
     drop_params: bool | None = None
     disable_vision: bool | None = None
+    caching_prompt: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -621,7 +623,7 @@ def get_llm_config_arg(
     model = 'gpt-3.5-turbo'
     api_key = '...'
     temperature = 0.5
-    num_retries = 10
+    num_retries = 8
     ...
     ```
 
