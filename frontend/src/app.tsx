@@ -7,15 +7,15 @@ import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
-import AgentControlBar from "../components/AgentControlBar";
-import AgentStatusBar from "../components/AgentStatusBar";
-import VolumeIcon from "../components/VolumeIcon";
-import Terminal from "../components/terminal/Terminal";
+import AgentControlBar from "./components/AgentControlBar";
+import AgentStatusBar from "./components/AgentStatusBar";
+import VolumeIcon from "./components/VolumeIcon";
+import Terminal from "./components/terminal/Terminal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { getSettings } from "#/services/settings";
-import Security from "../components/modals/security/Security";
-import { ProjectMenuCard } from "../components/project-menu/ProjectMenuCard";
+import Security from "./components/modals/security/Security";
+import { ProjectMenuCard } from "./components/project-menu/ProjectMenuCard";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;

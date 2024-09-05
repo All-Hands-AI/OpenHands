@@ -38,14 +38,6 @@
   "overrides": [
     {
       "files": [
-        "**/__tests__/**/*.{js,jsx,ts,tsx}"
-      ],
-      "rules": {
-        "react/react-in-jsx-scope": "off"
-      }
-    },
-    {
-      "files": [
         "*.ts",
         "*.tsx"
       ],
@@ -82,7 +74,8 @@
         ],
         "react/no-array-index-key": "off",
         "react-hooks/exhaustive-deps": "off",
-        "import/no-extraneous-dependencies": "off"
+        "import/no-extraneous-dependencies": "off",
+        "react/react-in-jsx-scope": "off"
       },
       "parserOptions": {
         "project": [

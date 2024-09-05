@@ -1,4 +1,3 @@
-import React from "react";
 import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { SuggestionBox } from "./suggestion-box";
