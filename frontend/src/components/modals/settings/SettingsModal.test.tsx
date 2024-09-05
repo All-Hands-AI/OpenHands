@@ -94,8 +94,7 @@ describe("SettingsModal", () => {
   it("should disabled the save button if the settings contain a missing value", async () => {
     const onOpenChangeMock = vi.fn();
     (getSettings as Mock).mockReturnValueOnce({
-      LLM_MODEL: "gpt-4o",
-      AGENT: "",
+      LLM_MODEL: "",
     });
     await act(async () =>
       renderWithProviders(
