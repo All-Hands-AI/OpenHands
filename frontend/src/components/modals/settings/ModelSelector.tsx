@@ -61,10 +61,6 @@ export function ModelSelector({
 
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
-      <span className="text-center italic text-gray-500" data-testid="model-id">
-        {litellmId?.replace("other", "") || "No model selected"}
-      </span>
-
       <div className="flex flex-col gap-3">
         <Autocomplete
           isDisabled={isDisabled}
