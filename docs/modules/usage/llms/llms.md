@@ -13,6 +13,11 @@ The following are verified by the community to work with OpenHands:
 * llama-3.1-405b / hermes-3-llama-3.1-405b
 * wizardlm-2-8x22b
 
+:::warning
+OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
+limits and monitor usage.
+:::
+
 If you have successfully run OpenHands with specific LLMs not in the list, please add them to the verified list. We
 also encourage you to open a PR to share your setup process to help others using the same provider and LLM!
 
@@ -26,11 +31,6 @@ wait times between messages, poor responses, or errors about malformed JSON. Ope
 models driving it. However, if you do find ones that work, please add them to the verified list above.
 
 ## LLM Configuration
-
-:::warning
-OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
-limits and monitor usage.
-:::
 
 The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
 But when using the OpenHands UI, you'll need to choose your model in the settings window.
