@@ -27,8 +27,8 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
-    CONFIRMATION_MODE: true,
-    SECURITY_ANALYZER: "invariant",
+    CONFIRMATION_MODE: false,
+    SECURITY_ANALYZER: "",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
@@ -196,6 +196,9 @@ describe("SettingsModal", () => {
     it("should close the modal", async () => {
       const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
+      (getSettings as Mock).mockReturnValueOnce({
+        LLM_MODEL: "gpt-4o",
+      });
       await act(async () =>
         renderWithProviders(
           <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
@@ -227,15 +230,15 @@ describe("SettingsModal", () => {
   it("should reset settings to defaults when the 'reset to defaults' button is clicked", async () => {
     const user = userEvent.setup();
     const onOpenChangeMock = vi.fn();
+    (getSettings as Mock).mockReturnValueOnce({
+      LLM_MODEL: "gpt-4o",
+      SECURITY_ANALYZER: "fakeanalyzer",
+    });
     await act(async () =>
       renderWithProviders(
         <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
       ),
     );
-
-    // We need to enable the agent select first
-    //const advancedSwitch = screen.getByTestId("advanced-options-toggle");
-    //await user.click(advancedSwitch);
 
     const resetButton = screen.getByRole("button", {
       name: /MODAL_RESET_BUTTON_LABEL/i,
