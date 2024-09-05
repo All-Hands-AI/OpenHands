@@ -25,7 +25,7 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_random_exponential,
+    wait_exponential,
 )
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
@@ -83,6 +83,17 @@ class LLM:
         except Exception as e:
             logger.warning(f'Could not get model info for {config.model}:\n{e}')
 
+        # Tuple of exceptions to retry on
+        self.retry_exceptions = (
+            APIConnectionError,
+            ContentPolicyViolationError,
+            InternalServerError,
+            OpenAIError,
+            RateLimitError,
+        )
+
+        litellm.set_verbose = True
+
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
             if (
@@ -122,33 +133,58 @@ class LLM:
             top_p=self.config.top_p,
         )
 
+        if self.vision_is_active():
+            logger.debug('LLM: model has vision enabled')
+
         completion_unwrapped = self._completion
 
         def attempt_on_error(retry_state):
+            """Custom attempt function for litellm completion."""
             logger.error(
-                f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
+                f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
                 exc_info=False,
             )
             return None
 
-        @retry(
-            reraise=True,
-            stop=stop_after_attempt(self.config.num_retries),
-            wait=wait_random_exponential(
+        def custom_completion_wait(retry_state):
+            """Custom wait function for litellm completion."""
+            if not retry_state:
+                return 0
+            exception = retry_state.outcome.exception() if retry_state.outcome else None
+            if exception is None:
+                return 0
+
+            min_wait_time = self.config.retry_min_wait
+            max_wait_time = self.config.retry_max_wait
+
+            # for rate limit errors, wait 1 minute by default, max 4 minutes between retries
+            exception_type = type(exception).__name__
+            logger.error(f'\nexception_type: {exception_type}\n')
+
+            if exception_type == 'RateLimitError':
+                min_wait_time = 60
+                max_wait_time = 240
+            elif exception_type == 'BadRequestError' and exception.response:
+                # this should give us the burried, actual error message from
+                # the LLM model.
+                logger.error(f'\n\nBadRequestError: {exception.response}\n\n')
+
+            # Return the wait time using exponential backoff
+            exponential_wait = wait_exponential(
                 multiplier=self.config.retry_multiplier,
-                min=self.config.retry_min_wait,
-                max=self.config.retry_max_wait,
-            ),
-            retry=retry_if_exception_type(
-                (
-                    APIConnectionError,
-                    ContentPolicyViolationError,
-                    InternalServerError,
-                    OpenAIError,
-                    RateLimitError,
-                )
-            ),
+                min=min_wait_time,
+                max=max_wait_time,
+            )
+
+            # Call the exponential wait function with retry_state to get the actual wait time
+            return exponential_wait(retry_state)
+
+        @retry(
             after=attempt_on_error,
+            stop=stop_after_attempt(self.config.num_retries),
+            reraise=True,
+            retry=retry_if_exception_type(self.retry_exceptions),
+            wait=custom_completion_wait,
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
@@ -230,23 +266,11 @@ class LLM:
         async_completion_unwrapped = self._async_completion
 
         @retry(
-            reraise=True,
-            stop=stop_after_attempt(self.config.num_retries),
-            wait=wait_random_exponential(
-                multiplier=self.config.retry_multiplier,
-                min=self.config.retry_min_wait,
-                max=self.config.retry_max_wait,
-            ),
-            retry=retry_if_exception_type(
-                (
-                    APIConnectionError,
-                    ContentPolicyViolationError,
-                    InternalServerError,
-                    OpenAIError,
-                    RateLimitError,
-                )
-            ),
             after=attempt_on_error,
+            stop=stop_after_attempt(self.config.num_retries),
+            reraise=True,
+            retry=retry_if_exception_type(self.retry_exceptions),
+            wait=custom_completion_wait,
         )
         async def async_completion_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion function."""
@@ -336,23 +360,11 @@ class LLM:
                     pass
 
         @retry(
-            reraise=True,
-            stop=stop_after_attempt(self.config.num_retries),
-            wait=wait_random_exponential(
-                multiplier=self.config.retry_multiplier,
-                min=self.config.retry_min_wait,
-                max=self.config.retry_max_wait,
-            ),
-            retry=retry_if_exception_type(
-                (
-                    APIConnectionError,
-                    ContentPolicyViolationError,
-                    InternalServerError,
-                    OpenAIError,
-                    RateLimitError,
-                )
-            ),
             after=attempt_on_error,
+            stop=stop_after_attempt(self.config.num_retries),
+            reraise=True,
+            retry=retry_if_exception_type(self.retry_exceptions),
+            wait=custom_completion_wait,
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion with streaming function."""
