@@ -1,5 +1,5 @@
 import { useDisclosure } from "@nextui-org/react";
-import React, { useEffect } from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 import { IoLockClosed } from "react-icons/io5";
 import ChatInterface from "#/components/chat/ChatInterface";
@@ -7,15 +7,16 @@ import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
-import AgentControlBar from "./components/AgentControlBar";
-import AgentStatusBar from "./components/AgentStatusBar";
-import VolumeIcon from "./components/VolumeIcon";
-import Terminal from "./components/terminal/Terminal";
+import AgentControlBar from "../components/AgentControlBar";
+import AgentStatusBar from "../components/AgentStatusBar";
+import VolumeIcon from "../components/VolumeIcon";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { getSettings } from "#/services/settings";
-import Security from "./components/modals/security/Security";
-import { ProjectMenuCard } from "./components/project-menu/ProjectMenuCard";
+import Security from "../components/modals/security/Security";
+import { ProjectMenuCard } from "../components/project-menu/ProjectMenuCard";
+
+const Terminal = lazy(() => import("../components/terminal/Terminal"));
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -69,7 +70,7 @@ function App(): JSX.Element {
 
   const { SECURITY_ANALYZER } = getSettings();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (initOnce) return;
     initOnce = true;
 
@@ -96,7 +97,11 @@ function App(): JSX.Element {
               initialSize={window.innerHeight - 300}
               firstChild={<Workspace />}
               firstClassName="rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
-              secondChild={<Terminal />}
+              secondChild={
+                <Suspense>
+                  <Terminal />
+                </Suspense>
+              }
               secondClassName="rounded-xl border border-neutral-600 bg-neutral-800"
             />
           }

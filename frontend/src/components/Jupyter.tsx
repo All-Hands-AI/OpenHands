@@ -1,8 +1,7 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { VscArrowDown } from "react-icons/vsc";
 import { useTranslation } from "react-i18next";
 import { RootState } from "#/store";
@@ -25,9 +24,7 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
           className="scrollbar-custom scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20 overflow-auto px-5"
           style={{ padding: 0, marginBottom: 0, fontSize: "0.75rem" }}
         >
-          <SyntaxHighlighter language="python" style={atomOneDark}>
-            {code}
-          </SyntaxHighlighter>
+          <SyntaxHighlighter language="python">{code}</SyntaxHighlighter>
         </pre>
       </div>
     );
@@ -67,7 +64,7 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
           }
           return (
             <div key={index}>
-              <SyntaxHighlighter language="plaintext" style={atomOneDark}>
+              <SyntaxHighlighter language="plaintext">
                 {line.content}
               </SyntaxHighlighter>
             </div>
@@ -82,7 +79,7 @@ function Jupyter(): JSX.Element {
   const { t } = useTranslation();
 
   const { cells } = useSelector((state: RootState) => state.jupyter);
-  const jupyterRef = useRef<HTMLDivElement>(null);
+  const jupyterRef = React.useRef<HTMLDivElement>(null);
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);
