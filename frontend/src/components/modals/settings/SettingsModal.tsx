@@ -128,7 +128,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     );
   };
 
-  let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
+  let subtitle = "";
   if (loading) {
     subtitle = t(I18nKey.CONFIGURATION$AGENT_LOADING);
   } else if (agentIsRunning) {
