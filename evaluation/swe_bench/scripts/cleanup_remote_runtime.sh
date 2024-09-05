@@ -12,7 +12,7 @@ runtimes=$(curl --silent --location --request GET "${BASE_URL}/runtime/list" \
 for runtime_id in $runtimes; do
   echo "Stopping runtime: ${runtime_id}"
   curl --silent --location --request POST "${BASE_URL}/runtime/stop" \
-    --header "X-API-Key: ${API_KEY}" \
+    --header "X-API-Key: ${ALLHANDS_API_KEY}" \
     --header "Content-Type: application/json" \
     --data-raw "{\"runtime_id\": \"${runtime_id}\"}"
   echo
