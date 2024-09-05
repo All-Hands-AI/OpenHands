@@ -4,7 +4,7 @@ OpenHands uses [LiteLLM](https://www.litellm.ai/) to make calls to OpenAI's chat
 
 ## Configuration
 
-When running the OpenHands Docker image, you'll need to set `LLM_MODEL` and `LLM_API_KEY` in the OpenHands UI through the Settings.
+When running the OpenHands Docker image, you'll need to choose a model and set your API key in the OpenHands UI through the Settings.
 
 To see a full list of OpenAI models that LiteLLM supports, please visit https://docs.litellm.ai/docs/providers/openai#openai-chat-completion-models.
 
@@ -20,4 +20,4 @@ When running the OpenHands Docker image, you'll need to set the following enviro
 LLM_BASE_URL="<api-base-url>"   # e.g. "http://0.0.0.0:3000"
 ```
 
-Then set `LLM_MODEL` and `LLM_API_KEY` in the OpenHands UI through the Settings.
+Then set your model and API key in the OpenHands UI through the Settings.
