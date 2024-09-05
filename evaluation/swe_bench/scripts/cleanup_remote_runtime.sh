@@ -6,7 +6,7 @@ BASE_URL="https://api.all-hands.dev/v0"
 
 # Get the list of runtimes
 runtimes=$(curl --silent --location --request GET "${BASE_URL}/runtime/list" \
-  --header "X-API-Key: ${API_KEY}" | jq -r '.runtimes | .[].runtime_id')
+  --header "X-API-Key: ${ALLHANDS_API_KEY}" | jq -r '.runtimes | .[].runtime_id')
 
 # Loop through each runtime and stop it
 for runtime_id in $runtimes; do
