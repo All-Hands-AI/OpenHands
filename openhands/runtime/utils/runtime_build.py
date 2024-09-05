@@ -216,60 +216,6 @@ def build_runtime_image(
     dry_run: bool = False,
     force_rebuild: bool = False,
 ) -> str:
-    runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(base_image)
-
-    generic_runtime_image_name = f'{runtime_image_repo}:{runtime_image_tag}'
-
-    # Prepare build folder only once
-    cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
-
-    if not force_rebuild and runtime_builder.image_exists(generic_runtime_image_name):
-        from_scratch_hash = prep_docker_build_folder(
-            cur_docker_build_folder,
-            base_image=generic_runtime_image_name,
-            skip_init=True,
-            extra_deps=extra_deps,
-        )
-    else:
-        from_scratch_hash = prep_docker_build_folder(
-            cur_docker_build_folder,
-            base_image=base_image,
-            skip_init=False,
-            extra_deps=extra_deps,
-        )
-
-    hash_runtime_image_name = f'{runtime_image_repo}:{from_scratch_hash}'
-
-    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
-        if docker_build_folder is None:
-            shutil.rmtree(cur_docker_build_folder)
-        return hash_runtime_image_name
-
-    if not dry_run:
-        _build_sandbox_image(
-            docker_folder=cur_docker_build_folder,
-            runtime_builder=runtime_builder,
-            target_image_repo=runtime_image_repo,
-            target_image_hash_tag=from_scratch_hash,
-            target_image_tag=runtime_image_tag,
-        )
-    else:
-        logger.info(f'Dry run: Skipping image build for [{generic_runtime_image_name}]')
-
-    if docker_build_folder is None:
-        shutil.rmtree(cur_docker_build_folder)
-
-    return hash_runtime_image_name
-
-
-def build_runtime_image_old(
-    base_image: str,
-    runtime_builder: RuntimeBuilder,
-    extra_deps: str | None = None,
-    docker_build_folder: str | None = None,
-    dry_run: bool = False,
-    force_rebuild: bool = False,
-) -> str:
     """Prepares the final docker build folder.
     If dry_run is False, it will also build the OpenHands runtime Docker image using the docker build folder.
 
@@ -286,19 +232,8 @@ def build_runtime_image_old(
 
     See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
     """
-    # Calculate the hash for the docker build folder (source code and Dockerfile)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        from_scratch_hash = prep_docker_build_folder(
-            temp_dir,
-            base_image=base_image,
-            skip_init=False,
-            extra_deps=extra_deps,
-        )
-
+    # Get the base image repo and tag
     runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(base_image)
-
-    # The image name in the format <image repo>:<hash>
-    hash_runtime_image_name = f'{runtime_image_repo}:{from_scratch_hash}'
 
     # non-hash generic image name, it could contain *similar* dependencies
     # but *might* not exactly match the state of the source code.
@@ -307,95 +242,60 @@ def build_runtime_image_old(
     # we will build from IT to save time if the `from_scratch_hash` is not found
     generic_runtime_image_name = f'{runtime_image_repo}:{runtime_image_tag}'
 
-    # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
-    # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
-        logger.info(
-            f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
-        )
-        return hash_runtime_image_name
+    # Prepare build folder only once
+    cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
 
-    # Scenario 2: If a Docker image with the exact hash is not found, we will FIRST try to re-build it
-    # by leveraging the `generic_runtime_image_name` to save some time
-    # from re-building the dependencies (e.g., poetry install, apt install)
+    # Scenario 1: If we are not forced to build and the generic image already
+    # exists, treat that as our from scratch base.
     if not force_rebuild and runtime_builder.image_exists(generic_runtime_image_name):
-        logger.info(
-            f'Could not find docker image [{hash_runtime_image_name}]\n'
-            f'Will try to re-build it from latest [{generic_runtime_image_name}] image to potentially save '
-            f'time for dependencies installation.\n'
-        )
-
-        cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
-        _skip_init_hash = prep_docker_build_folder(
+        from_scratch_hash = prep_docker_build_folder(
             cur_docker_build_folder,
-            # we want to use the existing generic image as base
-            # so that we can leverage existing dependencies already installed in the image
             base_image=generic_runtime_image_name,
-            skip_init=True,  # skip init since we are re-using the existing image
+            skip_init=True,
             extra_deps=extra_deps,
         )
-
-        assert (
-            _skip_init_hash != from_scratch_hash
-        ), f'The skip_init hash [{_skip_init_hash}] should not match the existing hash [{from_scratch_hash}]'
-
-        if not dry_run:
-            _build_sandbox_image(
-                docker_folder=cur_docker_build_folder,
-                runtime_builder=runtime_builder,
-                target_image_repo=runtime_image_repo,
-                # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
-                # otherwise, even if the source code is exactly the same, the image *might* be re-built
-                # because the same source code will generate different hash when skip_init=True/False
-                # since the Dockerfile is slightly different
-                target_image_hash_tag=from_scratch_hash,
-                target_image_tag=runtime_image_tag,
-            )
-        else:
-            logger.info(
-                f'Dry run: Skipping image build for [{generic_runtime_image_name}]'
-            )
-
-        if docker_build_folder is None:
-            shutil.rmtree(cur_docker_build_folder)
-
-    # Scenario 3: If the Docker image with the required hash is not found AND we cannot re-use the latest
-    # relevant image, we will build it completely from scratch
     else:
-        if force_rebuild:
-            logger.info(
-                f'Force re-build: Will try to re-build image [{generic_runtime_image_name}] from scratch.\n'
-            )
-
-        cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
-        _new_from_scratch_hash = prep_docker_build_folder(
+        # Otherwise, we need to build from scratch with the build folder.
+        from_scratch_hash = prep_docker_build_folder(
             cur_docker_build_folder,
-            base_image,
+            base_image=base_image,
             skip_init=False,
             extra_deps=extra_deps,
         )
-        assert (
-            _new_from_scratch_hash == from_scratch_hash
-        ), f'The new from scratch hash [{_new_from_scratch_hash}] does not match the existing hash [{from_scratch_hash}]'
 
-        if not dry_run:
-            _build_sandbox_image(
-                docker_folder=cur_docker_build_folder,
-                runtime_builder=runtime_builder,
-                target_image_repo=runtime_image_repo,
-                # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
-                target_image_hash_tag=from_scratch_hash,
-                target_image_tag=runtime_image_tag,
-            )
-        else:
-            logger.info(
-                f'Dry run: Skipping image build for [{generic_runtime_image_name}]'
-            )
+    # The image name in the format <image repo>:<hash>
+    hash_runtime_image_name = f'{runtime_image_repo}:{from_scratch_hash}'
 
+    # If we now have a preliminary image and don't have to rebuild,
+    # remove the build folder and return the new image name.
+    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
         if docker_build_folder is None:
             shutil.rmtree(cur_docker_build_folder)
+        return hash_runtime_image_name
 
-    return f'{runtime_image_repo}:{from_scratch_hash}'
+    # If we're not in dry run, build the image.
+    if not dry_run:
+        logger.info(
+            f'Building sand box image {hash_runtime_image_name}, please wait...'
+        )
+        _build_sandbox_image(
+            docker_folder=cur_docker_build_folder,
+            runtime_builder=runtime_builder,
+            target_image_repo=runtime_image_repo,
+            # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
+            # otherwise, even if the source code is exactly the same, the image *might* be re-built
+            # because the same source code will generate different hash when skip_init=True/False
+            # since the Dockerfile is slightly different
+            target_image_hash_tag=from_scratch_hash,
+            target_image_tag=runtime_image_tag,
+        )
+    else:
+        logger.info(f'Dry run: skipping image build for [{generic_runtime_image_name}]')
+
+    if docker_build_folder is None:
+        shutil.rmtree(cur_docker_build_folder)
+
+    return hash_runtime_image_name
 
 
 def _build_sandbox_image(
