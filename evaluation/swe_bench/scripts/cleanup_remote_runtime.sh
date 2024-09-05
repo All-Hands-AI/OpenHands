@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Set your API key
-API_KEY=$1
 
 # API base URL
 BASE_URL="https://api.all-hands.dev/v0"
