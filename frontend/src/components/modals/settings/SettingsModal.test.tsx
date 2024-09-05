@@ -129,8 +129,8 @@ describe("SettingsModal", () => {
       await assertModelsAndAgentsFetched();
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const azure = screen.getByText("Azure");
@@ -158,8 +158,8 @@ describe("SettingsModal", () => {
       );
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const openai = screen.getByText("OpenAI");
@@ -184,8 +184,8 @@ describe("SettingsModal", () => {
       );
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const cohere = screen.getByText("cohere");
@@ -235,8 +235,8 @@ describe("SettingsModal", () => {
       });
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const cohere = screen.getByText("cohere");
