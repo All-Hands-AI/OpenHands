@@ -82,32 +82,31 @@ def format_messages(
 
     converted_messages = []
     for message in messages:
-        content_str = ''
+        content_parts = []
         role = 'user'
-        if 'role' in message:
-            role = message['role']
-        if isinstance(message, str):
-            content_str = content_str + message + '\n'
-            continue
 
-        if isinstance(message, dict):
-            if 'content' in message:
-                content_str = content_str + message['content'] + '\n'
+        if isinstance(message, str) and message:
+            content_parts.append(message)
+        elif isinstance(message, dict):
+            role = message.get('role', 'user')
+            if 'content' in message and message['content']:
+                content_parts.append(message['content'])
         elif isinstance(message, Message):
             role = message.role
             for content in message.content:
                 if isinstance(content, list):
                     for item in content:
-                        if isinstance(item, TextContent):
-                            content_str = content_str + item.text + '\n'
-                elif isinstance(content, TextContent):
-                    content_str = content_str + content.text + '\n'
+                        if isinstance(item, TextContent) and item.text:
+                            content_parts.append(item.text)
+                elif isinstance(content, TextContent) and content.text:
+                    content_parts.append(content.text)
         else:
             logger.error(
                 f'>>> `message` is not a string, dict, or Message: {type(message)}'
             )
 
-        if content_str:
+        if content_parts:
+            content_str = '\n'.join(content_parts)
             converted_messages.append(
                 {
                     'role': role,
