@@ -1,11 +1,19 @@
-import { json, LoaderFunctionArgs } from "@remix-run/node";
+import {
+  ActionFunctionArgs,
+  json,
+  LoaderFunctionArgs,
+  redirect,
+} from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
 import { GitHubRepositorySelector } from "./github-repo-selector";
 import { getSession } from "#/sessions";
-import { isGitHubErrorReponse, retrieveGitHubUserRepositories } from "#/api/github";
+import {
+  isGitHubErrorReponse,
+  retrieveGitHubUserRepositories,
+} from "#/api/github";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const session = await getSession(request.headers.get("Cookie"));
@@ -20,6 +28,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   return json({ repos });
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const q = formData.get("q")?.toString();
+
+  if (q) {
+    const searchParams = new URLSearchParams({ q });
+    return redirect(`/app?${searchParams}`);
+  }
+
+  return json(null);
 };
 
 function Home() {

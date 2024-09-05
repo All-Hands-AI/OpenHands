@@ -5,10 +5,10 @@ import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 
 export function TaskForm() {
-  const [text, setText] = React.useState("");
+  const [hasText, setHasText] = React.useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setText(e.target.value);
+    setHasText(!!e.target.value);
   };
 
   return (
@@ -18,14 +18,13 @@ export function TaskForm() {
           name="q"
           type="text"
           placeholder="What do you want to build?"
-          value={text}
           onChange={handleChange}
           className={clsx(
             "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
             "focus:bg-[#525252]",
           )}
         />
-        {text && (
+        {hasText && (
           <button
             type="submit"
             aria-label="Submit"
