@@ -61,10 +61,10 @@ export function ModelSelector({
 
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-row gap-3">
         <Autocomplete
           isDisabled={isDisabled}
-          label="Provider"
+          label="LLM Provider"
           placeholder="Select a provider"
           isClearable={false}
           onSelectionChange={(e) => {
@@ -95,7 +95,7 @@ export function ModelSelector({
         </Autocomplete>
 
         <Autocomplete
-          label="Model"
+          label="LLM Model"
           placeholder="Select a model"
           onSelectionChange={(e) => {
             if (e?.toString()) handleChangeModel(e.toString());
