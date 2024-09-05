@@ -244,7 +244,7 @@ def test_build_runtime_image_exact_hash_exist(temp_dir):
             [
                 call(
                     ANY,
-                    base_image=f'ghcr.io/all-hands-ai/runtime:{OD_VERSION}_image_debian_tag_11',
+                    base_image=f'ghcr.io/all-hands-ai/runtime:{OH_VERSION}_image_debian_tag_11',
                     skip_init=True,
                     extra_deps=None,
                 ),
