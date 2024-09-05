@@ -69,7 +69,7 @@ This is in limited beta. Contact Xingyao over slack if you want to try this out!
 
 ```bash
 # ./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
-SANDBOX_API_KEY="YOUR-API-KEY" RUNTIME=remote EVAL_DOCKER_IMAGE_PREFIX="us-docker.pkg.dev/evaluation-428620/swe-bench-images" \
+ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote EVAL_DOCKER_IMAGE_PREFIX="us-docker.pkg.dev/evaluation-428620/swe-bench-images" \
 ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 16 "princeton-nlp/SWE-bench_Lite" test
 # This example runs evaluation on CodeActAgent for 300 instances on "princeton-nlp/SWE-bench_Lite"'s test set, with max 30 iteration per instances, with 16 number of workers running in parallel
 ```
