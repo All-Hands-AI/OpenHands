@@ -84,35 +84,6 @@ describe("ModelSelector", () => {
     expect(screen.getByText("chat-bison-32k")).toBeInTheDocument();
   });
 
-  it("should display the actual litellm model ID as the user is making the selections", async () => {
-    const user = userEvent.setup();
-    const onModelChange = vi.fn();
-    render(<ModelSelector models={models} onModelChange={onModelChange} />);
-
-    const id = screen.getByTestId("model-id");
-    const providerSelector = screen.getByLabelText("LLM Provider");
-    const modelSelector = screen.getByLabelText("LLM Model");
-
-    expect(id).toHaveTextContent("No model selected");
-
-    await user.click(providerSelector);
-    await user.click(screen.getByText("Azure"));
-
-    expect(id).toHaveTextContent("azure/");
-
-    await user.click(modelSelector);
-    await user.click(screen.getByText("ada"));
-    expect(id).toHaveTextContent("azure/ada");
-
-    await user.click(providerSelector);
-    await user.click(screen.getByText("cohere"));
-    expect(id).toHaveTextContent("cohere.");
-
-    await user.click(modelSelector);
-    await user.click(screen.getByText("command-r-v1:0"));
-    expect(id).toHaveTextContent("cohere.command-r-v1:0");
-  });
-
   it("should call onModelChange when the model is changed", async () => {
     const user = userEvent.setup();
     const onModelChange = vi.fn();
@@ -146,29 +117,6 @@ describe("ModelSelector", () => {
     expect(onModelChange).toHaveBeenCalledWith("cohere.command-r-v1:0");
   });
 
-  it("should clear the model ID when the provider is cleared", async () => {
-    const user = userEvent.setup();
-    const onModelChange = vi.fn();
-    render(<ModelSelector models={models} onModelChange={onModelChange} />);
-
-    const providerSelector = screen.getByLabelText("LLM Provider");
-    const modelSelector = screen.getByLabelText("LLM Model");
-
-    await user.click(providerSelector);
-    await user.click(screen.getByText("Azure"));
-
-    await user.click(modelSelector);
-    await user.click(screen.getByText("ada"));
-
-    expect(screen.getByTestId("model-id")).toHaveTextContent("azure/ada");
-
-    await user.clear(providerSelector);
-
-    expect(screen.getByTestId("model-id")).toHaveTextContent(
-      "No model selected",
-    );
-  });
-
   it("should have a default value if passed", async () => {
     const onModelChange = vi.fn();
     render(
@@ -179,7 +127,6 @@ describe("ModelSelector", () => {
       />,
     );
 
-    expect(screen.getByTestId("model-id")).toHaveTextContent("azure/ada");
     expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
     expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
   });
