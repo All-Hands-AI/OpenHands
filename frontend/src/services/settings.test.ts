@@ -17,8 +17,6 @@ describe("getSettings", () => {
   it("should get the stored settings", () => {
     (localStorage.getItem as Mock)
       .mockReturnValueOnce("llm_value")
-      .mockReturnValueOnce("custom_llm_value")
-      .mockReturnValueOnce("true")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
