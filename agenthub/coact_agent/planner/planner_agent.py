@@ -1,6 +1,6 @@
 import os
 
-from agenthub.codeact_agent.action_parser import CodeActResponseParser
+from agenthub.coact_agent.planner.action_parser import PlannerResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -31,26 +31,8 @@ from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
-class CodeActAgent(Agent):
-    VERSION = '1.9'
-    """
-    The Code Act Agent is a minimalist agent.
-    The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
-
-    ### Overview
-
-    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
-
-    The conceptual idea is illustrated below. At each turn, the agent can:
-
-    1. **Converse**: Communicate with humans in natural language to ask for clarification, confirmation, etc.
-    2. **CodeAct**: Choose to perform the task by executing code
-    - Execute any valid Linux `bash` command
-    - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
-
-    ![image](https://github.com/All-Hands-AI/OpenHands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
-
-    """
+class GlobalPlannerAgent(Agent):
+    VERSION = '1.0'
 
     sandbox_plugins: list[PluginRequirement] = [
         # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
@@ -60,7 +42,7 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    action_parser = CodeActResponseParser()
+    action_parser = PlannerResponseParser()
 
     def __init__(
         self,
@@ -99,7 +81,7 @@ class CodeActAgent(Agent):
         elif isinstance(action, IPythonRunCellAction):
             return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, AgentDelegateAction):
-            return f'{action.thought}\n<execute_{action.action_suffix}>\n{action.inputs["task"]}\n</execute_{action.action_suffix}>'
+            return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
         elif isinstance(action, MessageAction):
             return action.content
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
@@ -204,11 +186,6 @@ class CodeActAgent(Agent):
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
-        delegated_task = ''
-        if state.inputs.get('task') is not None:
-            # CodeActAgent is delegated a task
-            delegated_task = state.inputs['task']
-
         messages: list[Message] = [
             Message(
                 role='system',
@@ -223,9 +200,7 @@ class CodeActAgent(Agent):
                 role='user',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.initial_user_message
-                        + '\n'
-                        + delegated_task,
+                        text=self.prompt_manager.initial_user_message,
                         cache_prompt=self.llm.supports_prompt_caching,  # if the user asks the same query,
                     )
                 ],
