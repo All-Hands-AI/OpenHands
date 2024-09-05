@@ -464,7 +464,7 @@ class LLM:
 
     def is_caching_prompt_active(self) -> bool:
         """Check if prompt caching is enabled and supported for current model.
-        
+
         Returns:
             boolean: True if prompt caching is active for the given model.
         """
