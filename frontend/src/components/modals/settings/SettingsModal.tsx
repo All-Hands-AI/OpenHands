@@ -17,7 +17,6 @@ import {
   Settings,
   getSettings,
   getDefaultSettings,
-  getSettingsDifference,
   settingsAreUpToDate,
   maybeMigrateSettings,
   saveSettings,
@@ -117,7 +116,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleSaveSettings = () => {
-    const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
     Session.startNewSession();

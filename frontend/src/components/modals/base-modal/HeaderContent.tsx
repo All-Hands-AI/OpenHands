@@ -6,7 +6,7 @@ interface HeaderContentProps {
 }
 
 export function HeaderContent({
-  maintitle: maintitle,
+  maintitle,
   subtitle = undefined,
 }: HeaderContentProps) {
   return (

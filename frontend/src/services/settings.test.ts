@@ -3,7 +3,6 @@ import {
   DEFAULT_SETTINGS,
   Settings,
   getSettings,
-  getSettingsDifference,
   saveSettings,
 } from "./settings";
 
@@ -119,46 +118,5 @@ describe("saveSettings", () => {
       "INVALID",
       "invalid_value",
     );
-  });
-});
-
-describe("getSettingsDifference", () => {
-  beforeEach(() => {
-    (localStorage.getItem as Mock)
-      .mockReturnValueOnce("llm_value")
-      .mockReturnValueOnce("custom_llm_value")
-      .mockReturnValueOnce("false")
-      .mockReturnValueOnce("agent_value")
-      .mockReturnValueOnce("language_value");
-  });
-
-  it("should return updated settings", () => {
-    const settings = {
-      LLM_MODEL: "new_llm_value",
-      AGENT: "new_agent_value",
-      LANGUAGE: "language_value",
-    };
-
-    const updatedSettings = getSettingsDifference(settings);
-
-    expect(updatedSettings).toEqual({
-      LLM_MODEL: "new_llm_value",
-      AGENT: "new_agent_value",
-    });
-  });
-
-  it("should not handle invalid settings", () => {
-    const settings = {
-      LLM_MODEL: "new_llm_value",
-      AGENT: "new_agent_value",
-      INVALID: "invalid_value",
-    };
-
-    const updatedSettings = getSettingsDifference(settings);
-
-    expect(updatedSettings).toEqual({
-      LLM_MODEL: "new_llm_value",
-      AGENT: "new_agent_value",
-    });
   });
 });
