@@ -6,8 +6,6 @@ import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
-const onCustomModelChangeMock = vi.fn();
-const onModelTypeChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
@@ -32,8 +30,6 @@ const renderSettingsForm = (settings?: Settings) => {
       agents={["agent1", "agent2", "agent3"]}
       securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
-      onCustomModelChange={onCustomModelChangeMock}
-      onModelTypeChange={onModelTypeChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
@@ -105,8 +101,6 @@ describe("SettingsForm", () => {
         securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
         onModelChange={onModelChangeMock}
-        onCustomModelChange={onCustomModelChangeMock}
-        onModelTypeChange={onModelTypeChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
@@ -202,8 +196,7 @@ describe("SettingsForm", () => {
       const customModelInput = screen.getByTestId("custom-model-input");
       await userEvent.type(customModelInput, "my/custom-model");
 
-      expect(onCustomModelChangeMock).toHaveBeenCalledWith("my/custom-model");
-      expect(onModelTypeChangeMock).toHaveBeenCalledWith("custom");
+      expect(onModelChangeMock).toHaveBeenCalledWith("my/custom-model");
     });
 
     it("should have custom model switched if using custom model", () => {
@@ -222,8 +215,6 @@ describe("SettingsForm", () => {
           securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
           disabled
           onModelChange={onModelChangeMock}
-          onCustomModelChange={onCustomModelChangeMock}
-          onModelTypeChange={onModelTypeChangeMock}
           onAgentChange={onAgentChangeMock}
           onLanguageChange={onLanguageChangeMock}
           onAPIKeyChange={onAPIKeyChangeMock}
