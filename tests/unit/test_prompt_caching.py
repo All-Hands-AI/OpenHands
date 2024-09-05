@@ -14,8 +14,8 @@ from openhands.storage import get_file_store
 @pytest.fixture
 def mock_llm():
     llm = Mock(spec=LLM)
-    llm.config = LLMConfig(model='claude-3-5-sonnet-20240620')
-    llm.supports_prompt_caching = True
+    llm.config = LLMConfig(model='claude-3-5-sonnet-20240620', caching_prompt=True)
+    llm.is_caching_prompt_active.return_value = True
     return llm
 
 

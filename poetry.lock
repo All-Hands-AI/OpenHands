@@ -195,13 +195,13 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.34.1"
+version = "0.34.2"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "anthropic-0.34.1-py3-none-any.whl", hash = "sha256:2fa26710809d0960d970f26cd0be3686437250a481edb95c33d837aa5fa24158"},
-    {file = "anthropic-0.34.1.tar.gz", hash = "sha256:69e822bd7a31ec11c2edb85f2147e8f0ee0cfd3288fea70b0ca8808b2f9bf91d"},
+    {file = "anthropic-0.34.2-py3-none-any.whl", hash = "sha256:f50a628eb71e2c76858b106c8cbea278c45c6bd2077cb3aff716a112abddc9fc"},
+    {file = "anthropic-0.34.2.tar.gz", hash = "sha256:808ea19276f26646bfde9ee535669735519376e4eeb301a2974fc69892be1d6e"},
 ]
 
 [package.dependencies]
@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.11"
+version = "1.35.12"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.11-py3-none-any.whl", hash = "sha256:f5834dd908edda56c3da86b908693c7cd1c17c2f8150de736e9e90c56ecc78f6"},
-    {file = "boto3-1.35.11.tar.gz", hash = "sha256:bdfb8dd2564e5cf2f5095fb8e3a0a4612202654c1196692dddd9bc48aadc7657"},
+    {file = "boto3-1.35.12-py3-none-any.whl", hash = "sha256:acaa7c75cbf483605e3c46e9ac03043a4cf5e9866940122d68b06d1defe00774"},
+    {file = "boto3-1.35.12.tar.gz", hash = "sha256:b32faab174f6f9b75fada27bcf054ab3e8846bd410ed9817d0b511109326b6b1"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.11,<1.36.0"
+botocore = ">=1.35.12,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.11"
+version = "1.35.12"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.11-py3-none-any.whl", hash = "sha256:e9b647b6cf1f63fd701c27433802d1c4342838a37fd152b40fe53b967fd19af4"},
-    {file = "botocore-1.35.11.tar.gz", hash = "sha256:f5f671f8f9566f28bed496017ea94d275ca5c253e9e4f91cd56cb7a293e37d0c"},
+    {file = "botocore-1.35.12-py3-none-any.whl", hash = "sha256:cb787030415438ea6ff8381f8acd8b1107593d5ebea457fd843a5e36ba19e9a4"},
+    {file = "botocore-1.35.12.tar.gz", hash = "sha256:a8f8230032d090225a93763675a73c208d121bb63ed99f41ee6ad3d51b74b80d"},
 ]
 
 [package.dependencies]
@@ -1662,13 +1662,13 @@ files = [
 
 [[package]]
 name = "fastapi"
-version = "0.112.2"
+version = "0.112.3"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.112.2-py3-none-any.whl", hash = "sha256:db84b470bd0e2b1075942231e90e3577e12a903c4dc8696f0d206a7904a7af1c"},
-    {file = "fastapi-0.112.2.tar.gz", hash = "sha256:3d4729c038414d5193840706907a41839d839523da6ed0c2811f1168cac1798c"},
+    {file = "fastapi-0.112.3-py3-none-any.whl", hash = "sha256:f28ef49eb91543f8419a0c9023498b5f311d6611067e2fae2bb218947c499d66"},
+    {file = "fastapi-0.112.3.tar.gz", hash = "sha256:9b6b41ea59ba948a07142f09d6241bda975fdb86847413136f6e2a1675d3bf25"},
 ]
 
 [package.dependencies]
@@ -2224,13 +2224,13 @@ httplib2 = ">=0.19.0"
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.64.0"
+version = "1.65.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "google-cloud-aiplatform-1.64.0.tar.gz", hash = "sha256:475a612829b283eb8f783e773d37115c30db42e2e50065c8653db0c9bd18b0da"},
-    {file = "google_cloud_aiplatform-1.64.0-py2.py3-none-any.whl", hash = "sha256:3a79ce2ec047868c348336624a60993464ca977fd258bcf609cc79309a8101c4"},
+    {file = "google-cloud-aiplatform-1.65.0.tar.gz", hash = "sha256:2349a2b8b85868c378788233929810aaac3efbb72cfec46f01097923faf8d7b6"},
+    {file = "google_cloud_aiplatform-1.65.0-py2.py3-none-any.whl", hash = "sha256:88e1eef5a7cab737606ae456cb5e866133f990ed9c8bca534077144037e18524"},
 ]
 
 [package.dependencies]
@@ -2251,21 +2251,20 @@ autologging = ["mlflow (>=1.27.0,<=2.1.1)"]
 cloud-profiler = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "werkzeug (>=2.0.0,<2.1.0dev)"]
 datasets = ["pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)"]
 endpoint = ["requests (>=2.28.1)"]
-evaluation = ["immutabledict", "pandas (>=1.0.0,<2.2.0)", "tqdm (>=4.23.0)"]
-full = ["cloudpickle (<3.0)", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.109.1)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-cloud-logging (<4.0)", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "requests (>=2.28.1)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)"]
+evaluation = ["pandas (>=1.0.0,<2.2.0)", "tqdm (>=4.23.0)"]
+full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.109.1)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "requests (>=2.28.1)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)"]
 langchain = ["langchain (>=0.1.16,<0.3)", "langchain-core (<0.3)", "langchain-google-vertexai (<2)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "orjson (<=3.10.6)", "tenacity (<=8.3)"]
 langchain-testing = ["absl-py", "cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "langchain (>=0.1.16,<0.3)", "langchain-core (<0.3)", "langchain-google-vertexai (<2)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "orjson (<=3.10.6)", "pydantic (>=2.6.3,<3)", "pytest-xdist", "tenacity (<=8.3)"]
 lit = ["explainable-ai-sdk (>=1.0.0)", "lit-nlp (==0.4.0)", "pandas (>=1.0.0)", "tensorflow (>=2.3.0,<3.0.0dev)"]
 metadata = ["numpy (>=1.15.0)", "pandas (>=1.0.0)"]
 pipelines = ["pyyaml (>=5.3.1,<7)"]
 prediction = ["docker (>=5.0.3)", "fastapi (>=0.71.0,<=0.109.1)", "httpx (>=0.23.0,<0.25.0)", "starlette (>=0.17.1)", "uvicorn[standard] (>=0.16.0)"]
-preview = ["cloudpickle (<3.0)", "google-cloud-logging (<4.0)"]
 private-endpoints = ["requests (>=2.28.1)", "urllib3 (>=1.21.1,<1.27)"]
 ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "setuptools (<70.0.0)"]
 ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "ray[train] (==2.9.3)", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
 reasoningengine = ["cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)"]
 tensorboard = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "werkzeug (>=2.0.0,<2.1.0dev)"]
-testing = ["bigframes", "cloudpickle (<3.0)", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.109.1)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-cloud-logging (<4.0)", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pyfakefs", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
+testing = ["bigframes", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.109.1)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
 tokenization = ["sentencepiece (>=0.2.0)"]
 vizier = ["google-vizier (>=0.1.6)"]
 xai = ["tensorflow (>=2.3.0,<3.0.0dev)"]
@@ -3668,13 +3667,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.44.15"
+version = "1.44.17"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.44.15-py3-none-any.whl", hash = "sha256:6b818bb9b974e72dd731fedb0ef0c2164bc3239fc879428b054f4192ad32115a"},
-    {file = "litellm-1.44.15.tar.gz", hash = "sha256:7bd3a9bde01f7a80f1bbf748ccd171debcea435ba4ac0853688049f66673a44e"},
+    {file = "litellm-1.44.17-py3-none-any.whl", hash = "sha256:a3c93658e4e0f654c817464c4c29c123ee51e62997a701a4976ed94809a281a6"},
+    {file = "litellm-1.44.17.tar.gz", hash = "sha256:b863eb373ac46a8da2925637e6d00af4f62c37812329598666900342c142e247"},
 ]
 
 [package.dependencies]
@@ -3711,23 +3710,23 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.4"
+version = "0.11.5"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.4-py3-none-any.whl", hash = "sha256:6a7b1177fb12396ecff336786c2a4e083703df7f1f330c19ed74ced30f865b9d"},
-    {file = "llama_index-0.11.4.tar.gz", hash = "sha256:aa048ffa96eff02bd70a2de095c0465143498956493a8f93e186e6e958087832"},
+    {file = "llama_index-0.11.5-py3-none-any.whl", hash = "sha256:0c87078016895807d0a340591143cd85803b5db4e4843d59a7811b532583eafb"},
+    {file = "llama_index-0.11.5.tar.gz", hash = "sha256:5fc72c3a0ead6587a047aced9d5c5fdd59c8fad79879002bd771f523ed0db042"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.3.0,<0.4.0"
 llama-index-cli = ">=0.3.0,<0.4.0"
-llama-index-core = ">=0.11.4,<0.12.0"
-llama-index-embeddings-openai = ">=0.2.0,<0.3.0"
+llama-index-core = ">=0.11.5,<0.12.0"
+llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
-llama-index-llms-openai = ">=0.2.0,<0.3.0"
+llama-index-llms-openai = ">=0.2.2,<0.3.0"
 llama-index-multi-modal-llms-openai = ">=0.2.0,<0.3.0"
 llama-index-program-openai = ">=0.2.0,<0.3.0"
 llama-index-question-gen-openai = ">=0.2.0,<0.3.0"
@@ -3769,13 +3768,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.4"
+version = "0.11.5"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.4-py3-none-any.whl", hash = "sha256:a76fcc7ea7af6fb4f211e20a3003d4e711f523a2a4bffba04bfb16c2a58112de"},
-    {file = "llama_index_core-0.11.4.tar.gz", hash = "sha256:df19dac380c0ece1aff84ecbfcc74f686c15287c64923998582b0cb0520ed6e5"},
+    {file = "llama_index_core-0.11.5-py3-none-any.whl", hash = "sha256:54d4c6ba1e5bfb3f641b9f1c359c3ad251f87e3fe9ca7882bbb76766a9759cd7"},
+    {file = "llama_index_core-0.11.5.tar.gz", hash = "sha256:9631a7ed1b7b9abf8fd403404d9a03ffc6db2106b82307a640b8b1f3cea5cf22"},
 ]
 
 [package.dependencies]
@@ -3850,13 +3849,13 @@ ollama = ">=0.3.1,<0.4.0"
 
 [[package]]
 name = "llama-index-embeddings-openai"
-version = "0.2.3"
+version = "0.2.4"
 description = "llama-index embeddings openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_openai-0.2.3-py3-none-any.whl", hash = "sha256:be7d2aad0884e54d291af786b23d2feb7770cd1c3950f0de1fd5e36c60d83c06"},
-    {file = "llama_index_embeddings_openai-0.2.3.tar.gz", hash = "sha256:2f7adef6b61fd4f1bea487166ff9a5ff063227686b7dbb5d2227e46450a7ec4c"},
+    {file = "llama_index_embeddings_openai-0.2.4-py3-none-any.whl", hash = "sha256:2ddf8e6a911c1c058b6bcc94299806a987f837dfa7a3c4a1d7df62dac99c2c7b"},
+    {file = "llama_index_embeddings_openai-0.2.4.tar.gz", hash = "sha256:09e25ffb946dd1f95df15017236de45781a838dce65498559d0753c72effe617"},
 ]
 
 [package.dependencies]
@@ -3936,16 +3935,17 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.2.0"
+version = "0.2.2"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.2.0-py3-none-any.whl", hash = "sha256:70c5d97b9b03fbb689e45b434fb71a7ff047bc7c38241e09be977bad64f61aba"},
-    {file = "llama_index_llms_openai-0.2.0.tar.gz", hash = "sha256:13c85d4cf12bd07b9eab9805cbc42dfb2e35d0dfc9dc26720edd1bdf1c112a54"},
+    {file = "llama_index_llms_openai-0.2.2-py3-none-any.whl", hash = "sha256:c42d4dbf4ea81355a45d8132ee4cbe0fd89e6e3ad6688d2e592204d194919b2d"},
+    {file = "llama_index_llms_openai-0.2.2.tar.gz", hash = "sha256:5d8d77cd7dcb839aded9bd5da37c5806d680eb20fd04cc26891551fc17e4d1e0"},
 ]
 
 [package.dependencies]
+llama-index-agent-openai = ">=0.3.0,<0.4.0"
 llama-index-core = ">=0.11.0,<0.12.0"
 openai = ">=1.40.0,<2.0.0"
 
