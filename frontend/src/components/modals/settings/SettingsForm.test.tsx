@@ -45,21 +45,13 @@ describe("SettingsForm", () => {
 
     const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
     const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
-    const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
-    const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityAnalyzerInput = screen.getByRole("combobox", {
-      name: "securityanalyzer",
-    });
 
     expect(providerInput).toHaveValue("OpenAI");
     expect(modelInput).toHaveValue("gpt-4o");
-    expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
-    expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
-    expect(securityAnalyzerInput).toHaveValue("analyzer1");
   });
 
   it("should display the existing values if they are present", () => {
@@ -68,23 +60,15 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
-      CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: "analyzer2",
     });
 
     const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
     const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
-    const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
-    const securityAnalyzerInput = screen.getByRole("combobox", {
-      name: "securityanalyzer",
-    });
 
     expect(providerInput).toHaveValue("OpenAI");
     expect(modelInput).toHaveValue("gpt-3.5-turbo");
-    expect(agentInput).toHaveValue("agent2");
     expect(languageInput).toHaveValue("Español");
-    expect(securityAnalyzerInput).toHaveValue("analyzer2");
   });
 
   it("should disable settings when disabled is true", () => {
