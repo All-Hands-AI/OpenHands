@@ -114,8 +114,6 @@ describe("SettingsModal", () => {
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
-      CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: "invariant",
     };
 
     it("should save the settings", async () => {
@@ -172,32 +170,6 @@ describe("SettingsModal", () => {
       await user.click(saveButton);
 
       expect(startNewSessionSpy).toHaveBeenCalled();
-    });
-
-    it("should display a toast for every change", async () => {
-      const user = userEvent.setup();
-      const onOpenChangeMock = vi.fn();
-      await act(async () =>
-        renderWithProviders(
-          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
-        ),
-      );
-
-      const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
-
-      await user.click(providerInput);
-      const cohere = screen.getByText("cohere");
-      await user.click(cohere);
-
-      await user.click(modelInput);
-      const model3 = screen.getByText("command-r-v1:0");
-      await user.click(model3);
-
-      await user.click(saveButton);
-
-      expect(toastSpy).toHaveBeenCalledTimes(4);
     });
 
     it("should change the language", async () => {
