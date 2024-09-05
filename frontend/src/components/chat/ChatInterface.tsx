@@ -1,12 +1,10 @@
 import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
 import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
 import { useDisclosure } from "@nextui-org/react";
-import { useSearchParams } from "react-router-dom";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
@@ -46,7 +44,6 @@ function ScrollButton({
 }
 
 function ChatInterface() {
-  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -66,14 +63,6 @@ function ChatInterface() {
     dispatch(addUserMessage({ content, imageUrls }));
     sendChatMessage(content, imageUrls);
   };
-
-  React.useEffect(() => {
-    const q = searchParams.get("q");
-    if (q?.toString()) {
-      console.log("send", q.toString());
-      // handleSendMessage(q, []);
-    }
-  }, []);
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
     onFeedbackModalOpen();
@@ -97,12 +86,8 @@ function ChatInterface() {
   }, [curAgentState, dispatch, messages.length, t]);
 
   return (
-    <div className="flex flex-col h-full bg-neutral-800">
-      <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
-        <IoMdChatbubbles />
-        Chat
-      </div>
-      <div className="flex-1 flex flex-col relative min-h-0">
+    <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full">
         <div
           ref={scrollRef}
           className="overflow-y-auto p-3"

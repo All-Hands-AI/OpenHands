@@ -9,10 +9,10 @@ import { initialState as initialBrowserState } from "#/state/browserSlice";
 import { initialState as initialCodeState } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import { TabOption, TabType } from "#/types/TabOption";
-import Browser from "./Browser";
+import BrowserPanel from "./Browser";
 import CodeEditor from "./file-explorer/CodeEditor";
 import Planner from "./Planner";
-import Jupyter from "./Jupyter";
+import JupyterEditor from "./Jupyter";
 import { getSettings } from "#/services/settings";
 
 function Workspace() {
@@ -57,12 +57,12 @@ function Workspace() {
       [TabOption.BROWSER]: {
         name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
         icon: <IoIosGlobe size={iconSize} />,
-        component: <Browser key="browser" />,
+        component: <BrowserPanel key="browser" />,
       },
       [TabOption.JUPYTER]: {
         name: t(I18nKey.WORKSPACE$JUPYTER_TAB_LABEL),
         icon: <VscCode size={iconSize} />,
-        component: <Jupyter key="jupyter" />,
+        component: <JupyterEditor key="jupyter" />,
       },
     }),
     [t],

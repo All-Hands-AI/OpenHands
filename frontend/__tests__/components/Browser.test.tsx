@@ -1,11 +1,11 @@
 import { screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "../../test-utils";
-import Browser from "#/components/Browser";
+import BrowserPanel from "#/components/Browser";
 
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
-    renderWithProviders(<Browser />, {
+    renderWithProviders(<BrowserPanel />, {
       preloadedState: {
         browser: {
           url: "https://example.com",
@@ -19,7 +19,7 @@ describe("Browser", () => {
   });
 
   it("renders the url and a screenshot", () => {
-    renderWithProviders(<Browser />, {
+    renderWithProviders(<BrowserPanel />, {
       preloadedState: {
         browser: {
           url: "https://example.com",

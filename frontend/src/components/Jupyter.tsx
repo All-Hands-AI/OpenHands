@@ -75,7 +75,7 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
   );
 }
 
-function Jupyter(): JSX.Element {
+function JupyterEditor(): JSX.Element {
   const { t } = useTranslation();
 
   const { cells } = useSelector((state: RootState) => state.jupyter);
@@ -114,4 +114,4 @@ function Jupyter(): JSX.Element {
   );
 }
 
-export default Jupyter;
+export default JupyterEditor;

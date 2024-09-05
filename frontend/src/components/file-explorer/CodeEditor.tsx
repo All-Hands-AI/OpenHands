@@ -158,7 +158,7 @@ function CodeEditor(): JSX.Element {
   };
 
   return (
-    <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out relative">
+    <div className="flex h-full w-full bg-neutral-900 relative">
       <FileExplorer />
       <div className="flex flex-col min-h-0 w-full">
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4">

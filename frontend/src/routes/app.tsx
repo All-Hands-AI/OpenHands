@@ -5,7 +5,6 @@ import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { Provider } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
-import Errors from "#/components/Errors";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
@@ -14,6 +13,7 @@ import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
 import { getSettingsSession } from "#/sessions";
 import store from "#/store";
+import { Container } from "#/components/container";
 
 const Terminal = lazy(() => import("../components/terminal/Terminal"));
 
@@ -50,14 +50,32 @@ function App() {
   return (
     <Provider store={store}>
       <div className="h-full flex flex-col gap-[10px]">
-        <div className="flex grow text-white min-h-0">
-          <ChatInterface />
-          <Outlet />
-          {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-           * that it loads only in the client-side. */}
-          <Suspense>
-            <Terminal />
-          </Suspense>
+        <div className="h-full flex gap-3">
+          <div className="w-1/4">
+            <Container className="h-full" label="Chat">
+              <ChatInterface />
+            </Container>
+          </div>
+
+          <div className="flex flex-col gap-3 w-3/4">
+            <Container
+              className="h-full"
+              labels={[
+                { label: "Workspace", to: "" },
+                { label: "Jupyter", to: "jupyter" },
+                { label: "Browser (experimental)", to: "browser" },
+              ]}
+            >
+              <Outlet />
+            </Container>
+            {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+             * that it loads only in the client-side. */}
+            <Container className="h-2/5 min-h-0" label="Terminal">
+              <Suspense fallback={<div className="h-full" />}>
+                <Terminal />
+              </Suspense>
+            </Container>
+          </div>
         </div>
         <Controls
           setSecurityOpen={onSecurityModalOpen}
@@ -72,7 +90,6 @@ function App() {
           isOpen={loadPreviousSessionModalIsOpen}
           onOpenChange={onLoadPreviousSessionModalOpenChange}
         />
-        <Errors />
         <Toaster />
       </div>
     </Provider>
