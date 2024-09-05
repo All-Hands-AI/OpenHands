@@ -26,7 +26,6 @@ from openhands.core.config import (
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
-    load_from_env,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -123,26 +122,19 @@ def get_config(
         run_as_openhands=False,
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
-    selected_env_vars = {'runtime', 'sandbox_api_key'}
-    selected_env_vars = {
-        k: v for k, v in os.environ.items() if k.lower() in selected_env_vars
-    }
-    if selected_env_vars:
-        logger.info(
-            f'Loading config keys from env vars: {list(selected_env_vars.keys())}'
-        )
-        load_from_env(config, selected_env_vars)
     config.set_llm_config(metadata.llm_config)
     return config
 
