@@ -4,7 +4,6 @@ import i18next from "i18next";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
-import toast from "#/utils/toast";
 import {
   Settings,
   getSettings,
@@ -15,7 +14,6 @@ import Session from "#/services/session";
 import { fetchAgents, fetchModels } from "#/services/options";
 import SettingsModal from "./SettingsModal";
 
-const toastSpy = vi.spyOn(toast, "settingsChanged");
 const i18nSpy = vi.spyOn(i18next, "changeLanguage");
 const startNewSessionSpy = vi.spyOn(Session, "startNewSession");
 vi.spyOn(Session, "isConnected").mockImplementation(() => true);
@@ -128,7 +126,9 @@ describe("SettingsModal", () => {
       await assertModelsAndAgentsFetched();
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const providerInput = screen.getByRole("combobox", {
+        name: "LLM Provider",
+      });
       const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
@@ -157,7 +157,9 @@ describe("SettingsModal", () => {
       );
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const providerInput = screen.getByRole("combobox", {
+        name: "LLM Provider",
+      });
       const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
@@ -212,7 +214,9 @@ describe("SettingsModal", () => {
       });
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+      const providerInput = screen.getByRole("combobox", {
+        name: "LLM Provider",
+      });
       const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);

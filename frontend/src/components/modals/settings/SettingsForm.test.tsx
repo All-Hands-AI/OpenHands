@@ -43,7 +43,9 @@ describe("SettingsForm", () => {
   it("should display the first values in the array by default", () => {
     renderSettingsForm();
 
-    const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+    const providerInput = screen.getByRole("combobox", {
+      name: "LLM Provider",
+    });
     const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
@@ -62,7 +64,9 @@ describe("SettingsForm", () => {
       LLM_API_KEY: "sk-...",
     });
 
-    const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+    const providerInput = screen.getByRole("combobox", {
+      name: "LLM Provider",
+    });
     const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
 
@@ -93,7 +97,9 @@ describe("SettingsForm", () => {
       />,
     );
 
-    const providerInput = screen.getByRole("combobox", { name: "LLM Provider" });
+    const providerInput = screen.getByRole("combobox", {
+      name: "LLM Provider",
+    });
     const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
 
