@@ -6,6 +6,7 @@ import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
+const onBaseURLChangeMock = vi.fn();
 const onCustomModelChangeMock = vi.fn();
 const onModelTypeChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
@@ -21,6 +22,7 @@ const renderSettingsForm = (settings?: Settings) => {
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
+          LLM_BASE_URL: "base_url",
           CUSTOM_LLM_MODEL: "",
           USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
@@ -34,6 +36,7 @@ const renderSettingsForm = (settings?: Settings) => {
       agents={["agent1", "agent2", "agent3"]}
       securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
+      onBaseURLChange={onBaseURLChangeMock}
       onCustomModelChange={onCustomModelChangeMock}
       onModelTypeChange={onModelTypeChangeMock}
       onAgentChange={onAgentChangeMock}
@@ -72,6 +75,7 @@ describe("SettingsForm", () => {
     renderSettingsForm({
       LLM_MODEL: "gpt-3.5-turbo",
       CUSTOM_LLM_MODEL: "",
+      LLM_BASE_URL: "base_url",
       USING_CUSTOM_MODEL: false,
       AGENT: "agent2",
       LANGUAGE: "es",
@@ -100,6 +104,7 @@ describe("SettingsForm", () => {
       <SettingsForm
         settings={{
           LLM_MODEL: "gpt-4o",
+          LLM_BASE_URL: "base_url",
           CUSTOM_LLM_MODEL: "",
           USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
@@ -113,6 +118,7 @@ describe("SettingsForm", () => {
         securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
         onModelChange={onModelChangeMock}
+        onBaseURLChange={onBaseURLChangeMock}
         onCustomModelChange={onCustomModelChangeMock}
         onModelTypeChange={onModelTypeChangeMock}
         onAgentChange={onAgentChangeMock}
@@ -230,6 +236,7 @@ describe("SettingsForm", () => {
         <SettingsForm
           settings={{
             LLM_MODEL: "gpt-4o",
+            LLM_BASE_URL: "base_url",
             CUSTOM_LLM_MODEL: "CUSTOM_MODEL",
             USING_CUSTOM_MODEL: true,
             AGENT: "agent1",
@@ -243,6 +250,7 @@ describe("SettingsForm", () => {
           securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
           disabled
           onModelChange={onModelChangeMock}
+          onBaseURLChange={onBaseURLChangeMock}
           onCustomModelChange={onCustomModelChangeMock}
           onModelTypeChange={onModelTypeChangeMock}
           onAgentChange={onAgentChangeMock}

@@ -115,6 +115,7 @@ describe("SettingsModal", () => {
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
       LLM_MODEL: "gpt-4o",
+      LLM_BASE_URL: "",
       CUSTOM_LLM_MODEL: "",
       USING_CUSTOM_MODEL: false,
       AGENT: "CodeActAgent",

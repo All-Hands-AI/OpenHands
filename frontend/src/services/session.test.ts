@@ -19,6 +19,7 @@ describe("startNewSession", () => {
   it("Should start a new session with the current settings", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       CUSTOM_LLM_MODEL: "",
       USING_CUSTOM_MODEL: false,
       AGENT: "agent_value",
@@ -43,6 +44,7 @@ describe("startNewSession", () => {
   it("should start with the custom llm if set", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       CUSTOM_LLM_MODEL: "custom_llm_value",
       USING_CUSTOM_MODEL: true,
       AGENT: "agent_value",

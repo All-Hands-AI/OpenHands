@@ -70,6 +70,7 @@ describe("saveSettings", () => {
   it("should save the settings", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       CUSTOM_LLM_MODEL: "custom_llm_value",
       USING_CUSTOM_MODEL: true,
       AGENT: "agent_value",

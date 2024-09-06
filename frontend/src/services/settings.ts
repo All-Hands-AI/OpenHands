@@ -2,6 +2,7 @@ const LATEST_SETTINGS_VERSION = 1;
 
 export type Settings = {
   LLM_MODEL: string;
+  LLM_BASE_URL: string;
   CUSTOM_LLM_MODEL: string;
   USING_CUSTOM_MODEL: boolean;
   AGENT: string;
@@ -15,6 +16,7 @@ type SettingsInput = Settings[keyof Settings];
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "openai/gpt-4o",
+  LLM_BASE_URL: "",
   CUSTOM_LLM_MODEL: "",
   USING_CUSTOM_MODEL: false,
   AGENT: "CodeActAgent",
@@ -58,6 +60,7 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = (): Settings => {
   const model = localStorage.getItem("LLM_MODEL");
+  const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const customModel = localStorage.getItem("CUSTOM_LLM_MODEL");
   const usingCustomModel =
     localStorage.getItem("USING_CUSTOM_MODEL") === "true";
@@ -69,6 +72,7 @@ export const getSettings = (): Settings => {
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
+    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
     CUSTOM_LLM_MODEL: customModel || DEFAULT_SETTINGS.CUSTOM_LLM_MODEL,
     USING_CUSTOM_MODEL: usingCustomModel || DEFAULT_SETTINGS.USING_CUSTOM_MODEL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,

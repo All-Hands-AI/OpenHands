@@ -17,6 +17,7 @@ interface SettingsFormProps {
   disabled: boolean;
 
   onModelChange: (model: string) => void;
+  onBaseURLChange: (baseURL: string) => void;
   onCustomModelChange: (model: string) => void;
   onModelTypeChange: (type: "custom" | "default") => void;
   onAPIKeyChange: (apiKey: string) => void;
@@ -33,6 +34,7 @@ function SettingsForm({
   securityAnalyzers,
   disabled,
   onModelChange,
+  onBaseURLChange,
   onCustomModelChange,
   onModelTypeChange,
   onAPIKeyChange,
@@ -69,12 +71,20 @@ function SettingsForm({
         Use custom model
       </Switch>
       {usingCustomModel && (
-        <Input
-          data-testid="custom-model-input"
-          label="Custom Model"
-          onValueChange={onCustomModelChange}
-          defaultValue={settings.CUSTOM_LLM_MODEL}
-        />
+        <>
+          <Input
+            data-testid="custom-model-input"
+            label="Custom Model"
+            onValueChange={onCustomModelChange}
+            defaultValue={settings.CUSTOM_LLM_MODEL}
+          />
+          <Input
+            data-testid="base-url-input"
+            label="Base URL"
+            onValueChange={onBaseURLChange}
+            defaultValue={settings.LLM_BASE_URL}
+          />
+        </>
       )}
       {!usingCustomModel && (
         <ModelSelector
