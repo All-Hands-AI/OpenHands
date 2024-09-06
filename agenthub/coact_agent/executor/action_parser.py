@@ -1,3 +1,5 @@
+import re
+
 from agenthub.codeact_agent.action_parser import (
     CodeActActionParserAgentDelegate,
     CodeActActionParserCmdRun,
@@ -5,6 +7,11 @@ from agenthub.codeact_agent.action_parser import (
     CodeActActionParserIPythonRunCell,
     CodeActActionParserMessage,
     CodeActResponseParser,
+)
+from openhands.controller.action_parser import ActionParser
+from openhands.events.action import (
+    Action,
+    AgentDelegateAction,
 )
 
 
@@ -25,7 +32,7 @@ class ExecutorResponseParser(CodeActResponseParser):
             CodeActActionParserCmdRun(),
             CodeActActionParserIPythonRunCell(),
             CodeActActionParserAgentDelegate(),
-            # TODO: additional parsers
+            CoActActionParserRequest(),
         ]
         self.default_parser = CodeActActionParserMessage()
 
@@ -33,7 +40,33 @@ class ExecutorResponseParser(CodeActResponseParser):
         action = response.choices[0].message.content
         if action is None:
             return ''
-        for lang in ['bash', 'ipython', 'browse']:
-            if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
-                action += f'</execute_{lang}>'
+        for action_suffix in ['bash', 'ipython', 'browse', 'request']:
+            if (
+                f'<execute_{action_suffix}>' in action
+                and f'</execute_{action_suffix}>' not in action
+            ):
+                action += f'</execute_{action_suffix}>'
         return action
+
+
+class CoActActionParserRequest(ActionParser):
+    def __init__(self):
+        self.request = None
+
+    def check_condition(self, action_str: str) -> bool:
+        self.request = re.search(
+            r'<execute_request>(.*)</execute_request>', action_str, re.DOTALL
+        )
+        return self.request is not None
+
+    def parse(self, action_str: str) -> Action:
+        assert (
+            self.request is not None
+        ), 'self.global_plan should not be None when parse is called'
+
+        replan_request = self.request.group(1).strip()
+        return AgentDelegateAction(
+            'CoActPlannerAgent',
+            inputs={'task': replan_request},
+            action_suffix='request',
+        )
