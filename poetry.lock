@@ -5271,13 +5271,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.43.0"
+version = "1.43.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.43.0-py3-none-any.whl", hash = "sha256:1a748c2728edd3a738a72a0212ba866f4fdbe39c9ae03813508b267d45104abe"},
-    {file = "openai-1.43.0.tar.gz", hash = "sha256:e607aff9fc3e28eade107e5edd8ca95a910a4b12589336d3cbb6bfe2ac306b3c"},
+    {file = "openai-1.43.1-py3-none-any.whl", hash = "sha256:23ed3aa71e89cf644c911f7ab80087d08c0bf46ce6b75d9a811fc7942cff85c2"},
+    {file = "openai-1.43.1.tar.gz", hash = "sha256:b64843711b7c92ded36795062ea1f8cad84ec6c2848646f2a786ac4617a6b9f5"},
 ]
 
 [package.dependencies]
