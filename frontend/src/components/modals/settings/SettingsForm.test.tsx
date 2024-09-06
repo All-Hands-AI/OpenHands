@@ -62,6 +62,8 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      CONFIRMATION_MODE: false,
+      SECURITY_ANALYZER: "",
     });
 
     const providerInput = screen.getByRole("combobox", {
@@ -83,6 +85,8 @@ describe("SettingsForm", () => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          CONFIRMATION_MODE: false,
+          SECURITY_ANALYZER: "",
         }}
         models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
         agents={["agent1", "agent2", "agent3"]}
