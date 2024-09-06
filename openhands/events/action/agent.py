@@ -78,4 +78,4 @@ class AgentDelegateAction(Action):
 
     @property
     def message(self) -> str:
-        return f"I'm asking {self.agent} for help with this task."
+        return f"The task to delegate is: {self.inputs['task']}. I'm asking {self.agent} for help with this task."
