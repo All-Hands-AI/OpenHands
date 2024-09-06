@@ -18,7 +18,7 @@ import { server } from "./mocks/node";
 const ABORT_DELAY = 5_000;
 
 if (process.env.NODE_ENV !== "production") {
-  server.listen();
+  server.listen({ onUnhandledRequest: "bypass" });
 }
 
 function handleBotRequest(

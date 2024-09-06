@@ -49,7 +49,7 @@ function App() {
 
   return (
     <Provider store={store}>
-      <div className="h-full flex flex-col gap-[10px]">
+      <div data-testid="app" className="h-full flex flex-col gap-[10px]">
         <div className="h-full flex gap-3">
           <div className="w-1/4">
             <Container className="h-full" label="Chat">
