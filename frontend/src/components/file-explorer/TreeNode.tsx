@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
-import { Form } from "@remix-run/react";
+import { Form, useFetcher } from "@remix-run/react";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
@@ -44,6 +44,8 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
+  const fetcher = useFetcher({ key: "file-selector" });
+
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
@@ -96,7 +98,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         path === activeFilepath ? "bg-gray-700" : "",
       )}
     >
-      <Form method="post">
+      <fetcher.Form method="post" action="?index">
         <button type="submit" name="file" value={filename}>
           <Title
             name={filename}
@@ -106,7 +108,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
             onClick={handleClick}
           />
         </button>
-      </Form>
+      </fetcher.Form>
 
       {isOpen && children && (
         <div className="ml-5">

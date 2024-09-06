@@ -13,6 +13,7 @@ describe("CodeEditor", () => {
   it("should render", async () => {
     renderWithProviders(<RemixStub initialEntries={["/app"]} />);
     await screen.findByTestId("file-explorer");
+    expect(screen.getByTestId("code-editor-empty-message")).toBeInTheDocument();
   });
 
   it("should retrieve the files", async () => {
@@ -33,6 +34,9 @@ describe("CodeEditor", () => {
     await user.click(files[0]);
 
     // check if the file is opened
+    expect(
+      screen.queryByTestId("code-editor-empty-message"),
+    ).not.toBeInTheDocument();
     const editor = await screen.findByTestId("code-editor");
     expect(
       within(editor).getByText(/content of file1.ts/i),

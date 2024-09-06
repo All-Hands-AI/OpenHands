@@ -5,7 +5,7 @@ import { Editor, Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor";
 import { VscCheck, VscClose, VscCode, VscSave } from "react-icons/vsc";
 import { Button, Tab, Tabs } from "@nextui-org/react";
-import { json, useActionData, useLoaderData } from "@remix-run/react";
+import { json, useFetcher, useLoaderData } from "@remix-run/react";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
@@ -19,20 +19,7 @@ import { saveFile } from "#/services/fileService";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
-
-const retrieveFiles = async (): Promise<string[]> => {
-  const response = await fetch("http://localhost:3000/api/list-files");
-  return response.json();
-};
-
-const retrieveFileContent = async (path: string): Promise<string> => {
-  const url = new URL("http://localhost:3000/api/select-file");
-  url.searchParams.append("file", path);
-  const response = await fetch(url.toString());
-
-  const data = await response.json();
-  return data.code;
-};
+import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
 
 export const loader = async () => {
   let files: string[] = [];
@@ -67,7 +54,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 function CodeEditor() {
   const { files } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const fetcher = useFetcher<typeof action>({ key: "file-selector" });
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -254,8 +241,11 @@ function CodeEditor() {
           )}
         </div>
         <div className="flex grow items-center justify-center">
-          {!actionData?.selectedFileContent ? (
-            <div className="flex flex-col items-center text-neutral-400">
+          {!fetcher.data?.selectedFileContent ? (
+            <div
+              data-testid="code-editor-empty-message"
+              className="flex flex-col items-center text-neutral-400"
+            >
               <VscCode size={100} />
               {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
             </div>
@@ -265,7 +255,7 @@ function CodeEditor() {
               height="100%"
               path={selectedFileName.toLowerCase()}
               defaultValue=""
-              value={unsavedContent}
+              value={fetcher.data.selectedFileContent}
               onMount={handleEditorDidMount}
               onChange={handleEditorChange}
               options={{ readOnly: !isEditingAllowed }}
