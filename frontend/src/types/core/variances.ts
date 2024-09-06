@@ -1,6 +1,6 @@
 /** Variances are types which do not conform to the current event pattern */
 
-interface TokenConfigSuccess {
+export interface TokenConfigSuccess {
   status: "ok";
   token: string;
 }

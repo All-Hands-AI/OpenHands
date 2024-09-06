@@ -4,6 +4,7 @@ import { Settings } from "./services/settings";
 type SessionData = {
   tosAccepted: boolean;
   ghToken: string;
+  token: string; // Session token
 };
 
 export const { getSession, commitSession, destroySession } =

@@ -3,6 +3,7 @@ import { setupWorker } from "msw/browser";
 import AgentState from "#/types/AgentState";
 import { AgentStateChangeObservation } from "#/types/core/observations";
 import { AssistantMessageAction } from "#/types/core/actions";
+import { TokenConfigSuccess } from "#/types/core/variances";
 
 const generateAgentStateChangeObservation = (
   state: AgentState,
@@ -34,6 +35,13 @@ const api = ws.link("ws://localhost:3001/ws");
 
 const handlers: WebSocketHandler[] = [
   api.on("connection", ({ server, client }) => {
+    client.send(
+      JSON.stringify({
+        status: "ok",
+        token: "1234",
+      } satisfies TokenConfigSuccess),
+    );
+
     // data received from the server
     server.addEventListener("message", (event) => {
       console.log("data received from server", event.data);
@@ -76,8 +84,6 @@ const handlers: WebSocketHandler[] = [
       }
       console.warn(JSON.stringify(JSON.parse(event.data.toString()), null, 2));
     });
-
-    console.log("Connected to the server");
   }),
 ];
 

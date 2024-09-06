@@ -19,13 +19,14 @@ function useEffectOnce(callback: () => void) {
 }
 
 interface WebSocketClientOptions {
+  token?: string;
   onOpen?: (event: Event) => void;
   onMessage?: (event: MessageEvent<Data>) => void;
   onError?: (event: Event) => void;
   onClose?: (event: Event) => void;
 }
 
-interface WebSocketClientReturnType {
+export interface WebSocketClientReturnType {
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
 }
 
@@ -37,7 +38,8 @@ export function useWebSocketClient(
   useEffectOnce(() => {
     const wsUrl = new URL("/", document.baseURI);
     wsUrl.protocol = wsUrl.protocol.replace("http", "ws");
-    const ws = new WebSocket(wsUrl);
+    if (options?.token) wsUrl.searchParams.set("token", options.token);
+    const ws = new WebSocket(`${wsUrl.origin}/ws`);
 
     if (options?.onOpen) {
       ws.addEventListener("open", options.onOpen);
