@@ -456,7 +456,9 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
-    if not isinstance(instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str):
+    if not isinstance(
+        instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
+    ):
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(list(x)))
 
