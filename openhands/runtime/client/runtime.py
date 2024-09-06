@@ -13,6 +13,7 @@ from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
+    ActionConfirmationStatus,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -25,6 +26,7 @@ from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    UserRejectObservation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
@@ -123,7 +125,7 @@ class EventStreamRuntime(Runtime):
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
-        logger.debug(f'EventStreamRuntime `{sid}` config:\n{self.config}')
+        logger.debug(f'EventStreamRuntime `{sid}`')
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
@@ -244,6 +246,7 @@ class EventStreamRuntime(Runtime):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
         wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
+        reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
         init_msg = 'Runtime client initialized.'
@@ -333,12 +336,25 @@ class EventStreamRuntime(Runtime):
         with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
                 return ErrorObservation(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
                 return ErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
+                )
+            if (
+                hasattr(action, 'is_confirmed')
+                and action.is_confirmed == ActionConfirmationStatus.REJECTED
+            ):
+                return UserRejectObservation(
+                    'Action has been rejected by the user! Waiting for further user input.'
                 )
 
             logger.info('Awaiting session')

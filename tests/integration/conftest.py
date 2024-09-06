@@ -2,16 +2,16 @@ import io
 import os
 import re
 import shutil
+import socket
 import subprocess
 import tempfile
-import time
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from threading import Thread
 
 import pytest
 from litellm import completion
 
+from openhands.core.message import format_messages
 from openhands.llm.llm import message_separator
 
 script_dir = os.environ.get('SCRIPT_DIR')
@@ -78,7 +78,9 @@ def get_log_id(prompt_log_name):
         return match.group(1)
 
 
-def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -> str:
+def apply_prompt_and_get_mock_response(
+    test_name: str, messages: str, id: int
+) -> str | None:
     """Apply the mock prompt, and find mock response based on id.
     If there is no matching response file, return None.
 
@@ -183,11 +185,9 @@ def mock_user_response(*args, test_name, **kwargs):
 def mock_completion(*args, test_name, **kwargs):
     global cur_id
     messages = kwargs['messages']
-    message_str = ''
-    for message in messages:
-        for m in message['content']:
-            if m['type'] == 'text':
-                message_str += message_separator + m['text']
+    plain_messages = format_messages(messages, with_images=False)
+    message_str = message_separator.join(msg['content'] for msg in plain_messages)
+
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':
@@ -197,7 +197,7 @@ def mock_completion(*args, test_name, **kwargs):
     else:
         mock_response = get_mock_response(test_name, message_str, cur_id)
     if mock_response is None:
-        raise SecretExit('Mock response for prompt is not found')
+        raise SecretExit('\n\n***** Mock response for prompt is not found *****\n')
     response = completion(**kwargs, mock_response=mock_response)
     return response
 
@@ -222,6 +222,12 @@ def patch_completion(monkeypatch, request):
         lambda completion_response, **extra_kwargs: 1,
     )
 
+    # Mock LLMConfig to disable vision support
+    monkeypatch.setattr(
+        'openhands.llm.llm.LLM.vision_is_active',
+        lambda self: False,
+    )
+
     # Mock user input (only for tests that have user_responses.log)
     user_responses_str = mock_user_response(test_name=test_name)
     if user_responses_str:
@@ -229,25 +235,17 @@ def patch_completion(monkeypatch, request):
         monkeypatch.setattr('sys.stdin', user_responses)
 
 
-@pytest.fixture
-def http_server():
-    web_dir = os.path.join(os.path.dirname(__file__), 'static')
-    os.chdir(web_dir)
-    handler = SimpleHTTPRequestHandler
+class MultiAddressServer(HTTPServer):
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
 
-    # Start the server
-    server = HTTPServer(('localhost', 8000), handler)
-    thread = Thread(target=server.serve_forever)
-    thread.setDaemon(True)
-    thread.start()
-    time.sleep(1)
 
-    print('HTTP server started...')
-    yield server
-
-    # Stop the server
-    server.shutdown()
-    thread.join()
+class LoggingHTTPRequestHandler(SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        print(
+            f'Request received: {self.address_string()} - {self.log_date_time_string()} - {format % args}'
+        )
 
 
 def set_up():

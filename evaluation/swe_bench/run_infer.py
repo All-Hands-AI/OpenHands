@@ -25,8 +25,7 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
-    load_from_env,
-    parse_arguments,
+    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -109,6 +108,11 @@ def get_config(
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
         base_container_image = get_instance_docker_image(instance['instance_id'])
+        logger.info(
+            f'Using instance container image: {base_container_image}. '
+            f'Please make sure this image exists. '
+            f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
+        )
     else:
         base_container_image = SWE_BENCH_CONTAINER_IMAGE
         logger.info(f'Using swe-bench container image: {base_container_image}')
@@ -118,26 +122,19 @@ def get_config(
         run_as_openhands=False,
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
-    selected_env_vars = {'runtime', 'sandbox_api_key'}
-    selected_env_vars = {
-        k: v for k, v in os.environ.items() if k.lower() in selected_env_vars
-    }
-    if selected_env_vars:
-        logger.info(
-            f'Loading config keys from env vars: {list(selected_env_vars.keys())}'
-        )
-        load_from_env(config, selected_env_vars)
     config.set_llm_config(metadata.llm_config)
     return config
 
@@ -411,12 +408,26 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    parser = get_parser()
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default='princeton-nlp/SWE-bench',
+        help='data set to evaluate on, either full-test or lite-test',
+    )
+    parser.add_argument(
+        '--split',
+        type=str,
+        default='test',
+        help='split to evaluate on',
+    )
+    args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
-    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
+    dataset = load_dataset(args.dataset, split=args.split)
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
+    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
 
     llm_config = None
     if args.llm_config:
@@ -444,6 +455,12 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
+
+    if not isinstance(
+        instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
+    ):
+        for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
+            instances[col] = instances[col].apply(lambda x: str(list(x)))
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
