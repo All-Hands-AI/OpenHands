@@ -348,6 +348,8 @@ Review the instructions from the user, the current state of the page and all oth
 to find the best possible next action to accomplish your goal. Your answer will be interpreted
 and executed by a program, make sure to follow the formatting instructions.
 
+If the user needs to go to some website, you can navigate directly to that website and return a summary of what you see. Do NOT explore the website further unless the user asks you to do so.
+
 ## Chat messages:
 
 """
@@ -362,9 +364,11 @@ and executed by a program, make sure to follow the formatting instructions.
 
 class SystemPrompt(PromptElement):
     _prompt = """\
-You are an agent trying to solve a web task based on the content of the page and
+You are an agent trying to navigate the web and solve a web task based on the content of the page and
 a user instructions. You can interact with the page and explore. Each time you
-submit an action it will be sent to the browser and you will receive a new page."""
+submit an action it will be sent to the browser and you will receive a new page.
+
+The user's goal can be complex, or very simple as one step, e.g., to "go to website A". Don't try to guess the user's goal or perform any additional actions, only strictly follow what the user said (i.e., navigate to the correct website A) and then exit."""
 
 
 class MainPrompt(Shrinkable):
