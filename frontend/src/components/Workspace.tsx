@@ -26,6 +26,7 @@ function Workspace() {
     CodeActAgent: [TabOption.JUPYTER],
     PlannerAgent: [TabOption.PLANNER],
     CoActPlannerAgent: [TabOption.JUPYTER],
+    CoActExecutorAgent: [TabOption.JUPYTER],
   };
   const extraTabs = extraTabsMap[AGENT] || [];
   const showTabs = [...baseTabs, ...extraTabs];
