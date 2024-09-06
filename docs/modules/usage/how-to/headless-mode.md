@@ -29,10 +29,10 @@ WORKSPACE_BASE=$(pwd)/workspace
 2. Set `LLM_MODEL` to the model you want to use:
 
 ```bash
-LLM_MODEL="claude-3-5-sonnet-20240620"
+LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
 ```
 
-3. Set `LLM_API_KEY` to an API key, e.g., for OpenAI or Anthropic:
+3. Set `LLM_API_KEY` to your API key:
 
 ```bash
 LLM_API_KEY="abcde"
@@ -52,5 +52,5 @@ docker run -it \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     ghcr.io/all-hands-ai/openhands:0.9 \
-    poetry run python -m openhands.core.main -t "write a bash script that prints hi"
+    python -m openhands.core.main -t "write a bash script that prints hi"
 ```

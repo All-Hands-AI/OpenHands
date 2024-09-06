@@ -40,7 +40,7 @@ See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-start
 system requirements and more information.
 
 ```bash
-WORKSPACE_BASE=$(pwd)/workspace
+export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run -it --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9.2-nikolaik \
@@ -70,7 +70,7 @@ Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/us
 To learn more about the project, and for tips on using OpenHands,
 **check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started)**.
 
-There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
+There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
 
 ## 🤝 How to Contribute
