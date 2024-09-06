@@ -459,7 +459,6 @@ if __name__ == '__main__':
     if not isinstance(instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str):
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(list(x)))
-            instances[col] = instances[col].apply(lambda x: str(list(x)))
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
