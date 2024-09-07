@@ -62,7 +62,7 @@ class CoActActionParserRequest(ActionParser):
     def parse(self, action_str: str) -> Action:
         assert (
             self.request is not None
-        ), 'self.global_plan should not be None when parse is called'
+        ), 'self.request should not be None when parse is called'
 
         replan_request = self.request.group(1).strip()
         return AgentFinishAction(
