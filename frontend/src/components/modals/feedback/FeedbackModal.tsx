@@ -8,7 +8,7 @@ import { Feedback, sendFeedback } from "#/services/feedbackService";
 import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
 import Session from "#/services/session";
-import { removeApiKey } from "#/utils/utils";
+import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format
@@ -95,7 +95,7 @@ function FeedbackModal({
       email,
       permissions,
       token: getToken(),
-      trajectory: removeApiKey(Session._history),
+      trajectory: removeApiKey(removeUnwantedKeys(Session._history)),
     };
 
     try {
