@@ -3,7 +3,7 @@ import re
 from functools import partial
 
 from evaluation.utils.shared import codeact_user_response
-from opendevin.events.action import CmdRunAction, MessageAction
+from openhands.events.action import CmdRunAction, MessageAction
 
 
 def try_parse_answer(act) -> str | None:

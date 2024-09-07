@@ -1,4 +1,4 @@
-# Getting Started with the OpenDevin Frontend
+# Getting Started with the OpenHands Frontend
 
 The frontend code can be run against the docker image defined in the [Main README](../README.md) as a backend
 

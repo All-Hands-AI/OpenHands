@@ -33,21 +33,21 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
     Action,
     AgentFinishAction,
     MessageAction,
 )
-from opendevin.events.observation import Observation
+from openhands.events.observation import Observation
 
 ACTION_FORMAT = """
 <<FINAL_ANSWER||
@@ -61,11 +61,11 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='python:3.11-bookworm',
+            base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
         ),
@@ -169,7 +169,7 @@ def convert_instance_dict(instance):
     return out_instance_dict
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -214,15 +214,17 @@ Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
 """
 
-    runtime = await create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
+    runtime = create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
 
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-            metadata.agent_class
-        ),
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                metadata.agent_class
+            ),
+        )
     )
     assert state is not None, 'State should not be None.'
 
@@ -328,7 +330,7 @@ if __name__ == '__main__':
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to OpenDevin's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset('Idavidrein/gpqa', args.data_split)
     gpqa_dataset = dataset['train']
     # preprocess the dataset
@@ -355,12 +357,10 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gpqa_dataset, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            dataset=prepared_dataset,
-            metadata=metadata,
-            output_file=output_file,
-            num_workers=args.eval_num_workers,
-            process_instance_func=process_instance,
-        )
+    run_evaluation(
+        dataset=prepared_dataset,
+        metadata=metadata,
+        output_file=output_file,
+        num_workers=args.eval_num_workers,
+        process_instance_func=process_instance,
     )

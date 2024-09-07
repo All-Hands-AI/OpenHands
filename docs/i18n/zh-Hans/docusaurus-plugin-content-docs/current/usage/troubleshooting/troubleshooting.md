@@ -18,7 +18,7 @@ sidebar_position: 5
 
 ## 无法连接到 Docker
 
-[GitHub 问题](https://github.com/OpenDevin/OpenDevin/issues/1226)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1226)
 
 ### 症状
 
@@ -32,7 +32,7 @@ docker.errors.DockerException: 获取服务器 API 版本时出错: ('连接中�
 
 ### 详情
 
-OpenDevin 使用 Docker 容器来安全地完成工作，而不会破坏您的机器。
+OpenHands 使用 Docker 容器来安全地完成工作，而不会破坏您的机器。
 
 ### 解决方法
 
@@ -43,7 +43,7 @@ OpenDevin 使用 Docker 容器来安全地完成工作，而不会破坏您的�
 
 ## 无法连接到 DockerSSHBox
 
-[GitHub 问题](https://github.com/OpenDevin/OpenDevin/issues/1156)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1156)
 
 ### 症状
 
@@ -55,18 +55,18 @@ pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 
 ### 详情
 
-默认情况下，OpenDevin 使用 SSH 连接到一个运行中的容器。在某些机器上，尤其是 Windows，这似乎会失败。
+默认情况下，OpenHands 使用 SSH 连接到一个运行中的容器。在某些机器上，尤其是 Windows，这似乎会失败。
 
 ### 解决方法
 
 * 重新启动您的计算机（有时会有用）
 * 确保拥有最新版本的 WSL 和 Docker
 * 检查您的 WSL 分发版也已更新
-* 尝试[此重新安装指南](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
+* 尝试[此重新安装指南](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
 
 ## 无法连接到 LLM
 
-[GitHub 问题](https://github.com/OpenDevin/OpenDevin/issues/1208)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1208)
 
 ### 症状
 
@@ -79,9 +79,9 @@ AttributeError: 'NoneType' object has no attribute 'request'
 
 ### 详情
 
-[GitHub 问题](https://github.com/OpenDevin/OpenDevin/issues?q=is%3Aissue+is%3Aopen+404)
+[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
 
-这通常发生在本地 LLM 设置中，当 OpenDevin 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/localLLMs) 以获取更多信息。
+这通常发生在本地 LLM 设置中，当 OpenHands 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/local-llms) 以获取更多信息。
 
 ### 解决方法
 
@@ -128,9 +128,9 @@ openai.NotFoundError: Error code: 404 - {'error': {'code': '404', 'message': 'Re
   * 如果您在 UI 中运行，请确保在设置模式中设置 `model`
   * 如果您通过 main.py 运行，请确保在环境变量/配置中设置 `LLM_MODEL`
 * 确保遵循了您的 LLM 提供商的任何特殊说明
-  * [Ollama](/zh-Hans/modules/usage/llms/localLLMs)
-  * [Azure](/zh-Hans/modules/usage/llms/azureLLMs)
-  * [Google](/zh-Hans/modules/usage/llms/googleLLMs)
+  * [Ollama](/zh-Hans/modules/usage/llms/local-llms)
+  * [Azure](/zh-Hans/modules/usage/llms/azure-llms)
+  * [Google](/zh-Hans/modules/usage/llms/google-llms)
 * 确保您的 API 密钥正确无误
 * 尝试使用 `curl` 连接到 LLM
 * 尝试[直接通过 LiteLLM 连接](https://github.com/BerriAI/litellm)来测试您的设置
@@ -171,19 +171,19 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 
 ### 症状
 
-通常情况下，当打开 UI 时，OpenDevin 会询问是否要恢复或开始新会话。但点击“恢复”仍然会开始一个全新的聊天。
+通常情况下，当打开 UI 时，OpenHands 会询问是否要恢复或开始新会话。但点击“恢复”仍然会开始一个全新的聊天。
 
 ### 详情
 
-按今天的标准安装，会话数据存储在内存中。目前，如果 OpenDevin 的服务重启，以前的会话将失效（生成一个新秘密），因此无法恢复。
+按今天的标准安装，会话数据存储在内存中。目前，如果 OpenHands 的服务重启，以前的会话将失效（生成一个新秘密），因此无法恢复。
 
 ### 解决方法
 
-* 通过编辑 OpenDevin 根文件夹中的 `config.toml` 文件，更改配置以使会话持久化，指定一个 `file_store` 和一个绝对路径的 `file_store_path`：
+* 通过编辑 OpenHands 根文件夹中的 `config.toml` 文件，更改配置以使会话持久化，指定一个 `file_store` 和一个绝对路径的 `file_store_path`：
 
 ```toml
 file_store="local"
-file_store_path="/absolute/path/to/opendevin/cache/directory"
+file_store_path="/absolute/path/to/openhands/cache/directory"
 ```
 
 * 在您的 .bashrc 中添加一个固定的 JWT 秘密，如下所示，以便以前的会话 ID 可以被接受。

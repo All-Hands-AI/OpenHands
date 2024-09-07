@@ -1,6 +1,6 @@
 import pytest
 
-from opendevin.runtime.utils.bash import split_bash_commands
+from openhands.runtime.utils.bash import split_bash_commands
 
 
 def test_split_commands_util():

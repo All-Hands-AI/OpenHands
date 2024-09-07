@@ -3,17 +3,17 @@ import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
-  title: "OpenDevin",
-  tagline: "An Open Platform for AI Software Developers as Generalist Agents",
-  favicon: "img/logo.png",
+  title: "OpenHands",
+  tagline: "Code Less, Make More",
+  favicon: "img/logo-square.png",
 
   // Set the production url of your site here
   url: "https://docs.all-hands.dev",
   baseUrl: "/",
 
   // GitHub pages deployment config.
-  organizationName: "OpenDevin",
-  projectName: "OpenDevin",
+  organizationName: "All-Hands-AI",
+  projectName: "OpenHands",
   trailingSlash: false,
 
   onBrokenLinks: "throw",
@@ -63,9 +63,9 @@ const config: Config = {
   themeConfig: {
     image: "img/docusaurus.png",
     navbar: {
-      title: "OpenDevin",
+      title: "OpenHands",
       logo: {
-        alt: "OpenDevin",
+        alt: "OpenHands",
         src: "img/logo.png",
       },
       items: [
@@ -73,22 +73,27 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "docsSidebar",
           position: "left",
-          label: "Docs",
+          label: "User Guides",
         },
         {
           type: "docSidebar",
           sidebarId: "apiSidebar",
           position: "left",
-          label: "Codebase",
-        },
-        {
-          href: "https://github.com/OpenDevin/OpenDevin",
-          label: "GitHub",
-          position: "right",
+          label: "Python API",
         },
         {
           type: 'localeDropdown',
           position: 'left',
+        },
+        {
+          href: "https://all-hands.dev",
+          label: "Company",
+          position: "right",
+        },
+        {
+          href: "https://github.com/All-Hands-AI/OpenHands",
+          label: "GitHub",
+          position: "right",
         },
       ],
     },

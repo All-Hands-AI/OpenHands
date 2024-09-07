@@ -4,11 +4,11 @@ sidebar_position: 5
 
 # ✅ Providing Feedback
 
-When using OpenDevin, you will undoubtably encounter cases where things work well, and others where they don't. We encourage you to provide feedback when you use OpenDevin to help give feedback to the development team, and perhaps more importantly, create an open corpus of coding agent training examples -- Share-OpenDevin!
+When using OpenHands, you will encounter cases where things work well, and others where they don't. We encourage you to provide feedback when you use OpenHands to help give feedback to the development team, and perhaps more importantly, create an open corpus of coding agent training examples -- Share-OpenHands!
 
 ## 📝 How to Provide Feedback
 
-Providing feedback is easy! When you are using OpenDevin, you can press the thumbs-up or thumbs-down button at any point during your interaction with. You will be prompted to provide your email address (e.g. so we can contact you if we want to ask any follow-up questions), and you can choose whether you want to provide feedback publicly or privately.
+Providing feedback is easy! When you are using OpenHands, you can press the thumbs-up or thumbs-down button at any point during your interaction. You will be prompted to provide your email address (e.g. so we can contact you if we want to ask any follow-up questions), and you can choose whether you want to provide feedback publicly or privately.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/5rFx-StMVV0?si=svo7xzp6LhGK_GXr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
@@ -18,12 +18,12 @@ Providing feedback is easy! When you are using OpenDevin, you can press the thum
 
 When you submit data, you can submit it either publicly or privately.
 
-* **Public** data will be distributed under the MIT License, like OpenDevin itself, and can be used by the community to train and test models. Obviously, feedback that you can make public will be more valuable for the community as a whole, so when you are not dealing with sensitive information, we would encourage you to choose this option!
-* **Private** data will only be shared with the OpenDevin team for the purpose of improving OpenDevin.
+* **Public** data will be distributed under the MIT License, like OpenHands itself, and can be used by the community to train and test models. Obviously, feedback that you can make public will be more valuable for the community as a whole, so when you are not dealing with sensitive information, we would encourage you to choose this option!
+* **Private** data will only be shared with the OpenHands team for the purpose of improving OpenHands.
 
 ### Who collects and stores the data?
 
-The data is collected and stored by [All Hands AI](https://all-hands.dev), a company founded by OpenDevin maintainers to support and improve OpenDevin.
+The data is collected and stored by [All Hands AI](https://all-hands.dev), a company founded by OpenHands maintainers to support and improve OpenHands.
 
 ### How will public data be released?
 
@@ -31,7 +31,7 @@ The public data will be released when we hit fixed milestones, such as 1,000 pub
 At this time, we will follow the following release process:
 
 1. All people who contributed public feedback will receive an email describing the data release and being given an opportunity to opt out.
-2. The person or people in charge of the data release will perform quality control of the data, removing low-quality feedback, removing email submitter email addresses, and attempting to remove any sensitive information such as API keys.
+2. The person or people in charge of the data release will perform quality control of the data, removing low-quality feedback, removing email submitter email addresses, and attempting to remove any sensitive information.
 3. The data will be released publicly under the MIT license through commonly used sites such as github or Hugging Face.
 
 ### What if I want my data deleted?

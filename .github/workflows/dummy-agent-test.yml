@@ -1,12 +1,8 @@
 # Workflow that uses the DummyAgent to run a simple task
 name: Run E2E test with dummy agent
 
-# Only run one workflow of the same group at a time.
-# There can be at most one running and one pending job in a concurrency group at any time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
+# Always run on "main"
+# Always run on PRs
 on:
   push:
     branches:
@@ -31,7 +27,7 @@ jobs:
       - name: Run tests
         run: |
           set -e
-          poetry run python opendevin/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
+          poetry run python openhands/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
       - name: Check exit code
         run: |
           if [ $? -ne 0 ]; then

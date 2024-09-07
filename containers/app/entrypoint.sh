@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-echo "Starting OpenDevin..."
+echo "Starting OpenHands..."
 if [[ $NO_SETUP == "true" ]]; then
   echo "Skipping setup, running as $(whoami)"
   "$@"
@@ -9,7 +9,7 @@ if [[ $NO_SETUP == "true" ]]; then
 fi
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "The OpenDevin entrypoint.sh must run as root"
+  echo "The OpenHands entrypoint.sh must run as root"
   exit 1
 fi
 
@@ -19,11 +19,11 @@ if [ -z "$SANDBOX_USER_ID" ]; then
 fi
 
 if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
-  echo "Running OpenDevin as root"
-  export RUN_AS_DEVIN=false
+  echo "Running OpenHands as root"
+  export RUN_AS_OPENHANDS=false
   mkdir -p /root/.cache/ms-playwright/
-  if [ -d "/home/opendevin/.cache/ms-playwright/" ]; then
-    mv /home/opendevin/.cache/ms-playwright/ /root/.cache/
+  if [ -d "/home/openhands/.cache/ms-playwright/" ]; then
+    mv /home/openhands/.cache/ms-playwright/ /root/.cache/
   fi
   "$@"
 else
@@ -32,9 +32,9 @@ else
     echo "User enduser already exists. Skipping creation."
   else
     if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
-      echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving opendevin user."
+      echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving openhands user."
       incremented_id=$(($SANDBOX_USER_ID + 1))
-      usermod -u $incremented_id opendevin
+      usermod -u $incremented_id openhands
       if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
         echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
         exit 1
@@ -42,7 +42,7 @@ else
     fi
   fi
   usermod -aG app enduser
-  # get the user group of /var/run/docker.sock and set opendevin to that group
+  # get the user group of /var/run/docker.sock and set openhands to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
   echo "Docker socket group id: $DOCKER_SOCKET_GID"
   if getent group $DOCKER_SOCKET_GID; then
@@ -54,11 +54,11 @@ else
 
   mkdir -p /home/enduser/.cache/huggingface/hub/
   mkdir -p /home/enduser/.cache/ms-playwright/
-  if [ -d "/home/opendevin/.cache/ms-playwright/" ]; then
-    mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
+  if [ -d "/home/openhands/.cache/ms-playwright/" ]; then
+    mv /home/openhands/.cache/ms-playwright/ /home/enduser/.cache/
   fi
 
   usermod -aG $DOCKER_SOCKET_GID enduser
   echo "Running as enduser"
-  su enduser /bin/bash -c "$*"
+  su enduser /bin/bash -c "${*@Q}" # This magically runs any arguments passed to the script as a command
 fi

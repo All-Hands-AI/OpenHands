@@ -1,19 +1,11 @@
 #!/bin/bash
 
-# set -e
-
-# assert user name is `root`
-if [ "$USER" != "root" ]; then
-    echo "Error: This script is intended to be run by the 'root' user only." >&2
-    exit 1
-fi
-
 source ~/.bashrc
 
 SWEUTIL_DIR=/swe_util
 
 # Create logs directory
-LOG_DIR=/opendevin/logs
+LOG_DIR=/openhands/logs
 mkdir -p $LOG_DIR && chmod 777 $LOG_DIR
 
 # FIXME: Cannot read SWE_INSTANCE_ID from the environment variable
@@ -35,7 +27,7 @@ WORKSPACE_NAME=$(echo "$item" | jq -r '.repo + "__" + .version | gsub("/"; "__")
 
 echo "WORKSPACE_NAME: $WORKSPACE_NAME"
 
-SWE_TASK_DIR=/opendevin/swe_tasks
+SWE_TASK_DIR=/openhands/swe_tasks
 mkdir -p $SWE_TASK_DIR
 # Dump test_patch to /workspace/test.patch
 echo "$item" | jq -r '.test_patch' > $SWE_TASK_DIR/test.patch

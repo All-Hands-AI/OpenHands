@@ -21,18 +21,18 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 
 def codeact_user_response(state: State) -> str:
@@ -71,11 +71,11 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='python:3.11-bookworm',
+            base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
         ),
@@ -242,7 +242,7 @@ def load_bird():
     return bird_dataset
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -261,14 +261,14 @@ async def initialize_runtime(
         instance.db_id,
         f'{instance.db_id}.sqlite',
     )
-    await runtime.copy_to(db_file, '/workspace')
+    runtime.copy_to(db_file, '/workspace')
 
     # Check the database is copied
     action = CmdRunAction(
         command='cd /workspace && ls -l',
         keep_prompt=False,
     )
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
     assert f'{instance.db_id}.sqlite' in obs.content
@@ -276,7 +276,7 @@ async def initialize_runtime(
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def complete_runtime(
+def complete_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required, but it is used to get the workspace_dir_name
 ) -> dict[str, Any]:
@@ -300,7 +300,7 @@ async def complete_runtime(
         command=f'cat {path}',
         keep_prompt=False,
     )
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     if obs.exit_code != 0:
@@ -350,7 +350,7 @@ async def complete_runtime(
     return test_result
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -402,19 +402,23 @@ async def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
-    runtime = await create_runtime(config, sid=instance_id)
-    await initialize_runtime(runtime, instance)
+    runtime = create_runtime(config, sid=instance_id)
+    initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
-        runtime=runtime,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
+            runtime=runtime,
+        )
     )
 
     # ======= Attempt to evaluate the agent's edits =======
-    test_result = await complete_runtime(runtime, instance)
+    test_result = complete_runtime(runtime, instance)
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
@@ -463,8 +467,6 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

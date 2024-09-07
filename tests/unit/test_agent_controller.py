@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from opendevin.controller.agent import Agent
-from opendevin.controller.agent_controller import AgentController
-from opendevin.controller.state.state import TrafficControlState
-from opendevin.core.exceptions import LLMMalformedActionError
-from opendevin.core.schema import AgentState
-from opendevin.events import EventStream
-from opendevin.events.action import ChangeAgentStateAction, MessageAction
+from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
+from openhands.controller.state.state import TrafficControlState
+from openhands.core.exceptions import LLMMalformedActionError
+from openhands.core.schema import AgentState
+from openhands.events import EventStream
+from openhands.events.action import ChangeAgentStateAction, MessageAction
 
 
 @pytest.fixture
@@ -49,6 +49,7 @@ async def test_set_agent_state(mock_agent, mock_event_stream):
 
     await controller.set_agent_state_to(AgentState.PAUSED)
     assert controller.get_agent_state() == AgentState.PAUSED
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -65,6 +66,7 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
     message_action = MessageAction(content='Test message')
     await controller.on_event(message_action)
     assert controller.get_agent_state() == AgentState.RUNNING
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -81,6 +83,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
     change_state_action = ChangeAgentStateAction(agent_state=AgentState.PAUSED)
     await controller.on_event(change_state_action)
     assert controller.get_agent_state() == AgentState.PAUSED
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -97,6 +100,7 @@ async def test_report_error(mock_agent, mock_event_stream):
     await controller.report_error(error_message)
     assert controller.state.last_error == error_message
     controller.event_stream.add_event.assert_called_once()
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -116,6 +120,7 @@ async def test_step_with_exception(mock_agent, mock_event_stream):
 
     # Verify that report_error was called with the correct error message
     controller.report_error.assert_called_once_with('Malformed action')
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -134,6 +139,7 @@ async def test_step_max_iterations(mock_agent, mock_event_stream):
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.PAUSED
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -153,6 +159,7 @@ async def test_step_max_iterations_headless(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -172,6 +179,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.PAUSED
+    await controller.close()
 
 
 @pytest.mark.asyncio
@@ -192,3 +200,4 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
+    await controller.close()

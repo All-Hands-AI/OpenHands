@@ -1,8 +1,8 @@
 import ast
 
-from opendevin.controller.action_parser import ActionParser, ResponseParser
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action import (
+from openhands.controller.action_parser import ActionParser, ResponseParser
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
 )
@@ -24,9 +24,9 @@ class BrowsingResponseParser(ResponseParser):
         if action_str is None:
             return ''
         action_str = action_str.strip()
-        if not action_str.endswith('```'):
+        if action_str and not action_str.endswith('```'):
             action_str = action_str + ')```'
-        logger.info(action_str)
+        logger.debug(action_str)
         return action_str
 
     def parse_action(self, action_str: str) -> Action:

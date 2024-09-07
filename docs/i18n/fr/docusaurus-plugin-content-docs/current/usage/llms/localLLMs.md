@@ -24,11 +24,11 @@ mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
 starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ```
 
-## Démarrer OpenDevin
+## Démarrer OpenHands
 
 ### Docker
 
-Utilisez les instructions [ici](../intro) pour démarrer OpenDevin en utilisant Docker.
+Utilisez les instructions [ici](../intro) pour démarrer OpenHands en utilisant Docker.
 Mais lors de l'exécution de `docker run`, vous devrez ajouter quelques arguments supplémentaires :
 
 ```bash
@@ -40,7 +40,7 @@ Mais lors de l'exécution de `docker run`, vous devrez ajouter quelques argument
 Par exemple :
 
 ```bash
-# Le répertoire que vous souhaitez qu'OpenDevin modifie. DOIT être un chemin absolu !
+# Le répertoire que vous souhaitez qu'OpenHands modifie. DOIT être un chemin absolu !
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
@@ -54,14 +54,14 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
 
 ### Compiler à partir des sources
 
-Utilisez les instructions dans [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) pour compiler OpenDevin.
+Utilisez les instructions dans [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) pour compiler OpenHands.
 Assurez-vous que `config.toml` soit présent en exécutant `make setup-config` qui en créera un pour vous. Dans `config.toml`, saisissez les éléments suivants :
 
 ```
@@ -75,11 +75,11 @@ WORKSPACE_DIR="$(pwd)/workspace"
 
 Remplacez `LLM_MODEL` par celui de votre choix si nécessaire.
 
-Fini ! Vous pouvez maintenant démarrer Devin avec : `make run` sans Docker. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
+Fini ! Vous pouvez maintenant démarrer OpenHands avec : `make run` sans Docker. Vous devriez maintenant pouvoir vous connecter à `http://localhost:3000/`
 
 ## Sélection de votre modèle
 
-Dans l'interface OpenDevin, cliquez sur l'icône des paramètres en bas à gauche.
+Dans l'interface OpenHands, cliquez sur l'icône des paramètres en bas à gauche.
 Ensuite, dans l'entrée `Model`, saisissez `ollama/codellama:7b`, ou le nom du modèle que vous avez téléchargé précédemment.
 S'il n'apparaît pas dans un menu déroulant, ce n'est pas grave, tapez-le simplement. Cliquez sur Enregistrer lorsque vous avez terminé.
 
@@ -87,7 +87,7 @@ Et maintenant, vous êtes prêt à démarrer !
 
 ## Configuration du service ollama (WSL){#configuring-ollama-service-fr}
 
-La configuration par défaut pour ollama sous WSL ne sert que localhost. Cela signifie que vous ne pouvez pas l'atteindre depuis un conteneur docker, par exemple, il ne fonctionnera pas avec OpenDevin. Testons d'abord que ollama est en cours d'exécution correctement.
+La configuration par défaut pour ollama sous WSL ne sert que localhost. Cela signifie que vous ne pouvez pas l'atteindre depuis un conteneur docker, par exemple, il ne fonctionnera pas avec OpenHands. Testons d'abord que ollama est en cours d'exécution correctement.
 
 ```bash
 ollama list # obtenir la liste des modèles installés
@@ -99,7 +99,7 @@ curl http://localhost:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 Une fois cela fait, testez qu'il accepte les requêtes "externes", comme celles provenant d'un conteneur docker.
 
 ```bash
-docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test le plus précis choisissez le conteneur de sandbox open devin.
+docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test le plus précis choisissez le conteneur de sandbox OpenHands.
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 #ex. docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
 ```
@@ -136,6 +136,6 @@ Enfin, testez que ollama est accessible depuis le conteneur
 
 ```bash
 ollama list # obtenir la liste des modèles installés
-docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test le plus précis choisissez le conteneur de sandbox open devin.
+docker ps # obtenir la liste des conteneurs docker en cours d'exécution, pour un test le plus précis choisissez le conteneur de sandbox OpenHands.
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 ```

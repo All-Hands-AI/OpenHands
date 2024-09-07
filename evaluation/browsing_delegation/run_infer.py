@@ -14,15 +14,15 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
 
 # Only CodeActAgent can delegate to BrowsingAgent
 SUPPORTED_AGENT_CLS = {'CodeActAgent'}
@@ -36,11 +36,11 @@ def get_config(
     ), 'max_iterations must be 1 for browsing delegation evaluation.'
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='python:3.11-bookworm',
+            base_container_image='python:3.11-bookworm',
             enable_auto_lint=False,
             use_host_network=False,
         ),
@@ -51,7 +51,7 @@ def get_config(
     return config
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -71,12 +71,14 @@ async def process_instance(
         f'NOTE: You should copy the "query" as is into the <execute_browse> tag. DO NOT change ANYTHING in the query.'
     )
 
-    runtime = await create_runtime(config, sid=instance.instance_id)
+    runtime = create_runtime(config, sid=instance.instance_id)
 
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+        )
     )
 
     if state is None:
@@ -131,7 +133,7 @@ async def process_instance(
 if __name__ == '__main__':
     args = parse_arguments()
 
-    dataset = load_dataset('OpenDevin/eval-browsing-instructions')
+    dataset = load_dataset('OpenHands/eval-browsing-instructions')
     dataset = dataset['train'].to_pandas()
     assert dataset.columns.tolist() == ['instance_id', 'instruction']
 
@@ -158,12 +160,10 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
-    asyncio.run(
-        run_evaluation(
-            instances,
-            metadata,
-            output_file,
-            args.eval_num_workers,
-            process_instance,
-        )
+    run_evaluation(
+        instances,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
     )

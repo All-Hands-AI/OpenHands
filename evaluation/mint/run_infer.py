@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import os
 from typing import Any
@@ -17,20 +18,20 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
     CmdRunAction,
 )
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):
@@ -97,14 +98,14 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='xingyaoww/od-eval-mint:v1.0',
+            base_container_image='xingyaoww/od-eval-mint:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
-            od_runtime_extra_deps=f'$OD_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}',
+            runtime_extra_deps=f'$OD_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}',
         ),
         # do not mount workspace
         workspace_base=None,
@@ -114,7 +115,7 @@ def get_config(
     return config
 
 
-async def initialize_runtime(runtime: Runtime):
+def initialize_runtime(runtime: Runtime):
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -125,18 +126,18 @@ async def initialize_runtime(runtime: Runtime):
     # Set instance id
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-async def process_instance(
+def process_instance(
     instance: Any,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -173,14 +174,16 @@ async def process_instance(
         },
     )
 
-    runtime = await create_runtime(config, sid=instance.instance_id)
-    await initialize_runtime(runtime)
+    runtime = create_runtime(config, sid=instance.instance_id)
+    initialize_runtime(runtime)
 
-    state: State | None = await run_controller(
-        config=config,
-        task_str=instruction,
-        runtime=runtime,
-        fake_user_response_fn=fake_user_response_fn,
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            task_str=instruction,
+            runtime=runtime,
+            fake_user_response_fn=fake_user_response_fn,
+        )
     )
 
     if state is None:
@@ -243,7 +246,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to OpenDevin's repo
+    # so we don't need to manage file uploading to OpenHands's repo
     if args.subset == 'all':
         subsets = SUBSETS
     else:

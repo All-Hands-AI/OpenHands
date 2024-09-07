@@ -3,12 +3,25 @@ set -eo pipefail
 
 image_name=$1
 org_name=$2
-platform=$3
+push=0
+if [[ $3 == "--push" ]]; then
+  push=1
+fi
+tag_suffix=$4
 
-echo "Building: $image_name for platform: $platform"
+echo "Building: $image_name"
 tags=()
 
-OPEN_DEVIN_BUILD_VERSION="dev"
+OPENHANDS_BUILD_VERSION="dev"
+
+cache_tag_base="buildcache"
+cache_tag="$cache_tag_base"
+
+if [[ -n $GITHUB_SHA ]]; then
+  git_hash=$(git rev-parse --short "$GITHUB_SHA")
+  tags+=("$git_hash")
+  tags+=("$GITHUB_SHA")
+fi
 
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
@@ -18,22 +31,31 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     tags+=("$major_version" "$minor_version")
     tags+=("latest")
   fi
-  sanitized=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
-  OPEN_DEVIN_BUILD_VERSION=$sanitized
-  tag=$(echo "$sanitized" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
-  tags+=("$tag")
+  sanitized_ref_name=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
+  OPENHANDS_BUILD_VERSION=$sanitized_ref_name
+  sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
+  tags+=("$sanitized_ref_name")
+  cache_tag+="-${sanitized_ref_name}"
 fi
+
+if [[ -n $tag_suffix ]]; then
+  cache_tag+="-${tag_suffix}"
+  for i in "${!tags[@]}"; do
+    tags[$i]="${tags[$i]}-$tag_suffix"
+  done
+fi
+
 echo "Tags: ${tags[@]}"
 
-if [[ "$image_name" == "opendevin" ]]; then
+if [[ "$image_name" == "openhands" ]]; then
   dir="./containers/app"
-elif [[ "$image_name" == "od_runtime" ]]; then
+elif [[ "$image_name" == "runtime" ]]; then
   dir="./containers/runtime"
 else
   dir="./containers/$image_name"
 fi
 
-if [[ (! -f "$dir/Dockerfile") && "$image_name" != "od_runtime" ]]; then
+if [[ (! -f "$dir/Dockerfile") && "$image_name" != "runtime" ]]; then
   # Allow runtime to be built without a Dockerfile
   echo "No Dockerfile found"
   exit 1
@@ -49,15 +71,14 @@ if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
 
-# If $DOCKER_IMAGE_TAG is set, add it to the tags
-if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
-  tags+=("$DOCKER_IMAGE_TAG")
-fi
 # If $DOCKER_IMAGE_HASH_TAG is set, add it to the tags
 if [[ -n "$DOCKER_IMAGE_HASH_TAG" ]]; then
   tags+=("$DOCKER_IMAGE_HASH_TAG")
 fi
-
+# If $DOCKER_IMAGE_TAG is set, add it to the tags
+if [[ -n "$DOCKER_IMAGE_TAG" ]]; then
+  tags+=("$DOCKER_IMAGE_TAG")
+fi
 
 DOCKER_REPOSITORY="$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE"
 DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase
@@ -69,15 +90,19 @@ for tag in "${tags[@]}"; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
 done
 
-output_image="/tmp/${image_name}_image_${platform}.tar"
+if [[ $push -eq 1 ]]; then
+  args+=" --push"
+  args+=" --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max"
+fi
+
+echo "Args: $args"
 
 docker buildx build \
   $args \
-  --build-arg OPEN_DEVIN_BUILD_VERSION="$OPEN_DEVIN_BUILD_VERSION" \
-  --platform linux/$platform \
+  --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag_base-main \
+  --platform linux/amd64,linux/arm64 \
   --provenance=false \
   -f "$dir/Dockerfile" \
-  --output type=docker,dest="$output_image" \
   "$DOCKER_BASE_DIR"
-
-echo "${tags[*]}" > tags.txt

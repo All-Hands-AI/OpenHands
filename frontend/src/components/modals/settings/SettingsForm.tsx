@@ -6,6 +6,8 @@ import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
+import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import { ModelSelector } from "./ModelSelector";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -15,6 +17,8 @@ interface SettingsFormProps {
   disabled: boolean;
 
   onModelChange: (model: string) => void;
+  onCustomModelChange: (model: string) => void;
+  onModelTypeChange: (type: "custom" | "default") => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
@@ -29,6 +33,8 @@ function SettingsForm({
   securityAnalyzers,
   disabled,
   onModelChange,
+  onCustomModelChange,
+  onModelTypeChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
@@ -38,20 +44,46 @@ function SettingsForm({
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
   const [isAgentSelectEnabled, setIsAgentSelectEnabled] = React.useState(false);
+  const [usingCustomModel, setUsingCustomModel] = React.useState(
+    settings.USING_CUSTOM_MODEL,
+  );
+
+  const changeModelType = (type: "custom" | "default") => {
+    if (type === "custom") {
+      setUsingCustomModel(true);
+      onModelTypeChange("custom");
+    } else {
+      setUsingCustomModel(false);
+      onModelTypeChange("default");
+    }
+  };
 
   return (
     <>
-      <AutocompleteCombobox
-        ariaLabel="model"
-        items={models.map((model) => ({ value: model, label: model }))}
-        defaultKey={settings.LLM_MODEL}
-        onChange={(e) => {
-          onModelChange(e);
-        }}
-        tooltip={t(I18nKey.SETTINGS$MODEL_TOOLTIP)}
-        allowCustomValue // user can type in a custom LLM model that is not in the list
-        disabled={disabled}
-      />
+      <Switch
+        data-testid="custom-model-toggle"
+        aria-checked={usingCustomModel}
+        isSelected={usingCustomModel}
+        onValueChange={(value) => changeModelType(value ? "custom" : "default")}
+      >
+        Use custom model
+      </Switch>
+      {usingCustomModel && (
+        <Input
+          data-testid="custom-model-input"
+          label="Custom Model"
+          onValueChange={onCustomModelChange}
+          defaultValue={settings.CUSTOM_LLM_MODEL}
+        />
+      )}
+      {!usingCustomModel && (
+        <ModelSelector
+          isDisabled={disabled}
+          models={organizeModelsAndProviders(models)}
+          onModelChange={onModelChange}
+          defaultModel={settings.LLM_MODEL}
+        />
+      )}
       <Input
         label="API Key"
         isDisabled={disabled}
