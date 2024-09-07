@@ -626,8 +626,6 @@ async def test_bash_timeout(box_class):
             obs = await runtime.run_action(action)
             end_time = time.time()
             elapsed_time = end_time - start_time
-
-            assert elapsed_time <= time_limit, f"the command '{command}' to take less 10 seconds"
             assert (
                 elapsed_time <= time_limit
             ), f"the command '{command}' to take less 10 seconds"
