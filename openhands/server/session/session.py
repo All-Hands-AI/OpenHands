@@ -1,5 +1,7 @@
 import asyncio
+import threading
 import time
+from queue import Queue
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -20,7 +22,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.server.session.agent import AgentSession
+from openhands.server.session.agentsession import AgentSession
 from openhands.storage.files import FileStore
 
 DEL_DELT_SEC = 60 * 60 * 5
@@ -32,6 +34,8 @@ class Session:
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
+    status_message_queue: Queue[str | None]
+    status_message_thread: threading.Thread
 
     def __init__(
         self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
@@ -45,8 +49,16 @@ class Session:
         )
         self.config = config
 
+        self.status_message_queue = Queue()
+        self.status_message_thread = threading.Thread(
+            target=self._run_status_message_loop, daemon=True
+        )
+        self.status_message_thread.start()
+
     async def close(self):
         self.is_alive = False
+        self.status_message_queue.put(None)  # Signal to stop the status message loop
+        self.status_message_thread.join(timeout=5)
         await self.agent_session.close()
 
     async def loop_recv(self):
@@ -114,6 +126,7 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
+                status_message_callback=self.queue_status_message,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -126,17 +139,19 @@ class Session:
         )
 
     async def on_event(self, event: Event):
-        """Callback function for agent events.
+        """Callback function for events that mainly come from the agent.
+        Event is the base class for any agent action and observation.
 
         Args:
             event: The agent event (Observation or Action).
         """
+        logger.debug(f'Server event: {event}')
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
-            logger.info('Server event')
+            logger.info('Server event from agent')
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER and isinstance(
             event, CmdOutputObservation
@@ -146,6 +161,7 @@ class Session:
     async def dispatch(self, data: dict):
         action = data.get('action', '')
         if action == ActionType.INIT:
+            logger.debug('Received INIT, initializing agent')
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
@@ -167,7 +183,9 @@ class Session:
 
     async def send(self, data: dict[str, object]) -> bool:
         try:
+            logger.debug(f'session.send called with data:\n{data}')
             if self.websocket is None or not self.is_alive:
+                logger.debug('session.send: websocket is NOT alive yet!')
                 return False
             await self.websocket.send_json(data)
             await asyncio.sleep(0.001)  # This flushes the data to the client
@@ -196,3 +214,23 @@ class Session:
             return False
         self.is_alive = data.get('is_alive', False)
         return True
+
+    def queue_status_message(self, message: str):
+        """Queues a status message to be sent asynchronously."""
+        self.status_message_queue.put(message)
+
+    def _run_status_message_loop(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self._process_status_messages())
+
+    async def _process_status_messages(self):
+        while True:
+            message = await asyncio.get_event_loop().run_in_executor(
+                None, self.status_message_queue.get
+            )
+            if message is None:  # Stop signal
+                break
+            # commented out as it currently breaks browser (blank screen)
+            logger.info(f'send_message:\n{message}\n')
+            # await self.send_message(message)

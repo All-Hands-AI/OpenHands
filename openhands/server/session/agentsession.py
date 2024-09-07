@@ -1,3 +1,5 @@
+from typing import Callable, Optional
+
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -40,18 +42,15 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        status_message_callback: Optional[Callable] = None,
     ):
-        """Starts the agent session.
-
-        Args:
-            start_event: The start event data (optional).
-        """
+        """Starts the agent session."""
         if self.controller or self.runtime:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
         await self._create_security_analyzer(config.security.security_analyzer)
-        await self._create_runtime(runtime_name, config, agent)
+        await self._create_runtime(runtime_name, config, agent, status_message_callback)
         await self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -76,16 +75,22 @@ class AgentSession:
 
     async def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
-        logger.info(f'Using security analyzer: {security_analyzer}')
+        logger.debug(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
+    async def _create_runtime(
+        self,
+        runtime_name: str,
+        config: AppConfig,
+        agent: Agent,
+        status_message_callback: Optional[Callable] = None,
+    ):
         """Creates a runtime instance."""
         if self.runtime is not None:
-            raise Exception('Runtime already created')
+            raise RuntimeError('Runtime already created')
 
         logger.info(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
@@ -94,6 +99,7 @@ class AgentSession:
             event_stream=self.event_stream,
             sid=self.sid,
             plugins=agent.sandbox_plugins,
+            status_message_callback=status_message_callback,
         )
 
     async def _create_controller(
@@ -113,7 +119,7 @@ class AgentSession:
                 'Runtime must be initialized before the agent controller'
             )
 
-        logger.info(f'Agents: {agent_configs}')
+        logger.debug(f'Agents: {agent_configs}')
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
 
         self.controller = AgentController(
@@ -136,5 +142,5 @@ class AgentSession:
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            logger.info(f'Error restoring state: {e}')
+            logger.info(f'State could not be restored: {e}')
         logger.info('Agent controller initialized.')

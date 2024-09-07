@@ -3,6 +3,7 @@ import tempfile
 import threading
 import time
 import uuid
+from typing import Callable, Optional
 from zipfile import ZipFile
 
 import docker
@@ -107,6 +108,7 @@ class EventStreamRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Optional[Callable] = None,
     ):
         self.config = config
         self._port = find_available_tcp_port()
@@ -120,7 +122,6 @@ class EventStreamRuntime(Runtime):
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = self.container_name_prefix + self.instance_id
-
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
@@ -136,11 +137,19 @@ class EventStreamRuntime(Runtime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
+        self.event_stream = event_stream
+
+        self.status_message_callback = status_message_callback
+        self.send_status_message('Startup docker operations')
+
         if self.runtime_container_image is None:
             if self.base_container_image is None:
                 raise ValueError(
                     'Neither runtime container image nor base container image is set'
                 )
+            msg = f'Processing runtime image: {self.base_container_image}'
+            logger.info(msg)
+            self.send_status_message(msg)
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
@@ -152,12 +161,19 @@ class EventStreamRuntime(Runtime):
             plugins=plugins,
         )
         # will initialize both the event stream and the env vars
-        super().__init__(config, event_stream, sid, plugins, env_vars)
+        super().__init__(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         logger.info(f'Container initialized with env vars: {env_vars}')
+
+    def send_status_message(self, message: str):
+        """Sends a status message if the callback function was provided."""
+        if self.status_message_callback:
+            self.status_message_callback(message)
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -180,9 +196,9 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
-            logger.info(
-                f'Starting container with image: {self.runtime_container_image} and name: {self.container_name}'
-            )
+            msg = f'Starting container with image: {self.runtime_container_image} and name: {self.container_name}'
+            logger.info(msg)
+            self.send_status_message(msg)
             plugin_arg = ''
             if plugins is not None and len(plugins) > 0:
                 plugin_arg = (
@@ -235,7 +251,9 @@ class EventStreamRuntime(Runtime):
                 volumes=volumes,
             )
             self.log_buffer = LogBuffer(container)
-            logger.info(f'Container started. Server url: {self.api_url}')
+            msg = f'Container started. Server url: {self.api_url}'
+            logger.info(msg)
+            self.send_status_message(msg)
             return container
         except Exception as e:
             logger.error('Failed to start container')

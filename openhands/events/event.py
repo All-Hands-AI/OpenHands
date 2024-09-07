@@ -6,6 +6,7 @@ from enum import Enum
 class EventSource(str, Enum):
     AGENT = 'agent'
     USER = 'user'
+    BACKEND = 'backend'
 
 
 @dataclass

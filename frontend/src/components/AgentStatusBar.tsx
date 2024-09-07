@@ -18,6 +18,7 @@ enum IndicatorColor {
 function AgentStatusBar() {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
   const AgentStatusMap: {
     [k: string]: { message: string; indicator: IndicatorColor };
@@ -98,6 +99,12 @@ function AgentStatusBar() {
       <span className="text-sm text-stone-400">
         {AgentStatusMap[curAgentState].message}
       </span>
+      {curStatusMessage && (
+        <span className="text-sm text-stone-400 ml-2">
+          <br />
+          {curStatusMessage}
+        </span>
+      )}
     </div>
   );
 }

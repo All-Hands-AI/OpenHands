@@ -49,3 +49,7 @@ class AgentState(str, Enum):
     USER_REJECTED = 'user_rejected'
     """The user rejected the agent's action.
     """
+
+    CLIENT_READY = 'client_ready'
+    """The client is ready to receive instructions.
+    """

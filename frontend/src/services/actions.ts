@@ -6,10 +6,11 @@ import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
 } from "#/state/securityAnalyzerSlice";
+import { setCurStatusMessage } from "#/state/statusSlice";
 import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
-import { ActionMessage } from "#/types/Message";
+import { ActionMessage, StatusMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
 import { getRootTask } from "./taskService";
@@ -134,6 +135,13 @@ export function handleActionMessage(message: ActionMessage) {
   }
 }
 
+export function handleStatusMessage(message: StatusMessage) {
+  // TODO this should be improved: add status message a "info" bubble to chat window,
+  // without adding to the history, before the LLM does a completion.
+  // e.g. "Running a python command..."
+  store.dispatch(setCurStatusMessage(message));
+}
+
 export function handleAssistantMessage(data: string | SocketMessage) {
   let socketMessage: SocketMessage;
 
@@ -145,7 +153,9 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else {
+  } else if ("observation" in socketMessage) {
     handleObservationMessage(socketMessage);
+  } else if ("message" in socketMessage) {
+    handleStatusMessage(socketMessage);
   }
 }

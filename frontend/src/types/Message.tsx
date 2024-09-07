@@ -25,3 +25,12 @@ export interface ObservationMessage {
   // A friendly message that can be put in the chat log
   message: string;
 }
+
+export interface StatusMessage {
+  // TODO not implemented yet
+  // Whether the status is an error, default is false
+  is_error: boolean;
+
+  // A status message to display to the user
+  message: string;
+}

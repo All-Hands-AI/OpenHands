@@ -13,6 +13,7 @@ class SessionManager:
     _sessions: dict[str, Session] = {}
     cleanup_interval: int = 300
     session_timeout: int = 600
+    latest_session_id: str = ''
 
     def __init__(self, config: AppConfig, file_store: FileStore):
         asyncio.create_task(self._cleanup_sessions())
@@ -25,7 +26,14 @@ class SessionManager:
         self._sessions[sid] = Session(
             sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config
         )
+        self.latest_session_id = sid
         return self._sessions[sid]
+
+    def get_latest_id(self):
+        return self.latest_session_id
+
+    def get_latest_session(self) -> Session | None:
+        return self.get_session(self.latest_session_id)
 
     def get_session(self, sid: str) -> Session | None:
         if sid not in self._sessions:
@@ -34,9 +42,11 @@ class SessionManager:
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
-        if sid not in self._sessions:
+        session = self.get_session(sid)
+        if session is None:
+            logger.error(f'*** No session found for {sid}, skipping message ***')
             return False
-        return await self._sessions[sid].send(data)
+        return await session.send(data)
 
     async def send_error(self, sid: str, message: str) -> bool:
         """Sends an error message to the client."""

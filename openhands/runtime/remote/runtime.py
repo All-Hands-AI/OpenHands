@@ -3,7 +3,7 @@ import ssl
 import tempfile
 import threading
 import uuid
-from typing import Any, Type
+from typing import Any, Callable, Optional, Type
 from zipfile import ZipFile
 
 import requests
@@ -59,6 +59,7 @@ class RemoteRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Optional[Callable] = None,
     ):
         self.config = config
         if self.config.sandbox.api_hostname == 'localhost':
@@ -171,7 +172,9 @@ class RemoteRuntime(Runtime):
         )
 
         # Initialize the eventstream and env vars
-        super().__init__(config, event_stream, sid, plugins, env_vars)
+        super().__init__(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
 
         logger.info(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.plugins]}'
