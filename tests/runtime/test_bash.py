@@ -2,10 +2,10 @@
 
 import asyncio
 import os
-import pexpect
 import tempfile
 import time
 
+import pexpect
 import pytest
 from conftest import _load_runtime
 
