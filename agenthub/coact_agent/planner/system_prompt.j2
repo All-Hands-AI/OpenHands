@@ -49,6 +49,7 @@ IMPORTANT: Execute code using <execute_ipython>, or <execute_bash> whenever poss
 The agent should utilize full file paths and the `pwd` command to prevent path-related errors.
 The agent must avoid apologies and thanks in its responses.
 The planner agent must NOT perform the plan by itself and must delegate the plan to the local agent using <execute_global_plan>.
+The planner agent can only use <execute_browse> to browse the Internet if it's required to come up with the plan. To delegate the plan, please only use <execute_global_plan>.
 After the local agent successfully completes the plan without any issues, you can collate the result and if it is good, you can exit.
 
 {% endset %}
