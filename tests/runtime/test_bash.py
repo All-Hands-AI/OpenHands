@@ -636,7 +636,7 @@ async def test_bash_timeout(box_class):
             elapsed_time = end_time - start_time
             assert (
                 elapsed_time >= time_limit
-            ), f"Expected a timeout after at least 10 seconds for '{command}', but it occurred
+            ), f"Expected a timeout after at least 10 seconds for '{command}', but it occurred after {elapsed_time:.2f} seconds"
             partial_output = runtime.shell.before
             logger.warning(
                 f"Command '{command}' timed out as expected, partial output: {partial_output}",
