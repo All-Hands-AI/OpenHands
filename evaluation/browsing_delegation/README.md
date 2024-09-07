@@ -1,6 +1,6 @@
 # Browsing Delegation Evalution
 
-Some of OpenDevin's agent supports agent delegation action, for example, CodeActAgent can delegate browsing tasks to BrowsingAgent.
+Some of OpenHands's agent supports agent delegation action, for example, CodeActAgent can delegate browsing tasks to BrowsingAgent.
 
 This evaluation tests whether CodeActAgent can correctly delegate the instruction from WebArena and MiniWob benchmark to the BrowsingAgent.
 If so, the browsing performance upper-bound of CodeActAgent will be the performance of BrowsingAgent.
@@ -21,7 +21,7 @@ where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
 `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
 
-`git-version`, e.g. `HEAD`, is the git commit hash of the OpenDevin version you would
+`git-version`, e.g. `HEAD`, is the git commit hash of the OpenHands version you would
 like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting

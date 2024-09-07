@@ -7,17 +7,17 @@ import pytest
 import toml
 from pytest import TempPathFactory
 
-from opendevin.runtime.utils.runtime_build import (
-    RUNTIME_IMAGE_REPO,
+from openhands.runtime.utils.runtime_build import (
     _generate_dockerfile,
     _get_package_version,
     _put_source_code_to_dir,
     build_runtime_image,
+    get_runtime_image_repo,
     get_runtime_image_repo_and_tag,
     prep_docker_build_folder,
 )
 
-OD_VERSION = f'od_v{_get_package_version()}'
+OH_VERSION = f'oh_v{_get_package_version()}'
 
 
 @pytest.fixture
@@ -34,24 +34,25 @@ def _check_source_code_in_dir(temp_dir):
     # check the source file is the same as the current code base
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
-    # The source code should only include the `opendevin` folder, but not the other folders
+    # The source code should only include the `openhands` folder, but not the other folders
     assert set(os.listdir(code_dir)) == {
-        'opendevin',
+        'agenthub',
+        'openhands',
         'pyproject.toml',
         'poetry.lock',
         'LICENSE',
         'README.md',
         'PKG-INFO',
     }
-    assert os.path.exists(os.path.join(code_dir, 'opendevin'))
-    assert os.path.isdir(os.path.join(code_dir, 'opendevin'))
+    assert os.path.exists(os.path.join(code_dir, 'openhands'))
+    assert os.path.isdir(os.path.join(code_dir, 'openhands'))
 
     # make sure the version from the pyproject.toml is the same as the current version
     with open(os.path.join(code_dir, 'pyproject.toml'), 'r') as f:
         pyproject = toml.load(f)
 
     _pyproject_version = pyproject['tool']['poetry']['version']
-    assert _pyproject_version == version('opendevin')
+    assert _pyproject_version == version('openhands-ai')
 
 
 def test_put_source_code_to_dir(temp_dir):
@@ -136,14 +137,14 @@ def test_generate_dockerfile_scratch():
     assert 'apt-get update' in dockerfile_content
     assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
     assert (
-        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
+        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
         in dockerfile_content
     )
 
     # Check the update command
-    assert 'COPY ./code /opendevin/code' in dockerfile_content
+    assert 'COPY ./code /openhands/code' in dockerfile_content
     assert (
-        '/opendevin/miniforge3/bin/mamba run -n base poetry install'
+        '/openhands/miniforge3/bin/mamba run -n base poetry install'
         in dockerfile_content
     )
 
@@ -158,14 +159,14 @@ def test_generate_dockerfile_skip_init():
     # These commands SHOULD NOT include in the dockerfile if skip_init is True
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
     assert (
-        'RUN /opendevin/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
+        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
         not in dockerfile_content
     )
 
     # These update commands SHOULD still in the dockerfile
-    assert 'COPY ./code /opendevin/code' in dockerfile_content
+    assert 'COPY ./code /openhands/code' in dockerfile_content
     assert (
-        '/opendevin/miniforge3/bin/mamba run -n base poetry install'
+        '/openhands/miniforge3/bin/mamba run -n base poetry install'
         in dockerfile_content
     )
 
@@ -174,23 +175,23 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     base_image = 'debian:11'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_debian_tag_11'
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag == f'{OH_VERSION}_image_debian_tag_11'
     )
 
     base_image = 'nikolaik/python-nodejs:python3.11-nodejs22'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        img_repo == f'{RUNTIME_IMAGE_REPO}'
+        img_repo == f'{get_runtime_image_repo()}'
         and img_tag
-        == f'{OD_VERSION}_image_nikolaik___python-nodejs_tag_python3.11-nodejs22'
+        == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.11-nodejs22'
     )
 
     base_image = 'ubuntu'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_ubuntu_tag_latest'
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag == f'{OH_VERSION}_image_ubuntu_tag_latest'
     )
 
 
@@ -206,18 +207,18 @@ def test_build_runtime_image_from_scratch(temp_dir):
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = False
     mock_runtime_builder.build.return_value = (
-        f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+        f'{get_runtime_image_repo()}:{from_scratch_hash}'
     )
 
     image_name = build_runtime_image(base_image, mock_runtime_builder)
     mock_runtime_builder.build.assert_called_once_with(
         path=ANY,
         tags=[
-            f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}',
-            f'{RUNTIME_IMAGE_REPO}:{OD_VERSION}_image_debian_tag_11',
+            f'{get_runtime_image_repo()}:{from_scratch_hash}',
+            f'{get_runtime_image_repo()}:{OH_VERSION}_image_debian_tag_11',
         ],
     )
-    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
 
 
 def test_build_runtime_image_exact_hash_exist(temp_dir):
@@ -232,15 +233,15 @@ def test_build_runtime_image_exact_hash_exist(temp_dir):
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = True
     mock_runtime_builder.build.return_value = (
-        f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+        f'{get_runtime_image_repo()}:{from_scratch_hash}'
     )
 
     image_name = build_runtime_image(base_image, mock_runtime_builder)
-    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
     mock_runtime_builder.build.assert_not_called()
 
 
-@patch('opendevin.runtime.utils.runtime_build._build_sandbox_image')
+@patch('openhands.runtime.utils.runtime_build._build_sandbox_image')
 def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp_dir):
     base_image = 'debian:11'
     repo, latest_image_tag = get_runtime_image_repo_and_tag(base_image)
@@ -263,7 +264,7 @@ def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp
     mock_runtime_builder.image_exists.side_effect = [False, True]
 
     with patch(
-        'opendevin.runtime.utils.runtime_build.prep_docker_build_folder'
+        'openhands.runtime.utils.runtime_build.prep_docker_build_folder'
     ) as mock_prep_docker_build_folder:
         mock_prep_docker_build_folder.side_effect = [
             from_scratch_hash,

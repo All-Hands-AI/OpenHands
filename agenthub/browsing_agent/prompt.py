@@ -12,12 +12,11 @@ from browsergym.core.action.base import AbstractActionSet
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.core.action.python import PythonActionSet
 
-from opendevin.runtime.browser.browser_env import BrowserEnv
-
-from .utils import (
+from agenthub.browsing_agent.utils import (
     ParseError,
     parse_html_tags_raise,
 )
+from openhands.runtime.browser.browser_env import BrowserEnv
 
 
 @dataclass
@@ -355,7 +354,7 @@ and executed by a program, make sure to follow the formatting instructions.
         self._prompt += '\n'.join(
             [
                 f"""\
- - [{msg['role']}] {msg['message']}"""
+ - [{msg['role']}], {msg['message']}"""
                 for msg in chat_messages
             ]
         )

@@ -1,5 +1,4 @@
-from opendevin.controller.agent import Agent
-
-from .agent import DummyAgent
+from agenthub.dummy_agent.agent import DummyAgent
+from openhands.controller.agent import Agent
 
 Agent.register('DummyAgent', DummyAgent)

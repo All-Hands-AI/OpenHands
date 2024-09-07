@@ -3,15 +3,15 @@ from unittest.mock import Mock
 import pytest
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
-from opendevin.core.config import AgentConfig, LLMConfig
-from opendevin.core.message import TextContent
-from opendevin.events.observation.commands import (
+from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.message import TextContent
+from openhands.events.observation.commands import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.delegate import AgentDelegateObservation
-from opendevin.events.observation.error import ErrorObservation
-from opendevin.llm.llm import LLM
+from openhands.events.observation.delegate import AgentDelegateObservation
+from openhands.events.observation.error import ErrorObservation
+from openhands.llm.llm import LLM
 
 
 @pytest.fixture
@@ -92,6 +92,5 @@ def test_error_observation_message(agent: CodeActAgent):
 def test_unknown_observation_message(agent: CodeActAgent):
     obs = Mock()
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match='Unknown observation type:'):
         agent.get_observation_message(obs)
-        assert 'Unknown observation type:' in str(excinfo.value)

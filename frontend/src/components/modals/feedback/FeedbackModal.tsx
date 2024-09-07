@@ -8,7 +8,7 @@ import { Feedback, sendFeedback } from "#/services/feedbackService";
 import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
 import Session from "#/services/session";
-import { removeApiKey } from "#/utils/utils";
+import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format
@@ -16,7 +16,7 @@ const isEmailValid = (email: string) => {
   return emailRegex.test(email);
 };
 
-const VIEWER_PAGE = "https://www.all-hands.dev/share-opendevin";
+const VIEWER_PAGE = "https://www.all-hands.dev/share";
 const FEEDBACK_VERSION = "1.0";
 
 interface FeedbackModalProps {
@@ -95,7 +95,7 @@ function FeedbackModal({
       email,
       permissions,
       token: getToken(),
-      trajectory: removeApiKey(Session._history),
+      trajectory: removeApiKey(removeUnwantedKeys(Session._history)),
     };
 
     try {
@@ -103,7 +103,7 @@ function FeedbackModal({
       localStorage.setItem("feedback-email", email); // store email in local storage
       if (response.statusCode === 200) {
         const { message, feedback_id: feedbackId, password } = response.body;
-        const link = `${VIEWER_PAGE}?share_id=${feedbackId}&password=${password}`;
+        const link = `${VIEWER_PAGE}?share_id=${feedbackId}`;
         shareFeedbackToast(message, link, password);
       } else {
         toast.error(

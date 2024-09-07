@@ -13,23 +13,23 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from opendevin.controller.state.state import State
-from opendevin.core.config import (
+from openhands.controller.state.state import State
+from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import create_runtime, run_controller
-from opendevin.events.action import (
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import (
     AgentFinishAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
-from opendevin.events.observation import CmdOutputObservation
-from opendevin.runtime.runtime import Runtime
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -45,14 +45,14 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_devin=False,
+        run_as_openhands=False,
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
+            base_container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
-            od_runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
+            runtime_extra_deps='$OD_INTERPRETER_PATH -m pip install scitools-pyke',
         ),
         # do not mount workspace
         workspace_base=None,
@@ -128,7 +128,7 @@ def get_test_result(
 CUR_EVAL_DIR = os.path.dirname(__file__)
 
 
-async def initialize_runtime(
+def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
 ):
@@ -142,33 +142,31 @@ async def initialize_runtime(
     # Set instance id
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     # copy logic_inference.py to /workspace
-    await runtime.copy_to(
-        os.path.join(CUR_EVAL_DIR, 'logic_inference.py'), '/workspace'
-    )
+    runtime.copy_to(os.path.join(CUR_EVAL_DIR, 'logic_inference.py'), '/workspace')
     # check if the file exists
-    obs = await runtime.run_action(CmdRunAction(command='ls /workspace'))
+    obs = runtime.run_action(CmdRunAction(command='ls /workspace'))
     assert obs.exit_code == 0
     assert 'logic_inference.py' in obs.content
 
-    await runtime.add_env_vars({'DATASET_NAME': metadata.dataset})
+    runtime.add_env_vars({'DATASET_NAME': metadata.dataset})
 
     action = CmdRunAction(command='mkdir -p /workspace/.cache_program')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = await runtime.run_action(action)
+    obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = IPythonRunCellAction(code='%pip install scitools-pyke')
     logger.info(action, extra={'msg_type': 'ACTION'})
-    ipynb_obs = await runtime.run_action(action)
+    ipynb_obs = runtime.run_action(action)
     logger.info(ipynb_obs, extra={'msg_type': 'OBSERVATION'})
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
@@ -179,7 +177,7 @@ with open(os.path.join(CUR_EVAL_DIR, 'instruction.txt'), 'r') as f:
     INSTRUCTION_TEMPLATE = f.read()
 
 
-async def process_instance(
+def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
@@ -206,8 +204,8 @@ async def process_instance(
     # use a session id for concurrent evaluation
     sid = instance['instance_id']
 
-    runtime = await create_runtime(config, sid=sid)
-    await initialize_runtime(runtime, instance)
+    runtime = create_runtime(config, sid=sid)
+    initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State | None = asyncio.run(
@@ -303,8 +301,6 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
-    asyncio.run(
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+    run_evaluation(
+        instances, metadata, output_file, args.eval_num_workers, process_instance
     )

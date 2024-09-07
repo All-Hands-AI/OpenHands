@@ -1,7 +1,0 @@
-Great! Now that pymsgbox is installed, let's import it and print its version to /workspace/test.txt:
-
-<execute_ipython>
-import pymsgbox
-with open('/workspace/test.txt', 'w') as f:
-    f.write(f"pymsgbox version: {pymsgbox.__version__}")
-print("Version written to /workspace/test.txt")

@@ -19,35 +19,35 @@ La réalisation d'une réplication complète des applications de production avec
 
 ## 🤝 Comment Contribuer {#how-to-contribute}
 
-OpenDevin est un projet communautaire, et nous accueillons les contributions de tout le monde. Que vous soyez développeur, chercheur, ou simplement enthousiaste à l'idée de faire progresser le domaine de l'ingénierie logicielle avec l'IA, il existe de nombreuses façons de vous impliquer :
+OpenHands est un projet communautaire, et nous accueillons les contributions de tout le monde. Que vous soyez développeur, chercheur, ou simplement enthousiaste à l'idée de faire progresser le domaine de l'ingénierie logicielle avec l'IA, il existe de nombreuses façons de vous impliquer :
 
 - **Contributions de Code :** Aidez-nous à développer les fonctionnalités de base, l'interface frontend ou les solutions de sandboxing.
 - **Recherche et Évaluation :** Contribuez à notre compréhension des LLM en ingénierie logicielle, participez à l'évaluation des modèles ou suggérez des améliorations.
-- **Retour d'Information et Tests :** Utilisez l'ensemble d'outils OpenDevin, signalez des bogues, suggérez des fonctionnalités ou fournissez des retours sur l'ergonomie.
+- **Retour d'Information et Tests :** Utilisez l'ensemble d'outils OpenHands, signalez des bogues, suggérez des fonctionnalités ou fournissez des retours sur l'ergonomie.
 
-Pour plus de détails, veuillez consulter [ce document](https://github.com/OpenDevin/OpenDevin/blob/main/CONTRIBUTING.md).
+Pour plus de détails, veuillez consulter [ce document](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md).
 
 ## 🤖 Rejoignez Notre Communauté {#join-our-community}
 
-Nous avons maintenant à la fois un espace de travail Slack pour la collaboration sur la construction d'OpenDevin et un serveur Discord pour discuter de tout ce qui est lié, par exemple, à ce projet, aux LLM, aux agents, etc.
+Nous avons maintenant à la fois un espace de travail Slack pour la collaboration sur la construction d'OpenHands et un serveur Discord pour discuter de tout ce qui est lié, par exemple, à ce projet, aux LLM, aux agents, etc.
 
-- [Espace de travail Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw)
+- [Espace de travail Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA)
 - [Serveur Discord](https://discord.gg/ESHStjSjD4)
 
 Si vous souhaitez contribuer, n'hésitez pas à rejoindre notre communauté. Simplifions l'ingénierie logicielle ensemble !
 
-🐚 **Codez moins, créez plus avec OpenDevin.**
+🐚 **Codez moins, créez plus avec OpenHands.**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date)](https://star-history.com/#All-Hands-AI/OpenHands&Date)
 
 ## 🛠️ Construit Avec {#built-with}
 
-OpenDevin est construit en utilisant une combinaison de cadres et de bibliothèques puissants, offrant une base robuste pour son développement. Voici les technologies clés utilisées dans le projet :
+OpenHands est construit en utilisant une combinaison de cadres et de bibliothèques puissants, offrant une base robuste pour son développement. Voici les technologies clés utilisées dans le projet :
 
 ![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LlamaIndex](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
 
-Veuillez noter que la sélection de ces technologies est en cours, et que des technologies supplémentaires peuvent être ajoutées ou des existantes supprimées au fur et à mesure de l'évolution du projet. Nous nous efforçons d'adopter les outils les plus adaptés et efficaces pour améliorer les capacités d'OpenDevin.
+Veuillez noter que la sélection de ces technologies est en cours, et que des technologies supplémentaires peuvent être ajoutées ou des existantes supprimées au fur et à mesure de l'évolution du projet. Nous nous efforçons d'adopter les outils les plus adaptés et efficaces pour améliorer les capacités d'OpenHands.
 
 ## 📜 Licence {#license}
 
-Distribué sous la licence MIT. Voir [notre licence](https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE) pour plus d'informations.
+Distribué sous la licence MIT. Voir [notre licence](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE) pour plus d'informations.

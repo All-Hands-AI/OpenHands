@@ -3,8 +3,8 @@
 This folder contains backend integration tests that rely on a mock LLM. It serves
 two purposes:
 
-1. Ensure the quality of development, including OpenDevin framework and agents.
-2. Help contributors learn the workflow of OpenDevin, and examples of real interactions
+1. Ensure the quality of development, including OpenHands framework and agents.
+2. Help contributors learn the workflow of OpenHands, and examples of real interactions
 with (powerful) LLM, without spending real money.
 
 ## Why don't we launch an open-source model, e.g. LLAMA3?
@@ -57,8 +57,6 @@ how integration tests are launched in a CI environment.
 You can run:
 
 ```bash
-# for server runtime
-TEST_RUNTIME=server TEST_ONLY=true ./tests/integration/regenerate.sh
 # for event stream
 TEST_RUNTIME=eventstream TEST_ONLY=true ./tests/integration/regenerate.sh
 ```
@@ -77,10 +75,9 @@ TEST_ONLY=true ONLY_TEST_NAME="test_simple_task_rejection" ONLY_TEST_AGENT="Mana
 ## Regenerate Integration Tests
 
 When you make changes to an agent's prompt, the integration tests will fail. You'll need to regenerate them
-by running the following command from OpenDevin's project root directory:
+by running the following command from OpenHands's project root directory:
 
 ```bash
-TEST_RUNTIME=server ./tests/integration/regenerate.sh
 TEST_RUNTIME=eventstream ./tests/integration/regenerate.sh
 ```
 

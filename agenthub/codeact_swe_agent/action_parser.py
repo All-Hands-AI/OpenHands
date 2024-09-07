@@ -1,7 +1,7 @@
 import re
 
-from opendevin.controller.action_parser import ActionParser
-from opendevin.events.action import (
+from openhands.controller.action_parser import ActionParser
+from openhands.events.action import (
     Action,
     AgentFinishAction,
     CmdRunAction,

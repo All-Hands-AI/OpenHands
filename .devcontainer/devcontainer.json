@@ -1,5 +1,5 @@
 {
-	"name": "OpenDevin Codespaces",
+	"name": "OpenHands Codespaces",
 	"image": "mcr.microsoft.com/devcontainers/universal",
 	"customizations":{
         "vscode":{

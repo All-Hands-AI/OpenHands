@@ -2,12 +2,18 @@
 
 .custom-footer {
     background-color: dark;
-    color: white;
-    height: 200px;
+    color: #000;
+    height: 100px;
     /* background: linear-gradient(to bottom, #1a1a1a, #1a1a1a); */
-    background: linear-gradient(to bottom, #1f2937, #000000);
+    background-color: #F1EAE0;
 
   }
+
+[data-theme="dark"] .custom-footer {
+  background-color: #000;
+  color: #fff;
+}
+
 
   .footer-content {
     display: flex;
@@ -47,7 +53,6 @@
   }
 
   .footer-community {
-    text-transform: uppercase;
     font-weight: 300;
   }
 
@@ -64,8 +69,4 @@
 
   .footer-icons a:hover {
     color: white;
-  }
-
-  .footer-bottom {
-    text-transform: uppercase;
   }
