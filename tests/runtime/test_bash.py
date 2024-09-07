@@ -1,11 +1,12 @@
 """Bash-related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
-import os
-import tempfile
 import asyncio
+import os
 import pexpect
 import pytest
+import tempfile
 import time
+
 from conftest import _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
