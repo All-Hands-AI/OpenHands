@@ -9,43 +9,53 @@ require_env_var:
 
 ## Environment Variable Available
 
-1. `GITHUB_TOKEN`: A read-only token for Github.
+- `GITHUB_TOKEN`: A read-only token for Github.
 
 ## Using GitHub's RESTful API
 
 Use `curl` with the `GITHUB_TOKEN` to interact with GitHub's API. Here are some common operations:
 
-1. View an issue:
-   ```
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-        https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}
-   ```
+Here's a template for API calls:
 
-2. List repository issues:
-   ```
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-        https://api.github.com/repos/{owner}/{repo}/issues
-   ```
+```sh
+curl -H "Authorization: token $GITHUB_TOKEN" \
+    "https://api.github.com/{endpoint}"
+```
 
-3. Get repository details:
-   ```
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-        https://api.github.com/repos/{owner}/{repo}
-   ```
+First replace `{endpoint}` with the specific API path. Common operations:
 
-4. List pull requests:
-   ```
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-        https://api.github.com/repos/{owner}/{repo}/pulls
-   ```
+1. View an issue or pull request:
+   - Issues: `/repos/{owner}/{repo}/issues/{issue_number}`
+   - Pull requests: `/repos/{owner}/{repo}/pulls/{pull_request_number}`
 
-5. Get user information:
-   ```
-   curl -H "Authorization: token $GITHUB_TOKEN" \
-        https://api.github.com/user
-   ```
+2. List repository issues or pull requests:
+   - Issues: `/repos/{owner}/{repo}/issues`
+   - Pull requests: `/repos/{owner}/{repo}/pulls`
 
-Replace `{owner}`, `{repo}`, and `{issue_number}` with appropriate values.
+3. Search issues or pull requests:
+   - `/search/issues?q=repo:{owner}/{repo}+is:{type}+{search_term}+state:{state}`
+   - Replace `{type}` with `issue` or `pr`
+
+4. List repository branches:
+   `/repos/{owner}/{repo}/branches`
+
+5. Get commit details:
+   `/repos/{owner}/{repo}/commits/{commit_sha}`
+
+6. Get repository details:
+   `/repos/{owner}/{repo}`
+
+7. Get user information:
+   `/user`
+
+8. Search repositories:
+   `/search/repositories?q={query}`
+
+9. Get rate limit status:
+   `/rate_limit`
+
+Replace `{owner}`, `{repo}`, `{commit_sha}`, `{issue_number}`, `{pull_request_number}`,
+`{search_term}`, `{state}`, and `{query}` with appropriate values.
 
 ## Important Notes
 

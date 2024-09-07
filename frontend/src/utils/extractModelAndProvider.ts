@@ -1,5 +1,8 @@
 import { isNumber } from "./isNumber";
-import { VERIFIED_OPENAI_MODELS } from "./verified-models";
+import {
+  VERIFIED_ANTHROPIC_MODELS,
+  VERIFIED_OPENAI_MODELS,
+} from "./verified-models";
 
 /**
  * Checks if the split array is actually a version number.
@@ -40,6 +43,9 @@ export const extractModelAndProvider = (model: string) => {
     // no "/" or "." separator found
     if (VERIFIED_OPENAI_MODELS.includes(split[0])) {
       return { provider: "openai", model: split[0], separator: "/" };
+    }
+    if (VERIFIED_ANTHROPIC_MODELS.includes(split[0])) {
+      return { provider: "anthropic", model: split[0], separator: "/" };
     }
     // return as model only
     return { provider: "", model, separator: "" };

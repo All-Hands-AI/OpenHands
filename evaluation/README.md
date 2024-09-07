@@ -14,7 +14,7 @@ all the preprocessing/evaluation/analysis scripts.
 
 ## Supported Benchmarks
 
-To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/evaluation_harness).
+To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/how-to/evaluation-harness).
 
 ### Software Engineering
 

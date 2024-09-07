@@ -58,10 +58,9 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    'git config --global user.name "openhands"',
-    'git config --global user.email "openhands@all-hands.dev"',
-    "alias git='git --no-pager'",
+    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
+SOFT_TIMEOUT_SECONDS = 5
 
 
 class RuntimeClient:
@@ -187,7 +186,9 @@ class RuntimeClient:
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
-        self.shell.sendline(f'cd {work_dir}')
+        self.shell.sendline(
+            f'if [ ! -d "{work_dir}" ]; then mkdir -p "{work_dir}"; fi && cd "{work_dir}"'
+        )
         self.shell.expect(self.__bash_expect_regex)
         logger.debug(
             f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
@@ -212,6 +213,9 @@ class RuntimeClient:
         if ps1 == pexpect.EOF:
             logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
             raise RuntimeError('Bash shell EOF')
+        if ps1 == pexpect.TIMEOUT:
+            logger.warning('Bash shell timeout')
+            return ''
 
         # begin at the last occurrence of '[PEXPECT_BEGIN]'.
         # In multi-line bash commands, the prompt will be repeated
@@ -243,39 +247,56 @@ class RuntimeClient:
         command: str,
         timeout: int | None,
         keep_prompt: bool = True,
+        kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
+        self.shell.sendline(command)
+        return self._continue_bash(
+            timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
+        )
+
+    def _interrupt_bash(self, timeout: int | None = None) -> tuple[str, int]:
+        self.shell.sendintr()  # send SIGINT to the shell
+        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+        output = self.shell.before
+        exit_code = 130  # SIGINT
+        return output, exit_code
+
+    def _continue_bash(
+        self,
+        timeout: int | None,
+        keep_prompt: bool = True,
+        kill_on_timeout: bool = True,
+    ) -> tuple[str, int]:
         try:
-            self.shell.sendline(command)
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
             output = self.shell.before
 
             # Get exit code
             self.shell.sendline('echo $?')
-            logger.debug(f'Executing command for exit code: {command}')
+            logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             _exit_code_output = self.shell.before
-            logger.debug(f'Exit code Output: {_exit_code_output}')
             exit_code = int(_exit_code_output.strip().split()[0])
 
         except pexpect.TIMEOUT as e:
-            self.shell.sendintr()  # send SIGINT to the shell
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-            output = self.shell.before
-            output += (
-                '\r\n\r\n'
-                + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
-            )
-            exit_code = 130  # SIGINT
-            logger.error(f'Failed to execute command: {command}. Error: {e}')
+            if kill_on_timeout:
+                output, exit_code = self._interrupt_bash()
+                output += (
+                    '\r\n\r\n'
+                    + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
+                )
+                logger.error(f'Failed to execute command. Error: {e}')
+            else:
+                output = self.shell.before or ''
+                exit_code = -1
 
         finally:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
             if keep_prompt:
                 output += '\r\n' + bash_prompt
             logger.debug(f'Command output: {output}')
-
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
@@ -293,11 +314,23 @@ class RuntimeClient:
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                output, exit_code = self._execute_bash(
-                    command,
-                    timeout=action.timeout,
-                    keep_prompt=action.keep_prompt,
-                )
+                if command == '':
+                    output, exit_code = self._continue_bash(
+                        timeout=SOFT_TIMEOUT_SECONDS,
+                        keep_prompt=action.keep_prompt,
+                        kill_on_timeout=False,
+                    )
+                elif command.lower() == 'ctrl+c':
+                    output, exit_code = self._interrupt_bash(
+                        timeout=SOFT_TIMEOUT_SECONDS
+                    )
+                else:
+                    output, exit_code = self._execute_bash(
+                        command,
+                        timeout=SOFT_TIMEOUT_SECONDS,
+                        keep_prompt=action.keep_prompt,
+                        kill_on_timeout=False,
+                    )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
                     # we need to add the command to the previous output,
@@ -507,6 +540,7 @@ if __name__ == '__main__':
             return event_to_dict(observation)
         except Exception as e:
             logger.error(f'Error processing command: {str(e)}')
+            logger.exception(e)
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')
@@ -690,5 +724,4 @@ if __name__ == '__main__':
             return []
 
     logger.info(f'Starting action execution API on port {args.port}')
-    print(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

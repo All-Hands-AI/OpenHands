@@ -43,7 +43,7 @@ if LLAMA_INDEX_AVAILABLE:
 
     def attempt_on_error(retry_state):
         logger.error(
-            f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
+            f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
             exc_info=False,
         )
         return None
@@ -73,6 +73,10 @@ if LLAMA_INDEX_AVAILABLE:
                 'nomic-embed-text',
                 'all-minilm',
                 'stable-code',
+                'bge-m3',
+                'bge-large',
+                'paraphrase-multilingual',
+                'snowflake-arctic-embed',
             ]
             if strategy in supported_ollama_embed_models:
                 from llama_index.embeddings.ollama import OllamaEmbedding

@@ -40,7 +40,6 @@ def temp_toml_file(tmp_path):
 @pytest.fixture
 def default_config(monkeypatch):
     # Fixture to provide a default AppConfig instance
-    AppConfig.reset()
     yield AppConfig()
 
 
@@ -228,6 +227,7 @@ sandbox_user_id = 1001
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
     monkeypatch.setenv('SANDBOX_USER_ID', '1002')
+    monkeypatch.delenv('LLM_MODEL', raising=False)
 
     load_from_toml(default_config, temp_toml_file)
 
@@ -280,6 +280,7 @@ user_id = 1001
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
     monkeypatch.setenv('SANDBOX_USER_ID', '1002')
+    monkeypatch.delenv('LLM_MODEL', raising=False)
 
     load_from_toml(default_config, temp_toml_file)
 
@@ -306,7 +307,7 @@ user_id = 1001
     assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
 
 
-def test_sandbox_config_from_toml(default_config, temp_toml_file):
+def test_sandbox_config_from_toml(monkeypatch, default_config, temp_toml_file):
     # Test loading configuration from a new-style TOML file
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write(
@@ -323,7 +324,7 @@ base_container_image = "custom_image"
 user_id = 1001
 """
         )
-
+    monkeypatch.setattr(os, 'environ', {})
     load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
@@ -501,8 +502,8 @@ def test_api_keys_repr_str():
 def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):
     temp_toml = """
 [core]
-max_iterations = 100
-max_budget_per_task = 4.0
+max_iterations = 42
+max_budget_per_task = 4.7
 """
 
     config = AppConfig()
@@ -511,8 +512,8 @@ max_budget_per_task = 4.0
 
     load_from_toml(config, temp_toml_file)
 
-    assert config.max_iterations == 100
-    assert config.max_budget_per_task == 4.0
+    assert config.max_iterations == 42
+    assert config.max_budget_per_task == 4.7
 
 
 def test_get_llm_config_arg(temp_toml_file):

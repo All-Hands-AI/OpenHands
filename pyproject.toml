@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.9.0"
+version = "0.9.2"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -38,7 +38,7 @@ minio = "^7.2.8"
 gevent = "^24.2.1"
 pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
-zope-interface = "7.0.2"
+zope-interface = "7.0.3"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
@@ -65,7 +65,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.6.2"
+ruff = "0.6.4"
 mypy = "1.11.2"
 pre-commit = "3.8.0"
 build = "*"
@@ -75,6 +75,7 @@ pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
+pytest-xdist = "*"
 flake8 = "*"
 openai = "*"
 opencv-python = "*"
@@ -83,7 +84,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -115,7 +115,6 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -125,3 +124,5 @@ swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
 func_timeout = "*"
 sympy = "*"
 gdown = "*"
+matplotlib = "*"
+seaborn = "*"
