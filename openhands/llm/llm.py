@@ -43,7 +43,7 @@ cache_prompting_supported_models = [
     'claude-3-haiku-20240307',
 ]
 
-llm_prompt_logger, llm_response_logger = get_llm_loggers()
+llm_prompt_logger, llm_response_logger = get_llm_loggers().values()
 
 
 class LLM:

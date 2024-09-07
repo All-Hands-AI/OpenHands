@@ -224,14 +224,24 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 class LlmFileHandler(logging.FileHandler):
     """LLM prompt and response logging"""
 
-    _instances: dict[str, 'LlmFileHandler'] = {}
+    _prompt_instances: dict[str, 'LlmFileHandler'] = {}
+    _response_instances: dict[str, 'LlmFileHandler'] = {}
 
     @classmethod
-    def get_instance(cls, sid: str, filename: str) -> 'LlmFileHandler':
-        """Get or create an LlmFileHandler instance for the given session ID."""
-        if sid not in cls._instances:
-            cls._instances[sid] = cls(sid, filename)
-        return cls._instances[sid]
+    def get_instance(cls, sid: str, llm_log_type: str) -> 'LlmFileHandler':
+        """Get or create an LlmFileHandler instance for the given session ID and filename."""
+        if llm_log_type == 'prompt':
+            if sid not in cls._prompt_instances:
+                cls._prompt_instances[sid] = cls(sid, llm_log_type)
+            return cls._prompt_instances[sid]
+        elif llm_log_type == 'response':
+            if sid not in cls._response_instances:
+                cls._response_instances[sid] = cls(sid, llm_log_type)
+            return cls._response_instances[sid]
+        else:
+            raise ValueError(
+                f"Invalid llm_log_type: {llm_log_type}. Must be 'prompt' or 'response'."
+            )
 
     def __init__(self, sid: str, filename: str, mode='a', encoding='utf-8', delay=True):
         """Initializes an instance of LlmFileHandler."""
@@ -279,19 +289,19 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(name: str, sid: str, log_level: int):
-    llm_file_handler = LlmFileHandler.get_instance(sid, name)
+def _get_llm_file_handler(llm_log_type: str, sid: str, log_level: int):
+    llm_file_handler = LlmFileHandler.get_instance(sid, llm_log_type)
     llm_file_handler.setFormatter(llm_formatter)
     llm_file_handler.setLevel(log_level)
     return llm_file_handler
 
 
-def _setup_llm_logger(name: str, sid: str, log_level: int):
-    logger = logging.getLogger(f'{name}_{sid}')
+def _setup_llm_logger(llm_log_type: str, sid: str, log_level: int):
+    logger = logging.getLogger(f'{llm_log_type}_{sid}')
     logger.propagate = False
     logger.setLevel(log_level)
     if LOG_TO_FILE:
-        logger.addHandler(_get_llm_file_handler(name, sid, log_level))
+        logger.addHandler(_get_llm_file_handler(llm_log_type, sid, log_level))
     return logger
 
 
