@@ -1523,6 +1523,11 @@ def valid_func2():
     print(my_sum(0, 0))
 """
 
+        # Add 100 lines of invalid code, which linter shall ignore
+        # because they are not being edited. For testing purpose, we
+        # must add these existing linting errors, otherwise the pre-edit
+        # linting would pass, and thus there won't be any comparison
+        # between pre-edit and post-edit linting.
         for _ in range(100):
             content += '\ninvalid line'
 
@@ -1537,7 +1542,7 @@ def valid_func2():
                     str(temp_file_path),
                     to_replace='def my_sum(a, b):',
                     # we deliberately make a mistake here (LLMs can make mistakes like this)
-                    # by changing the function name, existing function calls become invalid
+                    # by changing the function name, existing function calls would become invalid
                     new_content='def my_sum2(a, b):',
                 )
             result = buf.getvalue()
@@ -1563,7 +1568,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
 """
             )
             for lineno in range(12, 101):
-                result += f'{lineno}|invalid line\n'
+                expected += f'{lineno}|invalid line\n'
             assert result.split('\n') == expected.split('\n')
 
 
