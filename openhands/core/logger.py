@@ -1,3 +1,5 @@
+import copy
+import glob
 import logging
 import os
 import re
@@ -46,6 +48,8 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 
 class ColoredFormatter(logging.Formatter):
+    """Formatter for colored logging in console."""
+
     def format(self, record):
         msg_type = record.__dict__.get('msg_type')
         event_source = record.__dict__.get('event_source')
@@ -70,15 +74,42 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
+class NoColorFormatter(logging.Formatter):
+    """Formatter for non-colored logging in files."""
+
+    def format(self, record):
+        # Create a deep copy of the record to avoid modifying the original
+        new_record = copy.deepcopy(record)
+        # Strip ANSI color codes from the message
+        new_record.msg = strip_ansi(new_record.msg)
+
+        return super().format(new_record)
+
+
+def strip_ansi(str: str) -> str:
+    """
+    Removes ANSI escape sequences from str, as defined by ECMA-048 in
+    http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
+    # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
+    """
+
+    pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
+    stripped = pattern.sub('', str)
+    if stripped != str:
+        print(f'Stripped ANSI from {str} to {stripped}')
+    return stripped
+
+
 console_formatter = ColoredFormatter(
     '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
 
-file_formatter = logging.Formatter(
+file_formatter = NoColorFormatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
+
 llm_formatter = logging.Formatter('%(message)s')
 
 
@@ -191,25 +222,24 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 
 
 class LlmFileHandler(logging.FileHandler):
-    """# LLM prompt and response logging"""
+    """LLM prompt and response logging"""
 
-    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
-        """Initializes an instance of LlmFileHandler.
+    _instances: dict[str, 'LlmFileHandler'] = {}
 
-        Args:
-            filename (str): The name of the log file.
-            mode (str, optional): The file mode. Defaults to 'a'.
-            encoding (str, optional): The file encoding. Defaults to None.
-            delay (bool, optional): Whether to delay file opening. Defaults to False.
-        """
+    @classmethod
+    def get_instance(cls, sid: str, filename: str) -> 'LlmFileHandler':
+        """Get or create an LlmFileHandler instance for the given session ID."""
+        if sid not in cls._instances:
+            cls._instances[sid] = cls(sid, filename)
+        return cls._instances[sid]
+
+    def __init__(self, sid: str, filename: str, mode='a', encoding='utf-8', delay=True):
+        """Initializes an instance of LlmFileHandler."""
         self.filename = filename
         self.message_counter = 1
-        if DEBUG:
-            self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
-        else:
-            self.session = 'default'
-        self.log_directory = os.path.join(LOG_DIR, 'llm', self.session)
+        self.log_directory = os.path.join(LOG_DIR, 'llm', sid)
         os.makedirs(self.log_directory, exist_ok=True)
+
         if not DEBUG:
             # Clear the log directory if not in debug mode
             for file in os.listdir(self.log_directory):
@@ -217,9 +247,19 @@ class LlmFileHandler(logging.FileHandler):
                 try:
                     os.unlink(file_path)
                 except Exception as e:
-                    openhands_logger.error(
-                        'Failed to delete %s. Reason: %s', file_path, e
-                    )
+                    openhands_logger.error(f'Failed to delete {file_path}. Reason: {e}')
+        else:
+            # In DEBUG mode, continue writing existing log directory
+            # find the highest message counter
+            existing_files = glob.glob(
+                os.path.join(self.log_directory, f'{self.filename}_*.log')
+            )
+            if existing_files:
+                highest_counter = max(
+                    int(f.split('_')[-1].split('.')[0]) for f in existing_files
+                )
+                self.message_counter = highest_counter + 1
+
         filename = f'{self.filename}_{self.message_counter:03}.log'
         self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
@@ -235,27 +275,28 @@ class LlmFileHandler(logging.FileHandler):
         self.stream = self._open()
         super().emit(record)
         self.stream.close()
-        openhands_logger.debug('Logging to %s', self.baseFilename)
+        openhands_logger.debug(f'Logging to {self.baseFilename}')
         self.message_counter += 1
 
 
-def _get_llm_file_handler(name: str, log_level: int):
-    # The 'delay' parameter, when set to True, postpones the opening of the log file
-    # until the first log message is emitted.
-    llm_file_handler = LlmFileHandler(name, delay=True)
+def _get_llm_file_handler(name: str, sid: str, log_level: int):
+    llm_file_handler = LlmFileHandler.get_instance(sid, name)
     llm_file_handler.setFormatter(llm_formatter)
     llm_file_handler.setLevel(log_level)
     return llm_file_handler
 
 
-def _setup_llm_logger(name: str, log_level: int):
-    logger = logging.getLogger(name)
+def _setup_llm_logger(name: str, sid: str, log_level: int):
+    logger = logging.getLogger(f'{name}_{sid}')
     logger.propagate = False
     logger.setLevel(log_level)
     if LOG_TO_FILE:
-        logger.addHandler(_get_llm_file_handler(name, log_level))
+        logger.addHandler(_get_llm_file_handler(name, sid, log_level))
     return logger
 
 
-llm_prompt_logger = _setup_llm_logger('prompt', current_log_level)
-llm_response_logger = _setup_llm_logger('response', current_log_level)
+def get_llm_loggers(sid: str = 'default'):
+    return {
+        'prompt': _setup_llm_logger('prompt', sid, current_log_level),
+        'response': _setup_llm_logger('response', sid, current_log_level),
+    }

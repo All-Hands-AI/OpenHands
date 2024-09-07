@@ -29,7 +29,7 @@ from tenacity import (
 )
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
-from openhands.core.logger import llm_prompt_logger, llm_response_logger
+from openhands.core.logger import get_llm_loggers
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, format_messages
 from openhands.core.metrics import Metrics
@@ -42,6 +42,8 @@ cache_prompting_supported_models = [
     'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
 ]
+
+llm_prompt_logger, llm_response_logger = get_llm_loggers()
 
 
 class LLM:
