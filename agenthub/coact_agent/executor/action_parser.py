@@ -11,7 +11,7 @@ from agenthub.codeact_agent.action_parser import (
 from openhands.controller.action_parser import ActionParser
 from openhands.events.action import (
     Action,
-    AgentDelegateAction,
+    AgentFinishAction,
 )
 
 
@@ -65,8 +65,7 @@ class CoActActionParserRequest(ActionParser):
         ), 'self.global_plan should not be None when parse is called'
 
         replan_request = self.request.group(1).strip()
-        return AgentDelegateAction(
-            'CoActPlannerAgent',
-            inputs={'task': replan_request},
-            action_suffix='request',
+        return AgentFinishAction(
+            thought=replan_request,
+            outputs={'content': replan_request},
         )
