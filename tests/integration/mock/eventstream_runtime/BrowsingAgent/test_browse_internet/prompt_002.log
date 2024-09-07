@@ -111,6 +111,7 @@ Don't execute multiple actions at once if you need feedback from the page.
 
 
 
+
 ----------
 
 # Current Accessibility Tree:
@@ -121,7 +122,7 @@ RootWebArea 'The Ultimate Answer', focused
 	[10] button 'Click me', clickable
 
 # Previous Actions
-goto('http://localhost:8000')
+goto("http://localhost:8000")
 
 Here is an example with chain of thought of a valid action when clicking on a button:
 "

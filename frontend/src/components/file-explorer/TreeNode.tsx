@@ -79,12 +79,10 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       setIsOpen((prev) => !prev);
     } else {
       let newFileState = fileStates.find((f) => f.path === path);
-      if (!newFileState) {
-        const code = await selectFile(path);
-        newFileState = { path, savedContent: code, unsavedContent: code };
-      }
+      const code = await selectFile(path);
+      newFileState = { path, savedContent: code, unsavedContent: code };
       dispatch(addOrUpdateFileState(newFileState));
-      dispatch(setCode(newFileState.unsavedContent));
+      dispatch(setCode(code));
       dispatch(setActiveFilepath(path));
     }
   };

@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import os
 import shutil
 import subprocess
@@ -183,11 +184,25 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         if ':' not in base_image:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
-        # replace '/' with '_s_' to avoid '/' in the image name
-        # while make it a valid docker image name
-        repo = repo.replace('/', '_s_')
-        od_version = _get_package_version()
-        return get_runtime_image_repo(), f'od_v{od_version}_image_{repo}_tag_{tag}'
+        oh_version = _get_package_version()
+
+        # Hash the repo if it's too long
+        if len(repo) > 32:
+            repo_hash = hashlib.md5(repo[:-24].encode()).hexdigest()[:8]
+            repo = f'{repo_hash}_{repo[-24:]}'  # Use 8 char hash + last 24 chars
+        else:
+            repo = repo.replace('/', '_s_')
+
+        new_tag = f'oh_v{oh_version}_image_{repo}_tag_{tag}'
+
+        # if it's still too long, hash the entire image name
+        if len(new_tag) > 128:
+            new_tag = f'oh_v{oh_version}_image_{hashlib.md5(new_tag.encode()).hexdigest()[:64]}'
+            logger.warning(
+                f'The new tag [{new_tag}] is still too long, so we use an hash of the entire image name: {new_tag}'
+            )
+
+        return get_runtime_image_repo(), new_tag
 
 
 def build_runtime_image(

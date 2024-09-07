@@ -1,9 +1,12 @@
-# Running in Headless Mode
+# Headless Mode
 
-You can run OpenHands via a CLI, without starting the web application. This makes it easy
-to automate tasks with OpenHands.
+You can run OpenHands with a single command, without starting the web application.
+This makes it easy to write scripts and automate tasks with OpenHands.
+
+This is different from [CLI Mode](cli-mode), which is interactive, and better for active development.
 
 ## With Python
+
 To run OpenHands in headless mode with Python,
 [follow the Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
 and then run:
@@ -12,19 +15,32 @@ and then run:
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
+You'll need to be sure to set your model, API key, and other settings via environment variables
+[or the `config.toml` file](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml).
+
 ## With Docker
-To run OpenHands in headless mode with Docker, run:
+
+1. Set `WORKSPACE_BASE` to the directory you want OpenHands to edit:
 
 ```bash
-# Set WORKSPACE_BASE to the directory you want OpenHands to edit
 WORKSPACE_BASE=$(pwd)/workspace
+```
 
-# Set LLM_API_KEY to an API key, e.g. for OpenAI or Anthropic
+2. Set `LLM_MODEL` to the model you want to use:
+
+```bash
+LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
+```
+
+3. Set `LLM_API_KEY` to your API key:
+
+```bash
 LLM_API_KEY="abcde"
+```
 
-# Set LLM_MODEL to the model you want to use
-LLM_MODEL="gpt-4o"
+4. Run the following Docker command:
 
+```bash
 docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
@@ -35,7 +51,6 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:main \ # TODO: pin a version here
-    python -m openhands.core.main \
-    -t "Write a bash script that prints Hello World"
+    ghcr.io/all-hands-ai/openhands:0.9 \
+    python -m openhands.core.main -t "write a bash script that prints hi"
 ```
