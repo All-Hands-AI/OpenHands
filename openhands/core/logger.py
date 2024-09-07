@@ -6,9 +6,16 @@ import re
 import sys
 import traceback
 from datetime import datetime
+from enum import Enum
 from typing import Literal, Mapping
 
 from termcolor import colored
+
+
+class LlmLogType(Enum):
+    PROMPT = 'prompt'
+    RESPONSE = 'response'
+
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
@@ -228,19 +235,19 @@ class LlmFileHandler(logging.FileHandler):
     _response_instances: dict[str, 'LlmFileHandler'] = {}
 
     @classmethod
-    def get_instance(cls, sid: str, llm_log_type: str) -> 'LlmFileHandler':
+    def get_instance(cls, sid: str, llm_log_type: LlmLogType) -> 'LlmFileHandler':
         """Get or create an LlmFileHandler instance for the given session ID and filename."""
-        if llm_log_type == 'prompt':
+        if llm_log_type == LlmLogType.PROMPT:
             if sid not in cls._prompt_instances:
-                cls._prompt_instances[sid] = cls(sid, llm_log_type)
+                cls._prompt_instances[sid] = cls(sid, llm_log_type.value)
             return cls._prompt_instances[sid]
-        elif llm_log_type == 'response':
+        elif llm_log_type == LlmLogType.RESPONSE:
             if sid not in cls._response_instances:
-                cls._response_instances[sid] = cls(sid, llm_log_type)
+                cls._response_instances[sid] = cls(sid, llm_log_type.value)
             return cls._response_instances[sid]
         else:
             raise ValueError(
-                f"Invalid llm_log_type: {llm_log_type}. Must be 'prompt' or 'response'."
+                f'Invalid llm_log_type: {llm_log_type}. Must be a LlmLogType enum.'
             )
 
     def __init__(self, sid: str, filename: str, mode='a', encoding='utf-8', delay=True):
@@ -289,15 +296,15 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(llm_log_type: str, sid: str, log_level: int):
+def _get_llm_file_handler(llm_log_type: LlmLogType, sid: str, log_level: int):
     llm_file_handler = LlmFileHandler.get_instance(sid, llm_log_type)
     llm_file_handler.setFormatter(llm_formatter)
     llm_file_handler.setLevel(log_level)
     return llm_file_handler
 
 
-def _setup_llm_logger(llm_log_type: str, sid: str, log_level: int):
-    logger = logging.getLogger(f'{llm_log_type}_{sid}')
+def _setup_llm_logger(llm_log_type: LlmLogType, sid: str, log_level: int):
+    logger = logging.getLogger(f'{llm_log_type.value}_{sid}')
     logger.propagate = False
     logger.setLevel(log_level)
     if LOG_TO_FILE:
@@ -307,6 +314,8 @@ def _setup_llm_logger(llm_log_type: str, sid: str, log_level: int):
 
 def get_llm_loggers(sid: str = 'default'):
     return {
-        'prompt': _setup_llm_logger('prompt', sid, current_log_level),
-        'response': _setup_llm_logger('response', sid, current_log_level),
+        LlmLogType.PROMPT: _setup_llm_logger(LlmLogType.PROMPT, sid, current_log_level),
+        LlmLogType.RESPONSE: _setup_llm_logger(
+            LlmLogType.RESPONSE, sid, current_log_level
+        ),
     }
