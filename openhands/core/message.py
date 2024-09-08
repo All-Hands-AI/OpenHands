@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Union
+from typing import Any, Dict, Union
 
 from pydantic import BaseModel, Field, model_serializer
 from typing_extensions import Literal
@@ -111,11 +111,12 @@ def format_messages(
 
         if content_parts:
             content_str = '\n'.join(content_parts)
-            formatted_message = {
+            formatted_message: Dict[str, Any] = {
                 'role': role,
                 'content': content_str,
-                'cache_control': {'type': 'ephemeral'} if cache_prompt else None,
             }
+            if cache_prompt:
+                formatted_message['cache_control'] = {'type': 'ephemeral'}
             converted_messages.append(formatted_message)
 
     return converted_messages
