@@ -1521,6 +1521,8 @@ def my_sum(a, b):
 
 def valid_func2():
     print(my_sum(0, 0))
+
+
 """
 
         # Add 100 lines of invalid code, which linter shall ignore
@@ -1529,7 +1531,7 @@ def valid_func2():
         # linting would pass, and thus there won't be any comparison
         # between pre-edit and post-edit linting.
         for _ in range(100):
-            content += '\ninvalid line'
+            content += '\ninvalid_func()'
 
         temp_file_path = tmp_path / 'problematic-file-test.py'
         temp_file_path.write_text(content)
@@ -1549,26 +1551,66 @@ def valid_func2():
 
             expected = (
                 '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-                f"{temp_file_path}:2:11: F821 undefined name 'my_sum'\n"
-                f"{temp_file_path}:10:11: F821 undefined name 'my_sum'\n"
+                f"{temp_file_path}:2:11: F821 undefined name 'my_sum'\n\n"
+                f"{temp_file_path}:10:11: F821 undefined name 'my_sum'\n\n"
                 """[This is how your edit would have looked if applied]
 -------------------------------------------------
 (this is the beginning of the file)
-(this is the end of the file)
+1|def valid_func1():
+2|    print(my_sum(1, 2))
+3|
+4|
+5|def my_sum2(a, b):
+6|    return a - b
+7|
+8|
+9|def valid_func2():
+10|    print(my_sum(0, 0))
+11|
+12|
+13|
+14|invalid_func()
+15|invalid_func()
+16|invalid_func()
+17|invalid_func()
+18|invalid_func()
+19|invalid_func()
+20|invalid_func()
+21|invalid_func()
+(92 more lines below)
 -------------------------------------------------
 
 [This is the original code before your edit]
 -------------------------------------------------
 (this is the beginning of the file)
-(this is the end of the file)
+1|def valid_func1():
+2|    print(my_sum(1, 2))
+3|
+4|
+5|def my_sum(a, b):
+6|    return a - b
+7|
+8|
+9|def valid_func2():
+10|    print(my_sum(0, 0))
+11|
+12|
+13|
+14|invalid_func()
+15|invalid_func()
+16|invalid_func()
+17|invalid_func()
+18|invalid_func()
+19|invalid_func()
+20|invalid_func()
+21|invalid_func()
+(92 more lines below)
 -------------------------------------------------
 Your changes have NOT been applied. Please fix your edit command and try again.
 You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
 DO NOT re-run the same failed edit command. Running it again will lead to the same error.
 """
             )
-            for lineno in range(12, 101):
-                expected += f'{lineno}|invalid line\n'
             assert result.split('\n') == expected.split('\n')
 
 
