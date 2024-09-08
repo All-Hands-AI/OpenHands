@@ -39,6 +39,8 @@ __all__ = ['LLM']
 message_separator = '\n\n----------\n\n'
 
 cache_prompting_supported_models = [
+    'anthropic/claude-3-5-sonnet-20240620',
+    'anthropic/claude-3-haiku-20240307',
     'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
 ]
