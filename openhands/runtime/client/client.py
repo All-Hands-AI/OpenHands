@@ -33,6 +33,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -40,6 +41,7 @@ from openhands.events.action import (
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
     IPythonRunCellObservation,
@@ -52,6 +54,10 @@ from openhands.runtime.plugins import (
     ALL_PLUGINS,
     JupyterPlugin,
     Plugin,
+)
+from openhands.runtime.plugins.agent_skills.file_ops import (
+    append_file,
+    edit_file_by_replace,
 )
 from openhands.runtime.utils import split_bash_commands
 from openhands.runtime.utils.files import insert_lines, read_lines
@@ -76,6 +82,9 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
     if SESSION_API_KEY and api_key != SESSION_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API Key')
     return api_key
+HEAD = '<<<<<<< SEARCH'
+DIVIDER = '======='
+TAIL = '>>>>>>> REPLACE'
 
 
 class RuntimeClient:
@@ -588,6 +597,39 @@ class RuntimeClient:
         except PermissionError:
             return ErrorObservation(f'Malformed paths not permitted: {filepath}')
         return FileWriteObservation(content='', path=filepath)
+
+    async def edit(self, action: FileEditAction) -> Observation:
+        diff_blocks = re.search(
+            f'(.*){HEAD}(.*){DIVIDER}(.*){TAIL}', action.diff_block, re.DOTALL
+        )
+        if not diff_blocks or len(diff_blocks.groups()) < 3:
+            return ErrorObservation(
+                'Could not resolve diff block into search/replace blocks.'
+            )
+
+        path = diff_blocks.group(1).strip()
+        search_block = diff_blocks.group(2).strip()
+        replace_block = diff_blocks.group(3).strip()
+
+        working_dir = self._get_working_directory()
+        filepath = self._resolve_path(path, working_dir)
+        if not search_block:
+            append_file(
+                file_name=filepath,
+                content=replace_block,
+            )
+        else:
+            edit_file_by_replace(
+                file_name=filepath,
+                to_replace=search_block,
+                new_content=replace_block,
+            )
+        return FileEditObservation(
+            content=action.diff_block,
+            path=filepath,
+            search_block=search_block,
+            replace_block=replace_block,
+        )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         return await browse(action, self.browser)
