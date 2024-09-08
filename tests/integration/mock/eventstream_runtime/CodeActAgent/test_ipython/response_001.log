@@ -2,4 +2,3 @@ Certainly! I'll use Jupyter IPython to create a text file containing 'hello worl
 
 <execute_ipython>
 create_file('/workspace/test.txt')
-append_file('/workspace/test.txt', 'hello world')

@@ -8,8 +8,13 @@ The assistant can use a Python environment with <execute_ipython>, e.g.:
 print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands wrapped with <execute_bash>, e.g. <execute_bash> ls </execute_bash>.
-The assistant is not allowed to run interactive commands. For commands that may run indefinitely,
-the output should be redirected to a file and the command run in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
+If a bash command returns exit code `-1`, this means the process is not yet finished.
+The assistant must then send a second <execute_bash>. The second <execute_bash> can be empty
+(which will retrieve any additional logs), or it can contain text to be sent to STDIN of the running process,
+or it can contain the text `ctrl+c` to interrupt the process.
+
+For commands that may run indefinitely, the output should be redirected to a file and the command run
+in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
 If a command execution result says "Command timed out. Sending SIGINT to the process",
 the assistant should retry running the command in the background.
 
@@ -174,7 +179,6 @@ If the assistant is finished with the task you MUST include <finish></finish> in
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 The assistant should utilize full file paths and the `pwd` command to prevent path-related errors.
 The assistant must avoid apologies and thanks in its responses.
-
 
 ----------
 
@@ -404,7 +408,6 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 NOW, LET'S START!
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
-
 ----------
 
 Certainly! I'll create a shell script named 'hello.sh' that prints 'hello'. Here's how we'll do it:
@@ -413,7 +416,6 @@ echo '#!/bin/bash' > hello.sh
 echo 'echo "hello"' >> hello.sh
 chmod +x hello.sh
 </execute_bash>
-
 
 ----------
 
