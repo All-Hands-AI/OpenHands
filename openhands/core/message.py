@@ -114,9 +114,8 @@ def format_messages(
             formatted_message = {
                 'role': role,
                 'content': content_str,
+                'cache_control': {'type': 'ephemeral'} if cache_prompt else None,
             }
-            if cache_prompt:
-                formatted_message['cache_control'] = 'ephemeral'
             converted_messages.append(formatted_message)
 
     return converted_messages
