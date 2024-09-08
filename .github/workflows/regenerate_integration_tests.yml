@@ -59,5 +59,6 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add .
-        git commit -m "Regenerate integration tests"
+        # run it twice in case pre-commit makes changes
+        git commit -am "Regenerate integration tests" || git commit -am "Regenerate integration tests"
         git push

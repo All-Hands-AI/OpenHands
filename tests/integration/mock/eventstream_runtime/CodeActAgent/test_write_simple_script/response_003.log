@@ -1,4 +1,4 @@
-The shell script 'hello.sh' has been created successfully with the correct content. Since we don't have permission to change the file's executable permissions, we can run it using the bash command. Let's test the script:
+The script has been created successfully with the correct content. Since we don't have permission to change the file's executable permissions, we can run it using the bash command directly. Let's test the script:
 
 <execute_bash>
 bash hello.sh
