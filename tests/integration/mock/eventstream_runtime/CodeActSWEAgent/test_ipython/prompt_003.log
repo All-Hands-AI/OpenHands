@@ -157,7 +157,6 @@ The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in eve
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
-
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -591,7 +590,6 @@ exit
 NOW, LET'S START!
 Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
 
-
 ----------
 
 Certainly! I'll use Jupyter IPython to create a text file containing 'hello world' at '/workspace/test.txt'. Here's how we'll do it:
@@ -601,7 +599,6 @@ with open('/workspace/test.txt', 'w') as f:
 print("File created successfully.")
 </execute_ipython>
 
-
 ----------
 
 OBSERVATION:
@@ -609,16 +606,14 @@ File created successfully.
 [Jupyter current working directory: /workspace]
 [Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 
-
 ----------
 
-Great! The file has been created successfully. Let's verify its contents to make sure everything is correct:
+Great! The file has been created successfully. Let's verify its contents to ensure everything is correct:
 <execute_ipython>
 with open('/workspace/test.txt', 'r') as f:
     content = f.read()
 print(f"File contents: {content}")
 </execute_ipython>
-
 
 ----------
 

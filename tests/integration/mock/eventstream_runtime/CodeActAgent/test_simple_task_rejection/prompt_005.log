@@ -8,8 +8,13 @@ The assistant can use a Python environment with <execute_ipython>, e.g.:
 print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands wrapped with <execute_bash>, e.g. <execute_bash> ls </execute_bash>.
-The assistant is not allowed to run interactive commands. For commands that may run indefinitely,
-the output should be redirected to a file and the command run in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
+If a bash command returns exit code `-1`, this means the process is not yet finished.
+The assistant must then send a second <execute_bash>. The second <execute_bash> can be empty
+(which will retrieve any additional logs), or it can contain text to be sent to STDIN of the running process,
+or it can contain the text `ctrl+c` to interrupt the process.
+
+For commands that may run indefinitely, the output should be redirected to a file and the command run
+in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
 If a command execution result says "Command timed out. Sending SIGINT to the process",
 the assistant should retry running the command in the background.
 
@@ -174,7 +179,6 @@ If the assistant is finished with the task you MUST include <finish></finish> in
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 The assistant should utilize full file paths and the `pwd` command to prevent path-related errors.
 The assistant must avoid apologies and thanks in its responses.
-
 
 ----------
 
@@ -404,14 +408,12 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 NOW, LET'S START!
 Write a git commit message for the current staging area. Do not ask me for confirmation at any point.
 
-
 ----------
 
 Certainly! I'll write a git commit message for the current staging area. First, let's check the status of the git repository to see what changes are staged.
 <execute_bash>
 git status
 </execute_bash>
-
 
 ----------
 
@@ -423,14 +425,14 @@ Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 128]
 
-
 ----------
 
-I apologize for the confusion. It seems that we are not in a git repository. Let's initialize a git repository and create a sample file to stage and commit.
-<execute_bash>
-git init && echo "Hello, Git!" > sample.txt && git add sample.txt
-</execute_bash>
+I apologize for the confusion. It seems that we are not in a git repository. Let's initialize a git repository in the current directory and then stage some files before writing a commit message.
 
+First, let's initialize a git repository:
+<execute_bash>
+git init
+</execute_bash>
 
 ----------
 
@@ -452,35 +454,33 @@ fatal: could not set 'core.filemode' to 'false'
 openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 128]
 
-
 ----------
 
-I apologize for the oversight. It seems we don't have the necessary permissions to initialize a git repository in this environment. Let's try a different approach by checking if there are any existing files in the current directory that we can work with.
+I apologize for the oversight. It seems we don't have the necessary permissions to initialize a git repository in the current directory. Let's try to work with the existing files in the directory instead.
+
+First, let's list the files in the current directory:
 <execute_bash>
 ls -la
 </execute_bash>
-
 
 ----------
 
 OBSERVATION:
 total 4
-drwxrwxrwx 1 pn   pn   4096 Sep  3 12:05 .
-drwxr-xr-x 1 root root 4096 Sep  3 12:05 ..
-drwxrwxrwx 1 pn   pn   4096 Sep  3 12:05 .git
+drwxrwxrwx 1 pn   pn   4096 Sep  8 15:57 .
+drwxr-xr-x 1 root root 4096 Sep  8 15:57 ..
+drwxrwxrwx 1 pn   pn   4096 Sep  8 15:57 .git
 
 [Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 
-
 ----------
 
-It appears there is already a .git directory in the current workspace. Let's check the status of the git repository to see what changes are staged.
+It appears that there is already a .git directory in the current workspace. Let's try to use git commands to see the status of the repository:
 <execute_bash>
 git status
 </execute_bash>
-
 
 ----------
 
