@@ -519,69 +519,16 @@ def _edit_file_impl(
 
             lint_error, first_error_line = _lint_file(file_name)
 
-            # Select the errors caused by the modification
-            def refine_lint_error(original_lint_error, lint_error):
-                original_error_lines = set(
-                    Linter.extract_error_lines_from(original_lint_error)
-                )
-                new_lint_errors = []
-                first_error_lineno = None
-
-                # due to the edit, the old line numbers and new line numbers may not match
-                # for every lint error, check if it is caused by modification
-                for line in lint_error.splitlines(True):
-                    lineno = Linter.extract_error_line_from(line)
-                    if lineno is None:
-                        continue
-                    elif is_append:
-                        # append: only retain errors from appendication chunk, since
-                        # an appendication never causes new errors in other places
-                        if lineno > len(lines):
-                            new_lint_errors.append(line)
-                        else:
-                            continue
-                    elif is_insert:
-                        # insert: similar to append, only retain errors from insertion
-                        # chunk, since an insertion never causes new errors in other places,
-                        # except the line right below the insertion
-                        if lineno >= start and lineno <= start + n_added_lines:
-                            new_lint_errors.append(line)
-                        else:
-                            continue
-                    else:
-                        # edit:
-                        if lineno >= start and lineno <= start + n_added_lines:
-                            # error coming from edit part itself
-                            new_lint_errors.append(line)
-                        elif lineno < start and lineno not in original_error_lines:
-                            # error coming before edit part, and is new, meaning the
-                            # error is caused by the edit - e.g. edit changes a
-                            # function signature and breaks existing code
-                            new_lint_errors.append(line)
-                        elif (
-                            lineno > start + n_added_lines
-                            and (lineno - n_added_lines + end - start + 1)
-                            not in original_error_lines
-                        ):
-                            # error coming after edit part, and is new, meaning the
-                            # error is caused by the edit - e.g. edit changes a
-                            # function signature and breaks existing code
-                            new_lint_errors.append(line)
-                        else:
-                            continue
-
-                    if first_error_lineno is None:
-                        first_error_lineno = lineno
-
-                # TODO: start with "ERROR:"
-                if len(new_lint_errors) == 0:
-                    return None, None
-                else:
-                    return '\n'.join(new_lint_errors), first_error_lineno
-
             if original_lint_error is not None and lint_error is not None:
-                lint_error, first_error_line = refine_lint_error(
-                    original_lint_error, lint_error
+                lint_error, first_error_line = Linter.refine_lint_error(
+                    original_lint_error,
+                    lint_error,
+                    is_append,
+                    is_insert,
+                    lines,
+                    start,
+                    end,
+                    n_added_lines,
                 )
 
             if lint_error is not None:
