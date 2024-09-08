@@ -111,7 +111,7 @@ def format_messages(
 
         if content_parts:
             content_str = '\n'.join(content_parts)
-            formatted_message: Dict[str, Any] = {
+            formatted_message: dict[str, Any] = {
                 'role': role,
                 'content': content_str,
             }
