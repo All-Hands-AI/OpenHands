@@ -38,10 +38,6 @@ jobs:
         base_image:
           - image: 'nikolaik/python-nodejs:python3.11-nodejs22'
             tag: nikolaik
-          - image: 'python:3.11-bookworm'
-            tag: python
-          - image: 'node:22-bookworm'
-            tag: node
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,11 +99,12 @@ jobs:
   # Run unit tests with the EventStream runtime Docker images
   test_runtime:
     name: Test Runtime
-    runs-on: ubuntu-latest
     needs: [ghcr_build_runtime]
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        base_image: ['nikolaik', 'python', 'node']
+        base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
       - name: Free Disk Space (Ubuntu)
@@ -141,14 +138,17 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
+          # We install pytest-xdist in order to run tests across CPUs
+          poetry run pip install pytest-xdist
+
+          image_name=ghcr.io/All-Hands-AI/runtime:ad3aad64f9b6d7a4edc3a8dbfae55f2a81b261ba-nikolaik
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 4 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -162,7 +162,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        base_image: ['nikolaik', 'python', 'node']
+        base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
       # Forked repos can't push to GHCR, so we need to download the image as an artifact

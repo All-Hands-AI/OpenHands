@@ -317,7 +317,7 @@ class EventStreamRuntime(Runtime):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name_prefix):
+                if container.name == self.container_name:
                     logs = container.logs(tail=1000).decode('utf-8')
                     logger.debug(
                         f'==== Container logs ====\n{logs}\n==== End of container logs ===='
