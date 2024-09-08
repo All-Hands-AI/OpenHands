@@ -256,12 +256,6 @@ class LLM:
 
             # this serves to prevent empty messages and logging the messages
             debug_message = self._get_debug_message(messages)
-            if debug_message:
-                llm_prompt_logger.debug(debug_message)
-                resp = completion_unwrapped(*args, **kwargs)
-            else:
-                logger.debug('No completion messages!')
-                resp = {'choices': [{'message': {'content': ''}}]}
 
             async def check_stopped():
                 while True:
@@ -277,7 +271,12 @@ class LLM:
 
             try:
                 # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                if debug_message:
+                    llm_prompt_logger.debug(debug_message)
+                    resp = await async_completion_unwrapped(*args, **kwargs)
+                else:
+                    logger.debug('No completion messages!')
+                    resp = {'choices': [{'message': {'content': ''}}]}
 
                 # skip if messages is empty (thus debug_message is empty)
                 if debug_message:
