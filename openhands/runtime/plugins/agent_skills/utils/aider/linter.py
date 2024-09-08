@@ -261,6 +261,9 @@ class Linter:
 
     @staticmethod
     def extract_error_line_from(line):
+        # TODO: this is a temporary fix to extract the error line from the error message
+        # it should be replaced with a more robust/unified solution
+        # eslint, for example, doesn't follow the same format
         if line.strip():
             # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
             parts = line.split(':')
