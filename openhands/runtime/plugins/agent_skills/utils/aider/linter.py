@@ -291,7 +291,6 @@ class Linter:
                 lines.append(error_lineno)
         return lines
 
-    # Select the errors caused by the modification
     @staticmethod
     def refine_lint_error(
         original_lint_error: str,
@@ -303,13 +302,17 @@ class Linter:
         end: int,
         n_added_lines: int,
     ):
+        """
+        Given original_lint_error (pre-edit-lint) and lint_error (post-edit-lint),
+        select only new linting errors that are caused by the edit
+        """
         original_error_lines = set(Linter.extract_error_lines_from(original_lint_error))
         new_lint_errors = []
         first_error_lineno = None
 
         # due to the edit, the old line numbers and new line numbers may not match
         # for every lint error, check if it is caused by modification
-        for line in lint_error.splitlines(True):
+        for line in lint_error.splitlines():
             lineno = Linter.extract_error_line_from(line)
             if lineno is None:
                 continue
@@ -353,7 +356,6 @@ class Linter:
             if first_error_lineno is None:
                 first_error_lineno = lineno
 
-        # TODO: start with "ERROR:"
         if len(new_lint_errors) == 0:
             return None, None
         else:

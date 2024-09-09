@@ -33,7 +33,7 @@ WINDOW = 100
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
-LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\nERRORS:\n'
 
 
 # ==================================================================================================
@@ -104,7 +104,7 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
         # Linting successful. No issues found.
         return None, None
     first_error_line = lint_error.lines[0] if lint_error.lines else None
-    return 'ERRORS:\n' + lint_error.text, first_error_line
+    return lint_error.text, first_error_line
 
 
 def _print_window(

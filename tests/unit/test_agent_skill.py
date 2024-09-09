@@ -1467,6 +1467,7 @@ def sum(a, b):
 
             expected = (
                 '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+                'ERRORS:\n'
                 f"{temp_file_path}:9:16: F821 undefined name 'variable'\n"
                 """[This is how your edit would have looked if applied]
 -------------------------------------------------
@@ -1551,8 +1552,9 @@ def valid_func2():
 
             expected = (
                 '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-                f"{temp_file_path}:2:11: F821 undefined name 'my_sum'\n\n"
-                f"{temp_file_path}:10:11: F821 undefined name 'my_sum'\n\n"
+                'ERRORS:\n'
+                f"{temp_file_path}:2:11: F821 undefined name 'my_sum'\n"
+                f"{temp_file_path}:10:11: F821 undefined name 'my_sum'\n"
                 """[This is how your edit would have looked if applied]
 -------------------------------------------------
 (this is the beginning of the file)
