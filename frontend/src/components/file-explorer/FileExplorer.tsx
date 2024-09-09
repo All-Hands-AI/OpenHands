@@ -90,7 +90,7 @@ function ExplorerActions({
 function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
-  const [files, setFiles] = React.useState<string[]>([]);
+  const [files, setFiles] = React.useState<string[] | null>(null);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
