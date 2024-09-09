@@ -78,10 +78,11 @@ class CoActActionParserGlobalPlan(ActionParser):
         assert (
             self.global_plan is not None
         ), 'self.global_plan should not be None when parse is called'
-        # thought = action_str.replace(self.global_plan.group(0), '').strip()
+        thought = action_str.replace(self.global_plan.group(0), '').strip()
         global_plan_actions = self.global_plan.group(1).strip()
         return AgentDelegateAction(
             agent='CoActExecutorAgent',
+            thought=thought,
             inputs={'task': global_plan_actions},
             action_suffix='global_plan',
         )  # FIXME: check to use a more proper key e.g. 'global_plan' instead of 'task'
