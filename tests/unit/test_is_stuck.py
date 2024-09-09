@@ -54,9 +54,13 @@ class TestStuckDetector:
         return StuckDetector(state)
 
     def _impl_syntax_error_events(
-        self, event_stream: EventStream, error_message: str, random_line: bool
+        self,
+        event_stream: EventStream,
+        error_message: str,
+        random_line: bool,
+        incidents: int = 4,
     ):
-        for i in range(4):
+        for i in range(incidents):
             ipython_action = IPythonRunCellAction(code='print("hello')
             event_stream.add_event(ipython_action, EventSource.AGENT)
             extra_number = (i + 1) * 10 if random_line else '42'
@@ -71,9 +75,9 @@ class TestStuckDetector:
             event_stream.add_event(ipython_observation, EventSource.USER)
 
     def _impl_unterminated_string_error_events(
-        self, event_stream: EventStream, random_line: bool
+        self, event_stream: EventStream, random_line: bool, incidents: int = 4
     ):
-        for i in range(4):
+        for i in range(incidents):
             ipython_action = IPythonRunCellAction(code='print("hello')
             event_stream.add_event(ipython_action, EventSource.AGENT)
             line_number = (i + 1) * 10 if random_line else '1'
@@ -249,13 +253,26 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is True
 
-    def test_is_not_stuck_invalid_syntax_error(
+    def test_is_not_stuck_invalid_syntax_error_random_lines(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         self._impl_syntax_error_events(
             event_stream,
             error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
             random_line=True,
+        )
+
+        with patch('logging.Logger.warning'):
+            assert stuck_detector.is_stuck() is False
+
+    def test_is_not_stuck_invalid_syntax_error_only_three_incidents(
+        self, stuck_detector: StuckDetector, event_stream: EventStream
+    ):
+        self._impl_syntax_error_events(
+            event_stream,
+            error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
+            random_line=True,
+            incidents=3,
         )
 
         with patch('logging.Logger.warning'):
@@ -285,10 +302,20 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
 
-    def test_is_not_stuck_ipython_unterminated_string_error(
+    def test_is_not_stuck_ipython_unterminated_string_error_random_lines(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         self._impl_unterminated_string_error_events(event_stream, random_line=True)
+
+        with patch('logging.Logger.warning'):
+            assert stuck_detector.is_stuck() is False
+
+    def test_is_not_stuck_ipython_unterminated_string_error_only_three_incidents(
+        self, stuck_detector: StuckDetector, event_stream: EventStream
+    ):
+        self._impl_unterminated_string_error_events(
+            event_stream, random_line=False, incidents=3
+        )
 
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
@@ -301,7 +328,7 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is True
 
-    def test_is_stuck_ipython_syntax_error_not_at_end(
+    def test_is_not_stuck_ipython_syntax_error_not_at_end(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         # this test is to make sure we don't get false positives

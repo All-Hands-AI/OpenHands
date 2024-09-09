@@ -135,30 +135,29 @@ class StuckDetector:
             if all(isinstance(obs, ErrorObservation) for obs in last_observations[:3]):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
-            # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
-            elif all(
-                isinstance(obs, IPythonRunCellObservation)
-                for obs in last_observations[:3]
-            ):
-                warning = 'Action, IPythonRunCellObservation loop detected'
-                for error_message in self.SYNTAX_ERROR_MESSAGES:
-                    if error_message.startswith(
-                        'SyntaxError: unterminated string literal (detected at line'
+        # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
+        if all(
+            isinstance(obs, IPythonRunCellObservation) for obs in last_observations[:3]
+        ):
+            warning = 'Action, IPythonRunCellObservation loop detected'
+            for error_message in self.SYNTAX_ERROR_MESSAGES:
+                if error_message.startswith(
+                    'SyntaxError: unterminated string literal (detected at line'
+                ):
+                    if self._check_for_consistent_line_error(
+                        last_observations[:3], error_message
                     ):
-                        if self._check_for_consistent_line_error(
-                            last_observations[:3], error_message
-                        ):
-                            logger.warning(warning)
-                            return True
-                    elif error_message in (
-                        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-                        'SyntaxError: incomplete input',
+                        logger.warning(warning)
+                        return True
+                elif error_message in (
+                    'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
+                    'SyntaxError: incomplete input',
+                ):
+                    if self._check_for_consistent_invalid_syntax(
+                        last_observations[:3], error_message
                     ):
-                        if self._check_for_consistent_invalid_syntax(
-                            last_observations[:3], error_message
-                        ):
-                            logger.warning(warning)
-                            return True
+                        logger.warning(warning)
+                        return True
         return False
 
     def _check_for_consistent_invalid_syntax(self, observations, error_message):
