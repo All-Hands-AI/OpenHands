@@ -1,17 +1,17 @@
 import React from "react";
 
 interface HeaderContentProps {
-  title: string;
+  maintitle: string;
   subtitle?: string;
 }
 
 export function HeaderContent({
-  title,
+  maintitle,
   subtitle = undefined,
 }: HeaderContentProps) {
   return (
     <>
-      <h3>{title}</h3>
+      <h3>{maintitle}</h3>
       {subtitle && (
         <span className="text-neutral-400 text-sm font-light">{subtitle}</span>
       )}

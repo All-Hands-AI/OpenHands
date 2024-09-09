@@ -13,7 +13,6 @@ import {
   Settings,
   getSettings,
   getDefaultSettings,
-  getSettingsDifference,
   settingsAreUpToDate,
   maybeMigrateSettings,
   saveSettings,
@@ -29,7 +28,7 @@ interface SettingsProps {
   agents: string[];
 }
 
-const REQUIRED_SETTINGS = ["LLM_MODEL", "AGENT"];
+const REQUIRED_SETTINGS = ["LLM_MODEL"];
 
 function SettingsModal({
   isOpen,
@@ -80,20 +79,6 @@ function SettingsModal({
     }));
   };
 
-  const handleCustomModelChange = (model: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      CUSTOM_LLM_MODEL: model,
-    }));
-  };
-
-  const handleModelTypeChange = (type: "custom" | "default") => {
-    setSettings((prev) => ({
-      ...prev,
-      USING_CUSTOM_MODEL: type === "custom",
-    }));
-  };
-
   const handleAgentChange = (agent: string) => {
     setSettings((prev) => ({ ...prev, AGENT: agent }));
   };
@@ -128,20 +113,9 @@ function SettingsModal({
   };
 
   const handleSaveSettings = () => {
-    const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
     Session.startNewSession();
-
-    const sensitiveKeys = ["LLM_API_KEY"];
-
-    Object.entries(updatedSettings).forEach(([key, value]) => {
-      if (!sensitiveKeys.includes(key)) {
-        toast.settingsChanged(`${key} set to "${value}"`);
-      } else {
-        toast.settingsChanged(`${key} has been updated securely.`);
-      }
-    });
 
     localStorage.setItem(
       `API_KEY_${settings.LLM_MODEL || models[0]}`,
@@ -149,7 +123,7 @@ function SettingsModal({
     );
   };
 
-  let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
+  let subtitle = "";
   if (loading) {
     subtitle = t(I18nKey.CONFIGURATION$AGENT_LOADING);
   } else if (agentIsRunning) {
@@ -201,8 +175,7 @@ function SettingsModal({
           models={models}
           agents={agents}
           securityAnalyzers={securityAnalyzers}
-          onCustomModelChange={handleCustomModelChange}
-          onModelTypeChange={handleModelTypeChange}
+          onModelChange={handleModelChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}

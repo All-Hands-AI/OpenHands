@@ -19,7 +19,7 @@ export function ModelSelector({
   models,
   currentModel,
 }: ModelSelectorProps) {
-  const [litellmId, setLitellmId] = React.useState<string | null>(null);
+  const [, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
     null,
   );
@@ -58,108 +58,68 @@ export function ModelSelector({
 
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
-      <span
-        className="text-center italic text-[#A3A3A3] text-sm"
-        data-testid="model-id"
-      >
-        {litellmId?.replace("other", "") || "No model selected"}
-      </span>
+      <div className="flex flex-row gap-3">
+        <Autocomplete
+          isDisabled={isDisabled}
+          label="LLM Provider"
+          placeholder="Select a provider"
+          isClearable={false}
+          onSelectionChange={(e) => {
+            if (e?.toString()) handleChangeProvider(e.toString());
+          }}
+          onInputChange={(value) => !value && clear()}
+          defaultSelectedKey={selectedProvider ?? undefined}
+          selectedKey={selectedProvider}
+        >
+          <AutocompleteSection title="Verified">
+            {Object.keys(models)
+              .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
+              .map((provider) => (
+                <AutocompleteItem key={provider} value={provider}>
+                  {mapProvider(provider)}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+          <AutocompleteSection title="Others">
+            {Object.keys(models)
+              .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
+              .map((provider) => (
+                <AutocompleteItem key={provider} value={provider}>
+                  {mapProvider(provider)}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+        </Autocomplete>
 
-      <input
-        type="text"
-        hidden
-        aria-hidden
-        name="model"
-        defaultValue={litellmId || ""}
-      />
-
-      <div className="flex flex-col gap-3">
-        <fieldset className="flex flex-col gap-2">
-          <label
-            htmlFor="provider"
-            className="font-[500] text-[#A3A3A3] text-xs"
-          >
-            Provider
-          </label>
-          <Autocomplete
-            id="provider"
-            isDisabled={isDisabled}
-            aria-label="Provider"
-            placeholder="Select a provider"
-            isClearable={false}
-            onSelectionChange={(e) => {
-              if (e?.toString()) handleChangeProvider(e.toString());
-            }}
-            onInputChange={(value) => !value && clear()}
-            defaultSelectedKey={selectedProvider ?? undefined}
-            selectedKey={selectedProvider}
-            inputProps={{
-              classNames: {
-                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-              },
-            }}
-          >
-            <AutocompleteSection title="Verified">
-              {Object.keys(models)
-                .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
-                .map((provider) => (
-                  <AutocompleteItem key={provider} value={provider}>
-                    {mapProvider(provider)}
-                  </AutocompleteItem>
-                ))}
-            </AutocompleteSection>
-            <AutocompleteSection title="Others">
-              {Object.keys(models)
-                .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
-                .map((provider) => (
-                  <AutocompleteItem key={provider} value={provider}>
-                    {mapProvider(provider)}
-                  </AutocompleteItem>
-                ))}
-            </AutocompleteSection>
-          </Autocomplete>
-        </fieldset>
-
-        <fieldset className="flex flex-col gap-2">
-          <label htmlFor="model" className="font-[500] text-[#A3A3A3] text-xs">
-            Model
-          </label>
-          <Autocomplete
-            id="model"
-            aria-label="Model"
-            placeholder="Select a model"
-            onSelectionChange={(e) => {
-              if (e?.toString()) handleChangeModel(e.toString());
-            }}
-            isDisabled={isDisabled || !selectedProvider}
-            selectedKey={selectedModel}
-            defaultSelectedKey={selectedModel ?? undefined}
-            inputProps={{
-              classNames: {
-                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-              },
-            }}
-          >
-            <AutocompleteSection title="Verified">
-              {models[selectedProvider || ""]?.models
-                .filter((model) => VERIFIED_MODELS.includes(model))
-                .map((model) => (
-                  <AutocompleteItem key={model} value={model}>
-                    {model}
-                  </AutocompleteItem>
-                ))}
-            </AutocompleteSection>
-            <AutocompleteSection title="Others">
-              {models[selectedProvider || ""]?.models
-                .filter((model) => !VERIFIED_MODELS.includes(model))
-                .map((model) => (
-                  <AutocompleteItem key={model} value={model}>
-                    {model}
-                  </AutocompleteItem>
-                ))}
-            </AutocompleteSection>
-          </Autocomplete>
-        </fieldset>
+        <Autocomplete
+          label="LLM Model"
+          placeholder="Select a model"
+          onSelectionChange={(e) => {
+            if (e?.toString()) handleChangeModel(e.toString());
+          }}
+          isDisabled={isDisabled || !selectedProvider}
+          selectedKey={selectedModel}
+          defaultSelectedKey={selectedModel ?? undefined}
+        >
+          <AutocompleteSection title="Verified">
+            {models[selectedProvider || ""]?.models
+              .filter((model) => VERIFIED_MODELS.includes(model))
+              .map((model) => (
+                <AutocompleteItem key={model} value={model}>
+                  {model}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+          <AutocompleteSection title="Others">
+            {models[selectedProvider || ""]?.models
+              .filter((model) => !VERIFIED_MODELS.includes(model))
+              .map((model) => (
+                <AutocompleteItem key={model} value={model}>
+                  {model}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+        </Autocomplete>
       </div>
     </div>
   );
