@@ -164,7 +164,7 @@ jobs:
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          poetry run pytest -n 4 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 2 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
