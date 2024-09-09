@@ -1,6 +1,6 @@
-Great! The file has been created successfully. Let's verify its contents to make sure everything is correct:
+Great! The file has been created successfully. Let's verify its contents to ensure everything is correct:
 
 <execute_ipython>
 with open('/workspace/test.txt', 'r') as f:
     content = f.read()
-print(f"File contents: {content}")
+print(f"Contents of /workspace/test.txt: {content}")

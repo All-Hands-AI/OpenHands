@@ -105,7 +105,6 @@ click('a51')
 click('48', button='middle', modifiers=['Shift'])
 
 
-
 ----------
 
 # Current Accessibility Tree:

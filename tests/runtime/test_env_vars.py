@@ -34,71 +34,37 @@ def test_env_vars_os_environ(temp_dir, box_class, run_as_openhands):
         time.sleep(1)
 
 
-def test_env_vars_runtime_add_env_vars(temp_dir, box_class):
+def test_env_vars_runtime_operations(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
+
+    # Test adding single env var
     runtime.add_env_vars({'QUUX': 'abc"def'})
-
-    obs: CmdOutputObservation = runtime.run_action(CmdRunAction(command='echo $QUUX'))
-    print(obs)
-    assert obs.exit_code == 0, 'The exit code should be 0.'
+    obs = runtime.run_action(CmdRunAction(command='echo $QUUX'))
     assert (
-        obs.content.strip().split('\r\n')[0].strip() == 'abc"def'
-    ), f'Output: [{obs.content}] for {box_class}'
-
-    runtime.close()
-    time.sleep(1)
-
-
-def test_env_vars_runtime_add_empty_dict(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
-
-    prev_obs = runtime.run_action(CmdRunAction(command='env'))
-    assert prev_obs.exit_code == 0, 'The exit code should be 0.'
-    print(prev_obs)
-
-    runtime.add_env_vars({})
-
-    obs = runtime.run_action(CmdRunAction(command='env'))
-    assert obs.exit_code == 0, 'The exit code should be 0.'
-    print(obs)
-    assert (
-        obs.content == prev_obs.content
-    ), 'The env var content should be the same after adding an empty dict.'
-
-    runtime.close()
-    time.sleep(1)
-
-
-def test_env_vars_runtime_add_multiple_env_vars(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
-    runtime.add_env_vars({'QUUX': 'abc"def', 'FOOBAR': 'xyz'})
-
-    obs: CmdOutputObservation = runtime.run_action(
-        CmdRunAction(command='echo $QUUX $FOOBAR')
+        obs.exit_code == 0 and obs.content.strip().split('\r\n')[0].strip() == 'abc"def'
     )
-    print(obs)
-    assert obs.exit_code == 0, 'The exit code should be 0.'
+
+    # Test adding multiple env vars
+    runtime.add_env_vars({'FOOBAR': 'xyz'})
+    obs = runtime.run_action(CmdRunAction(command='echo $QUUX $FOOBAR'))
     assert (
-        obs.content.strip().split('\r\n')[0].strip() == 'abc"def xyz'
-    ), f'Output: [{obs.content}] for {box_class}'
+        obs.exit_code == 0
+        and obs.content.strip().split('\r\n')[0].strip() == 'abc"def xyz'
+    )
+
+    # Test adding empty dict
+    prev_env = runtime.run_action(CmdRunAction(command='env')).content
+    runtime.add_env_vars({})
+    current_env = runtime.run_action(CmdRunAction(command='env')).content
+    assert prev_env == current_env
+
+    # Test overwriting env vars
+    runtime.add_env_vars({'QUUX': 'new_value'})
+    obs = runtime.run_action(CmdRunAction(command='echo $QUUX'))
+    assert (
+        obs.exit_code == 0
+        and obs.content.strip().split('\r\n')[0].strip() == 'new_value'
+    )
 
     runtime.close()
     time.sleep(1)
-
-
-def test_env_vars_runtime_add_env_vars_overwrite(temp_dir, box_class):
-    with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = _load_runtime(temp_dir, box_class)
-        runtime.add_env_vars({'FOOBAR': 'xyz'})
-
-        obs: CmdOutputObservation = runtime.run_action(
-            CmdRunAction(command='echo $FOOBAR')
-        )
-        print(obs)
-        assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert (
-            obs.content.strip().split('\r\n')[0].strip() == 'xyz'
-        ), f'Output: [{obs.content}] for {box_class}'
-
-        runtime.close()
-        time.sleep(1)
