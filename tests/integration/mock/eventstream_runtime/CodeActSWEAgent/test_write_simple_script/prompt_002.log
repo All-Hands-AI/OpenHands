@@ -157,7 +157,6 @@ The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in eve
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
-
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -591,16 +590,14 @@ exit
 NOW, LET'S START!
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
-
 ----------
 
-Certainly! I'll create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation.
+Certainly! I'll create a shell script named 'hello.sh' that prints 'hello'. Here's how we'll do it:
 <execute_bash>
 echo '#!/bin/bash
 echo "hello"' > hello.sh
 chmod +x hello.sh
 </execute_bash>
-
 
 ----------
 

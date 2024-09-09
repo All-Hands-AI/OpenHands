@@ -16,7 +16,7 @@ The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` b
 existing code that you'd like to modify.
 
 ```bash
-WORKSPACE_BASE=$(pwd)/workspace
+export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run -it --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9.2-nikolaik \
