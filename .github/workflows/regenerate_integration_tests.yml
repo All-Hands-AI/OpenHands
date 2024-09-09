@@ -29,13 +29,13 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    - name: Install poetry via pipx
-      run: pipx install poetry
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: 'poetry'
+    - name: Install poetry via pipx
+      run: pipx install poetry
     - name: Install Python dependencies using Poetry
       run: poetry install --without evaluation,llama-index
     - name: Build Environment
