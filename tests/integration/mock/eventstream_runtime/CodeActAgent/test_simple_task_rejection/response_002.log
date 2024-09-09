@@ -1,4 +1,6 @@
-I apologize for the confusion. It seems that we are not in a git repository. Let's initialize a git repository and create a sample file to stage and commit.
+I apologize for the confusion. It seems that we are not in a git repository. Let's initialize a git repository in the current directory and then stage some files before writing a commit message.
+
+First, let's initialize a git repository:
 
 <execute_bash>
-git init && echo "Hello, Git!" > sample.txt && git add sample.txt
+git init

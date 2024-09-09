@@ -1,4 +1,4 @@
-Certainly! I'll create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation.
+Certainly! I'll create a shell script named 'hello.sh' that prints 'hello'. Here's how we'll do it:
 
 <execute_bash>
 echo '#!/bin/bash
