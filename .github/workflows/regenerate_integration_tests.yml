@@ -35,9 +35,6 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install poetry via pipx
-      run: pipx install poetry
-
     - name: Cache Poetry dependencies
       uses: actions/cache@v3
       with:
@@ -47,6 +44,9 @@ jobs:
         key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
         restore-keys: |
           ${{ runner.os }}-poetry-
+
+    - name: Install poetry via pipx
+      run: pipx install poetry
 
     - name: Install Python dependencies using Poetry
       run: poetry install --without evaluation,llama-index
