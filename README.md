@@ -43,7 +43,7 @@ system requirements and more information.
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:od_v0.9.2_image_nikolaik_s_python-nodejs_tag_python3.11-nodejs22 \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
