@@ -4,7 +4,7 @@ import TreeNode from "./TreeNode";
 import { I18nKey } from "#/i18n/declaration";
 
 interface ExplorerTreeProps {
-  files: string[];
+  files: string[] | null;
   defaultOpen?: boolean;
 }
 
