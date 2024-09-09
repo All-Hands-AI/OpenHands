@@ -1,7 +1,3 @@
-
-
-----------
-
 # Instructions
 Review the current state of the page and all other information to find the best
 possible next action to accomplish your goal. Your answer will be interpreted
@@ -108,7 +104,6 @@ click('51')
 click('48', button='middle', modifiers=['Shift'])
 Multiple actions are meant to be executed sequentially without any feedback from the page.
 Don't execute multiple actions at once if you need feedback from the page.
-
 
 
 

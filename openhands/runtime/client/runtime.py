@@ -47,6 +47,9 @@ class LogBuffer:
     """
 
     def __init__(self, container: docker.models.containers.Container):
+        self.client_ready = False
+        self.init_msg = 'Runtime client initialized.'
+
         self.buffer: list[str] = []
         self.lock = threading.Lock()
         self.log_generator = container.logs(stream=True, follow=True)
@@ -77,9 +80,12 @@ class LogBuffer:
                 if self._stop_event.is_set():
                     break
                 if log_line:
-                    self.append(log_line.decode('utf-8').rstrip())
+                    decoded_line = log_line.decode('utf-8').rstrip()
+                    self.append(decoded_line)
+                    if self.init_msg in decoded_line:
+                        self.client_ready = True
         except Exception as e:
-            logger.error(f'Error in stream_logs: {e}')
+            logger.error(f'Error streaming docker logs: {e}')
 
     def __del__(self):
         if self.log_stream_thread.is_alive():
@@ -129,7 +135,6 @@ class EventStreamRuntime(Runtime):
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
-        self.startup_done = False
 
         if self.config.sandbox.runtime_extra_deps:
             logger.info(
@@ -249,7 +254,6 @@ class EventStreamRuntime(Runtime):
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
-        init_msg = 'Runtime client initialized.'
         logger.debug('Getting container logs...')
 
         # Print and clear the log buffer
@@ -257,26 +261,23 @@ class EventStreamRuntime(Runtime):
             self.log_buffer is not None
         ), 'Log buffer is expected to be initialized when container is started'
 
-        # Always process logs, regardless of startup_done status
+        # Always process logs, regardless of client_ready status
         logs = self.log_buffer.get_and_clear()
         if logs:
             formatted_logs = '\n'.join([f'    |{log}' for log in logs])
             logger.info(
                 '\n'
-                + '-' * 30
+                + '-' * 35
                 + 'Container logs:'
-                + '-' * 30
+                + '-' * 35
                 + f'\n{formatted_logs}'
                 + '\n'
-                + '-' * 90
+                + '-' * 80
             )
-            # Check for initialization message even if startup_done is True
-            if any(init_msg in log for log in logs):
-                self.startup_done = True
 
-        if not self.startup_done:
+        if not self.log_buffer.client_ready:
             attempts = 0
-            while not self.startup_done and attempts < 10:
+            while not self.log_buffer.client_ready and attempts < 5:
                 attempts += 1
                 time.sleep(1)
                 logs = self.log_buffer.get_and_clear()
@@ -284,16 +285,13 @@ class EventStreamRuntime(Runtime):
                     formatted_logs = '\n'.join([f'    |{log}' for log in logs])
                     logger.info(
                         '\n'
-                        + '-' * 30
+                        + '-' * 35
                         + 'Container logs:'
-                        + '-' * 30
+                        + '-' * 35
                         + f'\n{formatted_logs}'
                         + '\n'
-                        + '-' * 90
+                        + '-' * 80
                     )
-                    if any(init_msg in log for log in logs):
-                        self.startup_done = True
-                        break
 
         response = self.session.get(f'{self.api_url}/alive')
         if response.status_code == 200:
