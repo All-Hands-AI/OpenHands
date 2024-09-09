@@ -11,12 +11,10 @@ interface ExplorerTreeProps {
 function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
   const { t } = useTranslation();
   if (!files?.length) {
-    const message = !files ? I18nKey.EXPLORER$LOADING_WORKSPACE_MESSAGE : I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE;
-    return (
-      <div className="text-sm text-gray-400 pt-4">
-        {t(message)}
-      </div>
-    );
+    const message = !files
+      ? I18nKey.EXPLORER$LOADING_WORKSPACE_MESSAGE
+      : I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE;
+    return <div className="text-sm text-gray-400 pt-4">{t(message)}</div>;
   }
   return (
     <div className="w-full h-full pt-[4px]">
