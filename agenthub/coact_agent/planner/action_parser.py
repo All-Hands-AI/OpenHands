@@ -84,4 +84,4 @@ class CoActActionParserGlobalPlan(ActionParser):
             agent='CoActExecutorAgent',
             inputs={'task': global_plan_actions},
             action_suffix='global_plan',
-        )
+        )  # FIXME: check to use a more proper key like 'global_plan' instead of 'task'
