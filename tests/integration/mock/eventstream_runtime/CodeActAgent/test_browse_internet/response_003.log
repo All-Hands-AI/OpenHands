@@ -2,4 +2,5 @@ To accomplish the goal of revealing the answer, I need to click on the "Click me
 
 Here's the action I'll take:
 
+In order to accomplish our goal, I need to click on the button with bid 10
 ```click("10"
