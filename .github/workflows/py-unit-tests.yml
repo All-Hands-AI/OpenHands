@@ -22,13 +22,21 @@ jobs:
         python-version: ['3.11']
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry via pipx
-        run: pipx install poetry
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
       - name: Install & Start Docker
