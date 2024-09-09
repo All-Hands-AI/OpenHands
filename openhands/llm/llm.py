@@ -212,11 +212,11 @@ class LLM:
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
+            if message_back:
+                llm_response_logger.debug(message_back)
 
-            llm_response_logger.debug(message_back)
-
-            # post-process to log costs
-            self._post_completion(resp)
+                # post-process to log costs
+                self._post_completion(resp)
 
             return resp
 

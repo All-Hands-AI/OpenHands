@@ -277,7 +277,7 @@ class EventStreamRuntime(Runtime):
 
         if not self.log_buffer.client_ready:
             attempts = 0
-            while not self.log_buffer.client_ready and attempts < 10:
+            while not self.log_buffer.client_ready and attempts < 5:
                 attempts += 1
                 time.sleep(1)
                 logs = self.log_buffer.get_and_clear()
