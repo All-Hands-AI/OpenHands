@@ -71,7 +71,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pypoetry
@@ -135,7 +135,7 @@ jobs:
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pypoetry
@@ -189,7 +189,7 @@ jobs:
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pypoetry
