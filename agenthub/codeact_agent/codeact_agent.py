@@ -102,7 +102,7 @@ class CodeActAgent(Agent):
         elif isinstance(action, IPythonRunCellAction):
             return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, AgentDelegateAction):
-            return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
+            return f'{action.thought}\n<execute_{action.action_suffix}>\n{action.inputs["task"]}\n</execute_{action.action_suffix}>'
         elif isinstance(action, MessageAction):
             return action.content
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
