@@ -7,7 +7,7 @@ import tempfile
 
 import docker
 import toml
-from dirhash import dirhash
+from checksumdir import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
