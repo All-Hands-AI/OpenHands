@@ -1,4 +1,5 @@
 import os
+import random
 import time
 
 import pytest
@@ -26,8 +27,22 @@ def print_method_name(request):
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory: TempPathFactory) -> str:
-    return str(tmp_path_factory.mktemp('test_runtime'))
+def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
+    random_number = random.randint(10000, 99999)
+    temp_dir = tmp_path_factory.mktemp(f'test_runtime_{random_number}')
+
+    def cleanup():
+        if os.path.exists(temp_dir):
+            try:
+                os.rmdir(temp_dir)
+            except OSError:
+                import shutil
+
+                shutil.rmtree(temp_dir)
+
+    request.addfinalizer(cleanup)
+
+    return str(temp_dir)
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
@@ -63,13 +78,11 @@ def box_class(request):
 # since `EventStreamRuntime` supports running as an arbitrary user.
 @pytest.fixture(scope='module', params=get_run_as_openhands())
 def run_as_openhands(request):
-    time.sleep(1)
     return request.param
 
 
 @pytest.fixture(scope='module', params=[True, False])
 def enable_auto_lint(request):
-    time.sleep(1)
     return request.param
 
 
@@ -120,9 +133,15 @@ def _load_runtime(
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+
+    # Create a workspace folder in the temp directory
+    temp_folder = os.path.join(temp_dir, 'workspace/')
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
+
     config = AppConfig(
-        workspace_base=temp_dir,
-        workspace_mount_path=temp_dir,
+        workspace_base=temp_folder,
+        workspace_mount_path_in_sandbox=temp_folder,
         sandbox=SandboxConfig(
             use_host_network=True,
             browsergym_eval_env=browsergym_eval_env,

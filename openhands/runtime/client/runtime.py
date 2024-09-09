@@ -276,7 +276,7 @@ class EventStreamRuntime(Runtime):
 
         if not self.startup_done:
             attempts = 0
-            while not self.startup_done and attempts < 10:
+            while not self.startup_done and attempts < 5:
                 attempts += 1
                 time.sleep(1)
                 logs = self.log_buffer.get_and_clear()

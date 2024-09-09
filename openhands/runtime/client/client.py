@@ -86,7 +86,7 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
-        self._initial_pwd = work_dir
+        logger.info(f'client working directory: {self.pwd}')
 
     @property
     def initial_pwd(self):
@@ -354,10 +354,9 @@ class RuntimeClient:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            if self.pwd != getattr(self, '_jupyter_pwd', None):
-                logger.debug(
-                    f"{self.pwd} != {getattr(self, '_jupyter_pwd', None)} -> reset Jupyter PWD"
-                )
+            jupyter_pwd = getattr(self, '_jupyter_pwd', None)
+            if self.pwd != jupyter_pwd:
+                logger.debug(f'{self.pwd} != {jupyter_pwd} -> reset Jupyter PWD')
                 reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
                 _reset_obs = await _jupyter_plugin.run(_aux_action)
