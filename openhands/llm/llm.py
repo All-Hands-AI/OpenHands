@@ -478,9 +478,8 @@ class LLM:
         Returns:
             boolean: True if prompt caching is active for the given model.
         """
-        return (
-            self.config.caching_prompt is True
-            and self.config.model in cache_prompting_supported_models
+        return self.config.caching_prompt is True and any(
+            model in self.config.model for model in cache_prompting_supported_models
         )
 
     def _post_completion(self, response) -> None:
