@@ -192,32 +192,8 @@ class LLM:
             else:
                 messages = args[1] if len(args) > 1 else []
 
-            # log the prompt
-            debug_message = ''
-            for message in messages:
-                debug_str = ''  # helper to prevent empty messages
-                content = message['content']
-
-                if isinstance(content, list):
-                    for element in content:
-                        if isinstance(element, dict):
-                            if 'text' in element:
-                                debug_str = element['text'].strip()
-                            elif (
-                                self.vision_is_active()
-                                and 'image_url' in element
-                                and 'url' in element['image_url']
-                            ):
-                                debug_str = element['image_url']['url']
-                            else:
-                                debug_str = str(element)
-                        else:
-                            debug_str = str(element)
-                else:
-                    debug_str = str(content)
-
-                if debug_str:
-                    debug_message += message_separator + debug_str
+            # this serves to prevent empty messages and logging the messages
+            debug_message = self._get_debug_message(messages)
 
             if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching
@@ -236,11 +212,11 @@ class LLM:
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
+            if message_back:
+                llm_response_logger.debug(message_back)
 
-            llm_response_logger.debug(message_back)
-
-            # post-process to log costs
-            self._post_completion(resp)
+                # post-process to log costs
+                self._post_completion(resp)
 
             return resp
 
@@ -276,36 +252,10 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1]
+                messages = args[1] if len(args) > 1 else []
 
-            # log the prompt
-            debug_message = ''
-            for message in messages:
-                content = message['content']
-
-                if isinstance(content, list):
-                    for element in content:
-                        if isinstance(element, dict):
-                            if 'text' in element:
-                                debug_str = element['text']
-                            elif (
-                                self.vision_is_active()
-                                and 'image_url' in element
-                                and 'url' in element['image_url']
-                            ):
-                                debug_str = element['image_url']['url']
-                            else:
-                                debug_str = str(element)
-                        else:
-                            debug_str = str(element)
-
-                        debug_message += message_separator + debug_str
-                else:
-                    debug_str = str(content)
-
-                debug_message += message_separator + debug_str
-
-            llm_prompt_logger.debug(debug_message)
+            # this serves to prevent empty messages and logging the messages
+            debug_message = self._get_debug_message(messages)
 
             async def check_stopped():
                 while True:
@@ -321,7 +271,12 @@ class LLM:
 
             try:
                 # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                if debug_message:
+                    llm_prompt_logger.debug(debug_message)
+                    resp = await async_completion_unwrapped(*args, **kwargs)
+                else:
+                    logger.debug('No completion messages!')
+                    resp = {'choices': [{'message': {'content': ''}}]}
 
                 # skip if messages is empty (thus debug_message is empty)
                 if debug_message:
@@ -370,7 +325,7 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1]
+                messages = args[1] if len(args) > 1 else []
 
             # log the prompt
             debug_message = ''
@@ -421,6 +376,38 @@ class LLM:
 
         self._async_completion = async_completion_wrapper  # type: ignore
         self._async_streaming_completion = async_acompletion_stream_wrapper  # type: ignore
+
+    def _get_debug_message(self, messages):
+        if not messages:
+            return ''
+
+        messages = messages if isinstance(messages, list) else [messages]
+        return message_separator.join(
+            self._format_message_content(msg) for msg in messages if msg['content']
+        )
+
+    def _format_message_content(self, message):
+        content = message['content']
+        if isinstance(content, list):
+            return self._format_list_content(content)
+        return str(content)
+
+    def _format_list_content(self, content_list):
+        return '\n'.join(
+            self._format_content_element(element) for element in content_list
+        )
+
+    def _format_content_element(self, element):
+        if isinstance(element, dict):
+            if 'text' in element:
+                return element['text']
+            if (
+                self.vision_is_active()
+                and 'image_url' in element
+                and 'url' in element['image_url']
+            ):
+                return element['image_url']['url']
+        return str(element)
 
     async def _call_acompletion(self, *args, **kwargs):
         return await litellm.acompletion(*args, **kwargs)
