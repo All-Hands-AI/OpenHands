@@ -72,7 +72,7 @@ Run OpenHands by running ```make run``` in the top level directory.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.
 
-In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```
+In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```.
 
 Congratulations!
 

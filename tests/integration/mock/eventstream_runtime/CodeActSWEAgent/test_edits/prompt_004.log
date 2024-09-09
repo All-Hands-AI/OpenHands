@@ -157,7 +157,6 @@ The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in eve
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
-
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -591,14 +590,12 @@ exit
 NOW, LET'S START!
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
-
 ----------
 
 Certainly! I'll fix the typos in bad.txt without asking for confirmation. Let's start by opening the file and examining its contents.
 <execute_ipython>
 open_file('bad.txt')
 </execute_ipython>
-
 
 ----------
 
@@ -613,7 +610,6 @@ OBSERVATION:
 [Jupyter current working directory: /workspace]
 [Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 
-
 ----------
 
 Thank you for providing the contents of the file. I'll now proceed to fix the typos in bad.txt.
@@ -622,7 +618,6 @@ edit_file_by_replace('bad.txt',
 to_replace='This is a stupid typoo.',
 new_content='This is a stupid typo.')
 </execute_ipython>
-
 
 ----------
 
@@ -638,7 +633,6 @@ OBSERVATION:
 [Jupyter current working directory: /workspace]
 [Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 
-
 ----------
 
 Thank you for the update. I'll now fix the remaining typo in the file.
@@ -647,7 +641,6 @@ edit_file_by_replace('bad.txt',
 to_replace='No mor typos!',
 new_content='No more typos!')
 </execute_ipython>
-
 
 ----------
 

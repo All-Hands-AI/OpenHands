@@ -38,7 +38,7 @@ def test_simple_browse(temp_dir, box_class, run_as_openhands):
     assert obs.exit_code == 0
     assert '[1]' in obs.content
 
-    action_cmd = CmdRunAction(command='sleep 5 && cat server.log')
+    action_cmd = CmdRunAction(command='sleep 3 && cat server.log')
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

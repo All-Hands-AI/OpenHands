@@ -1,4 +1,4 @@
-The script has been successfully created. Let's verify its contents and then run it to make sure it works as expected.
+Great! The script has been created successfully. Let's verify its contents and then run it to make sure it works as expected.
 
 <execute_bash>
 bash hello.sh
