@@ -10,10 +10,10 @@ import { initialState as initialCodeState } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import { TabOption, TabType } from "#/types/TabOption";
 import BrowserPanel from "./Browser";
-import CodeEditor from "./file-explorer/CodeEditor";
 import Planner from "./Planner";
 import JupyterEditor from "./Jupyter";
 import { getSettings } from "#/services/settings";
+import CodeEditor from "#/routes/app._index";
 
 function Workspace() {
   const { t } = useTranslation();

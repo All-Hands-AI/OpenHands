@@ -5,8 +5,13 @@ import { Editor, Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor";
 import { VscCheck, VscClose, VscCode, VscSave } from "react-icons/vsc";
 import { Button, Tab, Tabs } from "@nextui-org/react";
-import { json, useFetcher, useLoaderData } from "@remix-run/react";
-import { ActionFunctionArgs } from "@remix-run/node";
+import {
+  ClientActionFunctionArgs,
+  json,
+  useFetcher,
+  useLoaderData,
+  useRouteError,
+} from "@remix-run/react";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import {
@@ -21,40 +26,35 @@ import { I18nKey } from "#/i18n/declaration";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
 
-export const loader = async () => {
-  let files: string[] = [];
+export const clientLoader = async () => json({ files: await retrieveFiles() });
 
-  try {
-    files = await retrieveFiles();
-  } catch (error) {
-    // TODO: Display error in UI
-    console.error("Failed to retrieve files", error);
-  }
-
-  return json({ files });
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const file = formData.get("file")?.toString();
 
   let selectedFileContent: string | null = null;
 
   if (file) {
-    try {
-      selectedFileContent = await retrieveFileContent(file);
-    } catch (error) {
-      // TODO: Display error in UI
-      console.error("Failed to retrieve file content", error);
-    }
+    selectedFileContent = await retrieveFileContent(file);
   }
 
   return json({ selectedFileContent });
 };
 
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  return (
+    <div className="w-full h-full border border-danger rounded-b-xl flex flex-col items-center justify-center gap-2 bg-red-500/5">
+      <h1 className="text-3xl font-bold">Oops! An error occurred!</h1>
+      {error instanceof Error && <pre>{error.message}</pre>}
+    </div>
+  );
+}
+
 function CodeEditor() {
-  const { files } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>({ key: "file-selector" });
+  const { files } = useLoaderData<typeof clientLoader>();
+  const fetcher = useFetcher<typeof clientAction>({ key: "file-selector" });
 
   const { t } = useTranslation();
   const dispatch = useDispatch();

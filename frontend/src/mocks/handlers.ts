@@ -10,7 +10,7 @@ export const handlers = [
       .trim();
 
     if (token !== "ghp_123456") {
-      return HttpResponse.json(null, { status: 401 });
+      return HttpResponse.json([], { status: 401 });
     }
 
     return HttpResponse.json([

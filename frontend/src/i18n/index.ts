@@ -25,7 +25,7 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: "en",
-    debug: process.env.NODE_ENV === "development",
+    debug: import.meta.env.NODE_ENV === "development",
   })
   .then(() => {
     // assume all detected languages are available

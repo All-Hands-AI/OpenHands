@@ -1,14 +1,13 @@
 import { useDisclosure } from "@nextui-org/react";
 import { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useFetcher, useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs } from "@remix-run/node";
+import { Outlet, useFetcher, useLoaderData, json } from "@remix-run/react";
 import { Provider } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
-import { DEFAULT_SETTINGS, getSettings } from "#/services/settings";
+import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
-import { commitSession, getSession, getSettingsSession } from "#/sessions";
 import store from "#/store";
 import { Container } from "#/components/container";
 import { useWebSocketClient } from "#/hooks/useWebSocketClient";
@@ -17,37 +16,26 @@ import { handleAssistantMessage } from "#/services/actions";
 
 const Terminal = lazy(() => import("../components/terminal/Terminal"));
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const settingsSession = await getSettingsSession(
-    request.headers.get("Cookie"),
-  );
-  const settings = settingsSession.get("settings") || DEFAULT_SETTINGS;
-
-  const session = await getSession(request.headers.get("Cookie"));
-  const token = session.get("token");
+export const clientLoader = () => {
+  const settings = getSettings();
+  const token = localStorage.getItem("token");
 
   return json({ token, securityAnalyzer: settings.SECURITY_ANALYZER });
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const session = await getSession(request.headers.get("Cookie"));
-
+export const clientAction = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const token = formData.get("token")?.toString();
 
   if (token) {
-    session.set("token", token);
+    localStorage.setItem("token", token);
   }
 
-  return json(null, {
-    headers: {
-      "Set-Cookie": await commitSession(session),
-    },
-  });
+  return json(null);
 };
 
 function App() {
-  const { token, securityAnalyzer } = useLoaderData<typeof loader>();
+  const { token, securityAnalyzer } = useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
   const socket = useWebSocketClient({

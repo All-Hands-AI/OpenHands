@@ -22,9 +22,9 @@ const generateGitHubAPIHeaders = (token: string) =>
  * @returns Boolean indicating if the data is a GitHub error response
  */
 export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
-  data: T | GitHubErrorReponse,
+  data: T | GitHubErrorReponse | null,
 ): data is GitHubErrorReponse =>
-  "message" in data && data.message !== undefined;
+  !!data && "message" in data && data.message !== undefined;
 
 /**
  * Given a GitHub token, retrieves the repositories of the authenticated user

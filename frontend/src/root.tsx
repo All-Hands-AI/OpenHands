@@ -1,26 +1,25 @@
 import {
-  json,
+  ClientActionFunctionArgs,
   Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  json,
   useLoaderData,
 } from "@remix-run/react";
 import "./tailwind.css";
 import "./index.css";
 import React from "react";
 import { useDisclosure } from "@nextui-org/react";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import CogTooth from "./assets/cog-tooth";
 import ConnectToGitHubByTokenModal from "./components/modals/ConnectToGitHubByTokenModal";
 import { SettingsForm } from "./routes/settings-form";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { getAgents, getModels } from "./api/open-hands";
-import { commitSession, getSession } from "./sessions";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
+import { getAgents, getModels } from "./api/open-hands";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -40,17 +39,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const session = await getSession(request.headers.get("Cookie"));
-  const tosAccepted = session.get("tosAccepted");
-  const ghToken = session.get("ghToken");
+export const clientLoader = async () => {
+  const tosAccepted = localStorage.getItem("tosAccepted") === "true";
+  const ghToken = localStorage.getItem("ghToken");
 
   let user: GitHubUser | null = null;
   if (ghToken) {
     const data = await retrieveGitHubUser(ghToken);
-    if (!isGitHubErrorReponse(data)) user = data;
-    // TODO: display error message in the UI
-    else console.warn(data.status, data.message);
+    if (!isGitHubErrorReponse(data)) {
+      user = data;
+    }
   }
 
   return json({
@@ -61,29 +59,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const session = await getSession(request.headers.get("Cookie"));
+export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
+  const ghToken = formData.get("token")?.toString();
+  const tosAccepted = formData.get("tos")?.toString();
 
-  const tos = formData.get("tos")?.toString();
-  if (tos === "on") {
-    session.set("tosAccepted", true);
+  if (tosAccepted) {
+    localStorage.setItem("tosAccepted", "true");
   }
 
-  const token = formData.get("token")?.toString();
-  if (token) {
-    session.set("ghToken", token);
+  if (ghToken) {
+    localStorage.setItem("ghToken", ghToken);
   }
 
-  return json(null, {
-    headers: {
-      "Set-Cookie": await commitSession(session),
-    },
-  });
+  return json(null);
 };
 
 export default function App() {
-  const { user, models, agents, tosAccepted } = useLoaderData<typeof loader>();
+  const { user, models, agents, tosAccepted } =
+    useLoaderData<typeof clientLoader>();
 
   const {
     isOpen: settingsModalIsOpen,
@@ -130,6 +124,7 @@ export default function App() {
                 To continue, connect an OpenAI, Anthropic, or other LLM account
               </p>
               <SettingsForm
+                // @ts-expect-error - TODO: fix this
                 settings={{}}
                 models={models}
                 agents={agents}
@@ -141,4 +136,8 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+export function HydrateFallback() {
+  return <p>Loading...</p>;
 }

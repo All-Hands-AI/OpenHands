@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => {
             v3_throwAbortReason: true,
           },
           appDirectory: "src",
+          ssr: false,
         }),
       viteTsconfigPaths(),
       svgr(),
