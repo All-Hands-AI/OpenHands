@@ -21,7 +21,7 @@ export function ModelSelector({
   onModelChange,
   defaultModel,
 }: ModelSelectorProps) {
-  const [litellmId, setLitellmId] = React.useState<string | null>(null);
+  const [, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
     null,
   );
@@ -61,14 +61,10 @@ export function ModelSelector({
 
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
-      <span className="text-center italic text-gray-500" data-testid="model-id">
-        {litellmId?.replace("other", "") || "No model selected"}
-      </span>
-
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-row gap-3">
         <Autocomplete
           isDisabled={isDisabled}
-          label="Provider"
+          label="LLM Provider"
           placeholder="Select a provider"
           isClearable={false}
           onSelectionChange={(e) => {
@@ -99,7 +95,7 @@ export function ModelSelector({
         </Autocomplete>
 
         <Autocomplete
-          label="Model"
+          label="LLM Model"
           placeholder="Select a model"
           onSelectionChange={(e) => {
             if (e?.toString()) handleChangeModel(e.toString());
