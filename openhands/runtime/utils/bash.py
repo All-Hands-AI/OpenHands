@@ -4,6 +4,8 @@ from openhands.core.logger import openhands_logger as logger
 
 
 def split_bash_commands(commands):
+    if not commands.strip():
+        return ['']
     try:
         parsed = bashlex.parse(commands)
     except bashlex.errors.ParsingError as e:

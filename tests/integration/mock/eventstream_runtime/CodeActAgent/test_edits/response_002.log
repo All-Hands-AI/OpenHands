@@ -1,14 +1,14 @@
-I'll fix the typos in the bad.txt file. There are three typos to correct:
+I'll now fix the typos in the bad.txt file. There are three typos to correct:
 
 1. "typoo" should be "typo"
-2. "stupid" is not appropriate, we'll change it to "simple"
+2. "stupid" is not appropriate, we'll change it to "silly"
 3. "mor" should be "more"
 
-Let's make these corrections:
+Let's make these changes:
 
 <execute_ipython>
 edit_file_by_replace(
     'bad.txt',
     to_replace="This is a stupid typoo.",
-    new_content="This is a simple typo."
+    new_content="This is a silly typo."
 )
