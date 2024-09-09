@@ -9,7 +9,6 @@ interface ExplorerTreeProps {
 }
 
 function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
-  console.log('tree', files);
   const { t } = useTranslation();
   if (!files?.length) {
     const message = !files ? I18nKey.EXPLORER$LOADING_WORKSPACE_MESSAGE : I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE;
