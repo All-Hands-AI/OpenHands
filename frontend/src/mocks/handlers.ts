@@ -31,4 +31,10 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+  http.get("http://localhost:3000/api/options/agents", () =>
+    HttpResponse.json(["agent1", "agent2"]),
+  ),
+  http.get("http://localhost:3000/api/options/models", () =>
+    HttpResponse.json(["some/model", "another/model"]),
+  ),
 ];

@@ -1,8 +1,14 @@
 import { useDisclosure } from "@nextui-org/react";
-import { lazy, Suspense } from "react";
+import React from "react";
 import { Toaster } from "react-hot-toast";
-import { ActionFunctionArgs } from "@remix-run/node";
-import { Outlet, useFetcher, useLoaderData, json } from "@remix-run/react";
+import {
+  Outlet,
+  useFetcher,
+  useLoaderData,
+  json,
+  ClientActionFunctionArgs,
+  ClientLoaderFunctionArgs,
+} from "@remix-run/react";
 import { Provider } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
@@ -13,17 +19,21 @@ import { Container } from "#/components/container";
 import { useWebSocketClient } from "#/hooks/useWebSocketClient";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
+import { addUserMessage } from "#/state/chatSlice";
+import { SocketProvider } from "#/context/socket";
 
-const Terminal = lazy(() => import("../components/terminal/Terminal"));
+const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
-export const clientLoader = () => {
+export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const q = url.searchParams.get("q");
   const settings = getSettings();
   const token = localStorage.getItem("token");
 
-  return json({ token, securityAnalyzer: settings.SECURITY_ANALYZER });
+  return json({ token, securityAnalyzer: settings.SECURITY_ANALYZER, q });
 };
 
-export const clientAction = async ({ request }: ActionFunctionArgs) => {
+export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const token = formData.get("token")?.toString();
 
@@ -35,14 +45,14 @@ export const clientAction = async ({ request }: ActionFunctionArgs) => {
 };
 
 function App() {
-  const { token, securityAnalyzer } = useLoaderData<typeof clientLoader>();
+  const { token, securityAnalyzer, q } = useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
   const socket = useWebSocketClient({
     token,
     onOpen: () => {
       const settings = getSettings();
-      const event = {
+      const initEvent = {
         action: ActionType.INIT,
         args: {
           ...settings,
@@ -52,7 +62,17 @@ function App() {
         },
       };
 
-      socket.send(JSON.stringify(event));
+      socket.send(JSON.stringify(initEvent));
+      // first time connection, send the query if it exists
+      if (!token && q) {
+        const event = {
+          action: ActionType.MESSAGE,
+          args: { content: q },
+        };
+
+        socket.send(JSON.stringify(event));
+        store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+      }
     },
     onMessage: (message) => {
       console.warn("Received message", message);
@@ -80,45 +100,47 @@ function App() {
 
   return (
     <Provider store={store}>
-      <div data-testid="app" className="h-full flex flex-col gap-[10px]">
-        <div className="h-full flex gap-3">
-          <div className="w-1/4">
-            <Container className="h-full" label="Chat">
-              <ChatInterface />
-            </Container>
-          </div>
+      <SocketProvider socket={socket}>
+        <div data-testid="app" className="h-full flex flex-col gap-[10px]">
+          <div className="h-full flex gap-3">
+            <div className="w-1/4">
+              <Container className="h-full" label="Chat">
+                <ChatInterface />
+              </Container>
+            </div>
 
-          <div className="flex flex-col gap-3 w-3/4">
-            <Container
-              className="h-full"
-              labels={[
-                { label: "Workspace", to: "" },
-                { label: "Jupyter", to: "jupyter" },
-                { label: "Browser (experimental)", to: "browser" },
-              ]}
-            >
-              <Outlet />
-            </Container>
-            {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-             * that it loads only in the client-side. */}
-            <Container className="h-2/5 min-h-0" label="Terminal">
-              <Suspense fallback={<div className="h-full" />}>
-                <Terminal />
-              </Suspense>
-            </Container>
+            <div className="flex flex-col gap-3 w-3/4">
+              <Container
+                className="h-full"
+                labels={[
+                  { label: "Workspace", to: "" },
+                  { label: "Jupyter", to: "jupyter" },
+                  { label: "Browser (experimental)", to: "browser" },
+                ]}
+              >
+                <Outlet />
+              </Container>
+              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+               * that it loads only in the client-side. */}
+              <Container className="h-2/5 min-h-0" label="Terminal">
+                <React.Suspense fallback={<div className="h-full" />}>
+                  <Terminal />
+                </React.Suspense>
+              </Container>
+            </div>
           </div>
+          <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!securityAnalyzer}
+          />
+          <Security
+            isOpen={securityModalIsOpen}
+            onOpenChange={onSecurityModalOpenChange}
+            securityAnalyzer={securityAnalyzer}
+          />
+          <Toaster />
         </div>
-        <Controls
-          setSecurityOpen={onSecurityModalOpen}
-          showSecurityLock={!!securityAnalyzer}
-        />
-        <Security
-          isOpen={securityModalIsOpen}
-          onOpenChange={onSecurityModalOpenChange}
-          securityAnalyzer={securityAnalyzer}
-        />
-        <Toaster />
-      </div>
+      </SocketProvider>
     </Provider>
   );
 }

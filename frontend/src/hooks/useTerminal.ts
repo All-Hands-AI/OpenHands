@@ -4,6 +4,7 @@ import React from "react";
 import { Command } from "#/state/commandSlice";
 import { sendTerminalCommand } from "#/services/terminalService";
 import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
+import { useSocket } from "#/context/socket";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -11,6 +12,7 @@ import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
 */
 
 export const useTerminal = (commands: Command[] = []) => {
+  const { socket } = useSocket();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -39,7 +41,7 @@ export const useTerminal = (commands: Command[] = []) => {
       terminal.current.onKey(({ key, domEvent }) => {
         if (domEvent.key === "Enter") {
           terminal.current?.write("\r\n");
-          sendTerminalCommand(commandBuffer);
+          socket.send(sendTerminalCommand(commandBuffer));
           commandBuffer = "";
         } else if (domEvent.key === "Backspace") {
           if (commandBuffer.length > 0) {

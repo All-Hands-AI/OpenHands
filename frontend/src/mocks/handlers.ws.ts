@@ -1,6 +1,9 @@
 import { delay, WebSocketHandler, ws } from "msw";
 import AgentState from "#/types/AgentState";
-import { AgentStateChangeObservation } from "#/types/core/observations";
+import {
+  AgentStateChangeObservation,
+  CommandObservation,
+} from "#/types/core/observations";
 import { AssistantMessageAction } from "#/types/core/actions";
 import { TokenConfigSuccess } from "#/types/core/variances";
 
@@ -27,6 +30,21 @@ const generateAgentResponse = (message: string): AssistantMessageAction => ({
     content: message,
     images_urls: [],
     wait_for_response: false,
+  },
+});
+
+const generateAgentRunObservation = (): CommandObservation => ({
+  id: 3,
+  cause: 0,
+  message: "COMMAND_OBSERVATION",
+  source: "agent",
+  timestamp: new Date().toISOString(),
+  observation: "run",
+  content: "COMMAND_OBSERVATION",
+  extras: {
+    command: "<input>",
+    command_id: 1,
+    exit_code: 0,
   },
 });
 
@@ -74,6 +92,13 @@ export const handlers: WebSocketHandler[] = [
                   AgentState.AWAITING_USER_INPUT,
                 ),
               ),
+            );
+            break;
+          case "run":
+            await delay(2500);
+            // send command observation
+            client.send(
+              JSON.stringify(generateAgentRunObservation(parsed.args.command)),
             );
             break;
           default:
