@@ -250,18 +250,6 @@
     "fr": "Configuration",
     "tr": "Konfigürasyon"
   },
-  "CONFIGURATION$MODAL_SUB_TITLE": {
-    "en": "Adjust settings to your liking",
-    "zh-CN": "根据您的喜好调整设置",
-    "de": "Passen Sie die Einstellungen nach Ihren Wünschen an ",
-    "ko-KR": "원하는 대로 설정 조정",
-    "no": "Juster innstillinger etter dine ønsker ",
-    "zh-TW": "調整設定以符合您的喜好",
-    "it": "Regola le impostazioni in base alle tue preferenze",
-    "pt": "Ajuste as configurações de acordo com sua preferência",
-    "es": "Ajusta la configuración a tu gusto",
-    "tr": "Ayarları isteğinize göre ayarlayın"
-  },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
     "zh-CN": "模型",
