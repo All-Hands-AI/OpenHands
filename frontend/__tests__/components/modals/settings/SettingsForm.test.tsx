@@ -5,19 +5,16 @@ import { vi, describe, it, expect } from "vitest";
 import { Settings } from "#/services/settings";
 import { SettingsForm } from "#/routes/settings-form";
 
-const onModelChangeMock = vi.fn();
 const onCustomModelChangeMock = vi.fn();
 const onModelTypeChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
-const onConfirmationModeChangeMock = vi.fn();
-const onSecurityAnalyzerChangeMock = vi.fn();
 
 const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
     <SettingsForm
-      disabled={false}
+      onClose={vi.fn}
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
@@ -32,15 +29,6 @@ const renderSettingsForm = (settings?: Settings) => {
       }
       models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
       agents={["agent1", "agent2", "agent3"]}
-      securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
-      onModelChange={onModelChangeMock}
-      onCustomModelChange={onCustomModelChangeMock}
-      onModelTypeChange={onModelTypeChangeMock}
-      onAgentChange={onAgentChangeMock}
-      onLanguageChange={onLanguageChangeMock}
-      onAPIKeyChange={onAPIKeyChangeMock}
-      onConfirmationModeChange={onConfirmationModeChangeMock}
-      onSecurityAnalyzerChange={onSecurityAnalyzerChangeMock}
     />,
   );
 };
@@ -98,28 +86,16 @@ describe("SettingsForm", () => {
   it("should disable settings when disabled is true", () => {
     renderWithProviders(
       <SettingsForm
+        onClose={vi.fn}
         settings={{
           LLM_MODEL: "gpt-4o",
           CUSTOM_LLM_MODEL: "",
           USING_CUSTOM_MODEL: false,
           AGENT: "agent1",
-          LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
-          CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: "analyzer1",
         }}
         models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
         agents={["agent1", "agent2", "agent3"]}
-        securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
-        disabled
-        onModelChange={onModelChangeMock}
-        onCustomModelChange={onCustomModelChangeMock}
-        onModelTypeChange={onModelTypeChangeMock}
-        onAgentChange={onAgentChangeMock}
-        onLanguageChange={onLanguageChangeMock}
-        onAPIKeyChange={onAPIKeyChangeMock}
-        onConfirmationModeChange={onConfirmationModeChangeMock}
-        onSecurityAnalyzerChange={onSecurityAnalyzerChangeMock}
       />,
     );
 
@@ -228,28 +204,16 @@ describe("SettingsForm", () => {
     it("should have custom model switched if using custom model", () => {
       renderWithProviders(
         <SettingsForm
+          onClose={vi.fn}
           settings={{
             LLM_MODEL: "gpt-4o",
             CUSTOM_LLM_MODEL: "CUSTOM_MODEL",
             USING_CUSTOM_MODEL: true,
             AGENT: "agent1",
-            LANGUAGE: "en",
             LLM_API_KEY: "sk-...",
-            CONFIRMATION_MODE: true,
-            SECURITY_ANALYZER: "analyzer1",
           }}
           models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
           agents={["agent1", "agent2", "agent3"]}
-          securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
-          disabled
-          onModelChange={onModelChangeMock}
-          onCustomModelChange={onCustomModelChangeMock}
-          onModelTypeChange={onModelTypeChangeMock}
-          onAgentChange={onAgentChangeMock}
-          onLanguageChange={onLanguageChangeMock}
-          onAPIKeyChange={onAPIKeyChangeMock}
-          onConfirmationModeChange={onConfirmationModeChangeMock}
-          onSecurityAnalyzerChange={onSecurityAnalyzerChangeMock}
         />,
       );
 

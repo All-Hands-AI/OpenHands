@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createRemixStub } from "@remix-run/testing";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import App, { clientLoader, clientAction } from "#/root";
+import App, { clientLoader } from "#/root";
 
 const RemixStub = createRemixStub([
   {
     path: "/",
     Component: App,
     loader: clientLoader,
-    action: clientAction,
   },
 ]);
 

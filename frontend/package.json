@@ -43,7 +43,7 @@
   },
   "scripts": {
     "dev": "npm run make-i18n && remix vite:dev",
-    "build": "npm run make-i18n && tsc && remix vite:build --config tsconfig.build.json",
+    "build": "npm run make-i18n && tsc && remix vite:build",
     "start": "remix-serve ./build/server/index.js",
     "test": "vitest run",
     "test:coverage": "npm run make-i18n && vitest run --coverage",

@@ -4,9 +4,9 @@ import {
   Input,
   Switch,
 } from "@nextui-org/react";
-import React from "react";
+import React, { Suspense } from "react";
 import clsx from "clsx";
-import { useFetcher } from "@remix-run/react";
+import { Await, useFetcher } from "@remix-run/react";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 import { ModelSelector } from "#/components/modals/settings/ModelSelector";
 
@@ -18,8 +18,8 @@ interface SettingsFormProps {
     USING_CUSTOM_MODEL: boolean;
     CUSTOM_LLM_MODEL: string;
   };
-  models: string[];
-  agents: string[];
+  models: Promise<string[]>;
+  agents: Promise<string[]>;
   onClose: () => void;
 }
 
@@ -88,10 +88,16 @@ export function SettingsForm({
         )}
 
         {!isCustomModel && (
-          <ModelSelector
-            models={organizeModelsAndProviders(models)}
-            currentModel={settings.LLM_MODEL}
-          />
+          <Suspense fallback={<div>Loading models...</div>}>
+            <Await resolve={models}>
+              {(resolvedModels) => (
+                <ModelSelector
+                  models={organizeModelsAndProviders(resolvedModels)}
+                  currentModel={settings.LLM_MODEL}
+                />
+              )}
+            </Await>
+          </Suspense>
         )}
 
         <fieldset data-testid="api-key-input" className="flex flex-col gap-2">
@@ -123,25 +129,32 @@ export function SettingsForm({
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
             Agent
           </label>
-          <Autocomplete
-            id="agent"
-            aria-label="Agent"
-            data-testid="agent-input"
-            name="agent"
-            defaultSelectedKey={settings.AGENT}
-            isClearable={false}
-            inputProps={{
-              classNames: {
-                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-              },
-            }}
-          >
-            {agents.map((agent) => (
-              <AutocompleteItem key={agent} value={agent}>
-                {agent}
-              </AutocompleteItem>
-            ))}
-          </Autocomplete>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Await resolve={agents}>
+              {(resolvedAgents) => (
+                <Autocomplete
+                  id="agent"
+                  aria-label="Agent"
+                  data-testid="agent-input"
+                  name="agent"
+                  defaultSelectedKey={settings.AGENT}
+                  isClearable={false}
+                  inputProps={{
+                    classNames: {
+                      inputWrapper:
+                        "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                    },
+                  }}
+                >
+                  {resolvedAgents.map((agent) => (
+                    <AutocompleteItem key={agent} value={agent}>
+                      {agent}
+                    </AutocompleteItem>
+                  ))}
+                </Autocomplete>
+              )}
+            </Await>
+          </Suspense>
         </fieldset>
       </div>
 

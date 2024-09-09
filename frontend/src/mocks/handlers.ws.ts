@@ -97,9 +97,7 @@ export const handlers: WebSocketHandler[] = [
           case "run":
             await delay(2500);
             // send command observation
-            client.send(
-              JSON.stringify(generateAgentRunObservation(parsed.args.command)),
-            );
+            client.send(JSON.stringify(generateAgentRunObservation()));
             break;
           default:
             // send error

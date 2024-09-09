@@ -6,8 +6,10 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  defer,
   json,
   useLoaderData,
+  useNavigation,
 } from "@remix-run/react";
 import "./tailwind.css";
 import "./index.css";
@@ -20,6 +22,7 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import { getAgents, getModels } from "./api/open-hands";
+import LoadingProjectModal from "./components/modals/LoadingProject";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,18 +46,19 @@ export const clientLoader = async () => {
   const tosAccepted = localStorage.getItem("tosAccepted") === "true";
   const ghToken = localStorage.getItem("ghToken");
 
+  const models = getModels();
+  const agents = getAgents();
+
   let user: GitHubUser | null = null;
   if (ghToken) {
     const data = await retrieveGitHubUser(ghToken);
-    if (!isGitHubErrorReponse(data)) {
-      user = data;
-    }
+    if (!isGitHubErrorReponse(data)) user = data;
   }
 
-  return json({
+  return defer({
     user,
-    models: await getModels(),
-    agents: await getAgents(),
+    models,
+    agents,
     tosAccepted,
   });
 };
@@ -75,7 +79,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   return json(null);
 };
 
+export const shouldRevalidate = () => false;
+
 export default function App() {
+  const navigation = useNavigation();
   const { user, models, agents, tosAccepted } =
     useLoaderData<typeof clientLoader>();
 
@@ -112,6 +119,11 @@ export default function App() {
         {!tosAccepted && (
           <ModalBackdrop>
             <ConnectToGitHubByTokenModal />
+          </ModalBackdrop>
+        )}
+        {navigation.state === "loading" && (
+          <ModalBackdrop>
+            <LoadingProjectModal />
           </ModalBackdrop>
         )}
         {settingsModalIsOpen && (

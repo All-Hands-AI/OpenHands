@@ -16,14 +16,9 @@ function LoadingProjectModal() {
   return (
     <ModalBody>
       <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
-        Your project is loading...
+        Loading...
       </span>
       <LoadingSpinner />
-      <ModalButton
-        onClick={() => console.log("cancel")}
-        text="Cancel"
-        className="bg-[#737373] w-full"
-      />
     </ModalBody>
   );
 }

@@ -3,11 +3,11 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { ws } from "msw";
 import { setupServer } from "msw/node";
-import App, { loader } from "#/routes/app";
+import App from "#/routes/app";
 import AgentState from "#/types/AgentState";
 import { AgentStateChangeObservation } from "#/types/core/observations";
 
-const RemixStub = createRemixStub([{ path: "/app", Component: App, loader }]);
+const RemixStub = createRemixStub([{ path: "/app", Component: App }]);
 
 describe("App", () => {
   const agent = ws.link("ws://localhost:3001/ws");

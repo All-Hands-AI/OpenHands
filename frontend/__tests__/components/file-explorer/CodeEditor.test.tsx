@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { describe, afterEach, vi, it, expect } from "vitest";
-import CodeEditor from "#/components/file-explorer/CodeEditor";
+import CodeEditor from "#/routes/app._index";
 
 describe("CodeEditor", () => {
   afterEach(() => {

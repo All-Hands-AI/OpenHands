@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Editor, Monaco } from "@monaco-editor/react";
@@ -6,7 +6,9 @@ import { type editor } from "monaco-editor";
 import { VscCheck, VscClose, VscCode, VscSave } from "react-icons/vsc";
 import { Button, Tab, Tabs } from "@nextui-org/react";
 import {
+  Await,
   ClientActionFunctionArgs,
+  defer,
   json,
   useFetcher,
   useLoaderData,
@@ -26,7 +28,23 @@ import { I18nKey } from "#/i18n/declaration";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
 
-export const clientLoader = async () => json({ files: await retrieveFiles() });
+function FileExplorerFallback() {
+  return (
+    <div className="h-full w-60 border border-yellow-500 rounded-bl-xl bg-neutral-800 px-3 py-2">
+      Loading files...
+    </div>
+  );
+}
+
+export const clientLoader = async () => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    const files = retrieveFiles(token);
+    return defer({ files });
+  }
+
+  throw new Error("Unauthorized");
+};
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
@@ -196,7 +214,11 @@ function CodeEditor() {
 
   return (
     <div className="flex h-full w-full bg-neutral-900 relative">
-      <FileExplorer files={files} />
+      <Suspense fallback={<FileExplorerFallback />}>
+        <Await resolve={files}>
+          {(resolvedFiled) => <FileExplorer files={resolvedFiled} />}
+        </Await>
+      </Suspense>
       <div className="flex flex-col min-h-0 w-full">
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4">
           <Tabs

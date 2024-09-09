@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ClientActionFunctionArgs, json } from "@remix-run/react";
 import {
   getDefaultSettings,
   saveSettings,
@@ -7,7 +7,7 @@ import {
 
 // This is the route for saving settings. It only exports the action function.
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const entries = Object.fromEntries(formData.entries());
 

@@ -1,10 +1,11 @@
 import clsx from "clsx";
 import React from "react";
-import { Form } from "@remix-run/react";
+import { Form, useNavigation } from "@remix-run/react";
 import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 
 export function TaskForm() {
+  const navigation = useNavigation();
   const [hasText, setHasText] = React.useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,6 +30,7 @@ export function TaskForm() {
             type="submit"
             aria-label="Submit"
             className="absolute right-4 top-1/2 transform -translate-y-1/2"
+            disabled={navigation.state === "loading"}
           >
             <Send width={24} height={24} />
           </button>

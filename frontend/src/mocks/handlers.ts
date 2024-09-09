@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 
 export const handlers = [
   http.get("/api/options/models", () => HttpResponse.json([])),
@@ -9,7 +9,7 @@ export const handlers = [
       ?.replace("Bearer", "")
       .trim();
 
-    if (token !== "ghp_123456") {
+    if (!token) {
       return HttpResponse.json([], { status: 401 });
     }
 
@@ -18,10 +18,10 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]);
   }),
-  http.get("http://localhost:3000/api/list-files", () =>
+  http.get("http://localhost:3001/api/list-files", () =>
     HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]),
   ),
-  http.get("http://localhost:3000/api/select-file", ({ request }) => {
+  http.get("http://localhost:3001/api/select-file", ({ request }) => {
     const url = new URL(request.url);
     const file = url.searchParams.get("file")?.toString();
 
@@ -31,10 +31,12 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
-  http.get("http://localhost:3000/api/options/agents", () =>
-    HttpResponse.json(["agent1", "agent2"]),
-  ),
-  http.get("http://localhost:3000/api/options/models", () =>
-    HttpResponse.json(["some/model", "another/model"]),
-  ),
+  http.get("http://localhost:3000/api/options/agents", async () => {
+    await delay(2500);
+    return HttpResponse.json(["agent1", "agent2"]);
+  }),
+  http.get("http://localhost:3000/api/options/models", async () => {
+    await delay(2500);
+    return HttpResponse.json(["some/model", "another/model"]);
+  }),
 ];
