@@ -1,4 +1,4 @@
-It appears there is already a .git directory in the current workspace. Let's check the status of the git repository to see what changes are staged.
+It appears that there is already a .git directory in the current workspace. Let's try to use git commands to see the status of the repository:
 
 <execute_bash>
 git status
