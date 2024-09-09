@@ -157,7 +157,6 @@ The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in eve
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
-
 ----------
 
 Here is an example of how you can interact with the environment for task solving:
@@ -591,14 +590,12 @@ exit
 NOW, LET'S START!
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
-
 ----------
 
 Certainly! I'll fix the typos in bad.txt without asking for confirmation. Let's start by opening the file and examining its contents.
 <execute_ipython>
 open_file('bad.txt')
 </execute_ipython>
-
 
 ----------
 
