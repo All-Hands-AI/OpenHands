@@ -15,9 +15,13 @@ from openhands.storage import get_file_store
 
 @pytest.fixture(autouse=True)
 def print_method_name(request):
-    print('\n########################################################################')
+    print(
+        '\n\n########################################################################'
+    )
     print(f'Running test: {request.node.name}')
-    print('########################################################################')
+    print(
+        '########################################################################\n\n'
+    )
     yield
 
 
@@ -26,7 +30,10 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime'))
 
 
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
+RUN_AS_OPENHANDS = (
+    os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes'] == 'true'
+)
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
@@ -40,6 +47,10 @@ def get_box_classes():
         raise ValueError(f'Invalid runtime: {runtime}')
 
 
+def get_run_as_openhands():
+    return [RUN_AS_OPENHANDS]
+
+
 # This assures that all tests run together per runtime, not alternating between them,
 # which cause errors (especially outside GitHub actions).
 @pytest.fixture(scope='module', params=get_box_classes())
@@ -50,7 +61,7 @@ def box_class(request):
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
 # since `EventStreamRuntime` supports running as an arbitrary user.
-@pytest.fixture(scope='module', params=[True, False])
+@pytest.fixture(scope='module', params=get_run_as_openhands())
 def run_as_openhands(request):
     time.sleep(1)
     return request.param
@@ -81,8 +92,6 @@ def base_container_image(request):
         if request.param is None:
             request.param = pytest.param(
                 'nikolaik/python-nodejs:python3.11-nodejs22',
-                'python:3.11-bookworm',
-                'node:22-bookworm',
                 'golang:1.23-bookworm',
             )
     print(f'Container image: {request.param}')
