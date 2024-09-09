@@ -6,6 +6,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  ShouldRevalidateFunctionArgs,
   defer,
   json,
   useLoaderData,
@@ -79,7 +80,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   return json(null);
 };
 
-export const shouldRevalidate = () => false;
+export const shouldRevalidate = ({ formData }: ShouldRevalidateFunctionArgs) =>
+  !!formData?.get("tos");
 
 export default function App() {
   const navigation = useNavigation();

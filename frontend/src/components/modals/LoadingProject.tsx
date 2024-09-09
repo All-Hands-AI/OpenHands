@@ -1,5 +1,3 @@
-import React from "react";
-import ModalButton from "../buttons/ModalButton";
 import LoadingSpinnerOuter from "#/assets/loading-outer.svg?react";
 import ModalBody from "./ModalBody";
 

@@ -38,22 +38,25 @@ function FileExplorerFallback() {
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
+
   if (token) {
     const files = retrieveFiles(token);
     return defer({ files });
   }
 
-  throw new Error("Unauthorized");
+  return json({ files: [] }, { status: 401 });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
+  const token = localStorage.getItem("token");
+
   const formData = await request.formData();
   const file = formData.get("file")?.toString();
 
   let selectedFileContent: string | null = null;
 
-  if (file) {
-    selectedFileContent = await retrieveFileContent(file);
+  if (file && token) {
+    selectedFileContent = await retrieveFileContent(token, file);
   }
 
   return json({ selectedFileContent });

@@ -25,10 +25,17 @@ export const retrieveFiles = async (token: string): Promise<string[]> => {
   return response.json();
 };
 
-export const retrieveFileContent = async (path: string): Promise<string> => {
+export const retrieveFileContent = async (
+  token: string,
+  path: string,
+): Promise<string> => {
   const url = new URL("http://localhost:3001/api/select-file");
   url.searchParams.append("file", path);
-  const response = await fetch(url.toString());
+  const response = await fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   const data = await response.json();
   return data.code;

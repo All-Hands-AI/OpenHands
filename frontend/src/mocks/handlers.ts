@@ -18,10 +18,32 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]);
   }),
-  http.get("http://localhost:3001/api/list-files", () =>
-    HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]),
-  ),
-  http.get("http://localhost:3001/api/select-file", ({ request }) => {
+  http.get("http://localhost:3001/api/list-files", async ({ request }) => {
+    await delay(2500);
+
+    const token = request.headers
+      .get("Authorization")
+      ?.replace("Bearer", "")
+      .trim();
+
+    if (!token) {
+      return HttpResponse.json([], { status: 401 });
+    }
+
+    return HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]);
+  }),
+  http.get("http://localhost:3001/api/select-file", async ({ request }) => {
+    await delay(500);
+
+    const token = request.headers
+      .get("Authorization")
+      ?.replace("Bearer", "")
+      .trim();
+
+    if (!token) {
+      return HttpResponse.json([], { status: 401 });
+    }
+
     const url = new URL(request.url);
     const file = url.searchParams.get("file")?.toString();
 
