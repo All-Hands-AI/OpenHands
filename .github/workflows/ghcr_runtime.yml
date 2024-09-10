@@ -158,6 +158,9 @@ jobs:
           # then across more than 2 CPUs for some reason
           poetry run pip install pytest-xdist
 
+          # Install to be able to retry on failures for flaky tests
+          poetry run pip install pytest-rerunfailures
+
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
@@ -165,7 +168,7 @@ jobs:
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          poetry run pytest -n 2 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 2 --reruns 2 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
