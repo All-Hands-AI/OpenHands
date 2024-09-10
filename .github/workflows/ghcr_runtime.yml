@@ -98,7 +98,7 @@ jobs:
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
       - name: Upload runtime image for fork
-        if: github.event.pull_request.head.repo.fork != true
+        if: github.event.pull_request.head.repo.fork
         uses: actions/upload-artifact@v4
         with:
           name: runtime-${{ matrix.base_image.tag }}
