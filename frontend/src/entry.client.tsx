@@ -11,7 +11,7 @@ import { hydrateRoot } from "react-dom/client";
 import { SocketProvider } from "./context/socket";
 
 async function prepareApp() {
-  if (false && process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development") {
     const { worker } = await import("./mocks/browser");
 
     await worker.start({

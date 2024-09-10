@@ -18,7 +18,7 @@ import store from "#/store";
 import { Container } from "#/components/container";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
-import { addUserMessage } from "#/state/chatSlice";
+import { addUserMessage, clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import { sendTerminalCommand } from "#/services/terminalService";
 import { appendInput, appendOutput } from "#/state/commandSlice";
@@ -100,7 +100,10 @@ function App() {
         }
       },
       onMessage: (message) => {
-        console.warn("Received message", message);
+        console.warn(
+          "Received message",
+          JSON.stringify(JSON.parse(message.data.toString()), null, 2),
+        );
         const parsed = JSON.parse(message.data.toString());
         if ("token" in parsed) {
           fetcher.submit({ token: parsed.token }, { method: "post" });
@@ -123,6 +126,10 @@ function App() {
       return;
     }
 
+    if (resetSocket) {
+      store.dispatch(clearMessages());
+    }
+
     startSocketConnection();
     socketStartRef.current = true;
   }, [resetSocket]);
@@ -136,9 +143,6 @@ function App() {
   return (
     <Provider store={store}>
       <div data-testid="app" className="h-full flex flex-col gap-[10px]">
-        <button type="button" onClick={startSocketConnection}>
-          START
-        </button>
         <div className="h-full flex gap-3">
           <div className="w-1/4">
             <Container className="h-full" label="Chat">

@@ -1,14 +1,15 @@
 import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useSearchParams } from "@remix-run/react";
 import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
-import { changeAgentState } from "#/services/agentStateService";
+import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
-import Session from "#/services/session";
+import { useSocket } from "#/context/socket";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
@@ -74,6 +75,8 @@ function ActionButton({
 }
 
 function AgentControlBar() {
+  const [, setSearchParams] = useSearchParams();
+  const { send } = useSocket();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -84,14 +87,16 @@ function AgentControlBar() {
     }
 
     if (action === AgentState.STOPPED) {
-      Session._history = [];
-      store.dispatch(clearMessages());
+      setSearchParams((prev) => {
+        prev.set("reset", "true");
+        return prev;
+      });
     } else {
       setIsLoading(true);
     }
 
     setDesiredState(action);
-    changeAgentState(action);
+    send(generateAgentStateChangeEvent(action));
   };
 
   useEffect(() => {

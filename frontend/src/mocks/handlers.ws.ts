@@ -99,6 +99,15 @@ export const handlers: WebSocketHandler[] = [
             // send command observation
             client.send(JSON.stringify(generateAgentRunObservation()));
             break;
+          case "change_agent_state":
+            await delay();
+            // send agent state change observation
+            client.send(
+              JSON.stringify(
+                generateAgentStateChangeObservation(parsed.args.agent_state),
+              ),
+            );
+            break;
           default:
             // send error
             break;
