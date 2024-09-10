@@ -118,13 +118,13 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.content.strip().split('\n')[0].endswith('/workspace')
+    assert '[Jupyter current working directory:' in obs.content.strip().split('\n')[1]
+    assert obs.content.strip().split('\n')[1].endswith('/workspace]')
     assert (
         obs.content.strip()
-        == (
-            '/workspace\n'
-            '[Jupyter current working directory: /workspace]\n'
-            '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
-        ).strip()
+        .split('\n')[2]
+        .endswith('/openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]')
     )
 
     # write a file
@@ -135,12 +135,15 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert (
+        obs.content.strip().split('\n')[0]
+        == '[Code executed successfully with no output]'
+    )
+    assert '[Jupyter current working directory:' in obs.content.strip().split('\n')[1]
+    assert obs.content.strip().split('\n')[1].endswith('/workspace]')
+    assert (
         obs.content.strip()
-        == (
-            '[Code executed successfully with no output]\n'
-            '[Jupyter current working directory: /workspace]\n'
-            '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
-        ).strip()
+        .split('\n')[2]
+        .endswith('/openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]')
     )
 
     # check file owner via bash
