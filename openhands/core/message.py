@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Union
+from typing import Union
 
 from pydantic import BaseModel, Field, model_serializer
 from typing_extensions import Literal
@@ -109,10 +109,11 @@ def format_messages(
 
         if content_parts:
             content_str = '\n'.join(content_parts)
-            formatted_message: dict[str, Any] = {
-                'role': role,
-                'content': content_str,
-            }
-            converted_messages.append(formatted_message)
+            converted_messages.append(
+                {
+                    'role': role,
+                    'content': content_str,
+                }
+            )
 
     return converted_messages
