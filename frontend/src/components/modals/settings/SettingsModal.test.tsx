@@ -4,7 +4,6 @@ import i18next from "i18next";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
-import toast from "#/utils/toast";
 import {
   Settings,
   getSettings,
@@ -15,7 +14,6 @@ import Session from "#/services/session";
 import { fetchAgents, fetchModels } from "#/services/options";
 import SettingsModal from "./SettingsModal";
 
-const toastSpy = vi.spyOn(toast, "settingsChanged");
 const i18nSpy = vi.spyOn(i18next, "changeLanguage");
 const startNewSessionSpy = vi.spyOn(Session, "startNewSession");
 vi.spyOn(Session, "isConnected").mockImplementation(() => true);
@@ -24,18 +22,14 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
   getSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
-    CUSTOM_LLM_MODEL: "",
-    USING_CUSTOM_MODEL: false,
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
-    CONFIRMATION_MODE: true,
-    SECURITY_ANALYZER: "invariant",
+    CONFIRMATION_MODE: false,
+    SECURITY_ANALYZER: "",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
-    CUSTOM_LLM_MODEL: "",
-    USING_CUSTOM_MODEL: false,
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "",
@@ -98,8 +92,7 @@ describe("SettingsModal", () => {
   it("should disabled the save button if the settings contain a missing value", async () => {
     const onOpenChangeMock = vi.fn();
     (getSettings as Mock).mockReturnValueOnce({
-      LLM_MODEL: "gpt-4o",
-      AGENT: "",
+      LLM_MODEL: "",
     });
     await act(async () =>
       renderWithProviders(
@@ -115,13 +108,11 @@ describe("SettingsModal", () => {
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
       LLM_MODEL: "gpt-4o",
-      CUSTOM_LLM_MODEL: "",
-      USING_CUSTOM_MODEL: false,
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
-      CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: "invariant",
+      SECURITY_ANALYZER: "",
+      CONFIRMATION_MODE: false,
     };
 
     it("should save the settings", async () => {
@@ -135,8 +126,10 @@ describe("SettingsModal", () => {
       await assertModelsAndAgentsFetched();
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", {
+        name: "LLM Provider",
+      });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const azure = screen.getByText("Azure");
@@ -164,8 +157,10 @@ describe("SettingsModal", () => {
       );
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", {
+        name: "LLM Provider",
+      });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const openai = screen.getByText("OpenAI");
@@ -178,32 +173,6 @@ describe("SettingsModal", () => {
       await user.click(saveButton);
 
       expect(startNewSessionSpy).toHaveBeenCalled();
-    });
-
-    it("should display a toast for every change", async () => {
-      const user = userEvent.setup();
-      const onOpenChangeMock = vi.fn();
-      await act(async () =>
-        renderWithProviders(
-          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
-        ),
-      );
-
-      const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
-
-      await user.click(providerInput);
-      const cohere = screen.getByText("cohere");
-      await user.click(cohere);
-
-      await user.click(modelInput);
-      const model3 = screen.getByText("command-r-v1:0");
-      await user.click(model3);
-
-      await user.click(saveButton);
-
-      expect(toastSpy).toHaveBeenCalledTimes(4);
     });
 
     it("should change the language", async () => {
@@ -230,6 +199,10 @@ describe("SettingsModal", () => {
     it("should close the modal", async () => {
       const user = userEvent.setup();
       const onOpenChangeMock = vi.fn();
+      (getSettings as Mock).mockReturnValueOnce({
+        LLM_MODEL: "gpt-4o",
+        LLM_API_KEY: "sk-...",
+      });
       await act(async () =>
         renderWithProviders(
           <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
@@ -241,8 +214,10 @@ describe("SettingsModal", () => {
       });
 
       const saveButton = screen.getByRole("button", { name: /save/i });
-      const providerInput = screen.getByRole("combobox", { name: "Provider" });
-      const modelInput = screen.getByRole("combobox", { name: "Model" });
+      const providerInput = screen.getByRole("combobox", {
+        name: "LLM Provider",
+      });
+      const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
 
       await user.click(providerInput);
       const cohere = screen.getByText("cohere");
@@ -252,6 +227,7 @@ describe("SettingsModal", () => {
       const model3 = screen.getByText("command-r-v1:0");
       await user.click(model3);
 
+      expect(saveButton).not.toBeDisabled();
       await user.click(saveButton);
 
       expect(onOpenChangeMock).toHaveBeenCalledWith(false);
@@ -261,15 +237,15 @@ describe("SettingsModal", () => {
   it("should reset settings to defaults when the 'reset to defaults' button is clicked", async () => {
     const user = userEvent.setup();
     const onOpenChangeMock = vi.fn();
+    (getSettings as Mock).mockReturnValueOnce({
+      LLM_MODEL: "gpt-4o",
+      SECURITY_ANALYZER: "fakeanalyzer",
+    });
     await act(async () =>
       renderWithProviders(
         <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
       ),
     );
-
-    // We need to enable the agent select first
-    const agentSwitch = screen.getByTestId("enableagentselect");
-    await user.click(agentSwitch);
 
     const resetButton = screen.getByRole("button", {
       name: /MODAL_RESET_BUTTON_LABEL/i,

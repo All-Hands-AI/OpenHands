@@ -584,6 +584,6 @@ exit
 
 
 NOW, LET'S START!
-Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
+Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.
 
 ENVIRONMENT REMINDER: You have 19 turns left to complete the task. When finished reply with <finish></finish>.

@@ -39,7 +39,6 @@ function BaseModal({
       data-testid={testID}
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title={title}
       isDismissable={isDismissable}
       backdrop="blur"
       hideCloseButton
@@ -51,14 +50,14 @@ function BaseModal({
           <>
             {title && (
               <ModalHeader className="flex flex-col p-0">
-                <HeaderContent title={title} subtitle={subtitle} />
+                <HeaderContent maintitle={title} subtitle={subtitle} />
               </ModalHeader>
             )}
 
             <ModalBody className={bodyClassName}>{children}</ModalBody>
 
             {actions && actions.length > 0 && (
-              <ModalFooter className="flex-col flex justify-start p-0">
+              <ModalFooter className="flex-row flex justify-start p-0">
                 <FooterContent actions={actions} closeModal={closeModal} />
               </ModalFooter>
             )}
