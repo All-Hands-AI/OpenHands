@@ -16,11 +16,11 @@ import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
 import store from "#/store";
 import { Container } from "#/components/container";
-import { useWebSocketClient } from "#/hooks/useWebSocketClient";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage } from "#/state/chatSlice";
-import { SocketProvider } from "#/context/socket";
+import { useSocket } from "#/context/socket";
+import { useEffectOnce } from "#/utils/use-effect-once";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
@@ -45,51 +45,51 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function App() {
+  const { start, stop, send } = useSocket();
   const { token, securityAnalyzer, q } = useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
-  const socket = useWebSocketClient({
-    token,
-    onOpen: () => {
-      const settings = getSettings();
-      const initEvent = {
-        action: ActionType.INIT,
-        args: {
-          ...settings,
-          LLM_MODEL: settings.USING_CUSTOM_MODEL
-            ? settings.CUSTOM_LLM_MODEL
-            : settings.LLM_MODEL,
-        },
-      };
-
-      socket.send(JSON.stringify(initEvent));
-      // first time connection, send the query if it exists
-      if (!token && q) {
-        const event = {
-          action: ActionType.MESSAGE,
-          args: { content: q },
+  useEffectOnce(() => {
+    start({
+      token,
+      onOpen: () => {
+        const settings = getSettings();
+        const initEvent = {
+          action: ActionType.INIT,
+          args: settings,
         };
+  
+        send(JSON.stringify(initEvent));
+        // first time connection, send the query if it exists
+        if (!token && q) {
+          const event = {
+            action: ActionType.MESSAGE,
+            args: { content: q },
+          };
+  
+          send(JSON.stringify(event));
+          store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+        }
+      },
+      onMessage: (message) => {
+        console.warn("Received message", message);
+        const parsed = JSON.parse(message.data.toString());
+        if ("token" in parsed) {
+          fetcher.submit({ token: parsed.token }, { method: "post" });
+          return;
+        }
+  
+        handleAssistantMessage(message.data.toString());
+      },
+      onClose: (event) => {
+        console.warn("SOCKET CLOSED", event);
+      },
+      onError: (event) => {
+        console.error("Socket error", event);
+      },
+    });
 
-        socket.send(JSON.stringify(event));
-        store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
-      }
-    },
-    onMessage: (message) => {
-      console.warn("Received message", message);
-      const parsed = JSON.parse(message.data.toString());
-      if ("token" in parsed) {
-        fetcher.submit({ token: parsed.token }, { method: "post" });
-        return;
-      }
-
-      handleAssistantMessage(message.data.toString());
-    },
-    onClose: (event) => {
-      console.warn("Socket closed", event);
-    },
-    onError: (event) => {
-      console.error("Socket error", event);
-    },
+    return () => stop();
   });
 
   const {
@@ -100,47 +100,45 @@ function App() {
 
   return (
     <Provider store={store}>
-      <SocketProvider socket={socket}>
-        <div data-testid="app" className="h-full flex flex-col gap-[10px]">
-          <div className="h-full flex gap-3">
-            <div className="w-1/4">
-              <Container className="h-full" label="Chat">
-                <ChatInterface />
-              </Container>
-            </div>
-
-            <div className="flex flex-col gap-3 w-3/4">
-              <Container
-                className="h-full"
-                labels={[
-                  { label: "Workspace", to: "" },
-                  { label: "Jupyter", to: "jupyter" },
-                  { label: "Browser (experimental)", to: "browser" },
-                ]}
-              >
-                <Outlet />
-              </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
-              <Container className="h-2/5 min-h-0" label="Terminal">
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal />
-                </React.Suspense>
-              </Container>
-            </div>
+      <div data-testid="app" className="h-full flex flex-col gap-[10px]">
+        <div className="h-full flex gap-3">
+          <div className="w-1/4">
+            <Container className="h-full" label="Chat">
+              <ChatInterface />
+            </Container>
           </div>
-          <Controls
-            setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!securityAnalyzer}
-          />
-          <Security
-            isOpen={securityModalIsOpen}
-            onOpenChange={onSecurityModalOpenChange}
-            securityAnalyzer={securityAnalyzer}
-          />
-          <Toaster />
+
+          <div className="flex flex-col gap-3 w-3/4">
+            <Container
+              className="h-full"
+              labels={[
+                { label: "Workspace", to: "" },
+                { label: "Jupyter", to: "jupyter" },
+                { label: "Browser (experimental)", to: "browser" },
+              ]}
+            >
+              <Outlet />
+            </Container>
+            {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+               * that it loads only in the client-side. */}
+            <Container className="h-2/5 min-h-0" label="Terminal">
+              <React.Suspense fallback={<div className="h-full" />}>
+                <Terminal />
+              </React.Suspense>
+            </Container>
+          </div>
         </div>
-      </SocketProvider>
+        <Controls
+          setSecurityOpen={onSecurityModalOpen}
+          showSecurityLock={!!securityAnalyzer}
+        />
+        <Security
+          isOpen={securityModalIsOpen}
+          onOpenChange={onSecurityModalOpenChange}
+          securityAnalyzer={securityAnalyzer}
+        />
+        <Toaster />
+      </div>
     </Provider>
   );
 }

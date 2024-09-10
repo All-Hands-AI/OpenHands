@@ -12,7 +12,7 @@ import { useSocket } from "#/context/socket";
 */
 
 export const useTerminal = (commands: Command[] = []) => {
-  const { socket } = useSocket();
+  const { send } = useSocket();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export const useTerminal = (commands: Command[] = []) => {
       terminal.current.onKey(({ key, domEvent }) => {
         if (domEvent.key === "Enter") {
           terminal.current?.write("\r\n");
-          socket.send(sendTerminalCommand(commandBuffer));
+          send(sendTerminalCommand(commandBuffer));
           commandBuffer = "";
         } else if (domEvent.key === "Backspace") {
           if (commandBuffer.length > 0) {

@@ -46,7 +46,7 @@ function ScrollButton({
 
 function ChatInterface() {
   const dispatch = useDispatch();
-  const { socket } = useSocket();
+  const { send } = useSocket();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
@@ -63,7 +63,7 @@ function ChatInterface() {
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
     dispatch(addUserMessage({ content, imageUrls }));
-    socket.send(createChatMessage(content, imageUrls));
+    send(createChatMessage(content, imageUrls));
   };
 
   const shareFeedback = async (polarity: "positive" | "negative") => {

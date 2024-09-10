@@ -44,7 +44,7 @@ export const clientLoader = async () => {
     return defer({ files });
   }
 
-  return json({ files: [] }, { status: 401 });
+  return defer({ files: Promise.resolve([]) }, { status: 401 });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
