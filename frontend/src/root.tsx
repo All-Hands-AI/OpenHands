@@ -3,7 +3,6 @@ import {
   Link,
   Links,
   Meta,
-  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
@@ -25,7 +24,6 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import { getAgents, getModels } from "./api/open-hands";
 import LoadingProjectModal from "./components/modals/LoadingProject";
-import { cn } from "./utils/utils";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -116,12 +114,6 @@ export default function App() {
           >
             <CogTooth />
           </button>
-          <NavLink
-            to="/app"
-            className={({ isActive }) => cn(isActive && "bg-green-500")}
-          >
-            A
-          </NavLink>
         </nav>
       </aside>
       <div className="w-full relative">

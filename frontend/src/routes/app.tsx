@@ -20,7 +20,6 @@ import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
-import { useEffectOnce } from "#/utils/use-effect-once";
 import { sendTerminalCommand } from "#/services/terminalService";
 import { appendInput, appendOutput } from "#/state/commandSlice";
 
@@ -30,6 +29,7 @@ export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
   const repo = url.searchParams.get("repo");
+  const resetSocket = url.searchParams.get("reset") === "true";
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
@@ -41,6 +41,7 @@ export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
     repo,
     securityAnalyzer: settings.SECURITY_ANALYZER,
     q,
+    resetSocket,
   });
 };
 
@@ -57,65 +58,85 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function App() {
   const { start, stop, send } = useSocket();
-  const { token, ghToken, repo, securityAnalyzer, q } =
+  const { token, ghToken, repo, securityAnalyzer, q, resetSocket } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
-  useEffectOnce(() => {
-    start({
-      token,
-      onOpen: () => {
-        const settings = getSettings();
-        const initEvent = {
-          action: ActionType.INIT,
-          args: settings,
-        };
+  const socketStartRef = React.useRef(false);
 
-        send(JSON.stringify(initEvent));
-        // first time connection, send the query if it exists
-        if (!token) {
-          if (q) {
-            const event = {
-              action: ActionType.MESSAGE,
-              args: { content: q },
-            };
+  React.useEffect(() => {
+    if (socketStartRef.current && !resetSocket) {
+      return;
+    }
 
-            send(JSON.stringify(event));
-            store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+    const stopConnection = async () => {
+      await Promise.resolve(stop());
+    };
+
+    const startSocketConnection = () => {
+      start({
+        token,
+        onOpen: () => {
+          const settings = getSettings();
+          const initEvent = {
+            action: ActionType.INIT,
+            args: settings,
+          };
+
+          send(JSON.stringify(initEvent));
+          // first time connection, send the query if it exists
+          if (!token) {
+            if (q) {
+              const event = {
+                action: ActionType.MESSAGE,
+                args: { content: q },
+              };
+
+              send(JSON.stringify(event));
+              store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+            }
+
+            if (ghToken && repo) {
+              // clone repo via terminal
+              const url = `https://${ghToken}@github.com/${repo}.git`;
+              const command = `git clone ${url}`;
+              const event = sendTerminalCommand(command);
+
+              send(event);
+              store.dispatch(appendInput(command.replace(ghToken, "***")));
+              store.dispatch(appendOutput(command.replace(ghToken, "***")));
+            }
+          }
+        },
+        onMessage: (message) => {
+          console.warn("Received message", message);
+          const parsed = JSON.parse(message.data.toString());
+          if ("token" in parsed) {
+            fetcher.submit({ token: parsed.token }, { method: "post" });
+            return;
           }
 
-          if (ghToken && repo) {
-            // clone repo via terminal
-            const url = `https://${ghToken}@github.com/${repo}.git`;
-            const command = `git clone ${url}`;
-            const event = sendTerminalCommand(command);
+          handleAssistantMessage(message.data.toString());
+        },
+        onClose: (event) => {
+          console.warn("SOCKET CLOSED", event);
+        },
+        onError: (event) => {
+          console.error("SOCKET ERROR", event);
+        },
+      });
+    };
 
-            send(event);
-            store.dispatch(appendInput(command.replace(ghToken, "***")));
-            store.dispatch(appendOutput(command.replace(ghToken, "***")));
-          }
-        }
-      },
-      onMessage: (message) => {
-        console.warn("Received message", message);
-        const parsed = JSON.parse(message.data.toString());
-        if ("token" in parsed) {
-          fetcher.submit({ token: parsed.token }, { method: "post" });
-          return;
-        }
+    if (resetSocket) {
+      stopConnection().then(() => {
+        startSocketConnection();
+      });
+    } else {
+      startSocketConnection();
+    }
 
-        handleAssistantMessage(message.data.toString());
-      },
-      onClose: (event) => {
-        console.warn("SOCKET CLOSED", event);
-      },
-      onError: (event) => {
-        console.error("SOCKET ERROR", event);
-      },
-    });
-
-    return () => stop();
-  });
+    socketStartRef.current = true;
+  }, [resetSocket]);
 
   const {
     isOpen: securityModalIsOpen,

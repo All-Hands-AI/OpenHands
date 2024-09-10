@@ -35,8 +35,14 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const q = formData.get("q")?.toString();
 
+  const reset = formData.get("reset")?.toString() === "true";
+
   if (q) searchParams.set("q", q);
   if (repo) searchParams.set("repo", repo);
+  if (reset) {
+    searchParams.set("reset", "true");
+    localStorage.removeItem("token");
+  }
 
   return redirect(`/app?${searchParams.toString()}`);
 };
