@@ -1,25 +1,18 @@
-# Create and Use a Custom Docker Sandbox
+# Custom Sandbox
 
-The default OpenHands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
-Your use case may need additional software installed by default.
+The sandbox is where the agent does its work. Instead of running commands directly on your computer
+(which could be dangerous), the agent runs them inside of a Docker container.
+
+The default OpenHands sandbox (`python-nodejs:python3.11-nodejs22`
+from [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) comes with some packages installed such
+as python and Node.js but your use case may need additional software installed by default.
 
 There are two ways you can do so:
 
-1. Use an existing image from docker hub. For instance, if you want to have `nodejs` installed, you can do so by using the `node:20` image
+1. Use an existing image from docker hub
 2. Creating your own custom docker image and using it
 
 If you want to take the first approach, you can skip the `Create Your Docker Image` section.
-
-For a more feature-rich environment, you might consider using pre-built images like **[nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)**, which comes with both Python and Node.js pre-installed, along with many other useful tools and libraries, like:
-
-- Node.js: 22.x
-- npm: 10.x
-- yarn: stable
-- Python: latest
-- pip: latest
-- pipenv: latest
-- poetry: latest
-- uv: latest
 
 ## Setup
 
@@ -79,7 +72,7 @@ Run OpenHands by running ```make run``` in the top level directory.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.
 
-In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```
+In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```.
 
 Congratulations!
 

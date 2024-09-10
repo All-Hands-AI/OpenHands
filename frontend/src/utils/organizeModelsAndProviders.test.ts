@@ -15,6 +15,11 @@ test("organizeModelsAndProviders", () => {
     "gpt-4o",
     "together-ai-21.1b-41b",
     "gpt-3.5-turbo",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-haiku-20240307",
+    "claude-2",
+    "claude-2.1",
+    "anthropic.unsafe-claude-2.1",
   ];
 
   const object = organizeModelsAndProviders(models);
@@ -42,6 +47,15 @@ test("organizeModelsAndProviders", () => {
     openai: {
       separator: "/",
       models: ["gpt-4o", "gpt-3.5-turbo"],
+    },
+    anthropic: {
+      separator: "/",
+      models: [
+        "claude-3-5-sonnet-20240620",
+        "claude-3-haiku-20240307",
+        "claude-2",
+        "claude-2.1",
+      ],
     },
     other: {
       separator: "",

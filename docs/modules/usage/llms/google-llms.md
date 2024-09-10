@@ -2,7 +2,7 @@
 
 ## Completion
 
-OpenHands uses LiteLLM for completion calls. The following resources are relevant for using OpenHands with Google's LLMs
+OpenHands uses LiteLLM for completion calls. The following resources are relevant for using OpenHands with Google's LLMs:
 
 - [Gemini - Google AI Studio](https://docs.litellm.ai/docs/providers/gemini)
 - [VertexAI - Google Cloud Platform](https://docs.litellm.ai/docs/providers/vertex)
