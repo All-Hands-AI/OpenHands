@@ -382,6 +382,9 @@ async def get_security_analyzers():
 
 FILES_TO_IGNORE = [
     '.git/',
+    '.DS_Store',
+    'node_modules/',
+    '__pycache__/',
 ]
 
 
