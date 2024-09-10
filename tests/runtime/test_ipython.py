@@ -90,7 +90,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -167,7 +167,7 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -191,7 +191,7 @@ def test_ipython_simple(temp_dir, box_class):
         ).strip()
     )
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -312,7 +312,7 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -326,7 +326,7 @@ def test_ipython_agentskills_fileop_pwd(
     )
     _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -395,7 +395,7 @@ def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -431,5 +431,5 @@ def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     )
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)

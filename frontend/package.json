@@ -16,7 +16,7 @@
     "@xterm/xterm": "^5.4.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "i18next": "^23.15.0",
+    "i18next": "^23.15.1",
     "i18next-browser-languagedetector": "^8.0.0",
     "i18next-http-backend": "^2.6.1",
     "jose": "^5.8.0",
@@ -88,7 +88,7 @@
     "postcss": "^8.4.45",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.10",
-    "typescript": "^5.5.4",
+    "typescript": "^5.6.2",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^1.6.0"
   },

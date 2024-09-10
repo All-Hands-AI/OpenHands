@@ -28,6 +28,16 @@ def print_method_name(request):
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
+    """
+    Creates a unique temporary directory
+
+    Parameters:
+    - tmp_path_factory (TempPathFactory): A TempPathFactory class
+
+    Returns:
+    - str: The temporary directory path that was created
+    """
+
     unique_suffix = random.randint(10000, 99999)
     temp_dir = tmp_path_factory.mktemp(f'test_runtime_{unique_suffix}')
 
@@ -132,7 +142,7 @@ def _load_runtime(
 ) -> Runtime:
     sid = 'test'
     cli_session = 'main_test'
-    print(f'*** Test temp dir: {temp_dir}')
+    print(f'*** Test temp directory: {temp_dir}')
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]

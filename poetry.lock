@@ -3231,13 +3231,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.29.1"
+version = "0.29.2"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json_repair-0.29.1-py3-none-any.whl", hash = "sha256:01ceeab0fba85ba98b083c600c0e558e39148d4c78e534eeb4cc421eaeea7dfd"},
-    {file = "json_repair-0.29.1.tar.gz", hash = "sha256:78a0acbba1487399830234d73ef82a3aaa4193f8c1f3813a21d91da1260303bd"},
+    {file = "json_repair-0.29.2-py3-none-any.whl", hash = "sha256:a92436eb3cf4e51eff3f25b4540d983910d4a23a2c65c28aff2896d1645c97d5"},
+    {file = "json_repair-0.29.2.tar.gz", hash = "sha256:246bd76a7e213166f82a81ab02812db29b7ca2dfaedc58cb98fb68d97536b956"},
 ]
 
 [[package]]
@@ -5377,13 +5377,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.44.0"
+version = "1.44.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.44.0-py3-none-any.whl", hash = "sha256:99a12bbda15f9c632ee911851e101669a82ee34992fbfd658a9db27d90dc0a9c"},
-    {file = "openai-1.44.0.tar.gz", hash = "sha256:acde74598976ec85bc477e9abb94eeb17f6efd998914d5685eeb46a69116894a"},
+    {file = "openai-1.44.1-py3-none-any.whl", hash = "sha256:07e2c2758d1c94151c740b14dab638ba0d04bcb41a2e397045c90e7661cdf741"},
+    {file = "openai-1.44.1.tar.gz", hash = "sha256:e0ffdab601118329ea7529e684b606a72c6c9d4f05be9ee1116255fcf5593874"},
 ]
 
 [package.dependencies]
@@ -6593,13 +6593,13 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.3.2"
+version = "8.3.3"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.3.2-py3-none-any.whl", hash = "sha256:4ba08f9ae7dcf84ded419494d229b48d0903ea6407b030eaec46df5e6a73bba5"},
-    {file = "pytest-8.3.2.tar.gz", hash = "sha256:c132345d12ce551242c87269de812483f5bcc87cdbb4722e48487ba194f9fdce"},
+    {file = "pytest-8.3.3-py3-none-any.whl", hash = "sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2"},
+    {file = "pytest-8.3.3.tar.gz", hash = "sha256:70b98107bd648308a7952b06e6ca9a50bc660be218d53c257cc1fc94fda10181"},
 ]
 
 [package.dependencies]
