@@ -10,9 +10,11 @@ The user message is: "I want to go to the user 'ryanhoangtt' github profile usin
 # Phases
 ## Phase 1
 - description: Browse the GitHub profile of the user 'ryanhoangtt' to find the number of repositories.
+- reason: As the first step, we need to identify the number of repositories in the user's GitHub profile.
 - expected_state: The number of repositories is identified.
 ## Phase 2
 - description: Create a new file `repo_count.txt` and write the number of repositories to it.
+- reason: The number of repositories should be stored in a file as requested by the user.
 - expected_state: \"The file `repo_count.txt` is created and contains the number of repositories.
 </execute_global_plan>
 
@@ -32,10 +34,12 @@ Let's create a new plan to achieve the task:
 # Phases
 ## Phase 1
 - description: Browse the GitHub profile of the user 'ryanhoangt' to find the number of repositories.
+- reason: As the first step, we need to identify the number of repositories in the user's GitHub profile.
 - expected_state: The number of repositories is identified.
 ## Phase 2
 - description: Create a new file `repo_count.txt` and write the number of repositories to it.
-expected_state: The file `repo_count.txt` is created and contains the number of repositories.
+- reason: The number of repositories should be stored in a file as requested by the user.
+- expected_state: The file `repo_count.txt` is created and contains the number of repositories.
 </execute_global_plan>
 
 USER:
@@ -82,11 +86,18 @@ The user message is: "Create a list of numbers from 1 to 10, and display them in
 # Phases
 ## Phase 1
 - description: Edit the existing Python file `app.py` to insert the code for starting a web server, at the end of the file.
-- function_calls:
-    - insert_content_at_line: ["/workspace/app.py", 8, "if __name__ == '__main__':\n    app.run(port=5000)"]
+- reason: The existing Python file is missing the code to start the web server. Normally, the server is started using the `app.run(port=5000)` command. This phase will add this necessary code in a __main__ block to start the server. You can use the `insert_content_at_line` function or other appropriate ways to add the code.
 - expected_state: The Python file `app.py` is updated with the code to start the web server.
+<file_path> /workspace/app.py </file_path>
+<expected_content>
+8|
+9|if __name__ == '__main__':
+10|    app.run(port=5000)
+</expected_content>
+
 ## Phase 2
 - description: Run the Python file `app.py` to display the list of numbers on a web page at port 5000.
+- reason: After updating the Python file, we need to run it to display the list of numbers on a web page. The command a shell command can be: `python3 app.py`.
 - expected_state: The list of numbers is displayed on a web page at port 5000.
 
 USER:
@@ -129,14 +140,20 @@ The user message is: "Now kill the server, make it display the numbers in a tabl
 # Phases
 ## Phase 1
 - description: Stop the server running on port 5000.
+- reason: The server needs to be stopped before modifying the Python code.
 - expected_state: The server is stopped.
 ## Phase 2
 - description: Modify the Python code to display the numbers in a table format.
-- function_calls:
-    - 'edit_file_by_replace': ["/workspace/app.py", "    return str(numbers)", "    return '<table><tr><th>Numbers</th></tr>' + ''.join([f'<tr><td>{num}</td></tr>' for num in numbers]) + '</table>'"]
-- expected_state: The numbers are displayed in a table format on the web page.
+- reason: The current code returns the numbers as a string, which is incorrect. We need to modify it to display the numbers in a table format by using HTML tags for table rows and cells.
+- expected_state: The Python code is updated to display the numbers in a table format.
+<file_path> /workspace/app.py </file_path>
+<expected_content>
+6|    numbers = list(range(1, 11))
+7|    return "<table>" + "".join([f"<tr><td>{num}</td></tr>" for num in numbers]) + "</table>"
+</expected_content>
 ## Phase 3
 - description: Run the Python file again to display the numbers in a table format on the web page at port 5000.
+- reason: After modifying the Python code, we need to run the file again to display the numbers in the expected table format.
 - expected_state: The numbers are displayed in a table format on the web page.
 </execute_global_plan>
 
