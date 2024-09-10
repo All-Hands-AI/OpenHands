@@ -46,9 +46,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
-RUN_AS_OPENHANDS = (
-    os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes'] == 'true'
-)
+RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
@@ -63,6 +61,13 @@ def get_box_classes():
 
 
 def get_run_as_openhands():
+    print(
+        '\n\n########################################################################'
+    )
+    print('USER: ' + 'openhands' if RUN_AS_OPENHANDS else 'root')
+    print(
+        '########################################################################\n\n'
+    )
     return [RUN_AS_OPENHANDS]
 
 
@@ -129,21 +134,16 @@ def _load_runtime(
 ) -> Runtime:
     sid = 'test'
     cli_session = 'main_test'
-
+    print(f'*** Test temp dir: {temp_dir}')
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
-    # Create a workspace folder in the temp directory
-    temp_folder = os.path.join(temp_dir, 'workspace/')
-    if not os.path.exists(temp_folder):
-        os.makedirs(temp_folder)
-
     config = AppConfig(
-        workspace_base=temp_folder,
-        workspace_mount_path_in_sandbox=temp_folder,
+        workspace_base=temp_dir,
+        workspace_mount_path=temp_dir,
         sandbox=SandboxConfig(
-            use_host_network=True,
+            use_host_network=False,
             browsergym_eval_env=browsergym_eval_env,
         ),
     )

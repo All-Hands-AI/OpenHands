@@ -1,15 +1,17 @@
 import os
+import socket
 import tempfile
 import threading
 import time
 import uuid
+from contextlib import closing
 from zipfile import ZipFile
 
 import docker
 import requests
 import tenacity
 
-from openhands.core.config import AppConfig
+from openhands.core.config import AppConfig, UndefinedString
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -115,7 +117,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
     ):
         self.config = config
-        self._port = find_available_tcp_port()
+        self._port = 30000
         self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
         self.session = requests.Session()
 
@@ -152,7 +154,7 @@ class EventStreamRuntime(Runtime):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
             )
         self.container = self._init_container(
-            self.sandbox_workspace_dir,
+            sandbox_workspace_dir=self.sandbox_workspace_dir,
             mount_dir=self.config.workspace_mount_path,
             plugins=plugins,
         )
@@ -194,19 +196,31 @@ class EventStreamRuntime(Runtime):
                     f'--plugins {" ".join([plugin.name for plugin in plugins])} '
                 )
 
-            network_mode: str | None = None
-            port_mapping: dict[str, int] | None = None
-            if self.config.sandbox.use_host_network:
-                network_mode = 'host'
+            self._port = self._find_available_port()
+            self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
+
+            use_host_network = self.config.sandbox.use_host_network
+            network_mode: str | None = 'host' if use_host_network else None
+            port_mapping: dict[str, int] | None = (
+                None if use_host_network else {f'{self._port}/tcp': self._port}
+            )
+
+            if use_host_network:
                 logger.warn(
                     'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
                 )
-            else:
-                port_mapping = {f'{self._port}/tcp': self._port}
 
-            if mount_dir is not None:
-                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
-                logger.info(f'Mount dir: {sandbox_workspace_dir}')
+            # Combine environment variables
+            environment = {
+                'PORT': str(self._port),
+            }
+            if self.config.debug:
+                environment['DEBUG'] = 'true'
+
+            logger.info(f'Workspace dir: {sandbox_workspace_dir}')
+            if mount_dir is not None and mount_dir is not UndefinedString.UNDEFINED:
+                volumes = {mount_dir: {'bind': mount_dir, 'mode': 'rw'}}
+                logger.info(f'Mount dir: {mount_dir}')
             else:
                 logger.warn(
                     'Mount dir is not set, will not mount the workspace directory to the container.'
@@ -236,7 +250,7 @@ class EventStreamRuntime(Runtime):
                 working_dir='/openhands/code/',
                 name=self.container_name,
                 detach=True,
-                environment={'DEBUG': 'true'} if self.config.debug else None,
+                environment=environment,
                 volumes=volumes,
             )
             self.log_buffer = LogBuffer(container)
@@ -477,3 +491,36 @@ class EventStreamRuntime(Runtime):
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
+
+    def _is_port_in_use_host(self, port):
+        try:
+            # Check TCP
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+                if sock.connect_ex(('localhost', port)) == 0:
+                    return True
+            # Check UDP
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
+                if sock.connect_ex(('localhost', port)) == 0:
+                    return True
+            return False
+        except Exception:
+            # If we get a socket error, assume the port is in use
+            return True
+
+    def _is_port_in_use_docker(self, port):
+        containers = self.docker_client.containers.list()
+        for container in containers:
+            container_ports = container.ports
+            if str(port) in str(container_ports):
+                return True
+        return False
+
+    def _find_available_port(self, max_attempts=5):
+        for _ in range(max_attempts):
+            port = find_available_tcp_port()
+            if not self._is_port_in_use_host(port) and not self._is_port_in_use_docker(
+                port
+            ):
+                return port
+        # If no port is found after max_attempts, return the last tried port
+        return port
