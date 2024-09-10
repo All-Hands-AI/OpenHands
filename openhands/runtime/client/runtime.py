@@ -115,7 +115,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
     ):
         self.config = config
-        self._port = 30000
+        self._port = 30000 # initial dummy value
         self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
         self.session = requests.Session()
 
