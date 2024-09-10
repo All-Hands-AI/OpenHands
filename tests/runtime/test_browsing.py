@@ -66,7 +66,7 @@ def test_simple_browse(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -111,5 +111,5 @@ def test_browsergym_eval_env(box_class, temp_dir):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert json.loads(obs.content) == [0.0]
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
