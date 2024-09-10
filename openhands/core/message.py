@@ -72,19 +72,20 @@ class Message(BaseModel):
 
 
 def format_messages(
-    messages: Union[Message, list[Message]], with_images: bool
+    messages: Union[Message, list[Message]],
+    with_images: bool,
+    with_prompt_caching: bool,
 ) -> list[dict]:
     if not isinstance(messages, list):
         messages = [messages]
 
-    if with_images:
+    if with_images or with_prompt_caching:
         return [message.model_dump() for message in messages]
 
     converted_messages = []
     for message in messages:
         content_parts = []
         role = 'user'
-        cache_prompt = False
 
         if isinstance(message, str) and message:
             content_parts.append(message)
@@ -92,7 +93,6 @@ def format_messages(
             role = message.get('role', 'user')
             if 'content' in message and message['content']:
                 content_parts.append(message['content'])
-            cache_prompt = message.get('cache_prompt', False)
         elif isinstance(message, Message):
             role = message.role
             for content in message.content:
@@ -100,10 +100,8 @@ def format_messages(
                     for item in content:
                         if isinstance(item, TextContent) and item.text:
                             content_parts.append(item.text)
-                            cache_prompt |= item.cache_prompt
                 elif isinstance(content, TextContent) and content.text:
                     content_parts.append(content.text)
-                    cache_prompt |= content.cache_prompt
         else:
             logger.error(
                 f'>>> `message` is not a string, dict, or Message: {type(message)}'
@@ -115,8 +113,6 @@ def format_messages(
                 'role': role,
                 'content': content_str,
             }
-            if cache_prompt:
-                formatted_message['cache_control'] = {'type': 'ephemeral'}
             converted_messages.append(formatted_message)
 
     return converted_messages
