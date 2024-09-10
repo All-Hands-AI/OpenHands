@@ -84,6 +84,8 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         )
+    if metadata.agent_class == 'CoActPlannerAgent':
+        instruction += "Let's first examine the codebase and locate the relevant code for the issue. Then we'll come up with the detailed plan with all the edits to resolve it.\n"
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]

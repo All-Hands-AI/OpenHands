@@ -81,10 +81,9 @@ Great! Seems like the existing Python file `app.py` is ready to display a list o
 The user message is: "Create a list of numbers from 1 to 10, and display them in a web page at port 5000. There's an existing Python file `app.py` that you can use."
 # Phases
 ## Phase 1
-- description: Edit the existing Python file `app.py` to insert the code for starting a web server, at the end of the file: """
-if __name__ == '__main__':
-    app.run(port=5000)
-"""
+- description: Edit the existing Python file `app.py` to insert the code for starting a web server, at the end of the file.
+- function_calls:
+    - insert_content_at_line: ["/workspace/app.py", 8, "if __name__ == '__main__':\n    app.run(port=5000)"]
 - expected_state: The Python file `app.py` is updated with the code to start the web server.
 ## Phase 2
 - description: Run the Python file `app.py` to display the list of numbers on a web page at port 5000.
@@ -105,6 +104,7 @@ USER: Now browse the newly started server's homepage and show me the content.
 ASSISTANT:
 Sure, let me create a plan to achieve the task:
 <execute_global_plan>
+The user message is: "Now browse the newly started server's homepage and show me the content."
 # Phases
 ## Phase 1
 - description: Browse the server's homepage at http://127.0.0.1:5000
@@ -125,12 +125,15 @@ USER: Now kill the server, make it display the numbers in a table format.
 ASSISTANT:
 Sure! Let me create a plan to achieve the task:
 <execute_global_plan>
+The user message is: "Now kill the server, make it display the numbers in a table format."
 # Phases
 ## Phase 1
 - description: Stop the server running on port 5000.
 - expected_state: The server is stopped.
 ## Phase 2
 - description: Modify the Python code to display the numbers in a table format.
+- function_calls:
+    - 'edit_file_by_replace': ["/workspace/app.py", "    return str(numbers)", "    return '<table><tr><th>Numbers</th></tr>' + ''.join([f'<tr><td>{num}</td></tr>' for num in numbers]) + '</table>'"]
 - expected_state: The numbers are displayed in a table format on the web page.
 ## Phase 3
 - description: Run the Python file again to display the numbers in a table format on the web page at port 5000.

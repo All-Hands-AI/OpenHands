@@ -30,8 +30,18 @@ class GlobalPlannerAgent(CodeActAgent):
             for k, v in AGENTSKILLS_DOCS_DICT.items()
             if k not in planner_agentskills_exclude
         ]
+        executor_editing_agentskills = [
+            v
+            for k, v in AGENTSKILLS_DOCS_DICT.items()
+            if k in planner_agentskills_exclude
+        ]
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__)),
             agent_skills_docs=''.join(planner_agentskills),
+            system_extra_vars={
+                'executor_editing_agent_skills_docs': ''.join(
+                    executor_editing_agentskills
+                )
+            },
             micro_agent=self.micro_agent,
         )
