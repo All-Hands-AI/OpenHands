@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM nikolaik/python-nodejs:python3.11-nodejs22
 
 # install basic packages
 RUN apt-get update && apt-get install -y \
@@ -21,12 +21,9 @@ RUN apt-get update && apt-get install -y \
     g++ \
     make \
     iproute2 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p -m0755 /var/run/sshd
-
-# symlink python3 to python
-RUN ln -s /usr/bin/python3 /usr/bin/python
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p -m0755 /var/run/sshd \
+    && ln -s /usr/bin/python3 /usr/bin/python # symlink python3 to python
 
 # ==== OpenHands Runtime Client ====
 RUN mkdir -p /openhands && mkdir -p /openhands/logs && chmod 777 /openhands/logs
