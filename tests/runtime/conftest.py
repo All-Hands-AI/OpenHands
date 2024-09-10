@@ -23,6 +23,16 @@ def print_method_name(request):
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    """
+    Creates a unique temporary directory
+
+    Parameters:
+    - tmp_path_factory (TempPathFactory): A TempPathFactory class
+
+    Returns:
+    - str: The temporary directory path that was created
+    """
+
     unique_suffix = int(time.time() * 1000)
     temp_directory = tmp_path_factory.mktemp(
         f'test_runtime_{unique_suffix}', numbered=False
