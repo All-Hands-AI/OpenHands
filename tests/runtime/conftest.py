@@ -5,7 +5,7 @@ import time
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import AppConfig, SandboxConfig, load_from_env
+from openhands.core.config import load_app_config
 from openhands.events import EventStream
 from openhands.runtime.client.runtime import EventStreamRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -28,8 +28,8 @@ def print_method_name(request):
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
-    random_number = random.randint(10000, 99999)
-    temp_dir = tmp_path_factory.mktemp(f'test_runtime_{random_number}')
+    unique_suffix = random.randint(10000, 99999)
+    temp_dir = tmp_path_factory.mktemp(f'test_runtime_{unique_suffix}')
 
     def cleanup():
         if os.path.exists(temp_dir):
@@ -120,8 +120,6 @@ def base_container_image(request):
 def runtime(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
-    runtime.close()
-    time.sleep(1)
 
 
 def _load_runtime(
@@ -139,17 +137,13 @@ def _load_runtime(
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
-    config = AppConfig(
-        workspace_base=temp_dir,
-        workspace_mount_path=temp_dir,
-        sandbox=SandboxConfig(
-            use_host_network=False,
-            browsergym_eval_env=browsergym_eval_env,
-        ),
-    )
-    load_from_env(config, os.environ)
+    config = load_app_config()
     config.run_as_openhands = run_as_openhands
+    config.workspace_base = temp_dir
+    config.workspace_mount_path = temp_dir
     config.sandbox.enable_auto_lint = enable_auto_lint
+    config.sandbox.use_host_network = False
+    config.sandbox.browsergym_eval_env = browsergym_eval_env
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
 
