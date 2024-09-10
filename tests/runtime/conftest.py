@@ -1,4 +1,5 @@
 import os
+import random
 import time
 
 import pytest
@@ -33,7 +34,7 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     - str: The temporary directory path that was created
     """
 
-    unique_suffix = int(time.time() * 1000)
+    unique_suffix = random.randint(10000, 99999)
     temp_directory = tmp_path_factory.mktemp(
         f'test_runtime_{unique_suffix}', numbered=False
     )
@@ -107,7 +108,6 @@ def base_container_image(request):
 def runtime(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
-    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
