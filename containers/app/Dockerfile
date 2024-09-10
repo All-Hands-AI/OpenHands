@@ -30,6 +30,32 @@ RUN export POETRY_CACHE_DIR && poetry install --without evaluation,llama-index -
 
 FROM nikolaik/python-nodejs:python3.11-nodejs22 AS runtime
 
+# install basic packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    vim \
+    nano \
+    unzip \
+    zip \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-dev \
+    build-essential \
+    openssh-server \
+    sudo \
+    gcc \
+    jq \
+    g++ \
+    make \
+    iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Playwright via pip
+RUN python3 -m pip install playwright
+
 WORKDIR /app
 
 ARG OPENHANDS_BUILD_VERSION #re-declare for this section
