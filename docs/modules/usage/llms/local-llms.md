@@ -200,7 +200,7 @@ base_url="http://localhost:1234/v1"
 custom_llm_provider="openai"
 ```
 
-Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
+Done! Now you can start OpenHands by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
 
 # Note
 
