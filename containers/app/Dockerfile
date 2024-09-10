@@ -28,7 +28,7 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN export POETRY_CACHE_DIR && poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM python:3.12.3-slim AS runtime
+FROM nikolaik/python-nodejs:python3.11-nodejs22 AS runtime
 
 WORKDIR /app
 
