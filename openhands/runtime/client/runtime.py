@@ -1,10 +1,8 @@
 import os
-import socket
 import tempfile
 import threading
 import time
 import uuid
-from contextlib import closing
 from zipfile import ZipFile
 
 import docker
@@ -492,21 +490,6 @@ class EventStreamRuntime(Runtime):
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
 
-    def _is_port_in_use_host(self, port):
-        try:
-            # Check TCP
-            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-                if sock.connect_ex(('localhost', port)) == 0:
-                    return True
-            # Check UDP
-            with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
-                if sock.connect_ex(('localhost', port)) == 0:
-                    return True
-            return False
-        except Exception:
-            # If we get a socket error, assume the port is in use
-            return True
-
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
         for container in containers:
@@ -518,9 +501,7 @@ class EventStreamRuntime(Runtime):
     def _find_available_port(self, max_attempts=5):
         for _ in range(max_attempts):
             port = find_available_tcp_port()
-            if not self._is_port_in_use_host(port) and not self._is_port_in_use_docker(
-                port
-            ):
+            if not self._is_port_in_use_docker(port):
                 return port
         # If no port is found after max_attempts, return the last tried port
         return port
