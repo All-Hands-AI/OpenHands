@@ -305,7 +305,15 @@ class EventStreamRuntime(Runtime):
     def sandbox_workspace_dir(self):
         return self.config.workspace_mount_path_in_sandbox
 
-    def close(self, close_client: bool = True):
+    def close(self, close_client: bool = True, rm_all_containers: bool = True):
+        """
+        Closes the EventStreamRuntime and associated objects
+
+        Parameters:
+        - close_client (bool): Whether to close the DockerClient
+        - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
+        """
+
         if self.log_buffer:
             self.log_buffer.close()
 
@@ -315,7 +323,13 @@ class EventStreamRuntime(Runtime):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name_prefix):
+                # If the app doesn't shut down properly, it can leave runtime containers on the system. This ensures
+                # that all 'openhands-sandbox-' containers are removed as well.
+                if rm_all_containers and container.name.startswith(
+                    self.container_name_prefix
+                ):
+                    container.remove(force=True)
+                elif container.name == self.container_name:
                     logs = container.logs(tail=1000).decode('utf-8')
                     logger.debug(
                         f'==== Container logs ====\n{logs}\n==== End of container logs ===='
@@ -323,6 +337,7 @@ class EventStreamRuntime(Runtime):
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+
         if close_client:
             self.docker_client.close()
 
