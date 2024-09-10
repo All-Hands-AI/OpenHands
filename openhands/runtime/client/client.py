@@ -115,6 +115,7 @@ class RuntimeClient:
             logger.info(f'AgentSkills initialized: {obs}')
 
         await self._init_bash_commands()
+        logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
         """Create user if not exists."""
@@ -515,7 +516,6 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
-        logger.info('Runtime client initialized.')
         yield
         # Clean up & release the resources
         client.close()
@@ -721,6 +721,8 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}', exc_info=True)
             return []
+
+    logger.info('Runtime client initialized.')
 
     logger.info(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

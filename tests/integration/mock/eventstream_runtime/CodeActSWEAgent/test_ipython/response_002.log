@@ -3,4 +3,4 @@ Great! The file has been created successfully. Let's verify its contents to ensu
 <execute_ipython>
 with open('/workspace/test.txt', 'r') as f:
     content = f.read()
-print(f"File contents: {content}")
+print(f"Contents of /workspace/test.txt: {content}")
