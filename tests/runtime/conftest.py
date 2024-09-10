@@ -107,7 +107,7 @@ def base_container_image(request):
 def runtime(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 

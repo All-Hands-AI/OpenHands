@@ -154,7 +154,8 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          # We install pytest-xdist in order to run tests across CPUs
+          # We install pytest-xdist in order to run tests across CPUs. However, tests start to fail when we run
+          # then across more than 2 CPUs for some reason
           poetry run pip install pytest-xdist
 
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
