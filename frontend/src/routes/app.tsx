@@ -57,84 +57,73 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function App() {
-  const { start, stop, send } = useSocket();
+  const { start, send, isConnected } = useSocket();
   const { token, ghToken, repo, securityAnalyzer, q, resetSocket } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
-  const socketStartRef = React.useRef(false);
+  const socketStartRef = React.useRef(isConnected);
+
+  const startSocketConnection = React.useCallback(() => {
+    start({
+      token,
+      onOpen: () => {
+        const settings = getSettings();
+        const initEvent = {
+          action: ActionType.INIT,
+          args: settings,
+        };
+
+        send(JSON.stringify(initEvent));
+        // first time connection, send the query if it exists
+        if (!token) {
+          if (q) {
+            const event = {
+              action: ActionType.MESSAGE,
+              args: { content: q },
+            };
+
+            send(JSON.stringify(event));
+            store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+          }
+
+          if (ghToken && repo) {
+            // clone repo via terminal
+            const url = `https://${ghToken}@github.com/${repo}.git`;
+            const command = `git clone ${url}`;
+            const event = sendTerminalCommand(command);
+
+            send(event);
+            store.dispatch(appendInput(command.replace(ghToken, "***")));
+            store.dispatch(appendOutput(command.replace(ghToken, "***")));
+          }
+        }
+      },
+      onMessage: (message) => {
+        console.warn("Received message", message);
+        const parsed = JSON.parse(message.data.toString());
+        if ("token" in parsed) {
+          fetcher.submit({ token: parsed.token }, { method: "post" });
+          return;
+        }
+
+        handleAssistantMessage(message.data.toString());
+      },
+      onClose: (event) => {
+        console.warn("SOCKET CLOSED", event);
+      },
+      onError: (event) => {
+        console.error("SOCKET ERROR", event);
+      },
+    });
+  }, [token, q, ghToken, repo]);
 
   React.useEffect(() => {
     if (socketStartRef.current && !resetSocket) {
       return;
     }
 
-    const stopConnection = async () => {
-      await Promise.resolve(stop());
-    };
-
-    const startSocketConnection = () => {
-      start({
-        token,
-        onOpen: () => {
-          const settings = getSettings();
-          const initEvent = {
-            action: ActionType.INIT,
-            args: settings,
-          };
-
-          send(JSON.stringify(initEvent));
-          // first time connection, send the query if it exists
-          if (!token) {
-            if (q) {
-              const event = {
-                action: ActionType.MESSAGE,
-                args: { content: q },
-              };
-
-              send(JSON.stringify(event));
-              store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
-            }
-
-            if (ghToken && repo) {
-              // clone repo via terminal
-              const url = `https://${ghToken}@github.com/${repo}.git`;
-              const command = `git clone ${url}`;
-              const event = sendTerminalCommand(command);
-
-              send(event);
-              store.dispatch(appendInput(command.replace(ghToken, "***")));
-              store.dispatch(appendOutput(command.replace(ghToken, "***")));
-            }
-          }
-        },
-        onMessage: (message) => {
-          console.warn("Received message", message);
-          const parsed = JSON.parse(message.data.toString());
-          if ("token" in parsed) {
-            fetcher.submit({ token: parsed.token }, { method: "post" });
-            return;
-          }
-
-          handleAssistantMessage(message.data.toString());
-        },
-        onClose: (event) => {
-          console.warn("SOCKET CLOSED", event);
-        },
-        onError: (event) => {
-          console.error("SOCKET ERROR", event);
-        },
-      });
-    };
-
-    if (resetSocket) {
-      stopConnection().then(() => {
-        startSocketConnection();
-      });
-    } else {
-      startSocketConnection();
-    }
-
+    startSocketConnection();
     socketStartRef.current = true;
   }, [resetSocket]);
 
@@ -147,6 +136,9 @@ function App() {
   return (
     <Provider store={store}>
       <div data-testid="app" className="h-full flex flex-col gap-[10px]">
+        <button type="button" onClick={startSocketConnection}>
+          START
+        </button>
         <div className="h-full flex gap-3">
           <div className="w-1/4">
             <Container className="h-full" label="Chat">

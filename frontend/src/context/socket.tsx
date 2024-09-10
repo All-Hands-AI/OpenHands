@@ -30,8 +30,9 @@ function SocketProvider({ children }: SocketProviderProps) {
 
   const start = React.useCallback((options?: WebSocketClientOptions): void => {
     if (wsRef.current) {
-      console.warn("WebSocket connection is already established.");
-      return;
+      console.warn(
+        "WebSocket connection is already established, but a new one is starting anyways.",
+      );
     }
 
     const wsUrl = new URL("/", document.baseURI);
