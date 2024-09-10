@@ -27,14 +27,18 @@ export const clientLoader = async () => {
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
+  const searchParams = new URLSearchParams();
+
+  const url = new URL(request.url);
+  const repo = url.searchParams.get("repo");
+
   const formData = await request.formData();
   const q = formData.get("q")?.toString();
 
-  if (q) {
-    return redirect(`/app?q=${q}`);
-  }
+  if (q) searchParams.set("q", q);
+  if (repo) searchParams.set("repo", repo);
 
-  return json(null);
+  return redirect(`/app?${searchParams.toString()}`);
 };
 
 function Home() {

@@ -21,16 +21,27 @@ import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import { useEffectOnce } from "#/utils/use-effect-once";
+import { sendTerminalCommand } from "#/services/terminalService";
+import { appendInput, appendOutput } from "#/state/commandSlice";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
 export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
+  const repo = url.searchParams.get("repo");
+
   const settings = getSettings();
   const token = localStorage.getItem("token");
+  const ghToken = localStorage.getItem("ghToken");
 
-  return json({ token, securityAnalyzer: settings.SECURITY_ANALYZER, q });
+  return json({
+    token,
+    ghToken,
+    repo,
+    securityAnalyzer: settings.SECURITY_ANALYZER,
+    q,
+  });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -46,7 +57,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function App() {
   const { start, stop, send } = useSocket();
-  const { token, securityAnalyzer, q } = useLoaderData<typeof clientLoader>();
+  const { token, ghToken, repo, securityAnalyzer, q } =
+    useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
   useEffectOnce(() => {
@@ -58,17 +70,30 @@ function App() {
           action: ActionType.INIT,
           args: settings,
         };
-  
+
         send(JSON.stringify(initEvent));
         // first time connection, send the query if it exists
-        if (!token && q) {
-          const event = {
-            action: ActionType.MESSAGE,
-            args: { content: q },
-          };
-  
-          send(JSON.stringify(event));
-          store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+        if (!token) {
+          if (q) {
+            const event = {
+              action: ActionType.MESSAGE,
+              args: { content: q },
+            };
+
+            send(JSON.stringify(event));
+            store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+          }
+
+          if (ghToken && repo) {
+            // clone repo via terminal
+            const url = `https://${ghToken}@github.com/${repo}.git`;
+            const command = `git clone ${url}`;
+            const event = sendTerminalCommand(command);
+
+            send(event);
+            store.dispatch(appendInput(command.replace(ghToken, "***")));
+            store.dispatch(appendOutput(command.replace(ghToken, "***")));
+          }
         }
       },
       onMessage: (message) => {
@@ -78,14 +103,14 @@ function App() {
           fetcher.submit({ token: parsed.token }, { method: "post" });
           return;
         }
-  
+
         handleAssistantMessage(message.data.toString());
       },
       onClose: (event) => {
         console.warn("SOCKET CLOSED", event);
       },
       onError: (event) => {
-        console.error("Socket error", event);
+        console.error("SOCKET ERROR", event);
       },
     });
 
@@ -120,7 +145,7 @@ function App() {
               <Outlet />
             </Container>
             {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
+             * that it loads only in the client-side. */}
             <Container className="h-2/5 min-h-0" label="Terminal">
               <React.Suspense fallback={<div className="h-full" />}>
                 <Terminal />
