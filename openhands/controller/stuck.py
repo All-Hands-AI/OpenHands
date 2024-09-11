@@ -1,6 +1,7 @@
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
+from openhands.events.action.commands import IPythonRunCellAction
 from openhands.events.action.empty import NullAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
@@ -135,25 +136,25 @@ class StuckDetector:
             if all(isinstance(obs, ErrorObservation) for obs in last_observations[:3]):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
-        # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
-        if all(
-            isinstance(obs, IPythonRunCellObservation) for obs in last_observations[:3]
-        ):
-            warning = 'Action, IPythonRunCellObservation loop detected'
-            for error_message in self.SYNTAX_ERROR_MESSAGES:
-                if error_message.startswith(
-                    'SyntaxError: unterminated string literal (detected at line'
-                ):
-                    if self._check_for_consistent_line_error(
-                        last_observations[:3], error_message
+            # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
+            elif all(
+                isinstance(obs, IPythonRunCellObservation)
+                for obs in last_observations[:3]
+            ):
+                warning = 'Action, IPythonRunCellObservation loop detected'
+                for error_message in self.SYNTAX_ERROR_MESSAGES:
+                    if error_message.startswith(
+                        'SyntaxError: unterminated string literal (detected at line'
                     ):
-                        logger.warning(warning)
-                        return True
-                elif error_message in (
-                    'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-                    'SyntaxError: incomplete input',
-                ):
-                    if self._check_for_consistent_invalid_syntax(
+                        if self._check_for_consistent_line_error(
+                            last_observations[:3], error_message
+                        ):
+                            logger.warning(warning)
+                            return True
+                    elif error_message in (
+                        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
+                        'SyntaxError: incomplete input',
+                    ) and self._check_for_consistent_invalid_syntax(
                         last_observations[:3], error_message
                     ):
                         logger.warning(warning)
@@ -305,7 +306,15 @@ class StuckDetector:
         return False
 
     def _eq_no_pid(self, obj1, obj2):
-        if isinstance(obj1, CmdOutputObservation) and isinstance(
+        if isinstance(obj1, IPythonRunCellAction) and isinstance(
+            obj2, IPythonRunCellAction
+        ):
+            return (
+                'edit_file_by_replace(' in obj1.code
+                and len(obj1.code.split('\n')) > 2
+                and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
+            )
+        elif isinstance(obj1, CmdOutputObservation) and isinstance(
             obj2, CmdOutputObservation
         ):
             # for loop detection, ignore command_id, which is the pid

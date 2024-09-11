@@ -29,6 +29,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 jupyter_line_1 = '\n[Jupyter current working directory:'
 jupyter_line_2 = '\n[Jupyter Python interpreter:'
+code_snippet = """
+edit_file_by_replace(
+    'book_store.py',
+    to_replace=\"""def total(basket):
+    if not basket:
+        return 0
+"""
 
 
 @pytest.fixture
@@ -61,7 +68,7 @@ class TestStuckDetector:
         incidents: int = 4,
     ):
         for i in range(incidents):
-            ipython_action = IPythonRunCellAction(code='print("hello')
+            ipython_action = IPythonRunCellAction(code=code_snippet)
             event_stream.add_event(ipython_action, EventSource.AGENT)
             extra_number = (i + 1) * 10 if random_line else '42'
             extra_line = '\n' * (i + 1) if random_line else ''
@@ -69,7 +76,7 @@ class TestStuckDetector:
                 content=f'  Cell In[1], line {extra_number}\n'
                 'to_replace="""def largest(min_factor, max_factor):\n            ^\n'
                 f'{error_message}{extra_line}' + jupyter_line_1 + jupyter_line_2,
-                code='print("hello',
+                code=code_snippet,
             )
             ipython_observation._cause = ipython_action._id
             event_stream.add_event(ipython_observation, EventSource.USER)
@@ -78,14 +85,14 @@ class TestStuckDetector:
         self, event_stream: EventStream, random_line: bool, incidents: int = 4
     ):
         for i in range(incidents):
-            ipython_action = IPythonRunCellAction(code='print("hello')
+            ipython_action = IPythonRunCellAction(code=code_snippet)
             event_stream.add_event(ipython_action, EventSource.AGENT)
             line_number = (i + 1) * 10 if random_line else '1'
             ipython_observation = IPythonRunCellObservation(
                 content=f'print("  Cell In[1], line {line_number}\nhello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
                 + jupyter_line_1
                 + jupyter_line_2,
-                code='print("hello',
+                code=code_snippet,
             )
             ipython_observation._cause = ipython_action._id
             event_stream.add_event(ipython_observation, EventSource.USER)
