@@ -85,7 +85,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         )
     if metadata.agent_class == 'CoActPlannerAgent':
-        instruction += "Let's first examine the codebase and locate the relevant code for the issue. Then we'll come up with the detailed plan with all the edits to resolve it.\n"
+        instruction += "Now, let's come up with 2 global plans. First, examine the codebase and locate the relevant code for the issue. Then we'll come up with the FIRST detailed plan with all the edits to resolve it. Then, navigate the codebase again and come up with the SECOND detailed plan to create unit tests at the correct location to verify the change has actually resolved the issue. Finally, execute the test cases created from second plan to verify the correctness of the code changes. If the issue is not resolved, go through the codebase again to find the ACTUAL issue and repeat the 2 plans above. Remember to ONLY delegate the plan after you find out where to make the code changes. Note that when creating second plan, explicitly tell the executor NOT to execute them, only creating test cases and exit. because you will do it.\n"
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
