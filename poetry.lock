@@ -3804,23 +3804,23 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.6"
+version = "0.11.8"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.6-py3-none-any.whl", hash = "sha256:87f4947eded7cd7bf32432e56a1f80d510bd77e2770aa46ea0fd8bb51a2391e5"},
-    {file = "llama_index-0.11.6.tar.gz", hash = "sha256:5da3e2ad9f9562e5a85e34a177c6160e605c3e1d8f52659ba50438040e419b63"},
+    {file = "llama_index-0.11.8-py3-none-any.whl", hash = "sha256:6e3d33425bef812e49781c8e3c66c5ac0c24fdf7561fc74b8eb4dc6410873ad3"},
+    {file = "llama_index-0.11.8.tar.gz", hash = "sha256:f9ae58d5344afe458c6ae3a3aa5dc7375a18707712c9b56d94e08c1b5513ed23"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.0,<0.4.0"
-llama-index-cli = ">=0.3.0,<0.4.0"
-llama-index-core = ">=0.11.6,<0.12.0"
+llama-index-agent-openai = ">=0.3.1,<0.4.0"
+llama-index-cli = ">=0.3.1,<0.4.0"
+llama-index-core = ">=0.11.8,<0.12.0"
 llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
-llama-index-llms-openai = ">=0.2.2,<0.3.0"
+llama-index-llms-openai = ">=0.2.3,<0.3.0"
 llama-index-multi-modal-llms-openai = ">=0.2.0,<0.3.0"
 llama-index-program-openai = ">=0.2.0,<0.3.0"
 llama-index-question-gen-openai = ">=0.2.0,<0.3.0"
@@ -3830,13 +3830,13 @@ nltk = ">3.8.1"
 
 [[package]]
 name = "llama-index-agent-openai"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index agent openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_agent_openai-0.3.0-py3-none-any.whl", hash = "sha256:2b7d0e3d0e95271e5244e75a0366248c48d733497d93ae5bb09f548afe24ec98"},
-    {file = "llama_index_agent_openai-0.3.0.tar.gz", hash = "sha256:dade70e8b987194d7afb6925f723060e9f4953eb134400da2fcd4ceedf2c3dff"},
+    {file = "llama_index_agent_openai-0.3.1-py3-none-any.whl", hash = "sha256:21886081ae74574d8cad1ec4886f2d4b082284b9364adb46fff87aba1a25e9b9"},
+    {file = "llama_index_agent_openai-0.3.1.tar.gz", hash = "sha256:41c9aa5b7cebc5043adddb3442e3167e97971589466e36448e04e0a767f5b9aa"},
 ]
 
 [package.dependencies]
@@ -3846,13 +3846,13 @@ openai = ">=1.14.0"
 
 [[package]]
 name = "llama-index-cli"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index cli"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_cli-0.3.0-py3-none-any.whl", hash = "sha256:23227f305b7b320c7909f54ef2eeba90b9ad1a56231fbfbe1298280542bb9f24"},
-    {file = "llama_index_cli-0.3.0.tar.gz", hash = "sha256:a42e01fe2a02aa0fd3b645eb1403f9058fa7f62fbeea2a06a55b7fb8c07d5d02"},
+    {file = "llama_index_cli-0.3.1-py3-none-any.whl", hash = "sha256:2111fbb6973f5b1eabce0d6cca3986499f0f2f625b13d7f48269a49c64c027d4"},
+    {file = "llama_index_cli-0.3.1.tar.gz", hash = "sha256:1890dd687cf440f3651365a549e303363162c167b8efbd87a3aa10058d6d5c77"},
 ]
 
 [package.dependencies]
@@ -3862,13 +3862,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.6"
+version = "0.11.8"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.6-py3-none-any.whl", hash = "sha256:8eecb9f2ea4d7d44bf1cb84661f5f23523b9460427116a919c240318e73411a6"},
-    {file = "llama_index_core-0.11.6.tar.gz", hash = "sha256:853e8f188fe1e2d8430de838cf7fd76b1643886a3ac9f2278f7f1863116eb8cb"},
+    {file = "llama_index_core-0.11.8-py3-none-any.whl", hash = "sha256:c6a396ad5ad4846832e34188fb7dee46f93100ba1958bb209d7c660664a07368"},
+    {file = "llama_index_core-0.11.8.tar.gz", hash = "sha256:75b5ad2eb6439faf5cf01b4457b9f6a133ecbda5ffb21dbeeea18bf7faa827fc"},
 ]
 
 [package.dependencies]
@@ -4029,18 +4029,18 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.2.2"
+version = "0.2.3"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.2.2-py3-none-any.whl", hash = "sha256:c42d4dbf4ea81355a45d8132ee4cbe0fd89e6e3ad6688d2e592204d194919b2d"},
-    {file = "llama_index_llms_openai-0.2.2.tar.gz", hash = "sha256:5d8d77cd7dcb839aded9bd5da37c5806d680eb20fd04cc26891551fc17e4d1e0"},
+    {file = "llama_index_llms_openai-0.2.3-py3-none-any.whl", hash = "sha256:dbcf8636bca57b0c063621a9981bbf2fdfaedd96c8e4906b8ddf0a139cb74d2f"},
+    {file = "llama_index_llms_openai-0.2.3.tar.gz", hash = "sha256:e9173b430331791c6a5a9df16796437ae4a3ae247fd4e0f281f7cbe59258b07a"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.0,<0.4.0"
-llama-index-core = ">=0.11.0,<0.12.0"
+llama-index-agent-openai = ">=0.3.1,<0.4.0"
+llama-index-core = ">=0.11.7,<0.12.0"
 openai = ">=1.40.0,<2.0.0"
 
 [[package]]
