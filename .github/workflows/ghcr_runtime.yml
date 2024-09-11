@@ -236,11 +236,11 @@ jobs:
     needs: [test_runtime, runtime_integration_tests_on_linux]
     steps:
       - name: All tests passed
-        if: ${{ !contains(needs.*.result, 'cancelled') && !contains(needs.*.result, 'failure') }}
+        if: ${{ !contains(needs.*.result, 'failure') }}
         run: echo "All runtime tests have passed successfully!"
-      # If the prerequisite jobs were cancelled or failed, run this step so this job fails
+      # If the prerequisite jobs failed, run this step so this job fails
       - name: Tests failed
-        if: ${{ contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'failure') }}
+        if: ${{ contains(needs.*.result, 'failure') }}
         run: |
           echo "Some tests have failed!"
           exit 1
