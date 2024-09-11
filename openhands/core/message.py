@@ -49,7 +49,7 @@ class ImageContent(Content):
 
 class Message(BaseModel):
     role: Literal['user', 'system', 'assistant']
-    content: list[TextContent | ImageContent] = Field(default_factory=list)
+    content: list[TextContent | ImageContent] = Field(default=list)
 
     @property
     def contains_image(self) -> bool:
@@ -70,6 +70,11 @@ class Message(BaseModel):
             )
         else:
             # For user role or assistant role with vision enabled, serialize each content item
-            content = [item.model_dump() for item in self.content]
+            content = []
+            for item in self.content:
+                if isinstance(item, TextContent):
+                    content.append(item.model_dump())
+                elif isinstance(item, ImageContent):
+                    content.extend(item.model_dump())
 
         return {'content': content, 'role': self.role}
