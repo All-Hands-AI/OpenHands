@@ -169,12 +169,12 @@ jobs:
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 2 --reruns 2 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          # -n 2 --reruns 2
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
 
   # Run unit tests with the EventStream runtime Docker images as openhands user
   test_runtime_oh:
@@ -240,7 +240,8 @@ jobs:
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 2 --reruns 2 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          # -n 2 --reruns 2
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
