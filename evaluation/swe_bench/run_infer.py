@@ -85,7 +85,22 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         )
     if metadata.agent_class == 'CoActPlannerAgent':
-        instruction += "Now, let's come up with 2 global plans. First, examine the codebase and locate the relevant code for the issue. Then we'll come up with the FIRST detailed plan with all the edits to resolve it. Then, navigate the codebase again and come up with the SECOND detailed plan to create unit tests at the correct location to verify the change has actually resolved the issue. Finally, execute the test cases created from second plan to verify the correctness of the code changes. If the issue is not resolved, go through the codebase again to find the ACTUAL issue and repeat the 2 plans above. Remember to ONLY delegate the plan after you find out where to make the code changes. Note that when creating second plan, explicitly tell the executor NOT to execute them, only creating test cases and exit. because you will do it.\n"
+        instruction += """Now, let's come up with 2 global plans sequentially.\nFirst, examine the
+                        codebase and locate the relevant code for the issue. Then we'll come up with
+                        the FIRST detailed plan with all the edits to resolve it.\\After the local
+                        agent finishes executing the first plan, navigate
+                        the codebase again and come up with the SECOND detailed plan to create unit
+                        tests at the correct location to verify the change has actually resolved the
+                        issue.\nFinally, after the local agent finishe the second plan, execute the
+                        test cases created to verify
+                        the correctness of the code changes. IF THE ISSUE IS NOT RESOLVED AND THE
+                        TESTS FAILED, TRY TO GO THROUGH THE CODEBASE AGAIN TO FIND THE ACTUAL ISSUE
+                        AND CREATE THE FIRST PLAN AGAIN. Do NOT try to fix the failed tests by
+                        yourself as a planner agent. Remember to ONLY
+                        delegate the plan after you find out where to make the code changes. Note
+                        that when creating SECOND plan, explicitly tell the executor NOT to execute
+                        them, only creating test cases and exit as the last task, because you will
+                        do it.\n"""
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
