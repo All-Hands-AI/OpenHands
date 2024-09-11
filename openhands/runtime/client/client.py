@@ -17,8 +17,6 @@ from pathlib import Path
 import pexpect
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel
 from uvicorn import run
 
@@ -649,52 +647,12 @@ if __name__ == '__main__':
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
                 return []
 
-            # Check if .gitignore exists
-            gitignore_path = os.path.join(full_path, '.gitignore')
-            if os.path.exists(gitignore_path):
-                # Use PathSpec to parse .gitignore
-                with open(gitignore_path, 'r') as f:
-                    spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
-            else:
-                # Fallback to default exclude list if .gitignore doesn't exist
-                default_exclude = [
-                    '.git',
-                    '.DS_Store',
-                    '.svn',
-                    '.hg',
-                    '.idea',
-                    '.vscode',
-                    '.settings',
-                    '.pytest_cache',
-                    '__pycache__',
-                    'node_modules',
-                    'vendor',
-                    'build',
-                    'dist',
-                    'bin',
-                    'logs',
-                    'log',
-                    'tmp',
-                    'temp',
-                    'coverage',
-                    'venv',
-                    'env',
-                ]
-                spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
-
             entries = os.listdir(full_path)
-
-            # Filter entries using PathSpec
-            filtered_entries = [
-                os.path.join(full_path, entry)
-                for entry in entries
-                if not spec.match_file(os.path.relpath(entry, str(full_path)))
-            ]
 
             # Separate directories and files
             directories = []
             files = []
-            for entry in filtered_entries:
+            for entry in entries:
                 # Remove leading slash and any parent directory components
                 entry_relative = entry.lstrip('/').split('/')[-1]
 
