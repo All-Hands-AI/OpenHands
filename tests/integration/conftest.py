@@ -81,7 +81,9 @@ def _format_messages(messages):
     message_str = ''
     for message in messages:
         for m in message['content']:
-            if m['type'] == 'text':
+            if isinstance(m, str):
+                message_str += message_separator + m
+            elif isinstance(m, dict) and m['type'] == 'text':
                 message_str += message_separator + m['text']
     return message_str
 
