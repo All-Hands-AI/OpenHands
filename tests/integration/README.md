@@ -53,7 +53,7 @@ of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 
 [ghcr_runtime.yml](../../.github/workflows/ghcr_runtime.yml) runs integration tests in a CI environment.
 
-Note: If you are using docker desktop make sure that your version is up to date and "Enable host networking"
+*Note:* If you are using docker desktop make sure that your version is up to date and "Enable Host Networking"
 is checked (Under settings -> Resources -> Network ). Otherwise the integration tests may hang with the
 message `Getting container logs...` repeated ad infinitum.
 
