@@ -1,4 +1,5 @@
 import os
+import random
 import time
 
 import pytest
@@ -23,7 +24,21 @@ def print_method_name(request):
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory) -> str:
-    return str(tmp_path_factory.mktemp('test_runtime'))
+    """
+    Creates a unique temporary directory
+
+    Parameters:
+    - tmp_path_factory (TempPathFactory): A TempPathFactory class
+
+    Returns:
+    - str: The temporary directory path that was created
+    """
+
+    unique_suffix = random.randint(10000, 99999)
+    temp_directory = tmp_path_factory.mktemp(
+        f'test_runtime_{unique_suffix}', numbered=False
+    )
+    return str(temp_directory)
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
@@ -93,7 +108,6 @@ def base_container_image(request):
 def runtime(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
-    runtime.close()
     time.sleep(1)
 
 
