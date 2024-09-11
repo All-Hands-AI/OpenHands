@@ -3,13 +3,13 @@ import socket
 import time
 
 
-def find_available_tcp_port(min_port=49152, max_port=65535, max_attempts=100) -> int:
+def find_available_tcp_port(min_port=30000, max_port=60000, max_attempts=10) -> int:
     """Find an available TCP port in a specified range.
 
     Args:
-        min_port (int): The lower bound of the port range (default: 49152)
-        max_port (int): The upper bound of the port range (default: 65535)
-        max_attempts (int): Maximum number of attempts to find an available port (default: 100)
+        min_port (int): The lower bound of the port range (default: 30000)
+        max_port (int): The upper bound of the port range (default: 60000)
+        max_attempts (int): Maximum number of attempts to find an available port (default: 10)
 
     Returns:
         int: An available port number, or -1 if none found after max_attempts
@@ -24,7 +24,7 @@ def find_available_tcp_port(min_port=49152, max_port=65535, max_attempts=100) ->
             sock.bind(('localhost', port))
             return port
         except OSError:
-            time.sleep(0.01)  # Short delay to further reduce chance of collisions
+            time.sleep(0.1)  # Short delay to further reduce chance of collisions
             continue
         finally:
             sock.close()

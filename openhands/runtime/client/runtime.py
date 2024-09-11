@@ -9,7 +9,7 @@ import docker
 import requests
 import tenacity
 
-from openhands.core.config import AppConfig, UndefinedString
+from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -38,8 +38,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 
 
 class LogBuffer:
-    """
-    Synchronous buffer for Docker container logs.
+    """Synchronous buffer for Docker container logs.
 
     This class provides a thread-safe way to collect, store, and retrieve logs
     from a Docker container. It uses a list to store log lines and provides methods
@@ -94,7 +93,7 @@ class LogBuffer:
             )
             self.close(timeout=5)
 
-    def close(self, timeout: float = 10.0):
+    def close(self, timeout: float = 5.0):
         self._stop_event.set()
         self.log_stream_thread.join(timeout)
 
@@ -115,8 +114,11 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
     ):
         self.config = config
-        self._port = 30000 # initial dummy value
-        self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
+        self._host_port = 30000  # initial dummy value
+        self._container_port = 30001  # initial dummy value
+        self.api_url = (
+            f'http://{self.config.sandbox.api_hostname}:{self._container_port}'
+        )
         self.session = requests.Session()
 
         self.instance_id = (
@@ -152,8 +154,8 @@ class EventStreamRuntime(Runtime):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
             )
         self.container = self._init_container(
-            sandbox_workspace_dir=self.sandbox_workspace_dir,
-            mount_dir=self.config.workspace_mount_path,
+            sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
+            mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
             plugins=plugins,
         )
         # will initialize both the event stream and the env vars
@@ -194,13 +196,22 @@ class EventStreamRuntime(Runtime):
                     f'--plugins {" ".join([plugin.name for plugin in plugins])} '
                 )
 
-            self._port = self._find_available_port()
-            self.api_url = f'http://{self.config.sandbox.api_hostname}:{self._port}'
+            self._host_port = self._find_available_port()
+            self._container_port = (
+                self._host_port
+            )  # in future this might differ from host port
+            self.api_url = (
+                f'http://{self.config.sandbox.api_hostname}:{self._container_port}'
+            )
 
             use_host_network = self.config.sandbox.use_host_network
             network_mode: str | None = 'host' if use_host_network else None
-            port_mapping: dict[str, int] | None = (
-                None if use_host_network else {f'{self._port}/tcp': self._port}
+            port_mapping: dict[str, list[dict[str, str]]] | None = (
+                None
+                if use_host_network
+                else {
+                    f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]
+                }
             )
 
             if use_host_network:
@@ -210,18 +221,19 @@ class EventStreamRuntime(Runtime):
 
             # Combine environment variables
             environment = {
-                'PORT': str(self._port),
+                'port': str(self._container_port),
             }
             if self.config.debug:
                 environment['DEBUG'] = 'true'
 
             logger.info(f'Workspace dir: {sandbox_workspace_dir}')
-            if mount_dir is not None and mount_dir is not UndefinedString.UNDEFINED:
-                volumes = {mount_dir: {'bind': mount_dir, 'mode': 'rw'}}
+            if mount_dir is not None and sandbox_workspace_dir is not None:
+                # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
+                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
                 logger.info(f'Mount dir: {mount_dir}')
             else:
                 logger.warn(
-                    'Mount dir is not set, will not mount the workspace directory to the container.'
+                    'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
                 )
                 volumes = None
 
@@ -236,8 +248,8 @@ class EventStreamRuntime(Runtime):
                 command=(
                     f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                     'PYTHONUNBUFFERED=1 poetry run '
-                    f'python -u -m openhands.runtime.client.client {self._port} '
-                    f'--working-dir {sandbox_workspace_dir} '
+                    f'python -u -m openhands.runtime.client.client {self._container_port} '
+                    f'--working-dir "{sandbox_workspace_dir}" '
                     f'{plugin_arg}'
                     f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                     f'--user-id {self.config.sandbox.user_id} '
@@ -245,7 +257,7 @@ class EventStreamRuntime(Runtime):
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
-                working_dir='/openhands/code/',
+                working_dir='/openhands/code/',  # do not change this!
                 name=self.container_name,
                 detach=True,
                 environment=environment,
@@ -262,7 +274,7 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=10, max=60),
+        wait=tenacity.wait_exponential(multiplier=2, min=2, max=30),
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
@@ -288,10 +300,11 @@ class EventStreamRuntime(Runtime):
             )
 
         if not self.log_buffer.client_ready:
+            time.sleep(1)
             attempts = 0
-            while not self.log_buffer.client_ready and attempts < 5:
+            while not self.log_buffer.client_ready and attempts < 4:
                 attempts += 1
-                time.sleep(1)
+                time.sleep(2)
                 logs = self.log_buffer.get_and_clear()
                 if logs:
                     formatted_logs = '\n'.join([f'    |{log}' for log in logs])
@@ -318,8 +331,7 @@ class EventStreamRuntime(Runtime):
         return self.config.workspace_mount_path_in_sandbox
 
     def close(self, close_client: bool = True, rm_all_containers: bool = True):
-        """
-        Closes the EventStreamRuntime and associated objects
+        """Closes the EventStreamRuntime and associated objects
 
         Parameters:
         - close_client (bool): Whether to close the DockerClient
@@ -344,7 +356,7 @@ class EventStreamRuntime(Runtime):
                 elif container.name == self.container_name:
                     logs = container.logs(tail=1000).decode('utf-8')
                     logger.debug(
-                        f'==== Container logs ====\n{logs}\n==== End of container logs ===='
+                        f'==== Container logs on close ====\n{logs}\n==== End of container logs ===='
                     )
                     container.remove(force=True)
             except docker.errors.NotFound:

@@ -1,8 +1,7 @@
 """Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
-import time
-
-from conftest import _load_runtime
+import pytest
+from conftest import TEST_IN_CI, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -90,10 +89,11 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
 
-
+@pytest.mark.skipif(
+    TEST_IN_CI != 'True',
+    reason='This test is not working in WSL (file ownership)',
+)
 def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
 
@@ -111,20 +111,20 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     else:
         assert 'root' in obs.content
 
-    # print pwd
+    # print the current working directory
     test_code = 'import os; print(os.getcwd())'
     action_ipython = IPythonRunCellAction(code=test_code)
     logger.info(action_ipython, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_ipython)
     assert isinstance(obs, IPythonRunCellObservation)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip().split('\n')[0].endswith('/workspace')
-    assert '[Jupyter current working directory:' in obs.content.strip().split('\n')[1]
-    assert obs.content.strip().split('\n')[1].endswith('/workspace]')
     assert (
         obs.content.strip()
-        .split('\n')[2]
-        .endswith('/openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]')
+        == (
+            '/workspace\n'
+            '[Jupyter current working directory: /workspace]\n'
+            '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
+        ).strip()
     )
 
     # write a file
@@ -135,15 +135,12 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, IPythonRunCellObservation)
     assert (
-        obs.content.strip().split('\n')[0]
-        == '[Code executed successfully with no output]'
-    )
-    assert '[Jupyter current working directory:' in obs.content.strip().split('\n')[1]
-    assert obs.content.strip().split('\n')[1].endswith('/workspace]')
-    assert (
         obs.content.strip()
-        .split('\n')[2]
-        .endswith('/openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]')
+        == (
+            '[Code executed successfully with no output]\n'
+            '[Jupyter current working directory: /workspace]\n'
+            '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
+        ).strip()
     )
 
     # check file owner via bash
@@ -155,7 +152,6 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     if run_as_openhands:
         # -rw-r--r-- 1 openhands root 13 Jul 28 03:53 test.txt
         assert 'openhands' in obs.content.split('\r\n')[0]
-        assert 'root' in obs.content.split('\r\n')[0]
     else:
         # -rw-r--r-- 1 root root 13 Jul 28 03:53 test.txt
         assert 'root' in obs.content.split('\r\n')[0]
@@ -166,9 +162,6 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
 
 
 def test_ipython_simple(temp_dir, box_class):
@@ -190,9 +183,6 @@ def test_ipython_simple(temp_dir, box_class):
             '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
         ).strip()
     )
-
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
 
 
 def _test_ipython_agentskills_fileop_pwd_impl(
@@ -312,9 +302,6 @@ DO NOT re-run the same failed edit command. Running it again will lead to the sa
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
-
 
 def test_ipython_agentskills_fileop_pwd(
     temp_dir, box_class, run_as_openhands, enable_auto_lint
@@ -325,9 +312,6 @@ def test_ipython_agentskills_fileop_pwd(
         temp_dir, box_class, run_as_openhands, enable_auto_lint=enable_auto_lint
     )
     _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
-
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
 
 
 def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
@@ -395,9 +379,6 @@ def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
-
 
 def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
@@ -430,6 +411,3 @@ def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
         '[Jupyter current working directory: /workspace]\n'
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     )
-
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)

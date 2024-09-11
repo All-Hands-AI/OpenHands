@@ -1,7 +1,6 @@
 """Browsing-related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
 import json
-import time
 
 from conftest import _load_runtime
 
@@ -66,9 +65,6 @@ def test_simple_browse(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
-
 
 def test_browsergym_eval_env(box_class, temp_dir):
     runtime = _load_runtime(
@@ -110,6 +106,3 @@ def test_browsergym_eval_env(box_class, temp_dir):
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert json.loads(obs.content) == [0.0]
-
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)

@@ -584,10 +584,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
+    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
     # Set workspace_mount_path if not set by the user
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        cfg.workspace_mount_path = cfg.workspace_base
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?

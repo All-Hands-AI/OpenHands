@@ -13,6 +13,10 @@ from openhands.runtime.remote.runtime import RemoteRuntime
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
+TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
+RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
+
 
 @pytest.fixture(autouse=True)
 def print_method_name(request):
@@ -39,7 +43,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     """
 
     unique_suffix = random.randint(10000, 99999)
-    temp_dir = tmp_path_factory.mktemp(f'test_runtime_{unique_suffix}')
+    temp_dir = tmp_path_factory.mktemp(f'test_{unique_suffix}')
 
     def cleanup():
         if os.path.exists(temp_dir):
@@ -53,10 +57,6 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     request.addfinalizer(cleanup)
 
     return str(temp_dir)
-
-
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
-RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
@@ -130,6 +130,8 @@ def base_container_image(request):
 def runtime(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
+    runtime.close(rm_all_containers=not TEST_IN_CI)
+    time.sleep(2)
 
 
 def _load_runtime(
@@ -140,8 +142,9 @@ def _load_runtime(
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
 ) -> Runtime:
-    sid = 'test'
-    cli_session = 'main_test'
+    sid = f'test_{str(random.randint(10000, 99999))}'  # 'test'
+    cli_session = f'{sid}'
+
     print(f'*** Test temp directory: {temp_dir}')
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
@@ -149,11 +152,20 @@ def _load_runtime(
 
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
-    config.workspace_base = temp_dir
-    config.workspace_mount_path = temp_dir
+
+    config.workspace_mount_path = os.path.join(config.workspace_base, '_test_workspace')
+    config.workspace_mount_path_in_sandbox = '/workspace'  # temp_dir
+    print('\nPaths used:')
+    print(f'workspace_base: {config.workspace_base}')
+    print(f'workspace_mount_path: {config.workspace_mount_path}')
+    print(
+        f'workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n'
+    )
+
+    config.sandbox.browsergym_eval_env = browsergym_eval_env
     config.sandbox.enable_auto_lint = enable_auto_lint
     config.sandbox.use_host_network = False
-    config.sandbox.browsergym_eval_env = browsergym_eval_env
+
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
 
