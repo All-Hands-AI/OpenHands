@@ -126,14 +126,6 @@ def base_container_image(request):
     return request.param
 
 
-@pytest.fixture
-def runtime(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
-    yield runtime
-    runtime.close(rm_all_containers=not TEST_IN_CI)
-    time.sleep(2)
-
-
 def _load_runtime(
     temp_dir,
     box_class,

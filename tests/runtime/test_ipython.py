@@ -1,5 +1,7 @@
 """Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
+import time
+
 import pytest
 from conftest import TEST_IN_CI, _load_runtime
 
@@ -89,6 +91,9 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
+
 
 @pytest.mark.skipif(
     TEST_IN_CI != 'True',
@@ -163,6 +168,9 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
+
 
 def test_ipython_simple(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
@@ -183,6 +191,9 @@ def test_ipython_simple(temp_dir, box_class):
             '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
         ).strip()
     )
+
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
 
 
 def _test_ipython_agentskills_fileop_pwd_impl(
@@ -313,6 +324,9 @@ def test_ipython_agentskills_fileop_pwd(
     )
     _test_ipython_agentskills_fileop_pwd_impl(runtime, enable_auto_lint)
 
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
+
 
 def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
     """Make sure that cd in bash also update the current working directory in ipython.
@@ -379,6 +393,9 @@ def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     ).strip().split('\n')
 
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
+
 
 def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
@@ -411,3 +428,6 @@ def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
         '[Jupyter current working directory: /workspace]\n'
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]'
     )
+
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
