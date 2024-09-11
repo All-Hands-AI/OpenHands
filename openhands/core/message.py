@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_serializer
 
@@ -60,12 +60,12 @@ class Message(BaseModel):
         content: list[dict] | str
         if self.role == 'system':
             # For system role, concatenate all text content into a single string
-            content = ' '.join(
+            content = '\n'.join(
                 item.text for item in self.content if isinstance(item, TextContent)
             )
         elif self.role == 'assistant' and not vision_enabled:
             # For assistant role without vision, concatenate all text content into a single string
-            content = ' '.join(
+            content = '\n'.join(
                 item.text for item in self.content if isinstance(item, TextContent)
             )
         else:
@@ -73,30 +73,3 @@ class Message(BaseModel):
             content = [item.model_dump() for item in self.content]
 
         return {'content': content, 'role': self.role}
-
-
-def format_messages(
-    messages: Union[Message, list[Message]],
-    with_images: bool,
-    with_prompt_caching: bool,
-) -> list[dict]:
-    if not isinstance(messages, list):
-        messages = [messages]
-
-    # if with_images or with_prompt_caching:
-    return [message.model_dump() for message in messages]
-
-    # converted_messages = []
-    # for message in messages:
-    #    content_parts = []
-    #    role = 'user'
-
-    #    if isinstance(message, str) and message:
-    #        content_parts.append(message)
-    #    elif isinstance(message, dict):
-    #        role = message.get('role', 'user')
-    #        if 'content' in message and message['content']:
-    #            content_parts.append(message['content'])
-    # logger.error(
-    #            f'>>> `message` is not a string, dict, or Message: {type(message)}'
-    #        )
