@@ -597,7 +597,4 @@ class LLM:
     def format_messages_for_llm(
         self, messages: Union[Message, list[Message]]
     ) -> list[dict]:
-        vision_enabled = self.vision_is_active()
-        return [
-            message.model_dump(vision_enabled=vision_enabled) for message in messages
-        ]
+        return [message.model_dump() for message in messages]

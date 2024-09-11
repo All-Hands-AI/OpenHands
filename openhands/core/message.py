@@ -56,14 +56,14 @@ class Message(BaseModel):
         return any(isinstance(content, ImageContent) for content in self.content)
 
     @model_serializer
-    def serialize_model(self, vision_enabled: bool = False) -> dict:
+    def serialize_model(self) -> dict:
         content: list[dict] | str
         if self.role == 'system':
             # For system role, concatenate all text content into a single string
             content = '\n'.join(
                 item.text for item in self.content if isinstance(item, TextContent)
             )
-        elif self.role == 'assistant' and not vision_enabled:
+        elif self.role == 'assistant' and not self.contains_image:
             # For assistant role without vision, concatenate all text content into a single string
             content = '\n'.join(
                 item.text for item in self.content if isinstance(item, TextContent)
