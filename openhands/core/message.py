@@ -49,7 +49,7 @@ class ImageContent(Content):
 
 class Message(BaseModel):
     role: Literal['user', 'system', 'assistant']
-    content: list[TextContent | ImageContent] = Field(default=list)
+    content: list[TextContent | ImageContent] = Field(default_factory=list)
 
     @property
     def contains_image(self) -> bool:
