@@ -31,7 +31,7 @@ from tenacity import (
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, format_messages
+from openhands.core.message import Message
 from openhands.core.metrics import Metrics
 
 __all__ = ['LLM']
@@ -597,6 +597,7 @@ class LLM:
     def format_messages_for_llm(
         self, messages: Union[Message, list[Message]]
     ) -> list[dict]:
-        return format_messages(
-            messages, self.vision_is_active(), self.is_caching_prompt_active()
-        )
+        vision_enabled = self.vision_is_active()
+        return [
+            message.model_dump(vision_enabled=vision_enabled) for message in messages
+        ]
