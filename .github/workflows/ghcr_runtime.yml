@@ -229,11 +229,26 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # Checks that all runtime tests have passed
-  all_runtime_tests_passed:
+  # The two following jobs (named identically) are to check whether all the runtime tests have passed as the
+  # "All Runtime Tests Passed" is a required job for PRs to merge
+  # Due to this bug: https://github.com/actions/runner/issues/2566, we want to create a job that runs when the
+  # prerequisites have been cancelled or failed so merging is disallowed, otherwise Github considers "skipped" as "success"
+  runtime_tests_check_success:
     name: All Runtime Tests Passed
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     needs: [test_runtime, runtime_integration_tests_on_linux]
     steps:
       - name: All tests passed
         run: echo "All runtime tests have passed successfully!"
+
+  runtime_tests_check_fail:
+    name: All Runtime Tests Passed
+    if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+    runs-on: ubuntu-latest
+    needs: [test_runtime, runtime_integration_tests_on_linux]
+    steps:
+      - name: Some tests failed
+        run: |
+          echo "Some runtime tests failed or were cancelled"
+          exit 1
