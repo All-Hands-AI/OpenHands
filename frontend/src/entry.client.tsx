@@ -9,6 +9,7 @@ import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { SocketProvider } from "./context/socket";
+import "./i18n";
 
 async function prepareApp() {
   if (process.env.NODE_ENV === "development") {
