@@ -44,7 +44,7 @@ function BaseModal({ title, description, buttons }: BaseModalProps) {
         <BaseModalDescription description={description} />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 w-full">
         {buttons.map((button, index) => (
           <ModalButton
             key={index}

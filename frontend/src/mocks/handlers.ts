@@ -1,8 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
 
 export const handlers = [
-  http.get("/api/options/models", () => HttpResponse.json([])),
-  http.get("/api/options/agents", () => HttpResponse.json([])),
   http.get("https://api.github.com/user/repos", ({ request }) => {
     const token = request.headers
       .get("Authorization")
@@ -55,10 +53,14 @@ export const handlers = [
   }),
   http.get("http://localhost:3000/api/options/agents", async () => {
     await delay(2500);
-    return HttpResponse.json(["agent1", "agent2"]);
+    return HttpResponse.json(["CodeActAgent", "CoActAgent"]);
   }),
   http.get("http://localhost:3000/api/options/models", async () => {
     await delay(2500);
-    return HttpResponse.json(["some/model", "another/model"]);
+    return HttpResponse.json([
+      "gpt-3.5-turbo",
+      "gpt-4o",
+      "anthropic/claude-3.5",
+    ]);
   }),
 ];

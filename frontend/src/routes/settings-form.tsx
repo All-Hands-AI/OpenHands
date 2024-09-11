@@ -9,15 +9,12 @@ import clsx from "clsx";
 import { Await, useFetcher } from "@remix-run/react";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 import { ModelSelector } from "#/components/modals/settings/ModelSelector";
+import { Settings } from "#/services/settings";
+import ConfirmResetDefaultsModal from "#/components/modals/confirmation-modals/ConfirmResetDefaultsModal";
+import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 
 interface SettingsFormProps {
-  settings: {
-    LLM_MODEL: string;
-    AGENT: string;
-    LLM_API_KEY: string;
-    USING_CUSTOM_MODEL: boolean;
-    CUSTOM_LLM_MODEL: string;
-  };
+  settings: Settings;
   models: Promise<string[]>;
   agents: Promise<string[]>;
   onClose: () => void;
@@ -30,18 +27,19 @@ export function SettingsForm({
   onClose,
 }: SettingsFormProps) {
   const fetcher = useFetcher();
+  const formRef = React.useRef<HTMLFormElement>(null);
   const [isCustomModel, setIsCustomModel] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsCustomModel(settings.USING_CUSTOM_MODEL);
-  }, [settings.USING_CUSTOM_MODEL]);
+  const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
+    React.useState(false);
 
   return (
     <fetcher.Form
+      ref={formRef}
       data-testid="settings-form"
-      method="post"
+      method="POST"
       action="/settings"
       className="flex flex-col gap-6"
+      onSubmit={onClose}
     >
       <div className="flex flex-col gap-2">
         <Switch
@@ -79,7 +77,6 @@ export function SettingsForm({
               id="custom-model"
               name="custom-model"
               aria-label="Custom Model"
-              defaultValue={settings.CUSTOM_LLM_MODEL}
               classNames={{
                 inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
               }}
@@ -133,6 +130,7 @@ export function SettingsForm({
             <Await resolve={agents}>
               {(resolvedAgents) => (
                 <Autocomplete
+                  isRequired
                   id="agent"
                   aria-label="Agent"
                   data-testid="agent-input"
@@ -174,14 +172,29 @@ export function SettingsForm({
           Close
         </button>
         <button
-          type="submit"
-          name="intent"
-          value="reset"
+          type="button"
+          onClick={() => {
+            setConfirmResetDefaultsModalOpen(true);
+          }}
           className="text-sm text-[#EF3744] self-start"
         >
           Reset to defaults
         </button>
       </div>
+      {confirmResetDefaultsModalOpen && (
+        <ModalBackdrop>
+          <ConfirmResetDefaultsModal
+            onConfirm={() => {
+              const formData = new FormData(formRef.current ?? undefined);
+              formData.set("intent", "reset");
+              fetcher.submit(formData, { method: "POST", action: "/settings" });
+
+              onClose();
+            }}
+            onCancel={() => setConfirmResetDefaultsModalOpen(false)}
+          />
+        </ModalBackdrop>
+      )}
     </fetcher.Form>
   );
 }

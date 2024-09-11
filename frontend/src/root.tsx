@@ -24,6 +24,7 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import { getAgents, getModels } from "./api/open-hands";
 import LoadingProjectModal from "./components/modals/LoadingProject";
+import { getSettings } from "./services/settings";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -61,6 +62,7 @@ export const clientLoader = async () => {
     models,
     agents,
     tosAccepted,
+    settings: getSettings(),
   });
 };
 
@@ -80,12 +82,15 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   return json(null);
 };
 
-export const shouldRevalidate = ({ formData }: ShouldRevalidateFunctionArgs) =>
-  !!formData?.get("tos");
+export const shouldRevalidate = ({
+  formData,
+  formAction,
+}: ShouldRevalidateFunctionArgs) =>
+  !!formData?.get("tos") || formAction === "/settings";
 
 export default function App() {
   const navigation = useNavigation();
-  const { user, models, agents, tosAccepted } =
+  const { user, models, agents, tosAccepted, settings } =
     useLoaderData<typeof clientLoader>();
 
   const {
@@ -138,8 +143,7 @@ export default function App() {
                 To continue, connect an OpenAI, Anthropic, or other LLM account
               </p>
               <SettingsForm
-                // @ts-expect-error - TODO: fix this
-                settings={{}}
+                settings={settings}
                 models={models}
                 agents={agents}
                 onClose={onSettingsModalOpenChange}

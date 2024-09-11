@@ -1,7 +1,14 @@
-import React from "react";
 import BaseModal from "./BaseModal";
 
-function ConfirmResetDefaultsModal() {
+interface ConfirmResetDefaultsModalProps {
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function ConfirmResetDefaultsModal({
+  onConfirm,
+  onCancel,
+}: ConfirmResetDefaultsModalProps) {
   return (
     <BaseModal
       title="Are you sure?"
@@ -9,12 +16,12 @@ function ConfirmResetDefaultsModal() {
       buttons={[
         {
           text: "Reset Defaults",
-          onClick: () => console.log("Delete"),
+          onClick: onConfirm,
           className: "bg-danger",
         },
         {
           text: "Cancel",
-          onClick: () => console.log("Cancel"),
+          onClick: onCancel,
           className: "bg-[#737373]",
         },
       ]}
