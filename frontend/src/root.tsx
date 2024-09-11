@@ -18,7 +18,7 @@ import React from "react";
 import { useDisclosure } from "@nextui-org/react";
 import CogTooth from "./assets/cog-tooth";
 import ConnectToGitHubByTokenModal from "./components/modals/ConnectToGitHubByTokenModal";
-import { SettingsForm } from "./routes/settings-form";
+import { SettingsForm } from "./components/form/settings-form";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";

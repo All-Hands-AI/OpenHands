@@ -8,11 +8,14 @@ import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
 import { cn } from "#/utils/utils";
 import { clientLoader } from "#/routes/app";
+import { PushToGitHubModal } from "../modals/push-to-github-modal";
 
 export function ProjectMenuCard() {
   const data = useRouteLoaderData<typeof clientLoader>("routes/app");
   const [menuIsOpen, setMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
+    React.useState(false);
+  const [createNewRepositoryModalOpen, setCreateNewRepositoryModalOpen] =
     React.useState(false);
 
   const toggleMenuVisibility = () => {
@@ -24,9 +27,12 @@ export function ProjectMenuCard() {
       {menuIsOpen && (
         <ContextMenu className="absolute right-0 bottom-[calc(100%+8px)]">
           <ContextMenuListItem
-            onClick={() => setConnectToGitHubModalOpen(true)}
+            onClick={() => {
+              if (!data?.ghToken) setConnectToGitHubModalOpen(true);
+              else setCreateNewRepositoryModalOpen(true);
+            }}
           >
-            {data?.ghToken ? "Connected" : "Connect"} to GitHub
+            {data?.ghToken ? "Push to GitHub" : "Connect to GitHub"}
           </ContextMenuListItem>
           <ContextMenuListItem>Reset Workspace</ContextMenuListItem>
           <ContextMenuListItem>Download as .zip</ContextMenuListItem>
@@ -57,6 +63,14 @@ export function ProjectMenuCard() {
         <ModalBackdrop>
           <ConnectToGitHubModal
             onClose={() => setConnectToGitHubModalOpen(false)}
+          />
+        </ModalBackdrop>
+      )}
+      {!!data?.ghToken && createNewRepositoryModalOpen && (
+        <ModalBackdrop>
+          <PushToGitHubModal
+            token={data.ghToken}
+            onClose={() => setCreateNewRepositoryModalOpen(false)}
           />
         </ModalBackdrop>
       )}
