@@ -190,7 +190,7 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[1]  # TODO if len(args) > 1 else []
 
             # this serves to prevent empty messages and logging the messages
             debug_message = self._get_debug_message(messages)
@@ -252,7 +252,7 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[1]  # TODO if len(args) > 1 else []
 
             # this serves to prevent empty messages and logging the messages
             debug_message = self._get_debug_message(messages)
@@ -325,7 +325,7 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[1]  # TODO if len(args) > 1 else []
 
             # log the prompt
             debug_message = ''
@@ -597,4 +597,6 @@ class LLM:
     def format_messages_for_llm(
         self, messages: Union[Message, list[Message]]
     ) -> list[dict]:
+        if isinstance(messages, Message):
+            return [messages.model_dump()]
         return [message.model_dump() for message in messages]
