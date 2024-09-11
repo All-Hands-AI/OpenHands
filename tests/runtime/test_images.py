@@ -45,7 +45,7 @@ def test_bash_python_version(temp_dir, box_class, base_container_image):
     assert obs.exit_code == 0
     assert 'pip' in obs.content  # Check that pip is available
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -68,7 +68,7 @@ def test_nodejs_22_version(temp_dir, box_class, base_container_image):
     assert obs.exit_code == 0
     assert 'v22' in obs.content  # Check for specific version
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -90,5 +90,5 @@ def test_go_version(temp_dir, box_class, base_container_image):
     assert obs.exit_code == 0
     assert 'go1.23' in obs.content  # Check for specific version
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
