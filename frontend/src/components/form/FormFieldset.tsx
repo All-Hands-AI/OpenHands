@@ -1,5 +1,4 @@
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
-import React from "react";
 
 interface FormFieldsetProps {
   id: string;
@@ -34,7 +33,7 @@ function FormFieldset({
         }}
       >
         {items.map((item) => (
-          <AutocompleteItem key={item.key} value={item.value}>
+          <AutocompleteItem key={item.key} value={item.key}>
             {item.value}
           </AutocompleteItem>
         ))}

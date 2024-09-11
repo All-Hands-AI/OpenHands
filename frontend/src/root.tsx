@@ -25,6 +25,10 @@ import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import { getAgents, getModels } from "./api/open-hands";
 import LoadingProjectModal from "./components/modals/LoadingProject";
 import { getSettings } from "./services/settings";
+import { ContextMenu } from "./components/context-menu/context-menu";
+import { ContextMenuListItem } from "./components/context-menu/context-menu-list-item";
+import { ContextMenuSeparator } from "./components/context-menu/context-menu-separator";
+import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -93,6 +97,11 @@ export default function App() {
   const { user, models, agents, tosAccepted, settings } =
     useLoaderData<typeof clientLoader>();
 
+  const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
+    React.useState(false);
+  const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
+    React.useState(false);
+
   const {
     isOpen: settingsModalIsOpen,
     onOpen: onSettingsModalOpen,
@@ -106,11 +115,35 @@ export default function App() {
           <AllHandsLogo width={34} height={23} />
         </Link>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
-          <img
-            src={user?.avatar_url}
-            alt="User avatar"
-            className="w-8 h-8 rounded-full"
-          />
+          <div className="w-8 h-8 relative">
+            <button
+              type="button"
+              onClick={() => setAccountContextMenuIsVisible((prev) => !prev)}
+            >
+              <img
+                src={user?.avatar_url}
+                alt="User avatar"
+                className="w-8 h-8 rounded-full"
+              />
+            </button>
+
+            {accountContextMenuIsVisible && (
+              <ContextMenu className="absolute left-full -top-1 z-10">
+                <ContextMenuListItem
+                  onClick={() => {
+                    setAccountContextMenuIsVisible(false);
+                    setAccountSettingsModalOpen(true);
+                  }}
+                >
+                  Account Settings
+                </ContextMenuListItem>
+                <ContextMenuListItem>AI Provider Settings</ContextMenuListItem>
+                <ContextMenuListItem>Documentation</ContextMenuListItem>
+                <ContextMenuSeparator />
+                <ContextMenuListItem>Logout</ContextMenuListItem>
+              </ContextMenu>
+            )}
+          </div>
           <button
             type="button"
             className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
@@ -149,6 +182,14 @@ export default function App() {
                 onClose={onSettingsModalOpenChange}
               />
             </div>
+          </ModalBackdrop>
+        )}
+        {accountSettingsModalOpen && (
+          <ModalBackdrop>
+            <AccountSettingsModal
+              onClose={() => setAccountSettingsModalOpen(false)}
+              language={settings.LANGUAGE}
+            />
           </ModalBackdrop>
         )}
       </div>

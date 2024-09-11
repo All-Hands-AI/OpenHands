@@ -22,11 +22,13 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const LLM_MODEL = `${provider}/${model}`.toLowerCase();
   const LLM_API_KEY = formData.get("api-key")?.toString();
   const AGENT = formData.get("agent")?.toString();
+  const LANGUAGE = formData.get("language")?.toString();
 
   const settings: Partial<Settings> = {
     LLM_MODEL,
     LLM_API_KEY,
     AGENT,
+    LANGUAGE,
   };
 
   saveSettings(settings);
