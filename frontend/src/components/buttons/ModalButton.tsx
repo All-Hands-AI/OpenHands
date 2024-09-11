@@ -8,7 +8,7 @@ interface ModalButtonProps {
   className: React.HTMLProps<HTMLButtonElement>["className"];
   icon?: React.ReactNode;
   type?: "button" | "submit";
-  loading?: boolean;
+  disabled?: boolean;
 }
 
 function ModalButton({
@@ -18,18 +18,18 @@ function ModalButton({
   className,
   icon,
   type = "button",
-  loading,
+  disabled,
 }: ModalButtonProps) {
   return (
     <button
       type={type === "submit" ? "submit" : "button"}
-      disabled={loading}
+      disabled={disabled}
       onClick={onClick}
       className={clsx(
         variant === "default" && "text-sm text-[500] py-[10px] rounded",
         variant === "text-like" && "text-xs leading-4 font-normal",
         icon && "flex items-center justify-center gap-2",
-        loading && "opacity-50 cursor-not-allowed",
+        disabled && "opacity-50 cursor-not-allowed",
         className,
       )}
     >

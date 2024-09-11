@@ -47,11 +47,12 @@ export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
-  const token = formData.get("token")?.toString();
 
-  if (token) {
-    localStorage.setItem("token", token);
-  }
+  const token = formData.get("token")?.toString();
+  const ghToken = formData.get("ghToken")?.toString();
+
+  if (token) localStorage.setItem("token", token);
+  if (ghToken) localStorage.setItem("ghToken", ghToken);
 
   return json(null);
 };

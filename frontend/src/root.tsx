@@ -137,7 +137,6 @@ export default function App() {
                 >
                   Account Settings
                 </ContextMenuListItem>
-                <ContextMenuListItem>AI Provider Settings</ContextMenuListItem>
                 <ContextMenuListItem>Documentation</ContextMenuListItem>
                 <ContextMenuSeparator />
                 <ContextMenuListItem>Logout</ContextMenuListItem>
