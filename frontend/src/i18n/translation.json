@@ -441,6 +441,11 @@
     "zh-CN": "工作区没有文件",
     "de": "Keine Dateien im Arbeitsbereich"
   },
+  "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
+    "en": "Loading workspace...",
+    "zh-CN": "正在加载工作区...",
+    "de": "Arbeitsbereich wird geladen..."
+  },
   "EXPLORER$REFRESH_ERROR_MESSAGE": {
     "en": "Error refreshing workspace",
     "zh-CN": "工作区刷新错误",
