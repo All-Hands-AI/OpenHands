@@ -45,6 +45,7 @@ function SettingsForm({
     () =>
       !!settings.SECURITY_ANALYZER ||
       !!settings.CONFIRMATION_MODE ||
+      !!settings.LLM_BASE_URL ||
       (!!settings.LLM_MODEL && !models.includes(settings.LLM_MODEL)),
     [],
   );

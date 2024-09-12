@@ -20,7 +20,6 @@ const renderSettingsForm = (settings?: Settings) => {
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
-          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -63,7 +62,6 @@ describe("SettingsForm", () => {
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "gpt-3.5-turbo",
-      LLM_BASE_URL: "base_url",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -139,7 +137,6 @@ describe("SettingsForm", () => {
       <SettingsForm
         settings={{
           LLM_MODEL: "gpt-4o",
-          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -266,7 +263,6 @@ describe("SettingsForm", () => {
             AGENT: "agent1",
             LANGUAGE: "en",
             LLM_API_KEY: "sk-...",
-            LLM_BASE_URL: "",
             CONFIRMATION_MODE: true,
             SECURITY_ANALYZER: "analyzer1",
           }}
