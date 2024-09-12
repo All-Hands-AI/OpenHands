@@ -82,6 +82,13 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     }));
   };
 
+  const handleBaseURLChange = (baseURL: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      LLM_BASE_URL: baseURL,
+    }));
+  };
+
   const handleAgentChange = (agent: string) => {
     setSettings((prev) => ({ ...prev, AGENT: agent }));
   };
@@ -179,6 +186,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           agents={agents}
           securityAnalyzers={securityAnalyzers}
           onModelChange={handleModelChange}
+          onBaseURLChange={handleBaseURLChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
