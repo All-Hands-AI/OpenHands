@@ -50,7 +50,7 @@ If the agent is finished with the task you MUST include <finish></finish> in you
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 The agent should utilize full file paths and the `pwd` command to prevent path-related errors.
 The agent must avoid apologies and thanks in its responses.
-Remeber to execute ALL the phases of the global plan and only return the summary of the whole process to the global agent.
+Remeber to execute ALL the phases of the global plan and only return the summary of the whole process to the global agent. Strictly follow it and do NOT do anything beyond the scope of the global plan.
 
 {% endset %}
 {# Combine all parts without newlines between them #}

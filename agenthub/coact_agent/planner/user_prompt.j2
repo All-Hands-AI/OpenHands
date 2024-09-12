@@ -15,7 +15,7 @@ The user message is: "I want to go to the user 'ryanhoangtt' github profile usin
 ## Phase 2
 - description: Create a new file `repo_count.txt` and write the number of repositories to it.
 - reason: The number of repositories should be stored in a file as requested by the user.
-- expected_state: \"The file `repo_count.txt` is created and contains the number of repositories.
+- expected_state: The file `repo_count.txt` is created and contains the number of repositories.
 </execute_global_plan>
 
 USER:
@@ -94,11 +94,11 @@ The user message is: "Create a list of numbers from 1 to 10, and display them in
 9|if __name__ == '__main__':
 10|    app.run(port=5000)
 </expected_content>
-
 ## Phase 2
 - description: Run the Python file `app.py` to display the list of numbers on a web page at port 5000.
 - reason: After updating the Python file, we need to run it to display the list of numbers on a web page. The command a shell command can be: `python3 app.py`.
 - expected_state: The list of numbers is displayed on a web page at port 5000.
+</execute_global_plan>
 
 USER:
 OBSERVATION:
@@ -119,6 +119,7 @@ The user message is: "Now browse the newly started server's homepage and show me
 # Phases
 ## Phase 1
 - description: Browse the server's homepage at http://127.0.0.1:5000
+- reason: To verify that the server is running and displaying the list of numbers correctly, we need to browse the server's homepage. We can use the `execute_browse` function to access the URL.
 - expected_state: The content of the server's homepage is retrieved.
 </execute_global_plan>
 
@@ -144,7 +145,7 @@ The user message is: "Now kill the server, make it display the numbers in a tabl
 - expected_state: The server is stopped.
 ## Phase 2
 - description: Modify the Python code to display the numbers in a table format.
-- reason: The current code returns the numbers as a string, which is incorrect. We need to modify it to display the numbers in a table format by using HTML tags for table rows and cells.
+- reason: The current code returns the numbers as a string, which is incorrect. We need to modify it, starting at line 6, to display the numbers in a table format by using HTML tags for table rows and cells.
 - expected_state: The Python code is updated to display the numbers in a table format.
 <file_path> /workspace/app.py </file_path>
 <expected_content>
