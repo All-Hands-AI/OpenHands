@@ -17,7 +17,6 @@ import {
   Settings,
   getSettings,
   getDefaultSettings,
-  getSettingsDifference,
   settingsAreUpToDate,
   maybeMigrateSettings,
   saveSettings,
@@ -31,7 +30,7 @@ interface SettingsProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const REQUIRED_SETTINGS = ["LLM_MODEL", "AGENT"];
+const REQUIRED_SETTINGS = ["LLM_MODEL"];
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
@@ -63,8 +62,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        setModels(await fetchModels());
-        setAgents(await fetchAgents());
+        const fetchedModels = await fetchModels();
+        const fetchedAgents = await fetchAgents();
+        setModels(fetchedModels);
+        setAgents(fetchedAgents);
         setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
         toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));
@@ -78,6 +79,13 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     setSettings((prev) => ({
       ...prev,
       LLM_MODEL: model,
+    }));
+  };
+
+  const handleBaseURLChange = (baseURL: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      LLM_BASE_URL: baseURL,
     }));
   };
 
@@ -115,20 +123,9 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleSaveSettings = () => {
-    const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
     Session.startNewSession();
-
-    const sensitiveKeys = ["LLM_API_KEY"];
-
-    Object.entries(updatedSettings).forEach(([key, value]) => {
-      if (!sensitiveKeys.includes(key)) {
-        toast.settingsChanged(`${key} set to "${value}"`);
-      } else {
-        toast.settingsChanged(`${key} has been updated securely.`);
-      }
-    });
 
     localStorage.setItem(
       `API_KEY_${settings.LLM_MODEL || models[0]}`,
@@ -136,7 +133,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     );
   };
 
-  let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
+  let subtitle = "";
   if (loading) {
     subtitle = t(I18nKey.CONFIGURATION$AGENT_LOADING);
   } else if (agentIsRunning) {
@@ -189,6 +186,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           agents={agents}
           securityAnalyzers={securityAnalyzers}
           onModelChange={handleModelChange}
+          onBaseURLChange={handleBaseURLChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}

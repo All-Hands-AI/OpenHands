@@ -42,10 +42,10 @@ Créez un fichier ```config.toml``` dans le répertoire OpenHands et entrez ces 
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="image_personnalisée"
+sandbox_base_container_image="image_personnalisée"
 ```
 
-> Assurez-vous que ```sandbox_container_image``` est défini sur le nom de votre image personnalisée précédente.
+> Assurez-vous que ```sandbox_base_container_image``` est défini sur le nom de votre image personnalisée précédente.
 
 ## Exécution
 
@@ -61,7 +61,7 @@ Félicitations !
 
 Le code pertinent est défini dans [ssh_box.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/ssh_box.py) et [image_agnostic_util.py](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py).
 
-En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox_container_image``` et ensuite tente de récupérer l'image à l'aide de [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72), qui est défini dans image_agnostic_util.py.
+En particulier, ssh_box.py vérifie l'objet config pour ```config.sandbox.base_container_image``` et ensuite tente de récupérer l'image à l'aide de [get_od_sandbox_image](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/docker/image_agnostic_util.py#L72), qui est défini dans image_agnostic_util.py.
 
 Lorsqu'une image personnalisée est utilisée pour la première fois, elle ne sera pas trouvée et donc elle sera construite (à l'exécution ultérieure, l'image construite sera trouvée et renvoyée).
 
@@ -92,7 +92,7 @@ Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que O
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="image_personnalisée"
+sandbox_base_container_image="image_personnalisée"
 sandbox_user_id="1001"
 ```
 
@@ -102,4 +102,4 @@ Si vous voyez un message d'erreur indiquant que le port est utilisé ou indispon
 
 ## Discuter
 
-Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!
+Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!

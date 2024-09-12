@@ -8,16 +8,16 @@ import toml
 from pytest import TempPathFactory
 
 from openhands.runtime.utils.runtime_build import (
-    RUNTIME_IMAGE_REPO,
     _generate_dockerfile,
     _get_package_version,
     _put_source_code_to_dir,
     build_runtime_image,
+    get_runtime_image_repo,
     get_runtime_image_repo_and_tag,
     prep_docker_build_folder,
 )
 
-OD_VERSION = f'od_v{_get_package_version()}'
+OH_VERSION = f'oh_v{_get_package_version()}'
 
 
 @pytest.fixture
@@ -36,6 +36,7 @@ def _check_source_code_in_dir(temp_dir):
 
     # The source code should only include the `openhands` folder, but not the other folders
     assert set(os.listdir(code_dir)) == {
+        'agenthub',
         'openhands',
         'pyproject.toml',
         'poetry.lock',
@@ -51,7 +52,7 @@ def _check_source_code_in_dir(temp_dir):
         pyproject = toml.load(f)
 
     _pyproject_version = pyproject['tool']['poetry']['version']
-    assert _pyproject_version == version('openhands')
+    assert _pyproject_version == version('openhands-ai')
 
 
 def test_put_source_code_to_dir(temp_dir):
@@ -174,23 +175,23 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     base_image = 'debian:11'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_debian_tag_11'
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag == f'{OH_VERSION}_image_debian_tag_11'
     )
 
     base_image = 'nikolaik/python-nodejs:python3.11-nodejs22'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        img_repo == f'{RUNTIME_IMAGE_REPO}'
+        img_repo == f'{get_runtime_image_repo()}'
         and img_tag
-        == f'{OD_VERSION}_image_nikolaik___python-nodejs_tag_python3.11-nodejs22'
+        == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.11-nodejs22'
     )
 
     base_image = 'ubuntu'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
-        img_repo == f'{RUNTIME_IMAGE_REPO}'
-        and img_tag == f'{OD_VERSION}_image_ubuntu_tag_latest'
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag == f'{OH_VERSION}_image_ubuntu_tag_latest'
     )
 
 
@@ -206,18 +207,18 @@ def test_build_runtime_image_from_scratch(temp_dir):
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = False
     mock_runtime_builder.build.return_value = (
-        f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+        f'{get_runtime_image_repo()}:{from_scratch_hash}'
     )
 
     image_name = build_runtime_image(base_image, mock_runtime_builder)
     mock_runtime_builder.build.assert_called_once_with(
         path=ANY,
         tags=[
-            f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}',
-            f'{RUNTIME_IMAGE_REPO}:{OD_VERSION}_image_debian_tag_11',
+            f'{get_runtime_image_repo()}:{from_scratch_hash}',
+            f'{get_runtime_image_repo()}:{OH_VERSION}_image_debian_tag_11',
         ],
     )
-    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
 
 
 def test_build_runtime_image_exact_hash_exist(temp_dir):
@@ -232,11 +233,11 @@ def test_build_runtime_image_exact_hash_exist(temp_dir):
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = True
     mock_runtime_builder.build.return_value = (
-        f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+        f'{get_runtime_image_repo()}:{from_scratch_hash}'
     )
 
     image_name = build_runtime_image(base_image, mock_runtime_builder)
-    assert image_name == f'{RUNTIME_IMAGE_REPO}:{from_scratch_hash}'
+    assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
     mock_runtime_builder.build.assert_not_called()
 
 

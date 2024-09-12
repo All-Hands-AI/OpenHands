@@ -13,7 +13,6 @@ import toml
 from dotenv import load_dotenv
 
 from openhands.core import logger
-from openhands.core.utils import SingletonABCMeta
 
 load_dotenv()
 
@@ -95,6 +94,8 @@ class LLMConfig(BaseConfig):
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
+        disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+        caching_prompt: Using the prompt caching feature provided by the LLM.
     """
 
     model: str = 'gpt-4o'
@@ -104,10 +105,10 @@ class LLMConfig(BaseConfig):
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
-    num_retries: int = 10
+    num_retries: int = 8
     retry_multiplier: float = 2
-    retry_min_wait: int = 3
-    retry_max_wait: int = 300
+    retry_min_wait: int = 15
+    retry_max_wait: int = 120
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0
@@ -119,6 +120,8 @@ class LLMConfig(BaseConfig):
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
     drop_params: bool | None = None
+    disable_vision: bool | None = None
+    caching_prompt: bool = False
     memory_summarization_fraction: float = 0.75
 
     @classmethod
@@ -253,12 +256,14 @@ class AgentConfig(BaseConfig):
     """Configuration for the agent.
 
     Attributes:
+        micro_agent_name: The name of the micro agent to use for this agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use or an actual LLMConfig object. If specified, this will override global llm config.
         memory_config: The name of the memory config to use or an actual MemoryConfig object. If specified, this will override global memory config.
     """
 
+    micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 2
     llm_config: str | LLMConfig | None = None
@@ -326,7 +331,7 @@ class AgentConfig(BaseConfig):
 
 
 @dataclass
-class SecurityConfig(BaseConfig, metaclass=SingletonABCMeta):
+class SecurityConfig(BaseConfig):
     """Configuration for security related functionalities.
 
     Attributes:
@@ -358,12 +363,13 @@ class SecurityConfig(BaseConfig, metaclass=SingletonABCMeta):
 
 
 @dataclass
-class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
+class SandboxConfig(BaseConfig):
     """Configuration for the sandbox.
 
     Attributes:
         api_hostname: The hostname for the EventStream Runtime API.
-        container_image: The container image to use for the sandbox.
+        base_container_image: The base container image from which to build the runtime image.
+        runtime_container_image: The runtime container image to use.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
         enable_auto_lint: Whether to enable auto-lint.
@@ -383,7 +389,9 @@ class SandboxConfig(BaseConfig, metaclass=SingletonABCMeta):
     """
 
     api_hostname: str = 'localhost'
-    container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    api_key: str | None = None
+    base_container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    runtime_container_image: str | None = None
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
     enable_auto_lint: bool = (
@@ -442,7 +450,7 @@ class UndefinedString(str, Enum):
 
 
 @dataclass
-class AppConfig(BaseConfig, metaclass=SingletonABCMeta):
+class AppConfig(BaseConfig):
     """Configuration for the app.
 
     Attributes:
@@ -875,7 +883,7 @@ def get_llm_config_arg(
     model = 'gpt-3.5-turbo'
     api_key = '...'
     temperature = 0.5
-    num_retries = 10
+    num_retries = 8
     ...
     ```
 
@@ -1001,6 +1009,12 @@ def get_parser() -> argparse.ArgumentParser:
         default='default',
         type=str,
         help='Name for the session',
+    )
+    parser.add_argument(
+        '--eval-ids',
+        default=None,
+        type=str,
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
     return parser
 

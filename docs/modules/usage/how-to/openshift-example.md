@@ -1,11 +1,11 @@
-# Use OpenHands in OpenShift/K8S
+# Kubernetes
 
-There are different ways and scenarios that you can do, we're just mentioning one example here:
-1. Create a PV "as a cluster admin" to map workspace_base data and docker directory to the pod through the worker node.
-2. Create a PVC to be able to mount those PVs to the POD
-3. Create a POD which contains two containers; the OpenHands and Sandbox containers.
+There are different ways you might run OpenHands on Kubernetes or OpenShift. This guide goes through one possible way:
+1. Create a PV "as a cluster admin" to map workspace_base data and docker directory to the pod through the worker node
+2. Create a PVC to be able to mount those PVs to the pod
+3. Create a pod which contains two containers; the OpenHands and Sandbox containers
 
-## Steps to follow the above example.
+## Detailed Steps for the Example Above
 
 > Note: Make sure you are logged in to the cluster first with the proper account for each step. PV creation requires cluster administrator!
 
@@ -135,8 +135,8 @@ LAST SEEN   TYPE     REASON                 OBJECT                              
 10s         Normal   WaitForFirstConsumer   persistentvolumeclaim/workspace-pvc   waiting for first consumer to be created before binding
 ```
 
-3. Create the POD yaml file:
-Sample POD yaml file below:
+3. Create the pod yaml file:
+Sample pod yaml file below:
 
 - pod.yaml
 
@@ -150,7 +150,7 @@ metadata:
 spec:
   containers:
   - name: openhands-app-2024
-    image: ghcr.io/opendevin/opendevin:0.7.1
+    image: ghcr.io/all-hands-ai/openhands:main
     env:
     - name: SANDBOX_USER_ID
       value: "1000"
@@ -164,7 +164,7 @@ spec:
     ports:
     - containerPort: 3000
   - name: openhands-sandbox-2024
-    image: ghcr.io/openhands/sandbox:main
+    image: ghcr.io/all-hands-ai/sandbox:main
     ports:
     - containerPort: 51963
     command: ["/usr/sbin/sshd", "-D", "-p 51963", "-o", "PermitRootLogin=yes"]
@@ -204,10 +204,10 @@ LAST SEEN   TYPE     REASON                   OBJECT                            
 9s          Normal   SuccessfulAttachVolume   pod/openhands-app-2024                AttachVolume.Attach succeeded for volume "pvc-2b1d223a-1c8f-4990-8e3d-68061a9ae252"
 9s          Normal   SuccessfulAttachVolume   pod/openhands-app-2024                AttachVolume.Attach succeeded for volume "pvc-31f15b25-faad-4665-a25f-201a530379af"
 6s          Normal   AddedInterface           pod/openhands-app-2024                Add eth0 [10.128.2.48/23] from openshift-sdn
-6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/opendevin/opendevin:0.7.1" already present on machine
+6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/all-hands-ai/openhands:main" already present on machine
 6s          Normal   Created                  pod/openhands-app-2024                Created container openhands-app-2024
 6s          Normal   Started                  pod/openhands-app-2024                Started container openhands-app-2024
-6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/openhands/sandbox:main" already present on machine
+6s          Normal   Pulled                   pod/openhands-app-2024                Container image "ghcr.io/all-hands-ai/sandbox:main" already present on machine
 5s          Normal   Created                  pod/openhands-app-2024                Created container openhands-sandbox-2024
 5s          Normal   Started                  pod/openhands-app-2024                Started container openhands-sandbox-2024
 83s         Normal   WaitForFirstConsumer     persistentvolumeclaim/workspace-pvc   waiting for first consumer to be created before binding
@@ -262,35 +262,3 @@ Events:                   <none>
 6. Connect to OpenHands UI, configure the Agent, then test:
 
 ![image](https://github.com/user-attachments/assets/12f94804-a0c7-4744-b873-e003c9caf40e)
-
-
-## Challenges
-Some of the challenages that would be needed to improve:
-
-1. Install GIT into the container:
-   This can be resolved by building a custom image which includes GIT software and use that image during pod deplyment.
-
-Example below: "to be tested!"
-
-```dockerfile
-FROM ghcr.io/opendevin/opendevin:0.7.1
-
-# Install Git
-RUN apt-get update && apt-get install -y git
-
-# Ensure /opt/workspace_base is writable
-RUN mkdir -p /opt/workspace_base && chown -R 1000:1000 /opt/workspace_base
-
-# Verify Git installation
-RUN git --version
-```
-
-2. Mount a shared development directory "i.e. one hosted in EC2 instance" to the POD:
-   This can be also done by sharing the developement directory to the worker node through a sharing software (NFS), then creating a pv and pvc as described above to access that directory.
-
-3. Not all Agents working! Just tested CoderAgent with an openai API key and produced results.
-
-
-## Discuss
-
-For other issues or questions join the [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) or [Discord](https://discord.gg/ESHStjSjD4) and ask!

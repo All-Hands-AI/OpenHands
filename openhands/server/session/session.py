@@ -20,9 +20,8 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.server.session.agent import AgentSession
 from openhands.storage.files import FileStore
-
-from .agent import AgentSession
 
 DEL_DELT_SEC = 60 * 60 * 5
 
@@ -153,11 +152,17 @@ class Session:
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.images_urls:
             controller = self.agent_session.controller
-            if controller and not controller.agent.llm.supports_vision():
-                await self.send_error(
-                    'Model does not support image upload, change to a different model or try without an image.'
-                )
-                return
+            if controller:
+                if controller.agent.llm.config.disable_vision:
+                    await self.send_error(
+                        'Support for images is disabled for this model, try without an image.'
+                    )
+                    return
+                if not controller.agent.llm.vision_is_active():
+                    await self.send_error(
+                        'Model does not support image upload, change to a different model or try without an image.'
+                    )
+                    return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:

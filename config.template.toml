@@ -64,6 +64,15 @@ workspace_base = "./workspace"
 # Name of the default agent
 #default_agent = "CodeActAgent"
 
+# JWT secret for authentication
+#jwt_secret = ""
+
+# Restrict file types for file uploads
+#file_uploads_restrict_file_types = false
+
+# List of allowed file extensions for uploads
+#file_uploads_allowed_extensions = [".*"]
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
@@ -117,14 +126,31 @@ embedding_model = ""
 # Model to use
 model = "gpt-4o"
 
-# Number of retries to attempt
-#num_retries = 5
+# Number of retries to attempt when an operation fails with the LLM.
+# Increase this value to allow more attempts before giving up
+#num_retries = 8
 
-# Retry maximum wait time
-#retry_max_wait = 60
+# Maximum wait time (in seconds) between retry attempts
+# This caps the exponential backoff to prevent excessively long
+#retry_max_wait = 120
 
-# Retry minimum wait time
-#retry_min_wait = 3
+# Minimum wait time (in seconds) between retry attempts
+# This sets the initial delay before the first retry
+#retry_min_wait = 15
+
+# Multiplier for exponential backoff calculation
+# The wait time increases by this factor after each failed attempt
+# A value of 2.0 means each retry waits twice as long as the previous one
+#retry_multiplier = 2.0
+
+# Drop any unmapped (unsupported) params without causing an exception
+#drop_params = false
+
+# Using the prompt caching feature provided by the LLM
+#caching_prompt = false
+
+# Base URL for the OLLAMA API
+#ollama_base_url = ""
 
 # Temperature for the API
 #temperature = 0.0
@@ -134,6 +160,9 @@ model = "gpt-4o"
 
 # Top p for the API
 #top_p = 0.5
+
+# If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+#disable_vision = true
 
 [llm.gpt3]
 # API key to use
@@ -149,6 +178,9 @@ model = "gpt-3.5"
 # agent.CodeActAgent
 ##############################################################################
 [agent]
+# Name of the micro agent to use for this agent
+#micro_agent_name = ""
+
 # Memory enabled
 #memory_enabled = false
 
@@ -174,13 +206,25 @@ llm_config = 'gpt3'
 #user_id = 1000
 
 # Container image to use for the sandbox
-#container_image = "nikolaik/python-nodejs:python3.11-nodejs22"
+#base_container_image = "nikolaik/python-nodejs:python3.11-nodejs22"
 
 # Use host network
 #use_host_network = false
 
 # Enable auto linting after editing
 #enable_auto_lint = false
+
+# Whether to initialize plugins
+#initialize_plugins = true
+
+# Extra dependencies to install in the runtime image
+#runtime_extra_deps = ""
+
+# Environment variables to set at the launch of the runtime
+#runtime_startup_env_vars = {}
+
+# BrowserGym environment to use for evaluation
+#browsergym_eval_env = ""
 
 #################################### Security ###################################
 # Configuration for security features

@@ -5,18 +5,11 @@ sidebar_position: 4
 # 🚧 Troubleshooting
 
 There are some error messages that frequently get reported by users.
-
-We'll try to make the install process easier and these error messages
-better in the future. But for now, you can look for your error message below and see if there are any workarounds.
-
-For each of these error messages **there is an existing issue**. Please do not
-open a new issue--just comment there.
-
-If you find more information or a workaround for one of these issues, please
-open a *PR* to add details to this file.
+We'll try to make the install process easier, but for now you can look for your error message below and see if there are any workarounds.
+If you find more information or a workaround for one of these issues, please open a *PR* to add details to this file.
 
 :::tip
-If you're running on Windows and having trouble, check out our [guide for Windows (WSL) users](troubleshooting/windows).
+If you're running on Windows and having trouble, check out our [Notes for Windows and WSL users](troubleshooting/windows).
 :::
 
 ## Common Issues
@@ -141,7 +134,7 @@ the API endpoint you're trying to connect to. Most often this happens for Azure 
 **Workarounds**
 
 * Check that you've set `LLM_BASE_URL` properly
-* Check that model is set properly, based on the [LiteLLM docs](https://docs.litellm.ai/docs/providers)
+* Check that the model is set properly, based on the [LiteLLM docs](https://docs.litellm.ai/docs/providers)
   * If you're running inside the UI, be sure to set the `model` in the settings modal
   * If you're running headless (via main.py) be sure to set `LLM_MODEL` in your env/config
 * Make sure you've followed any special instructions for your LLM provider

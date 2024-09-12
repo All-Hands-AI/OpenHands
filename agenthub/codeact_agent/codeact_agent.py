@@ -1,9 +1,11 @@
 import os
+from itertools import islice
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -17,6 +19,7 @@ from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
+    UserRejectObservation,
 )
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
@@ -27,6 +30,7 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
+from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -73,10 +77,21 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm, config)
         self.reset()
+
+        self.micro_agent = (
+            MicroAgent(
+                os.path.join(
+                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
+                )
+            )
+            if config.micro_agent_name
+            else None
+        )
+
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__)),
             agent_skills_docs=AgentSkillsRequirement.documentation,
-            micro_agent_name=None,  # TODO: implement micro-agent
+            micro_agent=self.micro_agent,
         )
 
     def action_to_str(self, action: Action) -> str:
@@ -104,7 +119,11 @@ class CodeActAgent(Agent):
         ):
             content = [TextContent(text=self.action_to_str(action))]
 
-            if isinstance(action, MessageAction) and action.images_urls:
+            if (
+                self.llm.vision_is_active()
+                and isinstance(action, MessageAction)
+                and action.images_urls
+            ):
                 content.append(ImageContent(image_urls=action.images_urls))
 
             return Message(
@@ -114,14 +133,15 @@ class CodeActAgent(Agent):
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
+        obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = 'OBSERVATION:\n' + obs.content
+            text = obs_prefix + obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
@@ -133,13 +153,15 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            text = 'OBSERVATION:\n' + truncate_content(
-                str(obs.outputs), max_message_chars
-            )
+            text = obs_prefix + truncate_content(str(obs.outputs), max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
+            return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, UserRejectObservation):
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += '\n[Last action has been rejected by the user]'
             return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
@@ -171,27 +193,51 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-
-        response = self.llm.completion(
-            messages=[message.model_dump() for message in messages],
-            stop=[
+        params = {
+            'messages': self.llm.format_messages_for_llm(messages),
+            'stop': [
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
             ],
-            temperature=0.0,
-        )
+            'temperature': 0.0,
+        }
+
+        if self.llm.is_caching_prompt_active():
+            params['extra_headers'] = {
+                'anthropic-beta': 'prompt-caching-2024-07-31',
+            }
+
+        try:
+            response = self.llm.completion(**params)
+        except Exception as e:
+            logger.error(f'{e}')
+            error_message = '{}: {}'.format(type(e).__name__, str(e).split('\n')[0])
+            return AgentFinishAction(
+                thought=f'Agent encountered an error while processing the last action.\nError: {error_message}\nPlease try again.'
+            )
+
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
             Message(
                 role='system',
-                content=[TextContent(text=self.prompt_manager.system_message)],
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.system_message,
+                        cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
+                    )
+                ],
             ),
             Message(
                 role='user',
-                content=[TextContent(text=self.prompt_manager.initial_user_message)],
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.initial_user_message,
+                        cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
+                    )
+                ],
             ),
         ]
 
@@ -208,42 +254,38 @@ class CodeActAgent(Agent):
             if message:
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                # there should not have two consecutive messages from the same role
+                # there shouldn't be two consecutive messages from the same role
                 if messages and messages[-1].role == message.role:
                     messages[-1].content.extend(message.content)
                 else:
                     messages.append(message)
 
-        # the latest user message is important:
+        # Add caching to the last 2 user messages
+        if self.llm.is_caching_prompt_active():
+            user_turns_processed = 0
+            for message in reversed(messages):
+                if message.role == 'user' and user_turns_processed < 2:
+                    message.content[
+                        -1
+                    ].cache_prompt = True  # Last item inside the message content
+                    user_turns_processed += 1
+
+        # The latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (
-                m
-                for m in reversed(messages)
-                if m.role == 'user'
-                and any(isinstance(c, TextContent) for c in m.content)
+            islice(
+                (
+                    m
+                    for m in reversed(messages)
+                    if m.role == 'user'
+                    and any(isinstance(c, TextContent) for c in m.content)
+                ),
+                1,
             ),
             None,
         )
-
-        # Get the last user text inside content
         if latest_user_message:
-            latest_user_message_text = next(
-                (
-                    t
-                    for t in reversed(latest_user_message.content)
-                    if isinstance(t, TextContent)
-                )
-            )
-            # add a reminder to the prompt
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-
-            if latest_user_message_text:
-                latest_user_message_text.text = (
-                    latest_user_message_text.text + reminder_text
-                )
-            else:
-                latest_user_message_text = TextContent(text=reminder_text)
-                latest_user_message.content.append(latest_user_message_text)
+            latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages

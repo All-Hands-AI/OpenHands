@@ -1,7 +1,11 @@
 # Local LLM with Ollama
 
+:::warning
+When using a Local LLM, OpenHands may have limited functionality.
+:::
+
 Ensure that you have the Ollama server up and running.
-For detailed startup instructions, refer to [here](https://github.com/ollama/ollama)
+For detailed startup instructions, refer to [here](https://github.com/ollama/ollama).
 
 This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified. Please note that if you're running WSL the default ollama configuration blocks requests from docker containers. See [here](#configuring-ollama-service-wsl-en).
 
@@ -28,7 +32,7 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 
 ### Docker
 
-Use the instructions [here](../intro) to start OpenHands using Docker.
+Use the instructions [here](../getting-started) to start OpenHands using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
@@ -58,7 +62,7 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 You should now be able to connect to `http://localhost:3000/`
@@ -179,7 +183,7 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 You should now be able to connect to `http://localhost:3000/`
@@ -196,9 +200,9 @@ base_url="http://localhost:1234/v1"
 custom_llm_provider="openai"
 ```
 
-Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
+Done! Now you can start OpenHands by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
 
-# Note:
+# Note
 
 For WSL, run the following commands in cmd to set up the networking mode to mirrored:
 

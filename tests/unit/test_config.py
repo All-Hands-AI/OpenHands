@@ -6,8 +6,6 @@ from openhands.core.config import (
     AgentConfig,
     AppConfig,
     LLMConfig,
-    SandboxConfig,
-    SecurityConfig,
     UndefinedString,
     finalize_config,
     get_llm_config_arg,
@@ -41,9 +39,6 @@ def temp_toml_file(tmp_path):
 @pytest.fixture
 def default_config():
     # Fixture to provide a default AppConfig instance
-    AppConfig.reset()
-    SandboxConfig.reset()
-    SecurityConfig.reset()
     yield AppConfig()
 
 
@@ -78,7 +73,7 @@ def test_load_from_old_style_env(monkeypatch, default_config: AppConfig):
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('DEFAULT_AGENT', 'PlannerAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
-    monkeypatch.setenv('SANDBOX_CONTAINER_IMAGE', 'custom_image')
+    monkeypatch.setenv('SANDBOX_BASE_CONTAINER_IMAGE', 'custom_image')
 
     default_config.load_from_env(dict(os.environ))
 
@@ -92,7 +87,7 @@ def test_load_from_old_style_env(monkeypatch, default_config: AppConfig):
     assert (
         default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
     )
-    assert default_config.sandbox.container_image == 'custom_image'
+    assert default_config.sandbox.base_container_image == 'custom_image'
 
 
 def test_load_from_new_style_toml(default_config: AppConfig, temp_toml_file: str):
@@ -180,7 +175,7 @@ memory_enabled = true
 [core]
 workspace_base = "/opt/files2/workspace"
 sandbox_timeout = 500
-sandbox_container_image = "node:14"
+sandbox_base_container_image = "node:14"
 sandbox_user_id = 1001
 default_agent = "TestAgent"
 """
@@ -195,7 +190,7 @@ default_agent = "TestAgent"
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.timeout == 500
-    assert default_config.sandbox.container_image == 'node:14'
+    assert default_config.sandbox.base_container_image == 'node:14'
     assert default_config.sandbox.user_id == 1001
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
@@ -203,7 +198,7 @@ default_agent = "TestAgent"
 
     # app config doesn't have fields sandbox_*
     assert not hasattr(default_config, 'sandbox_timeout')
-    assert not hasattr(default_config, 'sandbox_container_image')
+    assert not hasattr(default_config, 'sandbox_base_container_image')
     assert not hasattr(default_config, 'sandbox_user_id')
 
     # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
@@ -233,6 +228,7 @@ sandbox_user_id = 1001
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
     monkeypatch.setenv('SANDBOX_USER_ID', '1002')
+    monkeypatch.delenv('LLM_MODEL', raising=False)
 
     toml_dict = load_dict_from_toml(temp_toml_file)
     default_config.load_from_toml(toml_dict)
@@ -288,6 +284,7 @@ user_id = 1001
     monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
     monkeypatch.setenv('SANDBOX_TIMEOUT', '1000')
     monkeypatch.setenv('SANDBOX_USER_ID', '1002')
+    monkeypatch.delenv('LLM_MODEL', raising=False)
 
     toml_dict = load_dict_from_toml(temp_toml_file)
     default_config.load_from_toml(toml_dict)
@@ -315,7 +312,9 @@ user_id = 1001
     assert default_config.workspace_mount_path == os.path.abspath('UNDEFINED')
 
 
-def test_sandbox_config_from_toml(default_config: AppConfig, temp_toml_file: str):
+def test_sandbox_config_from_toml(
+    monkeypatch, default_config: AppConfig, temp_toml_file: str
+):
     # Test loading configuration from a new-style TOML file
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write(
@@ -328,11 +327,11 @@ model = "test-model"
 
 [sandbox]
 timeout = 1
-container_image = "custom_image"
+base_container_image = "custom_image"
 user_id = 1001
 """
         )
-
+    monkeypatch.setattr(os, 'environ', {})
     toml_dict = load_dict_from_toml(temp_toml_file)
     default_config.load_from_toml(toml_dict)
     default_config.load_from_env(dict(os.environ))
@@ -340,7 +339,7 @@ user_id = 1001
 
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.sandbox.timeout == 1
-    assert default_config.sandbox.container_image == 'custom_image'
+    assert default_config.sandbox.base_container_image == 'custom_image'
     assert default_config.sandbox.user_id == 1001
 
 
@@ -367,7 +366,7 @@ def test_defaults_dict_after_updates(default_config: AppConfig):
     )
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
     assert (
-        defaults_after_updates['sandbox']['container_image']['default']
+        defaults_after_updates['sandbox']['base_container_image']['default']
         == 'nikolaik/python-nodejs:python3.11-nodejs22'
     )
     assert defaults_after_updates == initial_defaults
@@ -510,8 +509,8 @@ def test_api_keys_repr_str():
 def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):
     temp_toml = """
 [core]
-max_iterations = 100
-max_budget_per_task = 4.0
+max_iterations = 42
+max_budget_per_task = 4.7
 """
 
     config = AppConfig()
@@ -521,8 +520,8 @@ max_budget_per_task = 4.0
     toml_dict = load_dict_from_toml(temp_toml_file)
     config.load_from_toml(toml_dict)
 
-    assert config.max_iterations == 100
-    assert config.max_budget_per_task == 4.0
+    assert config.max_iterations == 42
+    assert config.max_budget_per_task == 4.7
 
 
 def test_get_llm_config_arg(temp_toml_file):

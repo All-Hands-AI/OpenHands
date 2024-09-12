@@ -5,6 +5,8 @@ import uuid
 import warnings
 
 import requests
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -378,6 +380,14 @@ async def get_security_analyzers():
     return sorted(SecurityAnalyzers.keys())
 
 
+FILES_TO_IGNORE = [
+    '.git/',
+    '.DS_Store',
+    'node_modules/',
+    '__pycache__/',
+]
+
+
 @app.get('/api/list-files')
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
@@ -406,7 +416,24 @@ async def list_files(request: Request, path: str | None = None):
             content={'error': 'Runtime not yet initialized'},
         )
     runtime: Runtime = request.state.session.agent_session.runtime
-    file_list = await runtime.list_files(path)
+    file_list = runtime.list_files(path)
+    file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
+
+    def filter_for_gitignore(file_list, base_path):
+        gitignore_path = os.path.join(base_path, '.gitignore')
+        try:
+            read_action = FileReadAction(gitignore_path)
+            observation = runtime.run_action(read_action)
+            spec = PathSpec.from_lines(
+                GitWildMatchPattern, observation.content.splitlines()
+            )
+        except Exception as e:
+            print(e)
+            return file_list
+        file_list = [entry for entry in file_list if not spec.match_file(entry)]
+        return file_list
+
+    file_list = filter_for_gitignore(file_list, '')
     return file_list
 
 
@@ -440,7 +467,7 @@ async def select_file(file: str, request: Request):
         )
 
     read_action = FileReadAction(file)
-    observation = await runtime.run_action(read_action)
+    observation = runtime.run_action(read_action)
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
@@ -519,7 +546,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
                     tmp_file.flush()
 
                 runtime: Runtime = request.state.session.agent_session.runtime
-                await runtime.copy_to(
+                runtime.copy_to(
                     tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
                 )
             uploaded_files.append(safe_filename)
@@ -686,7 +713,7 @@ async def save_file(request: Request):
         # Save the file to the agent's runtime file store
         runtime: Runtime = request.state.session.agent_session.runtime
         write_action = FileWriteAction(file_path, content)
-        observation = await runtime.run_action(write_action)
+        observation = runtime.run_action(write_action)
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(

@@ -1,3 +1,4 @@
+from agenthub.planner_agent.prompt import get_prompt_and_images
 from agenthub.planner_agent.response_parser import PlannerResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -5,8 +6,6 @@ from openhands.core.config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import Action, AgentFinishAction
 from openhands.llm.llm import LLM
-
-from .prompt import get_prompt_and_images
 
 
 class PlannerAgent(Agent):
@@ -47,8 +46,8 @@ class PlannerAgent(Agent):
             state, self.llm.config.max_message_chars
         )
         content = [TextContent(text=prompt)]
-        if image_urls:
+        if self.llm.vision_is_active() and image_urls:
             content.append(ImageContent(image_urls=image_urls))
         message = Message(role='user', content=content)
-        resp = self.llm.completion(messages=[message.model_dump()])
+        resp = self.llm.completion(messages=self.llm.format_messages_for_llm(message))
         return self.response_parser.parse(resp)

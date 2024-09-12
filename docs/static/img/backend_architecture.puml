@@ -135,7 +135,7 @@ class openhands.sandbox.sandbox.DockerInteractive {
   workspace_dir: None
   workspace_dir: None
   timeout: int
-  container_image: None
+  base_container_image: None
   container_name: None
 }
 class openhands.observation.UserMessageObservation {

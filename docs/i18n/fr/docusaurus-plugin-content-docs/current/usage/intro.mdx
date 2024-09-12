@@ -42,7 +42,7 @@ Explorez le code source d'OpenHands sur [GitHub](https://github.com/All-Hands-AI
   />
 </a>
 <br></br>
-<a href="https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw">
+<a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA">
   <img
     src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
     alt="Join our Slack community"
@@ -78,7 +78,7 @@ docker run -it \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.6
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 Vous trouverez OpenHands fonctionnant à l'adresse [http://localhost:3000](http://localhost:3000) avec accès à `./workspace`. Pour qu'OpenHands fonctionne sur votre code, placez-le dans `./workspace`.
@@ -86,7 +86,7 @@ Vous trouverez OpenHands fonctionnant à l'adresse [http://localhost:3000](http:
 OpenHands n'aura accès qu'à ce dossier de workspace. Le reste de votre système ne sera pas affecté car il s'exécute dans un bac à sable sécurisé de docker.
 
 :::tip
-Si vous souhaitez utiliser la version **(instable !)** la plus récente, vous pouvez utiliser `ghcr.io/opendevin/opendevin:main` comme image (dernière ligne).
+Si vous souhaitez utiliser la version **(instable !)** la plus récente, vous pouvez utiliser `ghcr.io/all-hands-ai/openhands:main` comme image (dernière ligne).
 :::
 
 Pour le workflow de développement, consultez [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).

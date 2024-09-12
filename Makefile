@@ -2,7 +2,6 @@ SHELL=/bin/bash
 # Makefile for OpenHands project
 
 # Variables
-DOCKER_IMAGE = ghcr.io/openhands/sandbox:main
 BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
@@ -261,6 +260,10 @@ setup-config-prompts:
 		echo "    - nomic-embed-text"; \
 		echo "    - all-minilm"; \
 		echo "    - stable-code"; \
+		echo "    - bge-m3"; \
+		echo "    - bge-large"; \
+		echo "    - paraphrase-multilingual"; \
+		echo "    - snowflake-arctic-embed"; \
 		echo "  - Leave blank to default to 'BAAI/bge-small-en-v1.5' via huggingface"; \
 		read -p "> " llm_embedding_model; \
 		echo "embedding_model=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \

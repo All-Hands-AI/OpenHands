@@ -1,0 +1,5 @@
+Thank you for the reminder. Let's continue with creating a file in this new directory and initializing a git repository.
+
+First, let's create a simple text file:
+<execute_bash>
+echo "Hello, this is a test file." > test.txt

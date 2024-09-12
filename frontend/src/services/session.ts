@@ -46,7 +46,12 @@ class Session {
 
   private static _initializeAgent = () => {
     const settings = getSettings();
-    const event = { action: ActionType.INIT, args: settings };
+    const event = {
+      action: ActionType.INIT,
+      args: {
+        ...settings,
+      },
+    };
     const eventString = JSON.stringify(event);
     Session.send(eventString);
   };

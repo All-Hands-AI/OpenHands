@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
 from openhands.core.schema import ActionType
-
-from .action import Action
+from openhands.events.action.action import Action
 
 
 @dataclass

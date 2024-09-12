@@ -1,26 +1,18 @@
-# Create and Use a Custom Docker Sandbox
+# Custom Sandbox
 
-The default OpenHands sandbox comes with a [minimal ubuntu configuration](https://github.com/All-Hands-AI/OpenHands/blob/main/containers/sandbox/Dockerfile).
+The sandbox is where the agent does its work. Instead of running commands directly on your computer
+(which could be dangerous), the agent runs them inside of a Docker container.
 
-Your use case may need additional software installed by default.
+The default OpenHands sandbox (`python-nodejs:python3.11-nodejs22`
+from [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) comes with some packages installed such
+as python and Node.js but your use case may need additional software installed by default.
 
 There are two ways you can do so:
 
-1. Use an existing image from docker hub. For instance, if you want to have `nodejs` installed, you can do so by using the `node:20` image
+1. Use an existing image from docker hub
 2. Creating your own custom docker image and using it
 
 If you want to take the first approach, you can skip the `Create Your Docker Image` section.
-
-For a more feature-rich environment, you might consider using pre-built images like **[nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)**, which comes with both Python and Node.js pre-installed, along with many other useful tools and libraries, like:
-
-- Node.js: 22.x
-- npm: 10.x
-- yarn: stable
-- Python: latest
-- pip: latest
-- pipenv: latest
-- poetry: latest
-- uv: latest
 
 ## Setup
 
@@ -67,10 +59,10 @@ Create a `config.toml` file in the OpenHands directory and enter these contents:
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 ```
 
-For `sandbox_container_image`, you can specify either:
+For `sandbox_base_container_image`, you can specify either:
 
 1. The name of your custom image that you built in the previous step (e.g., `”custom_image”`)
 2. A pre-existing image from Docker Hub (e.g., `”node:20”` if you want a sandbox with Node.js pre-installed)
@@ -80,13 +72,13 @@ Run OpenHands by running ```make run``` in the top level directory.
 
 Navigate to ```localhost:3001``` and check if your desired dependencies are available.
 
-In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```
+In the case of the example above, running ```node -v``` in the terminal produces ```v20.15.0```.
 
 Congratulations!
 
 ## Technical Explanation
 
-Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
+Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
 
 ## Troubleshooting / Errors
 
@@ -98,7 +90,7 @@ If you see this error in the console output it is because OpenHands is trying to
 [core]
 workspace_base="./workspace"
 run_as_openhands=true
-sandbox_container_image="custom_image"
+sandbox_base_container_image="custom_image"
 sandbox_user_id="1001"
 ```
 
@@ -108,4 +100,4 @@ If you see an error about a port being in use or unavailable, try deleting all r
 
 ## Discuss
 
-For other issues or questions join the [Slack](https://join.slack.com/t/openhands/shared_invite/zt-2ngejmfw6-9gW4APWOC9XUp1n~SiQ6iw) or [Discord](https://discord.gg/ESHStjSjD4) and ask!
+For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) or [Discord](https://discord.gg/ESHStjSjD4) and ask!

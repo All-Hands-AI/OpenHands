@@ -1,11 +1,10 @@
-# Contribute to OpenHands Evaluation Harness
+# Evaluation
 
 This guide provides an overview of how to integrate your own evaluation benchmark into the OpenHands framework.
 
-## Before everything begins: Setup Environment and LLM Configuration
+## Setup Environment and LLM Configuration
 
-Please follow instruction [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
-
+Please follow instructions [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment.
 OpenHands in development mode uses `config.toml` to keep track of most configurations.
 
 Here's an example configuration file you can use to define and use multiple LLMs:
@@ -13,7 +12,7 @@ Here's an example configuration file you can use to define and use multiple LLMs
 ```toml
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
-model = "gpt-4o-2024-05-13"
+model = "claude-3-5-sonnet-20240620"
 api_key = "sk-XXX"
 
 [llm.eval_gpt4_1106_preview_llm]
@@ -61,9 +60,9 @@ This command runs OpenHands with:
 
 The main entry point for OpenHands is in `openhands/core/main.py`. Here's a simplified flow of how it works:
 
-1. Parse command-line arguments and load the configuration.
-2. Create a runtime environment using `create_runtime()`.
-3. Initialize the specified agent.
+1. Parse command-line arguments and load the configuration
+2. Create a runtime environment using `create_runtime()`
+3. Initialize the specified agent
 4. Run the controller using `run_controller()`, which:
    - Attaches the runtime to the agent
    - Executes the agent's task
@@ -116,7 +115,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
            runtime='eventstream',
            max_iterations=metadata.max_iterations,
            sandbox=SandboxConfig(
-               container_image='your_container_image',
+               base_container_image='your_container_image',
                enable_auto_lint=True,
                timeout=300,
            ),
@@ -127,7 +126,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
 
 3. Initialize the runtime and set up the evaluation environment:
    ```python
-   async def initialize_runtime(runtime: Runtime, instance: pd.Series):
+   def initialize_runtime(runtime: Runtime, instance: pd.Series):
        # Set up your evaluation environment here
        # For example, setting environment variables, preparing files, etc.
        pass
@@ -135,14 +134,14 @@ To create an evaluation workflow for your benchmark, follow these steps:
 
 4. Create a function to process each instance:
    ```python
-   async def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
+   def process_instance(instance: pd.Series, metadata: EvalMetadata) -> EvalOutput:
        config = get_config(instance, metadata)
-       runtime = await create_runtime(config, sid=instance.instance_id)
-       await initialize_runtime(runtime, instance)
+       runtime = create_runtime(config, sid=instance.instance_id)
+       initialize_runtime(runtime, instance)
 
        instruction = get_instruction(instance, metadata)
 
-       state = await run_controller(
+       state = run_controller(
            config=config,
            task_str=instruction,
            runtime=runtime,
@@ -234,9 +233,9 @@ Here's a more accurate visual representation:
 
 In this workflow:
 
-- Executable actions (like running commands or executing code) are handled directly by the Runtime.
-- Non-executable actions (typically when the agent wants to communicate or ask for clarification) are handled by the `user_response_fn`.
-- The agent then processes the feedback, whether it's an Observation from the Runtime or a simulated response from the `user_response_fn`.
+- Executable actions (like running commands or executing code) are handled directly by the Runtime
+- Non-executable actions (typically when the agent wants to communicate or ask for clarification) are handled by the `user_response_fn`
+- The agent then processes the feedback, whether it's an Observation from the Runtime or a simulated response from the `user_response_fn`
 
 This approach allows for automated handling of both concrete actions and simulated user interactions, making it suitable for evaluation scenarios where you want to test the agent's ability to complete tasks with minimal human intervention.
 
@@ -270,8 +269,8 @@ def codeact_user_response(state: State | None) -> str:
 
 This function does the following:
 
-1. Provides a standard message encouraging the agent to continue working.
-2. Checks how many times the agent has attempted to communicate with the user.
-3. If the agent has made multiple attempts, it provides an option to give up.
+1. Provides a standard message encouraging the agent to continue working
+2. Checks how many times the agent has attempted to communicate with the user
+3. If the agent has made multiple attempts, it provides an option to give up
 
 By using this function, you can ensure consistent behavior across multiple evaluation runs and prevent the agent from getting stuck waiting for human input.

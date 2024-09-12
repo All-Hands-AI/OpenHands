@@ -6,6 +6,8 @@ import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
+import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import { ModelSelector } from "./ModelSelector";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -15,6 +17,7 @@ interface SettingsFormProps {
   disabled: boolean;
 
   onModelChange: (model: string) => void;
+  onBaseURLChange: (baseURL: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
@@ -29,6 +32,7 @@ function SettingsForm({
   securityAnalyzers,
   disabled,
   onModelChange,
+  onBaseURLChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
@@ -37,21 +41,46 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-  const [isAgentSelectEnabled, setIsAgentSelectEnabled] = React.useState(false);
+  const advancedAlreadyInUse =
+    !!settings.SECURITY_ANALYZER || !!settings.CONFIRMATION_MODE;
+  // TODO: || model is not in the list
+  const [enableAdvanced, setEnableAdvanced] =
+    React.useState(advancedAlreadyInUse);
 
   return (
     <>
-      <AutocompleteCombobox
-        ariaLabel="model"
-        items={models.map((model) => ({ value: model, label: model }))}
-        defaultKey={settings.LLM_MODEL}
-        onChange={(e) => {
-          onModelChange(e);
-        }}
-        tooltip={t(I18nKey.SETTINGS$MODEL_TOOLTIP)}
-        allowCustomValue // user can type in a custom LLM model that is not in the list
-        disabled={disabled}
-      />
+      <Switch
+        data-testid="advanced-options-toggle"
+        aria-checked={enableAdvanced}
+        isSelected={enableAdvanced}
+        onValueChange={(value) => setEnableAdvanced(value)}
+      >
+        Advanced Options
+      </Switch>
+      {enableAdvanced && (
+        <>
+          <Input
+            data-testid="custom-model-input"
+            label="Custom Model"
+            onValueChange={onModelChange}
+            defaultValue={settings.LLM_MODEL}
+          />
+          <Input
+            data-testid="base-url-input"
+            label="Base URL"
+            onValueChange={onBaseURLChange}
+            defaultValue={settings.LLM_BASE_URL}
+          />
+        </>
+      )}
+      {!enableAdvanced && (
+        <ModelSelector
+          isDisabled={disabled}
+          models={organizeModelsAndProviders(models)}
+          onModelChange={onModelChange}
+          defaultModel={settings.LLM_MODEL}
+        />
+      )}
       <Input
         label="API Key"
         isDisabled={disabled}
@@ -85,52 +114,48 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
-      <AutocompleteCombobox
-        ariaLabel="agent"
-        items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT}
-        onChange={onAgentChange}
-        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
-        disabled={disabled || !isAgentSelectEnabled}
-      />
-      <Switch
-        defaultSelected={false}
-        isSelected={isAgentSelectEnabled}
-        onValueChange={setIsAgentSelectEnabled}
-        aria-label="enableagentselect"
-        data-testid="enableagentselect"
-      >
-        {t(I18nKey.SETTINGS$AGENT_SELECT_ENABLED)}
-      </Switch>
-      <AutocompleteCombobox
-        ariaLabel="securityanalyzer"
-        items={securityAnalyzers.map((securityAnalyzer) => ({
-          value: securityAnalyzer,
-          label: securityAnalyzer,
-        }))}
-        defaultKey={settings.SECURITY_ANALYZER}
-        onChange={onSecurityAnalyzerChange}
-        tooltip={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-        disabled={disabled}
-      />
-      <Switch
-        aria-label="confirmationmode"
-        data-testid="confirmationmode"
-        defaultSelected={
-          settings.CONFIRMATION_MODE || !!settings.SECURITY_ANALYZER
-        }
-        onValueChange={onConfirmationModeChange}
-        isDisabled={disabled || !!settings.SECURITY_ANALYZER}
-        isSelected={settings.CONFIRMATION_MODE}
-      >
-        <Tooltip
-          content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-          closeDelay={100}
-          delay={500}
+      {enableAdvanced && (
+        <AutocompleteCombobox
+          ariaLabel="agent"
+          items={agents.map((agent) => ({ value: agent, label: agent }))}
+          defaultKey={settings.AGENT}
+          onChange={onAgentChange}
+          tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
+        />
+      )}
+      {enableAdvanced && (
+        <AutocompleteCombobox
+          ariaLabel="securityanalyzer"
+          items={securityAnalyzers.map((securityAnalyzer) => ({
+            value: securityAnalyzer,
+            label: securityAnalyzer,
+          }))}
+          defaultKey={settings.SECURITY_ANALYZER}
+          onChange={onSecurityAnalyzerChange}
+          tooltip={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+          disabled={disabled}
+        />
+      )}
+      {enableAdvanced && (
+        <Switch
+          aria-label="confirmationmode"
+          data-testid="confirmationmode"
+          defaultSelected={
+            settings.CONFIRMATION_MODE || !!settings.SECURITY_ANALYZER
+          }
+          onValueChange={onConfirmationModeChange}
+          isDisabled={disabled || !!settings.SECURITY_ANALYZER}
+          isSelected={settings.CONFIRMATION_MODE}
         >
-          {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-        </Tooltip>
-      </Switch>
+          <Tooltip
+            content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+            closeDelay={100}
+            delay={500}
+          >
+            {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+          </Tooltip>
+        </Switch>
+      )}
     </>
   );
 }

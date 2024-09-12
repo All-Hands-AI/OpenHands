@@ -1,5 +1,7 @@
 from jinja2 import BaseLoader, Environment
 
+from agenthub.micro.instructions import instructions
+from agenthub.micro.registry import all_microagents
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -10,9 +12,6 @@ from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.event import event_to_memory
 from openhands.llm.llm import LLM
 from openhands.memory.history import ShortTermHistory
-
-from .instructions import instructions
-from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:
@@ -74,10 +73,13 @@ class MicroAgent(Agent):
             latest_user_message=last_user_message,
         )
         content = [TextContent(text=prompt)]
-        if last_image_urls:
+        if self.llm.vision_is_active() and last_image_urls:
             content.append(ImageContent(image_urls=last_image_urls))
         message = Message(role='user', content=content)
-        resp = self.llm.completion(messages=[message.model_dump()])
+        resp = self.llm.completion(
+            messages=self.llm.format_messages_for_llm(message),
+            temperature=0.0,
+        )
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action

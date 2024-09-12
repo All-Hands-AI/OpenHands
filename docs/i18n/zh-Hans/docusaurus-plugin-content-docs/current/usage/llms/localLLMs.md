@@ -53,7 +53,7 @@ docker run \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/all-hands-ai/openhands:main
 ```
 
 现在您应该可以连接到 `http://localhost:3000/`
@@ -74,7 +74,7 @@ WORKSPACE_DIR="$(pwd)/workspace"
 
 如有需要，可以替换您选择的 `LLM_MODEL`。
 
-完成！现在您可以通过 `make run` 启动 Devin 而无需 Docker。现在您应该可以连接到 `http://localhost:3000/`
+完成！现在您可以通过 `make run` 启动 OpenHands 而无需 Docker。现在您应该可以连接到 `http://localhost:3000/`
 
 ## 选择您的模型
 

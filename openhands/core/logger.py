@@ -8,9 +8,13 @@ from typing import Literal, Mapping
 
 from termcolor import colored
 
-DISABLE_COLOR_PRINTING = False
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
+if DEBUG:
+    LOG_LEVEL = 'DEBUG'
+
 LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
+DISABLE_COLOR_PRINTING = False
 
 ColorType = Literal[
     'red',
@@ -113,24 +117,21 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler():
+def get_console_handler(log_level=logging.INFO):
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    if DEBUG:
-        console_handler.setLevel(logging.DEBUG)
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(console_formatter)
     return console_handler
 
 
-def get_file_handler(log_dir):
+def get_file_handler(log_dir, log_level=logging.INFO):
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'openhands_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
-    if DEBUG:
-        file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(log_level)
     file_handler.setFormatter(file_formatter)
     return file_handler
 
@@ -155,28 +156,33 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 
 
 sys.excepthook = log_uncaught_exceptions
-
 openhands_logger = logging.getLogger('openhands')
-openhands_logger.setLevel(logging.INFO)
+current_log_level = logging.INFO
+
+if LOG_LEVEL in logging.getLevelNamesMapping():
+    current_log_level = logging.getLevelNamesMapping()[LOG_LEVEL]
+openhands_logger.setLevel(current_log_level)
+
+if current_log_level == logging.DEBUG:
+    LOG_TO_FILE = True
+    openhands_logger.info('DEBUG mode enabled.')
+
+openhands_logger.addHandler(get_console_handler(current_log_level))
+openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
+openhands_logger.propagate = False
+openhands_logger.debug('Logging initialized')
+
 LOG_DIR = os.path.join(
     # parent dir of openhands/core (i.e., root of the repo)
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
 )
 
-if DEBUG:
-    openhands_logger.setLevel(logging.DEBUG)
-
 if LOG_TO_FILE:
-    # default log to project root
-    openhands_logger.info('Logging to file is enabled. Logging to %s', LOG_DIR)
-    openhands_logger.addHandler(get_file_handler(LOG_DIR))
-
-openhands_logger.addHandler(get_console_handler())
-openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
-openhands_logger.propagate = False
-openhands_logger.debug('Logging initialized')
-
+    openhands_logger.addHandler(
+        get_file_handler(LOG_DIR, current_log_level)
+    )  # default log to project root
+    openhands_logger.info(f'Logging to file in: {LOG_DIR}')
 
 # Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True
@@ -233,23 +239,23 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(name, debug_level=logging.DEBUG):
+def _get_llm_file_handler(name: str, log_level: int):
     # The 'delay' parameter, when set to True, postpones the opening of the log file
     # until the first log message is emitted.
     llm_file_handler = LlmFileHandler(name, delay=True)
     llm_file_handler.setFormatter(llm_formatter)
-    llm_file_handler.setLevel(debug_level)
+    llm_file_handler.setLevel(log_level)
     return llm_file_handler
 
 
-def _setup_llm_logger(name, debug_level=logging.DEBUG):
+def _setup_llm_logger(name: str, log_level: int):
     logger = logging.getLogger(name)
     logger.propagate = False
-    logger.setLevel(debug_level)
+    logger.setLevel(log_level)
     if LOG_TO_FILE:
-        logger.addHandler(_get_llm_file_handler(name, debug_level))
+        logger.addHandler(_get_llm_file_handler(name, log_level))
     return logger
 
 
-llm_prompt_logger = _setup_llm_logger('prompt', logging.DEBUG)
-llm_response_logger = _setup_llm_logger('response', logging.DEBUG)
+llm_prompt_logger = _setup_llm_logger('prompt', current_log_level)
+llm_response_logger = _setup_llm_logger('response', current_log_level)

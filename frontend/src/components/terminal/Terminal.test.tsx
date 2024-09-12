@@ -102,6 +102,23 @@ describe("Terminal", () => {
     expect(mockTerminal.write).toHaveBeenCalledWith("$ ");
   });
 
+  it("should display a custom symbol if output contains a custom symbol", () => {
+    renderTerminal([
+      { type: "input", content: "echo Hello" },
+      {
+        type: "output",
+        content:
+          "Hello\r\n\r\n[Python Interpreter: /openhands/poetry/openhands-5O4_aCHf-py3.11/bin/python]\nopenhands@659478cb008c:/workspace $ ",
+      },
+    ]);
+
+    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo Hello");
+    expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
+    expect(mockTerminal.write).toHaveBeenCalledWith(
+      "\nopenhands@659478cb008c:/workspace $ ",
+    );
+  });
+
   // This test fails because it expects `disposeMock` to have been called before the component is unmounted.
   it.skip("should dispose the terminal on unmount", () => {
     const { unmount } = renderWithProviders(<Terminal />);

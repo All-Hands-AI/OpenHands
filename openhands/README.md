@@ -49,4 +49,4 @@ flowchart LR
 
 ## Runtime
 
-Please refer to the [documentation](https://docs.all-hands.dev/modules/usage/runtime) to learn more about `Runtime`.
+Please refer to the [documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime) to learn more about `Runtime`.

@@ -6,6 +6,7 @@ import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
+const onBaseURLChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
@@ -18,18 +19,20 @@ const renderSettingsForm = (settings?: Settings) => {
       disabled={false}
       settings={
         settings || {
-          LLM_MODEL: "model1",
+          LLM_MODEL: "gpt-4o",
+          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
-          CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: "analyzer1",
+          CONFIRMATION_MODE: false,
+          SECURITY_ANALYZER: "",
         }
       }
-      models={["model1", "model2", "model3"]}
+      models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
       agents={["agent1", "agent2", "agent3"]}
       securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
+      onBaseURLChange={onBaseURLChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
@@ -43,62 +46,59 @@ describe("SettingsForm", () => {
   it("should display the first values in the array by default", () => {
     renderSettingsForm();
 
-    const modelInput = screen.getByRole("combobox", { name: "model" });
-    const agentInput = screen.getByRole("combobox", { name: "agent" });
+    const providerInput = screen.getByRole("combobox", {
+      name: "LLM Provider",
+    });
+    const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
     const apiKeyInput = screen.getByTestId("apikey");
-    const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityAnalyzerInput = screen.getByRole("combobox", {
-      name: "securityanalyzer",
-    });
 
-    expect(modelInput).toHaveValue("model1");
-    expect(agentInput).toHaveValue("agent1");
+    expect(providerInput).toHaveValue("OpenAI");
+    expect(modelInput).toHaveValue("gpt-4o");
     expect(languageInput).toHaveValue("English");
     expect(apiKeyInput).toHaveValue("sk-...");
-    expect(confirmationModeInput).toHaveAttribute("data-selected", "true");
-    expect(securityAnalyzerInput).toHaveValue("analyzer1");
   });
 
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
-      LLM_MODEL: "model2",
+      LLM_MODEL: "gpt-3.5-turbo",
+      LLM_BASE_URL: "base_url",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
-      CONFIRMATION_MODE: true,
-      SECURITY_ANALYZER: "analyzer2",
+      CONFIRMATION_MODE: false,
+      SECURITY_ANALYZER: "",
     });
 
-    const modelInput = screen.getByRole("combobox", { name: "model" });
-    const agentInput = screen.getByRole("combobox", { name: "agent" });
+    const providerInput = screen.getByRole("combobox", {
+      name: "LLM Provider",
+    });
+    const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
-    const securityAnalyzerInput = screen.getByRole("combobox", {
-      name: "securityanalyzer",
-    });
 
-    expect(modelInput).toHaveValue("model2");
-    expect(agentInput).toHaveValue("agent2");
+    expect(providerInput).toHaveValue("OpenAI");
+    expect(modelInput).toHaveValue("gpt-3.5-turbo");
     expect(languageInput).toHaveValue("Español");
-    expect(securityAnalyzerInput).toHaveValue("analyzer2");
   });
 
   it("should disable settings when disabled is true", () => {
     renderWithProviders(
       <SettingsForm
         settings={{
-          LLM_MODEL: "model1",
+          LLM_MODEL: "gpt-4o",
+          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
-          CONFIRMATION_MODE: true,
-          SECURITY_ANALYZER: "analyzer1",
+          CONFIRMATION_MODE: false,
+          SECURITY_ANALYZER: "",
         }}
-        models={["model1", "model2", "model3"]}
+        models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
         agents={["agent1", "agent2", "agent3"]}
         securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
         onModelChange={onModelChangeMock}
+        onBaseURLChange={onBaseURLChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
@@ -106,44 +106,25 @@ describe("SettingsForm", () => {
         onSecurityAnalyzerChange={onSecurityAnalyzerChangeMock}
       />,
     );
-    const modelInput = screen.getByRole("combobox", { name: "model" });
-    const agentInput = screen.getByRole("combobox", { name: "agent" });
-    const languageInput = screen.getByRole("combobox", { name: "language" });
-    const confirmationModeInput = screen.getByTestId("confirmationmode");
-    const securityAnalyzerInput = screen.getByRole("combobox", {
-      name: "securityanalyzer",
-    });
 
+    const providerInput = screen.getByRole("combobox", {
+      name: "LLM Provider",
+    });
+    const modelInput = screen.getByRole("combobox", { name: "LLM Model" });
+    const languageInput = screen.getByRole("combobox", { name: "language" });
+
+    expect(providerInput).toBeDisabled();
     expect(modelInput).toBeDisabled();
-    expect(agentInput).toBeDisabled();
     expect(languageInput).toBeDisabled();
-    expect(confirmationModeInput).toHaveAttribute("data-disabled", "true");
-    expect(securityAnalyzerInput).toBeDisabled();
   });
 
   describe("onChange handlers", () => {
-    it("should call the onModelChange handler when the model changes", async () => {
-      renderSettingsForm();
-
-      const modelInput = screen.getByRole("combobox", { name: "model" });
-      await act(async () => {
-        await userEvent.click(modelInput);
-      });
-
-      const model3 = screen.getByText("model3");
-      await act(async () => {
-        await userEvent.click(model3);
-      });
-
-      expect(onModelChangeMock).toHaveBeenCalledWith("model3");
-    });
-
     it("should call the onAgentChange handler when the agent changes", async () => {
       const user = userEvent.setup();
       renderSettingsForm();
 
       // We need to enable the agent select
-      const agentSwitch = screen.getByTestId("enableagentselect");
+      const agentSwitch = screen.getByTestId("advanced-options-toggle");
       await user.click(agentSwitch);
 
       const agentInput = screen.getByRole("combobox", { name: "agent" });
@@ -180,6 +161,76 @@ describe("SettingsForm", () => {
       });
 
       expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
+    });
+  });
+
+  describe("Setting a custom LLM model", () => {
+    it("should display the fetched models by default", () => {
+      renderSettingsForm();
+
+      const modelSelector = screen.getByTestId("model-selector");
+      expect(modelSelector).toBeInTheDocument();
+
+      const customModelInput = screen.queryByTestId("custom-model-input");
+      expect(customModelInput).not.toBeInTheDocument();
+    });
+
+    it("should switch to the custom model input when the custom model toggle is clicked", async () => {
+      const user = userEvent.setup();
+      renderSettingsForm();
+
+      const advancedToggle = screen.getByTestId("advanced-options-toggle");
+      await user.click(advancedToggle);
+
+      const modelSelector = screen.queryByTestId("model-selector");
+      expect(modelSelector).not.toBeInTheDocument();
+
+      const customModelInput = screen.getByTestId("custom-model-input");
+      expect(customModelInput).toBeInTheDocument();
+    });
+
+    it("should call the onCustomModelChange handler when the custom model input changes", async () => {
+      const user = userEvent.setup();
+      renderSettingsForm();
+
+      const advancedToggle = screen.getByTestId("advanced-options-toggle");
+      await user.click(advancedToggle);
+
+      const customModelInput = screen.getByTestId("custom-model-input");
+      await userEvent.clear(customModelInput);
+      await userEvent.type(customModelInput, "my/custom-model");
+
+      expect(onModelChangeMock).toHaveBeenCalledWith("my/custom-model");
+    });
+
+    it("should have advanced options switched if using advanced options", () => {
+      renderWithProviders(
+        <SettingsForm
+          settings={{
+            LLM_MODEL: "gpt-4o",
+            LLM_BASE_URL: "base_url",
+            AGENT: "agent1",
+            LANGUAGE: "en",
+            LLM_API_KEY: "sk-...",
+            CONFIRMATION_MODE: true,
+            SECURITY_ANALYZER: "analyzer1",
+          }}
+          models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
+          agents={["agent1", "agent2", "agent3"]}
+          securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
+          disabled
+          onModelChange={onModelChangeMock}
+          onBaseURLChange={onBaseURLChangeMock}
+          onAgentChange={onAgentChangeMock}
+          onLanguageChange={onLanguageChangeMock}
+          onAPIKeyChange={onAPIKeyChangeMock}
+          onConfirmationModeChange={onConfirmationModeChangeMock}
+          onSecurityAnalyzerChange={onSecurityAnalyzerChangeMock}
+        />,
+      );
+
+      const advancedToggle = screen.getByTestId("advanced-options-toggle");
+      expect(advancedToggle).toHaveAttribute("aria-checked", "true");
     });
   });
 });
