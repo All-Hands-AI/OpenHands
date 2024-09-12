@@ -6,6 +6,7 @@ import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
+const onBaseURLChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
@@ -19,6 +20,7 @@ const renderSettingsForm = (settings?: Settings) => {
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
+          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -30,6 +32,7 @@ const renderSettingsForm = (settings?: Settings) => {
       agents={["agent1", "agent2", "agent3"]}
       securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
+      onBaseURLChange={onBaseURLChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
@@ -59,6 +62,7 @@ describe("SettingsForm", () => {
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "gpt-3.5-turbo",
+      LLM_BASE_URL: "base_url",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -82,6 +86,7 @@ describe("SettingsForm", () => {
       <SettingsForm
         settings={{
           LLM_MODEL: "gpt-4o",
+          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
@@ -93,6 +98,7 @@ describe("SettingsForm", () => {
         securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
         onModelChange={onModelChangeMock}
+        onBaseURLChange={onBaseURLChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
@@ -202,6 +208,7 @@ describe("SettingsForm", () => {
         <SettingsForm
           settings={{
             LLM_MODEL: "gpt-4o",
+            LLM_BASE_URL: "base_url",
             AGENT: "agent1",
             LANGUAGE: "en",
             LLM_API_KEY: "sk-...",
@@ -213,6 +220,7 @@ describe("SettingsForm", () => {
           securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
           disabled
           onModelChange={onModelChangeMock}
+          onBaseURLChange={onBaseURLChangeMock}
           onAgentChange={onAgentChangeMock}
           onLanguageChange={onLanguageChangeMock}
           onAPIKeyChange={onAPIKeyChangeMock}

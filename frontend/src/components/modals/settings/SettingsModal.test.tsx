@@ -106,7 +106,7 @@ describe("SettingsModal", () => {
   });
 
   describe("onHandleSave", () => {
-    const initialSettings: Settings = {
+    const initialSettings: Partial<Settings> = {
       LLM_MODEL: "gpt-4o",
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
