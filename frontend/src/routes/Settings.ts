@@ -9,7 +9,7 @@ import {
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const intent = formData.get("intent")?.toString();
-  console.log(Object.fromEntries(formData.entries()));
+  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
 
   if (intent === "reset") {
     saveSettings(getDefaultSettings());
@@ -32,5 +32,14 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   };
 
   saveSettings(settings);
+
+  // If the settings version is different from the current version, update it.
+  if (settingsVersion !== import.meta.env.VITE_SETTINGS_VERSION) {
+    localStorage.setItem(
+      "SETTINGS_VERSION",
+      import.meta.env.VITE_SETTINGS_VERSION,
+    );
+  }
+
   return json(null);
 };

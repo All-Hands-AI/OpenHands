@@ -15,9 +15,7 @@ import {
 import "./tailwind.css";
 import "./index.css";
 import React from "react";
-import { useDisclosure } from "@nextui-org/react";
 import CogTooth from "./assets/cog-tooth";
-import ConnectToGitHubByTokenModal from "./components/modals/ConnectToGitHubByTokenModal";
 import { SettingsForm } from "./components/form/settings-form";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
@@ -49,8 +47,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const clientLoader = async () => {
-  const tosAccepted = localStorage.getItem("tosAccepted") === "true";
   const ghToken = localStorage.getItem("ghToken");
+  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
 
   const models = getModels();
   const agents = getAgents();
@@ -61,11 +59,16 @@ export const clientLoader = async () => {
     if (!isGitHubErrorReponse(data)) user = data;
   }
 
+  let settingsIsUpdated = false;
+  if (settingsVersion !== import.meta.env.VITE_SETTINGS_VERSION) {
+    settingsIsUpdated = true;
+  }
+
   return defer({
     user,
     models,
     agents,
-    tosAccepted,
+    settingsIsUpdated,
     settings: getSettings(),
   });
 };
@@ -73,11 +76,6 @@ export const clientLoader = async () => {
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const ghToken = formData.get("token")?.toString();
-  const tosAccepted = formData.get("tos")?.toString();
-
-  if (tosAccepted) {
-    localStorage.setItem("tosAccepted", "true");
-  }
 
   if (ghToken) {
     localStorage.setItem("ghToken", ghToken);
@@ -87,26 +85,19 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 export const shouldRevalidate = ({
-  formData,
   formAction,
-}: ShouldRevalidateFunctionArgs) =>
-  !!formData?.get("tos") || formAction === "/settings";
+}: ShouldRevalidateFunctionArgs) => formAction === "/settings";
 
 export default function App() {
   const navigation = useNavigation();
-  const { user, models, agents, tosAccepted, settings } =
+  const { user, models, agents, settingsIsUpdated, settings } =
     useLoaderData<typeof clientLoader>();
 
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
-
-  const {
-    isOpen: settingsModalIsOpen,
-    onOpen: onSettingsModalOpen,
-    onOpenChange: onSettingsModalOpenChange,
-  } = useDisclosure();
+  const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
@@ -146,7 +137,7 @@ export default function App() {
           <button
             type="button"
             className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
-            onClick={onSettingsModalOpen}
+            onClick={() => setSettingsModalIsOpen(true)}
             aria-label="Settings"
           >
             <CogTooth />
@@ -155,17 +146,12 @@ export default function App() {
       </aside>
       <div className="w-full relative">
         <Outlet />
-        {!tosAccepted && (
-          <ModalBackdrop>
-            <ConnectToGitHubByTokenModal />
-          </ModalBackdrop>
-        )}
         {navigation.state === "loading" && (
           <ModalBackdrop>
             <LoadingProjectModal />
           </ModalBackdrop>
         )}
-        {settingsModalIsOpen && (
+        {(settingsIsUpdated || settingsModalIsOpen) && (
           <ModalBackdrop>
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
               <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
@@ -178,7 +164,7 @@ export default function App() {
                 settings={settings}
                 models={models}
                 agents={agents}
-                onClose={onSettingsModalOpenChange}
+                onClose={() => setSettingsModalIsOpen(false)}
               />
             </div>
           </ModalBackdrop>
