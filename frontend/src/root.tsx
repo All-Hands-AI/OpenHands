@@ -70,6 +70,7 @@ export const clientLoader = async () => {
 
   return defer({
     token,
+    ghToken,
     user,
     models,
     agents,
@@ -121,7 +122,7 @@ export default function App() {
                 <img
                   src={user.avatar_url}
                   alt="User avatar"
-                  className="w-full h-full"
+                  className="w-full h-full rounded-full"
                 />
               )}
             </button>

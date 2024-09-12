@@ -2,9 +2,17 @@ interface CustomInputProps {
   name: string;
   label: string;
   required?: boolean;
+  defaultValue?: string;
+  type?: "text" | "password";
 }
 
-export function CustomInput({ name, label, required }: CustomInputProps) {
+export function CustomInput({
+  name,
+  label,
+  required,
+  defaultValue,
+  type = "text",
+}: CustomInputProps) {
   return (
     <label htmlFor={name} className="flex flex-col gap-2">
       <span className="text-[11px] leading-4 tracking-[0.5px] font-[500] text-[#A3A3A3]">
@@ -16,7 +24,8 @@ export function CustomInput({ name, label, required }: CustomInputProps) {
         id={name}
         name={name}
         required={required}
-        type="text"
+        defaultValue={defaultValue}
+        type={type}
         className="bg-[#27272A] text-xs py-[10px] px-3 rounded"
       />
     </label>

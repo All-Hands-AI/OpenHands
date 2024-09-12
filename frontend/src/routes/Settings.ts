@@ -11,6 +11,16 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const intent = formData.get("intent")?.toString();
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
 
+  if (intent === "account") {
+    const LANGUAGE = formData.get("language")?.toString();
+    const ghToken = formData.get("ghToken")?.toString();
+
+    if (ghToken) localStorage.setItem("ghToken", ghToken);
+    if (LANGUAGE) saveSettings({ LANGUAGE });
+
+    return json({ success: true });
+  }
+
   if (intent === "reset") {
     saveSettings(getDefaultSettings());
     return json(null);

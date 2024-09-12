@@ -9,6 +9,7 @@ interface ModalButtonProps {
   icon?: React.ReactNode;
   type?: "button" | "submit";
   disabled?: boolean;
+  intent?: string;
 }
 
 function ModalButton({
@@ -19,6 +20,7 @@ function ModalButton({
   icon,
   type = "button",
   disabled,
+  intent,
 }: ModalButtonProps) {
   return (
     <button
@@ -32,6 +34,8 @@ function ModalButton({
         disabled && "opacity-50 cursor-not-allowed",
         className,
       )}
+      name={intent && "intent"}
+      value={intent}
     >
       {icon}
       {text}
