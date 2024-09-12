@@ -11,7 +11,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class GlobalPlannerAgent(CodeActAgent):
-    VERSION = '1.1'
+    VERSION = '1.0'
 
     def __init__(self, llm: LLM, config: AgentConfig) -> None:
         super().__init__(llm, config)
