@@ -22,6 +22,7 @@ const renderSettingsForm = (settings?: Settings) => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          LLM_BASE_URL: "",
           CONFIRMATION_MODE: false,
           SECURITY_ANALYZER: "",
         }
@@ -62,6 +63,7 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
       CONFIRMATION_MODE: false,
       SECURITY_ANALYZER: "",
     });
@@ -83,6 +85,7 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "",
     });
@@ -97,6 +100,7 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
       CONFIRMATION_MODE: false,
       SECURITY_ANALYZER: "",
     });
@@ -111,6 +115,7 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
       CONFIRMATION_MODE: false,
       SECURITY_ANALYZER: "",
     });
@@ -133,6 +138,7 @@ describe("SettingsForm", () => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          LLM_BASE_URL: "",
           CONFIRMATION_MODE: false,
           SECURITY_ANALYZER: "",
         }}
@@ -253,6 +259,7 @@ describe("SettingsForm", () => {
             AGENT: "agent1",
             LANGUAGE: "en",
             LLM_API_KEY: "sk-...",
+            LLM_BASE_URL: "",
             CONFIRMATION_MODE: true,
             SECURITY_ANALYZER: "analyzer1",
           }}
