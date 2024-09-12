@@ -5,6 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
+import { cn } from "#/utils/utils";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -91,11 +92,14 @@ function AgentStatusBar() {
   }, [curAgentState]);
 
   return (
-    <div className="flex items-center">
+    <div className="flex items-center bg-root-secondary py-1 px-2 rounded-[100px]">
       <div
-        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
+        className={cn(
+          "w-3 h-3 mr-2 rounded-full animate-pulse",
+          AgentStatusMap[curAgentState].indicator,
+        )}
       />
-      <span className="text-sm text-stone-400">
+      <span className="text-sm text-neutral-400">
         {AgentStatusMap[curAgentState].message}
       </span>
     </div>

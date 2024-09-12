@@ -2,7 +2,6 @@ import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "@remix-run/react";
-import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
@@ -113,43 +112,29 @@ function AgentControlBar() {
 
   return (
     <div className="flex justify-between items-center gap-20">
-      <div className="flex items-center gap-3">
-        {curAgentState === AgentState.PAUSED ? (
-          <ActionButton
-            isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
-            }
-            content="Resume the agent task"
-            action={AgentState.RUNNING}
-            handleAction={handleAction}
-            large
-          >
-            <PlayIcon />
-          </ActionButton>
-        ) : (
-          <ActionButton
-            isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
-            }
-            content="Pause the current task"
-            action={AgentState.PAUSED}
-            handleAction={handleAction}
-            large
-          >
-            <PauseIcon />
-          </ActionButton>
-        )}
-        <ActionButton
-          isDisabled={isLoading}
-          content="Start a new task"
-          action={AgentState.STOPPED}
-          handleAction={handleAction}
-        >
-          <ArrowIcon />
-        </ActionButton>
-      </div>
+      <ActionButton
+        isDisabled={
+          isLoading ||
+          (curAgentState === AgentState.PAUSED
+            ? IgnoreTaskStateMap[AgentState.PAUSED]
+            : IgnoreTaskStateMap[AgentState.RUNNING]
+          ).includes(curAgentState)
+        }
+        content={
+          curAgentState === AgentState.PAUSED
+            ? "Resume the agent task"
+            : "Pause the current task"
+        }
+        action={
+          curAgentState === AgentState.PAUSED
+            ? AgentState.RUNNING
+            : AgentState.PAUSED
+        }
+        handleAction={handleAction}
+        large
+      >
+        {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
+      </ActionButton>
     </div>
   );
 }
