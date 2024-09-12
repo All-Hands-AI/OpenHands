@@ -68,6 +68,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         Returns:
             bool: Whether the Docker image exists in the registry or in the local store
         """
+        if not image_name:
+            logger.error(f'Invalid image name: `{image_name}`')
+            return False
+
         try:
             logger.info(f'Checking, if image {image_name} exists locally.')
             self.docker_client.images.get(image_name)
@@ -84,6 +88,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             except docker.errors.ImageNotFound:
                 logger.info('Could not find image locally or in registry.')
                 return False
-            except Exception:
-                logger.info('Could not pull image directly.')
+            except Exception as e:
+                logger.error(
+                    'Could not pull image directly '
+                    + (str(e) if '404' not in str(e) else '')
+                )
                 return False

@@ -3,12 +3,12 @@ import socket
 import time
 
 
-def find_available_tcp_port(min_port=30000, max_port=60000, max_attempts=10) -> int:
+def find_available_tcp_port(min_port=30000, max_port=39999, max_attempts=10) -> int:
     """Find an available TCP port in a specified range.
 
     Args:
         min_port (int): The lower bound of the port range (default: 30000)
-        max_port (int): The upper bound of the port range (default: 60000)
+        max_port (int): The upper bound of the port range (default: 39999)
         max_attempts (int): Maximum number of attempts to find an available port (default: 10)
 
     Returns:

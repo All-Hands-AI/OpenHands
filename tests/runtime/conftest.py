@@ -1,6 +1,9 @@
 import os
 import random
+import shutil
+import stat
 import time
+from pathlib import Path
 
 import pytest
 from pytest import TempPathFactory
@@ -16,6 +19,55 @@ from openhands.storage import get_file_store
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
 RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
+test_mount_path = ''
+project_dir = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sandbox_test_folder = '/openhands/workspace'
+tests_started = False
+
+
+def _get_runtime_sid(runtime: Runtime):
+    return '_'.join(runtime.sid.split('_')[:2])
+
+
+def _get_host_folder(runtime: Runtime):
+    return runtime.config.workspace_mount_path
+
+
+def _get_sandbox_folder(runtime: Runtime):
+    sid = _get_runtime_sid(runtime)
+    if sid:
+        return Path(os.path.join(sandbox_test_folder, sid))
+    return None
+
+
+def _close_test_runtime(runtime: Runtime):
+    # TODO this is for EventStreamRuntime, not RemoteRuntime!
+    runtime.close(rm_all_containers=False)
+    time.sleep(1)
+
+
+def _remove_test_folder():
+    global test_mount_path, project_dir
+    if test_mount_path:
+        try:
+            if test_mount_path and os.path.exists(test_mount_path):
+                shutil.rmtree(test_mount_path)
+                print(f'Removed sandbox test folder: {test_mount_path}')
+        except FileNotFoundError:
+            print('Failed to remove test folder!')
+        test_mount_path = ''
+        # Try to change back to project directory
+        try:
+            os.chdir(project_dir)
+            print(f'Changed back to project directory: {project_dir}')
+        except Exception as e:
+            print(f'Failed to change back to project directory: {e}')
+
+
+# *****************************************************************************
+# *****************************************************************************
 
 
 @pytest.fixture(autouse=True)
@@ -27,13 +79,12 @@ def print_method_name(request):
     print(
         '########################################################################\n\n'
     )
-    yield
 
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
-    """
-    Creates a unique temporary directory
+    """Creates a unique temporary directory.
+    Upon finalization, the temporary directory and its content is removed.
 
     Parameters:
     - tmp_path_factory (TempPathFactory): A TempPathFactory class
@@ -41,18 +92,22 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     Returns:
     - str: The temporary directory path that was created
     """
+    temp_dir = tmp_path_factory.mktemp('test', numbered=True)
 
-    unique_suffix = random.randint(10000, 99999)
-    temp_dir = tmp_path_factory.mktemp(f'test_{unique_suffix}')
+    # Set permissions to ensure the directory is writable and deletable
+    os.chmod(temp_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777 permissions
 
     def cleanup():
+        global project_dir
+        os.chdir(project_dir)
         if os.path.exists(temp_dir):
             try:
                 os.rmdir(temp_dir)
             except OSError:
-                import shutil
-
-                shutil.rmtree(temp_dir)
+                try:
+                    shutil.rmtree(temp_dir)
+                except OSError:
+                    pass
 
     request.addfinalizer(cleanup)
 
@@ -81,11 +136,17 @@ def get_run_as_openhands():
     return [RUN_AS_OPENHANDS]
 
 
+@pytest.fixture(scope='session')
+def runtime_setup():
+    yield
+    _remove_test_folder()
+
+
 # This assures that all tests run together per runtime, not alternating between them,
 # which cause errors (especially outside GitHub actions).
 @pytest.fixture(scope='module', params=get_box_classes())
 def box_class(request):
-    time.sleep(2)
+    time.sleep(1)
     return request.param
 
 
@@ -93,11 +154,7 @@ def box_class(request):
 # since `EventStreamRuntime` supports running as an arbitrary user.
 @pytest.fixture(scope='module', params=get_run_as_openhands())
 def run_as_openhands(request):
-    return request.param
-
-
-@pytest.fixture(scope='module', params=[True, False])
-def enable_auto_lint(request):
+    time.sleep(1)
     return request.param
 
 
@@ -134,8 +191,8 @@ def _load_runtime(
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
 ) -> Runtime:
-    sid = f'test_{str(random.randint(10000, 99999))}'  # 'test'
-    cli_session = f'{sid}'
+    sid = os.path.basename(temp_dir) + '_' + str(random.randint(10000, 99999))
+    global test_mount_path
 
     print(f'*** Test temp directory: {temp_dir}')
     # AgentSkills need to be initialized **before** Jupyter
@@ -145,9 +202,16 @@ def _load_runtime(
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
 
-    config.workspace_mount_path = os.path.join(config.workspace_base, '_test_workspace')
-    config.workspace_mount_path_in_sandbox = '/workspace'  # temp_dir
+    # Folder where all tests create their own folder
+    test_mount_path = temp_dir
+
+    # Folder specific for this test identified by the generated instance_id
+    config.workspace_mount_path = os.path.join(test_mount_path, sid)
+
+    # Mounting folder specific for this test inside the sandbox
+    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}/{sid}'
     print('\nPaths used:')
+    print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')
     print(f'workspace_mount_path: {config.workspace_mount_path}')
     print(
@@ -156,13 +220,12 @@ def _load_runtime(
 
     config.sandbox.browsergym_eval_env = browsergym_eval_env
     config.sandbox.enable_auto_lint = enable_auto_lint
-    config.sandbox.use_host_network = False
 
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
 
     file_store = get_file_store(config.file_store, config.file_store_path)
-    event_stream = EventStream(cli_session, file_store)
+    event_stream = EventStream(sid, file_store)
 
     runtime = box_class(
         config=config,
@@ -170,9 +233,13 @@ def _load_runtime(
         sid=sid,
         plugins=plugins,
     )
-    time.sleep(1)
+    time.sleep(2)
     return runtime
 
 
 # Export necessary function
-__all__ = ['_load_runtime']
+__all__ = [
+    '_load_runtime',
+    '_get_host_folder',
+    '_get_sandbox_folder',
+]

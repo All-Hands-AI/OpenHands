@@ -101,6 +101,14 @@ class LogBuffer:
 class EventStreamRuntime(Runtime):
     """This runtime will subscribe the event stream.
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
+    From the sid also an instance_id is generated in combination with a UID.
+
+    Args:
+        config (AppConfig): The application configuration.
+        event_stream (EventStream): The event stream to subscribe to.
+        sid (str, optional): The session ID. Defaults to 'default'.
+        plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
+        env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
     container_name_prefix = 'openhands-sandbox-'
@@ -120,10 +128,10 @@ class EventStreamRuntime(Runtime):
             f'http://{self.config.sandbox.api_hostname}:{self._container_port}'
         )
         self.session = requests.Session()
-
         self.instance_id = (
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
+
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
@@ -133,7 +141,7 @@ class EventStreamRuntime(Runtime):
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
-        logger.debug(f'EventStreamRuntime `{sid}`')
+        logger.debug(f'EventStreamRuntime `{self.instance_id}`')
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
@@ -142,7 +150,9 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
-
+        self.skip_container_logs = (
+            os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
+        )
         if self.runtime_container_image is None:
             if self.base_container_image is None:
                 raise ValueError(
@@ -161,12 +171,11 @@ class EventStreamRuntime(Runtime):
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
 
-        self._wait_until_alive()
-
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         logger.info(f'Container initialized with env vars: {env_vars}')
+        time.sleep(1)
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -224,11 +233,13 @@ class EventStreamRuntime(Runtime):
             # Combine environment variables
             environment = {
                 'port': str(self._container_port),
+                'PYTHONUNBUFFERED': 1,
             }
             if self.config.debug:
                 environment['DEBUG'] = 'true'
 
-            logger.info(f'Workspace dir: {sandbox_workspace_dir}')
+            logger.info(f'Workspace Base: {self.config.workspace_base}')
+            logger.info(f'Sandbox workspace: {sandbox_workspace_dir}')
             if mount_dir is not None and sandbox_workspace_dir is not None:
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
                 volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
@@ -249,7 +260,7 @@ class EventStreamRuntime(Runtime):
                 self.runtime_container_image,
                 command=(
                     f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
-                    'PYTHONUNBUFFERED=1 poetry run '
+                    f'poetry run '
                     f'python -u -m openhands.runtime.client.client {self._container_port} '
                     f'--working-dir "{sandbox_workspace_dir}" '
                     f'{plugin_arg}'
@@ -269,14 +280,19 @@ class EventStreamRuntime(Runtime):
             logger.info(f'Container started. Server url: {self.api_url}')
             return container
         except Exception as e:
-            logger.error('Failed to start container')
+            logger.error(
+                f'VVVVV Instance {self.instance_id} FAILED to start container VVVVV'
+            )
             logger.exception(e)
-            self.close(close_client=False)
+            logger.error(
+                '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+            )
+            self.close(close_client=False, rm_all_containers=False)
             raise e
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=2, max=30),
+        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
@@ -346,23 +362,29 @@ class EventStreamRuntime(Runtime):
         if self.session:
             self.session.close()
 
-        containers = self.docker_client.containers.list(all=True)
-        for container in containers:
-            try:
-                # If the app doesn't shut down properly, it can leave runtime containers on the system. This ensures
-                # that all 'openhands-sandbox-' containers are removed as well.
-                if rm_all_containers and container.name.startswith(
-                    self.container_name_prefix
-                ):
-                    container.remove(force=True)
-                elif container.name == self.container_name:
-                    logs = container.logs(tail=1000).decode('utf-8')
-                    logger.debug(
-                        f'==== Container logs on close ====\n{logs}\n==== End of container logs ===='
-                    )
-                    container.remove(force=True)
-            except docker.errors.NotFound:
-                pass
+        try:
+            containers = self.docker_client.containers.list(all=True)
+            for container in containers:
+                try:
+                    # If the app doesn't shut down properly, it can leave runtime containers on the system. This ensures
+                    # that all 'openhands-sandbox-' containers are removed as well.
+                    if rm_all_containers and container.name.startswith(
+                        self.container_name_prefix
+                    ):
+                        container.remove(force=True)
+                    elif container.name == self.container_name:
+                        if not self.skip_container_logs:
+                            logs = container.logs(tail=1000).decode('utf-8')
+                            logger.debug(
+                                f'==== Container logs on close ====\n{logs}\n==== End of container logs ===='
+                            )
+                        container.remove(force=True)
+                except docker.errors.APIError:
+                    pass
+                except docker.errors.NotFound:
+                    pass
+        except docker.errors.NotFound:  # yes, this can happen!
+            pass
 
         if close_client:
             self.docker_client.close()
@@ -528,8 +550,9 @@ class EventStreamRuntime(Runtime):
         return False
 
     def _find_available_port(self, max_attempts=5):
+        port = 39999
         for _ in range(max_attempts):
-            port = find_available_tcp_port()
+            port = find_available_tcp_port(30000, 39999)
             if not self._is_port_in_use_docker(port):
                 return port
         # If no port is found after max_attempts, return the last tried port

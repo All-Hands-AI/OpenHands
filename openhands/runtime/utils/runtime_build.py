@@ -39,6 +39,10 @@ def _put_source_code_to_dir(temp_dir: str):
     Parameters:
     - temp_dir (str): The directory to put the source code in
     """
+    if not temp_dir:
+        logger.error('Build failed: temp_dir not provided!')
+        raise RuntimeError('Build failed: temp_dir not provided!')
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
     logger.info(f'Using project root: {project_root}')
 
@@ -52,7 +56,7 @@ def _put_source_code_to_dir(temp_dir: str):
         ' ', r'\ '
     )  # escape spaces in the project root
     result = subprocess.run(
-        f'python -m build -s -o {temp_dir} {_cleaned_project_root}',
+        f'python -m build -s -o "{temp_dir}" {_cleaned_project_root}',
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -64,11 +68,11 @@ def _put_source_code_to_dir(temp_dir: str):
 
     if result.returncode != 0:
         logger.error(f'Build failed: {result}')
-        raise Exception(f'Build failed: {result}')
+        raise RuntimeError(f'Build failed: {result}')
 
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
-        raise Exception(f'Source distribution not found at {tarball_path}')
+        raise RuntimeError(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
     # Unzip the tarball

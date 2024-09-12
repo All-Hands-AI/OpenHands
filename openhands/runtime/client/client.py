@@ -84,7 +84,6 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
-        logger.info(f'client working directory: {self.pwd}')
 
     @property
     def initial_pwd(self):
@@ -116,7 +115,23 @@ class RuntimeClient:
         logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
-        """Create user if not exists."""
+        """Create working directory and user if not exists."""
+
+        # First create the working directory, independent of the user
+        logger.info(f'Client working directory: {self.initial_pwd}')
+        command = f'mkdir -p {self.initial_pwd}'
+        output = subprocess.run(command, shell=True, capture_output=True)
+        out_str = output.stdout.decode()
+
+        command = f'chown -R {username}:root {self.initial_pwd}'
+        output = subprocess.run(command, shell=True, capture_output=True)
+        out_str += output.stdout.decode()
+
+        command = f'chmod g+rw,o+rw {self.initial_pwd}'
+        output = subprocess.run(command, shell=True, capture_output=True)
+        out_str += output.stdout.decode()
+        logger.debug(f'Created working directory. Output: [{out_str}]')
+
         # Skip root since it is already created
         if username == 'root':
             return
@@ -144,12 +159,6 @@ class RuntimeClient:
                 f'useradd -rm -d /home/{username} -s /bin/bash '
                 f'-g root -G sudo -u {user_id} {username}'
             )
-
-            if not os.path.exists(self.initial_pwd):
-                command += f' && mkdir -p {self.initial_pwd}'
-                command += f' && chown -R {username}:root {self.initial_pwd}'
-                command += f' && chmod g+s {self.initial_pwd}'
-
             output = subprocess.run(command, shell=True, capture_output=True)
             if output.returncode == 0:
                 logger.debug(
