@@ -32,8 +32,6 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    // depending on your application, base can also be "/"
-    base: "",
     plugins: [
       !process.env.VITEST &&
         remix({

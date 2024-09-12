@@ -12,11 +12,10 @@ interface ControlsProps {
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <AgentControlBar />
+        <AgentStatusBar />
       </div>
-
-      <AgentStatusBar />
 
       <div style={{ display: "flex", alignItems: "center" }}>
         <div style={{ marginRight: "8px" }}>

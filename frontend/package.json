@@ -36,6 +36,7 @@
     "react-router-dom": "^6.26.1",
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.0",
+    "sirv-cli": "^2.0.2",
     "tailwind-merge": "^2.5.2",
     "vite": "^5.4.4",
     "web-vitals": "^3.5.2",
@@ -44,7 +45,7 @@
   "scripts": {
     "dev": "npm run make-i18n && remix vite:dev",
     "build": "npm run make-i18n && tsc && remix vite:build",
-    "start": "remix-serve ./build/server/index.js",
+    "start": "npx sirv-cli build/client/ --single",
     "test": "vitest run",
     "test:coverage": "npm run make-i18n && vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",

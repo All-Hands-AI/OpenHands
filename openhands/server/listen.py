@@ -760,4 +760,4 @@ async def security_api(request: Request):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
