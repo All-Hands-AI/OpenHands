@@ -35,7 +35,11 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
-from openhands.runtime.utils.request import DEFAULT_RETRY_EXCEPTIONS, send_request
+from openhands.runtime.utils.request import (
+    DEFAULT_RETRY_EXCEPTIONS,
+    is_404_error,
+    send_request,
+)
 from openhands.runtime.utils.runtime_build import build_runtime_image
 
 
@@ -244,6 +248,10 @@ class RemoteRuntime(Runtime):
                     retry_exceptions=list(
                         filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                     ),
+                    # Retry 404 errors for the /execute_action endpoint
+                    # because the runtime might just be starting up
+                    # and have not registered the endpoint yet
+                    retry_fns=[is_404_error],
                 )
                 if response.status_code == 200:
                     output = response.json()
