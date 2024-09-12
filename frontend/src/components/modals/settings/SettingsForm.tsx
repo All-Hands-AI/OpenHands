@@ -42,7 +42,7 @@ function SettingsForm({
   const advancedAlreadyInUse = React.useMemo(() => (
       !!settings.SECURITY_ANALYZER ||
       !!settings.CONFIRMATION_MODE ||
-      (!!settings.LLM_MODEL && !models.includes(settings.LLM_MODEL)),
+      (!!settings.LLM_MODEL && !models.includes(settings.LLM_MODEL))
   ), []);
   const [enableAdvanced, setEnableAdvanced] =
     React.useState(advancedAlreadyInUse);
