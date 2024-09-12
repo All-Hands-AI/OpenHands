@@ -39,11 +39,11 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-  let advancedAlreadyInUse =
-    !!settings.SECURITY_ANALYZER || !!settings.CONFIRMATION_MODE;
-  if (settings.LLM_MODEL && !models.includes(settings.LLM_MODEL)) {
-    advancedAlreadyInUse = true;
-  }
+  const advancedAlreadyInUse = React.useMemo(() => (
+      !!settings.SECURITY_ANALYZER ||
+      !!settings.CONFIRMATION_MODE ||
+      (!!settings.LLM_MODEL && !models.includes(settings.LLM_MODEL)),
+  ), []);
   const [enableAdvanced, setEnableAdvanced] =
     React.useState(advancedAlreadyInUse);
 
