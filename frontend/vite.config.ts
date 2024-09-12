@@ -46,6 +46,9 @@ export default defineConfig(({ mode }) => {
       viteTsconfigPaths(),
       svgr(),
     ],
+    ssr: {
+      noExternal: ["react-syntax-highlighter"],
+    },
     clearScreen: false,
     server: {
       watch: {

@@ -48,7 +48,7 @@ const generateAgentRunObservation = (): CommandObservation => ({
   },
 });
 
-const api = ws.link("ws://localhost:3001/ws");
+const api = ws.link("ws://localhost:3000/ws");
 
 export const handlers: WebSocketHandler[] = [
   api.on("connection", ({ server, client }) => {
