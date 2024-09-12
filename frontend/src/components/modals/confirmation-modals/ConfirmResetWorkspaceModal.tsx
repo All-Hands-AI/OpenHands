@@ -11,11 +11,11 @@ function ConfirmResetWorkspaceModal({
 }: ConfirmResetWorkspaceModalProps) {
   return (
     <BaseModal
-      title="Are you sure you want to reset?"
-      description="You will lose any unsaved information. This will clear your workspace and remove any prompts. Your current project will remain open."
+      title="Are you sure you want to exit?"
+      description="You will lose any unsaved information."
       buttons={[
         {
-          text: "Reset and Continue",
+          text: "Exit Project",
           onClick: onConfirm,
           className: "bg-danger",
         },

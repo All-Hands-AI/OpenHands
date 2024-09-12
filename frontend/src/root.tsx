@@ -6,11 +6,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  ShouldRevalidateFunctionArgs,
   defer,
   json,
   useLoaderData,
   useNavigation,
+  useSubmit,
 } from "@remix-run/react";
 import "./tailwind.css";
 import "./index.css";
@@ -27,6 +27,9 @@ import { ContextMenu } from "./components/context-menu/context-menu";
 import { ContextMenuListItem } from "./components/context-menu/context-menu-list-item";
 import { ContextMenuSeparator } from "./components/context-menu/context-menu-separator";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
+import NewProjectIcon from "./assets/new-project.svg?react";
+import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
+import DefaultUserAvatar from "./assets/default-user.svg?react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -47,6 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const clientLoader = async () => {
+  const token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
 
@@ -65,6 +69,7 @@ export const clientLoader = async () => {
   }
 
   return defer({
+    token,
     user,
     models,
     agents,
@@ -84,20 +89,19 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   return json(null);
 };
 
-export const shouldRevalidate = ({
-  formAction,
-}: ShouldRevalidateFunctionArgs) => formAction === "/settings";
-
 export default function App() {
   const navigation = useNavigation();
-  const { user, models, agents, settingsIsUpdated, settings } =
+  const { token, user, models, agents, settingsIsUpdated, settings } =
     useLoaderData<typeof clientLoader>();
+  const submit = useSubmit();
 
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
+  const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
+    React.useState(false);
 
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
@@ -109,13 +113,17 @@ export default function App() {
           <div className="w-8 h-8 relative">
             <button
               type="button"
+              className="bg-white w-8 h-8 rounded-full flex items-center justify-center"
               onClick={() => setAccountContextMenuIsVisible((prev) => !prev)}
             >
-              <img
-                src={user?.avatar_url}
-                alt="User avatar"
-                className="w-8 h-8 rounded-full"
-              />
+              {!user && <DefaultUserAvatar width={20} height={20} />}
+              {user && (
+                <img
+                  src={user.avatar_url}
+                  alt="User avatar"
+                  className="w-full h-full"
+                />
+              )}
             </button>
 
             {accountContextMenuIsVisible && (
@@ -142,6 +150,15 @@ export default function App() {
           >
             <CogTooth />
           </button>
+          {!!token && (
+            <button
+              type="button"
+              aria-label="Start new project"
+              onClick={() => setStartNewProjectModalIsOpen(true)}
+            >
+              <NewProjectIcon width={28} height={28} />
+            </button>
+          )}
         </nav>
       </aside>
       <div className="w-full relative">
@@ -174,6 +191,22 @@ export default function App() {
             <AccountSettingsModal
               onClose={() => setAccountSettingsModalOpen(false)}
               language={settings.LANGUAGE}
+            />
+          </ModalBackdrop>
+        )}
+        {startNewProjectModalIsOpen && (
+          <ModalBackdrop>
+            <ConfirmResetWorkspaceModal
+              onConfirm={() => {
+                setStartNewProjectModalIsOpen(false);
+
+                // remove token action and redirect to /
+                submit(new FormData(), {
+                  method: "POST",
+                  action: "/new-session",
+                });
+              }}
+              onCancel={() => setStartNewProjectModalIsOpen(false)}
             />
           </ModalBackdrop>
         )}

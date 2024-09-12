@@ -15,6 +15,11 @@ import {
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    return redirect("/app");
+  }
 
   if (ghToken) {
     const data = await retrieveGitHubUserRepositories(ghToken);
@@ -33,8 +38,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const repo = url.searchParams.get("repo");
 
   const formData = await request.formData();
-  const q = formData.get("q")?.toString();
 
+  const q = formData.get("q")?.toString();
   const reset = formData.get("reset")?.toString() === "true";
 
   if (q) searchParams.set("q", q);

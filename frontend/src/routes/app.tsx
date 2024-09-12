@@ -22,6 +22,7 @@ import { addUserMessage, clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import { sendTerminalCommand } from "#/services/terminalService";
 import { appendInput, appendOutput } from "#/state/commandSlice";
+import { useEffectOnce } from "#/utils/use-effect-once";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
@@ -29,7 +30,6 @@ export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
   const repo = url.searchParams.get("repo");
-  const resetSocket = url.searchParams.get("reset") === "true";
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
@@ -41,7 +41,6 @@ export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
     repo,
     securityAnalyzer: settings.SECURITY_ANALYZER,
     q,
-    resetSocket,
   });
 };
 
@@ -58,12 +57,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function App() {
-  const { start, send, isConnected } = useSocket();
-  const { token, ghToken, repo, securityAnalyzer, q, resetSocket } =
+  const { start, send } = useSocket();
+  const { token, ghToken, repo, securityAnalyzer, q } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
-
-  const socketStartRef = React.useRef(isConnected);
 
   const startSocketConnection = React.useCallback(() => {
     start({
@@ -122,18 +119,11 @@ function App() {
     });
   }, [token, q, ghToken, repo]);
 
-  React.useEffect(() => {
-    if (socketStartRef.current && !resetSocket) {
-      return;
-    }
-
-    if (resetSocket) {
-      store.dispatch(clearMessages());
-    }
-
+  useEffectOnce(() => {
+    // clear and restart the socket connection
+    store.dispatch(clearMessages());
     startSocketConnection();
-    socketStartRef.current = true;
-  }, [resetSocket]);
+  });
 
   const {
     isOpen: securityModalIsOpen,

@@ -39,7 +39,7 @@ interface BaseModalProps {
 function BaseModal({ title, description, buttons }: BaseModalProps) {
   return (
     <ModalBody>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 self-start">
         <BaseModalTitle title={title} />
         <BaseModalDescription description={description} />
       </div>
