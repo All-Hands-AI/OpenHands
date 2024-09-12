@@ -17,6 +17,7 @@ interface SettingsFormProps {
   disabled: boolean;
 
   onModelChange: (model: string) => void;
+  onBaseURLChange: (baseURL: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
@@ -31,6 +32,7 @@ function SettingsForm({
   securityAnalyzers,
   disabled,
   onModelChange,
+  onBaseURLChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
@@ -56,12 +58,20 @@ function SettingsForm({
         Advanced Options
       </Switch>
       {enableAdvanced && (
-        <Input
-          data-testid="custom-model-input"
-          label="Custom Model"
-          onValueChange={onModelChange}
-          defaultValue={settings.LLM_MODEL}
-        />
+        <>
+          <Input
+            data-testid="custom-model-input"
+            label="Custom Model"
+            onValueChange={onModelChange}
+            defaultValue={settings.LLM_MODEL}
+          />
+          <Input
+            data-testid="base-url-input"
+            label="Base URL"
+            onValueChange={onBaseURLChange}
+            defaultValue={settings.LLM_BASE_URL}
+          />
+        </>
       )}
       {!enableAdvanced && (
         <ModelSelector

@@ -2,6 +2,7 @@ const LATEST_SETTINGS_VERSION = 2;
 
 export type Settings = {
   LLM_MODEL: string;
+  LLM_BASE_URL: string;
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY: string;
@@ -11,6 +12,7 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "openai/gpt-4o",
+  LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
@@ -60,6 +62,7 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = (): Settings => {
   const model = localStorage.getItem("LLM_MODEL");
+  const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
@@ -68,6 +71,7 @@ export const getSettings = (): Settings => {
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
+    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
