@@ -1,8 +1,7 @@
-import ssl
 from typing import Any, Type
 
 import requests
-from requests.exceptions import HTTPError, RequestException, Timeout
+from requests.exceptions import ConnectionError, Timeout
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -10,10 +9,16 @@ from tenacity import (
     wait_exponential,
 )
 
+
+def is_server_error(exception):
+    return (
+        isinstance(exception, requests.HTTPError)
+        and exception.response.status_code >= 500
+    )
+
+
 DEFAULT_RETRY_EXCEPTIONS = [
-    ssl.SSLCertVerificationError,
-    RequestException,
-    HTTPError,
+    ConnectionError,
     Timeout,
 ]
 
@@ -26,13 +31,15 @@ def send_request(
     n_attempts: int = 30,
     **kwargs: Any,
 ) -> requests.Response:
-    if retry_exceptions is None:
-        retry_exceptions = DEFAULT_RETRY_EXCEPTIONS
+    exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
 
     @retry(
         stop=stop_after_attempt(n_attempts),
         wait=wait_exponential(multiplier=1, min=4, max=60),
-        retry=retry_if_exception_type(tuple(retry_exceptions)),
+        retry=(
+            retry_if_exception_type(tuple(exceptions_to_catch))
+            | retry_if_exception_type(requests.HTTPError, is_server_error)
+        ),
         reraise=True,
     )
     def _send_request_with_retry():
