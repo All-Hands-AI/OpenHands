@@ -6,7 +6,7 @@ import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
 import { clientLoader } from "#/root";
-import { clientAction } from "#/routes/settings";
+import { clientAction } from "#/routes/Settings";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
