@@ -17,6 +17,7 @@ describe("getSettings", () => {
   it("should get the stored settings", () => {
     (localStorage.getItem as Mock)
       .mockReturnValueOnce("llm_value")
+      .mockReturnValueOnce("base_url")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
@@ -27,6 +28,7 @@ describe("getSettings", () => {
 
     expect(settings).toEqual({
       LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
@@ -53,6 +55,7 @@ describe("getSettings", () => {
       AGENT: DEFAULT_SETTINGS.AGENT,
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
       LLM_API_KEY: "",
+      LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
       CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
       SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
     });
@@ -63,6 +66,7 @@ describe("saveSettings", () => {
   it("should save the settings", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",

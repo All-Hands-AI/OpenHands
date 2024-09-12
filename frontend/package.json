@@ -37,7 +37,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.0",
     "tailwind-merge": "^2.5.2",
-    "vite": "^5.4.3",
+    "vite": "^5.4.4",
     "web-vitals": "^3.5.2",
     "ws": "^8.18.0"
   },
@@ -95,12 +95,12 @@
     "husky": "^9.1.5",
     "jsdom": "^25.0.0",
     "lint-staged": "^15.2.10",
-    "msw": "^2.3.0-ws.rc-7",
+    "msw": "^2.4.5",
     "postcss": "^8.4.45",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.10",
-    "vite-plugin-svgr": "^4.2.0",
     "typescript": "^5.6.2",
+    "vite-plugin-svgr": "^4.2.0",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^1.6.0"
   },
