@@ -326,9 +326,11 @@ class RuntimeClient:
                 else:
                     output, exit_code = self._execute_bash(
                         command,
-                        timeout=SOFT_TIMEOUT_SECONDS,
+                        timeout=SOFT_TIMEOUT_SECONDS
+                        if not action.blocking
+                        else action.timeout,
                         keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False,
+                        kill_on_timeout=False if not action.blocking else True,
                     )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
