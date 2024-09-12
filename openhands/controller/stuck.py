@@ -309,11 +309,19 @@ class StuckDetector:
         if isinstance(obj1, IPythonRunCellAction) and isinstance(
             obj2, IPythonRunCellAction
         ):
-            return (
+            # for loop detection on edit actions, ignore the thought, compare some code
+            # the code should have at least 3 lines, to avoid simple one-liners
+            if (
                 'edit_file_by_replace(' in obj1.code
-                and len(obj1.code.split('\n')) > 2
-                and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
-            )
+                and 'edit_file_by_replace(' in obj2.code
+            ):
+                return (
+                    len(obj1.code.split('\n')) > 2
+                    and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
+                )
+            else:
+                # default comparison
+                return obj1 == obj2
         elif isinstance(obj1, CmdOutputObservation) and isinstance(
             obj2, CmdOutputObservation
         ):
