@@ -4,6 +4,7 @@ import requests
 from requests.exceptions import ConnectionError, Timeout
 from tenacity import (
     retry,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
@@ -38,7 +39,7 @@ def send_request(
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=(
             retry_if_exception_type(tuple(exceptions_to_catch))
-            | retry_if_exception_type(requests.HTTPError, is_server_error)
+            | retry_if_exception(is_server_error)
         ),
         reraise=True,
     )
