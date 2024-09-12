@@ -9,6 +9,7 @@ import {
   defer,
   json,
   useLoaderData,
+  useLocation,
   useNavigation,
   useSubmit,
 } from "@remix-run/react";
@@ -92,6 +93,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 export default function App() {
   const navigation = useNavigation();
+  const location = useLocation();
   const { token, user, models, agents, settingsIsUpdated, settings } =
     useLoaderData<typeof clientLoader>();
   const submit = useSubmit();
@@ -164,7 +166,7 @@ export default function App() {
       </aside>
       <div className="w-full relative">
         <Outlet />
-        {navigation.state === "loading" && (
+        {navigation.state === "loading" && location.pathname !== "/" && (
           <ModalBackdrop>
             <LoadingProjectModal />
           </ModalBackdrop>

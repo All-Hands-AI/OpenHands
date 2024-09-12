@@ -3,6 +3,7 @@ import {
   json,
   redirect,
   useLoaderData,
+  useNavigation,
 } from "@remix-run/react";
 import React from "react";
 import { SuggestionBox } from "./suggestion-box";
@@ -17,6 +18,7 @@ import ModalButton from "#/components/buttons/ModalButton";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
+import { LoadingSpinner } from "#/components/modals/LoadingProject";
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
@@ -59,12 +61,18 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function Home() {
+  const navigation = useNavigation();
   const { repositories, ghToken } = useLoaderData<typeof clientLoader>();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
 
   return (
-    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center gap-16">
+    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center gap-16 relative">
+      {navigation.state === "loading" && (
+        <div className="absolute top-8 right-8">
+          <LoadingSpinner size="small" />
+        </div>
+      )}
       <HeroHeading />
       <TaskForm />
       <div className="flex gap-4">

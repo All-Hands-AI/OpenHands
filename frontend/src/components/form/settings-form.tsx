@@ -12,6 +12,8 @@ import { ModelSelector } from "#/components/modals/settings/ModelSelector";
 import { Settings } from "#/services/settings";
 import ConfirmResetDefaultsModal from "#/components/modals/confirmation-modals/ConfirmResetDefaultsModal";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
+import ModalButton from "../buttons/ModalButton";
+import { clientAction } from "#/routes/Settings";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -26,11 +28,15 @@ export function SettingsForm({
   agents,
   onClose,
 }: SettingsFormProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<typeof clientAction>();
   const formRef = React.useRef<HTMLFormElement>(null);
   const [isCustomModel, setIsCustomModel] = React.useState(false);
   const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
     React.useState(false);
+
+  React.useEffect(() => {
+    if (fetcher.data?.success) onClose();
+  }, [fetcher.data]);
 
   return (
     <fetcher.Form
@@ -39,7 +45,6 @@ export function SettingsForm({
       method="POST"
       action="/settings"
       className="flex flex-col gap-6"
-      onSubmit={onClose}
     >
       <div className="flex flex-col gap-2">
         <Switch
@@ -157,29 +162,25 @@ export function SettingsForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <button
+        <ModalButton
+          disabled={fetcher.state === "submitting"}
           type="submit"
-          className="bg-[#4465DB] text-sm font-[500] py-[10px] rounded"
-        >
-          Save
-        </button>
-        <button
-          type="button"
-          data-testid="close-button"
-          className="bg-[#737373] text-sm font-[500] py-[10px] rounded"
+          text="Save"
+          className="bg-[#4465DB] w-full"
+        />
+        <ModalButton
+          text="Close"
+          className="bg-[#737373] w-full"
           onClick={onClose}
-        >
-          Close
-        </button>
-        <button
-          type="button"
+        />
+        <ModalButton
+          text="Reset to defaults"
+          variant="text-like"
+          className="text-danger self-start"
           onClick={() => {
             setConfirmResetDefaultsModalOpen(true);
           }}
-          className="text-sm text-[#EF3744] self-start"
-        >
-          Reset to defaults
-        </button>
+        />
       </div>
       {confirmResetDefaultsModalOpen && (
         <ModalBackdrop>

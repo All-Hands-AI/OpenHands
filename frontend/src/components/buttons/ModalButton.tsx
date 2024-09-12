@@ -28,7 +28,7 @@ function ModalButton({
       disabled={disabled}
       onClick={onClick}
       className={clsx(
-        variant === "default" && "text-sm text-[500] py-[10px] rounded",
+        variant === "default" && "text-sm font-[500] py-[10px] rounded",
         variant === "text-like" && "text-xs leading-4 font-normal",
         icon && "flex items-center justify-center gap-2",
         disabled && "opacity-50 cursor-not-allowed",

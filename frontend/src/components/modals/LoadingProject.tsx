@@ -1,11 +1,24 @@
 import LoadingSpinnerOuter from "#/assets/loading-outer.svg?react";
+import { cn } from "#/utils/utils";
 import ModalBody from "./ModalBody";
 
-function LoadingSpinner() {
+interface LoadingSpinnerProps {
+  size: "small" | "large";
+}
+
+export function LoadingSpinner({ size }: LoadingSpinnerProps) {
+  const sizeStyle =
+    size === "small" ? "w-[25px] h-[25px]" : "w-[50px] h-[50px]";
+
   return (
-    <div className="relative w-[60px] h-[60px]">
-      <div className="w-[60px] h-[60px] rounded-full border-4 border-[#525252] absolute" />
-      <LoadingSpinnerOuter className="absolute w-[60px] h-[60px] animate-spin" />
+    <div className={cn("relative", sizeStyle)}>
+      <div
+        className={cn(
+          "rounded-full border-4 border-[#525252] absolute",
+          sizeStyle,
+        )}
+      />
+      <LoadingSpinnerOuter className={cn("absolute animate-spin", sizeStyle)} />
     </div>
   );
 }
@@ -16,7 +29,7 @@ function LoadingProjectModal() {
       <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
         Loading...
       </span>
-      <LoadingSpinner />
+      <LoadingSpinner size="large" />
     </ModalBody>
   );
 }

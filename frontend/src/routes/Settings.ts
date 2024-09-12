@@ -51,5 +51,5 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     );
   }
 
-  return json(null);
+  return json({ success: true });
 };
