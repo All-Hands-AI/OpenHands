@@ -3,6 +3,7 @@ from typing import Any, Callable, Type
 import requests
 from requests.exceptions import ConnectionError, Timeout
 from tenacity import (
+    retry,
     retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
@@ -40,17 +41,17 @@ def send_request(
     **kwargs: Any,
 ) -> requests.Response:
     exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
-    retry = retry_if_exception_type(tuple(exceptions_to_catch)) | retry_if_exception(
-        is_server_error
-    )
+    retry_condition = retry_if_exception_type(
+        tuple(exceptions_to_catch)
+    ) | retry_if_exception(is_server_error)
     if retry_fns is not None:
         for fn in retry_fns:
-            retry |= retry_if_exception(fn)
+            retry_condition |= retry_if_exception(fn)
 
     @retry(
         stop=stop_after_attempt(n_attempts),
         wait=wait_exponential(multiplier=1, min=4, max=60),
-        retry=retry,
+        retry=retry_condition,
         reraise=True,
     )
     def _send_request_with_retry():
