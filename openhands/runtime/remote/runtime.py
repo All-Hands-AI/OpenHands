@@ -189,7 +189,15 @@ class RemoteRuntime(Runtime):
     )
     def _wait_until_alive(self):
         logger.info('Waiting for sandbox to be alive...')
-        response = send_request(self.session, 'GET', f'{self.runtime_url}/alive')
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.runtime_url}/alive',
+            # Retry 404 errors for the /alive endpoint
+            # because the runtime might just be starting up
+            # and have not registered the endpoint yet
+            retry_fns=[is_404_error],
+        )
         if response.status_code != 200:
             msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
             logger.warning(msg)
