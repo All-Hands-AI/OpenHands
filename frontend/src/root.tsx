@@ -81,13 +81,13 @@ export const clientLoader = async () => {
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
-  const ghToken = formData.get("token")?.toString();
+  const ghToken = formData.get("ghToken")?.toString();
 
   if (ghToken) {
     localStorage.setItem("ghToken", ghToken);
   }
 
-  return json(null);
+  return json({ success: true });
 };
 
 export default function App() {

@@ -4,6 +4,7 @@ import {
   redirect,
   useLoaderData,
 } from "@remix-run/react";
+import React from "react";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
@@ -12,6 +13,10 @@ import {
   isGitHubErrorReponse,
   retrieveGitHubUserRepositories,
 } from "#/api/github";
+import ModalButton from "#/components/buttons/ModalButton";
+import GitHubLogo from "#/assets/branding/github-logo.svg?react";
+import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
+import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
@@ -21,14 +26,15 @@ export const clientLoader = async () => {
     return redirect("/app");
   }
 
+  let repositories: GitHubRepository[] = [];
   if (ghToken) {
     const data = await retrieveGitHubUserRepositories(ghToken);
     if (!isGitHubErrorReponse(data)) {
-      return json({ repositories: data });
+      repositories = data;
     }
   }
 
-  return json({ repositories: [] });
+  return json({ repositories, ghToken });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -53,7 +59,9 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function Home() {
-  const { repositories } = useLoaderData<typeof clientLoader>();
+  const { repositories, ghToken } = useLoaderData<typeof clientLoader>();
+  const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
+    React.useState(false);
 
   return (
     <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center gap-16">
@@ -61,15 +69,29 @@ function Home() {
       <TaskForm />
       <div className="flex gap-4">
         <SuggestionBox
-          title="Make a To-do List App"
-          content="Track your daily work"
-        />
-        <SuggestionBox
-          title="Clone Repo"
-          content={<GitHubRepositorySelector repositories={repositories} />}
+          title="Open a Repo"
+          content={
+            ghToken ? (
+              <GitHubRepositorySelector repositories={repositories} />
+            ) : (
+              <ModalButton
+                text="Connect to GitHub"
+                icon={<GitHubLogo width={20} height={20} />}
+                className="bg-[#791B80] w-full"
+                onClick={() => setConnectToGitHubModalOpen(true)}
+              />
+            )
+          }
         />
         <SuggestionBox title="+ Import Project" content="from your desktop" />
       </div>
+      {connectToGitHubModalOpen && (
+        <ModalBackdrop>
+          <ConnectToGitHubModal
+            onClose={() => setConnectToGitHubModalOpen(false)}
+          />
+        </ModalBackdrop>
+      )}
     </div>
   );
 }
