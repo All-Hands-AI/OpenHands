@@ -20,10 +20,10 @@ const renderSettingsForm = (settings?: Settings) => {
       settings={
         settings || {
           LLM_MODEL: "gpt-4o",
-          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          LLM_BASE_URL: "",
           CONFIRMATION_MODE: false,
           SECURITY_ANALYZER: "",
         }
@@ -62,10 +62,10 @@ describe("SettingsForm", () => {
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
       LLM_MODEL: "gpt-3.5-turbo",
-      LLM_BASE_URL: "base_url",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
       CONFIRMATION_MODE: false,
       SECURITY_ANALYZER: "",
     });
@@ -81,15 +81,66 @@ describe("SettingsForm", () => {
     expect(languageInput).toHaveValue("Español");
   });
 
+  it("should show advanced settings by default if advanced settings are in use", () => {
+    renderSettingsForm({
+      LLM_MODEL: "gpt-3.5-turbo",
+      AGENT: "agent2",
+      LANGUAGE: "es",
+      LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
+      CONFIRMATION_MODE: true,
+      SECURITY_ANALYZER: "",
+    });
+
+    const customModelInput = screen.getByTestId("custom-model-input");
+    expect(customModelInput).toBeInTheDocument();
+  });
+
+  it("should show advanced settings if using a custom model", () => {
+    renderSettingsForm({
+      LLM_MODEL: "bagel",
+      AGENT: "agent2",
+      LANGUAGE: "es",
+      LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
+      CONFIRMATION_MODE: false,
+      SECURITY_ANALYZER: "",
+    });
+
+    const customModelInput = screen.getByTestId("custom-model-input");
+    expect(customModelInput).toBeInTheDocument();
+  });
+
+  it("should show advanced settings if button is clicked", async () => {
+    renderSettingsForm({
+      LLM_MODEL: "gpt-3.5-turbo",
+      AGENT: "agent2",
+      LANGUAGE: "es",
+      LLM_API_KEY: "sk-...",
+      LLM_BASE_URL: "",
+      CONFIRMATION_MODE: false,
+      SECURITY_ANALYZER: "",
+    });
+
+    let customModelInput = screen.queryByTestId("custom-model-input");
+    expect(customModelInput).not.toBeInTheDocument();
+
+    const advancedToggle = screen.getByTestId("advanced-options-toggle");
+    await userEvent.click(advancedToggle);
+
+    customModelInput = screen.getByTestId("custom-model-input");
+    expect(customModelInput).toBeInTheDocument();
+  });
+
   it("should disable settings when disabled is true", () => {
     renderWithProviders(
       <SettingsForm
         settings={{
           LLM_MODEL: "gpt-4o",
-          LLM_BASE_URL: "base_url",
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          LLM_BASE_URL: "",
           CONFIRMATION_MODE: false,
           SECURITY_ANALYZER: "",
         }}
