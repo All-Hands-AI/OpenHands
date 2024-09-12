@@ -152,7 +152,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
       isDismissable={settingsAreUpToDate()}
       subtitle={subtitle}
-      actions={[
+      actions={ loading ? [] : [
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: handleSaveSettings,
