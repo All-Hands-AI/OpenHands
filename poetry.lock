@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.15"
+version = "1.35.16"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.15-py3-none-any.whl", hash = "sha256:c8e3567a843bee89b826b71916748088386ccd48014f0f55f56288215a686048"},
-    {file = "boto3-1.35.15.tar.gz", hash = "sha256:5e286daa84f945e4c57b133fc96bd2abbcf4066e5d4e63c591ce5e949913d6fd"},
+    {file = "boto3-1.35.16-py3-none-any.whl", hash = "sha256:9c5b0ce4a25bb78d659478d1c552f1dbb7ff275aab3263bb41cdbef8bca28693"},
+    {file = "boto3-1.35.16.tar.gz", hash = "sha256:9b96c210678cf430b16b49dee87db30f46044602bb9a605a465e1900f468a43f"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.15,<1.36.0"
+botocore = ">=1.35.16,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.15"
+version = "1.35.16"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.15-py3-none-any.whl", hash = "sha256:a01a7668941c9276ca7697fb0b09a47ab1f13e585c5ca6551270528f4e086de8"},
-    {file = "botocore-1.35.15.tar.gz", hash = "sha256:bbfe4f6cd417d1d097900db062f1017e5185775acdeccd0eff1ec0f499633242"},
+    {file = "botocore-1.35.16-py3-none-any.whl", hash = "sha256:3564a980d95ff2861a6ca74313173d8778aa659125c63cf49c93ad23896c63b1"},
+    {file = "botocore-1.35.16.tar.gz", hash = "sha256:1b48c94e8a4bbe23143f3d1c21a32b9ffc7476b651ef42371ab45d678f6dbfbc"},
 ]
 
 [package.dependencies]
@@ -605,36 +605,36 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
 
 [package.extras]
-crt = ["awscrt (==0.21.2)"]
+crt = ["awscrt (==0.21.5)"]
 
 [[package]]
 name = "browsergym"
-version = "0.4.3"
+version = "0.5.1"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.4.3-py3-none-any.whl", hash = "sha256:876bf47ac897041eba4a78089b854d77cbe104d929093ebecf9d2a8fb8f93003"},
-    {file = "browsergym-0.4.3.tar.gz", hash = "sha256:b70385fa83d31c6f3f9140fcb20cdca31ae43bd860eeed87468e5d11650e084c"},
+    {file = "browsergym-0.5.1-py3-none-any.whl", hash = "sha256:8c05b0b7692ba28549247fa551a0f0899562be446030445f5a944468c6f80c56"},
+    {file = "browsergym-0.5.1.tar.gz", hash = "sha256:4e96ed9c2a57fd3a6cb603b477cf587a16aa713d989148d7e85d7d6643621e23"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.4.3"
-browsergym-experiments = "0.4.3"
-browsergym-miniwob = "0.4.3"
-browsergym-visualwebarena = "0.4.3"
-browsergym-webarena = "0.4.3"
+browsergym-core = "0.5.1"
+browsergym-experiments = "0.5.1"
+browsergym-miniwob = "0.5.1"
+browsergym-visualwebarena = "0.5.1"
+browsergym-webarena = "0.5.1"
 browsergym-workarena = "*"
 
 [[package]]
 name = "browsergym-core"
-version = "0.4.3"
+version = "0.5.1"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.9"
 files = [
-    {file = "browsergym_core-0.4.3-py3-none-any.whl", hash = "sha256:62d83f51fe1f656336bfd59b351cf2e23e120d5948eae9f7d1a6737813360040"},
-    {file = "browsergym_core-0.4.3.tar.gz", hash = "sha256:1028506d8d92e933aadddbf71934cec44c5c2a3d7e1d168006d38555e6a63c5e"},
+    {file = "browsergym_core-0.5.1-py3-none-any.whl", hash = "sha256:5940a52a9b312e57ca51f2709de188454aebf8d00e34c74b024ae0a167ee474d"},
+    {file = "browsergym_core-0.5.1.tar.gz", hash = "sha256:b8e13ea4e27e5613b37d99bb86258f700ace09bce3cdc46c907fab07b186e919"},
 ]
 
 [package.dependencies]
@@ -648,62 +648,62 @@ pyparsing = ">=3"
 
 [[package]]
 name = "browsergym-experiments"
-version = "0.4.3"
+version = "0.5.1"
 description = "Experimentation tools for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_experiments-0.4.3-py3-none-any.whl", hash = "sha256:235f99cfd64e2ef959ed3a7e218516359e2d2b51bde87ad1ff749b8e71bad278"},
-    {file = "browsergym_experiments-0.4.3.tar.gz", hash = "sha256:bfd6104287c86d22124fd0fc9e4a8ab8ee2c29f58463ee8c4410a1207bda451c"},
+    {file = "browsergym_experiments-0.5.1-py3-none-any.whl", hash = "sha256:a1f07c13f89a53fde9ace16a81857a12e1c1af5ca249ddf4ccdb0f78e3c73199"},
+    {file = "browsergym_experiments-0.5.1.tar.gz", hash = "sha256:367ffb0be076276c267215be90ace390d51b8cbbf26658f60ddbb0d593ea8abf"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.4.3"
+browsergym-core = "0.5.1"
 tiktoken = ">=0.4"
 
 [[package]]
 name = "browsergym-miniwob"
-version = "0.4.3"
+version = "0.5.1"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.4.3-py3-none-any.whl", hash = "sha256:d81fe18c78f889059282d19c338f707ee79d652b0eb83d39994a44524ee2de76"},
-    {file = "browsergym_miniwob-0.4.3.tar.gz", hash = "sha256:6be98d4ef602d43488f6080820a5277d96960de221afc91950a6b7810692db87"},
+    {file = "browsergym_miniwob-0.5.1-py3-none-any.whl", hash = "sha256:73b78bf4a0195e398ad08c3a75d5efce7966ab0e90eed218d9a6fc570832e24b"},
+    {file = "browsergym_miniwob-0.5.1.tar.gz", hash = "sha256:aa6cf97012b687afdb4bd824bd49f367a0d0b09bb9d38b676269933abc283cbc"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.4.3"
+browsergym-core = "0.5.1"
 
 [[package]]
 name = "browsergym-visualwebarena"
-version = "0.4.3"
+version = "0.5.1"
 description = "VisualWebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_visualwebarena-0.4.3-py3-none-any.whl", hash = "sha256:e80775eaa0b42cbcacf42a9913b5603b9e33d53b1dd039f3d134019e4bf0da46"},
-    {file = "browsergym_visualwebarena-0.4.3.tar.gz", hash = "sha256:c422ead2f404f03597af5b6214ee9d31fc8b5e195598a3b0625819e224ccf0e1"},
+    {file = "browsergym_visualwebarena-0.5.1-py3-none-any.whl", hash = "sha256:1ffa193bd9dc6300b8415441ed3da70ca9d6e6c818e1b708eec29ccea37fcad7"},
+    {file = "browsergym_visualwebarena-0.5.1.tar.gz", hash = "sha256:3f4850599baca2572d8d4339f8a34cb2ef0e5e9b98c8cda29a3a7d368696011d"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.4.3"
+browsergym-core = "0.5.1"
 libvisualwebarena = "0.0.7"
 requests = "*"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.4.3"
+version = "0.5.1"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.4.3-py3-none-any.whl", hash = "sha256:fe180c96f38205428422ee60067cc1c8fd6d06b7482fb457f7a73138b197ed96"},
-    {file = "browsergym_webarena-0.4.3.tar.gz", hash = "sha256:7b235b7a41d163573a1a5075a43e7ecf39823e513bf38de28e5454c91181d2ee"},
+    {file = "browsergym_webarena-0.5.1-py3-none-any.whl", hash = "sha256:1da2341717d455da6167b84e909e4ae859204a4aff68248c68b7e6b336d67146"},
+    {file = "browsergym_webarena-0.5.1.tar.gz", hash = "sha256:a79b36826552b0ea3e4b9661baa643ecaa6075753d435279c78e150c1dec4c41"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.4.3"
+browsergym-core = "0.5.1"
 libwebarena = "0.0.3"
 
 [[package]]
@@ -1350,13 +1350,13 @@ typing-inspect = ">=0.4.0,<1"
 
 [[package]]
 name = "datasets"
-version = "2.21.0"
+version = "3.0.0"
 description = "HuggingFace community-driven open-source library of datasets"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "datasets-2.21.0-py3-none-any.whl", hash = "sha256:25e4e097110ce28824b746a107727ada94024cba11db8bc588d468414692b65a"},
-    {file = "datasets-2.21.0.tar.gz", hash = "sha256:998f85a8460f1bd982e5bd058f8a0808eef424249e3df1e8cdd594ccd0dc8ba2"},
+    {file = "datasets-3.0.0-py3-none-any.whl", hash = "sha256:c23fefb6c953dcb1cd5f6deb6c502729c733ef98791e0c3f2d80c7ca2d9a01dd"},
+    {file = "datasets-3.0.0.tar.gz", hash = "sha256:592317eb137f0fc5aac068ff283ba13c3c66d10c9c034d44bc8aa584126cf3e2"},
 ]
 
 [package.dependencies]
@@ -1364,7 +1364,7 @@ aiohttp = "*"
 dill = ">=0.3.0,<0.3.9"
 filelock = "*"
 fsspec = {version = ">=2023.1.0,<=2024.6.1", extras = ["http"]}
-huggingface-hub = ">=0.21.2"
+huggingface-hub = ">=0.22.0"
 multiprocess = "*"
 numpy = ">=1.17"
 packaging = "*"
@@ -1376,19 +1376,17 @@ tqdm = ">=4.66.3"
 xxhash = "*"
 
 [package.extras]
-apache-beam = ["apache-beam (>=2.26.0)"]
 audio = ["librosa", "soundfile (>=0.12.1)", "soxr (>=0.4.0)"]
 benchmarks = ["tensorflow (==2.12.0)", "torch (==2.0.1)", "transformers (==4.30.1)"]
-dev = ["Pillow (>=9.4.0)", "absl-py", "decorator", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.8.0.post1)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "moto[server]", "polars[timezone] (>=0.20.0)", "protobuf (<4.0.0)", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "ruff (>=0.3.0)", "s3fs", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "soxr (>=0.4.0)", "sqlalchemy", "tensorflow (>=2.16.0)", "tensorflow (>=2.6.0)", "tensorflow (>=2.6.0)", "tiktoken", "torch", "torch (>=2.0.0)", "transformers", "transformers (>=4.42.0)", "typing-extensions (>=4.6.1)", "zstandard"]
+dev = ["Pillow (>=9.4.0)", "absl-py", "decorator", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.8.0.post1)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "moto[server]", "polars[timezone] (>=0.20.0)", "protobuf (<4.0.0)", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "ruff (>=0.3.0)", "s3fs", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "soxr (>=0.4.0)", "sqlalchemy", "tensorflow (>=2.16.0)", "tensorflow (>=2.6.0)", "tensorflow (>=2.6.0)", "tiktoken", "torch", "torch (>=2.0.0)", "transformers", "transformers (>=4.42.0)", "zstandard"]
 docs = ["s3fs", "tensorflow (>=2.6.0)", "torch", "transformers"]
 jax = ["jax (>=0.3.14)", "jaxlib (>=0.3.14)"]
-metrics-tests = ["Werkzeug (>=1.0.1)", "accelerate", "bert-score (>=0.3.6)", "jiwer", "langdetect", "mauve-text", "nltk (<3.8.2)", "requests-file (>=1.5.1)", "rouge-score", "sacrebleu", "sacremoses", "scikit-learn", "scipy", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "spacy (>=3.0.0)", "texttable (>=1.6.3)", "tldextract", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "typer (<0.5.0)"]
 quality = ["ruff (>=0.3.0)"]
 s3 = ["s3fs"]
 tensorflow = ["tensorflow (>=2.6.0)"]
 tensorflow-gpu = ["tensorflow (>=2.6.0)"]
-tests = ["Pillow (>=9.4.0)", "absl-py", "decorator", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.8.0.post1)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "moto[server]", "polars[timezone] (>=0.20.0)", "protobuf (<4.0.0)", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "soxr (>=0.4.0)", "sqlalchemy", "tensorflow (>=2.16.0)", "tensorflow (>=2.6.0)", "tiktoken", "torch (>=2.0.0)", "transformers (>=4.42.0)", "typing-extensions (>=4.6.1)", "zstandard"]
-tests-numpy2 = ["Pillow (>=9.4.0)", "absl-py", "decorator", "elasticsearch (<8.0.0)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "moto[server]", "polars[timezone] (>=0.20.0)", "protobuf (<4.0.0)", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "soxr (>=0.4.0)", "sqlalchemy", "tiktoken", "torch (>=2.0.0)", "typing-extensions (>=4.6.1)", "zstandard"]
+tests = ["Pillow (>=9.4.0)", "absl-py", "decorator", "elasticsearch (<8.0.0)", "faiss-cpu (>=1.8.0.post1)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "librosa", "lz4", "moto[server]", "polars[timezone] (>=0.20.0)", "protobuf (<4.0.0)", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "soxr (>=0.4.0)", "sqlalchemy", "tensorflow (>=2.16.0)", "tensorflow (>=2.6.0)", "tiktoken", "torch (>=2.0.0)", "transformers (>=4.42.0)", "zstandard"]
+tests-numpy2 = ["Pillow (>=9.4.0)", "absl-py", "decorator", "elasticsearch (<8.0.0)", "jax (>=0.3.14)", "jaxlib (>=0.3.14)", "joblib (<1.3.0)", "joblibspark", "lz4", "moto[server]", "polars[timezone] (>=0.20.0)", "protobuf (<4.0.0)", "py7zr", "pyspark (>=3.4)", "pytest", "pytest-datadir", "pytest-xdist", "rarfile (>=4.0)", "s3fs (>=2021.11.1)", "soundfile (>=0.12.1)", "soxr (>=0.4.0)", "sqlalchemy", "tiktoken", "torch (>=2.0.0)", "transformers (>=4.42.0)", "zstandard"]
 torch = ["torch"]
 vision = ["Pillow (>=9.4.0)"]
 
@@ -1591,13 +1589,13 @@ files = [
 
 [[package]]
 name = "evaluate"
-version = "0.4.2"
+version = "0.4.3"
 description = "HuggingFace community-driven open-source library of evaluation"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "evaluate-0.4.2-py3-none-any.whl", hash = "sha256:5fdcaf8a086b075c2b8e2c5898f501224b020b0ac7d07be76536e47e661c0c65"},
-    {file = "evaluate-0.4.2.tar.gz", hash = "sha256:851ab767df8ec4031366c512eb88d8174adfba65d2c8c4c9bfdfe9c702212234"},
+    {file = "evaluate-0.4.3-py3-none-any.whl", hash = "sha256:47d8770bdea76e2c2ed0d40189273027d1a41ccea861bcc7ba12d30ec5d1e517"},
+    {file = "evaluate-0.4.3.tar.gz", hash = "sha256:3a5700cf83aabee9549264e1e5666f116367c61dbd4d38352015e859a5e2098d"},
 ]
 
 [package.dependencies]
@@ -1614,14 +1612,14 @@ tqdm = ">=4.62.1"
 xxhash = "*"
 
 [package.extras]
-dev = ["Werkzeug (>=1.0.1)", "absl-py", "accelerate", "bert-score (>=0.3.6)", "black (>=22.0,<23.0)", "cer (>=1.2.0)", "charcut (>=1.1.1)", "flake8 (>=3.8.3)", "isort (>=5.0.0)", "jiwer", "mauve-text", "nltk", "pytest", "pytest-datadir", "pytest-xdist", "pyyaml (>=5.3.1)", "requests-file (>=1.5.1)", "rouge-score (>=0.1.2)", "sacrebleu", "sacremoses", "scikit-learn", "scipy (>=1.10.0)", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1,<=2.10)", "texttable (>=1.6.3)", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "torch", "transformers", "trectools", "unidecode (>=1.3.4)"]
+dev = ["Werkzeug (>=1.0.1)", "absl-py", "accelerate", "bert-score (>=0.3.6)", "black (>=22.0,<23.0)", "cer (>=1.2.0)", "charcut (>=1.1.1)", "flake8 (>=3.8.3)", "isort (>=5.0.0)", "jiwer", "mauve-text", "nltk (<3.9)", "pytest", "pytest-datadir", "pytest-xdist", "pyyaml (>=5.3.1)", "requests-file (>=1.5.1)", "rouge-score (>=0.1.2)", "sacrebleu", "sacremoses", "scikit-learn", "scipy (>=1.10.0)", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1,<=2.10)", "texttable (>=1.6.3)", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "torch", "transformers", "trectools", "unidecode (>=1.3.4)"]
 docs = ["s3fs"]
 evaluator = ["scipy (>=1.7.1)", "transformers"]
 quality = ["black (>=22.0,<23.0)", "flake8 (>=3.8.3)", "isort (>=5.0.0)", "pyyaml (>=5.3.1)"]
 template = ["cookiecutter", "gradio (>=3.0.0)"]
 tensorflow = ["tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)"]
 tensorflow-gpu = ["tensorflow-gpu (>=2.2.0,!=2.6.0,!=2.6.1)"]
-tests = ["Werkzeug (>=1.0.1)", "absl-py", "accelerate", "bert-score (>=0.3.6)", "cer (>=1.2.0)", "charcut (>=1.1.1)", "jiwer", "mauve-text", "nltk", "pytest", "pytest-datadir", "pytest-xdist", "requests-file (>=1.5.1)", "rouge-score (>=0.1.2)", "sacrebleu", "sacremoses", "scikit-learn", "scipy (>=1.10.0)", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1,<=2.10)", "texttable (>=1.6.3)", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "torch", "transformers", "trectools", "unidecode (>=1.3.4)"]
+tests = ["Werkzeug (>=1.0.1)", "absl-py", "accelerate", "bert-score (>=0.3.6)", "cer (>=1.2.0)", "charcut (>=1.1.1)", "jiwer", "mauve-text", "nltk (<3.9)", "pytest", "pytest-datadir", "pytest-xdist", "requests-file (>=1.5.1)", "rouge-score (>=0.1.2)", "sacrebleu", "sacremoses", "scikit-learn", "scipy (>=1.10.0)", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1,<=2.10)", "texttable (>=1.6.3)", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "torch", "transformers", "trectools", "unidecode (>=1.3.4)"]
 torch = ["torch"]
 
 [[package]]
@@ -1679,13 +1677,13 @@ files = [
 
 [[package]]
 name = "fastapi"
-version = "0.114.0"
+version = "0.114.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "fastapi-0.114.0-py3-none-any.whl", hash = "sha256:fee75aa1b1d3d73f79851c432497e4394e413e1dece6234f68d3ce250d12760a"},
-    {file = "fastapi-0.114.0.tar.gz", hash = "sha256:9908f2a5cc733004de6ca5e1412698f35085cefcbfd41d539245b9edf87b73c1"},
+    {file = "fastapi-0.114.1-py3-none-any.whl", hash = "sha256:5d4746f6e4b7dff0b4f6b6c6d5445645285f662fe75886e99af7ee2d6b58bb3e"},
+    {file = "fastapi-0.114.1.tar.gz", hash = "sha256:1d7bbbeabbaae0acb0c22f0ab0b040f642d3093ca3645f8c876b6f91391861d8"},
 ]
 
 [package.dependencies]
@@ -2143,20 +2141,20 @@ test = ["coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre-commit",
 
 [[package]]
 name = "google-ai-generativelanguage"
-version = "0.6.6"
+version = "0.6.9"
 description = "Google Ai Generativelanguage API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-ai-generativelanguage-0.6.6.tar.gz", hash = "sha256:1739f035caeeeca5c28f887405eec8690f3372daf79fecf26454a97a4f1733a8"},
-    {file = "google_ai_generativelanguage-0.6.6-py3-none-any.whl", hash = "sha256:59297737931f073d55ce1268dcc6d95111ee62850349d2b6cde942b16a4fca5c"},
+    {file = "google_ai_generativelanguage-0.6.9-py3-none-any.whl", hash = "sha256:50360cd80015d1a8cc70952e98560f32fa06ddee2e8e9f4b4b98e431dc561e0b"},
+    {file = "google_ai_generativelanguage-0.6.9.tar.gz", hash = "sha256:899f1d3a06efa9739f1cd9d2788070178db33c89d4a76f2e8f4da76f649155fa"},
 ]
 
 [package.dependencies]
 google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
 google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0dev"
 proto-plus = ">=1.22.3,<2.0.0dev"
-protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0dev"
+protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0dev"
 
 [[package]]
 name = "google-api-core"
@@ -2241,13 +2239,13 @@ httplib2 = ">=0.19.0"
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.65.0"
+version = "1.66.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "google-cloud-aiplatform-1.65.0.tar.gz", hash = "sha256:2349a2b8b85868c378788233929810aaac3efbb72cfec46f01097923faf8d7b6"},
-    {file = "google_cloud_aiplatform-1.65.0-py2.py3-none-any.whl", hash = "sha256:88e1eef5a7cab737606ae456cb5e866133f990ed9c8bca534077144037e18524"},
+    {file = "google-cloud-aiplatform-1.66.0.tar.gz", hash = "sha256:e95a2b45087e0e2cbfed9ffaf3f10aa8ef3fa2e5642f067246181b5c7b9b2b04"},
+    {file = "google_cloud_aiplatform-1.66.0-py2.py3-none-any.whl", hash = "sha256:3f7de6aab42f67b933a36bfb1354e36a5256f45780df92ac8b1b6361a145af49"},
 ]
 
 [package.dependencies]
@@ -2269,19 +2267,19 @@ cloud-profiler = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow 
 datasets = ["pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)"]
 endpoint = ["requests (>=2.28.1)"]
 evaluation = ["pandas (>=1.0.0,<2.2.0)", "tqdm (>=4.23.0)"]
-full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.109.1)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "requests (>=2.28.1)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)"]
+full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)"]
 langchain = ["langchain (>=0.1.16,<0.3)", "langchain-core (<0.3)", "langchain-google-vertexai (<2)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "orjson (<=3.10.6)", "tenacity (<=8.3)"]
 langchain-testing = ["absl-py", "cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "langchain (>=0.1.16,<0.3)", "langchain-core (<0.3)", "langchain-google-vertexai (<2)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "orjson (<=3.10.6)", "pydantic (>=2.6.3,<3)", "pytest-xdist", "tenacity (<=8.3)"]
 lit = ["explainable-ai-sdk (>=1.0.0)", "lit-nlp (==0.4.0)", "pandas (>=1.0.0)", "tensorflow (>=2.3.0,<3.0.0dev)"]
 metadata = ["numpy (>=1.15.0)", "pandas (>=1.0.0)"]
 pipelines = ["pyyaml (>=5.3.1,<7)"]
-prediction = ["docker (>=5.0.3)", "fastapi (>=0.71.0,<=0.109.1)", "httpx (>=0.23.0,<0.25.0)", "starlette (>=0.17.1)", "uvicorn[standard] (>=0.16.0)"]
+prediction = ["docker (>=5.0.3)", "fastapi (>=0.71.0,<=0.114.0)", "httpx (>=0.23.0,<0.25.0)", "starlette (>=0.17.1)", "uvicorn[standard] (>=0.16.0)"]
 private-endpoints = ["requests (>=2.28.1)", "urllib3 (>=1.21.1,<1.27)"]
-ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "setuptools (<70.0.0)"]
-ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "ray[train] (==2.9.3)", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
+ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "setuptools (<70.0.0)"]
+ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "ray[train] (==2.9.3)", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
 reasoningengine = ["cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)"]
 tensorboard = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "werkzeug (>=2.0.0,<2.1.0dev)"]
-testing = ["bigframes", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.109.1)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<=2.9.3)", "ray[default] (>=2.5,<=2.9.3)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
+testing = ["bigframes", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.1.1)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
 tokenization = ["sentencepiece (>=0.2.0)"]
 vizier = ["google-vizier (>=0.1.6)"]
 xai = ["tensorflow (>=2.3.0,<3.0.0dev)"]
@@ -2458,16 +2456,16 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-generativeai"
-version = "0.7.2"
+version = "0.8.0"
 description = "Google Generative AI High level API client library and tools."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "google_generativeai-0.7.2-py3-none-any.whl", hash = "sha256:3117d1ebc92ee77710d4bc25ab4763492fddce9b6332eb25d124cf5d8b78b339"},
+    {file = "google_generativeai-0.8.0-py3-none-any.whl", hash = "sha256:d7a76f72a2736f5c0960be836c5e864aea32b08105b51cab81835522eb62938b"},
 ]
 
 [package.dependencies]
-google-ai-generativelanguage = "0.6.6"
+google-ai-generativelanguage = "0.6.9"
 google-api-core = "*"
 google-api-python-client = "*"
 google-auth = ">=2.15.0"
@@ -3763,13 +3761,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.44.23"
+version = "1.44.24"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.44.23-py3-none-any.whl", hash = "sha256:5215c3a9252cffb0d4430e11fa7e2520363662fb79e2192b15aacd95cbd234e3"},
-    {file = "litellm-1.44.23.tar.gz", hash = "sha256:b028c5c87ed18a9b513eb36989a629b621b01ae79867b01675c5fefd153d4fbf"},
+    {file = "litellm-1.44.24-py3-none-any.whl", hash = "sha256:c0aa7f943c031660ad25b72c9ca14accbea6e6e6c79186eb172e1ee69a868eda"},
+    {file = "litellm-1.44.24.tar.gz", hash = "sha256:657c7c5365e90427356bea63cf5dcac81752f5ba6c7f205ec9c5c3ea15d57fb9"},
 ]
 
 [package.dependencies]
@@ -3806,23 +3804,23 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.6"
+version = "0.11.8"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.6-py3-none-any.whl", hash = "sha256:87f4947eded7cd7bf32432e56a1f80d510bd77e2770aa46ea0fd8bb51a2391e5"},
-    {file = "llama_index-0.11.6.tar.gz", hash = "sha256:5da3e2ad9f9562e5a85e34a177c6160e605c3e1d8f52659ba50438040e419b63"},
+    {file = "llama_index-0.11.8-py3-none-any.whl", hash = "sha256:6e3d33425bef812e49781c8e3c66c5ac0c24fdf7561fc74b8eb4dc6410873ad3"},
+    {file = "llama_index-0.11.8.tar.gz", hash = "sha256:f9ae58d5344afe458c6ae3a3aa5dc7375a18707712c9b56d94e08c1b5513ed23"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.0,<0.4.0"
-llama-index-cli = ">=0.3.0,<0.4.0"
-llama-index-core = ">=0.11.6,<0.12.0"
+llama-index-agent-openai = ">=0.3.1,<0.4.0"
+llama-index-cli = ">=0.3.1,<0.4.0"
+llama-index-core = ">=0.11.8,<0.12.0"
 llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
-llama-index-llms-openai = ">=0.2.2,<0.3.0"
+llama-index-llms-openai = ">=0.2.3,<0.3.0"
 llama-index-multi-modal-llms-openai = ">=0.2.0,<0.3.0"
 llama-index-program-openai = ">=0.2.0,<0.3.0"
 llama-index-question-gen-openai = ">=0.2.0,<0.3.0"
@@ -3832,13 +3830,13 @@ nltk = ">3.8.1"
 
 [[package]]
 name = "llama-index-agent-openai"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index agent openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_agent_openai-0.3.0-py3-none-any.whl", hash = "sha256:2b7d0e3d0e95271e5244e75a0366248c48d733497d93ae5bb09f548afe24ec98"},
-    {file = "llama_index_agent_openai-0.3.0.tar.gz", hash = "sha256:dade70e8b987194d7afb6925f723060e9f4953eb134400da2fcd4ceedf2c3dff"},
+    {file = "llama_index_agent_openai-0.3.1-py3-none-any.whl", hash = "sha256:21886081ae74574d8cad1ec4886f2d4b082284b9364adb46fff87aba1a25e9b9"},
+    {file = "llama_index_agent_openai-0.3.1.tar.gz", hash = "sha256:41c9aa5b7cebc5043adddb3442e3167e97971589466e36448e04e0a767f5b9aa"},
 ]
 
 [package.dependencies]
@@ -3848,13 +3846,13 @@ openai = ">=1.14.0"
 
 [[package]]
 name = "llama-index-cli"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index cli"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_cli-0.3.0-py3-none-any.whl", hash = "sha256:23227f305b7b320c7909f54ef2eeba90b9ad1a56231fbfbe1298280542bb9f24"},
-    {file = "llama_index_cli-0.3.0.tar.gz", hash = "sha256:a42e01fe2a02aa0fd3b645eb1403f9058fa7f62fbeea2a06a55b7fb8c07d5d02"},
+    {file = "llama_index_cli-0.3.1-py3-none-any.whl", hash = "sha256:2111fbb6973f5b1eabce0d6cca3986499f0f2f625b13d7f48269a49c64c027d4"},
+    {file = "llama_index_cli-0.3.1.tar.gz", hash = "sha256:1890dd687cf440f3651365a549e303363162c167b8efbd87a3aa10058d6d5c77"},
 ]
 
 [package.dependencies]
@@ -3864,13 +3862,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.6"
+version = "0.11.8"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.6-py3-none-any.whl", hash = "sha256:8eecb9f2ea4d7d44bf1cb84661f5f23523b9460427116a919c240318e73411a6"},
-    {file = "llama_index_core-0.11.6.tar.gz", hash = "sha256:853e8f188fe1e2d8430de838cf7fd76b1643886a3ac9f2278f7f1863116eb8cb"},
+    {file = "llama_index_core-0.11.8-py3-none-any.whl", hash = "sha256:c6a396ad5ad4846832e34188fb7dee46f93100ba1958bb209d7c660664a07368"},
+    {file = "llama_index_core-0.11.8.tar.gz", hash = "sha256:75b5ad2eb6439faf5cf01b4457b9f6a133ecbda5ffb21dbeeea18bf7faa827fc"},
 ]
 
 [package.dependencies]
@@ -4031,18 +4029,18 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.2.2"
+version = "0.2.3"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.2.2-py3-none-any.whl", hash = "sha256:c42d4dbf4ea81355a45d8132ee4cbe0fd89e6e3ad6688d2e592204d194919b2d"},
-    {file = "llama_index_llms_openai-0.2.2.tar.gz", hash = "sha256:5d8d77cd7dcb839aded9bd5da37c5806d680eb20fd04cc26891551fc17e4d1e0"},
+    {file = "llama_index_llms_openai-0.2.3-py3-none-any.whl", hash = "sha256:dbcf8636bca57b0c063621a9981bbf2fdfaedd96c8e4906b8ddf0a139cb74d2f"},
+    {file = "llama_index_llms_openai-0.2.3.tar.gz", hash = "sha256:e9173b430331791c6a5a9df16796437ae4a3ae247fd4e0f281f7cbe59258b07a"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.0,<0.4.0"
-llama-index-core = ">=0.11.0,<0.12.0"
+llama-index-agent-openai = ">=0.3.1,<0.4.0"
+llama-index-core = ">=0.11.7,<0.12.0"
 openai = ">=1.40.0,<2.0.0"
 
 [[package]]
@@ -9677,4 +9675,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "82be9c0d9d3286e7cd05fbdddc93fff27985e79773b371f9219311f135a28a05"
+content-hash = "0e58db00440a169a2e950e7643b4b0a2c0c807179d711a0845461683b17adb28"
