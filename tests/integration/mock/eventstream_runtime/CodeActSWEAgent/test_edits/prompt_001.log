@@ -157,7 +157,6 @@ The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in eve
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
-
 ----------
 
 Here is an example of how you can interact with the environment for task solving:

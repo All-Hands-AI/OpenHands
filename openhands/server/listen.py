@@ -5,6 +5,8 @@ import uuid
 import warnings
 
 import requests
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -378,6 +380,14 @@ async def get_security_analyzers():
     return sorted(SecurityAnalyzers.keys())
 
 
+FILES_TO_IGNORE = [
+    '.git/',
+    '.DS_Store',
+    'node_modules/',
+    '__pycache__/',
+]
+
+
 @app.get('/api/list-files')
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
@@ -407,6 +417,23 @@ async def list_files(request: Request, path: str | None = None):
         )
     runtime: Runtime = request.state.session.agent_session.runtime
     file_list = runtime.list_files(path)
+    file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
+
+    def filter_for_gitignore(file_list, base_path):
+        gitignore_path = os.path.join(base_path, '.gitignore')
+        try:
+            read_action = FileReadAction(gitignore_path)
+            observation = runtime.run_action(read_action)
+            spec = PathSpec.from_lines(
+                GitWildMatchPattern, observation.content.splitlines()
+            )
+        except Exception as e:
+            print(e)
+            return file_list
+        file_list = [entry for entry in file_list if not spec.match_file(entry)]
+        return file_list
+
+    file_list = filter_for_gitignore(file_list, '')
     return file_list
 
 

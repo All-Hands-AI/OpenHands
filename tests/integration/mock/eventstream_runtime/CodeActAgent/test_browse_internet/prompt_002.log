@@ -1,14 +1,10 @@
-
-
-----------
-
 # Instructions
 Review the current state of the page and all other information to find the best
 possible next action to accomplish your goal. Your answer will be interpreted
 and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
-Certainly! I'll browse localhost:8000 and retrieve the ultimate answer to life for you.. I should start with: Get the content on "http://localhost:8000"
+. I should start with: Get the content on "http://localhost:8000"
 
 # Action Space
 
@@ -40,13 +36,13 @@ fill(bid: str, value: str)
 
 select_option(bid: str, options: str | list[str])
     Examples:
-        select_option('48', 'blue')
+        select_option('a48', 'blue')
 
-        select_option('48', ['red', 'green', 'blue'])
+        select_option('c48', ['red', 'green', 'blue'])
 
 click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'Meta', 'Shift']] = [])
     Examples:
-        click('51')
+        click('a51')
 
         click('b22', button='right')
 
@@ -102,17 +98,18 @@ goto(url: str)
     Examples:
         goto('http://www.example.com')
 
-Multiple actions can be provided at once. Example:
+Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
+More than 2-3 actions usually leads to failure or unexpected behavior. Example:
 fill('a12', 'example with "quotes"')
-click('51')
+click('a51')
 click('48', button='middle', modifiers=['Shift'])
-Multiple actions are meant to be executed sequentially without any feedback from the page.
-Don't execute multiple actions at once if you need feedback from the page.
-
 
 
 
 ----------
+
+# Current Page URL:
+
 
 # Current Accessibility Tree:
 

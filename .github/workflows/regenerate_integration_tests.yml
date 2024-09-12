@@ -29,18 +29,25 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    - name: Install poetry via pipx
-      run: pipx install poetry
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
-        cache: 'poetry'
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pypoetry
+          ~/.virtualenvs
+        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
+    - name: Install poetry via pipx
+      run: pipx install poetry
     - name: Install Python dependencies using Poetry
-      run: poetry install --without evaluation,llama-index
+      run: make install-python-dependencies
     - name: Build Environment
       run: make build
-
     - name: Regenerate integration tests
       run: |
         DEBUG=${{ inputs.debug }} \
@@ -48,7 +55,6 @@ jobs:
         FORCE_REGENERATE_TESTS=${{ inputs.force_regenerate_tests }} \
         FORCE_USE_LLM=${{ inputs.force_use_llm }} \
         ./tests/integration/regenerate.sh
-
     - name: Commit changes
       run: |
         if git diff --quiet --exit-code; then
@@ -59,5 +65,6 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add .
-        git commit -m "Regenerate integration tests"
+        # run it twice in case pre-commit makes changes
+        git commit -am "Regenerate integration tests" || git commit -am "Regenerate integration tests"
         git push
