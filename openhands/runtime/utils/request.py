@@ -23,13 +23,14 @@ def send_request(
     method: str,
     url: str,
     retry_exceptions: list[Type[Exception]] | None = None,
+    n_attempts: int = 30,
     **kwargs: Any,
 ) -> requests.Response:
     if retry_exceptions is None:
         retry_exceptions = DEFAULT_RETRY_EXCEPTIONS
 
     @retry(
-        stop=stop_after_attempt(30),
+        stop=stop_after_attempt(n_attempts),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_if_exception_type(tuple(retry_exceptions)),
         reraise=True,
