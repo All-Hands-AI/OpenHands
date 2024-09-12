@@ -417,6 +417,9 @@ async def list_files(request: Request, path: str | None = None):
         )
     runtime: Runtime = request.state.session.agent_session.runtime
     file_list = runtime.list_files(path)
+    if path:
+        file_list = [os.path.join(path, f) for f in file_list]
+
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
     def filter_for_gitignore(file_list, base_path):
@@ -458,13 +461,8 @@ async def select_file(file: str, request: Request):
         HTTPException: If there's an error opening the file.
     """
     runtime: Runtime = request.state.session.agent_session.runtime
-
-    # convert file to an absolute path inside the runtime
-    if not os.path.isabs(file):
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={'error': 'File path must be absolute'},
-        )
+    # prepend `/workspace`
+    file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
 
     read_action = FileReadAction(file)
     observation = runtime.run_action(read_action)
