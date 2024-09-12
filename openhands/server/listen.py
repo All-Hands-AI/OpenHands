@@ -461,9 +461,8 @@ async def select_file(file: str, request: Request):
         HTTPException: If there's an error opening the file.
     """
     runtime: Runtime = request.state.session.agent_session.runtime
-    # prepend `/workspace`
-    file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
 
+    file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
     observation = runtime.run_action(read_action)
 
@@ -701,15 +700,11 @@ async def save_file(request: Request):
         if not file_path or content is None:
             raise HTTPException(status_code=400, detail='Missing filePath or content')
 
-        # Make sure file_path is abs
-        if not os.path.isabs(file_path):
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={'error': 'File path must be absolute'},
-            )
-
         # Save the file to the agent's runtime file store
         runtime: Runtime = request.state.session.agent_session.runtime
+        file_path = os.path.join(
+            runtime.config.workspace_mount_path_in_sandbox, file_path
+        )
         write_action = FileWriteAction(file_path, content)
         observation = runtime.run_action(write_action)
 
