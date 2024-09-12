@@ -95,7 +95,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 raise RuntimeError(error_message)
 
             # Wait before polling again
-            time.sleep(5)
+            time.sleep(30)
 
     def image_exists(self, image_name: str) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
