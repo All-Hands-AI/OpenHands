@@ -21,7 +21,7 @@ import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage, clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import { sendTerminalCommand } from "#/services/terminalService";
-import { appendInput, appendOutput } from "#/state/commandSlice";
+import { appendInput } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
@@ -29,11 +29,13 @@ const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
   const url = new URL(request.url);
   const q = url.searchParams.get("q");
-  const repo = url.searchParams.get("repo");
+  const repo = url.searchParams.get("repo") || localStorage.getItem("repo");
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+
+  if (repo) localStorage.setItem("repo", repo);
 
   return json({
     token,
@@ -73,18 +75,8 @@ function App() {
         };
 
         send(JSON.stringify(initEvent));
-        // first time connection, send the query if it exists
+        // first time connection
         if (!token) {
-          if (q) {
-            const event = {
-              action: ActionType.MESSAGE,
-              args: { content: q },
-            };
-
-            send(JSON.stringify(event));
-            store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
-          }
-
           if (ghToken && repo) {
             // clone repo via terminal
             const url = `https://${ghToken}@github.com/${repo}.git`;
@@ -93,7 +85,17 @@ function App() {
 
             send(event);
             store.dispatch(appendInput(command.replace(ghToken, "***")));
-            store.dispatch(appendOutput(command.replace(ghToken, "***")));
+          }
+
+          // send the query if it exists
+          if (q) {
+            const event = {
+              action: ActionType.MESSAGE,
+              args: { content: q },
+            };
+
+            send(JSON.stringify(event));
+            store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
           }
         }
       },
