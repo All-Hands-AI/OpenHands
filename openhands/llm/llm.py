@@ -2,7 +2,6 @@ import asyncio
 import copy
 import warnings
 from functools import partial
-from typing import Union
 
 from openhands.core.config import LLMConfig
 
@@ -594,9 +593,7 @@ class LLM:
     def reset(self):
         self.metrics = Metrics()
 
-    def format_messages_for_llm(
-        self, messages: Union[Message, list[Message]]
-    ) -> list[dict]:
+    def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):
             return [messages.model_dump()]
         return [message.model_dump() for message in messages]

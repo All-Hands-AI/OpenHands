@@ -80,11 +80,23 @@ def get_log_id(prompt_log_name):
 def _format_messages(messages):
     message_str = ''
     for message in messages:
-        for m in message['content']:
-            if isinstance(m, str):
-                message_str += message_separator + m
-            elif isinstance(m, dict) and m['type'] == 'text':
-                message_str += message_separator + m['text']
+        if isinstance(message, str):
+            message_str += message_separator + message if message_str else message
+        elif isinstance(message, dict):
+            if isinstance(message['content'], list):
+                for m in message['content']:
+                    if isinstance(m, str):
+                        message_str += message_separator + m if message_str else m
+                    elif isinstance(m, dict) and m['type'] == 'text':
+                        message_str += (
+                            message_separator + m['text'] if message_str else m['text']
+                        )
+            elif isinstance(message['content'], str):
+                message_str += (
+                    message_separator + message['content']
+                    if message_str
+                    else message['content']
+                )
     return message_str
 
 
