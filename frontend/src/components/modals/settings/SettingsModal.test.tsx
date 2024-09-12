@@ -79,7 +79,9 @@ describe("SettingsModal", () => {
   it("should close the modal when the close button is clicked", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    renderWithProviders(<SettingsModal isOpen onOpenChange={onOpenChange} />);
+    await act(async () =>
+      renderWithProviders(<SettingsModal isOpen onOpenChange={onOpenChange} />),
+    );
 
     const cancelButton = screen.getByRole("button", {
       name: /MODAL_CLOSE_BUTTON_LABEL/i, // i18n key
@@ -106,7 +108,7 @@ describe("SettingsModal", () => {
   });
 
   describe("onHandleSave", () => {
-    const initialSettings: Settings = {
+    const initialSettings: Partial<Settings> = {
       LLM_MODEL: "gpt-4o",
       AGENT: "CodeActAgent",
       LANGUAGE: "en",
