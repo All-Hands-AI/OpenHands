@@ -28,7 +28,6 @@ sandbox_test_folder = '/openhands/workspace'
 
 
 def _get_runtime_sid(runtime: Runtime):
-    # return '_'.join(runtime.sid.split('_')[:2])
     logger.debug(f'\nruntime.sid: {runtime.sid}')
     return runtime.sid
 
@@ -105,12 +104,6 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     Returns:
     - str: The temporary directory path that was created
     """
-    # Check if pytest-xdist is being used
-    # worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'master')
-    # if worker_id == 'master':
-    #     temp_dir = tmp_path_factory.mktemp('rt', numbered=False)
-    # else:
-    #     temp_dir = tmp_path_factory.mktemp(f'rt_{worker_id}', numbered=False)
     temp_dir = tmp_path_factory.mktemp(
         'rt_' + str(random.randint(100000, 999999)), numbered=False
     )
@@ -216,7 +209,6 @@ def _load_runtime(
     browsergym_eval_env: str | None = None,
     use_workspace: bool | None = None,
 ) -> Runtime:
-    # sid = os.path.basename(temp_dir) + '_' + str(random.randint(10000, 99999))
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter

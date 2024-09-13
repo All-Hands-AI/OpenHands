@@ -195,12 +195,6 @@ class RuntimeClient:
             else:
                 logger.debug('Added sudoer successfully.')
 
-        # sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
-        # output = subprocess.run(sudoer_line, shell=True, capture_output=True)
-        # if output.returncode != 0:
-        #     raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
-        # logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
-
         # Attempt to add the user, retrying with incremented user_id if necessary
         while True:
             command = (
