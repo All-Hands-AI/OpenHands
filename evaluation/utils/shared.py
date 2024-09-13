@@ -5,6 +5,7 @@ import os
 import pathlib
 import subprocess
 import time
+import traceback
 from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Awaitable, Callable
 
@@ -75,6 +76,12 @@ class EvalOutput(BaseModel):
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
         dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
+
+
+class EvalError(BaseModel):
+    instance_id: str
+    error: str
+    stacktrace: str
 
 
 def codeact_user_response(
@@ -229,12 +236,16 @@ def prepare_dataset(
 
 def process_instance(
     instance, metadata, use_multiprocessing, process_instance_func
-) -> EvalOutput | None:
+) -> EvalOutput | EvalError:
     try:
         return process_instance_func(instance, metadata, use_multiprocessing)
     except Exception as e:
         logger.error(f'Error processing instance [{instance.instance_id}]: {e}')
-        return None
+        return EvalError(
+            instance_id=instance.instance_id,
+            error=str(e),
+            stacktrace=traceback.format_exc(),
+        )
 
 
 def run_evaluation(
@@ -260,8 +271,8 @@ def run_evaluation(
     pbar = tqdm(total=total_instances, desc='Instances processed')
     output_fp = open(output_file, 'a')
 
-    def update_progress(result: EvalOutput | None, instance: pd.Series):
-        if result is not None:
+    def update_progress(result: EvalOutput | EvalError, instance: pd.Series):
+        if isinstance(result, EvalOutput):
             pbar.update(1)
             pbar.set_description(f'Instance {result.instance_id}')
             pbar.set_postfix_str(f'Test Result: {result.test_result}')
@@ -271,7 +282,9 @@ def run_evaluation(
             output_fp.write(json.dumps(result.model_dump()) + '\n')
             output_fp.flush()
         else:
-            logger.error(f'Retrying instance [{instance.instance_id}]')
+            logger.error(
+                f'Retrying instance [{instance.instance_id}] due to error: {result.error}. Stacktrace:\n{result.stacktrace}'
+            )
             instance_queue.put(instance)
             pbar.total += 1
             pbar.refresh()
