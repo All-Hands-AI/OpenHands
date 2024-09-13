@@ -1,5 +1,4 @@
 import logging
-import random
 from unittest.mock import Mock, patch
 
 import pytest
@@ -30,6 +29,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 jupyter_line_1 = '\n[Jupyter current working directory:'
 jupyter_line_2 = '\n[Jupyter Python interpreter:'
+code_snippet = """
+edit_file_by_replace(
+    'book_store.py',
+    to_replace=\"""def total(basket):
+    if not basket:
+        return 0
+"""
 
 
 @pytest.fixture
@@ -55,35 +61,38 @@ class TestStuckDetector:
         return StuckDetector(state)
 
     def _impl_syntax_error_events(
-        self, event_stream: EventStream, error_message: str, random_line: bool
+        self,
+        event_stream: EventStream,
+        error_message: str,
+        random_line: bool,
+        incidents: int = 4,
     ):
-        for _ in range(4):
-            ipython_action = IPythonRunCellAction(code='print("hello')
+        for i in range(incidents):
+            ipython_action = IPythonRunCellAction(code=code_snippet)
             event_stream.add_event(ipython_action, EventSource.AGENT)
-            extra_number = random.randint(88, 222) if random_line else '42'
-            extra_line = '\n' * random.randint(2, 3) if random_line else ''
+            extra_number = (i + 1) * 10 if random_line else '42'
+            extra_line = '\n' * (i + 1) if random_line else ''
             ipython_observation = IPythonRunCellObservation(
                 content=f'  Cell In[1], line {extra_number}\n'
                 'to_replace="""def largest(min_factor, max_factor):\n            ^\n'
                 f'{error_message}{extra_line}' + jupyter_line_1 + jupyter_line_2,
-                code='print("hello',
+                code=code_snippet,
             )
-            print(ipython_observation.content)
             ipython_observation._cause = ipython_action._id
             event_stream.add_event(ipython_observation, EventSource.USER)
 
     def _impl_unterminated_string_error_events(
-        self, event_stream: EventStream, random_line: bool
+        self, event_stream: EventStream, random_line: bool, incidents: int = 4
     ):
-        for i in range(4):
-            ipython_action = IPythonRunCellAction(code='print("hello')
+        for i in range(incidents):
+            ipython_action = IPythonRunCellAction(code=code_snippet)
             event_stream.add_event(ipython_action, EventSource.AGENT)
-            line_number = i * 10 if random_line else '1'
+            line_number = (i + 1) * 10 if random_line else '1'
             ipython_observation = IPythonRunCellObservation(
                 content=f'print("  Cell In[1], line {line_number}\nhello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
                 + jupyter_line_1
                 + jupyter_line_2,
-                code='print("hello',
+                code=code_snippet,
             )
             ipython_observation._cause = ipython_action._id
             event_stream.add_event(ipython_observation, EventSource.USER)
@@ -251,13 +260,26 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is True
 
-    def test_is_not_stuck_invalid_syntax_error(
+    def test_is_not_stuck_invalid_syntax_error_random_lines(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         self._impl_syntax_error_events(
             event_stream,
             error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
             random_line=True,
+        )
+
+        with patch('logging.Logger.warning'):
+            assert stuck_detector.is_stuck() is False
+
+    def test_is_not_stuck_invalid_syntax_error_only_three_incidents(
+        self, stuck_detector: StuckDetector, event_stream: EventStream
+    ):
+        self._impl_syntax_error_events(
+            event_stream,
+            error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
+            random_line=True,
+            incidents=3,
         )
 
         with patch('logging.Logger.warning'):
@@ -287,10 +309,20 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
 
-    def test_is_not_stuck_ipython_unterminated_string_error(
+    def test_is_not_stuck_ipython_unterminated_string_error_random_lines(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         self._impl_unterminated_string_error_events(event_stream, random_line=True)
+
+        with patch('logging.Logger.warning'):
+            assert stuck_detector.is_stuck() is False
+
+    def test_is_not_stuck_ipython_unterminated_string_error_only_three_incidents(
+        self, stuck_detector: StuckDetector, event_stream: EventStream
+    ):
+        self._impl_unterminated_string_error_events(
+            event_stream, random_line=False, incidents=3
+        )
 
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
@@ -303,7 +335,7 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is True
 
-    def test_is_stuck_ipython_syntax_error_not_at_end(
+    def test_is_not_stuck_ipython_syntax_error_not_at_end(
         self, stuck_detector: StuckDetector, event_stream: EventStream
     ):
         # this test is to make sure we don't get false positives
