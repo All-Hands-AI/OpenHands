@@ -88,8 +88,8 @@ function ChatInterface() {
   }, [curAgentState, dispatch, messages.length, t]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full justify-between">
+      <div className="flex flex-col">
         <div
           ref={scrollRef}
           className="overflow-y-auto p-3"
@@ -99,54 +99,56 @@ function ChatInterface() {
         </div>
       </div>
 
-      <div className="relative">
-        <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
-          {!hitBottom && (
-            <ScrollButton
-              onClick={scrollDomToBottom}
-              icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
-            />
-          )}
-          {hitBottom && (
-            <>
-              {curAgentState === AgentState.AWAITING_USER_INPUT && (
-                <ScrollButton
-                  onClick={handleSendContinueMsg}
-                  icon={
-                    <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
-                  }
-                  label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-                />
-              )}
-              {curAgentState === AgentState.RUNNING && <TypingIndicator />}
-            </>
+      <div>
+        <div className="relative">
+          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
+            {!hitBottom && (
+              <ScrollButton
+                onClick={scrollDomToBottom}
+                icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
+                label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
+              />
+            )}
+            {hitBottom && (
+              <>
+                {curAgentState === AgentState.AWAITING_USER_INPUT && (
+                  <ScrollButton
+                    onClick={handleSendContinueMsg}
+                    icon={
+                      <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
+                    }
+                    label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                  />
+                )}
+                {curAgentState === AgentState.RUNNING && <TypingIndicator />}
+              </>
+            )}
+          </div>
+
+          {feedbackShared !== messages.length && messages.length > 3 && (
+            <div className="flex justify-start gap-2 p-2">
+              <ScrollButton
+                onClick={() => shareFeedback("positive")}
+                icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
+                label=""
+              />
+              <ScrollButton
+                onClick={() => shareFeedback("negative")}
+                icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
+                label=""
+              />
+            </div>
           )}
         </div>
 
-        {feedbackShared !== messages.length && messages.length > 3 && (
-          <div className="flex justify-start gap-2 p-2">
-            <ScrollButton
-              onClick={() => shareFeedback("positive")}
-              icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
-              label=""
-            />
-            <ScrollButton
-              onClick={() => shareFeedback("negative")}
-              icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
-              label=""
-            />
-          </div>
-        )}
+        <ChatInput
+          disabled={
+            curAgentState === AgentState.LOADING ||
+            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+          }
+          onSendMessage={handleSendMessage}
+        />
       </div>
-
-      <ChatInput
-        disabled={
-          curAgentState === AgentState.LOADING ||
-          curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-        }
-        onSendMessage={handleSendMessage}
-      />
       <FeedbackModal
         polarity={feedbackPolarity}
         isOpen={feedbackModalIsOpen}

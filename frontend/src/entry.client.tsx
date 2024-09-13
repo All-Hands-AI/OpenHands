@@ -8,11 +8,13 @@
 import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
+import { Provider } from "react-redux";
 import { SocketProvider } from "./context/socket";
 import "./i18n";
+import store from "./store";
 
 async function prepareApp() {
-  if (false && process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development") {
     const { worker } = await import("./mocks/browser");
 
     await worker.start({
@@ -27,7 +29,9 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <SocketProvider>
-          <RemixBrowser />
+          <Provider store={store}>
+            <RemixBrowser />
+          </Provider>
         </SocketProvider>
       </StrictMode>,
     );

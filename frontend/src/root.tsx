@@ -164,7 +164,7 @@ export default function App() {
           )}
         </nav>
       </aside>
-      <div className="w-full relative">
+      <div className="h-full w-full relative">
         <Outlet />
         {navigation.state === "loading" && location.pathname !== "/" && (
           <ModalBackdrop>

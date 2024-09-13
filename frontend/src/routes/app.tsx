@@ -10,7 +10,6 @@ import {
   ClientLoaderFunctionArgs,
   useBeforeUnload,
 } from "@remix-run/react";
-import { Provider } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
@@ -147,47 +146,46 @@ function App() {
   } = useDisclosure();
 
   return (
-    <Provider store={store}>
-      <div data-testid="app" className="h-full flex flex-col gap-[10px]">
-        <div className="h-full flex gap-3">
-          <div className="w-1/4">
-            <Container className="h-full" label="Chat">
-              <ChatInterface />
-            </Container>
-          </div>
+    <div className="flex flex-col h-full gap-3">
+      <div className="flex h-[calc(100%-60px)] gap-3">
+        <Container className="w-1/4 overflow-scroll" label="Chat">
+          <ChatInterface />
+        </Container>
 
-          <div className="flex flex-col gap-3 w-3/4">
-            <Container
-              className="h-full"
-              labels={[
-                { label: "Workspace", to: "" },
-                { label: "Jupyter", to: "jupyter" },
-                { label: "Browser (experimental)", to: "browser" },
-              ]}
-            >
-              <Outlet />
-            </Container>
-            {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-             * that it loads only in the client-side. */}
-            <Container className="h-2/5 min-h-0" label="Terminal">
-              <React.Suspense fallback={<div className="h-full" />}>
-                <Terminal />
-              </React.Suspense>
-            </Container>
-          </div>
+        <div className="flex flex-col w-3/4 gap-3">
+          <Container
+            className="h-3/5 overflow-scroll"
+            labels={[
+              { label: "Workspace", to: "" },
+              { label: "Jupyter", to: "jupyter" },
+              { label: "Browser (experimental)", to: "browser" },
+            ]}
+          >
+            <Outlet />
+          </Container>
+          {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+           * that it loads only in the client-side. */}
+          <Container className="h-2/5 overflow-scroll" label="Terminal">
+            <React.Suspense fallback={<div className="h-full" />}>
+              <Terminal />
+            </React.Suspense>
+          </Container>
         </div>
+      </div>
+
+      <div className="h-[60px]">
         <Controls
           setSecurityOpen={onSecurityModalOpen}
           showSecurityLock={!!securityAnalyzer}
         />
-        <Security
-          isOpen={securityModalIsOpen}
-          onOpenChange={onSecurityModalOpenChange}
-          securityAnalyzer={securityAnalyzer}
-        />
-        <Toaster />
       </div>
-    </Provider>
+      <Security
+        isOpen={securityModalIsOpen}
+        onOpenChange={onSecurityModalOpenChange}
+        securityAnalyzer={securityAnalyzer}
+      />
+      <Toaster />
+    </div>
   );
 }
 

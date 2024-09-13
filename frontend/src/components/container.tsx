@@ -17,7 +17,7 @@ export function Container({
   return (
     <div
       className={clsx(
-        "bg-neutral-800 border border-neutral-600 rounded-xl flex flex-col overflow-hidden",
+        "bg-neutral-800 border border-neutral-600 rounded-xl flex flex-col",
         className,
       )}
     >
