@@ -1,7 +1,3 @@
-
-
-----------
-
 # Task
 You are a software architect. Your team has inherited an existing codebase, and
 need to finish a project:
@@ -41,7 +37,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[{"source": "agent", "action": "run", "args": {"command": "ls", "thought": "", "keep_prompt": true, "is_confirmed": "confirmed"}}, {"source": "agent", "observation": "run", "content": "\r\n[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]\nopenhands@docker-desktop:/workspace $ ", "extras": {"command_id": -1, "command": "ls", "exit_code": 0}}]
+[{"source": "agent", "action": "run", "args": {"command": "ls", "thought": "", "blocking": false, "keep_prompt": true, "is_confirmed": "confirmed"}}, {"source": "agent", "observation": "run", "content": "\r\n[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]\nopenhands@docker-desktop:/workspace $ ", "extras": {"command_id": -1, "command": "ls", "exit_code": 0}}]
 
 ## Format
 Your response MUST be in JSON format. It must be an object, and it must contain two fields:

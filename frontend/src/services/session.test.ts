@@ -19,6 +19,7 @@ describe("startNewSession", () => {
   it("Should start a new session with the current settings", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "sk-...",

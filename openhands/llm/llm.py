@@ -597,4 +597,6 @@ class LLM:
     def format_messages_for_llm(
         self, messages: Union[Message, list[Message]]
     ) -> list[dict]:
-        return format_messages(messages, self.vision_is_active())
+        return format_messages(
+            messages, self.vision_is_active(), self.is_caching_prompt_active()
+        )
