@@ -17,7 +17,7 @@ GEMINI_API_KEY="<your-google-api-key>"
 Example:
 ```bash
 docker run -it --pull=always \
-    -e GEMINI_API_KEY=="AIzaSyA-1234567890abcdefGHIJKLmnopQRStuvWXYZ"
+    -e GEMINI_API_KEY="AIzaSyA-1234567890abcdefGHIJKLmnopQRStuvWXYZ"
     ...
 ```
 
