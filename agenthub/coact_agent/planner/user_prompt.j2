@@ -1,15 +1,15 @@
 {% set DEFAULT_EXAMPLE %}
 --- START OF EXAMPLE 1 ---
 
-USER: I want to go to the user 'ryanhoangtt' github profile using browser and check how many repos they have, then write the number to the new 'repo_count.txt' file. Use a plan that has the least number of steps.
+USER: I want to go to the user 'Every-Hands-AI' github profile using browser and check how many repos they have, then write the number to the new 'repo_count.txt' file. Use a plan that has the least number of steps.
 
 ASSISTANT:
 I have enough information, let's create a plan to achieve the task:
 <execute_global_plan>
-The user message is: "I want to go to the user 'ryanhoangtt' github profile using browser and check how many repos they have, then write the number to the new 'repo_count.txt' file. Use a plan that has the least number of steps."
+The user message is: "I want to go to the user 'Every-Hands-AI' github profile using browser and check how many repos they have, then write the number to the new 'repo_count.txt' file. Use a plan that has the least number of steps."
 # Phases
 ## Phase 1
-- description: Browse the GitHub profile of the user 'ryanhoangtt' to find the number of repositories.
+- description: Browse the GitHub profile of the user 'Every-Hands-AI' to find the number of repositories.
 - reason: As the first step, we need to identify the number of repositories in the user's GitHub profile.
 - expected_state: The number of repositories is identified.
 ## Phase 2
@@ -20,20 +20,20 @@ The user message is: "I want to go to the user 'ryanhoangtt' github profile usin
 
 USER:
 OBSERVATION:
-LocalExecutorAgent finishes task with content: The GitHub profile 'ryanhoangtt' does not exist or is not accessible. Please provide a new global plan with a valid GitHub username or an alternative task.
+LocalExecutorAgent finishes task with content: The GitHub profile 'Every-Hands-AI' does not exist or is not accessible. Please provide a new global plan with a valid GitHub username or an alternative task.
 
 ASSISTANT:
-It seems the GitHub profile 'ryanhoangtt' does not exist or is not accessible. Please provide a valid GitHub username or an alternative task.
+It seems the GitHub profile 'Every-Hands-AI' does not exist or is not accessible. Please provide a valid GitHub username or an alternative task.
 
 USER:
-Sorry, the correct github handle is "ryanhoangt".
+Sorry, the correct github handle is "All-Hands-AI".
 
 ASSISTANT:
 Let's create a new plan to achieve the task:
 <execute_global_plan>
 # Phases
 ## Phase 1
-- description: Browse the GitHub profile of the user 'ryanhoangt' to find the number of repositories.
+- description: Browse the GitHub profile of the user 'All-Hands-AI' to find the number of repositories.
 - reason: As the first step, we need to identify the number of repositories in the user's GitHub profile.
 - expected_state: The number of repositories is identified.
 ## Phase 2
@@ -46,11 +46,11 @@ USER:
 OBSERVATION:
 LocalExecutorAgent finishes task with content: The file repo_count.txt has been successfully updated with the number of repositories. The tasks are now complete.
 Summary:
-- Browsed the GitHub profile of the user 'ryanhoangt' and found that the number of repositories is 129.
+- Browsed the GitHub profile of the user 'All-Hands-AI' and found that the number of repositories is 2.
 - Appended the number of repositories to the file repo_count.txt.
 
 ASSISTANT:
-The tasks have been successfully completed. The file repo_count.txt has been created and updated with the number of repositories (129) for the user 'ryanhoangt'.
+The tasks have been successfully completed. The file repo_count.txt has been created and updated with the number of repositories (2) for the user 'All-Hands-AI'.
 If you have any further requests, feel free to ask. Otherwise, I will consider the task complete.
 <finish></finish>
 
