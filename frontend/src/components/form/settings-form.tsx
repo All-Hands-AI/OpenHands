@@ -34,10 +34,6 @@ export function SettingsForm({
   const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
     React.useState(false);
 
-  React.useEffect(() => {
-    if (fetcher.data?.success) onClose();
-  }, [fetcher.data]);
-
   return (
     <fetcher.Form
       ref={formRef}
@@ -45,6 +41,7 @@ export function SettingsForm({
       method="POST"
       action="/settings"
       className="flex flex-col gap-6"
+      onSubmit={onClose}
     >
       <div className="flex flex-col gap-2">
         <Switch
@@ -140,7 +137,9 @@ export function SettingsForm({
                   aria-label="Agent"
                   data-testid="agent-input"
                   name="agent"
-                  defaultSelectedKey={settings.AGENT}
+                  defaultSelectedKey={
+                    fetcher.formData?.get("agent")?.toString() ?? settings.AGENT
+                  }
                   isClearable={false}
                   inputProps={{
                     classNames: {
