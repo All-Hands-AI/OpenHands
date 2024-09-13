@@ -2456,12 +2456,12 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-generativeai"
-version = "0.8.0"
+version = "0.8.1"
 description = "Google Generative AI High level API client library and tools."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "google_generativeai-0.8.0-py3-none-any.whl", hash = "sha256:d7a76f72a2736f5c0960be836c5e864aea32b08105b51cab81835522eb62938b"},
+    {file = "google_generativeai-0.8.1-py3-none-any.whl", hash = "sha256:b031877f24d51af0945207657c085896a0a886eceec7a1cb7029327b0aa6e2f6"},
 ]
 
 [package.dependencies]
