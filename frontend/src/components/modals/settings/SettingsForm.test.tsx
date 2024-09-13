@@ -28,7 +28,7 @@ const renderSettingsForm = (settings?: Settings) => {
           SECURITY_ANALYZER: "",
         }
       }
-      models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
+      models={["gpt-4o", "gpt-4o-mini", "azure/ada"]}
       agents={["agent1", "agent2", "agent3"]}
       securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
       onModelChange={onModelChangeMock}
@@ -61,7 +61,7 @@ describe("SettingsForm", () => {
 
   it("should display the existing values if they are present", () => {
     renderSettingsForm({
-      LLM_MODEL: "gpt-3.5-turbo",
+      LLM_MODEL: "gpt-4o-mini",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -77,13 +77,13 @@ describe("SettingsForm", () => {
     const languageInput = screen.getByRole("combobox", { name: "language" });
 
     expect(providerInput).toHaveValue("OpenAI");
-    expect(modelInput).toHaveValue("gpt-3.5-turbo");
+    expect(modelInput).toHaveValue("gpt-4o-mini");
     expect(languageInput).toHaveValue("Español");
   });
 
   it("should show advanced settings by default if advanced settings are in use", () => {
     renderSettingsForm({
-      LLM_MODEL: "gpt-3.5-turbo",
+      LLM_MODEL: "gpt-4o-mini",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -113,7 +113,7 @@ describe("SettingsForm", () => {
 
   it("should show advanced settings if button is clicked", async () => {
     renderSettingsForm({
-      LLM_MODEL: "gpt-3.5-turbo",
+      LLM_MODEL: "gpt-4o-mini",
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
@@ -144,7 +144,7 @@ describe("SettingsForm", () => {
           CONFIRMATION_MODE: false,
           SECURITY_ANALYZER: "",
         }}
-        models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
+        models={["gpt-4o", "gpt-4o-mini", "azure/ada"]}
         agents={["agent1", "agent2", "agent3"]}
         securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
         disabled
@@ -266,7 +266,7 @@ describe("SettingsForm", () => {
             CONFIRMATION_MODE: true,
             SECURITY_ANALYZER: "analyzer1",
           }}
-          models={["gpt-4o", "gpt-3.5-turbo", "azure/ada"]}
+          models={["gpt-4o", "gpt-4o-mini", "azure/ada"]}
           agents={["agent1", "agent2", "agent3"]}
           securityAnalyzers={["analyzer1", "analyzer2", "analyzer3"]}
           disabled
