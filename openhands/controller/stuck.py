@@ -1,6 +1,7 @@
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
+from openhands.events.action.commands import IPythonRunCellAction
 from openhands.events.action.empty import NullAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
@@ -150,15 +151,14 @@ class StuckDetector:
                         ):
                             logger.warning(warning)
                             return True
-                    elif error_message in [
+                    elif error_message in (
                         'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
                         'SyntaxError: incomplete input',
-                    ]:
-                        if self._check_for_consistent_invalid_syntax(
-                            last_observations[:3], error_message
-                        ):
-                            logger.warning(warning)
-                            return True
+                    ) and self._check_for_consistent_invalid_syntax(
+                        last_observations[:3], error_message
+                    ):
+                        logger.warning(warning)
+                        return True
         return False
 
     def _check_for_consistent_invalid_syntax(self, observations, error_message):
@@ -169,18 +169,22 @@ class StuckDetector:
             content = obs.content
             lines = content.strip().split('\n')
 
-            if len(lines) < 4:
+            if len(lines) < 6:  # 6 because a real syntax error has at least 6 lines
                 return False
 
-            first_lines.append(lines[0])  # Store the first line of each observation
+            line1 = lines[0].strip()
+            if not line1.startswith('Cell In[1], line'):
+                return False
+
+            first_lines.append(line1)  # Store the first line of each observation
 
             # Check last three lines
-            if lines[-2].startswith('[Jupyter current working directory:') and lines[
-                -1
-            ].startswith('[Jupyter Python interpreter:'):
-                if error_message in lines[-3]:
-                    valid_observations.append(obs)
-                    break
+            if (
+                lines[-1].startswith('[Jupyter Python interpreter:')
+                and lines[-2].startswith('[Jupyter current working directory:')
+                and error_message in lines[-3]
+            ):
+                valid_observations.append(obs)
 
         # Check if:
         # 1. All first lines are identical
@@ -302,7 +306,23 @@ class StuckDetector:
         return False
 
     def _eq_no_pid(self, obj1, obj2):
-        if isinstance(obj1, CmdOutputObservation) and isinstance(
+        if isinstance(obj1, IPythonRunCellAction) and isinstance(
+            obj2, IPythonRunCellAction
+        ):
+            # for loop detection on edit actions, ignore the thought, compare some code
+            # the code should have at least 3 lines, to avoid simple one-liners
+            if (
+                'edit_file_by_replace(' in obj1.code
+                and 'edit_file_by_replace(' in obj2.code
+            ):
+                return (
+                    len(obj1.code.split('\n')) > 2
+                    and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
+                )
+            else:
+                # default comparison
+                return obj1 == obj2
+        elif isinstance(obj1, CmdOutputObservation) and isinstance(
             obj2, CmdOutputObservation
         ):
             # for loop detection, ignore command_id, which is the pid
