@@ -14,6 +14,13 @@ using `-e` in the [docker run command](/modules/usage/getting-started#installati
 GEMINI_API_KEY="<your-google-api-key>"
 ```
 
+Example:
+```bash
+docker run -it --pull=always \
+    -e GEMINI_API_KEY=="AIzaSyA-1234567890abcdefGHIJKLmnopQRStuvWXYZ"
+    ...
+```
+
 Then set the following in the OpenHands UI through the Settings:
 * `LLM Provider` to `Gemini`
 * `LLM Model` to the model you will be using.
