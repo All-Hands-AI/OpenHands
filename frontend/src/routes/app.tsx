@@ -23,6 +23,9 @@ import { useSocket } from "#/context/socket";
 import { sendTerminalCommand } from "#/services/terminalService";
 import { appendInput } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
+import CodeIcon from "#/assets/code.svg?react";
+import GlobeIcon from "#/assets/globe.svg?react";
+import ListIcon from "#/assets/list-type-number.svg?react";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
@@ -154,18 +157,23 @@ function App() {
 
         <div className="flex flex-col w-3/4 gap-3">
           <Container
-            className="h-3/5 overflow-scroll"
+            className="h-2/3 overflow-scroll"
             labels={[
-              { label: "Workspace", to: "" },
-              { label: "Jupyter", to: "jupyter" },
-              { label: "Browser (experimental)", to: "browser" },
+              { label: "Workspace", to: "", icon: <CodeIcon /> },
+              { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+              {
+                label: "Browser",
+                to: "browser",
+                icon: <GlobeIcon />,
+                isBeta: true,
+              },
             ]}
           >
             <Outlet />
           </Container>
           {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
            * that it loads only in the client-side. */}
-          <Container className="h-2/5 overflow-scroll" label="Terminal">
+          <Container className="h-1/3 overflow-scroll" label="Terminal">
             <React.Suspense fallback={<div className="h-full" />}>
               <Terminal />
             </React.Suspense>
