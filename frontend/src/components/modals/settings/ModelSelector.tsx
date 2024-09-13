@@ -46,7 +46,11 @@ export function ModelSelector({
 
   const handleChangeModel = (model: string) => {
     const separator = models[selectedProvider || ""]?.separator || "";
-    const fullModel = selectedProvider + separator + model;
+    let fullModel = selectedProvider + separator + model;
+    if (selectedProvider === "openai") {
+      // LiteLLM lists OpenAI models without the openai/ prefix
+      fullModel = model;
+    }
     setLitellmId(fullModel);
     setSelectedModel(model);
   };
