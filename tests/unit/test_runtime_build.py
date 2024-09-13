@@ -95,37 +95,36 @@ def test_hash_folder_same(temp_dir):
     assert dir_hash_1 == dir_hash_2
 
 
-# TODO where should the hash actually differ?
-# def test_hash_folder_diff_init(temp_dir):
-#     dir_hash_1 = prep_docker_build_folder(
-#         temp_dir,
-#         base_image='nikolaik/python-nodejs:python3.11-nodejs22',
-#         skip_init=False,
-#     )
+def test_hash_folder_diff_init(temp_dir):
+    dir_hash_1 = prep_docker_build_folder(
+        temp_dir,
+        base_image='nikolaik/python-nodejs:python3.11-nodejs22',
+        skip_init=False,
+    )
 
-#     with tempfile.TemporaryDirectory() as temp_dir_2:
-#         dir_hash_2 = prep_docker_build_folder(
-#             temp_dir_2,
-#             base_image='nikolaik/python-nodejs:python3.11-nodejs22',
-#             skip_init=True,
-#         )
-#     assert dir_hash_1 != dir_hash_2
+    with tempfile.TemporaryDirectory() as temp_dir_2:
+        dir_hash_2 = prep_docker_build_folder(
+            temp_dir_2,
+            base_image='nikolaik/python-nodejs:python3.11-nodejs22',
+            skip_init=True,
+        )
+    assert dir_hash_1 != dir_hash_2
 
 
-# def test_hash_folder_diff_image(temp_dir):
-#     dir_hash_1 = prep_docker_build_folder(
-#         temp_dir,
-#         base_image='nikolaik/python-nodejs:python3.11-nodejs22',
-#         skip_init=False,
-#     )
+def test_hash_folder_diff_image(temp_dir):
+    dir_hash_1 = prep_docker_build_folder(
+        temp_dir,
+        base_image='nikolaik/python-nodejs:python3.11-nodejs22',
+        skip_init=False,
+    )
 
-#     with tempfile.TemporaryDirectory() as temp_dir_2:
-#         dir_hash_2 = prep_docker_build_folder(
-#             temp_dir_2,
-#             base_image='debian:11',
-#             skip_init=False,
-#         )
-#     assert dir_hash_1 != dir_hash_2
+    with tempfile.TemporaryDirectory() as temp_dir_2:
+        dir_hash_2 = prep_docker_build_folder(
+            temp_dir_2,
+            base_image='debian:11',
+            skip_init=False,
+        )
+    assert dir_hash_1 != dir_hash_2
 
 
 def test_generate_dockerfile_scratch():
@@ -225,76 +224,69 @@ def test_build_runtime_image_from_scratch(temp_dir):
 def test_build_runtime_image_exact_hash_exist(temp_dir):
     base_image = 'debian:11'
 
+    from_scratch_hash = prep_docker_build_folder(
+        temp_dir,
+        base_image,
+        skip_init=False,
+    )
+
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = True
+    mock_runtime_builder.build.return_value = (
+        f'{get_runtime_image_repo()}:{from_scratch_hash}'
+    )
 
-    # Mock the prep_docker_build_folder function to return a consistent hash
-    with patch(
-        'openhands.runtime.utils.runtime_build.prep_docker_build_folder'
-    ) as mock_prep:
-        mock_prep.return_value = 'mock_hash_123'
-
-        image_name = build_runtime_image(base_image, mock_runtime_builder)
-
-        # Assert that prep_docker_build_folder was called twice
-        assert mock_prep.call_count == 1
-
-        # Check the calls to prep_docker_build_folder
-        mock_prep.assert_has_calls(
-            [
-                call(
-                    ANY,
-                    base_image=f'ghcr.io/all-hands-ai/runtime:{OH_VERSION}_image_debian_tag_11',
-                    skip_init=True,
-                    extra_deps=None,
-                ),
-            ]
-        )
-
-        # Assert that the image_exists method was called with the correct hash
-        mock_runtime_builder.image_exists.assert_called_with(
-            'ghcr.io/all-hands-ai/runtime:mock_hash_123'
-        )
-
-        # Assert that the build method was not called
-        mock_runtime_builder.build.assert_not_called()
-
-        # Check that the returned image name is correct
-        assert image_name == 'ghcr.io/all-hands-ai/runtime:mock_hash_123'
+    image_name = build_runtime_image(base_image, mock_runtime_builder)
+    assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
+    mock_runtime_builder.build.assert_not_called()
 
 
 @patch('openhands.runtime.utils.runtime_build._build_sandbox_image')
 def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp_dir):
     base_image = 'debian:11'
     repo, latest_image_tag = get_runtime_image_repo_and_tag(base_image)
+    latest_image_name = f'{repo}:{latest_image_tag}'
+
+    from_scratch_hash = prep_docker_build_folder(
+        temp_dir,
+        base_image,
+        skip_init=False,
+    )
+    with tempfile.TemporaryDirectory() as temp_dir_2:
+        non_from_scratch_hash = prep_docker_build_folder(
+            temp_dir_2,
+            base_image,
+            skip_init=True,
+        )
 
     mock_runtime_builder = MagicMock()
-    # Set up mock_runtime_builder.image_exists to return False for both checks
-    mock_runtime_builder.image_exists.side_effect = [False, False]
+    # Set up mock_runtime_builder.image_exists to return False then True
+    mock_runtime_builder.image_exists.side_effect = [False, True]
 
     with patch(
         'openhands.runtime.utils.runtime_build.prep_docker_build_folder'
     ) as mock_prep_docker_build_folder:
-        # We only expect prep_docker_build_folder to be called once now
-        mock_prep_docker_build_folder.return_value = 'hash123'
+        mock_prep_docker_build_folder.side_effect = [
+            from_scratch_hash,
+            non_from_scratch_hash,
+        ]
 
         image_name = build_runtime_image(base_image, mock_runtime_builder)
 
-        # Assert prep_docker_build_folder was called once with the correct arguments
-        mock_prep_docker_build_folder.assert_called_once_with(
-            ANY, base_image=base_image, skip_init=False, extra_deps=None
+        mock_prep_docker_build_folder.assert_has_calls(
+            [
+                call(ANY, base_image=base_image, skip_init=False, extra_deps=None),
+                call(
+                    ANY, base_image=latest_image_name, skip_init=True, extra_deps=None
+                ),
+            ]
         )
 
-        # Assert _build_sandbox_image was called with the correct arguments
         mock_build_sandbox_image.assert_called_once_with(
             docker_folder=ANY,
             runtime_builder=mock_runtime_builder,
             target_image_repo=repo,
-            target_image_hash_tag='hash123',
+            target_image_hash_tag=from_scratch_hash,
             target_image_tag=latest_image_tag,
         )
-
-        assert image_name == f'{repo}:hash123'
-
-    # Verify that image_exists was called twice
-    assert mock_runtime_builder.image_exists.call_count == 2
+        assert image_name == f'{repo}:{from_scratch_hash}'
