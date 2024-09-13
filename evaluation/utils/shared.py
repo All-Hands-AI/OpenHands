@@ -227,6 +227,16 @@ def prepare_dataset(
     return pd.DataFrame(new_dataset)
 
 
+def process_instance(
+    instance, metadata, use_multiprocessing, process_instance_func
+) -> EvalOutput | None:
+    try:
+        return process_instance_func(instance, metadata, use_multiprocessing)
+    except Exception as e:
+        logger.error(f'Error processing instance [{instance.instance_id}]: {e}')
+        return None
+
+
 def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata,
@@ -250,16 +260,8 @@ def run_evaluation(
     pbar = tqdm(total=total_instances, desc='Instances processed')
     output_fp = open(output_file, 'a')
 
-    def process_instance(instance, metadata, use_multiprocessing) -> EvalOutput | None:
-        try:
-            return process_instance_func(instance, metadata, use_multiprocessing)
-        except Exception as e:
-            logger.error(f'Error processing instance [{instance.instance_id}]: {e}')
-            return None
-
     def update_progress(result: EvalOutput | None, instance: pd.Series):
         if result is not None:
-            assert isinstance(result, EvalOutput)
             pbar.update(1)
             pbar.set_description(f'Instance {result.instance_id}')
             pbar.set_postfix_str(f'Test Result: {result.test_result}')
@@ -286,6 +288,7 @@ def run_evaluation(
                             instance,
                             metadata,
                             True,
+                            process_instance_func,
                         )
                         future.add_done_callback(
                             lambda f, inst=instance: update_progress(f.result(), inst)
@@ -296,7 +299,9 @@ def run_evaluation(
         else:
             while not instance_queue.empty():
                 instance = instance_queue.get()
-                result = process_instance(instance, metadata, False)
+                result = process_instance(
+                    instance, metadata, False, process_instance_func
+                )
                 update_progress(result, instance)
 
     except KeyboardInterrupt:
