@@ -241,42 +241,63 @@ def run_evaluation(
         f'Evaluation started with Agent {metadata.agent_class}:\n'
         f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
     )
-    pbar = tqdm(total=len(dataset))
+
+    instance_queue = mp.Queue()
+    for _, instance in dataset.iterrows():
+        instance_queue.put(instance)
+
+    total_instances = instance_queue.qsize()
+    pbar = tqdm(total=total_instances, desc='Instances processed')
     output_fp = open(output_file, 'a')
 
-    def update_progress(future):
-        pbar.update(1)
-        output: EvalOutput = future.result() if use_multiprocessing else future
+    def process_instance(instance, metadata, use_multiprocessing) -> EvalOutput | None:
+        try:
+            return process_instance_func(instance, metadata, use_multiprocessing)
+        except Exception as e:
+            logger.error(f'Error processing instance [{instance.instance_id}]: {e}')
+            return None
 
-        pbar.set_description(f'Instance {output.instance_id}')
-        pbar.set_postfix_str(f'Test Result: {output.test_result}')
-        logger.info(
-            f'Finished evaluation for instance {output.instance_id}: {str(output.test_result)[:300]}...\n'
-        )
-        output_fp.write(json.dumps(output.model_dump()) + '\n')
-        output_fp.flush()
+    def update_progress(result: EvalOutput | None, instance: pd.Series):
+        if result is not None:
+            assert isinstance(result, EvalOutput)
+            pbar.update(1)
+            pbar.set_description(f'Instance {result.instance_id}')
+            pbar.set_postfix_str(f'Test Result: {result.test_result}')
+            logger.info(
+                f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
+            )
+            output_fp.write(json.dumps(result.model_dump()) + '\n')
+            output_fp.flush()
+        else:
+            logger.error(f'Retrying instance [{instance.instance_id}]')
+            instance_queue.put(instance)
+            pbar.total += 1
+            pbar.refresh()
 
     try:
         if use_multiprocessing:
             with ProcessPoolExecutor(num_workers) as executor:
-                futures = []
-                for _, instance in dataset.iterrows():
-                    future = executor.submit(
-                        process_instance_func,
-                        instance,
-                        metadata,
-                        bool(num_workers > 1),
-                    )
-                    future.add_done_callback(update_progress)
-                    futures.append(future)
-                for future in futures:
-                    future.result()
-        # Use plain for loop for single process for easier debugging
+                while not instance_queue.empty():
+                    futures = []
+                    for _ in range(min(num_workers, instance_queue.qsize())):
+                        instance = instance_queue.get()
+                        future = executor.submit(
+                            process_instance,
+                            instance,
+                            metadata,
+                            True,
+                        )
+                        future.add_done_callback(
+                            lambda f, inst=instance: update_progress(f.result(), inst)
+                        )
+                        futures.append(future)
+                    for future in futures:
+                        future.result()
         else:
-            assert num_workers == 1
-            for _, instance in dataset.iterrows():
-                output = process_instance_func(instance, metadata, False)
-                update_progress(output)
+            while not instance_queue.empty():
+                instance = instance_queue.get()
+                result = process_instance(instance, metadata, False)
+                update_progress(result, instance)
 
     except KeyboardInterrupt:
         print('\nKeyboardInterrupt received. Cleaning up...\n')
