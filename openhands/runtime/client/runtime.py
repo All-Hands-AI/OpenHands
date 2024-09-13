@@ -341,10 +341,6 @@ class EventStreamRuntime(Runtime):
             logger.error(msg)
             raise RuntimeError(msg)
 
-    @property
-    def sandbox_workspace_dir(self):
-        return self.config.workspace_mount_path_in_sandbox
-
     def close(self, close_client: bool = True, rm_all_containers: bool = True):
         """Closes the EventStreamRuntime and associated objects
 
