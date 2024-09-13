@@ -284,7 +284,7 @@ class EventStreamRuntime(Runtime):
                 f'Error: Instance {self.instance_id} FAILED to start container!\n'
             )
             logger.exception(e)
-            self.close(close_client=False, rm_all_containers=False)
+            self.close(close_client=False)
             raise e
 
     @tenacity.retry(
