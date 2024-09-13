@@ -176,6 +176,7 @@ def initialize_runtime(
 
         # inject the instance info
         action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
+        action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -233,6 +234,7 @@ def initialize_runtime(
         ), f'Failed to source /swe_util/swe_entry.sh: {obs.content}'
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
