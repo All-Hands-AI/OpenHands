@@ -6,10 +6,8 @@ import pytest
 from conftest import (
     TEST_IN_CI,
     _close_test_runtime,
-    _get_host_folder,
     _get_sandbox_folder,
     _load_runtime,
-    _remove_folder,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -21,10 +19,8 @@ from openhands.events.observation import CmdOutputObservation
 # ============================================================================================================================
 
 
-def _run_cmd(runtime, custom_command=None):
-    if not isinstance(custom_command, str):
-        return None
-    action = CmdRunAction(command=custom_command)
+def _run_cmd_action(runtime, custom_command: str, keep_prompt=True):
+    action = CmdRunAction(command=custom_command, keep_prompt=keep_prompt)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert isinstance(obs, CmdOutputObservation)
@@ -61,40 +57,21 @@ def test_bash_command_pexcept(temp_dir, box_class, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-def test_single_multiline_command(temp_dir, box_class):
+def test_multiline_commands(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     try:
-        action = CmdRunAction(command='echo \\\n -e "foo"')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        # single multiline command
+        obs = _run_cmd_action(runtime, 'echo \\\n -e "foo"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert 'foo' in obs.content
-    finally:
-        _close_test_runtime(runtime)
 
-
-def test_multiline_echo(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
-    try:
-        action = CmdRunAction(command='echo -e "hello\nworld"')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        # test multiline echo
+        obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert 'hello\r\nworld' in obs.content
-    finally:
-        _close_test_runtime(runtime)
 
-
-def test_runtime_whitespace(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
-    try:
-        action = CmdRunAction(command='echo -e "\\n\\n\\n"')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
+        # test whitespace
+        obs = _run_cmd_action(runtime, 'echo -e "\\n\\n\\n"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert '\r\n\r\n\r\n' in obs.content
     finally:
@@ -133,12 +110,7 @@ world "
 
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
-        action = CmdRunAction(command=joined_cmds)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, joined_cmds)
         assert obs.exit_code == 0, 'The exit code should be 0.'
 
         assert 'total 0' in obs.content
@@ -156,10 +128,8 @@ def test_no_ps2_in_output(temp_dir, box_class, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
-        action = CmdRunAction(command='echo -e "hello\nworld"')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
+        assert obs.exit_code == 0, 'The exit code should be 0.'
 
         assert 'hello\r\nworld' in obs.content
         assert '>' not in obs.content
@@ -187,21 +157,11 @@ echo "success"
 """
     runtime = _load_runtime(temp_dir, box_class)
     try:
-        action = CmdRunAction(command=init_cmd)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, init_cmd)
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert 'created files' in obs.content
 
-        action = CmdRunAction(command=follow_up_cmd)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, follow_up_cmd)
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert 'success' in obs.content
     finally:
@@ -211,33 +171,17 @@ echo "success"
 def test_cmd_run(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
-        action = CmdRunAction(command='ls -l /openhands/workspace')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'ls -l /openhands/workspace')
         assert obs.exit_code == 0
 
-        action = CmdRunAction(command='ls -l')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'ls -l')
         assert obs.exit_code == 0
         assert 'total 0' in obs.content
 
-        action = CmdRunAction(command='mkdir test')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'mkdir test')
         assert obs.exit_code == 0
 
-        action = CmdRunAction(command='ls -l')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'ls -l')
         assert obs.exit_code == 0
         if run_as_openhands:
             assert 'openhands' in obs.content
@@ -245,29 +189,17 @@ def test_cmd_run(temp_dir, box_class, run_as_openhands):
             assert 'root' in obs.content
         assert 'test' in obs.content
 
-        action = CmdRunAction(command='touch test/foo.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'touch test/foo.txt')
         assert obs.exit_code == 0
 
-        action = CmdRunAction(command='ls -l test')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'ls -l test')
         assert obs.exit_code == 0
         assert 'foo.txt' in obs.content
 
         # clean up: this is needed, since CI will not be
         # run as root, and this test may leave a file
         # owned by root
-        action = CmdRunAction(command='rm -rf test')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        _run_cmd_action(runtime, 'rm -rf test')
         assert obs.exit_code == 0
     finally:
         _close_test_runtime(runtime)
@@ -276,11 +208,7 @@ def test_cmd_run(temp_dir, box_class, run_as_openhands):
 def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
-        action = CmdRunAction(command='cd ~ && pwd')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'cd ~ && pwd')
         assert obs.exit_code == 0
         if run_as_openhands:
             assert '/home/openhands' in obs.content
@@ -293,11 +221,7 @@ def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
 def test_multi_cmd_run_in_single_line(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     try:
-        action = CmdRunAction(command='pwd && ls -l')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'pwd && ls -l')
         assert obs.exit_code == 0
         assert '/workspace' in obs.content
         assert 'total 0' in obs.content
@@ -309,25 +233,13 @@ def test_stateful_cmd(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     sandbox_dir = _get_sandbox_folder(runtime)
     try:
-        action = CmdRunAction(command='mkdir -p test')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'mkdir -p test')
         assert obs.exit_code == 0, 'The exit code should be 0.'
 
-        action = CmdRunAction(command='cd test')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'cd test')
         assert obs.exit_code == 0, 'The exit code should be 0.'
 
-        action = CmdRunAction(command='pwd')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'pwd')
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert f'{sandbox_dir}/test' in obs.content
     finally:
@@ -337,11 +249,7 @@ def test_stateful_cmd(temp_dir, box_class):
 def test_failed_cmd(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     try:
-        action = CmdRunAction(command='non_existing_command')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'non_existing_command')
         assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
     finally:
         _close_test_runtime(runtime)
@@ -361,19 +269,11 @@ def test_copy_single_file(temp_dir, box_class):
         _create_test_file(temp_dir)
         runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
 
-        action = CmdRunAction(command=f'ls -alh {sandbox_dir}')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
         assert 'test_file.txt' in obs.content
 
-        action = CmdRunAction(command=f'cat {sandbox_file}')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'cat {sandbox_file}')
         assert obs.exit_code == 0
         assert 'Hello, World!' in obs.content
     finally:
@@ -392,49 +292,32 @@ def _create_host_test_dir_with_files(test_dir):
 
 
 def test_copy_directory_recursively(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class, use_workspace=True)
+    runtime = _load_runtime(temp_dir, box_class)
 
-    host_dir = _get_host_folder(runtime)
-    host_test_dir = os.path.join(host_dir, 'test_dir')
     sandbox_dir = _get_sandbox_folder(runtime)
-    logger.debug(f'host_dir: {host_dir}')
-    logger.debug(f'sandbox_dir: {sandbox_dir}')
-
     try:
+        temp_dir_copy = os.path.join(temp_dir, 'test_dir')
         # We need a separate directory, since temp_dir is mounted to /workspace
-        _create_host_test_dir_with_files(host_test_dir)
+        _create_host_test_dir_with_files(temp_dir_copy)
 
-        runtime.copy_to(host_test_dir, sandbox_dir, recursive=True)
+        runtime.copy_to(temp_dir_copy, sandbox_dir, recursive=True)
 
-        action = CmdRunAction(command=f'ls -alh {sandbox_dir}')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
         assert 'test_dir' in obs.content
         assert 'file1.txt' not in obs.content
         assert 'file2.txt' not in obs.content
 
-        action = CmdRunAction(command=f'ls -alh {sandbox_dir}/test_dir')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}/test_dir')
         assert obs.exit_code == 0
         assert 'file1.txt' in obs.content
         assert 'file2.txt' in obs.content
 
-        action = CmdRunAction(command=f'cat {sandbox_dir}/test_dir/file1.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'cat {sandbox_dir}/test_dir/file1.txt')
         assert obs.exit_code == 0
         assert 'File 1 content' in obs.content
     finally:
         _close_test_runtime(runtime)
-        _remove_folder(host_dir)
 
 
 def test_copy_to_non_existent_directory(temp_dir, box_class):
@@ -446,11 +329,7 @@ def test_copy_to_non_existent_directory(temp_dir, box_class):
             os.path.join(temp_dir, 'test_file.txt'), f'{sandbox_dir}/new_dir'
         )
 
-        action = CmdRunAction(command=f'cat {sandbox_dir}/new_dir/test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'cat {sandbox_dir}/new_dir/test_file.txt')
         assert obs.exit_code == 0
         assert 'Hello, World!' in obs.content
     finally:
@@ -462,23 +341,23 @@ def test_overwrite_existing_file(temp_dir, box_class):
     try:
         sandbox_dir = _get_sandbox_folder(runtime)
 
-        obs = _run_cmd(runtime, f'ls -alh {sandbox_dir}')
+        obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
 
-        obs = _run_cmd(runtime, f'touch {sandbox_dir}/test_file.txt')
+        obs = _run_cmd_action(runtime, f'touch {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
 
-        obs = _run_cmd(runtime, f'ls -alh {sandbox_dir}')
+        obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
 
-        obs = _run_cmd(runtime, f'cat {sandbox_dir}/test_file.txt')
+        obs = _run_cmd_action(runtime, f'cat {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
         assert 'Hello, World!' not in obs.content
 
         _create_test_file(temp_dir)
         runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
 
-        obs = _run_cmd(runtime, f'cat {sandbox_dir}/test_file.txt')
+        obs = _run_cmd_action(runtime, f'cat {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
         assert 'Hello, World!' in obs.content
     finally:
@@ -495,11 +374,7 @@ def test_copy_non_existent_file(temp_dir, box_class):
                 f'{sandbox_dir}/should_not_exist.txt',
             )
 
-        action = CmdRunAction(command=f'ls {sandbox_dir}/should_not_exist.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, f'ls {sandbox_dir}/should_not_exist.txt')
         assert obs.exit_code != 0  # File should not exist
     finally:
         _close_test_runtime(runtime)
@@ -513,21 +388,14 @@ def test_keep_prompt(box_class, temp_dir):
     )
     try:
         sandbox_dir = _get_sandbox_folder(runtime)
-        action = CmdRunAction(command=f'touch {sandbox_dir}/test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+
+        obs = _run_cmd_action(runtime, f'touch {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
         assert 'root@' in obs.content
 
-        action = CmdRunAction(
-            command=f'cat {sandbox_dir}/test_file.txt', keep_prompt=False
+        obs = _run_cmd_action(
+            runtime, f'cat {sandbox_dir}/test_file.txt', keep_prompt=False
         )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         assert 'root@' not in obs.content
     finally:
@@ -552,11 +420,7 @@ def test_git_operation(box_class):
     # fatal: detected dubious ownership in repository at '/workspace'
     try:
         # check the ownership of the current directory
-        action = CmdRunAction(command='ls -alh .')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'ls -alh .')
         assert obs.exit_code == 0
         # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
         # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
@@ -572,43 +436,23 @@ def test_git_operation(box_class):
                 assert 'root' in line
 
         # make sure all git operations are allowed
-        action = CmdRunAction(command='git init')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'git init')
         assert obs.exit_code == 0
 
         # create a file
-        action = CmdRunAction(command='echo "hello" > test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
 
         # git add
-        action = CmdRunAction(command='git add test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'git add test_file.txt')
         assert obs.exit_code == 0
 
         # git diff
-        action = CmdRunAction(command='git diff')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'git diff')
         assert obs.exit_code == 0
 
         # git commit
-        action = CmdRunAction(command='git commit -m "test commit"')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd_action(runtime, 'git commit -m "test commit"')
         assert obs.exit_code == 0
     finally:
         _close_test_runtime(runtime)

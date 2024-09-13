@@ -28,7 +28,9 @@ sandbox_test_folder = '/openhands/workspace'
 
 
 def _get_runtime_sid(runtime: Runtime):
-    return '_'.join(runtime.sid.split('_')[:2])
+    # return '_'.join(runtime.sid.split('_')[:2])
+    logger.debug(f'\nruntime.sid: {runtime.sid}')
+    return runtime.sid
 
 
 def _get_host_folder(runtime: Runtime):
@@ -212,7 +214,7 @@ def _load_runtime(
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
-    use_workspace: bool | None = False,
+    use_workspace: bool | None = None,
 ) -> Runtime:
     # sid = os.path.basename(temp_dir) + '_' + str(random.randint(10000, 99999))
     sid = 'rt_' + str(random.randint(100000, 999999))
