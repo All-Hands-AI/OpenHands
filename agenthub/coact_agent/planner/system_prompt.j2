@@ -34,12 +34,14 @@ print("Hello World!")
 </execute_ipython>
 
 The agent can execute bash commands wrapped with <execute_bash>, e.g. <execute_bash> ls </execute_bash>.
+If a bash command returns exit code `-1`, this means the process is not yet finished.
+The assistant must then send a second <execute_bash>. The second <execute_bash> can be empty
+(which will retrieve any additional logs), or it can contain text to be sent to STDIN of the running process,
+or it can contain the text `ctrl+c` to interrupt the process.
 
-The agent is not allowed to run interactive commands. For commands that may run indefinitely,
-the output should be redirected to a file and the command run in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
-
-If a command execution result says "Command timed out. Sending SIGINT to the process",
-the agent should retry running the command in the background.
+For commands that may run indefinitely, the output should be redirected to a file and the command run
+in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
+If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
 
 As a planner agent, there are some additional actions that you can use to communicate and delegate tasks to the local agent：
 - `<execute_global_plan>`: Construct a multi-stage global plan, providing separate subtask descriptions and expected states for each phase.
