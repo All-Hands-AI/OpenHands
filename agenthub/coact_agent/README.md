@@ -10,3 +10,27 @@ This folder implements a multi-agent workflow inspired by the CoAct framework ([
 2. `CoActExecutorAgent`:
     - is responsible for executing the proposed plan. Facing issues with the plan, it can request for a new one.
     - also has full capabilities of [CodeActAgent](https://github.com/All-Hands-AI/OpenHands/tree/main/agenthub/codeact_agent).
+
+
+## Plan structure
+```markdown
+The user message is: <<Full user's message here.>>
+# Phases
+## Phase 1
+- description: <<The task that needs to be done in this phase.>>
+- reason: <<Assistant's thorough thoughts on why this phase is necessary, with tips/codes to instruct the executor finish the task easier.>>
+- expected_state: <<Describe the expected state after this phase is completed. If the task involves code editing, provide the expectation of the code after the edit.>>
+<file_path> <<The file path to edit. In one phase only 1 file is edited.>> </file_path>
+<expected_content>
+<<The partial expected content here WITH LINE NUMBERS and a vertical bar before the actual code e.g., 1|, 11|.>>
+</expected_content>
+## Phase 2
+- description: ...
+- reason: ...
+- expected_state: ...
+<file_path> ... </file_path>
+<expected_content>
+...|...
+</expected_content>
+## Phase ...
+```
