@@ -137,14 +137,36 @@ class RuntimeClient:
             return
 
         # Check if the username already exists
+        existing_user_id = -1
         try:
-            subprocess.run(
+            result = subprocess.run(
                 f'id -u {username}', shell=True, check=True, capture_output=True
             )
-            logger.debug(f'User {username} already exists. Skipping creation.')
-            return
-        except subprocess.CalledProcessError:
-            pass  # User does not exist, continue with creation
+            existing_user_id = int(result.stdout.decode().strip())
+            logger.debug(f'User {username} already exists with UID {existing_user_id}.')
+
+            # If the existing user ID matches the provided user_id, skip user creation
+            if existing_user_id == user_id:
+                logger.debug(
+                    f'User {username} already has the provided UID {user_id}. Skipping creation.'
+                )
+                return
+            else:
+                logger.warning(
+                    f'User {username} exists with different UID ({existing_user_id}).'
+                )
+                self.user_id = existing_user_id
+                return
+
+        except subprocess.CalledProcessError as e:
+            # Handle the case where the user does not exist
+            if e.returncode == 1:
+                logger.debug(
+                    f'User {username} does not exist. Proceeding with user creation.'
+                )
+            else:
+                logger.error(f'Error checking user {username}: {e}')
+                raise
 
         # Add sudoer
         sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
@@ -458,7 +480,7 @@ class RuntimeClient:
                     os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
                 else:
                     # set the new file permissions if the file is new
-                    os.chmod(filepath, 0o644)
+                    os.chmod(filepath, 0o664)
                     os.chown(filepath, self.user_id, self.user_id)
 
             except FileNotFoundError:

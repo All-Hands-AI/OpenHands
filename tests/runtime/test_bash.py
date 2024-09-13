@@ -368,7 +368,7 @@ def test_copy_single_file(temp_dir, box_class):
 
 
 def _create_test_dir_with_files(host_temp_dir):
-    os.mkdir(os.path.join(host_temp_dir, 'test_dir'))
+    os.makedirs(os.path.join(host_temp_dir, 'test_dir'), exist_ok=True)
     with open(os.path.join(host_temp_dir, 'test_dir', 'file1.txt'), 'w') as f:
         f.write('File 1 content')
     with open(os.path.join(host_temp_dir, 'test_dir', 'file2.txt'), 'w') as f:
@@ -380,6 +380,8 @@ def test_copy_directory_recursively(temp_dir, box_class):
     try:
         host_dir = _get_host_folder(runtime)
         sandbox_dir = _get_sandbox_folder(runtime)
+        logger.info(f'host_dir: {host_dir}')
+        logger.info(f'sandbox_dir: {sandbox_dir}')
         # We need a separate directory, since temp_dir is mounted to /workspace
         _create_test_dir_with_files(host_dir)
         runtime.copy_to(os.path.join(host_dir, 'test_dir'), sandbox_dir, recursive=True)
