@@ -281,12 +281,9 @@ class EventStreamRuntime(Runtime):
             return container
         except Exception as e:
             logger.error(
-                f'VVVVV Instance {self.instance_id} FAILED to start container VVVVV'
+                f'Error: Instance {self.instance_id} FAILED to start container!\n'
             )
             logger.exception(e)
-            logger.error(
-                '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-            )
             self.close(close_client=False, rm_all_containers=False)
             raise e
 
