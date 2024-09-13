@@ -3,8 +3,12 @@ import React from "react";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
 import ModalButton from "../buttons/ModalButton";
-import { BaseModalTitle } from "./confirmation-modals/BaseModal";
+import {
+  BaseModalDescription,
+  BaseModalTitle,
+} from "./confirmation-modals/BaseModal";
 import { clientAction } from "#/root";
+import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
@@ -19,7 +23,24 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
 
   return (
     <ModalBody>
-      <BaseModalTitle title="Connect to GitHub" />
+      <div className="flex flex-col gap-2 self-start">
+        <BaseModalTitle title="Connect to GitHub" />
+        <BaseModalDescription
+          description={
+            <span>
+              Get your token{" "}
+              <a
+                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[#791B80] underline"
+              >
+                here
+              </a>
+            </span>
+          }
+        />
+      </div>
       <fetcher.Form
         method="POST"
         action="/"

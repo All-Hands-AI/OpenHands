@@ -9,7 +9,7 @@ interface ButtonConfig {
 }
 
 interface BaseModalTitleProps {
-  title: string;
+  title: React.ReactNode;
 }
 
 export function BaseModalTitle({ title }: BaseModalTitleProps) {
@@ -21,13 +21,13 @@ export function BaseModalTitle({ title }: BaseModalTitleProps) {
 }
 
 interface BaseModalDescriptionProps {
-  description: string;
+  description: React.ReactNode;
 }
 
 export function BaseModalDescription({
   description,
 }: BaseModalDescriptionProps) {
-  return <p className="text-xs text-[#A3A3A3]">{description}</p>;
+  return <span className="text-xs text-[#A3A3A3]">{description}</span>;
 }
 
 interface BaseModalProps {
