@@ -13,6 +13,10 @@ from openhands.events.action.action import (
 class CmdRunAction(Action):
     command: str
     thought: str = ''
+    blocking: bool = False
+    # If False, the command will be run in a non-blocking / interactive way
+    # The partial command outputs will be returned as output observation.
+    # If True, the command will be run for max .timeout seconds.
     keep_prompt: bool = True
     # if True, the command prompt will be kept in the command output observation
     # Example of command output:

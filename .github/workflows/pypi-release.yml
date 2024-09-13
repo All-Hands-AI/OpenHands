@@ -1,9 +1,14 @@
-name: Release workflow
+# Publishes the OpenHands PyPi package
+name: Publish PyPi Package
 
+# Triggered manually
 on:
-  push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: true
+        default: ''
 
 jobs:
   release:

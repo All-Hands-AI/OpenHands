@@ -49,3 +49,8 @@ class Event:
     @timeout.setter
     def timeout(self, value: int | None) -> None:
         self._timeout = value
+
+        # Check if .blocking is an attribute of the event
+        if hasattr(self, 'blocking'):
+            # .blocking needs to be set to True if .timeout is set
+            self.blocking = True
