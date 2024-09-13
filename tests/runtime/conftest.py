@@ -9,6 +9,7 @@ import pytest
 from pytest import TempPathFactory
 
 from openhands.core.config import load_app_config
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.client.runtime import EventStreamRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -24,7 +25,6 @@ project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
 sandbox_test_folder = '/openhands/workspace'
-tests_started = False
 
 
 def _get_runtime_sid(runtime: Runtime):
@@ -42,28 +42,38 @@ def _get_sandbox_folder(runtime: Runtime):
     return None
 
 
+def _remove_folder(folder: str) -> bool:
+    success = False
+    if folder and os.path.isdir(folder):
+        try:
+            os.rmdir(folder)
+            success = True
+        except OSError:
+            try:
+                shutil.rmtree(folder)
+                success = True
+            except OSError:
+                pass
+        logger.debug(f'\nCleanup: `{folder}`: ' + ('[OK]' if success else '[FAILED]'))
+    return success
+
+
 def _close_test_runtime(runtime: Runtime):
-    # TODO this is for EventStreamRuntime, not RemoteRuntime!
-    runtime.close(rm_all_containers=False)
+    if isinstance(runtime, EventStreamRuntime):
+        runtime.close(rm_all_containers=False)
+    else:
+        runtime.close()
     time.sleep(1)
 
 
-def _remove_test_folder():
-    global test_mount_path, project_dir
-    if test_mount_path:
-        try:
-            if test_mount_path and os.path.exists(test_mount_path):
-                shutil.rmtree(test_mount_path)
-                print(f'Removed sandbox test folder: {test_mount_path}')
-        except FileNotFoundError:
-            print('Failed to remove test folder!')
-        test_mount_path = ''
-        # Try to change back to project directory
-        try:
-            os.chdir(project_dir)
-            print(f'Changed back to project directory: {project_dir}')
-        except Exception as e:
-            print(f'Failed to change back to project directory: {e}')
+def _reset_pwd():
+    global project_dir
+    # Try to change back to project directory
+    try:
+        os.chdir(project_dir)
+        logger.info(f'Changed back to project directory `{project_dir}')
+    except Exception as e:
+        logger.error(f'Failed to change back to project directory: {e}')
 
 
 # *****************************************************************************
@@ -85,6 +95,7 @@ def print_method_name(request):
 def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     """Creates a unique temporary directory.
     Upon finalization, the temporary directory and its content is removed.
+    The cleanup function is also called upon KeyboardInterrupt.
 
     Parameters:
     - tmp_path_factory (TempPathFactory): A TempPathFactory class
@@ -92,7 +103,17 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     Returns:
     - str: The temporary directory path that was created
     """
-    temp_dir = tmp_path_factory.mktemp('test', numbered=True)
+    # Check if pytest-xdist is being used
+    # worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'master')
+    # if worker_id == 'master':
+    #     temp_dir = tmp_path_factory.mktemp('rt', numbered=False)
+    # else:
+    #     temp_dir = tmp_path_factory.mktemp(f'rt_{worker_id}', numbered=False)
+    temp_dir = tmp_path_factory.mktemp(
+        'rt_' + str(random.randint(100000, 999999)), numbered=False
+    )
+
+    logger.info(f'\n*** {request.node.name}\n>> temp folder: {temp_dir}\n')
 
     # Set permissions to ensure the directory is writable and deletable
     os.chmod(temp_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777 permissions
@@ -100,14 +121,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     def cleanup():
         global project_dir
         os.chdir(project_dir)
-        if os.path.exists(temp_dir):
-            try:
-                os.rmdir(temp_dir)
-            except OSError:
-                try:
-                    shutil.rmtree(temp_dir)
-                except OSError:
-                    pass
+        _remove_folder(temp_dir)
 
     request.addfinalizer(cleanup)
 
@@ -136,10 +150,18 @@ def get_run_as_openhands():
     return [RUN_AS_OPENHANDS]
 
 
-@pytest.fixture(scope='session')
-def runtime_setup():
+@pytest.fixture(scope='module')  # for xdist
+def runtime_setup_module():
+    _reset_pwd()
     yield
-    _remove_test_folder()
+    _reset_pwd()
+
+
+@pytest.fixture(scope='session')  # not for xdist
+def runtime_setup_session():
+    _reset_pwd()
+    yield
+    _reset_pwd()
 
 
 # This assures that all tests run together per runtime, not alternating between them,
@@ -190,11 +212,11 @@ def _load_runtime(
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
+    use_workspace: bool | None = False,
 ) -> Runtime:
-    sid = os.path.basename(temp_dir) + '_' + str(random.randint(10000, 99999))
-    global test_mount_path
+    # sid = os.path.basename(temp_dir) + '_' + str(random.randint(10000, 99999))
+    sid = 'rt_' + str(random.randint(100000, 999999))
 
-    print(f'*** Test temp directory: {temp_dir}')
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
@@ -203,10 +225,14 @@ def _load_runtime(
     config.run_as_openhands = run_as_openhands
 
     # Folder where all tests create their own folder
-    test_mount_path = temp_dir
-
-    # Folder specific for this test identified by the generated instance_id
-    config.workspace_mount_path = os.path.join(test_mount_path, sid)
+    global test_mount_path
+    if use_workspace:
+        test_mount_path = os.path.join(config.workspace_base, 'rt')
+    else:
+        test_mount_path = os.path.join(
+            temp_dir, sid
+        )  # need a subfolder to avoid conflicts
+    config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
     config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}/{sid}'
@@ -242,4 +268,5 @@ __all__ = [
     '_load_runtime',
     '_get_host_folder',
     '_get_sandbox_folder',
+    '_remove_folder',
 ]

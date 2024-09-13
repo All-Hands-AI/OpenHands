@@ -9,6 +9,7 @@ from conftest import (
     _get_host_folder,
     _get_sandbox_folder,
     _load_runtime,
+    _remove_folder,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,6 +19,17 @@ from openhands.events.observation import CmdOutputObservation
 # ============================================================================================================================
 # Bash-specific tests
 # ============================================================================================================================
+
+
+def _run_cmd(runtime, custom_command=None):
+    if not isinstance(custom_command, str):
+        return None
+    action = CmdRunAction(command=custom_command)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    assert isinstance(obs, CmdOutputObservation)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    return obs
 
 
 def test_bash_command_pexcept(temp_dir, box_class, run_as_openhands):
@@ -295,6 +307,7 @@ def test_multi_cmd_run_in_single_line(temp_dir, box_class):
 
 def test_stateful_cmd(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
+    sandbox_dir = _get_sandbox_folder(runtime)
     try:
         action = CmdRunAction(command='mkdir -p test')
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -316,7 +329,7 @@ def test_stateful_cmd(temp_dir, box_class):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert '/workspace/test' in obs.content
+        assert f'{sandbox_dir}/test' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -367,24 +380,31 @@ def test_copy_single_file(temp_dir, box_class):
         _close_test_runtime(runtime)
 
 
-def _create_test_dir_with_files(host_temp_dir):
-    os.makedirs(os.path.join(host_temp_dir, 'test_dir'), exist_ok=True)
-    with open(os.path.join(host_temp_dir, 'test_dir', 'file1.txt'), 'w') as f:
+def _create_host_test_dir_with_files(test_dir):
+    logger.debug(f'creating `{test_dir}`')
+    if not os.path.isdir(test_dir):
+        os.makedirs(test_dir, exist_ok=True)
+    logger.debug('creating test files in `test_dir`')
+    with open(os.path.join(test_dir, 'file1.txt'), 'w') as f:
         f.write('File 1 content')
-    with open(os.path.join(host_temp_dir, 'test_dir', 'file2.txt'), 'w') as f:
+    with open(os.path.join(test_dir, 'file2.txt'), 'w') as f:
         f.write('File 2 content')
 
 
 def test_copy_directory_recursively(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+    runtime = _load_runtime(temp_dir, box_class, use_workspace=True)
+
+    host_dir = _get_host_folder(runtime)
+    host_test_dir = os.path.join(host_dir, 'test_dir')
+    sandbox_dir = _get_sandbox_folder(runtime)
+    logger.debug(f'host_dir: {host_dir}')
+    logger.debug(f'sandbox_dir: {sandbox_dir}')
+
     try:
-        host_dir = _get_host_folder(runtime)
-        sandbox_dir = _get_sandbox_folder(runtime)
-        logger.info(f'host_dir: {host_dir}')
-        logger.info(f'sandbox_dir: {sandbox_dir}')
         # We need a separate directory, since temp_dir is mounted to /workspace
-        _create_test_dir_with_files(host_dir)
-        runtime.copy_to(os.path.join(host_dir, 'test_dir'), sandbox_dir, recursive=True)
+        _create_host_test_dir_with_files(host_test_dir)
+
+        runtime.copy_to(host_test_dir, sandbox_dir, recursive=True)
 
         action = CmdRunAction(command=f'ls -alh {sandbox_dir}')
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -414,6 +434,7 @@ def test_copy_directory_recursively(temp_dir, box_class):
         assert 'File 1 content' in obs.content
     finally:
         _close_test_runtime(runtime)
+        _remove_folder(host_dir)
 
 
 def test_copy_to_non_existent_directory(temp_dir, box_class):
@@ -439,31 +460,25 @@ def test_copy_to_non_existent_directory(temp_dir, box_class):
 def test_overwrite_existing_file(temp_dir, box_class):
     runtime = _load_runtime(temp_dir, box_class)
     try:
-        # touch a file in /workspace
         sandbox_dir = _get_sandbox_folder(runtime)
-        action = CmdRunAction(command=f'touch {sandbox_dir}/test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+
+        obs = _run_cmd(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
 
-        action = CmdRunAction(command=f'cat {sandbox_dir}/test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd(runtime, f'touch {sandbox_dir}/test_file.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd(runtime, f'ls -alh {sandbox_dir}')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd(runtime, f'cat {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
         assert 'Hello, World!' not in obs.content
 
         _create_test_file(temp_dir)
-        runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), f'{sandbox_dir}')
+        runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
 
-        action = CmdRunAction(command=f'cat {sandbox_dir}/test_file.txt')
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
+        obs = _run_cmd(runtime, f'cat {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
         assert 'Hello, World!' in obs.content
     finally:

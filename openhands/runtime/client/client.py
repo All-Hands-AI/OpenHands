@@ -115,11 +115,27 @@ class RuntimeClient:
         logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
-        """Create working directory and user if not exists."""
+        """Create working directory and user if not exists.
+        It performs the following steps effectively:
+        * Creates the Working Directory:
+            - Uses mkdir -p to create the directory.
+            - Sets ownership to username:root.
+            - Adjusts permissions to be readable and writable by group and others.
+        * User Verification and Creation:
+            - Checks if the user exists using id -u.
+            - If the user exists with the correct UID, it skips creation.
+            - If the UID differs, it logs a warning and updates self.user_id.
+            - If the user doesn't exist, it proceeds to create the user.
+        * Sudo Configuration:
+            - Appends %sudo ALL=(ALL) NOPASSWD:ALL to /etc/sudoers to grant
+              passwordless sudo access to the sudo group.
+            - Adds the user to the sudo group with the useradd command, handling
+              UID conflicts by incrementing the UID if necessary.
+        """
 
         # First create the working directory, independent of the user
         logger.info(f'Client working directory: {self.initial_pwd}')
-        command = f'mkdir -p {self.initial_pwd}'
+        command = f'umask 002; mkdir -p {self.initial_pwd}'
         output = subprocess.run(command, shell=True, capture_output=True)
         out_str = output.stdout.decode()
 
@@ -127,7 +143,7 @@ class RuntimeClient:
         output = subprocess.run(command, shell=True, capture_output=True)
         out_str += output.stdout.decode()
 
-        command = f'chmod g+rw,o+rw {self.initial_pwd}'
+        command = f'chmod g+rw {self.initial_pwd}'
         output = subprocess.run(command, shell=True, capture_output=True)
         out_str += output.stdout.decode()
         logger.debug(f'Created working directory. Output: [{out_str}]')
@@ -143,37 +159,47 @@ class RuntimeClient:
                 f'id -u {username}', shell=True, check=True, capture_output=True
             )
             existing_user_id = int(result.stdout.decode().strip())
-            logger.debug(f'User {username} already exists with UID {existing_user_id}.')
 
-            # If the existing user ID matches the provided user_id, skip user creation
+            # The user ID already exists, skip setup
             if existing_user_id == user_id:
                 logger.debug(
-                    f'User {username} already has the provided UID {user_id}. Skipping creation.'
+                    f'User `{username}` already has the provided UID {user_id}. Skipping user setup.'
                 )
-                return
             else:
                 logger.warning(
-                    f'User {username} exists with different UID ({existing_user_id}).'
+                    f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
                 )
                 self.user_id = existing_user_id
-                return
-
+            return
         except subprocess.CalledProcessError as e:
-            # Handle the case where the user does not exist
+            # Returncode 1 indicates, that the user does not exist yet
             if e.returncode == 1:
                 logger.debug(
-                    f'User {username} does not exist. Proceeding with user creation.'
+                    f'User `{username}` does not exist. Proceeding with user creation.'
                 )
             else:
-                logger.error(f'Error checking user {username}: {e}')
+                logger.error(
+                    f'Error checking user `{username}`, skipping setup:\n{e}\n'
+                )
                 raise
 
         # Add sudoer
-        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
-        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
-        if output.returncode != 0:
-            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
-        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
+        sudoer_line = r'%sudo ALL=(ALL) NOPASSWD:ALL\n'
+        sudoers_path = '/etc/sudoers.d/99_sudo'
+        if not Path(sudoers_path).exists():
+            with open(sudoers_path, 'w') as f:
+                f.write(sudoer_line)
+            output = subprocess.run(['chmod', '0440', sudoers_path])
+            if output.returncode != 0:
+                logger.error('Failed to chmod 99_sudo file!')
+            else:
+                logger.debug('Added sudoer successfully.')
+
+        # sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        # output = subprocess.run(sudoer_line, shell=True, capture_output=True)
+        # if output.returncode != 0:
+        #     raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
+        # logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
         # Attempt to add the user, retrying with incremented user_id if necessary
         while True:
@@ -184,7 +210,7 @@ class RuntimeClient:
             output = subprocess.run(command, shell=True, capture_output=True)
             if output.returncode == 0:
                 logger.debug(
-                    f'Added user {username} successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
+                    f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
                 )
                 break
             elif f'UID {user_id} is not unique' in output.stderr.decode():
@@ -194,7 +220,7 @@ class RuntimeClient:
                 user_id += 1
             else:
                 raise RuntimeError(
-                    f'Failed to create user {username}: {output.stderr.decode()}'
+                    f'Failed to create user `{username}`! Output: [{output.stderr.decode()}]'
                 )
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
@@ -212,8 +238,8 @@ class RuntimeClient:
 
         # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
         self.__bash_expect_regex = r'\[PEXPECT_BEGIN\]\s*(.*?)\s*([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+)\s*\[PEXPECT_END\]'
-
-        self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
+        # Set umask to allow group write permissions
+        self.shell.sendline(f'umask 002; export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
         self.shell.sendline(
@@ -221,8 +247,11 @@ class RuntimeClient:
         )
         self.shell.expect(self.__bash_expect_regex)
         logger.debug(
-            f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
+            f'Bash initialized. Working directory: {work_dir}. Output: [{self.shell.before}]'
         )
+        # Ensure the group has write permissions on the working directory
+        self.shell.sendline(f'chmod g+rw "{work_dir}"')
+        self.shell.expect(self.__bash_expect_regex)
 
     async def _init_bash_commands(self):
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
@@ -326,14 +355,14 @@ class RuntimeClient:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
             if keep_prompt:
                 output += '\r\n' + bash_prompt
-            logger.debug(f'Command output: {output}')
+            # logger.debug(f'Command output:\n{output}')
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
         action_type = action.action
-        logger.debug(f'Running action: {action}')
+        logger.debug(f'Running action:\n{action}')
         observation = await getattr(self, action_type)(action)
-        logger.debug(f'Action output: {observation}')
+        logger.debug(f'Action output:\n{observation}')
         return observation
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:

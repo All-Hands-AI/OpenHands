@@ -239,7 +239,6 @@ class EventStreamRuntime(Runtime):
                 environment['DEBUG'] = 'true'
 
             logger.info(f'Workspace Base: {self.config.workspace_base}')
-            logger.info(f'Sandbox workspace: {sandbox_workspace_dir}')
             if mount_dir is not None and sandbox_workspace_dir is not None:
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
                 volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
@@ -249,6 +248,7 @@ class EventStreamRuntime(Runtime):
                     'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
                 )
                 volumes = None
+            logger.info(f'Sandbox workspace: {sandbox_workspace_dir}')
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
