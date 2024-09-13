@@ -284,6 +284,9 @@ def run_evaluation(
         else:
             logger.error(
                 f'Retrying instance [{instance.instance_id}] due to error: {result.error}. Stacktrace:\n{result.stacktrace}'
+                + '-' * 10
+                + '[You may ignore this error if it is a transient issue - the instance will be automatically retried.]'
+                + '-' * 10
             )
             instance_queue.put(instance)
             pbar.total += 1
