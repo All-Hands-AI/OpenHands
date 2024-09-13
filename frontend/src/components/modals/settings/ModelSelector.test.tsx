@@ -8,7 +8,7 @@ describe("ModelSelector", () => {
   const models = {
     openai: {
       separator: "/",
-      models: ["gpt-4o", "gpt-3.5-turbo"],
+      models: ["gpt-4o", "gpt-4o-mini"],
     },
     azure: {
       separator: "/",
