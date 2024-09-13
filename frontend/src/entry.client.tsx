@@ -12,7 +12,7 @@ import { SocketProvider } from "./context/socket";
 import "./i18n";
 
 async function prepareApp() {
-  if (process.env.NODE_ENV === "development") {
+  if (false && process.env.NODE_ENV === "development") {
     const { worker } = await import("./mocks/browser");
 
     await worker.start({

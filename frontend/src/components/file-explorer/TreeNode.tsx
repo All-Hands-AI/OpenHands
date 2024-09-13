@@ -99,7 +99,11 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       )}
     >
       <fetcher.Form method="post" action="?index">
-        <button type="submit" name="file" value={filename}>
+        <button
+          type={isDirectory ? "button" : "submit"}
+          name="file"
+          value={path}
+        >
           <Title
             name={filename}
             type={isDirectory ? "folder" : "file"}

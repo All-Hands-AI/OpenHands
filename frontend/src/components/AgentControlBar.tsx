@@ -1,7 +1,6 @@
 import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useSearchParams } from "@remix-run/react";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
@@ -74,7 +73,6 @@ function ActionButton({
 }
 
 function AgentControlBar() {
-  const [, setSearchParams] = useSearchParams();
   const { send } = useSocket();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
@@ -85,14 +83,7 @@ function AgentControlBar() {
       return;
     }
 
-    if (action === AgentState.STOPPED) {
-      setSearchParams((prev) => {
-        prev.set("reset", "true");
-        return prev;
-      });
-    } else {
-      setIsLoading(true);
-    }
+    setIsLoading(true);
 
     setDesiredState(action);
     send(generateAgentStateChangeEvent(action));
