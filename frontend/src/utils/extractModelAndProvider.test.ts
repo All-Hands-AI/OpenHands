@@ -47,7 +47,7 @@ describe("extractModelAndProvider", () => {
   });
 
   it("should add provider for popular models", () => {
-    expect(extractModelAndProvider("gpt-3.5-turbo")).toEqual({
+    expect(extractModelAndProvider("gpt-4o-mini")).toEqual({
       provider: "openai",
       model: "gpt-4o-mini",
       separator: "/",
