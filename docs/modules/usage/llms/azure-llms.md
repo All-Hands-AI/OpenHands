@@ -29,8 +29,6 @@ You will need your ChatGPT deployment name which can be found on the deployments
 * `Custom Model` to azure/&lt;deployment-name&gt;
 * `API Key`
 
-
-
 ## Embeddings
 
 OpenHands uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/).
