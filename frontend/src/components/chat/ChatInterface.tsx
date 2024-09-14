@@ -72,7 +72,7 @@ function ChatInterface() {
       addUserMessage({
         content,
         imageUrls,
-        timestamp: timestamp,
+        timestamp,
       }),
     );
     sendChatMessage(content, imageUrls, timestamp);

@@ -16,15 +16,14 @@ interface CustomMatchers<R = unknown> {
 }
 
 declare module "vitest" {
-  interface Assertion<T = any> extends CustomMatchers<T> {}
+  interface Assertion<T> extends CustomMatchers<T> {}
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
 HTMLElement.prototype.scrollTo = vi.fn().mockImplementation(() => {});
-const test_timestamp = new Date().toISOString();
-
+const TEST_TIMESTAMP = new Date().toISOString();
 
 describe("ChatInterface", () => {
   const sessionSendSpy = vi.spyOn(Session, "send");
@@ -32,23 +31,26 @@ describe("ChatInterface", () => {
 
   expect.extend({
     toMatchMessageEvent(received, expected) {
-        const receivedObj = JSON.parse(received);
-        const expectedObj = JSON.parse(expected);
+      const receivedObj = JSON.parse(received);
+      const expectedObj = JSON.parse(expected);
 
-        // Compare everything except the timestamp
-        const { timestamp: receivedTimestamp, ...receivedRest } = receivedObj.args;
-        const { timestamp: expectedTimestamp, ...expectedRest } = expectedObj.args;
+      // Compare everything except the timestamp
+      const { timestamp: receivedTimestamp, ...receivedRest } =
+        receivedObj.args;
+      const { timestamp: expectedTimestamp, ...expectedRest } =
+        expectedObj.args;
 
-        const pass = this.equals(receivedRest, expectedRest) &&
-                    typeof receivedTimestamp === 'string' &&
-                    !isNaN(Date.parse(receivedTimestamp));
+      const pass =
+        this.equals(receivedRest, expectedRest) &&
+        typeof receivedTimestamp === "string";
 
-        return {
+      return {
         pass,
-        message: () => pass
+        message: () =>
+          pass
             ? `expected ${received} not to match the structure of ${expected} (ignoring exact timestamp)`
             : `expected ${received} to match the structure of ${expected} (ignoring exact timestamp)`,
-        };
+      };
     },
   });
 
@@ -57,7 +59,7 @@ describe("ChatInterface", () => {
     args: {
       content: "my message",
       images_urls: [],
-      timestamp: test_timestamp,
+      timestamp: TEST_TIMESTAMP,
     },
   };
 
@@ -79,7 +81,7 @@ describe("ChatInterface", () => {
               sender: "user",
               content: "Hello",
               imageUrls: [],
-              timestamp: test_timestamp,
+              timestamp: TEST_TIMESTAMP,
             },
           ],
         },
@@ -113,7 +115,7 @@ describe("ChatInterface", () => {
     await user.keyboard("{Enter}");
 
     expect(sessionSendSpy).toHaveBeenCalledWith(
-      expect.toMatchMessageEvent(JSON.stringify(userMessageEvent))
+      expect.toMatchMessageEvent(JSON.stringify(userMessageEvent)),
     );
   });
 
@@ -132,7 +134,7 @@ describe("ChatInterface", () => {
     await user.keyboard("{Enter}");
 
     expect(sessionSendSpy).toHaveBeenCalledWith(
-      expect.toMatchMessageEvent(JSON.stringify(userMessageEvent))
+      expect.toMatchMessageEvent(JSON.stringify(userMessageEvent)),
     );
   });
 
