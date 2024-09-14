@@ -169,7 +169,7 @@ model = "gpt-4o"
 api_key = "your-api-key"
 
 # Model to use
-model = "gpt-3.5"
+model = "gpt-4o-mini"
 
 #################################### Agent ###################################
 # Configuration for agents (group name starts with 'agent')
