@@ -14,6 +14,7 @@ interface WebSocketContextType {
   start: (options?: WebSocketClientOptions) => void;
   stop: () => void;
   isConnected: boolean;
+  events: Record<string, unknown>[];
 }
 
 const SocketContext = React.createContext<WebSocketContextType | undefined>(
@@ -27,6 +28,7 @@ interface SocketProviderProps {
 function SocketProvider({ children }: SocketProviderProps) {
   const wsRef = React.useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = React.useState<boolean>(false);
+  const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
 
   const start = React.useCallback((options?: WebSocketClientOptions): void => {
     if (wsRef.current) {
@@ -48,6 +50,7 @@ function SocketProvider({ children }: SocketProviderProps) {
     });
 
     ws.addEventListener("message", (event) => {
+      setEvents((prevEvents) => [...prevEvents, JSON.parse(event.data)]);
       options?.onMessage?.(event);
     });
 
@@ -83,8 +86,8 @@ function SocketProvider({ children }: SocketProviderProps) {
   );
 
   const value = React.useMemo(
-    () => ({ send, start, stop, isConnected }),
-    [send, start, stop, isConnected],
+    () => ({ send, start, stop, isConnected, events }),
+    [send, start, stop, isConnected, events],
   );
 
   return (

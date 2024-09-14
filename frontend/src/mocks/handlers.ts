@@ -63,4 +63,7 @@ export const handlers = [
       "anthropic/claude-3.5",
     ]);
   }),
+  http.post("http://localhost:3000/api/submit-feedback", async () =>
+    HttpResponse.json({ statusCode: 200 }, { status: 200 }),
+  ),
 ];

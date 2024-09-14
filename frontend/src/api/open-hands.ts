@@ -40,3 +40,24 @@ export const retrieveFileContent = async (
   const data = await response.json();
   return data.code;
 };
+
+export interface Feedback {
+  version: string;
+  email: string;
+  token: string;
+  feedback: "positive" | "negative";
+  permissions: "public" | "private";
+  trajectory: unknown[];
+}
+
+export const sendFeedback = async (data: Feedback) => {
+  const response = await fetch("http://localhost:3000/api/submit-feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  return response.json();
+};

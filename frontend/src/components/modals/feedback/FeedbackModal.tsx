@@ -4,11 +4,11 @@ import { Input, Radio, RadioGroup } from "@nextui-org/react";
 import hotToast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
-import { Feedback, sendFeedback } from "#/services/feedbackService";
 import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
-import Session from "#/services/session";
 import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
+import { useSocket } from "#/context/socket";
+import { Feedback, sendFeedback } from "#/api/open-hands";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format
@@ -32,6 +32,7 @@ function FeedbackModal({
   onOpenChange,
   onSendFeedback,
 }: FeedbackModalProps) {
+  const { events } = useSocket();
   const { t } = useTranslation();
 
   const [email, setEmail] = React.useState("");
@@ -95,7 +96,7 @@ function FeedbackModal({
       email,
       permissions,
       token: getToken(),
-      trajectory: removeApiKey(removeUnwantedKeys(Session._history)),
+      trajectory: removeApiKey(removeUnwantedKeys(events)),
     };
 
     try {
