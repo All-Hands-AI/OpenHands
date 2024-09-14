@@ -39,8 +39,11 @@ def _put_source_code_to_dir(temp_dir: str):
     Parameters:
     - temp_dir (str): The directory to put the source code in
     """
+    if not os.path.isdir(temp_dir):
+        raise RuntimeError(f'Temp directory {temp_dir} does not exist')
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    logger.info(f'Using project root: {project_root}')
+    logger.info(f'Building source distribution using project root: {project_root}')
 
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
@@ -63,12 +66,12 @@ def _put_source_code_to_dir(temp_dir: str):
         logger.error(err_logs)
 
     if result.returncode != 0:
-        logger.error(f'Build failed: {result}')
-        raise Exception(f'Build failed: {result}')
+        logger.error(f'Image build failed:\n{result}')
+        raise RuntimeError(f'Image build failed:\n{result}')
 
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
-        raise Exception(f'Source distribution not found at {tarball_path}')
+        raise RuntimeError(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
     # Unzip the tarball
@@ -150,14 +153,14 @@ def prep_docker_build_folder(
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    hash = dirhash(dir_path, 'md5')
+    dist_hash = dirhash(dir_path, 'md5')
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
         f'Extra deps: {extra_deps}\n'
-        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {dist_hash}\n'
     )
-    return hash
+    return dist_hash
 
 
 def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:

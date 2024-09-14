@@ -71,7 +71,7 @@ def create_runtime(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    logger.info(f'Initializing runtime: {runtime_cls}')
+    logger.info(f'Initializing runtime: {runtime_cls.__name__}')
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
