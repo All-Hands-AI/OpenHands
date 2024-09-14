@@ -27,6 +27,7 @@ You will need your ChatGPT deployment name which can be found on the deployments
 
 * Enable `Advanced Options`
 * `Custom Model` to azure/&lt;deployment-name&gt;
+* `Base URL` to your Azure API Base URL (Example: https://openai-gpt-4-test-v-1.openai.azure.com/)
 * `API Key`
 
 ## Embeddings
