@@ -9,20 +9,55 @@ import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
 
+/// <reference types="vitest" />
+
+interface CustomMatchers<R = unknown> {
+  toMatchMessageEvent(expected: string): R;
+}
+
+declare module "vitest" {
+  interface Assertion<T = any> extends CustomMatchers<T> {}
+  interface AsymmetricMatchersContaining extends CustomMatchers {}
+}
+
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
 HTMLElement.prototype.scrollTo = vi.fn().mockImplementation(() => {});
+const test_timestamp = new Date().toISOString();
+
 
 describe("ChatInterface", () => {
   const sessionSendSpy = vi.spyOn(Session, "send");
   vi.spyOn(Session, "isConnected").mockReturnValue(true);
+
+  expect.extend({
+    toMatchMessageEvent(received, expected) {
+        const receivedObj = JSON.parse(received);
+        const expectedObj = JSON.parse(expected);
+
+        // Compare everything except the timestamp
+        const { timestamp: receivedTimestamp, ...receivedRest } = receivedObj.args;
+        const { timestamp: expectedTimestamp, ...expectedRest } = expectedObj.args;
+
+        const pass = this.equals(receivedRest, expectedRest) &&
+                    typeof receivedTimestamp === 'string' &&
+                    !isNaN(Date.parse(receivedTimestamp));
+
+        return {
+        pass,
+        message: () => pass
+            ? `expected ${received} not to match the structure of ${expected} (ignoring exact timestamp)`
+            : `expected ${received} to match the structure of ${expected} (ignoring exact timestamp)`,
+        };
+    },
+  });
 
   const userMessageEvent = {
     action: ActionType.MESSAGE,
     args: {
       content: "my message",
       images_urls: [],
-      timestamp: new Date().toISOString(),
+      timestamp: test_timestamp,
     },
   };
 
@@ -44,7 +79,7 @@ describe("ChatInterface", () => {
               sender: "user",
               content: "Hello",
               imageUrls: [],
-              timestamp: new Date().toISOString(),
+              timestamp: test_timestamp,
             },
           ],
         },
@@ -78,7 +113,7 @@ describe("ChatInterface", () => {
     await user.keyboard("{Enter}");
 
     expect(sessionSendSpy).toHaveBeenCalledWith(
-      JSON.stringify(userMessageEvent),
+      expect.toMatchMessageEvent(JSON.stringify(userMessageEvent))
     );
   });
 
@@ -97,7 +132,7 @@ describe("ChatInterface", () => {
     await user.keyboard("{Enter}");
 
     expect(sessionSendSpy).toHaveBeenCalledWith(
-      JSON.stringify(userMessageEvent),
+      expect.toMatchMessageEvent(JSON.stringify(userMessageEvent))
     );
   });
 

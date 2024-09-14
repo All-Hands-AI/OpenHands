@@ -67,14 +67,15 @@ function ChatInterface() {
   };
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
+    const timestamp = new Date().toISOString();
     dispatch(
       addUserMessage({
         content,
         imageUrls,
-        timestamp: new Date().toISOString(),
+        timestamp: timestamp,
       }),
     );
-    sendChatMessage(content, imageUrls);
+    sendChatMessage(content, imageUrls, timestamp);
   };
 
   const { t } = useTranslation();
