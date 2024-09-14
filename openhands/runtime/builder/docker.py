@@ -68,6 +68,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         Returns:
             bool: Whether the Docker image exists in the registry or in the local store
         """
+        if not image_name:
+            logger.error(f'Invalid image name: `{image_name}`')
+            return False
+
         try:
             logger.info(f'Checking, if image exists locally:\n{image_name}')
             self.docker_client.images.get(image_name)

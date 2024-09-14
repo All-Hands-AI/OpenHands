@@ -142,7 +142,7 @@ class RemoteRuntime(Runtime):
                 f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                 'PYTHONUNBUFFERED=1 poetry run '
                 f'python -u -m openhands.runtime.client.client {self.port} '
-                f'--working-dir {self.sandbox_workspace_dir} '
+                f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
                 f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                 f'--user-id {self.config.sandbox.user_id} '
@@ -202,10 +202,6 @@ class RemoteRuntime(Runtime):
             msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
             logger.warning(msg)
             raise RuntimeError(msg)
-
-    @property
-    def sandbox_workspace_dir(self):
-        return self.config.workspace_mount_path_in_sandbox
 
     def close(self):
         if self.runtime_id:

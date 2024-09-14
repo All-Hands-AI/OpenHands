@@ -60,6 +60,7 @@ RUN cd /openhands/code && \
     {{ extra_deps }} {% if extra_deps %} && {% endif %} \
     /openhands/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
     {% if not skip_init %}chmod -R g+rws /openhands/poetry && {% endif %} \
+    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/miniforge3/bin/mamba clean --all
 
