@@ -73,24 +73,56 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return False
 
         try:
-            logger.info(f'Checking, if image {image_name} exists locally.')
+            logger.info(f'Checking, if image exists locally:\n{image_name}')
             self.docker_client.images.get(image_name)
-            logger.info(f'Image {image_name} found locally.')
+            logger.info('Image found locally.')
             return True
         except docker.errors.ImageNotFound:
             try:
                 logger.info(
                     'Image not found locally. Trying to pull it, please wait...'
                 )
-                self.docker_client.images.pull(image_name)
-                logger.info(f'Image {image_name} pulled successfully.')
+
+                layers = {}
+                for line in self.docker_client.api.pull(
+                    image_name, stream=True, decode=True
+                ):
+                    if 'id' in line and 'progressDetail' in line:
+                        layer_id = line['id']
+                        if layer_id not in layers:
+                            layers[layer_id] = {
+                                'last_logged': -10
+                            }  # Initialize last logged at -10%
+
+                        if (
+                            'total' in line['progressDetail']
+                            and 'current' in line['progressDetail']
+                        ):
+                            total = line['progressDetail']['total']
+                            current = line['progressDetail']['current']
+                            percentage = (current / total) * 100
+
+                            # Log if percentage is at least 10% higher than last logged
+                            if percentage - layers[layer_id]['last_logged'] >= 10:
+                                logger.info(
+                                    f'Layer {layer_id}: {percentage:.0f}% downloaded'
+                                )
+                                layers[layer_id]['last_logged'] = percentage
+
+                    elif 'status' in line:
+                        logger.info(line['status'])
+
+                logger.info('Image pulled')
                 return True
             except docker.errors.ImageNotFound:
                 logger.info('Could not find image locally or in registry.')
                 return False
             except Exception as e:
-                logger.error(
-                    'Could not pull image directly '
-                    + (str(e) if '404' not in str(e) else '')
-                )
+                msg = 'Image could not be pulled: '
+                ex_msg = str(e)
+                if 'Not Found' in ex_msg:
+                    msg += 'image not found in registry.'
+                else:
+                    msg += f'{ex_msg}'
+                logger.warning(msg)
                 return False
