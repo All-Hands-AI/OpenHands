@@ -523,9 +523,16 @@ class RuntimeClient:
             f'(.*)\n{HEAD}(.*)\n{DIVIDER}(.*)\n{TAIL}', action.diff_block, re.DOTALL
         )
         if not diff_blocks or len(diff_blocks.groups()) < 3:
-            return ErrorObservation(
-                'Could not resolve diff block into search/replace blocks.'
-            )
+            found_head = re.search(f'{HEAD}', action.diff_block) is not None
+            found_divider = re.search(f'{DIVIDER}', action.diff_block) is not None
+            found_tail = re.search(f'{TAIL}', action.diff_block) is not None
+
+            error_msg = 'Could not resolve diff block into search/replace blocks.'
+            if found_head and (not found_tail):
+                error_msg = 'The diff block got cut off because it is too long. Try breaking it into smaller SEARCH/REPLACE blocks.'
+            elif found_head and found_tail and (not found_divider):
+                error_msg = 'Could not find the divider between SEARCH/REPLACE blocks.'
+            return ErrorObservation(error_msg)
 
         path = diff_blocks.group(1)
         search_block = diff_blocks.group(2)
