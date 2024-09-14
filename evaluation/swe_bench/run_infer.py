@@ -88,7 +88,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         instruction += """
 Now, let's come up with 2 global plans sequentially.
 - First, examine the codebase and locate the relevant code for the issue. Then we'll come up with the FIRST detailed plan with all the edits to resolve it.
-- After the local agent finishes executing the first plan, navigate the codebase again and come up with the SECOND detailed plan to create exactly ONE unit test at the correct location to verify the change has actually resolved the issue. As the LAST phase, explicitly tell the executor to execute it after creating that test case. If the test failed and after debugging it the local executor believes the previous fixes are incorrect, request for a new plan and include the error with explaination for that request.
+- After the local agent finishes executing the first plan, navigate the codebase again and come up with the SECOND detailed plan to create exactly ONE unit test at the correct location to verify the change has actually resolved the issue. As the LAST phase, explicitly tell the executor to execute it after creating that test case. If the test failed and after debugging it the local executor believes the previous fixes are incorrect, request for a new plan and include the error with explanation for that request.
 - If the local agent fails to execute the test you suggested and request for a new plan, examinine the codebase again and come up with the last third plan to fix the issue and unit test.
 
 Important:
