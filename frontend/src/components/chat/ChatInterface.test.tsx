@@ -19,7 +19,11 @@ describe("ChatInterface", () => {
 
   const userMessageEvent = {
     action: ActionType.MESSAGE,
-    args: { content: "my message", images_urls: [] },
+    args: {
+      content: "my message",
+      images_urls: [],
+      timestamp: new Date().toISOString(),
+    },
   };
 
   afterEach(() => {
@@ -35,7 +39,14 @@ describe("ChatInterface", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
         chat: {
-          messages: [{ sender: "user", content: "Hello", imageUrls: [] }],
+          messages: [
+            {
+              sender: "user",
+              content: "Hello",
+              imageUrls: [],
+              timestamp: new Date().toISOString(),
+            },
+          ],
         },
       },
     });

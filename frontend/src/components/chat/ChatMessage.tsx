@@ -59,12 +59,27 @@ function ChatMessage({
     }
   };
 
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(date);
+  };
+
   return (
     <div
       data-testid="message"
       className={className}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      role="article"
+      aria-label={t(I18nKey.CHAT_INTERFACE$MESSAGE_ARIA_LABEL, {
+        sender: message.sender
+          ? message.sender.charAt(0).toUpperCase() +
+            message.sender.slice(1).toLowerCase()
+          : t(I18nKey.CHAT_INTERFACE$UNKNOWN_SENDER),
+      })}
     >
       {isHovering && (
         <button
@@ -92,6 +107,9 @@ function ChatMessage({
           ))}
         </div>
       )}
+      <div className="text-xs text-neutral-400 mt-2">
+        {formatTimestamp(message.timestamp)}
+      </div>
       {isLastMessage &&
         message.sender === "assistant" &&
         awaitingUserConfirmation && <ConfirmationButtons />}

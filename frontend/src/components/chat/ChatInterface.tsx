@@ -67,7 +67,13 @@ function ChatInterface() {
   };
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
-    dispatch(addUserMessage({ content, imageUrls }));
+    dispatch(
+      addUserMessage({
+        content,
+        imageUrls,
+        timestamp: new Date().toISOString(),
+      }),
+    );
     sendChatMessage(content, imageUrls);
   };
 

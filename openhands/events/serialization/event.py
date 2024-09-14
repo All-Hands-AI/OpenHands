@@ -35,8 +35,8 @@ def event_from_dict(data) -> 'Event':
     for key in UNDERSCORE_KEYS:
         if key in data:
             value = data[key]
-            if key == 'timestamp':
-                value = datetime.fromisoformat(value)
+            if key == 'timestamp' and isinstance(value, datetime):
+                value = value.isoformat()
             if key == 'source':
                 value = EventSource(value)
             setattr(evt, '_' + key, value)
@@ -54,7 +54,8 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'id' and d.get('id') == -1:
             d.pop('id', None)
         if key == 'timestamp' and 'timestamp' in d:
-            d['timestamp'] = d['timestamp'].isoformat()
+            if isinstance(d['timestamp'], datetime):
+                d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
         props.pop(key, None)

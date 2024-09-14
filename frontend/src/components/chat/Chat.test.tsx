@@ -5,9 +5,18 @@ import { renderWithProviders } from "test-utils";
 import Chat from "./Chat";
 
 const MESSAGES: Message[] = [
-  { sender: "assistant", content: "Hello!", imageUrls: [] },
-  { sender: "user", content: "Hi!", imageUrls: [] },
-  { sender: "assistant", content: "How can I help you today?", imageUrls: [] },
+  {
+    sender: "assistant",
+    content: "Hello!",
+    imageUrls: [],
+    timestamp: new Date().toISOString(),
+  },
+  {
+    sender: "user",
+    content: "Hi!",
+    imageUrls: [],
+    timestamp: new Date().toISOString(),
+  },
 ];
 
 describe("Chat", () => {

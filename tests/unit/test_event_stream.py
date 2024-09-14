@@ -35,6 +35,7 @@ def test_stream_storage(temp_dir: str):
     content = event_stream.file_store.read('sessions/abc/events/0.json')
     assert content is not None
     data = json.loads(content)
+    print(data)
     assert 'timestamp' in data
     del data['timestamp']
     assert data == {

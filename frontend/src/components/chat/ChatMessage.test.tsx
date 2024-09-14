@@ -9,7 +9,12 @@ describe("Message", () => {
   it("should render a user message", () => {
     render(
       <ChatMessage
-        message={{ sender: "user", content: "Hello", imageUrls: [] }}
+        message={{
+          sender: "user",
+          content: "Hello",
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+        }}
         isLastMessage={false}
       />,
     );
@@ -21,7 +26,12 @@ describe("Message", () => {
   it("should render an assistant message", () => {
     render(
       <ChatMessage
-        message={{ sender: "assistant", content: "Hi", imageUrls: [] }}
+        message={{
+          sender: "assistant",
+          content: "Hi",
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+        }}
         isLastMessage={false}
       />,
     );
@@ -37,6 +47,7 @@ describe("Message", () => {
           sender: "user",
           content: "```js\nconsole.log('Hello')\n```",
           imageUrls: [],
+          timestamp: new Date().toISOString(),
         }}
         isLastMessage={false}
       />,
@@ -56,7 +67,12 @@ describe("Message", () => {
       const user = userEvent.setup();
       render(
         <ChatMessage
-          message={{ sender: "user", content: "Hello", imageUrls: [] }}
+          message={{
+            sender: "user",
+            content: "Hello",
+            imageUrls: [],
+            timestamp: new Date().toISOString(),
+          }}
           isLastMessage={false}
         />,
       );
@@ -80,7 +96,12 @@ describe("Message", () => {
       const user = userEvent.setup();
       render(
         <ChatMessage
-          message={{ sender: "user", content: "Hello", imageUrls: [] }}
+          message={{
+            sender: "user",
+            content: "Hello",
+            imageUrls: [],
+            timestamp: new Date().toISOString(),
+          }}
           isLastMessage={false}
         />,
       );
@@ -118,6 +139,7 @@ describe("Message", () => {
             sender: "assistant",
             content: "Are you sure?",
             imageUrls: [],
+            timestamp: new Date().toISOString(),
           }}
           isLastMessage={false}
           awaitingUserConfirmation
@@ -128,7 +150,12 @@ describe("Message", () => {
       // it should not render buttons if the message is not from the assistant
       rerender(
         <ChatMessage
-          message={{ sender: "user", content: "Yes", imageUrls: [] }}
+          message={{
+            sender: "user",
+            content: "Yes",
+            imageUrls: [],
+            timestamp: new Date().toISOString(),
+          }}
           isLastMessage
           awaitingUserConfirmation
         />,
@@ -142,6 +169,7 @@ describe("Message", () => {
             sender: "assistant",
             content: "Are you sure?",
             imageUrls: [],
+            timestamp: new Date().toISOString(),
           }}
           isLastMessage
           awaitingUserConfirmation={false}
@@ -156,6 +184,7 @@ describe("Message", () => {
             sender: "assistant",
             content: "Are you sure?",
             imageUrls: [],
+            timestamp: new Date().toISOString(),
           }}
           isLastMessage
           awaitingUserConfirmation
