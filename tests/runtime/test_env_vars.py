@@ -1,10 +1,9 @@
 """Env vars related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
 import os
-import time
 from unittest.mock import patch
 
-from conftest import _load_runtime
+from conftest import _close_test_runtime, _load_runtime
 
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
@@ -30,8 +29,7 @@ def test_env_vars_os_environ(temp_dir, box_class, run_as_openhands):
             obs.content.strip().split('\n\r')[0].strip() == 'BAZ'
         ), f'Output: [{obs.content}] for {box_class}'
 
-        runtime.close(rm_all_containers=False)
-        time.sleep(1)
+        _close_test_runtime(runtime)
 
 
 def test_env_vars_runtime_operations(temp_dir, box_class):
@@ -66,5 +64,4 @@ def test_env_vars_runtime_operations(temp_dir, box_class):
         and obs.content.strip().split('\r\n')[0].strip() == 'new_value'
     )
 
-    runtime.close(rm_all_containers=False)
-    time.sleep(1)
+    _close_test_runtime(runtime)

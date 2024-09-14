@@ -507,7 +507,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
-                    logger.openhands_logger.info(
+                    logger.openhands_logger.debug(
                         'Attempt to load default agent config from config toml'
                     )
                     non_dict_fields = {
@@ -517,13 +517,13 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_agent_config(agent_config, 'agent')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.openhands_logger.info(
+                            logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as agent config'
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 elif key is not None and key.lower() == 'llm':
-                    logger.openhands_logger.info(
+                    logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
                     non_dict_fields = {
@@ -533,7 +533,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.openhands_logger.info(
+                            logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
                             llm_config = LLMConfig(**nested_value)
@@ -584,10 +584,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
+    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
     # Set workspace_mount_path if not set by the user
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        cfg.workspace_mount_path = cfg.workspace_base
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?

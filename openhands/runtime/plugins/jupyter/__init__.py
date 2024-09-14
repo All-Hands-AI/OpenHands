@@ -19,7 +19,7 @@ class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
     async def initialize(self, username: str, kernel_id: str = 'openhands-default'):
-        self.kernel_gateway_port = find_available_tcp_port()
+        self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
             (
