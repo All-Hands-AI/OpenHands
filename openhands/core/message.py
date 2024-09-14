@@ -72,12 +72,14 @@ class Message(BaseModel):
 
 
 def format_messages(
-    messages: Union[Message, list[Message]], with_images: bool
+    messages: Union[Message, list[Message]],
+    with_images: bool,
+    with_prompt_caching: bool,
 ) -> list[dict]:
     if not isinstance(messages, list):
         messages = [messages]
 
-    if with_images:
+    if with_images or with_prompt_caching:
         return [message.model_dump() for message in messages]
 
     converted_messages = []
@@ -113,4 +115,5 @@ def format_messages(
                     'content': content_str,
                 }
             )
+
     return converted_messages

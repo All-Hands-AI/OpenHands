@@ -42,7 +42,7 @@ def test_bash_command_pexcept(temp_dir, box_class, run_as_openhands):
     ), 'The observation should be a CmdOutputObservation.'
     assert obs.exit_code == 0, 'The exit code should be 0.'
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -56,7 +56,7 @@ def test_single_multiline_command(temp_dir, box_class):
     assert obs.exit_code == 0, 'The exit code should be 0.'
     assert 'foo' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -70,7 +70,7 @@ def test_multiline_echo(temp_dir, box_class):
     assert obs.exit_code == 0, 'The exit code should be 0.'
     assert 'hello\r\nworld' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -85,7 +85,7 @@ def test_runtime_whitespace(temp_dir, box_class):
     assert obs.exit_code == 0, 'The exit code should be 0.'
     assert '\r\n\r\n\r\n' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -137,7 +137,7 @@ world "
     assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
     assert 'hello\r\nworld "\r\n' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -153,7 +153,7 @@ def test_no_ps2_in_output(temp_dir, box_class, run_as_openhands):
     assert 'hello\r\nworld' in obs.content
     assert '>' not in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -196,7 +196,7 @@ echo "success"
     assert obs.exit_code == 0, 'The exit code should be 0.'
     assert 'success' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -255,7 +255,7 @@ def test_cmd_run(temp_dir, box_class, run_as_openhands):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -273,7 +273,7 @@ def test_run_as_user_correct_home_dir(temp_dir, box_class, run_as_openhands):
     else:
         assert '/root' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -289,7 +289,7 @@ def test_multi_cmd_run_in_single_line(temp_dir, box_class):
     assert '/workspace' in obs.content
     assert 'total 0' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -318,7 +318,7 @@ def test_stateful_cmd(temp_dir, box_class):
     assert obs.exit_code == 0, 'The exit code should be 0.'
     assert '/workspace/test' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -332,7 +332,7 @@ def test_failed_cmd(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -365,7 +365,7 @@ def test_copy_single_file(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -414,7 +414,7 @@ def test_copy_directory_recursively(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'File 1 content' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -435,7 +435,7 @@ def test_copy_to_non_existent_directory(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -470,7 +470,7 @@ def test_overwrite_existing_file(temp_dir, box_class):
     assert obs.exit_code == 0
     assert 'Hello, World!' in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -490,7 +490,7 @@ def test_copy_non_existent_file(temp_dir, box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code != 0  # File should not exist
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -517,7 +517,7 @@ def test_keep_prompt(box_class, temp_dir):
     assert obs.exit_code == 0
     assert 'root@' not in obs.content
 
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
 
 
@@ -595,7 +595,5 @@ def test_git_operation(box_class):
     assert isinstance(obs, CmdOutputObservation)
     assert obs.exit_code == 0
 
-    runtime.close()
-
-    runtime.close()
+    runtime.close(rm_all_containers=False)
     time.sleep(1)
