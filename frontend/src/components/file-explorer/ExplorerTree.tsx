@@ -4,18 +4,17 @@ import TreeNode from "./TreeNode";
 import { I18nKey } from "#/i18n/declaration";
 
 interface ExplorerTreeProps {
-  files: string[];
+  files: string[] | null;
   defaultOpen?: boolean;
 }
 
 function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
   const { t } = useTranslation();
-  if (files.length === 0) {
-    return (
-      <div className="text-sm text-gray-400 pt-4">
-        {t(I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE)}
-      </div>
-    );
+  if (!files?.length) {
+    const message = !files
+      ? I18nKey.EXPLORER$LOADING_WORKSPACE_MESSAGE
+      : I18nKey.EXPLORER$EMPTY_WORKSPACE_MESSAGE;
+    return <div className="text-sm text-gray-400 pt-4">{t(message)}</div>;
   }
   return (
     <div className="w-full h-full pt-[4px]">

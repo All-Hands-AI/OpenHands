@@ -61,22 +61,64 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         return target_image_hash_name
 
     def image_exists(self, image_name: str) -> bool:
-        """Check if the image exists in the registry (try to pull it first) AND in the local store.
+        """Check if the image exists in the registry (try to pull it first) or in the local store.
 
         Args:
             image_name (str): The Docker image to check (<image repo>:<image tag>)
         Returns:
-            bool: Whether the Docker image exists in the registry and in the local store
+            bool: Whether the Docker image exists in the registry or in the local store
         """
-        # Try to pull the Docker image from the registry
         try:
-            self.docker_client.images.pull(image_name)
-        except Exception:
-            logger.info(f'Cannot pull image {image_name} directly')
+            logger.info(f'Checking, if image exists locally:\n{image_name}')
+            self.docker_client.images.get(image_name)
+            logger.info('Image found locally.')
+            return True
+        except docker.errors.ImageNotFound:
+            try:
+                logger.info(
+                    'Image not found locally. Trying to pull it, please wait...'
+                )
 
-        images = self.docker_client.images.list()
-        if images:
-            for image in images:
-                if image_name in image.tags:
-                    return True
-        return False
+                layers = {}
+                for line in self.docker_client.api.pull(
+                    image_name, stream=True, decode=True
+                ):
+                    if 'id' in line and 'progressDetail' in line:
+                        layer_id = line['id']
+                        if layer_id not in layers:
+                            layers[layer_id] = {
+                                'last_logged': -10
+                            }  # Initialize last logged at -10%
+
+                        if (
+                            'total' in line['progressDetail']
+                            and 'current' in line['progressDetail']
+                        ):
+                            total = line['progressDetail']['total']
+                            current = line['progressDetail']['current']
+                            percentage = (current / total) * 100
+
+                            # Log if percentage is at least 10% higher than last logged
+                            if percentage - layers[layer_id]['last_logged'] >= 10:
+                                logger.info(
+                                    f'Layer {layer_id}: {percentage:.0f}% downloaded'
+                                )
+                                layers[layer_id]['last_logged'] = percentage
+
+                    elif 'status' in line:
+                        logger.info(line['status'])
+
+                logger.info('Image pulled')
+                return True
+            except docker.errors.ImageNotFound:
+                logger.info('Could not find image locally or in registry.')
+                return False
+            except Exception as e:
+                msg = 'Image could not be pulled: '
+                ex_msg = str(e)
+                if 'Not Found' in ex_msg:
+                    msg += 'image not found in registry.'
+                else:
+                    msg += f'{ex_msg}'
+                logger.warning(msg)
+                return False

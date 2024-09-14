@@ -1,8 +1,10 @@
 import os
 import shutil
+from unittest.mock import Mock
 
 import pytest
 
+from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -32,7 +34,7 @@ def test_prompt_manager_without_micro_agent(prompt_dir, agent_skills_docs):
 
     assert isinstance(manager.system_message, str)
     assert (
-        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions."
+        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
         in manager.system_message
     )
     assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
@@ -56,15 +58,23 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
     with open(os.path.join(prompt_dir, 'micro', f'{micro_agent_name}.md'), 'w') as f:
         f.write(micro_agent_content)
 
-    manager = PromptManager(prompt_dir, agent_skills_docs, micro_agent_name)
+    # Mock MicroAgent
+    mock_micro_agent = Mock(spec=MicroAgent)
+    mock_micro_agent.content = micro_agent_content
+
+    manager = PromptManager(
+        prompt_dir=prompt_dir,
+        agent_skills_docs=agent_skills_docs,
+        micro_agent=mock_micro_agent,
+    )
 
     assert manager.prompt_dir == prompt_dir
     assert manager.agent_skills_docs == agent_skills_docs
-    assert manager.micro_agent == micro_agent_content
+    assert manager.micro_agent == mock_micro_agent
 
     assert isinstance(manager.system_message, str)
     assert (
-        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions."
+        "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
         in manager.system_message
     )
     assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
@@ -86,7 +96,7 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
 
 def test_prompt_manager_file_not_found(prompt_dir, agent_skills_docs):
     with pytest.raises(FileNotFoundError):
-        PromptManager(prompt_dir, agent_skills_docs, 'non_existent_micro_agent')
+        MicroAgent(os.path.join(prompt_dir, 'micro', 'non_existent_micro_agent.md'))
 
 
 def test_prompt_manager_template_rendering(prompt_dir, agent_skills_docs):

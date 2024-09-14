@@ -2,7 +2,7 @@
 
 ## Completion
 
-OpenHands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure)
+OpenHands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure).
 
 ### Azure openai configs
 
@@ -12,7 +12,7 @@ When running the OpenHands Docker image, you'll need to set the following enviro
 LLM_BASE_URL="<azure-api-base-url>"          # e.g. "https://openai-gpt-4-test-v-1.openai.azure.com/"
 LLM_API_KEY="<azure-api-key>"
 LLM_MODEL="azure/<your-gpt-deployment-name>"
-LLM_API_VERSION="<api-version>"          # e.g. "2024-02-15-preview"
+LLM_API_VERSION="<api-version>"              # e.g. "2024-02-15-preview"
 ```
 
 Example:
@@ -31,15 +31,18 @@ docker run -it \
 ghcr.io/all-hands-ai/openhands:main
 ```
 
-You can set the LLM_MODEL and LLM_API_KEY in the OpenHands UI itself.
+You can also set the model and API key in the OpenHands UI through the Settings.
 
 :::note
-You can find your ChatGPT deployment name on the deployments page in Azure. It could be the same with the chat model name (e.g. 'GPT4-1106-preview'), by default or initially set, but it doesn't have to be the same. Run openhands, and when you load it in the browser, go to Settings and set model as above: "azure/&lt;your-actual-gpt-deployment-name&gt;". If it's not in the list, enter your own text and save it.
+You can find your ChatGPT deployment name on the deployments page in Azure. It could be the same with the chat model
+name (e.g. 'GPT4-1106-preview'), by default or initially set, but it doesn't have to be the same. Run OpenHands,
+and when you load it in the browser, go to Settings and set model as above: "azure/&lt;your-actual-gpt-deployment-name&gt;".
+If it's not in the list, you can open the Settings modal, switch to "Custom Model", and enter your model name.
 :::
 
 ## Embeddings
 
-OpenHands uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)
+OpenHands uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/).
 
 ### Azure openai configs
 
@@ -50,6 +53,6 @@ When running OpenHands in Docker, set the following environment variables using 
 
 ```
 LLM_EMBEDDING_MODEL="azureopenai"
-LLM_EMBEDDING_DEPLOYMENT_NAME="<your-embedding-deployment-name>"        # e.g. "TextEmbedding...<etc>"
-LLM_API_VERSION="<api-version>"         # e.g. "2024-02-15-preview"
+LLM_EMBEDDING_DEPLOYMENT_NAME="<your-embedding-deployment-name>"   # e.g. "TextEmbedding...<etc>"
+LLM_API_VERSION="<api-version>"                                    # e.g. "2024-02-15-preview"
 ```

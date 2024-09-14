@@ -1,5 +1,5 @@
-import asyncio
 import os
+import random
 import time
 
 import pytest
@@ -9,6 +9,7 @@ from openhands.core.config import AppConfig, SandboxConfig, load_from_env
 from openhands.events import EventStream
 from openhands.runtime.client.runtime import EventStreamRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from openhands.runtime.remote.runtime import RemoteRuntime
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
@@ -23,7 +24,21 @@ def print_method_name(request):
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory) -> str:
-    return str(tmp_path_factory.mktemp('test_runtime'))
+    """
+    Creates a unique temporary directory
+
+    Parameters:
+    - tmp_path_factory (TempPathFactory): A TempPathFactory class
+
+    Returns:
+    - str: The temporary directory path that was created
+    """
+
+    unique_suffix = random.randint(10000, 99999)
+    temp_directory = tmp_path_factory.mktemp(
+        f'test_runtime_{unique_suffix}', numbered=False
+    )
+    return str(temp_directory)
 
 
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream')
@@ -34,6 +49,8 @@ def get_box_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
+    elif runtime.lower() == 'remote':
+        return [RemoteRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
@@ -88,14 +105,13 @@ def base_container_image(request):
 
 
 @pytest.fixture
-async def runtime(temp_dir, box_class, run_as_openhands):
-    runtime = await _load_runtime(temp_dir, box_class, run_as_openhands)
+def runtime(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     yield runtime
-    await runtime.close()
-    await asyncio.sleep(1)
+    time.sleep(1)
 
 
-async def _load_runtime(
+def _load_runtime(
     temp_dir,
     box_class,
     run_as_openhands: bool = True,
@@ -132,8 +148,7 @@ async def _load_runtime(
         sid=sid,
         plugins=plugins,
     )
-    await runtime.ainit()
-    await asyncio.sleep(1)
+    time.sleep(1)
     return runtime
 
 

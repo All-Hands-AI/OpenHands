@@ -47,15 +47,33 @@ describe("extractModelAndProvider", () => {
   });
 
   it("should add provider for popular models", () => {
-    expect(extractModelAndProvider("gpt-3.5-turbo")).toEqual({
+    expect(extractModelAndProvider("gpt-4o-mini")).toEqual({
       provider: "openai",
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       separator: "/",
     });
 
     expect(extractModelAndProvider("gpt-4o")).toEqual({
       provider: "openai",
       model: "gpt-4o",
+      separator: "/",
+    });
+
+    expect(extractModelAndProvider("claude-3-5-sonnet-20240620")).toEqual({
+      provider: "anthropic",
+      model: "claude-3-5-sonnet-20240620",
+      separator: "/",
+    });
+
+    expect(extractModelAndProvider("claude-3-haiku-20240307")).toEqual({
+      provider: "anthropic",
+      model: "claude-3-haiku-20240307",
+      separator: "/",
+    });
+
+    expect(extractModelAndProvider("claude-2.1")).toEqual({
+      provider: "anthropic",
+      model: "claude-2.1",
       separator: "/",
     });
   });

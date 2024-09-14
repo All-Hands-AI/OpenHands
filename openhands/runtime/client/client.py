@@ -17,8 +17,6 @@ from pathlib import Path
 import pexpect
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel
 from uvicorn import run
 
@@ -58,10 +56,9 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    'git config --global user.name "openhands"',
-    'git config --global user.email "openhands@all-hands.dev"',
-    "alias git='git --no-pager'",
+    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
+SOFT_TIMEOUT_SECONDS = 5
 
 
 class RuntimeClient:
@@ -116,6 +113,7 @@ class RuntimeClient:
             logger.info(f'AgentSkills initialized: {obs}')
 
         await self._init_bash_commands()
+        logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
         """Create user if not exists."""
@@ -187,7 +185,9 @@ class RuntimeClient:
         self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
-        self.shell.sendline(f'cd {work_dir}')
+        self.shell.sendline(
+            f'if [ ! -d "{work_dir}" ]; then mkdir -p "{work_dir}"; fi && cd "{work_dir}"'
+        )
         self.shell.expect(self.__bash_expect_regex)
         logger.debug(
             f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
@@ -209,6 +209,12 @@ class RuntimeClient:
 
     def _get_bash_prompt_and_update_pwd(self):
         ps1 = self.shell.after
+        if ps1 == pexpect.EOF:
+            logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
+            raise RuntimeError('Bash shell EOF')
+        if ps1 == pexpect.TIMEOUT:
+            logger.warning('Bash shell timeout')
+            return ''
 
         # begin at the last occurrence of '[PEXPECT_BEGIN]'.
         # In multi-line bash commands, the prompt will be repeated
@@ -240,39 +246,56 @@ class RuntimeClient:
         command: str,
         timeout: int | None,
         keep_prompt: bool = True,
+        kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Executing command: {command}')
+        self.shell.sendline(command)
+        return self._continue_bash(
+            timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
+        )
+
+    def _interrupt_bash(self, timeout: int | None = None) -> tuple[str, int]:
+        self.shell.sendintr()  # send SIGINT to the shell
+        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+        output = self.shell.before
+        exit_code = 130  # SIGINT
+        return output, exit_code
+
+    def _continue_bash(
+        self,
+        timeout: int | None,
+        keep_prompt: bool = True,
+        kill_on_timeout: bool = True,
+    ) -> tuple[str, int]:
         try:
-            self.shell.sendline(command)
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
             output = self.shell.before
 
             # Get exit code
             self.shell.sendline('echo $?')
-            logger.debug(f'Executing command for exit code: {command}')
+            logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             _exit_code_output = self.shell.before
-            logger.debug(f'Exit code Output: {_exit_code_output}')
             exit_code = int(_exit_code_output.strip().split()[0])
 
         except pexpect.TIMEOUT as e:
-            self.shell.sendintr()  # send SIGINT to the shell
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-            output = self.shell.before
-            output += (
-                '\r\n\r\n'
-                + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
-            )
-            exit_code = 130  # SIGINT
-            logger.error(f'Failed to execute command: {command}. Error: {e}')
+            if kill_on_timeout:
+                output, exit_code = self._interrupt_bash()
+                output += (
+                    '\r\n\r\n'
+                    + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
+                )
+                logger.error(f'Failed to execute command. Error: {e}')
+            else:
+                output = self.shell.before or ''
+                exit_code = -1
 
         finally:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
             if keep_prompt:
                 output += '\r\n' + bash_prompt
             logger.debug(f'Command output: {output}')
-
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
@@ -290,11 +313,25 @@ class RuntimeClient:
             commands = split_bash_commands(action.command)
             all_output = ''
             for command in commands:
-                output, exit_code = self._execute_bash(
-                    command,
-                    timeout=action.timeout,
-                    keep_prompt=action.keep_prompt,
-                )
+                if command == '':
+                    output, exit_code = self._continue_bash(
+                        timeout=SOFT_TIMEOUT_SECONDS,
+                        keep_prompt=action.keep_prompt,
+                        kill_on_timeout=False,
+                    )
+                elif command.lower() == 'ctrl+c':
+                    output, exit_code = self._interrupt_bash(
+                        timeout=SOFT_TIMEOUT_SECONDS
+                    )
+                else:
+                    output, exit_code = self._execute_bash(
+                        command,
+                        timeout=SOFT_TIMEOUT_SECONDS
+                        if not action.blocking
+                        else action.timeout,
+                        keep_prompt=action.keep_prompt,
+                        kill_on_timeout=False if not action.blocking else True,
+                    )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
                     # we need to add the command to the previous output,
@@ -479,7 +516,6 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
-        logger.info('Runtime client initialized.')
         yield
         # Clean up & release the resources
         client.close()
@@ -613,52 +649,12 @@ if __name__ == '__main__':
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
                 return []
 
-            # Check if .gitignore exists
-            gitignore_path = os.path.join(full_path, '.gitignore')
-            if os.path.exists(gitignore_path):
-                # Use PathSpec to parse .gitignore
-                with open(gitignore_path, 'r') as f:
-                    spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
-            else:
-                # Fallback to default exclude list if .gitignore doesn't exist
-                default_exclude = [
-                    '.git',
-                    '.DS_Store',
-                    '.svn',
-                    '.hg',
-                    '.idea',
-                    '.vscode',
-                    '.settings',
-                    '.pytest_cache',
-                    '__pycache__',
-                    'node_modules',
-                    'vendor',
-                    'build',
-                    'dist',
-                    'bin',
-                    'logs',
-                    'log',
-                    'tmp',
-                    'temp',
-                    'coverage',
-                    'venv',
-                    'env',
-                ]
-                spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
-
             entries = os.listdir(full_path)
-
-            # Filter entries using PathSpec
-            filtered_entries = [
-                os.path.join(full_path, entry)
-                for entry in entries
-                if not spec.match_file(os.path.relpath(entry, str(full_path)))
-            ]
 
             # Separate directories and files
             directories = []
             files = []
-            for entry in filtered_entries:
+            for entry in entries:
                 # Remove leading slash and any parent directory components
                 entry_relative = entry.lstrip('/').split('/')[-1]
 
@@ -686,6 +682,7 @@ if __name__ == '__main__':
             logger.error(f'Error listing files: {e}', exc_info=True)
             return []
 
+    logger.info('Runtime client initialized.')
+
     logger.info(f'Starting action execution API on port {args.port}')
-    print(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

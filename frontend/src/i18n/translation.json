@@ -196,18 +196,18 @@
     "es": "Editor de código"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
-    "en": "Browser",
-    "zh-CN": "浏览器",
-    "de": "Browser",
-    "ko-KR": "브라우저",
-    "no": "Nettleser",
-    "zh-TW": "瀏覽器",
-    "it": "Browser",
-    "pt": "Navegador",
-    "es": "Navegador",
-    "ar": "المتصفح",
-    "fr": "Navigateur",
-    "tr": "Tarayıcı"
+    "en": "Browser (Experimental)",
+    "zh-CN": "浏览器（实验性）",
+    "de": "Browser (Experimentell)",
+    "ko-KR": "브라우저 (실험적)",
+    "no": "Nettleser (Eksperimentell)",
+    "zh-TW": "瀏覽器 (實驗性)",
+    "it": "Browser (Sperimentale)",
+    "pt": "Navegador (Experimental)",
+    "es": "Navegador (Experimental)",
+    "ar": "المتصفح (تجريبي)",
+    "fr": "Navigateur (Expérimental)",
+    "tr": "Tarayıcı (Deneysel)"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
@@ -249,18 +249,6 @@
     "ar": "التكوين",
     "fr": "Configuration",
     "tr": "Konfigürasyon"
-  },
-  "CONFIGURATION$MODAL_SUB_TITLE": {
-    "en": "Adjust settings to your liking",
-    "zh-CN": "根据您的喜好调整设置",
-    "de": "Passen Sie die Einstellungen nach Ihren Wünschen an ",
-    "ko-KR": "원하는 대로 설정 조정",
-    "no": "Juster innstillinger etter dine ønsker ",
-    "zh-TW": "調整設定以符合您的喜好",
-    "it": "Regola le impostazioni in base alle tue preferenze",
-    "pt": "Ajuste as configurações de acordo com sua preferência",
-    "es": "Ajusta la configuración a tu gusto",
-    "tr": "Ayarları isteğinize göre ayarlayın"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
@@ -452,6 +440,11 @@
     "en": "No files in workspace",
     "zh-CN": "工作区没有文件",
     "de": "Keine Dateien im Arbeitsbereich"
+  },
+  "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
+    "en": "Loading workspace...",
+    "zh-CN": "正在加载工作区...",
+    "de": "Arbeitsbereich wird geladen..."
   },
   "EXPLORER$REFRESH_ERROR_MESSAGE": {
     "en": "Error refreshing workspace",

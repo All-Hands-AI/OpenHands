@@ -1,3 +1,4 @@
-The file `test.txt` has been successfully created in the `/workspace` directory with the content 'hello world'. If you have any further requests, please let me know!
+Now that the file has been created, I'll append the content 'hello world' to it.
 
-<finish></finish>
+<execute_ipython>
+append_file('/workspace/test.txt', 'hello world')

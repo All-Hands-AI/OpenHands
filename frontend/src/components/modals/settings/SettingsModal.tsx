@@ -17,7 +17,6 @@ import {
   Settings,
   getSettings,
   getDefaultSettings,
-  getSettingsDifference,
   settingsAreUpToDate,
   maybeMigrateSettings,
   saveSettings,
@@ -31,7 +30,7 @@ interface SettingsProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const REQUIRED_SETTINGS = ["LLM_MODEL", "AGENT"];
+const REQUIRED_SETTINGS = ["LLM_MODEL"];
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
@@ -83,17 +82,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     }));
   };
 
-  const handleCustomModelChange = (model: string) => {
+  const handleBaseURLChange = (baseURL: string) => {
     setSettings((prev) => ({
       ...prev,
-      CUSTOM_LLM_MODEL: model,
-    }));
-  };
-
-  const handleModelTypeChange = (type: "custom" | "default") => {
-    setSettings((prev) => ({
-      ...prev,
-      USING_CUSTOM_MODEL: type === "custom",
+      LLM_BASE_URL: baseURL,
     }));
   };
 
@@ -131,20 +123,9 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleSaveSettings = () => {
-    const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
     Session.startNewSession();
-
-    const sensitiveKeys = ["LLM_API_KEY"];
-
-    Object.entries(updatedSettings).forEach(([key, value]) => {
-      if (!sensitiveKeys.includes(key)) {
-        toast.settingsChanged(`${key} set to "${value}"`);
-      } else {
-        toast.settingsChanged(`${key} has been updated securely.`);
-      }
-    });
 
     localStorage.setItem(
       `API_KEY_${settings.LLM_MODEL || models[0]}`,
@@ -152,7 +133,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     );
   };
 
-  let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
+  let subtitle = "";
   if (loading) {
     subtitle = t(I18nKey.CONFIGURATION$AGENT_LOADING);
   } else if (agentIsRunning) {
@@ -171,30 +152,34 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
       isDismissable={settingsAreUpToDate()}
       subtitle={subtitle}
-      actions={[
-        {
-          label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
-          action: handleSaveSettings,
-          isDisabled: saveIsDisabled,
-          closeAfterAction: true,
-          className: "bg-primary rounded-lg",
-        },
-        {
-          label: t(I18nKey.CONFIGURATION$MODAL_RESET_BUTTON_LABEL),
-          action: handleResetSettings,
-          closeAfterAction: false,
-          className: "bg-neutral-500 rounded-lg",
-        },
-        {
-          label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
-          action: () => {
-            setSettings(getSettings()); // reset settings from any changes
-          },
-          isDisabled: !settingsAreUpToDate(),
-          closeAfterAction: true,
-          className: "bg-rose-600 rounded-lg",
-        },
-      ]}
+      actions={
+        loading
+          ? []
+          : [
+              {
+                label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
+                action: handleSaveSettings,
+                isDisabled: saveIsDisabled,
+                closeAfterAction: true,
+                className: "bg-primary rounded-lg",
+              },
+              {
+                label: t(I18nKey.CONFIGURATION$MODAL_RESET_BUTTON_LABEL),
+                action: handleResetSettings,
+                closeAfterAction: false,
+                className: "bg-neutral-500 rounded-lg",
+              },
+              {
+                label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
+                action: () => {
+                  setSettings(getSettings()); // reset settings from any changes
+                },
+                isDisabled: !settingsAreUpToDate(),
+                closeAfterAction: true,
+                className: "bg-rose-600 rounded-lg",
+              },
+            ]
+      }
     >
       {loading && <Spinner />}
       {!loading && (
@@ -205,8 +190,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           agents={agents}
           securityAnalyzers={securityAnalyzers}
           onModelChange={handleModelChange}
-          onCustomModelChange={handleCustomModelChange}
-          onModelTypeChange={handleModelTypeChange}
+          onBaseURLChange={handleBaseURLChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
           onAPIKeyChange={handleAPIKeyChange}
