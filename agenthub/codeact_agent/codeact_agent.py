@@ -93,6 +93,11 @@ class CodeActAgent(Agent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
+        self.stop_sequences = [
+            '</execute_ipython>',
+            '</execute_bash>',
+            '</execute_browse>',
+        ]
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
@@ -195,11 +200,7 @@ class CodeActAgent(Agent):
         messages = self._get_messages(state)
         params = {
             'messages': self.llm.format_messages_for_llm(messages),
-            'stop': [
-                '</execute_ipython>',
-                '</execute_bash>',
-                '</execute_browse>',
-            ],
+            'stop': self.stop_sequences,
             'temperature': 0.0,
         }
 

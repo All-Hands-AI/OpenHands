@@ -45,3 +45,10 @@ class GlobalPlannerAgent(CodeActAgent):
             },
             micro_agent=self.micro_agent,
         )
+
+        self.stop_sequences = [
+            '</execute_ipython>',
+            '</execute_bash>',
+            '</execute_browse>',
+            '</execute_global_plan>',
+        ]
