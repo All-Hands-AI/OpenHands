@@ -41,7 +41,7 @@ LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
 3. Set `LLM_API_KEY` to your API key:
 
 ```bash
-LLM_API_KEY="sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+LLM_API_KEY="sk_test_12345"
 ```
 
 4. Run the following Docker command:

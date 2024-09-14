@@ -7,24 +7,11 @@ OpenHands uses LiteLLM for completion calls. The following resources are relevan
 
 ## Gemini - Google AI Studio Configs
 
-To use Gemini through Google AI Studio when running OpenHands, you'll need to set the following environment variable
-using `-e` in the [docker run command](/modules/usage/getting-started#installation):
-
-```
-GEMINI_API_KEY="<your-google-api-key>"
-```
-
-Example:
-```bash
-docker run -it --pull=always \
-    -e GEMINI_API_KEY="AIzaSyA-1234567890abcdefGHIJKLmnopQRStuvWXYZ"
-    ...
-```
-
-Then set the following in the OpenHands UI through the Settings:
+When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
 * `LLM Provider` to `Gemini`
 * `LLM Model` to the model you will be using.
 If the model is not in the list, toggle `Advanced Options`, and enter it in `Custom Model` (i.e. gemini/&lt;model-name&gt;).
+* `API Key`
 
 ## VertexAI - Google Cloud Platform Configs
 

@@ -19,15 +19,17 @@ docker run -it --pull=always \
 ```
 
 Then set the following in the OpenHands UI through the Settings:
-* `LLM Provider` to `Azure`
-* `LLM Model` to the model you will be using.
-[Visit **here** to see a list of Azure models that LiteLLM supports.](https://docs.litellm.ai/docs/providers/azure#azure-openai-chat-completion-models)
-If the model is not in the list, toggle `Advanced Options`, and enter it in `Custom Model` (i.e. azure/&lt;model-name&gt;).
-* `API Key`
 
 :::note
-You can find your ChatGPT deployment name on the deployments page in Azure.
+You will need your ChatGPT deployment name which can be found on the deployments page in Azure. This is referenced as
+&lt;deployment-name&gt; below.
 :::
+
+* Enable `Advanced Options`
+* `Custom Model` to azure/&lt;deployment-name&gt;
+* `API Key`
+
+
 
 ## Embeddings
 
