@@ -85,4 +85,4 @@ class CoActActionParserGlobalPlan(ActionParser):
             thought=thought,
             inputs={'task': global_plan_actions},
             action_suffix='global_plan',
-        )  # FIXME: check to use a more proper key e.g. 'global_plan' instead of 'task'
+        )
