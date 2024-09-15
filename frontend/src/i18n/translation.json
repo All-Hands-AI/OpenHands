@@ -703,6 +703,19 @@
     "fr": "Message de {{sender}}",
     "tr": "{{sender}} tarafından gönderilen mesaj"
   },
+  "CHAT_INTERFACE$CHAT_CONVERSATION": {
+    "en": "Chat Conversation",
+    "zh-CN": "聊天对话",
+    "de": "Chat-Konversation",
+    "ko-KR": "채팅 대화",
+    "no": "Chat-samtale",
+    "zh-TW": "聊天對話",
+    "it": "Conversazione di chat",
+    "pt": "Conversa de chat",
+    "es": "Conversación de chat",
+    "ar": "محادثة تلقيم",
+    "fr": "Conversation de chat"
+  },
   "CHAT_INTERFACE$UNKNOWN_SENDER": {
     "en": "Unknown",
     "zh-CN": "未知",

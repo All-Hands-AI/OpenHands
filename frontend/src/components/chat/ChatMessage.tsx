@@ -8,6 +8,7 @@ import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
+import { formatTimestamp } from "#/utils/utils";
 
 interface MessageProps {
   message: Message;
@@ -57,14 +58,6 @@ function ChatMessage({
         t(I18nKey.CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED),
       );
     }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(date);
   };
 
   return (

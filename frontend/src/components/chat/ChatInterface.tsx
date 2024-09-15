@@ -105,6 +105,8 @@ function ChatInterface() {
           ref={scrollRef}
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
+          role="region"
+          aria-label={t(I18nKey.CHAT_INTERFACE$CHAT_CONVERSATION)}
         >
           <Chat messages={messages} curAgentState={curAgentState} />
         </div>
