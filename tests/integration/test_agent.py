@@ -6,7 +6,7 @@ import subprocess
 import pytest
 
 from openhands.controller.state.state import State
-from openhands.core.config import AppConfig, SandboxConfig, load_from_env
+from openhands.core.config import load_app_config
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events.action import (
@@ -21,35 +21,22 @@ TEST_RUNTIME = os.getenv('TEST_RUNTIME')
 assert TEST_RUNTIME in ['eventstream', 'remote']
 _ = get_runtime_cls(TEST_RUNTIME)  # make sure it does not raise an error
 
-CONFIG = AppConfig(
-    max_iterations=int(os.getenv('MAX_ITERATIONS', 20)),
-    max_budget_per_task=int(os.getenv('MAX_BUDGET_PER_TASK', 15)),
-    runtime=TEST_RUNTIME,
-    default_agent=os.getenv('DEFAULT_AGENT'),
-    workspace_base=os.getenv('WORKSPACE_BASE'),
-    workspace_mount_path=os.getenv('WORKSPACE_MOUNT_PATH'),
-    sandbox=SandboxConfig(
-        use_host_network=True,
-    ),
+CONFIG = load_app_config()
+CONFIG.max_iterations = int(os.getenv('MAX_ITERATIONS', 20))
+CONFIG.max_budget_per_task = int(os.getenv('MAX_BUDGET_PER_TASK', 15))
+CONFIG.runtime = TEST_RUNTIME
+CONFIG.default_agent = os.getenv('DEFAULT_AGENT')
+CONFIG.workspace_base = os.getenv('WORKSPACE_BASE')
+CONFIG.workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
+CONFIG.workspace_mount_path_in_sandbox = os.getenv(
+    'WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace'
 )
-load_from_env(CONFIG, os.environ)
+CONFIG.sandbox.use_host_network = True
 
 print('\nPaths used:')
 print(f'workspace_base: {CONFIG.workspace_base}')
 print(f'workspace_mount_path: {CONFIG.workspace_mount_path}')
 print(f'workspace_mount_path_in_sandbox: {CONFIG.workspace_mount_path_in_sandbox}')
-
-# Check if running in WSL environment
-if 'WSL_DISTRO_NAME' in os.environ:
-    if (
-        CONFIG.workspace_base
-        and CONFIG.workspace_mount_path
-        and CONFIG.workspace_base != CONFIG.workspace_mount_path
-    ):
-        print(
-            '\n**********\nWARNING: if WORKSPACE_MOUNT_PATH is set differently to'
-            '\nWORKSPACE_BASE some file operation tests may fail!\n**********\n'
-        )
 
 
 def get_number_of_prompts(test_name: str):

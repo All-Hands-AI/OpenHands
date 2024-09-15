@@ -40,9 +40,10 @@ After running the command above, you'll find OpenHands running at [http://localh
 The agent will have access to the `./workspace` folder to do its work. You can copy existing code here, or change `WORKSPACE_BASE` in the
 command to point to an existing folder.
 
-Upon launching OpenHands, you'll see a settings modal. You must select an LLM backend using `Model`, and enter a corresponding `API Key`.
+Upon launching OpenHands, you'll see a settings modal. You must select an `LLM Provider` and `LLM Model` and enter a corresponding `API Key`.
 These can be changed at any time by selecting the `Settings` button (gear icon) in the UI.
-If the required `Model` does not exist in the list, you can toggle `Use custom model` and manually enter it in the text box.
+If the required `LLM Model` does not exist in the list, you can toggle `Advanced Options` and manually enter it in the `Custom Model` text box.
+The `Advanced Options` also allow you to specify a `Base URL` if required.
 
 <img src="/img/settings-screenshot.png" alt="settings-modal" width="340" />
 
