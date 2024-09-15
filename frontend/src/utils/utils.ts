@@ -79,7 +79,7 @@ export const getExtension = (code: string) => {
 export const formatTimestamp = (timestamp: string) => {
   const date = new Date(timestamp);
   return new Intl.DateTimeFormat(undefined, {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(date);
-  };
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+};
