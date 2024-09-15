@@ -426,7 +426,6 @@ class EventStreamRuntime(Runtime):
                     output = response.json()
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
-                    return obs
                 else:
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
@@ -437,6 +436,8 @@ class EventStreamRuntime(Runtime):
             except Exception as e:
                 logger.error(f'Error during command execution: {e}')
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
+            # Refresh docker logs
+            self._wait_until_alive()
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
