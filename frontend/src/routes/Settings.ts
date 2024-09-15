@@ -8,7 +8,6 @@ import {
 // This is the route for saving settings. It only exports the action function.
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
-  console.log(Object.fromEntries(formData.entries()));
 
   const intent = formData.get("intent")?.toString();
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
