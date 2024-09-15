@@ -1,6 +1,6 @@
 # Running LLMs on Groq
 
-OpenHands uses LiteLLM to make calls to chat models on Groq. You can find their full documentation on using Groq as provider [here](https://docs.litellm.ai/docs/providers/groq). With OpenHands, it's simpler: please see the configuration below.
+OpenHands uses LiteLLM to make calls to chat models on Groq. You can find their full documentation on using Groq as provider [here](https://docs.litellm.ai/docs/providers/groq).
 
 ## Configuration
 
