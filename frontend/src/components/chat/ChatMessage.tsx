@@ -61,12 +61,11 @@ function ChatMessage({
   };
 
   return (
-    <div
+    <article
       data-testid="article"
       className={className}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      role="article"
       aria-label={t(I18nKey.CHAT_INTERFACE$MESSAGE_ARIA_LABEL, {
         sender: message.sender
           ? message.sender.charAt(0).toUpperCase() +
@@ -106,7 +105,7 @@ function ChatMessage({
       {isLastMessage &&
         message.sender === "assistant" &&
         awaitingUserConfirmation && <ConfirmationButtons />}
-    </div>
+    </article>
   );
 }
 

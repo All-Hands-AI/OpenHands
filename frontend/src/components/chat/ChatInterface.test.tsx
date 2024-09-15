@@ -29,6 +29,10 @@ describe("ChatInterface", () => {
   const sessionSendSpy = vi.spyOn(Session, "send");
   vi.spyOn(Session, "isConnected").mockReturnValue(true);
 
+  // TODO: replace below with e.g. fake timers
+  // https://vitest.dev/guide/mocking#timers
+  // https://vitest.dev/api/vi.html#vi-usefaketimers
+  // Custom matcher for testing message events
   expect.extend({
     toMatchMessageEvent(received, expected) {
       const receivedObj = JSON.parse(received);

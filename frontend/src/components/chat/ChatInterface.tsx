@@ -102,11 +102,9 @@ function ChatInterface() {
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div
-          data-testid="region"
           ref={scrollRef}
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-          role="region"
           aria-label={t(I18nKey.CHAT_INTERFACE$CHAT_CONVERSATION)}
         >
           <Chat messages={messages} curAgentState={curAgentState} />
