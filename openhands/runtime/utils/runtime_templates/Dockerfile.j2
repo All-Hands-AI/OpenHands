@@ -77,7 +77,9 @@ RUN \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    /openhands/miniforge3/bin/mamba clean --all && \
+    /openhands/miniforge3/bin/mamba clean --all
+{% if not skip_init %}
+RUN \
     # Set up bash environment
     echo 'export PATH="/openhands/miniforge3/bin:$PATH"' >> /etc/bash.bashrc && \
     echo "export OH_INTERPRETER_PATH=\"$OH_INTERPRETER_PATH\"" >> /etc/bash.bashrc && \
@@ -85,7 +87,7 @@ RUN \
     echo 'source /openhands/miniforge3/etc/profile.d/conda.sh' >> /etc/bash.bashrc && \
     echo 'source "$OH_VENV_PATH/bin/activate"' >> /etc/bash.bashrc && \
     echo 'alias python="$OH_INTERPRETER_PATH"' >> /etc/bash.bashrc
-
+{% endif %}
 # ================================================================
 # END: Copy Project and Install/Update Dependencies
 # ================================================================
