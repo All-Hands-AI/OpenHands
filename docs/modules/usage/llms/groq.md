@@ -1,10 +1,10 @@
 # Running LLMs on Groq
 
-OpenHands uses LiteLLM to make calls to chat models on Groq. You can find their full documentation on using Groq as provider [here](https://docs.litellm.ai/docs/providers/groq). When running OpenHands, it's simpler: you only need to set the options below.
+OpenHands uses LiteLLM to make calls to chat models on Groq. You can find their full documentation on using Groq as provider [here](https://docs.litellm.ai/docs/providers/groq). With OpenHands, it's simpler: please see the configuration below.
 
 ## Configuration
 
-You'll need to set the following in the OpenHands UI through the Settings:
+When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings:
 * `LLM Provider` to `Groq`
 * `LLM Model` to the model you will be using
 * `API key` to your Groq API key. To find or create your Groq API Key, [see **here**](https://console.groq.com/keys).
