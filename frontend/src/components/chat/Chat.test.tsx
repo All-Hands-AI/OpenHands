@@ -23,7 +23,7 @@ describe("Chat", () => {
   it("should render chat messages", () => {
     renderWithProviders(<Chat messages={MESSAGES} />);
 
-    const messages = screen.getAllByTestId("message");
+    const messages = screen.getAllByTestId("article");
     expect(messages).toHaveLength(MESSAGES.length);
   });
 });
