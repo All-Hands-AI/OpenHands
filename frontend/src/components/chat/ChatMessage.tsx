@@ -62,7 +62,7 @@ function ChatMessage({
 
   return (
     <div
-      data-testid="message"
+      data-testid="article"
       className={className}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
@@ -88,9 +88,9 @@ function ChatMessage({
       <Markdown components={{ code }} remarkPlugins={[remarkGfm]}>
         {message.content}
       </Markdown>
-      {message.imageUrls.length > 0 && (
+      {(message.imageUrls?.length ?? 0) > 0 && (
         <div className="flex space-x-2 mt-2">
-          {message.imageUrls.map((url, index) => (
+          {message.imageUrls?.map((url, index) => (
             <img
               key={index}
               src={url}

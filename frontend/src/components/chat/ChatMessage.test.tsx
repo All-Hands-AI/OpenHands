@@ -19,8 +19,8 @@ describe("Message", () => {
       />,
     );
 
-    expect(screen.getByTestId("message")).toBeInTheDocument();
-    expect(screen.getByTestId("message")).toHaveClass("self-end"); // user message should be on the right side
+    expect(screen.getByTestId("article")).toBeInTheDocument();
+    expect(screen.getByTestId("article")).toHaveClass("self-end"); // user message should be on the right side
   });
 
   it("should render an assistant message", () => {
@@ -36,8 +36,8 @@ describe("Message", () => {
       />,
     );
 
-    expect(screen.getByTestId("message")).toBeInTheDocument();
-    expect(screen.getByTestId("message")).not.toHaveClass("self-end"); // assistant message should be on the left side
+    expect(screen.getByTestId("article")).toBeInTheDocument();
+    expect(screen.getByTestId("article")).not.toHaveClass("self-end"); // assistant message should be on the left side
   });
 
   it("should render markdown content", () => {
@@ -77,7 +77,7 @@ describe("Message", () => {
         />,
       );
 
-      const message = screen.getByTestId("message");
+      const message = screen.getByTestId("article");
       let copyButton = within(message).queryByTestId("copy-button");
       expect(copyButton).not.toBeInTheDocument();
 
@@ -106,7 +106,7 @@ describe("Message", () => {
         />,
       );
 
-      const message = screen.getByTestId("message");
+      const message = screen.getByTestId("article");
       fireEvent.mouseEnter(message);
 
       const copyButton = within(message).getByTestId("copy-button");

@@ -69,7 +69,7 @@ describe("ChatInterface", () => {
 
   it("should render empty message list and input", () => {
     renderWithProviders(<ChatInterface />);
-    expect(screen.queryAllByTestId("message")).toHaveLength(0);
+    expect(screen.queryAllByTestId("article")).toHaveLength(0);
   });
 
   it("should render user and assistant messages", () => {
@@ -88,7 +88,7 @@ describe("ChatInterface", () => {
       },
     });
 
-    expect(screen.getAllByTestId("message")).toHaveLength(1);
+    expect(screen.getAllByTestId("article")).toHaveLength(1);
     expect(screen.getByText("Hello")).toBeInTheDocument();
 
     act(() => {
@@ -96,7 +96,7 @@ describe("ChatInterface", () => {
       store.dispatch(addAssistantMessage("Hello to you!"));
     });
 
-    expect(screen.getAllByTestId("message")).toHaveLength(2);
+    expect(screen.getAllByTestId("article")).toHaveLength(2);
     expect(screen.getByText("Hello to you!")).toBeInTheDocument();
   });
 

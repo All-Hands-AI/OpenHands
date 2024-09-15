@@ -102,6 +102,7 @@ function ChatInterface() {
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div
+          data-testid="region"
           ref={scrollRef}
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
