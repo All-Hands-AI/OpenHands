@@ -30,7 +30,9 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const fetcher = useFetcher<typeof clientAction>();
   const formRef = React.useRef<HTMLFormElement>(null);
-  const [isCustomModel, setIsCustomModel] = React.useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = React.useState(
+    localStorage.getItem("use-custom-model") === "true",
+  );
   const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
     React.useState(false);
 
@@ -47,8 +49,8 @@ export function SettingsForm({
         <Switch
           name="use-custom-model"
           data-testid="custom-model-toggle"
-          isSelected={isCustomModel}
-          onValueChange={setIsCustomModel}
+          isSelected={showAdvancedOptions}
+          onValueChange={setShowAdvancedOptions}
           classNames={{
             thumb: clsx(
               "bg-[#5D5D5D] w-3 h-3",
@@ -64,29 +66,54 @@ export function SettingsForm({
           Use custom model
         </Switch>
 
-        {isCustomModel && (
-          <fieldset
-            data-testid="custom-model-input"
-            className="flex flex-col gap-2"
-          >
-            <label
-              htmlFor="custom-model"
-              className="font-[500] text-[#A3A3A3] text-xs"
+        {showAdvancedOptions && (
+          <>
+            <fieldset
+              data-testid="custom-model-input"
+              className="flex flex-col gap-2"
             >
-              Custom Model
-            </label>
-            <Input
-              id="custom-model"
-              name="custom-model"
-              aria-label="Custom Model"
-              classNames={{
-                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-              }}
-            />
-          </fieldset>
+              <label
+                htmlFor="custom-model"
+                className="font-[500] text-[#A3A3A3] text-xs"
+              >
+                Custom Model
+              </label>
+              <Input
+                id="custom-model"
+                name="custom-model"
+                defaultValue={settings.LLM_MODEL}
+                aria-label="Custom Model"
+                classNames={{
+                  inputWrapper:
+                    "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                }}
+              />
+            </fieldset>
+            <fieldset
+              data-testid="base-url-input"
+              className="flex flex-col gap-2"
+            >
+              <label
+                htmlFor="base-url"
+                className="font-[500] text-[#A3A3A3] text-xs"
+              >
+                Base URL
+              </label>
+              <Input
+                id="base-url"
+                name="base-url"
+                defaultValue={settings.LLM_BASE_URL}
+                aria-label="Base URL"
+                classNames={{
+                  inputWrapper:
+                    "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                }}
+              />
+            </fieldset>
+          </>
         )}
 
-        {!isCustomModel && (
+        {!showAdvancedOptions && (
           <Suspense fallback={<div>Loading models...</div>}>
             <Await resolve={models}>
               {(resolvedModels) => (
