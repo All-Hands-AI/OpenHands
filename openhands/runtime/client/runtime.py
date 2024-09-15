@@ -288,11 +288,9 @@ class EventStreamRuntime(Runtime):
             raise e
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
-        wait=tenacity.wait_exponential(multiplier=2, min=2, max=20),
-        retry=tenacity.retry_if_exception_type(ConnectionRefusedError),
-        reraise=True,  # Re-raise exceptions after retries
-        retry_error_callback=lambda retry_state: None,
+        stop=tenacity.stop_after_attempt(10),
+        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
+        reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
         try:
