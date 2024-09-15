@@ -20,9 +20,4 @@ class LocalExecutorAgent(CodeActAgent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
-        self.stop_sequences = [
-            '</execute_ipython>',
-            '</execute_bash>',
-            '</execute_browse>',
-            '</execute_request>',
-        ]
+        self.stop_sequences.append('</execute_request>')
