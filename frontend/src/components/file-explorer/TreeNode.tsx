@@ -1,26 +1,21 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
-import { Form, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { listFiles, selectFile } from "#/services/fileService";
-import {
-  setCode,
-  setActiveFilepath,
-  addOrUpdateFileState,
-} from "#/state/codeSlice";
+import { setCode, setActiveFilepath } from "#/state/codeSlice";
 
 interface TitleProps {
   name: string;
   type: "folder" | "file";
   isOpen: boolean;
-  isUnsaved: boolean;
   onClick: () => void;
 }
 
-function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
+function Title({ name, type, isOpen, onClick }: TitleProps) {
   return (
     <div
       onClick={onClick}
@@ -30,10 +25,7 @@ function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
         {type === "folder" && <FolderIcon isOpen={isOpen} />}
         {type === "file" && <FileIcon filename={name} />}
       </div>
-      <div className="flex-grow">
-        {name}
-        {isUnsaved && "*"}
-      </div>
+      <div className="flex-grow">{name}</div>
     </div>
   );
 }
@@ -50,9 +42,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const fileStates = useSelector((state: RootState) => state.code.fileStates);
-  const fileState = fileStates.find((f) => f.path === path);
-  const isUnsaved = fileState?.savedContent !== fileState?.unsavedContent;
+  const fileStates = useSelector((state: RootState) => state.fileState.changed);
 
   const dispatch = useDispatch();
 
@@ -81,10 +71,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      let newFileState = fileStates.find((f) => f.path === path);
       const code = await selectFile(path);
-      newFileState = { path, savedContent: code, unsavedContent: code };
-      dispatch(addOrUpdateFileState(newFileState));
       dispatch(setCode(code));
       dispatch(setActiveFilepath(path));
     }
@@ -103,21 +90,25 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
           type={isDirectory ? "button" : "submit"}
           name="file"
           value={path}
+          className="flex items-center justify-between w-full px-1"
         >
           <Title
             name={filename}
             type={isDirectory ? "folder" : "file"}
             isOpen={isOpen}
-            isUnsaved={isUnsaved}
             onClick={handleClick}
           />
+
+          {fileStates[path] && (
+            <div className="w-2 h-2 rounded-full bg-neutral-500" />
+          )}
         </button>
       </fetcher.Form>
 
       {isOpen && children && (
         <div className="ml-5">
           {children.map((child, index) => (
-            <TreeNode key={index} path={`${child}`} />
+            <TreeNode key={index} path={child} />
           ))}
         </div>
       )}

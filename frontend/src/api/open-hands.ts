@@ -41,6 +41,23 @@ export const retrieveFileContent = async (
   return data.code;
 };
 
+export const saveFileContent = async (
+  token: string,
+  path: string,
+  content: string,
+) => {
+  const response = await fetch("http://localhost:3001/api/save-file", {
+    method: "POST",
+    body: JSON.stringify({ filePath: path, content }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.json();
+};
+
 export interface Feedback {
   version: string;
   email: string;

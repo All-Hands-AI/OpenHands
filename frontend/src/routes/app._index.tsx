@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor";
-import { VscCheck, VscClose, VscCode, VscSave } from "react-icons/vsc";
-import { Button, Tab, Tabs } from "@nextui-org/react";
+import { VscCode } from "react-icons/vsc";
 import {
   Await,
   ClientActionFunctionArgs,
@@ -16,17 +15,11 @@ import {
 } from "@remix-run/react";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import {
-  addOrUpdateFileState,
-  FileState,
-  setCode,
-  setFileStates,
-} from "#/state/codeSlice";
-import { saveFile } from "#/services/fileService";
-import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
+import { setChanged } from "#/state/file-state-slice";
+import { clientAction as saveFileContentClientAction } from "#/routes/save-file-content";
 
 function FileExplorerFallback() {
   return (
@@ -59,7 +52,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     selectedFileContent = await retrieveFileContent(token, file);
   }
 
-  return json({ selectedFileContent });
+  return json({ file, selectedFileContent });
 };
 
 export function ErrorBoundary() {
@@ -76,21 +69,77 @@ export function ErrorBoundary() {
 function CodeEditor() {
   const { files } = useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher<typeof clientAction>({ key: "file-selector" });
+  const saveFile = useFetcher<typeof saveFileContentClientAction>({
+    key: "save-file",
+  });
+  const [fileContents, setFileContents] = React.useState<
+    Record<string, string>
+  >({});
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const fileStates = useSelector((state: RootState) => state.code.fileStates);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const fileState = fileStates.find((f) => f.path === activeFilepath);
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
-  const [saveStatus, setSaveStatus] = React.useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
-  const [showSaveNotification, setShowSaveNotification] = React.useState(false);
-  const unsavedContent = fileState?.unsavedContent;
-  const hasUnsavedChanges = fileState?.savedContent !== unsavedContent;
+
+  React.useEffect(() => {
+    // save file content on cmd+s
+    const handleSave = (event: KeyboardEvent) => {
+      if (event.metaKey && event.key === "s") {
+        event.preventDefault();
+
+        if (fileContents[activeFilepath]) {
+          const saveFileFormData = new FormData();
+          saveFileFormData.append("file", activeFilepath);
+          saveFileFormData.append(
+            "content",
+            fileContents[activeFilepath].trimEnd() || "",
+          );
+          saveFile.submit(saveFileFormData, {
+            method: "POST",
+            action: "/save-file-content",
+          });
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleSave);
+
+    return () => {
+      document.removeEventListener("keydown", handleSave);
+    };
+  }, [activeFilepath, fileContents, fetcher]);
+
+  React.useEffect(() => {
+    // if save file is successful, mark the file as unchanged
+    if (saveFile.data?.success) {
+      // refetch file content
+      const refetchFileFormData = new FormData();
+      refetchFileFormData.append("file", activeFilepath);
+      fetcher.submit(refetchFileFormData, {
+        method: "POST",
+      });
+
+      dispatch(
+        setChanged({
+          path: activeFilepath,
+          changed: false,
+        }),
+      );
+    } else {
+      // TODO: handle error
+    }
+  }, [saveFile.data]);
+
+  React.useEffect(() => {
+    if (fetcher.data?.selectedFileContent) {
+      setFileContents((prev) => ({
+        ...prev,
+        [activeFilepath]: fetcher.data!.selectedFileContent || "",
+      }));
+    }
+  }, [fetcher.data]);
 
   const selectedFileName = React.useMemo(() => {
     const paths = activeFilepath.split("/");
@@ -106,38 +155,24 @@ function CodeEditor() {
     [agentState],
   );
 
-  React.useEffect(() => {
-    setSaveStatus("idle");
-    // Clear out any file states where the file is not being viewed and does not have any changes
-    const newFileStates = fileStates.filter(
-      (f) => f.path === activeFilepath || f.savedContent !== f.unsavedContent,
-    );
-    if (fileStates.length !== newFileStates.length) {
-      dispatch(setFileStates(newFileStates));
-    }
-  }, [activeFilepath]);
-
-  React.useEffect(() => {
-    if (!showSaveNotification) {
-      return undefined;
-    }
-    const timeout = setTimeout(() => setShowSaveNotification(false), 2000);
-    return () => clearTimeout(timeout);
-  }, [showSaveNotification]);
-
   const handleEditorChange = React.useCallback(
     (value: string | undefined): void => {
-      if (value !== undefined && isEditingAllowed) {
-        dispatch(setCode(value));
-        const newFileState = {
-          path: activeFilepath,
-          savedContent: fileState?.savedContent,
-          unsavedContent: value,
-        };
-        dispatch(addOrUpdateFileState(newFileState));
+      if (value && isEditingAllowed) {
+        setFileContents((prev) => ({ ...prev, [activeFilepath]: value }));
+        dispatch(
+          setChanged({
+            path: activeFilepath,
+            changed: value !== fetcher.data?.selectedFileContent,
+          }),
+        );
       }
     },
-    [activeFilepath, dispatch, isEditingAllowed],
+    [
+      dispatch,
+      activeFilepath,
+      isEditingAllowed,
+      fetcher.data?.selectedFileContent,
+    ],
   );
 
   const handleEditorDidMount = React.useCallback(
@@ -156,65 +191,6 @@ function CodeEditor() {
     [],
   );
 
-  const handleSave = React.useCallback(async (): Promise<void> => {
-    if (saveStatus === "saving" || !isEditingAllowed) return;
-
-    setSaveStatus("saving");
-
-    try {
-      const newContent = fileState?.unsavedContent;
-      if (newContent) {
-        await saveFile(activeFilepath, newContent);
-      }
-      setSaveStatus("saved");
-      setShowSaveNotification(true);
-      const newFileState = {
-        path: activeFilepath,
-        savedContent: newContent,
-        unsavedContent: newContent,
-      };
-      dispatch(addOrUpdateFileState(newFileState));
-      toast.success(
-        "file-save-success",
-        t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY),
-      );
-    } catch (error) {
-      setSaveStatus("error");
-      if (error instanceof Error) {
-        toast.error(
-          "file-save-error",
-          `${t(I18nKey.CODE_EDITOR$FILE_SAVE_ERROR)}: ${error.message}`,
-        );
-      } else {
-        toast.error("file-save-error", t(I18nKey.CODE_EDITOR$FILE_SAVE_ERROR));
-      }
-    }
-  }, [saveStatus, activeFilepath, unsavedContent, isEditingAllowed, t]);
-
-  const handleCancel = React.useCallback(() => {
-    const { path, savedContent } = fileState as FileState;
-    dispatch(
-      addOrUpdateFileState({
-        path,
-        savedContent,
-        unsavedContent: savedContent,
-      }),
-    );
-  }, [activeFilepath, unsavedContent]);
-
-  const getSaveButtonColor = () => {
-    switch (saveStatus) {
-      case "saving":
-        return "bg-yellow-600";
-      case "saved":
-        return "bg-green-600";
-      case "error":
-        return "bg-red-600";
-      default:
-        return "bg-blue-600";
-    }
-  };
-
   return (
     <div className="flex h-full w-full bg-neutral-900 relative">
       <Suspense fallback={<FileExplorerFallback />}>
@@ -222,51 +198,10 @@ function CodeEditor() {
           {(resolvedFiled) => <FileExplorer files={resolvedFiled} />}
         </Await>
       </Suspense>
-      <div className="flex flex-col min-h-0 w-full">
-        <div className="flex justify-between items-center border-b border-neutral-600 mb-4">
-          <Tabs
-            disableCursorAnimation
-            classNames={{
-              base: "w-full",
-              tabList:
-                "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
-              cursor: "w-full bg-neutral-600 rounded-none",
-              tab: "max-w-fit px-4 h-[36px]",
-              tabContent: "group-data-[selected=true]:text-white",
-            }}
-            aria-label={t(I18nKey.CODE_EDITOR$OPTIONS)}
-          >
-            <Tab
-              key={selectedFileName}
-              title={selectedFileName || t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
-            />
-          </Tabs>
-          {selectedFileName && hasUnsavedChanges && (
-            <div className="flex items-center mr-2">
-              <Button
-                onClick={handleCancel}
-                className="text-white transition-colors duration-300 mr-2"
-                size="sm"
-                startContent={<VscClose />}
-              >
-                {t(I18nKey.FEEDBACK$CANCEL_LABEL)}
-              </Button>
-              <Button
-                onClick={handleSave}
-                className={`${getSaveButtonColor()} text-white transition-colors duration-300 mr-2`}
-                size="sm"
-                startContent={<VscSave />}
-                disabled={saveStatus === "saving" || !isEditingAllowed}
-              >
-                {saveStatus === "saving"
-                  ? t(I18nKey.CODE_EDITOR$SAVING_LABEL)
-                  : t(I18nKey.CODE_EDITOR$SAVE_LABEL)}
-              </Button>
-            </div>
-          )}
-        </div>
+      <div className="flex flex-col min-h-0 w-full pt-3">
         <div className="flex grow items-center justify-center">
-          {!fetcher.data?.selectedFileContent ? (
+          {!fileContents[activeFilepath] &&
+          !fetcher.data?.selectedFileContent ? (
             <div
               data-testid="code-editor-empty-message"
               className="flex flex-col items-center text-neutral-400"
@@ -280,7 +215,11 @@ function CodeEditor() {
               height="100%"
               path={selectedFileName.toLowerCase()}
               defaultValue=""
-              value={fetcher.data.selectedFileContent}
+              value={
+                fileContents[activeFilepath] ||
+                fetcher.data?.selectedFileContent ||
+                ""
+              }
               onMount={handleEditorDidMount}
               onChange={handleEditorChange}
               options={{ readOnly: !isEditingAllowed }}
@@ -288,14 +227,6 @@ function CodeEditor() {
           )}
         </div>
       </div>
-      {showSaveNotification && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-          <div className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center animate-pulse">
-            <VscCheck className="mr-2 text-xl" />
-            <span>{t(I18nKey.CODE_EDITOR$FILE_SAVED_SUCCESSFULLY)}</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

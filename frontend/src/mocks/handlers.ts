@@ -66,4 +66,7 @@ export const handlers = [
   http.post("http://localhost:3000/api/submit-feedback", async () =>
     HttpResponse.json({ statusCode: 200 }, { status: 200 }),
   ),
+  http.post("http://localhost:3001/api/save-file", () =>
+    HttpResponse.json(null, { status: 200 }),
+  ),
 ];
