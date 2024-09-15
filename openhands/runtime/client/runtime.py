@@ -288,58 +288,64 @@ class EventStreamRuntime(Runtime):
             raise e
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
-        reraise=(ConnectionRefusedError,),
+        stop=tenacity.stop_after_attempt(5),
+        wait=tenacity.wait_exponential(multiplier=2, min=2, max=20),
+        retry=tenacity.retry_if_exception_type(ConnectionRefusedError),
+        reraise=True,  # Re-raise exceptions after retries
+        retry_error_callback=lambda retry_state: None,
     )
     def _wait_until_alive(self):
-        logger.debug('Getting container logs...')
+        try:
+            logger.debug('Getting container logs...')
 
-        # Print and clear the log buffer
-        assert (
-            self.log_buffer is not None
-        ), 'Log buffer is expected to be initialized when container is started'
+            assert (
+                self.log_buffer is not None
+            ), 'Log buffer is expected to be initialized when container is started'
 
-        # Always process logs, regardless of client_ready status
-        logs = self.log_buffer.get_and_clear()
-        if logs:
-            formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-            logger.info(
-                '\n'
-                + '-' * 35
-                + 'Container logs:'
-                + '-' * 35
-                + f'\n{formatted_logs}'
-                + '\n'
-                + '-' * 80
-            )
+            # Always process logs, regardless of client_ready status
+            logs = self.log_buffer.get_and_clear()
+            if logs:
+                formatted_logs = '\n'.join([f'    |{log}' for log in logs])
+                logger.info(
+                    '\n'
+                    + '-' * 35
+                    + 'Container logs:'
+                    + '-' * 35
+                    + f'\n{formatted_logs}'
+                    + '\n'
+                    + '-' * 80
+                )
 
-        if not self.log_buffer.client_ready:
-            time.sleep(1)
-            attempts = 0
-            while not self.log_buffer.client_ready and attempts < 4:
-                attempts += 1
-                time.sleep(2)
-                logs = self.log_buffer.get_and_clear()
-                if logs:
-                    formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-                    logger.info(
-                        '\n'
-                        + '-' * 35
-                        + 'Container logs:'
-                        + '-' * 35
-                        + f'\n{formatted_logs}'
-                        + '\n'
-                        + '-' * 80
-                    )
+            if not self.log_buffer.client_ready:
+                time.sleep(1)
+                attempts = 0
+                while not self.log_buffer.client_ready and attempts < 5:
+                    attempts += 1
+                    time.sleep(1)
+                    logs = self.log_buffer.get_and_clear()
+                    if logs:
+                        formatted_logs = '\n'.join([f'    |{log}' for log in logs])
+                        logger.info(
+                            '\n'
+                            + '-' * 35
+                            + 'Container logs:'
+                            + '-' * 35
+                            + f'\n{formatted_logs}'
+                            + '\n'
+                            + '-' * 80
+                        )
 
-        response = self.session.get(f'{self.api_url}/alive')
-        if response.status_code == 200:
+            response = self.session.get(f'{self.api_url}/alive')
+            if response.status_code == 200:
+                return
+            else:
+                msg = f'Action execution API is not alive. Response: {response}'
+                logger.error(msg)
+                raise RuntimeError(msg)
+
+        except KeyboardInterrupt:
+            logger.debug('KeyboardInterrupt: exiting _wait_until_alive.')
             return
-        else:
-            msg = f'Action execution API is not alive. Response: {response}'
-            logger.error(msg)
-            raise RuntimeError(msg)
 
     def close(self, close_client: bool = True, rm_all_containers: bool = True):
         """Closes the EventStreamRuntime and associated objects
@@ -436,8 +442,8 @@ class EventStreamRuntime(Runtime):
             except Exception as e:
                 logger.error(f'Error during command execution: {e}')
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
-            # Refresh docker logs
-            self._wait_until_alive()
+            # TODO Refresh docker logs or not?
+            # self._wait_until_alive()
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
