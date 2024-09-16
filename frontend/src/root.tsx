@@ -23,7 +23,11 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import { getAgents, getModels } from "./api/open-hands";
 import LoadingProjectModal from "./components/modals/LoadingProject";
-import { getSettings } from "./services/settings";
+import {
+  getSettings,
+  maybeMigrateSettings,
+  settingsAreUpToDate,
+} from "./services/settings";
 import { ContextMenu } from "./components/context-menu/context-menu";
 import { ContextMenuListItem } from "./components/context-menu/context-menu-list-item";
 import { ContextMenuSeparator } from "./components/context-menu/context-menu-separator";
@@ -53,7 +57,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
-  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
 
   const models = getModels();
   const agents = getAgents();
@@ -65,7 +68,8 @@ export const clientLoader = async () => {
   }
 
   let settingsIsUpdated = false;
-  if (settingsVersion !== import.meta.env.VITE_SETTINGS_VERSION) {
+  if (!settingsAreUpToDate()) {
+    maybeMigrateSettings();
     settingsIsUpdated = true;
   }
 

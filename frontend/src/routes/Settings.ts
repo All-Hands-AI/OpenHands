@@ -1,16 +1,16 @@
 import { ClientActionFunctionArgs, json } from "@remix-run/react";
 import {
   getDefaultSettings,
+  LATEST_SETTINGS_VERSION,
   saveSettings,
   Settings,
+  settingsAreUpToDate,
 } from "#/services/settings";
 
 // This is the route for saving settings. It only exports the action function.
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
-
   const intent = formData.get("intent")?.toString();
-  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
 
   if (intent === "account") {
     const LANGUAGE = formData.get("language")?.toString();
@@ -64,10 +64,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   );
 
   // If the settings version is different from the current version, update it.
-  if (settingsVersion !== import.meta.env.VITE_SETTINGS_VERSION) {
+  if (!settingsAreUpToDate) {
     localStorage.setItem(
       "SETTINGS_VERSION",
-      import.meta.env.VITE_SETTINGS_VERSION,
+      LATEST_SETTINGS_VERSION.toString(),
     );
   }
 

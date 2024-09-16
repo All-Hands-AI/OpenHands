@@ -1,4 +1,4 @@
-const LATEST_SETTINGS_VERSION = 2;
+export const LATEST_SETTINGS_VERSION = 2;
 
 export type Settings = {
   LLM_MODEL: string;
