@@ -190,7 +190,9 @@ class AgentController:
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
         elif isinstance(action, AddTaskAction):
-            self.state.root_task.add_subtask(action.parent, action.goal, action.subtasks)
+            self.state.root_task.add_subtask(
+                action.parent, action.goal, action.subtasks
+            )
         elif isinstance(action, ModifyTaskAction):
             self.state.root_task.set_subtask_state(action.task_id, action.state)
         elif isinstance(action, AgentFinishAction):
@@ -240,7 +242,9 @@ class AgentController:
             action (MessageAction): The message action to handle.
         """
         if action.source == EventSource.USER:
-            logger.info(action, extra={'msg_type': 'ACTION', 'event_source': EventSource.USER})
+            logger.info(
+                action, extra={'msg_type': 'ACTION', 'event_source': EventSource.USER}
+            )
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
@@ -267,7 +271,8 @@ class AgentController:
 
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
-        elif (new_state == AgentState.RUNNING
+        elif (
+            new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
             and self.state.traffic_control_state == TrafficControlState.THROTTLING
         ):
@@ -388,11 +393,15 @@ class AgentController:
         # check if agent hit the target limit
         stop_step = False
         if self.state.iteration >= self.state.max_iterations:
-            stop_step = await self._handle_traffic_control('iteration', self.state.iteration, self.state.max_iterations)
+            stop_step = await self._handle_traffic_control(
+                'iteration', self.state.iteration, self.state.max_iterations
+            )
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
-                stop_step = await self._handle_traffic_control('budget', current_cost, self.max_budget_per_task)
+                stop_step = await self._handle_traffic_control(
+                    'budget', current_cost, self.max_budget_per_task
+                )
         if stop_step:
             return
 
@@ -438,9 +447,7 @@ class AgentController:
         logger.debug(f'[Agent Controller {self.id}] Delegate step done')
         assert self.delegate is not None
         delegate_state = self.delegate.get_agent_state()
-        logger.debug(
-            f'[Agent Controller {self.id}] Delegate state: {delegate_state}'
-        )
+        logger.debug(f'[Agent Controller {self.id}] Delegate state: {delegate_state}')
         if delegate_state == AgentState.ERROR:
             # update iteration that shall be shared across agents
             self.state.iteration = self.delegate.state.iteration
@@ -482,7 +489,9 @@ class AgentController:
             self.event_stream.add_event(obs, EventSource.AGENT)
         return
 
-    async def _handle_traffic_control(self, limit_type: str, current_value: float, max_value: float):
+    async def _handle_traffic_control(
+        self, limit_type: str, current_value: float, max_value: float
+    ):
         """Handles agent state after hitting the traffic control limit.
 
         Args:
