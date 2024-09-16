@@ -38,7 +38,7 @@ def send_request(
     url: str,
     retry_exceptions: list[Type[Exception]] | None = None,
     retry_fns: list[Callable[[Exception], bool]] | None = None,
-    timeout: int = 150,
+    timeout: int = 120,
     **kwargs: Any,
 ) -> requests.Response:
     exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
