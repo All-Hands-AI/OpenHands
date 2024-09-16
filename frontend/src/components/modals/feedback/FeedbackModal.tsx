@@ -100,17 +100,21 @@ function FeedbackModal({
     };
 
     try {
-      const response = await sendFeedback(feedback);
       localStorage.setItem("feedback-email", email); // store email in local storage
-      if (response.statusCode === 200) {
-        const { message, feedback_id: feedbackId, password } = response.body;
-        const link = `${VIEWER_PAGE}?share_id=${feedbackId}`;
-        shareFeedbackToast(message, link, password);
-      } else {
-        toast.error(
-          "share-error",
-          `Failed to share, please contact the developers: ${response.body.message}`,
-        );
+      // TODO: Move to data loader
+      const token = localStorage.getItem("token");
+      if (token) {
+        const response = await sendFeedback(token, feedback);
+        if (response.statusCode === 200) {
+          const { message, feedback_id: feedbackId, password } = response.body;
+          const link = `${VIEWER_PAGE}?share_id=${feedbackId}`;
+          shareFeedbackToast(message, link, password);
+        } else {
+          toast.error(
+            "share-error",
+            `Failed to share, please contact the developers: ${response.body.message}`,
+          );
+        }
       }
     } catch (error) {
       toast.error(

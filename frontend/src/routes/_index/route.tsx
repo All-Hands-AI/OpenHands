@@ -12,7 +12,7 @@ import { HeroHeading } from "./hero-heading";
 import { GitHubRepositorySelector } from "./github-repo-selector";
 import {
   isGitHubErrorReponse,
-  retrieveGitHubUserRepositories,
+  retrieveAllGitHubUserRepositories,
 } from "#/api/github";
 import ModalButton from "#/components/buttons/ModalButton";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
@@ -30,7 +30,7 @@ export const clientLoader = async () => {
 
   let repositories: GitHubRepository[] = [];
   if (ghToken) {
-    const data = await retrieveGitHubUserRepositories(ghToken);
+    const data = await retrieveAllGitHubUserRepositories(ghToken);
     if (!isGitHubErrorReponse(data)) {
       repositories = data;
     }

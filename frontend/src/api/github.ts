@@ -33,12 +33,77 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
  */
 export const retrieveGitHubUserRepositories = async (
   token: string,
-): Promise<GitHubRepository[] | GitHubErrorReponse> => {
-  const response = await fetch("https://api.github.com/user/repos", {
+  per_page = 30,
+  page = 1,
+): Promise<Response> => {
+  const url = new URL("https://api.github.com/user/repos");
+  url.searchParams.append("per_page", per_page.toString());
+  url.searchParams.append("page", page.toString());
+
+  return fetch(url.toString(), {
     headers: generateGitHubAPIHeaders(token),
   });
+};
 
-  return response.json();
+/**
+ * Given a GitHub token, retrieves all repositories of the authenticated user
+ * @param token The GitHub token
+ * @returns A list of repositories or an error response
+ */
+export const retrieveAllGitHubUserRepositories = async (
+  token: string,
+): Promise<GitHubRepository[] | GitHubErrorReponse> => {
+  const repositories: GitHubRepository[] = [];
+
+  // Fetch the first page to extract the last page number and get the first batch of data
+  const firstPageResponse = await retrieveGitHubUserRepositories(token, 100, 1);
+
+  if (!firstPageResponse.ok) {
+    return {
+      message: "Failed to fetch repositories",
+      documentation_url:
+        "https://docs.github.com/rest/reference/repos#list-repositories-for-the-authenticated-user",
+      status: firstPageResponse.status,
+    };
+  }
+
+  const firstPageData = await firstPageResponse.json();
+  repositories.push(...firstPageData);
+
+  // Check for pagination and extract the last page number
+  const link = firstPageResponse.headers.get("link");
+  const lastPageMatch = link?.match(/page=(\d+)>; rel="last"/);
+  const lastPage = lastPageMatch ? parseInt(lastPageMatch[1], 10) : 1;
+
+  // If there is only one page, return the fetched repositories
+  if (lastPage === 1) {
+    return repositories;
+  }
+
+  // Create an array of promises for the remaining pages
+  const promises = [];
+  for (let page = 2; page <= lastPage; page += 1) {
+    promises.push(retrieveGitHubUserRepositories(token, 100, page));
+  }
+
+  // Fetch all pages in parallel
+  const responses = await Promise.all(promises);
+
+  for (const response of responses) {
+    if (response.ok) {
+      const data = await response.json();
+      repositories.push(...data);
+    } else {
+      return {
+        message: "Failed to fetch repositories",
+        documentation_url:
+          "https://docs.github.com/rest/reference/repos#list-repositories-for-the-authenticated-user",
+        status: response.status,
+      };
+    }
+  }
+
+  return repositories;
 };
 
 /**

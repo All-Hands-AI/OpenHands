@@ -61,11 +61,12 @@ export interface Feedback {
   trajectory: unknown[];
 }
 
-export const sendFeedback = async (data: Feedback) => {
+export const sendFeedback = async (token: string, data: Feedback) => {
   const response = await fetch(`${BASE_URL}/api/submit-feedback`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
