@@ -12,12 +12,17 @@ export const chatSlice = createSlice({
   reducers: {
     addUserMessage(
       state,
-      action: PayloadAction<{ content: string; imageUrls: string[] }>,
+      action: PayloadAction<{
+        content: string;
+        imageUrls: string[];
+        timestamp: string;
+      }>,
     ) {
       const message: Message = {
         sender: "user",
         content: action.payload.content,
         imageUrls: action.payload.imageUrls,
+        timestamp: action.payload.timestamp || new Date().toISOString(),
       };
       state.messages.push(message);
     },
@@ -27,6 +32,7 @@ export const chatSlice = createSlice({
         sender: "assistant",
         content: action.payload,
         imageUrls: [],
+        timestamp: new Date().toISOString(),
       };
       state.messages.push(message);
     },
