@@ -31,7 +31,6 @@ DEFAULT_RETRY_EXCEPTIONS = [
 ]
 
 
-# Find the timeout....
 def send_request(
     session: requests.Session,
     method: str,
