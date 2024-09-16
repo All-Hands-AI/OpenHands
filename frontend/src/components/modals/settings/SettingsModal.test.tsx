@@ -47,7 +47,7 @@ vi.mock("#/services/options", async (importOriginal) => ({
     .mockResolvedValue(
       Promise.resolve([
         "gpt-4o",
-        "gpt-3.5-turbo",
+        "gpt-4o-mini",
         "azure/ada",
         "cohere.command-r-v1:0",
       ]),
@@ -169,7 +169,7 @@ describe("SettingsModal", () => {
       await user.click(openai);
 
       await user.click(modelInput);
-      const model3 = screen.getByText("gpt-3.5-turbo");
+      const model3 = screen.getByText("gpt-4o-mini");
       await user.click(model3);
 
       await user.click(saveButton);
