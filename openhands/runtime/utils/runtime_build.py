@@ -55,7 +55,7 @@ def _put_source_code_to_dir(temp_dir: str):
         ' ', r'\ '
     )  # escape spaces in the project root
     result = subprocess.run(
-        f'python -m build -s -o {temp_dir} {_cleaned_project_root}',
+        f'python -m build -s -o "{temp_dir}" {_cleaned_project_root}',
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -142,13 +142,14 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
-    logger.debug(
-        (
-            f'===== Dockerfile content start =====\n'
-            f'{dockerfile_content}\n'
-            f'===== Dockerfile content end ====='
+    if os.getenv('SKIP_CONTAINER_LOGS', 'false') != 'true':
+        logger.debug(
+            (
+                f'===== Dockerfile content start =====\n'
+                f'{dockerfile_content}\n'
+                f'===== Dockerfile content end ====='
+            )
         )
-    )
     with open(os.path.join(dir_path, 'Dockerfile'), 'w') as file:
         file.write(dockerfile_content)
 
