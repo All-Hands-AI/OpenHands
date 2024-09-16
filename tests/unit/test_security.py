@@ -1,6 +1,7 @@
 import asyncio
 import pathlib
 import tempfile
+from unittest.mock import Mock
 
 import pytest
 
@@ -147,8 +148,7 @@ def test_unsafe_python_code(temp_dir: str):
     ]
     asyncio.run(add_events(event_stream, data))
     assert data[0][0].security_risk == ActionSecurityRisk.LOW
-    # TODO: this failed but idk why and seems not deterministic to me
-    # assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
+    assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 
 
 def test_unsafe_bash_command(temp_dir: str):
@@ -156,14 +156,23 @@ def test_unsafe_bash_command(temp_dir: str):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('main', file_store)
     security_analyzer = InvariantAnalyzer()
+
+    # Wrap the get_risk method with a Mock to count calls
+    original_get_risk = security_analyzer.get_risk
+    security_analyzer.get_risk = Mock(side_effect=original_get_risk)
+
     event_stream.subscribe(
         EventStreamSubscriber.SECURITY_ANALYZER, security_analyzer.on_event
     )
-    data = [
+    data: list[tuple[Event, EventSource]] = [
         (MessageAction('Hello world!'), EventSource.USER),
         (CmdRunAction(code), EventSource.AGENT),
     ]
     asyncio.run(add_events(event_stream, data))
+
+    # Assert that get_risk() was called twice
+    assert security_analyzer.get_risk.call_count == 2
+
     assert data[0][0].security_risk == ActionSecurityRisk.LOW
     assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 
