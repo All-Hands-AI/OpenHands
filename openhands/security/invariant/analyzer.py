@@ -14,6 +14,7 @@ from openhands.events.action.action import (
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import Observation
 from openhands.events.serialization.action import action_from_dict
+from openhands.events.stream import EventStream
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
@@ -124,9 +125,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
         return ActionSecurityRisk.LOW
 
-    async def act(self, event: Event) -> None:
+    async def act(self, stream: EventStream, event: Event) -> None:
         if await self.should_confirm(event):
-            await self.confirm(event)
+            await self.confirm(stream, event)
 
     async def should_confirm(self, event: Event) -> bool:
         risk = event.security_risk  # type: ignore [attr-defined]
@@ -137,14 +138,14 @@ class InvariantAnalyzer(SecurityAnalyzer):
             and event.is_confirmed == 'awaiting_confirmation'
         )
 
-    async def confirm(self, event: Event) -> None:
+    async def confirm(self, stream: EventStream, event: Event) -> None:
         new_event = action_from_dict(
             {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
         if event.source:
-            self.event_stream.add_event(new_event, event.source)
+            stream.add_event(new_event, event.source)
         else:
-            self.event_stream.add_event(new_event, EventSource.AGENT)
+            stream.add_event(new_event, EventSource.AGENT)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')

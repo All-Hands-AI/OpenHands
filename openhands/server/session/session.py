@@ -18,7 +18,7 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.events.stream import EventStreamSubscriber
+from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent import AgentSession
 from openhands.storage.files import FileStore
@@ -125,10 +125,11 @@ class Session:
             ChangeAgentStateAction(AgentState.INIT), EventSource.USER
         )
 
-    async def on_event(self, event: Event):
+    async def on_event(self, event_stream: EventStream, event: Event) -> None:
         """Callback function for agent events.
 
         Args:
+            event_stream: The event stream that the event is received from.
             event: The agent event (Observation or Action).
         """
         if isinstance(event, NullAction):

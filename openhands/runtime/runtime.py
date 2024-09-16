@@ -106,7 +106,9 @@ class Runtime:
                 f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
             )
 
-    async def on_event(self, event: Event) -> None:
+    async def on_event(self, event_stream: EventStream, event: Event) -> None:
+        if event_stream is not self.event_stream:
+            raise ValueError('Event stream mismatch')
         if isinstance(event, Action):
             # set timeout to default if not set
             if event.timeout is None:
@@ -115,7 +117,7 @@ class Runtime:
             observation = self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
-            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+            event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.

@@ -165,7 +165,7 @@ class ShortTermHistory(list[Event]):
                 return True
         return False
 
-    def on_event(self, event: Event):
+    def on_event(self, event_stream: EventStream, event: Event) -> None:
         if not isinstance(event, AgentDelegateObservation):
             return
 

@@ -2,7 +2,7 @@ import asyncio
 import threading
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Iterable
+from typing import Any, Callable, Coroutine, Iterable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
@@ -110,7 +110,12 @@ class EventStream:
     def get_latest_event_id(self) -> int:
         return self._cur_id - 1
 
-    def subscribe(self, id: EventStreamSubscriber, callback: Callable, append=False):
+    def subscribe(
+        self,
+        id: EventStreamSubscriber,
+        callback: Callable[['EventStream', Event], Coroutine[Any, Any, None]],
+        append=False,
+    ):
         if id in self._subscribers:
             if append:
                 self._subscribers[id].append(callback)
@@ -140,7 +145,7 @@ class EventStream:
         for key in sorted(self._subscribers.keys()):
             stack = self._subscribers[key]
             callback = stack[-1]
-            asyncio.create_task(callback(event))
+            asyncio.create_task(callback(self, event))
 
     def filtered_events_by_source(self, source: EventSource):
         for event in self.get_events():

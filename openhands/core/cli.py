@@ -104,7 +104,7 @@ async def main():
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
 
-    async def on_event(event: Event):
+    async def on_event(event_stream: EventStream, event: Event) -> None:
         display_event(event)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.ERROR:

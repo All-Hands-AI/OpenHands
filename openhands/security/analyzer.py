@@ -5,7 +5,7 @@ from fastapi import Request
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.events.event import Event
-from openhands.events.stream import EventStream, EventStreamSubscriber
+from openhands.events.stream import EventStream
 
 
 class SecurityAnalyzer:
@@ -14,8 +14,7 @@ class SecurityAnalyzer:
     def __init__(self):
         """Initializes a new instance of the SecurityAnalyzer class."""
 
-
-    async def on_event(self, event: Event) -> None:
+    async def on_event(self, stream: EventStream, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
         logger.info(f'SecurityAnalyzer received event: {event}')
         await self.log_event(event)
@@ -24,7 +23,7 @@ class SecurityAnalyzer:
 
         try:
             event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
-            await self.act(event)
+            await self.act(stream, event)
         except Exception as e:
             logger.error(f'Error occurred while analyzing the event: {e}')
 
@@ -38,7 +37,7 @@ class SecurityAnalyzer:
         """Logs the incoming event."""
         pass
 
-    async def act(self, event: Event) -> None:
+    async def act(self, stream: EventStream, event: Event) -> None:
         """Performs an action based on the analyzed event."""
         pass
 

@@ -166,10 +166,11 @@ class AgentController:
 
             await asyncio.sleep(0.1)
 
-    async def on_event(self, event: Event):
+    async def on_event(self, event_stream: EventStream, event: Event) -> None:
         """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
+            event_stream (EventStream): The event stream that the event is received from.
             event (Event): The incoming event to process.
         """
         if isinstance(event, ChangeAgentStateAction):
@@ -205,7 +206,7 @@ class AgentController:
                 and self._pending_action.is_confirmed
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
-                return
+                return None
             if self._pending_action and self._pending_action.id == event.cause:
                 self._pending_action = None
                 if self.state.agent_state == AgentState.USER_CONFIRMED:
@@ -216,7 +217,7 @@ class AgentController:
             elif isinstance(event, CmdOutputObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
-                self.state.history.on_event(event)
+                self.state.history.on_event(event_stream, event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, ErrorObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})

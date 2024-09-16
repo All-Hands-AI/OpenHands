@@ -167,7 +167,7 @@ async def run_controller(
         # init with the provided task
         event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
 
-    async def on_event(event: Event):
+    async def on_event(event_stream: EventStream, event: Event) -> None:
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
