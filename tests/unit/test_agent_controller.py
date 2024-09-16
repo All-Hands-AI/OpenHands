@@ -64,7 +64,7 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
     )
     controller.state.agent_state = AgentState.RUNNING
     message_action = MessageAction(content='Test message')
-    await controller.on_event(message_action)
+    await controller.on_event(mock_event_stream, message_action)
     assert controller.get_agent_state() == AgentState.RUNNING
     await controller.close()
 
@@ -81,7 +81,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
     )
     controller.state.agent_state = AgentState.RUNNING
     change_state_action = ChangeAgentStateAction(agent_state=AgentState.PAUSED)
-    await controller.on_event(change_state_action)
+    await controller.on_event(mock_event_stream, change_state_action)
     assert controller.get_agent_state() == AgentState.PAUSED
     await controller.close()
 
