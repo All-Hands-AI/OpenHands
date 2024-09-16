@@ -689,6 +689,47 @@
     "de": "Nach unten",
     "zh-CN": "回到底部"
   },
+  "CHAT_INTERFACE$MESSAGE_ARIA_LABEL": {
+    "en": "Message from {{sender}}",
+    "zh-CN": "来自 {{sender}} 的消息",
+    "de": "Nachricht von {{sender}}",
+    "ko-KR": "{{sender}}의 메시지",
+    "no": "Melding fra {{sender}}",
+    "zh-TW": "來自 {{sender}} 的訊息",
+    "it": "Messaggio da {{sender}}",
+    "pt": "Mensagem de {{sender}}",
+    "es": "Mensaje de {{sender}}",
+    "ar": "رسالة من {{sender}}",
+    "fr": "Message de {{sender}}",
+    "tr": "{{sender}} tarafından gönderilen mesaj"
+  },
+  "CHAT_INTERFACE$CHAT_CONVERSATION": {
+    "en": "Chat Conversation",
+    "zh-CN": "聊天对话",
+    "de": "Chat-Konversation",
+    "ko-KR": "채팅 대화",
+    "no": "Chat-samtale",
+    "zh-TW": "聊天對話",
+    "it": "Conversazione di chat",
+    "pt": "Conversa de chat",
+    "es": "Conversación de chat",
+    "ar": "محادثة تلقيم",
+    "fr": "Conversation de chat"
+  },
+  "CHAT_INTERFACE$UNKNOWN_SENDER": {
+    "en": "Unknown",
+    "zh-CN": "未知",
+    "de": "Unbekannt",
+    "ko-KR": "알 수 없음",
+    "no": "Ukjent",
+    "zh-TW": "未知",
+    "it": "Sconosciuto",
+    "pt": "Desconhecido",
+    "es": "Desconocido",
+    "ar": "مجهول",
+    "fr": "Inconnu",
+    "tr": "Bilinmeyen"
+  },
   "SECURITY_ANALYZER$UNKNOWN_RISK": {
     "en": "Unknown Risk",
     "de": "Unbekanntes Risiko",

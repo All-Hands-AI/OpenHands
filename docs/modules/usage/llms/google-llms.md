@@ -11,7 +11,7 @@ When running OpenHands, you'll need to set the following in the OpenHands UI thr
 * `LLM Provider` to `Gemini`
 * `LLM Model` to the model you will be using.
 If the model is not in the list, toggle `Advanced Options`, and enter it in `Custom Model` (i.e. gemini/&lt;model-name&gt;).
-* `API Key`
+* `API Key` to your Gemini API key
 
 ## VertexAI - Google Cloud Platform Configs
 
