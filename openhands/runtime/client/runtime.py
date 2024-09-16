@@ -295,7 +295,6 @@ class EventStreamRuntime(Runtime):
     def _wait_until_alive(self):
         logger.debug('Getting container logs...')
 
-        # Print and clear the log buffer
         assert (
             self.log_buffer is not None
         ), 'Log buffer is expected to be initialized when container is started'
@@ -317,9 +316,9 @@ class EventStreamRuntime(Runtime):
         if not self.log_buffer.client_ready:
             time.sleep(1)
             attempts = 0
-            while not self.log_buffer.client_ready and attempts < 4:
+            while not self.log_buffer.client_ready and attempts < 5:
                 attempts += 1
-                time.sleep(2)
+                time.sleep(1)
                 logs = self.log_buffer.get_and_clear()
                 if logs:
                     formatted_logs = '\n'.join([f'    |{log}' for log in logs])
@@ -427,6 +426,8 @@ class EventStreamRuntime(Runtime):
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
                 else:
+                    logger.debug(f'action: {action}')
+                    logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
                     obs = ErrorObservation(f'Command execution failed: {error_message}')
@@ -436,8 +437,8 @@ class EventStreamRuntime(Runtime):
             except Exception as e:
                 logger.error(f'Error during command execution: {e}')
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
-            # Refresh docker logs
-            self._wait_until_alive()
+            # TODO Refresh docker logs or not?
+            # self._wait_until_alive()
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
@@ -510,6 +511,8 @@ class EventStreamRuntime(Runtime):
             if recursive:
                 os.unlink(temp_zip_path)
             logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            # Refresh docker logs
+            self._wait_until_alive()
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.

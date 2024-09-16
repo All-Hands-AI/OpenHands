@@ -62,8 +62,9 @@ function ChatInterface() {
   } = useDisclosure();
 
   const handleSendMessage = (content: string, imageUrls: string[]) => {
-    dispatch(addUserMessage({ content, imageUrls }));
-    send(createChatMessage(content, imageUrls));
+    const timestamp = new Date().toISOString();
+    dispatch(addUserMessage({ content, imageUrls, timestamp }));
+    send(createChatMessage(content, imageUrls, timestamp));
   };
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
@@ -94,6 +95,7 @@ function ChatInterface() {
           ref={scrollRef}
           className="overflow-y-auto p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
+          aria-label={t(I18nKey.CHAT_INTERFACE$CHAT_CONVERSATION)}
         >
           <Chat messages={messages} curAgentState={curAgentState} />
         </div>
