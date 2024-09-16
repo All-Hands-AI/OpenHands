@@ -1,6 +1,7 @@
 {
   "action": "message",
   "args": {
-    "content": "The content of 'bad.txt' has been read. The following typos have been identified:\n1. 'typoo' should be 'typo'\n2. 'mor' should be 'more'\nI will now proceed to fix these typos and overwrite the original file with the corrected content."
+    "content": "I have identified the following typos in the file 'bad.txt':\n1. 'typoo' should be 'typo'\n2. 'mor' should be 'more'\n\nI will now proceed to fix these typos and overwrite the original file.",
+    "wait_for_response": false
   }
 }
