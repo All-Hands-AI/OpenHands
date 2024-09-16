@@ -24,6 +24,7 @@ interface CustomMatchers<R = unknown> {
 
 declare module "vitest" {
   interface Assertion<T> extends CustomMatchers<T> {}
+  // @ts-expect-error - recursively references itself
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 

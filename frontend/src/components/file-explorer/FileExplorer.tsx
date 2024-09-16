@@ -5,6 +5,7 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
+import { useRevalidator } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
@@ -92,6 +93,7 @@ interface FileExplorerProps {
 }
 
 function FileExplorer({ files }: FileExplorerProps) {
+  const { revalidate } = useRevalidator();
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -102,7 +104,7 @@ function FileExplorer({ files }: FileExplorerProps) {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
-  const refreshWorkspace = async () => {
+  const refreshWorkspace = () => {
     if (
       curAgentState === AgentState.LOADING ||
       curAgentState === AgentState.STOPPED
@@ -110,12 +112,7 @@ function FileExplorer({ files }: FileExplorerProps) {
       return;
     }
     dispatch(setRefreshID(Math.random()));
-    try {
-      // const fileList = await listFiles();
-      // setFiles(fileList);
-    } catch (error) {
-      toast.error("refresh-error", t(I18nKey.EXPLORER$REFRESH_ERROR_MESSAGE));
-    }
+    revalidate();
   };
 
   const uploadFileData = async (toAdd: FileList) => {
@@ -154,7 +151,7 @@ function FileExplorer({ files }: FileExplorerProps) {
         toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
       }
 
-      await refreshWorkspace();
+      refreshWorkspace();
     } catch (error) {
       // Handle unexpected errors (network issues, etc.)
       toast.error(
@@ -165,9 +162,7 @@ function FileExplorer({ files }: FileExplorerProps) {
   };
 
   React.useEffect(() => {
-    (async () => {
-      await refreshWorkspace();
-    })();
+    refreshWorkspace();
   }, [curAgentState]);
 
   React.useEffect(() => {

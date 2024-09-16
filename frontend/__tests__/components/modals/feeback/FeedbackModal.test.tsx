@@ -2,8 +2,8 @@ import { render, screen, within } from "@testing-library/react";
 import { Mock, afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
-import { sendFeedback } from "#/services/feedbackService";
 import FeedbackModal from "#/components/modals/feedback/FeedbackModal";
+import { sendFeedback } from "#/api/open-hands";
 
 describe("FeedbackModal", () => {
   Storage.prototype.setItem = vi.fn();

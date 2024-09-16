@@ -98,7 +98,13 @@ function App() {
             };
 
             send(JSON.stringify(event));
-            store.dispatch(addUserMessage({ content: q, imageUrls: [] }));
+            store.dispatch(
+              addUserMessage({
+                content: q,
+                imageUrls: [],
+                timestamp: new Date().toISOString(),
+              }),
+            );
           }
         }
       },

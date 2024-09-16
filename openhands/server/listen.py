@@ -61,7 +61,7 @@ session_manager = SessionManager(config, file_store)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3001'],
+    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -172,7 +172,14 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
+    # Bypass authentication for OPTIONS requests (preflight)
+    if request.method == "OPTIONS":
+        response = await call_next(request)
+        return response
+
+    # For all other methods, validate the Authorization header
     if not request.headers.get('Authorization'):
+        logger.warning('Missing Authorization header')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Missing Authorization header'},
@@ -184,6 +191,7 @@ async def attach_session(request: Request, call_next):
 
     request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
     if request.state.sid == '':
+        logger.warning('Invalid token')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},

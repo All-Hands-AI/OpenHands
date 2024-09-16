@@ -5,8 +5,9 @@ import { useFetcher } from "@remix-run/react";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { listFiles, selectFile } from "#/services/fileService";
+import { listFiles } from "#/services/fileService";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
+import { retrieveFileContent } from "#/api/open-hands";
 
 interface TitleProps {
   name: string;
@@ -71,9 +72,16 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      const code = await selectFile(path);
-      dispatch(setCode(code));
-      dispatch(setActiveFilepath(path));
+      // TODO: Move to data loader
+      const token = localStorage.getItem("token");
+      if (token) {
+        const code = await retrieveFileContent(token, path);
+        dispatch(setCode(code));
+        dispatch(setActiveFilepath(path));
+      } else {
+        // TODO: Show error message
+        console.error("No token found");
+      }
     }
   };
 

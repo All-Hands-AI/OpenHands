@@ -41,13 +41,10 @@ export async function uploadFiles(files: FileList): Promise<UploadResult> {
     }
   }
 
-  // Add skippedFilesCount to formData
   formData.append("skippedFilesCount", skippedFiles.length.toString());
-
-  // Add uploadedFilesCount to formData
   formData.append("uploadedFilesCount", uploadedCount.toString());
 
-  const response = await request("/api/upload-files", {
+  const response = await request("http://localhost:3000/api/upload-files", {
     method: "POST",
     body: formData,
   });
