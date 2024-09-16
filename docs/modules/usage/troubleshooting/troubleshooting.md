@@ -9,13 +9,15 @@ We'll try to make the install process easier, but for now you can look for your 
 If you find more information or a workaround for one of these issues, please open a *PR* to add details to this file.
 
 :::tip
-If you're running on Windows and having trouble, check out our [Notes for Windows and WSL users](troubleshooting/windows).
+OpenHands only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+Please be sure to run all commands inside your WSL terminal.
+Check out [Notes for WSL on Windows Users](troubleshooting/windows) for some troubleshooting guides.
 :::
 
 ## Common Issues
 
 * [Unable to connect to Docker](#unable-to-connect-to-docker)
-* [Unable to connect to SSH box](#unable-to-connect-to-ssh-box)
+* [Unable to connect to LLM](#unable-to-connect-to-llm)
 * [404 Resource not found](#404-resource-not-found)
 * [`make build` getting stuck on package installations](#make-build-getting-stuck-on-package-installations)
 * [Sessions are not restored](#sessions-are-not-restored)
@@ -44,31 +46,6 @@ OpenHands uses a Docker container to do its work safely, without potentially bre
 * Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
 * If you are on a Mac, check the [permissions requirements](https://docs.docker.com/desktop/mac/permission-requirements/) and in particular consider enabling the `Allow the default Docker socket to be used` under `Settings > Advanced` in Docker Desktop.
 * In addition, upgrade your Docker to the latest version under `Check for Updates`
-
----
-### Unable to connect to SSH box
-
-[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1156)
-
-**Symptoms**
-
-```python
-self.shell = DockerSSHBox(
-...
-pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
-```
-
-**Details**
-
-By default, OpenHands connects to a running container using SSH. On some machines,
-especially Windows, this seems to fail.
-
-**Workarounds**
-
-* Restart your computer (sometimes it does work)
-* Be sure to have the latest versions of WSL and Docker
-* Check that your distribution in WSL is up to date as well
-* Try [this reinstallation guide](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
 
 ---
 ### Unable to connect to LLM

@@ -152,30 +152,34 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
       isDismissable={settingsAreUpToDate()}
       subtitle={subtitle}
-      actions={[
-        {
-          label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
-          action: handleSaveSettings,
-          isDisabled: saveIsDisabled,
-          closeAfterAction: true,
-          className: "bg-primary rounded-lg",
-        },
-        {
-          label: t(I18nKey.CONFIGURATION$MODAL_RESET_BUTTON_LABEL),
-          action: handleResetSettings,
-          closeAfterAction: false,
-          className: "bg-neutral-500 rounded-lg",
-        },
-        {
-          label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
-          action: () => {
-            setSettings(getSettings()); // reset settings from any changes
-          },
-          isDisabled: !settingsAreUpToDate(),
-          closeAfterAction: true,
-          className: "bg-rose-600 rounded-lg",
-        },
-      ]}
+      actions={
+        loading
+          ? []
+          : [
+              {
+                label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
+                action: handleSaveSettings,
+                isDisabled: saveIsDisabled,
+                closeAfterAction: true,
+                className: "bg-primary rounded-lg",
+              },
+              {
+                label: t(I18nKey.CONFIGURATION$MODAL_RESET_BUTTON_LABEL),
+                action: handleResetSettings,
+                closeAfterAction: false,
+                className: "bg-neutral-500 rounded-lg",
+              },
+              {
+                label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
+                action: () => {
+                  setSettings(getSettings()); // reset settings from any changes
+                },
+                isDisabled: !settingsAreUpToDate(),
+                closeAfterAction: true,
+                className: "bg-rose-600 rounded-lg",
+              },
+            ]
+      }
     >
       {loading && <Spinner />}
       {!loading && (

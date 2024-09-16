@@ -821,8 +821,7 @@ def finalize_config(cfg: AppConfig) -> None:
         ensures directory existence, and performs compatibility checks.
     """
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        cfg.workspace_mount_path = cfg.workspace_base
 
     if cfg.workspace_mount_rewrite:
         base = cfg.workspace_base or os.getcwd()
