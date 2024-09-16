@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -14,8 +14,8 @@ from openhands.storage import get_file_store
 @pytest.fixture
 def mock_llm():
     llm = Mock(spec=LLM)
-    llm.config = LLMConfig(model='claude-3-5-sonnet-20240620')
-    llm.supports_prompt_caching = True
+    llm.config = LLMConfig(model='claude-3-5-sonnet-20240620', caching_prompt=True)
+    llm.is_caching_prompt_active.return_value = True
     return llm
 
 
@@ -47,7 +47,7 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     assert (
         len(messages) == 6
     )  # System, initial user + user message, agent message, last user message
-    assert messages[0].content[0].cache_prompt
+    assert messages[0].content[0].cache_prompt  # system message
     assert messages[1].role == 'user'
     assert messages[1].content[0].text.endswith("LET'S START!")
     assert messages[1].content[1].text.endswith('Initial user message')
@@ -55,8 +55,10 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
 
     assert messages[3].role == 'user'
     assert messages[3].content[0].text == ('Hello, agent!')
+    assert messages[3].content[0].cache_prompt
     assert messages[4].role == 'assistant'
     assert messages[4].content[0].text == 'Hello, user!'
+    assert not messages[4].content[0].cache_prompt
     assert messages[5].role == 'user'
     assert messages[5].content[0].text.startswith('Laaaaaaaast!')
     assert messages[5].content[0].cache_prompt
@@ -86,14 +88,20 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
-        msg for msg in messages if msg.role == 'user' and msg.content[0].cache_prompt
+        msg
+        for msg in messages
+        if msg.role in ('user', 'system') and msg.content[0].cache_prompt
     ]
-    assert len(cached_user_messages) == 3  # Including the initial system message
+    assert (
+        len(cached_user_messages) == 4
+    )  # Including the initial system+user + 2 last user message
 
-    # Verify that these are indeed the last two user messages
-    assert cached_user_messages[0].content[0].text.startswith('Here is an example')
-    assert cached_user_messages[1].content[0].text == 'User message 13'
-    assert cached_user_messages[2].content[0].text.startswith('User message 14')
+    # Verify that these are indeed the last two user messages (from start)
+    assert (
+        cached_user_messages[0].content[0].text.startswith('A chat between')
+    )  # system message
+    assert cached_user_messages[2].content[0].text.startswith('User message 1')
+    assert cached_user_messages[3].content[0].text.startswith('User message 1')
 
 
 def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
@@ -187,12 +195,11 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
 
     codeact_agent.reset()
 
-    # Replace mock LLM completion with a function that checks headers and returns a structured response
+    # Create a mock for litellm_completion
     def check_headers(**kwargs):
         assert 'extra_headers' in kwargs
         assert 'anthropic-beta' in kwargs['extra_headers']
         assert kwargs['extra_headers']['anthropic-beta'] == 'prompt-caching-2024-07-31'
-
         # Create a mock response with the expected structure
         mock_response = Mock()
         mock_response.choices = [Mock()]
@@ -200,11 +207,17 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
         mock_response.choices[0].message.content = 'Hello! How can I assist you today?'
         return mock_response
 
-    codeact_agent.llm.completion = check_headers
-
-    # Act
-    result = codeact_agent.step(mock_state)
+    # Use patch to replace litellm_completion with our check_headers function
+    with patch('openhands.llm.llm.litellm_completion', side_effect=check_headers):
+        # Also patch the action parser to return a MessageAction
+        with patch.object(
+            codeact_agent.action_parser,
+            'parse',
+            return_value=MessageAction('Hello! How can I assist you today?'),
+        ):
+            # Act
+            result = codeact_agent.step(mock_state)
 
     # Assert
     assert isinstance(result, MessageAction)
-    assert 'Hello! How can I assist you today?' in result.content
+    assert result.content == 'Hello! How can I assist you today?'

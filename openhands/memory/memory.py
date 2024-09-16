@@ -43,7 +43,7 @@ if LLAMA_INDEX_AVAILABLE:
 
     def attempt_on_error(retry_state):
         logger.error(
-            f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
+            f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
             exc_info=False,
         )
         return None

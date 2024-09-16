@@ -5,8 +5,9 @@ import os
 import pathlib
 import subprocess
 import time
-from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Awaitable, Callable
+import traceback
+from concurrent.futures import Future, ProcessPoolExecutor
+from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
 from pydantic import BaseModel
@@ -75,6 +76,12 @@ class EvalOutput(BaseModel):
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
         dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
+
+
+class EvalError(BaseModel):
+    instance_id: str
+    error: str
+    stacktrace: str
 
 
 def codeact_user_response(
@@ -227,6 +234,68 @@ def prepare_dataset(
     return pd.DataFrame(new_dataset)
 
 
+def update_progress(
+    result_or_future: Future | EvalOutput | EvalError,
+    instance: pd.Series,
+    pbar: tqdm,
+    output_fp: TextIO,
+    instance_queue: mp.Queue,
+):
+    """Update the progress bar and write the result to the output file."""
+    try:
+        if isinstance(result_or_future, Future):
+            result = result_or_future.result()
+        else:
+            result = result_or_future
+    except Exception as e:
+        # Handle the error
+        # Exception may be raised in the process_instance_func and will
+        # be raised here when we try to access the .result() of the future
+        handle_error(
+            EvalError(
+                instance_id=instance.instance_id,
+                error=str(e),
+                stacktrace=traceback.format_exc(),
+            ),
+            instance,
+            pbar,
+            instance_queue,
+        )
+        return
+
+    # Update the progress bar and write the result to the output file
+    if isinstance(result, EvalOutput):
+        pbar.update(1)
+        pbar.set_description(f'Instance {result.instance_id}')
+        pbar.set_postfix_str(f'Test Result: {result.test_result}')
+        logger.info(
+            f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
+        )
+        output_fp.write(json.dumps(result.model_dump()) + '\n')
+        output_fp.flush()
+    elif isinstance(result, EvalError):
+        handle_error(result, instance, pbar, instance_queue)
+    else:
+        raise ValueError(f'Unexpected result type: {type(result)}')
+
+
+def handle_error(
+    error: EvalError, instance: pd.Series, pbar: tqdm, instance_queue: mp.Queue
+):
+    """Handle an error that occurred during evaluation."""
+    logger.error(
+        f'Retrying instance [{instance.instance_id}] due to error: {error.error}. Stacktrace:\n{error.stacktrace}'
+        + '\n'
+        + '-' * 10
+        + '[You may ignore this error if it is a transient issue - the instance will be automatically retried.]'
+        + '-' * 10
+        + '\n'
+    )
+    instance_queue.put(instance)
+    pbar.total += 1
+    pbar.refresh()
+
+
 def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata,
@@ -241,42 +310,65 @@ def run_evaluation(
         f'Evaluation started with Agent {metadata.agent_class}:\n'
         f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
     )
-    pbar = tqdm(total=len(dataset))
+
+    instance_queue = mp.Queue()
+    for _, instance in dataset.iterrows():
+        instance_queue.put(instance)
+
+    total_instances = len(dataset)
+    pbar = tqdm(total=total_instances, desc='Instances processed')
     output_fp = open(output_file, 'a')
-
-    def update_progress(future):
-        pbar.update(1)
-        output: EvalOutput = future.result() if use_multiprocessing else future
-
-        pbar.set_description(f'Instance {output.instance_id}')
-        pbar.set_postfix_str(f'Test Result: {output.test_result}')
-        logger.info(
-            f'Finished evaluation for instance {output.instance_id}: {str(output.test_result)[:300]}...\n'
-        )
-        output_fp.write(json.dumps(output.model_dump()) + '\n')
-        output_fp.flush()
 
     try:
         if use_multiprocessing:
             with ProcessPoolExecutor(num_workers) as executor:
-                futures = []
-                for _, instance in dataset.iterrows():
-                    future = executor.submit(
-                        process_instance_func,
-                        instance,
-                        metadata,
-                        bool(num_workers > 1),
-                    )
-                    future.add_done_callback(update_progress)
-                    futures.append(future)
-                for future in futures:
-                    future.result()
-        # Use plain for loop for single process for easier debugging
+                batch_futures = []
+
+                # Loop until there are *no more instances to be processed* and *all (in-progress) futures are done*
+                # since a running future may add new instances to the queue when error occurs
+                while not instance_queue.empty() or batch_futures:
+                    # Submit new tasks if there are instances to be processed and available workers
+                    while (
+                        not instance_queue.empty() and len(batch_futures) < num_workers
+                    ):
+                        try:
+                            instance = instance_queue.get(block=False)
+                            future = executor.submit(
+                                process_instance_func, instance, metadata, True
+                            )
+                            future.instance = (
+                                instance  # Attach the instance to the future
+                            )
+                            batch_futures.append(future)
+                        except mp.queues.Empty:
+                            logger.warning(
+                                'Queue is empty - This should not happen. This is a bug.'
+                            )
+                            break  # Queue is empty, stop submitting new tasks
+
+                    # Continue to wait for the futures to be done & remove completed futures
+                    new_batch_futures = []
+                    for future in batch_futures:
+                        if future.done():
+                            update_progress(
+                                future, future.instance, pbar, output_fp, instance_queue
+                            )
+                        else:
+                            new_batch_futures.append(future)
+                    batch_futures = new_batch_futures
+
+                    # Short sleep to prevent busy-waiting
+                    time.sleep(1)
+
+                assert instance_queue.empty(), 'instance_queue should be empty after all futures are done. This is a bug.'
+                assert (
+                    len(batch_futures) == 0
+                ), 'batch_futures should be empty after all futures are done. This is a bug.'
         else:
-            assert num_workers == 1
-            for _, instance in dataset.iterrows():
-                output = process_instance_func(instance, metadata, False)
-                update_progress(output)
+            while not instance_queue.empty():
+                instance = instance_queue.get()
+                result = process_instance_func(instance, metadata, False)
+                update_progress(result, instance, pbar, output_fp, instance_queue)
 
     except KeyboardInterrupt:
         print('\nKeyboardInterrupt received. Cleaning up...\n')

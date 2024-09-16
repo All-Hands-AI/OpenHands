@@ -250,18 +250,6 @@
     "fr": "Configuration",
     "tr": "Konfigürasyon"
   },
-  "CONFIGURATION$MODAL_SUB_TITLE": {
-    "en": "Adjust settings to your liking",
-    "zh-CN": "根据您的喜好调整设置",
-    "de": "Passen Sie die Einstellungen nach Ihren Wünschen an ",
-    "ko-KR": "원하는 대로 설정 조정",
-    "no": "Juster innstillinger etter dine ønsker ",
-    "zh-TW": "調整設定以符合您的喜好",
-    "it": "Regola le impostazioni in base alle tue preferenze",
-    "pt": "Ajuste as configurações de acordo com sua preferência",
-    "es": "Ajusta la configuración a tu gusto",
-    "tr": "Ayarları isteğinize göre ayarlayın"
-  },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
     "zh-CN": "模型",
@@ -452,6 +440,11 @@
     "en": "No files in workspace",
     "zh-CN": "工作区没有文件",
     "de": "Keine Dateien im Arbeitsbereich"
+  },
+  "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
+    "en": "Loading workspace...",
+    "zh-CN": "正在加载工作区...",
+    "de": "Arbeitsbereich wird geladen..."
   },
   "EXPLORER$REFRESH_ERROR_MESSAGE": {
     "en": "Error refreshing workspace",
@@ -695,6 +688,47 @@
     "en": "To Bottom",
     "de": "Nach unten",
     "zh-CN": "回到底部"
+  },
+  "CHAT_INTERFACE$MESSAGE_ARIA_LABEL": {
+    "en": "Message from {{sender}}",
+    "zh-CN": "来自 {{sender}} 的消息",
+    "de": "Nachricht von {{sender}}",
+    "ko-KR": "{{sender}}의 메시지",
+    "no": "Melding fra {{sender}}",
+    "zh-TW": "來自 {{sender}} 的訊息",
+    "it": "Messaggio da {{sender}}",
+    "pt": "Mensagem de {{sender}}",
+    "es": "Mensaje de {{sender}}",
+    "ar": "رسالة من {{sender}}",
+    "fr": "Message de {{sender}}",
+    "tr": "{{sender}} tarafından gönderilen mesaj"
+  },
+  "CHAT_INTERFACE$CHAT_CONVERSATION": {
+    "en": "Chat Conversation",
+    "zh-CN": "聊天对话",
+    "de": "Chat-Konversation",
+    "ko-KR": "채팅 대화",
+    "no": "Chat-samtale",
+    "zh-TW": "聊天對話",
+    "it": "Conversazione di chat",
+    "pt": "Conversa de chat",
+    "es": "Conversación de chat",
+    "ar": "محادثة تلقيم",
+    "fr": "Conversation de chat"
+  },
+  "CHAT_INTERFACE$UNKNOWN_SENDER": {
+    "en": "Unknown",
+    "zh-CN": "未知",
+    "de": "Unbekannt",
+    "ko-KR": "알 수 없음",
+    "no": "Ukjent",
+    "zh-TW": "未知",
+    "it": "Sconosciuto",
+    "pt": "Desconhecido",
+    "es": "Desconocido",
+    "ar": "مجهول",
+    "fr": "Inconnu",
+    "tr": "Bilinmeyen"
   },
   "SECURITY_ANALYZER$UNKNOWN_RISK": {
     "en": "Unknown Risk",

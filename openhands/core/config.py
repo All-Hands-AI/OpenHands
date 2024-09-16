@@ -51,6 +51,8 @@ class LLMConfig:
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
+        disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+        caching_prompt: Using the prompt caching feature provided by the LLM.
     """
 
     model: str = 'gpt-4o'
@@ -63,10 +65,10 @@ class LLMConfig:
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
-    num_retries: int = 10
+    num_retries: int = 8
     retry_multiplier: float = 2
-    retry_min_wait: int = 3
-    retry_max_wait: int = 300
+    retry_min_wait: int = 15
+    retry_max_wait: int = 120
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0
@@ -78,6 +80,8 @@ class LLMConfig:
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
     drop_params: bool | None = None
+    disable_vision: bool | None = None
+    caching_prompt: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -503,7 +507,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
-                    logger.openhands_logger.info(
+                    logger.openhands_logger.debug(
                         'Attempt to load default agent config from config toml'
                     )
                     non_dict_fields = {
@@ -513,13 +517,13 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_agent_config(agent_config, 'agent')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.openhands_logger.info(
+                            logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as agent config'
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 elif key is not None and key.lower() == 'llm':
-                    logger.openhands_logger.info(
+                    logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
                     non_dict_fields = {
@@ -529,7 +533,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.openhands_logger.info(
+                            logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
                             llm_config = LLMConfig(**nested_value)
@@ -580,10 +584,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
+    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
     # Set workspace_mount_path if not set by the user
     if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = os.path.abspath(cfg.workspace_base)
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        cfg.workspace_mount_path = cfg.workspace_base
 
     if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?
@@ -619,7 +623,7 @@ def get_llm_config_arg(
     model = 'gpt-3.5-turbo'
     api_key = '...'
     temperature = 0.5
-    num_retries = 10
+    num_retries = 8
     ...
     ```
 

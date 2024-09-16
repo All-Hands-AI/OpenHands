@@ -46,8 +46,8 @@ class PlannerAgent(Agent):
             state, self.llm.config.max_message_chars
         )
         content = [TextContent(text=prompt)]
-        if image_urls:
+        if self.llm.vision_is_active() and image_urls:
             content.append(ImageContent(image_urls=image_urls))
         message = Message(role='user', content=content)
-        resp = self.llm.completion(messages=[message.model_dump()])
+        resp = self.llm.completion(messages=self.llm.format_messages_for_llm(message))
         return self.response_parser.parse(resp)

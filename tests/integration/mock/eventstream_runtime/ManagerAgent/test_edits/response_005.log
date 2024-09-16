@@ -1,19 +1,7 @@
 {
-  "action": "finish",
+  "action": "message",
   "args": {
-    "outputs": {
-      "summary": {
-        "bad.txt": {
-          "original": [
-            "typoo",
-            "mor"
-          ],
-          "fixed": [
-            "typo",
-            "more"
-          ]
-        }
-      }
-    }
+    "content": "I have successfully fixed the typos in the file 'bad.txt'. Here's a summary of the changes made:\n\n1. Changed 'typoo' to 'typo'\n2. Changed 'mor' to 'more'\n\nNow, I will use the finish action to complete the task and provide the summary.",
+    "wait_for_response": false
   }
 }

@@ -1,9 +1,8 @@
-const LATEST_SETTINGS_VERSION = 1;
+const LATEST_SETTINGS_VERSION = 2;
 
 export type Settings = {
   LLM_MODEL: string;
-  CUSTOM_LLM_MODEL: string;
-  USING_CUSTOM_MODEL: boolean;
+  LLM_BASE_URL: string;
   AGENT: string;
   LANGUAGE: string;
   LLM_API_KEY: string;
@@ -11,12 +10,9 @@ export type Settings = {
   SECURITY_ANALYZER: string;
 };
 
-type SettingsInput = Settings[keyof Settings];
-
 export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "openai/gpt-4o",
-  CUSTOM_LLM_MODEL: "",
-  USING_CUSTOM_MODEL: false,
+  LLM_MODEL: "gpt-4o",
+  LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
@@ -46,6 +42,14 @@ export const maybeMigrateSettings = () => {
   if (currentVersion < 1) {
     localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
   }
+  if (currentVersion < 2) {
+    const customModel = localStorage.getItem("CUSTOM_LLM_MODEL");
+    if (customModel) {
+      localStorage.setItem("LLM_MODEL", customModel);
+    }
+    localStorage.removeItem("CUSTOM_LLM_MODEL");
+    localStorage.removeItem("USING_CUSTOM_MODEL");
+  }
 };
 
 /**
@@ -58,9 +62,7 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = (): Settings => {
   const model = localStorage.getItem("LLM_MODEL");
-  const customModel = localStorage.getItem("CUSTOM_LLM_MODEL");
-  const usingCustomModel =
-    localStorage.getItem("USING_CUSTOM_MODEL") === "true";
+  const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
   const apiKey = localStorage.getItem("LLM_API_KEY");
@@ -69,8 +71,7 @@ export const getSettings = (): Settings => {
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
-    CUSTOM_LLM_MODEL: customModel || DEFAULT_SETTINGS.CUSTOM_LLM_MODEL,
-    USING_CUSTOM_MODEL: usingCustomModel || DEFAULT_SETTINGS.USING_CUSTOM_MODEL,
+    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
@@ -92,35 +93,4 @@ export const saveSettings = (settings: Partial<Settings>) => {
       localStorage.setItem(key, value.toString());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
-};
-
-/**
- * Get the difference between the current settings and the provided settings.
- * Useful for notifying the user of exact changes.
- *
- * @example
- * // Assuming the current settings are: { LLM_MODEL: "gpt-4o", AGENT: "CodeActAgent", LANGUAGE: "en" }
- * const updatedSettings = getSettingsDifference({ LLM_MODEL: "gpt-4o", AGENT: "OTHER_AGENT", LANGUAGE: "en" });
- * // updatedSettings = { AGENT: "OTHER_AGENT" }
- *
- * @param settings - the settings to compare
- * @returns the updated settings
- */
-export const getSettingsDifference = (settings: Partial<Settings>) => {
-  const currentSettings = getSettings();
-  const updatedSettings: Partial<Settings> = {};
-
-  Object.keys(settings).forEach((key) => {
-    const typedKey = key as keyof Settings;
-    if (
-      validKeys.includes(typedKey) &&
-      settings[typedKey] !== currentSettings[typedKey]
-    ) {
-      (updatedSettings[typedKey] as SettingsInput) = settings[
-        typedKey
-      ] as SettingsInput;
-    }
-  });
-
-  return updatedSettings;
 };

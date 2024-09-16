@@ -1,15 +1,8 @@
-```json
 {
   "action": "finish",
   "args": {
     "outputs": {
-      "summary": {
-        "bad.txt": {
-          "original": ["typoo", "mor"],
-          "fixed": ["typo", "more"]
-        }
-      }
+      "summary": "Typos fixed in 'bad.txt':\n1. 'typoo' changed to 'typo'\n2. 'mor' changed to 'more'\n\nOriginal content:\nThis is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n\nFixed content:\nThis is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n"
     }
   }
 }
-```
