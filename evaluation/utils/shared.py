@@ -255,7 +255,6 @@ def _process_instance_wrapper(
     instance: pd.Series,
     metadata: EvalMetadata,
     use_mp: bool,
-    pbar: tqdm,
     max_retries: int = 5,
 ) -> EvalOutput:
     """Wrap the process_instance_func to handle retries and errors.
@@ -268,6 +267,7 @@ def _process_instance_wrapper(
             return result
         except Exception as e:
             if attempt == max_retries - 1:
+                # Raise an error after all retries & stop the evaluation
                 raise RuntimeError(
                     f'Maximum error retries reached for instance {instance.instance_id}'
                 ) from e
@@ -286,7 +286,6 @@ def _process_instance_wrapper(
             logger.error(msg)
             if use_mp:
                 print(msg)  # use print to directly print to console
-            pbar.update(1)
             time.sleep(1)  # Add a small delay before retrying
 
 
@@ -319,7 +318,6 @@ def run_evaluation(
                         instance=instance,
                         metadata=metadata,
                         use_mp=True,
-                        pbar=pbar,
                     )
                     for _, instance in dataset.iterrows()
                 ]
@@ -333,7 +331,6 @@ def run_evaluation(
                     instance=instance,
                     metadata=metadata,
                     use_mp=False,
-                    pbar=pbar,
                 )
                 update_progress(result, pbar, output_fp)
 
