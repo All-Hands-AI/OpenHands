@@ -390,7 +390,7 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
-        # check if agent hit the target limit
+        # check if agent hit the resources limit
         stop_step = False
         if self.state.iteration >= self.state.max_iterations:
             stop_step = await self._handle_traffic_control(
