@@ -426,6 +426,8 @@ class EventStreamRuntime(Runtime):
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
                 else:
+                    logger.debug(f'action: {action}')
+                    logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
                     obs = ErrorObservation(f'Command execution failed: {error_message}')
@@ -509,6 +511,8 @@ class EventStreamRuntime(Runtime):
             if recursive:
                 os.unlink(temp_zip_path)
             logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            # Refresh docker logs
+            self._wait_until_alive()
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
