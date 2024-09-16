@@ -80,6 +80,14 @@ function App() {
         send(JSON.stringify(initEvent));
         // first time connection
         if (!token) {
+          if (ghToken) {
+            const command = `export GH_TOKEN=${ghToken}`;
+            const event = sendTerminalCommand(command);
+
+            send(event);
+            store.dispatch(appendInput(command.replace(ghToken, "***")));
+          }
+
           if (ghToken && repo) {
             // clone repo via terminal
             const url = `https://${ghToken}@github.com/${repo}.git`;
