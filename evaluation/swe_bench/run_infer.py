@@ -218,7 +218,7 @@ def initialize_runtime(
         assert obs.exit_code == 0
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-        action.timeout = 1800
+        action.timeout = 3600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
