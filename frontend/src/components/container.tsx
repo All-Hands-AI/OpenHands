@@ -63,7 +63,7 @@ export function Container({
           {label}
         </div>
       )}
-      {children}
+      <div className="overflow-scroll h-full">{children}</div>
     </div>
   );
 }

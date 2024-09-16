@@ -90,10 +90,10 @@ function ChatInterface() {
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <div className="flex flex-col">
+      <div className="flex flex-col max-h-full overflow-y-auto">
         <div
           ref={scrollRef}
-          className="overflow-y-auto p-3"
+          className="p-3"
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           aria-label={t(I18nKey.CHAT_INTERFACE$CHAT_CONVERSATION)}
         >

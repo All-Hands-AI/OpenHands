@@ -16,7 +16,7 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]);
   }),
-  http.get("http://localhost:3001/api/list-files", async ({ request }) => {
+  http.get("http://localhost:3000/api/list-files", async ({ request }) => {
     await delay(2500);
 
     const token = request.headers
@@ -30,7 +30,7 @@ export const handlers = [
 
     return HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]);
   }),
-  http.get("http://localhost:3001/api/select-file", async ({ request }) => {
+  http.get("http://localhost:3000/api/select-file", async ({ request }) => {
     await delay(500);
 
     const token = request.headers
@@ -66,7 +66,7 @@ export const handlers = [
   http.post("http://localhost:3000/api/submit-feedback", async () =>
     HttpResponse.json({ statusCode: 200 }, { status: 200 }),
   ),
-  http.post("http://localhost:3001/api/save-file", () =>
+  http.post("http://localhost:3000/api/save-file", () =>
     HttpResponse.json(null, { status: 200 }),
   ),
 ];

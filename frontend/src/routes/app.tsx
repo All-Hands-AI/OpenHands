@@ -165,13 +165,13 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-[calc(100%-60px)] gap-3">
-        <Container className="w-1/4 overflow-scroll" label="Chat">
+        <Container className="w-1/4" label="Chat">
           <ChatInterface />
         </Container>
 
         <div className="flex flex-col w-3/4 gap-3">
           <Container
-            className="h-2/3 overflow-scroll"
+            className="h-2/3"
             labels={[
               { label: "Workspace", to: "", icon: <CodeIcon /> },
               { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
