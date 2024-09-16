@@ -137,7 +137,7 @@ class CodeActAgent(Agent):
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
-                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
+                f'\\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):

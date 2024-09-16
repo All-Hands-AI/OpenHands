@@ -115,7 +115,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     mock_event_stream.add_event(cmd_action_1, EventSource.AGENT)
 
     cmd_observation_1 = CmdOutputObservation(
-        content='total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt',
+        content=r'total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt',
         command_id=cmd_action_1._id,
         command='ls -l',
         exit_code=0,
@@ -153,7 +153,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         for msg in messages
     )  # agent
     assert any(
-        'total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt'
+        r'total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt'
         in msg.content[0].text
         for msg in messages
     )  # user, observation
@@ -164,9 +164,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     assert any(
         'finished with exit code 0' in msg.content[0].text for msg in messages
     )  # user, observation
-    assert (
-        messages[5].content[0].text.startswith('OBSERVATION:\n\n')
-    )  # user, observation
+    assert messages[5].content[0].text.startswith('OBSERVATION:')  # user, observation
 
     # prompt cache is added to the system message
     assert messages[0].content[0].cache_prompt
