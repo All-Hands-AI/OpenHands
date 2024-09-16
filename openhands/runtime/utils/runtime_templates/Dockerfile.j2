@@ -80,12 +80,12 @@ RUN \
     /openhands/miniforge3/bin/mamba clean --all
 {% if not skip_init %}
 RUN \
-    # Set up bash environment
-    echo 'export PATH="/openhands/miniforge3/bin:$PATH"' >> /etc/bash.bashrc && \
+    # Add the Poetry virtual environment to the bashrc
     echo "export OH_INTERPRETER_PATH=\"$OH_INTERPRETER_PATH\"" >> /etc/bash.bashrc && \
     echo "export OH_VENV_PATH=\"$OH_VENV_PATH\"" >> /etc/bash.bashrc && \
-    echo 'source /openhands/miniforge3/etc/profile.d/conda.sh' >> /etc/bash.bashrc && \
+    # Activate the Poetry virtual environment
     echo 'source "$OH_VENV_PATH/bin/activate"' >> /etc/bash.bashrc && \
+    # Use the Poetry virtual environment's Python interpreter
     echo 'alias python="$OH_INTERPRETER_PATH"' >> /etc/bash.bashrc
 {% endif %}
 # ================================================================
