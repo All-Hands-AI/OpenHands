@@ -70,7 +70,7 @@ class LLMConfig:
     retry_min_wait: int = 15
     retry_max_wait: int = 120
     timeout: int | None = None
-    max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
+    max_message_chars: int = 20_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0
     top_p: float = 0.5
     custom_llm_provider: str | None = None

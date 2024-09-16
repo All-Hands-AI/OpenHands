@@ -133,7 +133,7 @@ class CodeActAgent(Agent):
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
-        obs_prefix = 'OBSERVATION:\n'
+        obs_prefix = r'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
@@ -141,15 +141,14 @@ class CodeActAgent(Agent):
             )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = obs_prefix + obs.content
-            splitted = text.split(r'\n')
+            splitted = obs.content.split(r'\n')
             # replace base64 images with a placeholder
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            text = r'\n'.join(splitted)
+            text = obs_prefix + r'\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
@@ -160,7 +159,7 @@ class CodeActAgent(Agent):
             text += '\n[Error occurred in processing last action]'
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
             return Message(role='user', content=[TextContent(text=text)])
         else:

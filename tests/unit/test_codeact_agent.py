@@ -42,21 +42,23 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):
     obs = IPythonRunCellObservation(
         code='plt.plot()',
-        content='IPython output\n![image](data:image/png;base64,ABC123)',
+        content=r'IPython output\n![image](data:image/png;base64,ABC123)\nMore output',
     )
-
+    agent.llm.config.max_message_chars = 200
     result = agent.get_observation_message(obs)
-
+    print(result)
     assert result is not None
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'OBSERVATION:' in result.content[0].text
-    assert 'IPython output' in result.content[0].text
-    assert (
-        '![image](data:image/png;base64, ...) already displayed to user'
-        in result.content[0].text
+
+    expected_content = (
+        r'OBSERVATION:\n'
+        r'IPython output\n'
+        r'![image](data:image/png;base64, ...) already displayed to user\n'
+        'More output'
     )
+    assert result.content[0].text == expected_content
     assert 'ABC123' not in result.content[0].text
 
 
