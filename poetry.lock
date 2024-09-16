@@ -3928,13 +3928,13 @@ sentence-transformers = ">=2.6.1"
 
 [[package]]
 name = "llama-index-embeddings-ollama"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index embeddings ollama integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_ollama-0.3.0-py3-none-any.whl", hash = "sha256:513f6e606fa9e55fd713b77d99d2e4c7b77611c68ac216431e32dc661f753953"},
-    {file = "llama_index_embeddings_ollama-0.3.0.tar.gz", hash = "sha256:439a5cd11e3bde504fad6a88085e94217d26a786a4636481a97052ecc22407b6"},
+    {file = "llama_index_embeddings_ollama-0.3.1-py3-none-any.whl", hash = "sha256:b869ce7e9f8e67aa7d81336e90d25d3ea1fca91c68dce8922b2d4b9c06c5acef"},
+    {file = "llama_index_embeddings_ollama-0.3.1.tar.gz", hash = "sha256:5a3e75fa14be7e2b1a82937416c880204dc96e1b1d2626dc5bde93f021e7b540"},
 ]
 
 [package.dependencies]
