@@ -588,9 +588,9 @@ Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me fo
 
 ----------
 
-
+Certainly! I'll browse localhost:8000 and find the ultimate answer to life for you. Let me do that now.
 <execute_bash>
-curl -s localhost:8000
+curl http://localhost:8000
 </execute_bash>
 
 ----------

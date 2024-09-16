@@ -1,4 +1,4 @@
-I apologize for the confusion. It seems that we are not in a git repository. Let's initialize a git repository in the current directory and then stage some files before writing a commit message.
+I apologize for the confusion. It seems we're not in a git repository. Let's initialize a git repository and add some files to it before we can create a commit message.
 
 First, let's initialize a git repository:
 

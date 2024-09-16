@@ -406,19 +406,17 @@ Use Jupyter IPython to write a text file containing 'hello world' to '/workspace
 
 ----------
 
-Certainly! I'll use Jupyter IPython to create a text file containing 'hello world' in the specified location.
+Certainly! I'll use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'.
 <execute_ipython>
-create_file('/workspace/test.txt')
+with open('/workspace/test.txt', 'w') as f:
+    f.write('hello world')
+print("File created successfully.")
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-[File: /workspace/test.txt (1 lines total)]
-(this is the beginning of the file)
-1|
-(this is the end of the file)
-[File /workspace/test.txt created.]
+File created successfully.
 [Jupyter current working directory: /workspace]
 [Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 

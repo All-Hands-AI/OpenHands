@@ -142,14 +142,14 @@ class CodeActAgent(Agent):
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs_prefix + obs.content
+            splitted = text.split(r'\n')
             # replace base64 images with a placeholder
-            splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            text = '\n'.join(splitted)
+            text = r'\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):

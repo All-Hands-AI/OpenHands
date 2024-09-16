@@ -1,4 +1,4 @@
-It appears that there is already a .git directory in the current workspace. Let's try to use git commands to see the status of the repository:
+Great, we've successfully initialized a git repository. Now, let's create a simple file and add it to the staging area:
 
 <execute_bash>
-git status
+echo "Hello, Git!" > hello.txt && git add hello.txt

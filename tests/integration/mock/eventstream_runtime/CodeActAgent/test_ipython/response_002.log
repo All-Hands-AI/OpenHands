@@ -1,4 +1,5 @@
-Now that the file has been created, I'll append the content 'hello world' to it.
+Great! The file has been created successfully. Let's verify its contents:
 
 <execute_ipython>
-append_file('/workspace/test.txt', 'hello world')
+with open('/workspace/test.txt', 'r') as f:
+    print(f.read())

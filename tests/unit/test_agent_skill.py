@@ -1161,7 +1161,9 @@ def test_search_dir_too_much_match(tmp_path):
         result = buf.getvalue()
     assert result is not None
 
-    expected = f'More than 999 files matched for "Line 5" in {tmp_path}. Please narrow your search.\n'
+    expected = (
+        f'999 files matched for "Line 5" in {tmp_path}. Please narrow your search.\n'
+    )
     assert result.split('\n') == expected.split('\n')
 
 
@@ -1631,3 +1633,130 @@ def test_lint_file_fail_typescript(tmp_path, capsys):
                 assert result_line.lstrip('./') == expected_line.lstrip(
                     './'
                 ), f"Line {i+1} doesn't match"
+
+
+def test_edit_file_by_replace_with_linebreaks(tmp_path):
+    temp_file_path = tmp_path / 'linebreak_test.txt'
+    content = 'Line 1\\n\nLine 2\r\nLine 3\\r\\n\nLine 4\n"Docstring\\n with\\r\\n linebreaks"'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file_by_replace(
+                file_name=str(temp_file_path),
+                to_replace='Line 2\r\nLine 3\\r\\n',
+                new_content='New Line 2\\nNew Line 3\r\n',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
+            '1|Line 1\\n\n'
+            '2|Line 2\n'
+            '3|New Line 2\\nNew Line 3\n'
+            '4|"Docstring\\n with\\r\\n linebreaks"\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=3)
+            + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    print(lines)
+    assert len(lines) == 4
+    assert lines[0] == 'Line 1\\n\n'
+    assert lines[1] == 'Line 2\n'
+    assert lines[2] == 'New Line 2\\nNew Line 3\n'
+    assert lines[3] == '"Docstring\\n with\\r\\n linebreaks"\n'
+
+
+def test_insert_content_with_mixed_linebreaks(tmp_path):
+    temp_file_path = tmp_path / 'mixed_linebreaks.txt'
+    content = (
+        'def function():\n    """Docstring with\\n\\r\\n mixed breaks"""\n    pass'
+    )
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            insert_content_at_line(
+                str(temp_file_path),
+                2,
+                'New Line A\\r\\nNew Line B\\nNew Line C\r\n',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (4 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
+            '1|def function():\n'
+            '2|New Line A\\r\\nNew Line B\\nNew Line C\n'
+            '3|    """Docstring with\\n\\r\\n mixed breaks"""\n'
+            '4|    pass\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=2)
+            + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 4
+    assert lines[1] == 'New Line A\\r\\nNew Line B\\nNew Line C\n'
+    assert lines[2] == '    """Docstring with\\n\\r\\n mixed breaks"""\n'
+
+
+def test_append_file_with_different_linebreaks(tmp_path):
+    temp_file_path = tmp_path / 'append_linebreaks.txt'
+    content = 'Line 1\nLine 2\\n\r\n"String\\nwith\\r\\nbreaks"'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            append_file(str(temp_file_path), content='New Line 3\\r\\n\nNew Line 4')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (5 lines total after edit)]\n'
+            '(this is the beginning of the file)\n'
+            '1|Line 1\n'
+            '2|Line 2\\n\n'
+            '3|"String\\nwith\\r\\nbreaks"\n'
+            '4|New Line 3\\r\\n\n'
+            '5|New Line 4\n'
+            '(this is the end of the file)\n'
+            + MSG_FILE_UPDATED.format(line_number=3)
+            + '\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 5
+    assert lines[2] == '"String\\nwith\\r\\nbreaks"\n'
+    assert lines[3] == 'New Line 3\\r\\n\n'
+    assert lines[4] == 'New Line 4\n'
+
+
+def test_search_file_with_different_linebreaks(tmp_path):
+    temp_file_path = tmp_path / 'search_linebreaks.txt'
+    content = 'Line 1\\r\\n\nLine 2\nLine 3\\n\r\nLine 4\n"""Multiline\r\ndocstring\\nwith breaks"""'
+    temp_file_path.write_text(content)
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_file('Line', str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
+    expected = f'[Found 4 matches for "Line" in {temp_file_path}]\n'
+    expected += 'Line 1: Line 1\\r\\n\n'
+    expected += 'Line 2: Line 2\n'
+    expected += 'Line 3: Line 3\\n\n'
+    expected += 'Line 4: Line 4\n'
+    expected += f'[End of matches for "Line" in {temp_file_path}]\n'
+    assert result.split('\n') == expected.split('\n')

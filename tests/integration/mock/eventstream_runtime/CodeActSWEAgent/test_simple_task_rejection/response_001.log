@@ -1,4 +1,4 @@
-Certainly! I'll write a git commit message for the current staging area. To do this, I'll first need to check what changes are currently staged.
+Certainly! I'll write a git commit message for the current staging area. To do this, I'll first check the current git status to see what changes are staged.
 
 <execute_bash>
 git status

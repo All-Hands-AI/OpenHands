@@ -705,19 +705,24 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         )
         return
 
-    start = file_content.find(to_replace)
+    # Replace escaped newlines with actual newlines
+    to_replace_normalized = to_replace.replace(r'\n', '\n')
+
+    start = file_content.find(to_replace_normalized)
     if start != -1:
         # Convert start from index to line number
         start_line_number = file_content[:start].count('\n') + 1
-        end_line_number = start_line_number + len(to_replace.splitlines()) - 1
+        end_line_number = (
+            start_line_number + len(to_replace_normalized.splitlines()) - 1
+        )
     else:
 
         def _fuzzy_transform(s: str) -> str:
             # remove all space except newline
-            return re.sub(r'[^\S\n]+', '', s)
+            return re.sub(r'(?<!\\)[^\S\n]+', '', s.replace('\\n', '\n'))
 
         # perform a fuzzy search (remove all spaces except newlines)
-        to_replace_fuzzy = _fuzzy_transform(to_replace)
+        to_replace_fuzzy = _fuzzy_transform(to_replace_normalized)
         file_content_fuzzy = _fuzzy_transform(file_content)
         # find the closest match
         start = file_content_fuzzy.find(to_replace_fuzzy)
@@ -728,7 +733,9 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
             return
         # Convert start from index to line number for fuzzy match
         start_line_number = file_content_fuzzy[:start].count('\n') + 1
-        end_line_number = start_line_number + len(to_replace.splitlines()) - 1
+        end_line_number = (
+            start_line_number + len(to_replace_normalized.splitlines()) - 1
+        )
 
     ret_str = _edit_file_impl(
         file_name,
@@ -829,7 +836,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
 
     if num_files > 100:
         print(
-            f'More than {num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.'
+            f'{num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.'
         )
         return
 

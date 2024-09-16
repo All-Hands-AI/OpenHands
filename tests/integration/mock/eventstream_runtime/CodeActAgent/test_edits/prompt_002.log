@@ -1,7 +1,3 @@
-
-
-----------
-
 A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions.
 The assistant can use a Python environment with <execute_ipython>, e.g.:
 <execute_ipython>
@@ -410,7 +406,7 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Certainly! I'll fix the typos in the bad.txt file. Let's start by opening the file and examining its contents.
+Certainly! I'll fix the typos in bad.txt. First, let's open the file to see its contents:
 <execute_ipython>
 open_file('bad.txt')
 </execute_ipython>

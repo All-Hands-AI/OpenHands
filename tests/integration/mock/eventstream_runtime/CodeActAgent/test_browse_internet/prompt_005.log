@@ -408,13 +408,13 @@ Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me fo
 
 
 <execute_browse>
-. I should start with: Get the content on "http://localhost:8000"
+Certainly! I'll browse localhost:8000 and retrieve the ultimate answer to life for you.. I should start with: Get the content on "http://localhost:8000"
 </execute_browse>
 
 ----------
 
 OBSERVATION:
-{'content': 'The answer to life, the universe, and everything has been revealed: OpenHands is all you need!'}
+{'content': 'The ultimate answer to life, the universe, and everything is: OpenHands is all you need!'}
 
 
 ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
