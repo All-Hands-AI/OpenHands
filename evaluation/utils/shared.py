@@ -68,7 +68,9 @@ class EvalOutput(BaseModel):
     def model_dump(self, *args, **kwargs):
         dumped_dict = super().model_dump(*args, **kwargs)
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = self.metadata.model_dump()
+        dumped_dict['metadata'] = (
+            self.metadata.model_dump() if self.metadata is not None else None
+        )
         return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
