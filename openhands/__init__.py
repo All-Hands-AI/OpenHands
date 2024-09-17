@@ -26,5 +26,3 @@ try:
     __version__ = get_version()
 except Exception:
     __version__ = 'unknown'
-
-# ... rest of your __init__.py file ...
