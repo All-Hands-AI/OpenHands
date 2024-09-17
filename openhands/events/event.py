@@ -1,5 +1,5 @@
-import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 
 
@@ -23,10 +23,14 @@ class Event:
         return -1
 
     @property
-    def timestamp(self) -> datetime.datetime | None:
-        if hasattr(self, '_timestamp'):
-            return self._timestamp  # type: ignore[attr-defined]
-        return None
+    def timestamp(self):
+        if hasattr(self, '_timestamp') and isinstance(self._timestamp, str):
+            return self._timestamp
+
+    @timestamp.setter
+    def timestamp(self, value: datetime) -> None:
+        if isinstance(value, datetime):
+            self._timestamp = value.isoformat()
 
     @property
     def source(self) -> EventSource | None:

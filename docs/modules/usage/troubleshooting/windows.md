@@ -1,4 +1,4 @@
-# Notes for Windows and WSL Users
+# Notes for WSL on Windows Users
 
 OpenHands only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 Please be sure to run all commands inside your WSL terminal.

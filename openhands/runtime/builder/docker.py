@@ -1,3 +1,5 @@
+import sys
+
 import docker
 
 from openhands.core.logger import openhands_logger as logger
@@ -68,22 +70,72 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         Returns:
             bool: Whether the Docker image exists in the registry or in the local store
         """
+        if not image_name:
+            logger.error(f'Invalid image name: `{image_name}`')
+            return False
+
         try:
-            logger.info(f'Checking, if image {image_name} exists locally.')
+            logger.info(f'Checking, if image exists locally:\n{image_name}')
             self.docker_client.images.get(image_name)
-            logger.info(f'Image {image_name} found locally.')
+            logger.info('Image found locally.')
             return True
         except docker.errors.ImageNotFound:
             try:
                 logger.info(
                     'Image not found locally. Trying to pull it, please wait...'
                 )
-                self.docker_client.images.pull(image_name)
-                logger.info(f'Image {image_name} pulled successfully.')
+
+                layers = {}
+                previous_layer_count = 0
+                for line in self.docker_client.api.pull(
+                    image_name, stream=True, decode=True
+                ):
+                    if 'id' in line and 'progressDetail' in line:
+                        layer_id = line['id']
+                        if layer_id not in layers:
+                            layers[layer_id] = {'last_logged': 0}
+
+                        if (
+                            'total' in line['progressDetail']
+                            and 'current' in line['progressDetail']
+                        ):
+                            total = line['progressDetail']['total']
+                            current = line['progressDetail']['current']
+                            percentage = (current / total) * 100
+
+                            # refresh process bar in console if stdout is a tty
+                            if sys.stdout.isatty():
+                                layers[layer_id]['last_logged'] = percentage
+                                self._output_pull_progress(layers, previous_layer_count)
+                                previous_layer_count = len(layers)
+                            # otherwise Log only if percentage is at least 10% higher than last logged
+                            elif percentage - layers[layer_id]['last_logged'] >= 10:
+                                logger.info(
+                                    f'Layer {layer_id}: {percentage:.0f}% downloaded'
+                                )
+                                layers[layer_id]['last_logged'] = percentage
+
+                    elif 'status' in line:
+                        logger.info(line['status'])
+
+                logger.info('Image pulled')
                 return True
             except docker.errors.ImageNotFound:
                 logger.info('Could not find image locally or in registry.')
                 return False
-            except Exception:
-                logger.info('Could not pull image directly.')
+            except Exception as e:
+                msg = 'Image could not be pulled: '
+                ex_msg = str(e)
+                if 'Not Found' in ex_msg:
+                    msg += 'image not found in registry.'
+                else:
+                    msg += f'{ex_msg}'
+                logger.warning(msg)
                 return False
+
+    def _output_pull_progress(self, layers: dict, previous_layer_count: int) -> None:
+        sys.stdout.write('\033[F' * previous_layer_count)
+        for lid, layer_data in sorted(layers.items()):
+            sys.stdout.write('\033[K')
+            print(f'Layer {lid}: {layer_data["last_logged"]:.0f}% downloaded')
+        sys.stdout.flush()

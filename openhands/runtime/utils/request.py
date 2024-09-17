@@ -6,7 +6,7 @@ from tenacity import (
     retry,
     retry_if_exception,
     retry_if_exception_type,
-    stop_after_attempt,
+    stop_after_delay,
     wait_exponential,
 )
 
@@ -37,7 +37,7 @@ def send_request(
     url: str,
     retry_exceptions: list[Type[Exception]] | None = None,
     retry_fns: list[Callable[[Exception], bool]] | None = None,
-    n_attempts: int = 15,
+    timeout: int = 120,
     **kwargs: Any,
 ) -> requests.Response:
     exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
@@ -49,7 +49,7 @@ def send_request(
             retry_condition |= retry_if_exception(fn)
 
     @retry(
-        stop=stop_after_attempt(n_attempts),
+        stop=stop_after_delay(timeout),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_condition,
         reraise=True,

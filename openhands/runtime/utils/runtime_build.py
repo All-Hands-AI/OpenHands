@@ -16,7 +16,7 @@ from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 
 def get_runtime_image_repo():
-    return os.getenv('OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
+    return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
 
 
 def _get_package_version():
@@ -39,8 +39,11 @@ def _put_source_code_to_dir(temp_dir: str):
     Parameters:
     - temp_dir (str): The directory to put the source code in
     """
+    if not os.path.isdir(temp_dir):
+        raise RuntimeError(f'Temp directory {temp_dir} does not exist')
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    logger.info(f'Using project root: {project_root}')
+    logger.info(f'Building source distribution using project root: {project_root}')
 
     # Fetch the correct version from pyproject.toml
     package_version = _get_package_version()
@@ -52,7 +55,7 @@ def _put_source_code_to_dir(temp_dir: str):
         ' ', r'\ '
     )  # escape spaces in the project root
     result = subprocess.run(
-        f'python -m build -s -o {temp_dir} {_cleaned_project_root}',
+        f'python -m build -s -o "{temp_dir}" {_cleaned_project_root}',
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -63,12 +66,12 @@ def _put_source_code_to_dir(temp_dir: str):
         logger.error(err_logs)
 
     if result.returncode != 0:
-        logger.error(f'Build failed: {result}')
-        raise Exception(f'Build failed: {result}')
+        logger.error(f'Image build failed:\n{result}')
+        raise RuntimeError(f'Image build failed:\n{result}')
 
     if not os.path.exists(tarball_path):
         logger.error(f'Source distribution not found at {tarball_path}')
-        raise Exception(f'Source distribution not found at {tarball_path}')
+        raise RuntimeError(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
     # Unzip the tarball
@@ -139,25 +142,26 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
-    logger.debug(
-        (
-            f'===== Dockerfile content start =====\n'
-            f'{dockerfile_content}\n'
-            f'===== Dockerfile content end ====='
+    if os.getenv('SKIP_CONTAINER_LOGS', 'false') != 'true':
+        logger.debug(
+            (
+                f'===== Dockerfile content start =====\n'
+                f'{dockerfile_content}\n'
+                f'===== Dockerfile content end ====='
+            )
         )
-    )
     with open(os.path.join(dir_path, 'Dockerfile'), 'w') as file:
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    hash = dirhash(dir_path, 'md5')
+    dist_hash = dirhash(dir_path, 'md5')
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
         f'Extra deps: {extra_deps}\n'
-        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {dist_hash}\n'
     )
-    return hash
+    return dist_hash
 
 
 def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
@@ -361,7 +365,7 @@ def _build_sandbox_image(
         on the contents of the docker build folder (source code and Dockerfile)
         e.g. 1234567890abcdef
     -target_image_tag (str): the tag for the target image that's generic and based on the base image name
-        e.g. od_v0.8.3_image_ubuntu_tag_22.04
+        e.g. oh_v0.9.3_image_ubuntu_tag_22.04
     """
     target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
