@@ -122,7 +122,7 @@ def process_instance(
         "(git apply -v /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
         "(echo 'Failed to apply patch with git apply, trying with patch command...' && "
         "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
-        "echo 'APPLY_PATCH_FAIL'))"
+        "echo 'APPLY_PATCH_FAIL')))"
     )
     action = CmdRunAction(command=exec_command)
     action.timeout = 600
