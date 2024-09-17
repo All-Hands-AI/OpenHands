@@ -54,6 +54,10 @@ const sidebars: SidebarsConfig = {
       id: 'usage/llms/google-llms',
     }, {
       type: 'doc',
+      label: 'Groq',
+      id: 'usage/llms/groq',
+    }, {
+      type: 'doc',
       label: 'Local/ollama',
       id: 'usage/llms/local-llms',
     }],
