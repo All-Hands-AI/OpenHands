@@ -83,12 +83,6 @@ class EvalOutput(BaseModel):
         return json.dumps(dumped_dict)
 
 
-class EvalError(BaseModel):
-    instance_id: str
-    error: str
-    stacktrace: str
-
-
 def codeact_user_response(
     state: State,
     encapsulate_solution: bool = False,
@@ -240,7 +234,7 @@ def prepare_dataset(
 
 
 def update_progress(
-    result: EvalOutput | EvalError,
+    result: EvalOutput,
     pbar: tqdm,
     output_fp: TextIO,
 ):
@@ -302,6 +296,7 @@ def run_evaluation(
     process_instance_func: Callable[
         [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
     ],
+    max_retries: int = 5,  # number of retries for each instance
 ):
     use_multiprocessing = num_workers > 1
     if metadata is not None:
@@ -326,6 +321,7 @@ def run_evaluation(
                         instance=instance,
                         metadata=metadata,
                         use_mp=True,
+                        max_retries=max_retries,
                     )
                     for _, instance in dataset.iterrows()
                 ]
@@ -339,6 +335,7 @@ def run_evaluation(
                     instance=instance,
                     metadata=metadata,
                     use_mp=False,
+                    max_retries=max_retries,
                 )
                 update_progress(result, pbar, output_fp)
 
