@@ -50,15 +50,16 @@ class EvalMetadata(BaseModel):
 class EvalOutput(BaseModel):
     # NOTE: User-specified
     instance_id: str
-    instruction: str
     # output of the evaluation
     # store anything that is needed for the score calculation
     test_result: dict[str, Any]
 
+    instruction: str | None = None
+
     # Interaction info
-    metadata: EvalMetadata
-    history: list[tuple[dict[str, Any], dict[str, Any]]]
-    metrics: dict[str, Any]
+    metadata: EvalMetadata | None = None
+    history: list[tuple[dict[str, Any], dict[str, Any]]] | None = None
+    metrics: dict[str, Any] | None = None
     error: str | None = None
 
     # Optionally save the input test instance
@@ -291,7 +292,7 @@ def _process_instance_wrapper(
 
 def run_evaluation(
     dataset: pd.DataFrame,
-    metadata: EvalMetadata,
+    metadata: EvalMetadata | None,
     output_file: str,
     num_workers: int,
     process_instance_func: Callable[
@@ -299,10 +300,13 @@ def run_evaluation(
     ],
 ):
     use_multiprocessing = num_workers > 1
-    logger.info(
-        f'Evaluation started with Agent {metadata.agent_class}:\n'
-        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
-    )
+    if metadata is not None:
+        logger.info(
+            f'Evaluation started with Agent {metadata.agent_class}:\n'
+            f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
+        )
+    else:
+        logger.info(f'Evaluation started with {num_workers} workers.')
 
     total_instances = len(dataset)
     pbar = tqdm(total=total_instances, desc='Instances processed')
