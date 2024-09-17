@@ -11,7 +11,6 @@ from typing import Any, ClassVar, MutableMapping, get_args, get_origin
 import toml
 from dotenv import load_dotenv
 
-from openhands import __version__
 from openhands.core import logger
 
 load_dotenv()
@@ -755,13 +754,6 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
-    )
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version=f'{__version__}',
-        help='Show the version number and exit',
     )
     return parser
 

@@ -131,3 +131,6 @@ seaborn = "*"
 enable = true
 vcs = "git"
 style = "semver"
+
+[tool.poetry.scripts]
+openhands = "openhands.core.cli:main"
