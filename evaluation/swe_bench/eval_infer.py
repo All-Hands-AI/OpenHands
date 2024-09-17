@@ -195,9 +195,7 @@ def process_instance(
                 # Read the log file
                 cat_action = CmdRunAction(command=f'cat {log_file}', keep_prompt=False)
                 cat_action.timeout = 300
-                logger.info(cat_action, extra={'msg_type': 'ACTION'})
                 cat_obs = runtime.run_action(cat_action)
-                logger.info(cat_obs, extra={'msg_type': 'OBSERVATION'})
 
                 # Grade answer
                 if isinstance(cat_obs, CmdOutputObservation) and cat_obs.exit_code == 0:
@@ -207,9 +205,15 @@ def process_instance(
                     # Get report from test output
                     logger.info(f'[{instance_id}] Grading answer...')
                     with tempfile.TemporaryDirectory() as temp_dir:
-                        test_output_path = os.path.join(temp_dir, 'test_output.txt')
+                        # Create a directory structure that matches the expected format
+                        # NOTE: this is a hack to make the eval report format consistent
+                        # with the original SWE-Bench eval script
+                        log_dir = os.path.join(temp_dir, 'logs', instance_id)
+                        os.makedirs(log_dir, exist_ok=True)
+                        test_output_path = os.path.join(log_dir, 'test_output.txt')
                         with open(test_output_path, 'w') as f:
                             f.write(test_output)
+
                         _report = get_eval_report(
                             test_spec=test_spec,
                             prediction={
