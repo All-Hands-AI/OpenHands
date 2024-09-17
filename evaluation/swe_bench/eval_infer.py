@@ -267,6 +267,7 @@ if __name__ == '__main__':
         output_file=output_file,
         num_workers=args.eval_num_workers,
         process_instance_func=process_instance,
+        max_retries=1,
     )
 
     # Load evaluated predictions & print number of resolved predictions
