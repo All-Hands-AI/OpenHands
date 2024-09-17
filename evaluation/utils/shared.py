@@ -286,7 +286,7 @@ def _process_instance_wrapper(
             logger.error(msg)
             if use_mp:
                 print(msg)  # use print to directly print to console
-            time.sleep(1)  # Add a small delay before retrying
+            time.sleep(5)
 
 
 def run_evaluation(
