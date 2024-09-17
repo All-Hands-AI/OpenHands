@@ -258,7 +258,7 @@ if __name__ == '__main__':
     predictions['test_spec'] = predictions['instance'].apply(make_test_spec)
 
     # Prepare dataset
-    output_file = args.input_file.replace('.jsonl', '.swebench_evaled.jsonl')
+    output_file = args.input_file.replace('.jsonl', '.swebench_eval.jsonl')
     instances = prepare_dataset(predictions, output_file, args.eval_n_limit)
 
     run_evaluation(
