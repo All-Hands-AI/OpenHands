@@ -1,3 +1,5 @@
+import sys
+
 import docker
 
 from openhands.core.logger import openhands_logger as logger
@@ -84,15 +86,14 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
                 layers = {}
+                previous_layer_count = 0
                 for line in self.docker_client.api.pull(
                     image_name, stream=True, decode=True
                 ):
                     if 'id' in line and 'progressDetail' in line:
                         layer_id = line['id']
                         if layer_id not in layers:
-                            layers[layer_id] = {
-                                'last_logged': -10
-                            }  # Initialize last logged at -10%
+                            layers[layer_id] = {'last_logged': 0}
 
                         if (
                             'total' in line['progressDetail']
@@ -102,8 +103,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                             current = line['progressDetail']['current']
                             percentage = (current / total) * 100
 
-                            # Log if percentage is at least 10% higher than last logged
-                            if percentage - layers[layer_id]['last_logged'] >= 10:
+                            # refresh process bar in console if stdout is a tty
+                            if sys.stdout.isatty():
+                                layers[layer_id]['last_logged'] = percentage
+                                self._output_pull_progress(layers, previous_layer_count)
+                                previous_layer_count = len(layers)
+                            # otherwise Log only if percentage is at least 10% higher than last logged
+                            elif percentage - layers[layer_id]['last_logged'] >= 10:
                                 logger.info(
                                     f'Layer {layer_id}: {percentage:.0f}% downloaded'
                                 )
@@ -126,3 +132,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     msg += f'{ex_msg}'
                 logger.warning(msg)
                 return False
+
+    def _output_pull_progress(self, layers: dict, previous_layer_count: int) -> None:
+        sys.stdout.write('\033[F' * previous_layer_count)
+        for lid, layer_data in sorted(layers.items()):
+            sys.stdout.write('\033[K')
+            print(f'Layer {lid}: {layer_data["last_logged"]:.0f}% downloaded')
+        sys.stdout.flush()
