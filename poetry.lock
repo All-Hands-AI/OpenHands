@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.19"
+version = "1.35.20"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.19-py3-none-any.whl", hash = "sha256:84b3fe1727945bc3cada832d969ddb3dc0d08fce1677064ca8bdc13a89c1a143"},
-    {file = "boto3-1.35.19.tar.gz", hash = "sha256:9979fe674780a0b7100eae9156d74ee374cd1638a9f61c77277e3ce712f3e496"},
+    {file = "boto3-1.35.20-py3-none-any.whl", hash = "sha256:aaddbeb8c37608492f2c8286d004101464833d4c6e49af44601502b8b18785ed"},
+    {file = "boto3-1.35.20.tar.gz", hash = "sha256:47e89d95964f10beee21ee723c3290874fddf364269bd97d200e8bfa9bf93a06"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.19,<1.36.0"
+botocore = ">=1.35.20,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.19"
+version = "1.35.20"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.19-py3-none-any.whl", hash = "sha256:c83f7f0cacfe7c19b109b363ebfa8736e570d24922f16ed371681f58ebab44a9"},
-    {file = "botocore-1.35.19.tar.gz", hash = "sha256:42d6d8db7250cbd7899f786f9861e02cab17dc238f64d6acb976098ed9809625"},
+    {file = "botocore-1.35.20-py3-none-any.whl", hash = "sha256:62412038f960691a299e60492f9ee7e8e75af563f2eca7f3640b3b54b8f5d236"},
+    {file = "botocore-1.35.20.tar.gz", hash = "sha256:82ad8a73fcd5852d127461c8dadbe40bf679f760a4efb0dde8d4d269ad3f126f"},
 ]
 
 [package.dependencies]
@@ -3761,13 +3761,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.46.0"
+version = "1.46.1"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.46.0-py3-none-any.whl", hash = "sha256:40209dc6368677d03b21b2c9d9cb91937c9648f741d42bb5a8f992a1cd31fb42"},
-    {file = "litellm-1.46.0.tar.gz", hash = "sha256:6707eb4b17a2eca714f81261c3b6f33297cd25470c4843b8297e345ebdff0560"},
+    {file = "litellm-1.46.1-py3-none-any.whl", hash = "sha256:f6b78278cf21a38da0d10a8b3e7b1084b6410012552c0a413774d1c43706e5ba"},
+    {file = "litellm-1.46.1.tar.gz", hash = "sha256:993c23d6f5e1d0f070b250d858a6ee87750a032e38f460f8c82385be854bc45f"},
 ]
 
 [package.dependencies]
@@ -3804,19 +3804,19 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.9"
+version = "0.11.10"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.9-py3-none-any.whl", hash = "sha256:b406dd6c099299b01379f85f517fddffd1bfa89fb7c036e42d48415458cda783"},
-    {file = "llama_index-0.11.9.tar.gz", hash = "sha256:ef6f433e0b8c439e85774383c0a86b34079e027e663dbd3b87b99d3da68287e9"},
+    {file = "llama_index-0.11.10-py3-none-any.whl", hash = "sha256:5f5ef55e14c2f670a855abb4d24bf626333ef33dd630a90ec61c3b36635b2cf7"},
+    {file = "llama_index-0.11.10.tar.gz", hash = "sha256:1733f23bfb5afcea97a594d356994d379e6fb0da4e85d5adcb49757559f113e6"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.3.1,<0.4.0"
 llama-index-cli = ">=0.3.1,<0.4.0"
-llama-index-core = ">=0.11.9,<0.12.0"
+llama-index-core = ">=0.11.10,<0.12.0"
 llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
@@ -3862,13 +3862,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.9"
+version = "0.11.10"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.9-py3-none-any.whl", hash = "sha256:cd89742692d9662f4ad503724409ce9df69e2124fd89e580119f8716a42aad6c"},
-    {file = "llama_index_core-0.11.9.tar.gz", hash = "sha256:aa11141161a0f40d22dae2d5fe08a3ead5ad209e0e1daf54f75643c816f3fd2d"},
+    {file = "llama_index_core-0.11.10-py3-none-any.whl", hash = "sha256:2dddd7cb4ccee89fdbbddd62e5fe3c7ae7fc431130e0a0a7155daee052874191"},
+    {file = "llama_index_core-0.11.10.tar.gz", hash = "sha256:9929b11cfb24a3581620466660ab11a6360fde8c2441caa3660e0127df65c1b9"},
 ]
 
 [package.dependencies]

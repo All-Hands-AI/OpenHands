@@ -32,7 +32,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.0",
     "tailwind-merge": "^2.5.2",
-    "vite": "^5.4.5",
+    "vite": "^5.4.6",
     "web-vitals": "^3.5.2"
   },
   "scripts": {
@@ -65,7 +65,7 @@
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.5.5",
-    "@types/react": "^18.3.6",
+    "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.0",
     "@types/react-highlight": "^0.12.8",
     "@types/react-syntax-highlighter": "^15.5.13",

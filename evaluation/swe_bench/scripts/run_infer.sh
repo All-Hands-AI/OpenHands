@@ -66,6 +66,11 @@ if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
 fi
 
+if [ -n "$EXP_NAME" ]; then
+  EVAL_NOTE="$EVAL_NOTE-$EXP_NAME"
+fi
+echo "EVAL_NOTE: $EVAL_NOTE"
+
 unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
 
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \

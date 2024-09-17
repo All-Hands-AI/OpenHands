@@ -1,4 +1,4 @@
-# Azure OpenAI LLM
+# Azure
 
 OpenHands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure).
 
