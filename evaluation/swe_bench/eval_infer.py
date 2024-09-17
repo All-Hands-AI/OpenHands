@@ -1,7 +1,6 @@
 import os
 import tempfile
 import time
-from typing import Any
 
 import pandas as pd
 from pydantic import BaseModel
@@ -15,6 +14,7 @@ from swebench.harness.utils import load_swebench_dataset
 
 from evaluation.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
+    EvalMetadata,
     EvalOutput,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -70,7 +70,7 @@ class SWEBenchEvalResult(BaseModel):
 
 def process_instance(
     instance: pd.Series,
-    *args: Any,  # args for run_evaluation
+    metadata: EvalMetadata | None = None,
     reset_logger: bool = True,
 ) -> EvalOutput:
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
