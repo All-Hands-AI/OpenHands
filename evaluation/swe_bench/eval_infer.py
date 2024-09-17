@@ -101,12 +101,12 @@ def process_instance(
         patch_file_path = os.path.join(temp_dir, 'patch.diff')
         with open(patch_file_path, 'w') as f:
             f.write(model_patch)
-        runtime.copy_to(patch_file_path, '/tmp/patch.diff')
+        runtime.copy_to(patch_file_path, '/tmp')
         # Eval script
         eval_script_path = os.path.join(temp_dir, 'eval.sh')
         with open(eval_script_path, 'w') as f:
             f.write(test_spec.eval_script)
-        runtime.copy_to(eval_script_path, '/tmp/eval.sh')
+        runtime.copy_to(eval_script_path, '/tmp')
 
     # Set +x
     action = CmdRunAction(command='chmod +x /tmp/eval.sh')
