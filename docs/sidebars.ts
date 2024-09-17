@@ -9,42 +9,6 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
-      type: 'doc',
-      label: 'Troubleshooting',
-      id: 'usage/troubleshooting/troubleshooting',
-    },
-    {
-      type: 'doc',
-      label: 'Feedback',
-      id: 'usage/feedback',
-    },
-    {
-      type: 'category',
-      label: 'How-to Guides',
-      items: [
-        {
-          type: 'doc',
-          id: 'usage/how-to/cli-mode',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/headless-mode',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/custom-sandbox-guide',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/evaluation-harness',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/openshift-example',
-        }
-      ]
-    },
-    {
       type: 'category',
       label: 'LLMs',
       items: [
@@ -85,6 +49,42 @@ const sidebars: SidebarsConfig = {
           ],
         },
       ],
+    },
+    {
+      type: 'doc',
+      label: 'Troubleshooting',
+      id: 'usage/troubleshooting/troubleshooting',
+    },
+    {
+      type: 'doc',
+      label: 'Feedback',
+      id: 'usage/feedback',
+    },
+    {
+      type: 'category',
+      label: 'How-to Guides',
+      items: [
+        {
+          type: 'doc',
+          id: 'usage/how-to/cli-mode',
+        },
+        {
+          type: 'doc',
+          id: 'usage/how-to/headless-mode',
+        },
+        {
+          type: 'doc',
+          id: 'usage/how-to/custom-sandbox-guide',
+        },
+        {
+          type: 'doc',
+          id: 'usage/how-to/evaluation-harness',
+        },
+        {
+          type: 'doc',
+          id: 'usage/how-to/openshift-example',
+        }
+      ]
     },
     {
       type: 'category',
