@@ -67,17 +67,19 @@ class EvalOutput(BaseModel):
 
     def model_dump(self, *args, **kwargs):
         dumped_dict = super().model_dump(*args, **kwargs)
+        # Remove None values
+        dumped_dict = {k: v for k, v in dumped_dict.items() if v is not None}
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = (
-            self.metadata.model_dump() if self.metadata is not None else None
-        )
+        if self.metadata is not None:
+            dumped_dict['metadata'] = self.metadata.model_dump()
         return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
         dumped_dict = json.loads(dumped)
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
+        if 'metadata' in dumped_dict:
+            dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
 
 
