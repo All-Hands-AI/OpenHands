@@ -127,12 +127,11 @@ def process_instance(
     )
     action = CmdRunAction(command=exec_command, keep_prompt=False)
     action.timeout = 600
-    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert isinstance(obs, CmdOutputObservation)
     apply_patch_output = obs.content
     assert isinstance(apply_patch_output, str)
+    instance['test_result']['apply_patch_output'] = apply_patch_output
 
     try:
         if 'APPLY_PATCH_FAIL' in apply_patch_output:
@@ -152,9 +151,7 @@ def process_instance(
                 command=f'/tmp/eval.sh > {log_file} 2>&1 & echo $!', keep_prompt=False
             )
             action.timeout = 60  # Short timeout just to get the process ID
-            logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
             if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 pid = obs.content.split()[-1].strip()
@@ -176,9 +173,7 @@ def process_instance(
                         command=f'ps -p {pid} > /dev/null; echo $?', keep_prompt=False
                     )
                     check_action.timeout = 60
-                    logger.info(check_action, extra={'msg_type': 'ACTION'})
                     check_obs = runtime.run_action(check_action)
-                    logger.info(check_obs, extra={'msg_type': 'OBSERVATION'})
                     if (
                         isinstance(check_obs, CmdOutputObservation)
                         and check_obs.content.split()[-1].strip() == '1'
@@ -201,6 +196,7 @@ def process_instance(
                 if isinstance(cat_obs, CmdOutputObservation) and cat_obs.exit_code == 0:
                     test_output = cat_obs.content
                     assert isinstance(test_output, str)
+                    instance['test_result']['test_output'] = test_output
 
                     # Get report from test output
                     logger.info(f'[{instance_id}] Grading answer...')
