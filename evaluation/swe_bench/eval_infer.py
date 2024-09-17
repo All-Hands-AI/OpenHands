@@ -117,24 +117,12 @@ def process_instance(
     assert obs.exit_code == 0
 
     # Apply patch
-    exec_command = ' '.join(
-        [
-            '/bin/bash',
-            '-c',
-            """
-            cd /testbed &&
-            if git apply -v /tmp/patch.diff; then
-                echo "APPLY_PATCH_PASS"
-            else
-                echo "Failed to apply patch with git apply, trying with patch command..."
-                if patch --batch --fuzz=5 -p1 -i /tmp/patch.diff; then
-                    echo "APPLY_PATCH_PASS"
-                else
-                    echo "APPLY_PATCH_FAIL"
-                fi
-            fi
-    """,
-        ]
+    exec_command = (
+        'cd /testbed && '
+        "(git apply -v /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
+        "(echo 'Failed to apply patch with git apply, trying with patch command...' && "
+        "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
+        "echo 'APPLY_PATCH_FAIL\n' && cat /tmp/patch.diff))"
     )
     action = CmdRunAction(command=exec_command)
     action.timeout = 600
@@ -280,3 +268,18 @@ if __name__ == '__main__':
         num_workers=args.eval_num_workers,
         process_instance_func=process_instance,
     )
+
+    # Load evaluated predictions & print number of resolved predictions
+    evaluated_predictions = pd.read_json(output_file, lines=True)
+    fields = ['resolved', 'failed_apply_patch', 'error_eval', 'empty_generation']
+
+    def count_report_field(row, field):
+        return row['test_result']['report'][field]
+
+    for field in fields:
+        count = evaluated_predictions.apply(
+            count_report_field, args=(field,), axis=1
+        ).sum()
+        logger.info(
+            f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})'
+        )
