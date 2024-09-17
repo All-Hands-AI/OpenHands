@@ -16,7 +16,7 @@ from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 
 def get_runtime_image_repo():
-    return os.getenv('OD_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
+    return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
 
 
 def _get_package_version():
@@ -365,7 +365,7 @@ def _build_sandbox_image(
         on the contents of the docker build folder (source code and Dockerfile)
         e.g. 1234567890abcdef
     -target_image_tag (str): the tag for the target image that's generic and based on the base image name
-        e.g. od_v0.8.3_image_ubuntu_tag_22.04
+        e.g. oh_v0.9.3_image_ubuntu_tag_22.04
     """
     target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'

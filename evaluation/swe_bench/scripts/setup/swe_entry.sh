@@ -60,7 +60,7 @@ conda activate swe-bench-eval
 
 mkdir -p $SWE_TASK_DIR/reset_testbed_temp
 mkdir -p $SWE_TASK_DIR/reset_testbed_log_dir
-SWE_BENCH_DIR=/swe_util/OD-SWE-bench
+SWE_BENCH_DIR=/swe_util/OH-SWE-bench
 output=$(
     export PYTHONPATH=$SWE_BENCH_DIR && \
     cd $SWE_BENCH_DIR && \
