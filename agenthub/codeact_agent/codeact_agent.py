@@ -1,4 +1,5 @@
 import os
+import re
 from itertools import islice
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
@@ -133,22 +134,22 @@ class CodeActAgent(Agent):
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
-        obs_prefix = r'OBSERVATION:\n'
+        obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
-                f'\\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
+                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            splitted = obs.content.split(r'\n')
-            # replace base64 images with a placeholder
-            for i, line in enumerate(splitted):
-                if '![image](data:image/png;base64,' in line:
-                    splitted[i] = (
-                        '![image](data:image/png;base64, ...) already displayed to user'
-                    )
-            text = obs_prefix + r'\n'.join(splitted)
+            # Replace base64 images with a placeholder using regex
+            image_pattern = r'!\[image\]\(data:image/png;base64,[^)]+\).*\n'
+            text = re.sub(
+                image_pattern,
+                '![image](data:image/png;base64, ...) already displayed to user\n',
+                obs.content,
+            )
+            text = obs_prefix + '\n'.join(text.split('\n'))
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):

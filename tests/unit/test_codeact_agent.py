@@ -49,10 +49,10 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert 'Command 1 finished with exit code 0' in result.content[0].text
 
 
-def test_ipython_run_cell_observation_message(agent: CodeActAgent):
+def test_ipython_run_obs_image_replacement(agent: CodeActAgent):
     obs = IPythonRunCellObservation(
         code='plt.plot()',
-        content=r'IPython output\n![image](data:image/png;base64,ABC123)\nMore output',
+        content='IPython output\n![image](data:image/png;base64,ABC123)\nMore output',
     )
     agent.llm.config.max_message_chars = 200
     result = agent.get_observation_message(obs)
@@ -63,9 +63,9 @@ def test_ipython_run_cell_observation_message(agent: CodeActAgent):
     assert isinstance(result.content[0], TextContent)
 
     expected_content = (
-        r'OBSERVATION:\n'
-        r'IPython output\n'
-        r'![image](data:image/png;base64, ...) already displayed to user\n'
+        'OBSERVATION:\n'
+        'IPython output\n'
+        '![image](data:image/png;base64, ...) already displayed to user\n'
         'More output'
     )
     assert result.content[0].text == expected_content
@@ -185,7 +185,7 @@ def test_reset(agent: CodeActAgent):
     assert not agent.complete, 'Agent complete should be reset to False'
 
 
-def test_step(agent: CodeActAgent):
+def test_step_bash(agent: CodeActAgent):
     state = Mock()
     state.history.get_last_user_message.return_value = None
     state.history.get_events.return_value = []
@@ -231,3 +231,80 @@ def test_step_error_handling(agent: CodeActAgent):
     assert isinstance(action, AgentFinishAction)
     assert 'Agent encountered an error' in action.thought
     assert 'Test error' in action.thought
+
+
+def test_ipython_run_cell_observation_message(agent: CodeActAgent):
+    observation = IPythonRunCellObservation(
+        code='Run this code:',
+        content="""IPython output
+while len(entries) > 0:
+    table += '\\n'""",
+    )
+    # observation.content and result.content[0].text should be the same
+    result = agent.get_observation_message(observation)
+    assert result is not None
+    assert result.role == 'user'
+    assert len(result.content) == 1
+    assert isinstance(result.content[0], TextContent)
+
+    expected_content = (
+        'OBSERVATION:\n'
+        'IPython output\n'
+        'while len(entries) > 0:\n'
+        "    table += '\\n'"
+    )
+    assert result.content[0].text == expected_content
+
+
+def test_step_ipython(agent: CodeActAgent):
+    state = Mock()
+    state.history.get_last_user_message.return_value = None
+    state.history.get_events.return_value = []
+    state.max_iterations = 10
+    state.iteration = 0
+
+    mock_response = Mock()
+    mock_response.choices = [
+        Mock(
+            message=Mock(
+                content='OBSERVATION:\nIPython output\n<execute_ipython>\nedit_file_by_replace(file_name="file.py", to_replace="Line 1\\nLine 2\\nLine 3", new_content="REPLACE TEXT")\n</execute_ipython>'
+            )
+        )
+    ]
+
+    with patch.object(agent.llm, 'completion') as mock_completion:
+        mock_completion.return_value = mock_response
+
+        ipython_action = IPythonRunCellAction(
+            code='edit_file_by_replace(file_name="file.py", to_replace="Line 1\\nLine 2\\nLine 3", new_content="REPLACE TEXT")',
+            thought='Edit file',
+        )
+        assert (
+            agent.action_to_str(ipython_action)
+            == 'Edit file\n<execute_ipython>\nedit_file_by_replace(file_name="file.py", to_replace="Line 1\\nLine 2\\nLine 3", new_content="REPLACE TEXT")\n</execute_ipython>'
+        )
+
+        action = agent.step(state)
+
+        assert isinstance(action, IPythonRunCellAction)
+        assert (
+            action.code
+            == 'edit_file_by_replace(file_name="file.py", to_replace="Line 1\\nLine 2\\nLine 3", new_content="REPLACE TEXT")'
+        )
+        print(action.code)
+
+        obs = IPythonRunCellObservation(
+            code='',
+            content="""IPython output
+while len(entries) > 0:
+    table += '\\n'""",
+        )
+        print('BEFORE:\n' + obs.content + '\n')
+        result = agent.get_observation_message(obs)
+        print('AFTER:\n' + result.content[0].text + '\n')
+        assert result is not None
+        assert result.role == 'user'
+        assert len(result.content) == 1
+        assert isinstance(result.content[0], TextContent)
+        assert result.content[0].text.startswith('OBSERVATION:\nIPython output')
+        assert 'IPython output' in result.content[0].text
