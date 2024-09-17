@@ -47,6 +47,9 @@ def send_request(
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
+    kwargs = {} if kwargs is None else kwargs.copy()
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = 30
 
     @retry(
         stop=stop_after_delay(timeout),

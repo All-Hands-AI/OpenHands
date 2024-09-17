@@ -32,6 +32,7 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.runtime.runtime import Runtime
+from openhands.runtime.utils.shutdown_listener import sleep_unless_shutdown
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -316,10 +317,10 @@ def complete_runtime(
                 break
             else:
                 logger.info('Failed to get git diff, retrying...')
-                time.sleep(10)
+                sleep_unless_shutdown(10)
         elif isinstance(obs, ErrorObservation):
             logger.error(f'Error occurred: {obs.content}. Retrying...')
-            time.sleep(10)
+            sleep_unless_shutdown(10)
         else:
             raise ValueError(f'Unexpected observation type: {type(obs)}')
 

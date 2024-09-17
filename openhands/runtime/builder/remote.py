@@ -8,6 +8,7 @@ import requests
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
+from openhands.runtime.utils.shutdown_listener import is_shutting_down, sleep_unless_shutdown
 
 
 class RemoteRuntimeBuilder(RuntimeBuilder):
@@ -56,7 +57,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         # Poll /build_status until the build is complete
         start_time = time.time()
         timeout = 30 * 60  # 20 minutes in seconds
-        while True:
+        while not is_shutting_down():
             if time.time() - start_time > timeout:
                 logger.error('Build timed out after 30 minutes')
                 raise RuntimeError('Build timed out after 30 minutes')
@@ -95,7 +96,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 raise RuntimeError(error_message)
 
             # Wait before polling again
-            time.sleep(30)
+            sleep_unless_shutdown(30)
 
     def image_exists(self, image_name: str) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""

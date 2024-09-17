@@ -48,6 +48,7 @@ from openhands.runtime.plugins import (
 )
 from openhands.runtime.utils import split_bash_commands
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.shutdown_listener import is_shutting_down
 
 
 class ActionRequest(BaseModel):
@@ -196,7 +197,7 @@ class RuntimeClient:
                 logger.debug('Added sudoer successfully.')
 
         # Attempt to add the user, retrying with incremented user_id if necessary
-        while True:
+        while not is_shutting_down():
             command = (
                 f'useradd -rm -d /home/{username} -s /bin/bash '
                 f'-g root -G sudo -u {user_id} {username}'
