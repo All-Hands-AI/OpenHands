@@ -57,7 +57,8 @@ class EvalOutput(BaseModel):
 
     # Interaction info
     metadata: EvalMetadata
-    history: list[tuple[dict[str, Any], dict[str, Any]]]
+    # list[tuple[dict[str, Any], dict[str, Any]]] - for compatibility with the old format
+    history: list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]]
     metrics: dict[str, Any]
     error: str | None = None
 

@@ -31,6 +31,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.runtime import Runtime
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
@@ -383,10 +384,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
-    # for compatibility with the existing output format, we can remake the pairs here
-    # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = [event_to_dict(event.to_dict()) for event in state.history.get_events()]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
