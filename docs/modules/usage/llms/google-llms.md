@@ -1,4 +1,4 @@
-# Google Gemini/Vertex LLM
+# Google Gemini/Vertex
 
 OpenHands uses LiteLLM for completion calls. The following resources are relevant for using OpenHands with Google's LLMs:
 
