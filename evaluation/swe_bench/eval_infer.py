@@ -17,6 +17,7 @@ from evaluation.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
     EvalOutput,
     prepare_dataset,
+    reset_logger_for_multiprocessing,
     run_evaluation,
 )
 from openhands.core.config import (
@@ -70,8 +71,17 @@ class SWEBenchEvalResult(BaseModel):
 def process_instance(
     instance: pd.Series,
     *args: Any,  # args for run_evaluation
-    **kwargs: Any,  # kwargs for run_evaluation
+    reset_logger: bool = True,
 ) -> EvalOutput:
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+    if reset_logger:
+        global output_file
+        log_dir = output_file.replace('.jsonl', '.logs')
+        os.makedirs(log_dir, exist_ok=True)
+        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
+    else:
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
+
     config = get_config(instance)
     instance_id = instance.instance_id
     model_patch = instance['model_patch']
