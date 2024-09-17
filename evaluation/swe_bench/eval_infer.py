@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 from typing import Any
 
 import pandas as pd
@@ -124,7 +125,7 @@ def process_instance(
         "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
         "echo 'APPLY_PATCH_FAIL')))"
     )
-    action = CmdRunAction(command=exec_command)
+    action = CmdRunAction(command=exec_command, keep_prompt=False)
     action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -144,35 +145,88 @@ def process_instance(
             )
         elif 'APPLY_PATCH_PASS' in apply_patch_output:
             logger.info(f'[{instance_id}] {APPLY_PATCH_PASS}:\n{apply_patch_output}')
-            # Execution for eval
-            action = CmdRunAction(command='/tmp/eval.sh', keep_prompt=False)
-            action.timeout = 1800
+
+            # Run eval script in background and save output to log file
+            log_file = '/tmp/eval_output.log'
+            action = CmdRunAction(
+                command=f'/tmp/eval.sh > {log_file} 2>&1 & echo $!', keep_prompt=False
+            )
+            action.timeout = 60  # Short timeout just to get the process ID
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
-                test_output = obs.content
-                assert isinstance(test_output, str)
 
-                # Get report from test output
-                logger.info(f'[{instance_id}] Grading answer...')
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    test_output_path = os.path.join(temp_dir, 'test_output.txt')
-                    with open(test_output_path, 'w') as f:
-                        f.write(test_output)
-                    _report = get_eval_report(
-                        test_spec=test_spec,
-                        prediction=model_patch,
-                        log_path=test_output_path,
-                        include_tests_status=True,
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                pid = obs.content.split()[-1].strip()
+                logger.info(
+                    f'[{instance_id}] Evaluation process started with PID: {pid}'
+                )
+
+                # Poll for completion
+                start_time = time.time()
+                timeout = 900  # 15 minutes
+                while True:
+                    seconds_elapsed = time.time() - start_time
+                    if seconds_elapsed > timeout:
+                        logger.info(
+                            f'[{instance_id}] Evaluation timed out after {timeout} seconds'
+                        )
+                        break
+                    check_action = CmdRunAction(
+                        command=f'ps -p {pid} > /dev/null; echo $?', keep_prompt=False
                     )
-                    report = _report[instance_id]
+                    check_action.timeout = 60
+                    logger.info(check_action, extra={'msg_type': 'ACTION'})
+                    check_obs = runtime.run_action(check_action)
+                    logger.info(check_obs, extra={'msg_type': 'OBSERVATION'})
+                    if (
+                        isinstance(check_obs, CmdOutputObservation)
+                        and check_obs.content.split()[-1].strip() == '1'
+                    ):
+                        logger.info(
+                            f'[{instance_id}] Evaluation process completed after {seconds_elapsed} seconds'
+                        )
+                        break
                     logger.info(
-                        f"[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report['resolved']}"
+                        f'[{instance_id}] [{seconds_elapsed:.0f}s] Evaluation still running, waiting...'
                     )
-                    instance['test_result']['report']['resolved'] = report['resolved']
+                    time.sleep(30)  # Wait for 30 seconds before checking again
+
+                # Read the log file
+                cat_action = CmdRunAction(command=f'cat {log_file}', keep_prompt=False)
+                cat_action.timeout = 300
+                logger.info(cat_action, extra={'msg_type': 'ACTION'})
+                cat_obs = runtime.run_action(cat_action)
+                logger.info(cat_obs, extra={'msg_type': 'OBSERVATION'})
+
+                # Grade answer
+                if isinstance(cat_obs, CmdOutputObservation) and cat_obs.exit_code == 0:
+                    test_output = cat_obs.content
+                    assert isinstance(test_output, str)
+
+                    # Get report from test output
+                    logger.info(f'[{instance_id}] Grading answer...')
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        test_output_path = os.path.join(temp_dir, 'test_output.txt')
+                        with open(test_output_path, 'w') as f:
+                            f.write(test_output)
+                        _report = get_eval_report(
+                            test_spec=test_spec,
+                            prediction={
+                                'model_patch': model_patch,
+                                'instance_id': instance_id,
+                            },
+                            include_tests_status=True,
+                        )
+                        report = _report[instance_id]
+                        logger.info(
+                            f"[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report['resolved']}"
+                        )
+                        instance['test_result']['report']['resolved'] = report[
+                            'resolved'
+                        ]
             else:
-                logger.info(f'[{instance_id}] Error when running eval:\n{obs.content}')
+                logger.info(f'[{instance_id}] Error when starting eval:\n{obs.content}')
                 instance['test_result']['report']['error_eval'] = True
 
             return EvalOutput(
@@ -267,7 +321,6 @@ if __name__ == '__main__':
         output_file=output_file,
         num_workers=args.eval_num_workers,
         process_instance_func=process_instance,
-        max_retries=1,
     )
 
     # Load evaluated predictions & print number of resolved predictions

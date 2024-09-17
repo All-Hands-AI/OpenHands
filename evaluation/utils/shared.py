@@ -266,6 +266,7 @@ def _process_instance_wrapper(
             return result
         except Exception as e:
             if attempt == max_retries:
+                logger.exception(e)
                 # Raise an error after all retries & stop the evaluation
                 raise RuntimeError(
                     f'Maximum error retries reached for instance {instance.instance_id}'
