@@ -2,7 +2,7 @@ import asyncio
 import copy
 import warnings
 from functools import partial
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from openhands.core.config import LLMConfig
 
@@ -122,7 +122,7 @@ class LLM:
         if self.config.drop_params:
             litellm.drop_params = self.config.drop_params
 
-        completion_kwargs: Dict[str, Any] = {
+        completion_kwargs: dict[str, Any] = {
             'model': self.config.model,
             'api_key': self.config.api_key,
             'base_url': self.config.base_url,
@@ -252,7 +252,7 @@ class LLM:
         self._completion = wrapper  # type: ignore
 
         # Update for _async_completion
-        async_completion_kwargs: Dict[str, Any] = {
+        async_completion_kwargs: dict[str, Any] = {
             'model': self.config.model,
             'api_key': self.config.api_key,
             'base_url': self.config.base_url,
