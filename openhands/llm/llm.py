@@ -347,9 +347,6 @@ class LLM:
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion with streaming function."""
-            # Merge async_completion_kwargs with the provided kwargs
-            merged_kwargs = {**async_completion_kwargs, **kwargs}
-
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -364,7 +361,7 @@ class LLM:
 
             try:
                 # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **merged_kwargs)
+                resp = await async_completion_unwrapped(*args, **kwargs)
 
                 # For streaming we iterate over the chunks
                 async for chunk in resp:
@@ -404,6 +401,7 @@ class LLM:
                     await asyncio.sleep(0.1)
 
         self._async_completion = async_completion_wrapper  # type: ignore
+
         self._async_streaming_completion = async_acompletion_stream_wrapper  # type: ignore
 
     def _get_debug_message(self, messages):
