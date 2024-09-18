@@ -75,3 +75,11 @@ export const getExtension = (code: string) => {
   if (code.includes(".")) return code.split(".").pop() || "";
   return "";
 };
+
+export const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp);
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+};

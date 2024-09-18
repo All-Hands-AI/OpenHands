@@ -5,6 +5,8 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
+echo -e "\n\n============================================================"
+
 # unset environmental variables that might disturb testing
 unset OPENAI_API_KEY
 unset SANDBOX_ENV_OPENAI_API_KEY
@@ -16,7 +18,7 @@ get_script_dir() {
     local source="${BASH_SOURCE[0]}"
     while [ -h "$source" ]; do
         local dir="$( cd -P "$( dirname "$source" )" && pwd )"
-        source="$(readlink "$source")"
+        source="$(readlink -f "$source" 2>/dev/null || echo "$source")"
         [[ $source != /* ]] && source="$dir/$source"
     done
     echo "$( cd -P "$( dirname "$source" )" && pwd )"
@@ -27,9 +29,6 @@ TMP_FILE="${TMP_FILE:-tmp.log}"
 if [ -z "$WORKSPACE_BASE" ]; then
   WORKSPACE_BASE=$(pwd)
 fi
-if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
-  WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE
-fi
 
 DEBUG=true  # needed for llm logging to create mock files!
 
@@ -39,7 +38,7 @@ fi
 
 export SCRIPT_DIR=$(get_script_dir)
 export PROJECT_ROOT=$(realpath "$SCRIPT_DIR/../..")
-export LOG_DIR=$PROJECT_ROOT/logs
+export LOG_DIR="$PROJECT_ROOT/logs"
 echo "Current working directory: $(pwd)"
 echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
@@ -47,22 +46,29 @@ echo "LOG_DIR: $LOG_DIR"
 echo "LOG_TO_FILE: $LOG_TO_FILE"
 
 WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
-mkdir -p $WORKSPACE_BASE
-chmod -R 777 $WORKSPACE_BASE
-WORKSPACE_BASE=$(realpath $WORKSPACE_BASE)
+mkdir -p "$WORKSPACE_BASE"
+chmod -R 777 "$WORKSPACE_BASE"
+WORKSPACE_BASE=$(realpath "$WORKSPACE_BASE")
 
-WORKSPACE_MOUNT_PATH=${WORKSPACE_MOUNT_PATH}/_test_workspace
-mkdir -p $WORKSPACE_MOUNT_PATH
-chmod -R 777 $WORKSPACE_MOUNT_PATH
-WORKSPACE_MOUNT_PATH=$(realpath $WORKSPACE_MOUNT_PATH)
+if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
+  WORKSPACE_MOUNT_PATH="$WORKSPACE_BASE"
+else
+  WORKSPACE_MOUNT_PATH="${WORKSPACE_MOUNT_PATH}/_test_workspace"
+  mkdir -p "$WORKSPACE_MOUNT_PATH"
+  chmod -R 755 "$WORKSPACE_MOUNT_PATH"
+  WORKSPACE_MOUNT_PATH=$(realpath "$WORKSPACE_MOUNT_PATH")
+fi
+
+WORKSPACE_MOUNT_PATH_IN_SANDBOX="${WORKSPACE_MOUNT_PATH_IN_SANDBOX:-/workspace}"
 
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
+echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
 
-mkdir -p $WORKSPACE_BASE
+mkdir -p "$WORKSPACE_BASE"
 
 # use environmental variable if exists
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"
@@ -178,7 +184,7 @@ cleanup() {
     kill $HTTP_SERVER_PID || true
     unset HTTP_SERVER_PID
   fi
-  [ -f $TMP_FILE ] && rm $TMP_FILE
+  [ -f "$TMP_FILE" ] && rm "$TMP_FILE"
   echo "Cleanup done!"
 }
 
@@ -200,14 +206,14 @@ regenerate_without_llm() {
       PROJECT_ROOT="$PROJECT_ROOT" \
       WORKSPACE_BASE="$WORKSPACE_BASE" \
       WORKSPACE_MOUNT_PATH="$WORKSPACE_MOUNT_PATH" \
-      MAX_ITERATIONS=$MAX_ITERATIONS \
+      MAX_ITERATIONS="$MAX_ITERATIONS" \
       FORCE_APPLY_PROMPTS=true \
-      DEFAULT_AGENT=$agent \
+      DEFAULT_AGENT="$agent" \
       TEST_RUNTIME="$TEST_RUNTIME" \
-      LLM=$LLM \
-      DEBUG=$DEBUG \
-      LOG_TO_FILE=$LOG_TO_FILE \
-      FORCE_REGENERATE=$FORCE_REGENERATE \
+      LLM="$LLM" \
+      DEBUG="$DEBUG" \
+      LOG_TO_FILE="$LOG_TO_FILE" \
+      FORCE_REGENERATE="$FORCE_REGENERATE" \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
       poetry run pytest -s "$SCRIPT_DIR/test_agent.py::$test_name"
   set +x
@@ -216,12 +222,12 @@ regenerate_without_llm() {
 regenerate_with_llm() {
   cd "$PROJECT_ROOT"
 
-  rm -rf $WORKSPACE_BASE/*
+  rm -rf "$WORKSPACE_BASE/*"
   if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
-    cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
+    cp -r "$SCRIPT_DIR/workspace/$test_name"/* "$WORKSPACE_BASE"
   fi
 
-  rm -rf logs
+  rm -rf "$LOG_DIR"
   rm -rf "$SCRIPT_DIR/mock/${TEST_RUNTIME}_runtime/$agent/$test_name/*"
   # set -x to print the command being executed
   set -x
@@ -233,12 +239,12 @@ regenerate_with_llm() {
       DEFAULT_AGENT=$agent \
       RUNTIME="$TEST_RUNTIME" \
       SANDBOX_BASE_CONTAINER_IMAGE="$SANDBOX_BASE_CONTAINER_IMAGE" \
-      LLM=$LLM \
-      DEBUG=$DEBUG \
-      LOG_TO_FILE=$LOG_TO_FILE \
-      FORCE_REGENERATE=$FORCE_REGENERATE \
+      LLM="$LLM" \
+      DEBUG="$DEBUG" \
+      LOG_TO_FILE="$LOG_TO_FILE" \
+      FORCE_REGENERATE="$FORCE_REGENERATE" \
       poetry run python "$PROJECT_ROOT/openhands/core/main.py" \
-      -i $MAX_ITERATIONS \
+      -i "$MAX_ITERATIONS" \
       -t "$task Do not ask me for confirmation at any point." \
       -c $agent
   set +x
@@ -256,8 +262,8 @@ if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
   exit 1
 fi
 
-rm -rf logs
-rm -rf $WORKSPACE_BASE/*
+rm -rf "$LOG_DIR"
+rm -rf "$WORKSPACE_BASE/*"
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
@@ -286,9 +292,9 @@ for ((i = 0; i < num_of_tests; i++)); do
     cd "$PROJECT_ROOT/tests"
     cd "$PROJECT_ROOT"
 
-    rm -rf $WORKSPACE_BASE/*
+    rm -rf "$WORKSPACE_BASE/*"
     if [ -d "$SCRIPT_DIR/workspace/$test_name" ]; then
-      cp -r "$SCRIPT_DIR/workspace/$test_name"/* $WORKSPACE_BASE
+      cp -r "$SCRIPT_DIR/workspace/$test_name"/* "$WORKSPACE_BASE"
     fi
 
     if [ "$TEST_ONLY" ]; then
@@ -395,7 +401,7 @@ for ((i = 0; i < num_of_tests; i++)); do
   fi
 done
 
-rm -rf logs
-rm -rf $WORKSPACE_BASE
+rm -rf "$LOG_DIR"
+rm -rf "$WORKSPACE_BASE"
 echo "Done!"
 cd "$PROJECT_ROOT"
