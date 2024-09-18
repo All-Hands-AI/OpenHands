@@ -1,4 +1,4 @@
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import React from "react";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
@@ -7,14 +7,14 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/BaseModal";
-import { clientAction } from "#/root";
-import GitHubLogo from "#/assets/branding/github-logo.svg?react";
+import { clientAction, clientLoader } from "#/root";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
 }
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
+  const data = useRouteLoaderData<typeof clientLoader>("root");
   const fetcher = useFetcher<typeof clientAction>();
 
   React.useEffect(() => {
@@ -46,7 +46,12 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
         action="/"
         className="w-full flex flex-col gap-6"
       >
-        <CustomInput label="GitHub Token" name="ghToken" required />
+        <CustomInput
+          label="GitHub Token"
+          name="ghToken"
+          required
+          defaultValue={data?.ghToken ?? ""}
+        />
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton

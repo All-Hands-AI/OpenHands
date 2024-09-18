@@ -7,20 +7,17 @@ import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
 import { cn } from "#/utils/utils";
 import ExternalLinkIcon from "#/assets/external-link.svg?react";
+import { retrieveWorkspaceZipBlob } from "#/api/open-hands";
 
 const downloadWorkspace = async () => {
   try {
-    const response = await fetch("/api/zip-directory", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to download workspace as .zip");
+    const token = localStorage.getItem("ghToken");
+    if (!token) {
+      throw new Error("No GitHub token found");
     }
 
-    const blob = await response.blob();
+    const blob = await retrieveWorkspaceZipBlob(token);
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -35,7 +32,13 @@ const downloadWorkspace = async () => {
 
 // TODO: Merge the two component variants into one
 
-function EmptyProjectMenuCard() {
+interface EmptyProjectMenuCardProps {
+  isConnectedToGitHub: boolean;
+}
+
+function EmptyProjectMenuCard({
+  isConnectedToGitHub,
+}: EmptyProjectMenuCardProps) {
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
@@ -48,11 +51,13 @@ function EmptyProjectMenuCard() {
     <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
       {contextMenuIsOpen && (
         <ContextMenu className="absolute right-0 bottom-[calc(100%+8px)]">
-          <ContextMenuListItem
-            onClick={() => setConnectToGitHubModalOpen(true)}
-          >
-            Connect to GitHub
-          </ContextMenuListItem>
+          {!isConnectedToGitHub && (
+            <ContextMenuListItem
+              onClick={() => setConnectToGitHubModalOpen(true)}
+            >
+              Connect to GitHub
+            </ContextMenuListItem>
+          )}
           <ContextMenuListItem onClick={downloadWorkspace}>
             Download as .zip
           </ContextMenuListItem>
@@ -60,14 +65,18 @@ function EmptyProjectMenuCard() {
       )}
       <div className="flex flex-col">
         <span className="text-sm leading-6 font-semibold">New Project</span>
-        <button type="button" onClick={() => setConnectToGitHubModalOpen(true)}>
+        <button
+          type="button"
+          onClick={() => setConnectToGitHubModalOpen(true)}
+          disabled={isConnectedToGitHub}
+        >
           <span
             className={cn(
               "text-xs leading-4 text-[#A3A3A3] flex items-center gap-2",
               "hover:underline hover:underline-offset-2",
             )}
           >
-            Connect to GitHub
+            {!isConnectedToGitHub ? "Connect to GitHub" : "Connected"}
             <CloudConnection width={12} height={12} />
           </span>
         </button>
@@ -144,6 +153,7 @@ function DetailedProjectMenuCard({
 }
 
 interface ProjectMenuCardProps {
+  token: string | null;
   githubData: {
     avatar: string;
     repoName: string;
@@ -151,7 +161,7 @@ interface ProjectMenuCardProps {
   } | null;
 }
 
-export function ProjectMenuCard({ githubData }: ProjectMenuCardProps) {
+export function ProjectMenuCard({ token, githubData }: ProjectMenuCardProps) {
   if (githubData) {
     return (
       <DetailedProjectMenuCard
@@ -162,5 +172,5 @@ export function ProjectMenuCard({ githubData }: ProjectMenuCardProps) {
     );
   }
 
-  return <EmptyProjectMenuCard />;
+  return <EmptyProjectMenuCard isConnectedToGitHub={!!token} />;
 }

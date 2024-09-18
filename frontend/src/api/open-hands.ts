@@ -73,3 +73,13 @@ export const sendFeedback = async (token: string, data: Feedback) => {
 
   return response.json();
 };
+
+export const retrieveWorkspaceZipBlob = async (token: string) => {
+  const response = await fetch("/api/zip-directory", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.blob();
+};

@@ -55,7 +55,9 @@ function AccountSettingsModal({
           <ModalButton
             variant="text-like"
             text="Disconnect"
-            onClick={() => console.log("Disconnect GH")}
+            onClick={() =>
+              fetcher.submit({}, { method: "POST", action: "/logout" })
+            }
             className="text-danger self-start"
           />
         </div>

@@ -45,7 +45,10 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         )}
       </div>
 
-      <ProjectMenuCard githubData={projectMenuCardData} />
+      <ProjectMenuCard
+        token={rootData?.ghToken ?? null}
+        githubData={projectMenuCardData}
+      />
     </div>
   );
 }
