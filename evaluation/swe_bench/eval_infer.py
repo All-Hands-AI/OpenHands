@@ -65,7 +65,6 @@ class SWEBenchEvalResult(BaseModel):
     apply_patch_output: str
     test_output: str
     resolved: bool
-    ...
 
 
 def process_instance(
