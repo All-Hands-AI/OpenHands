@@ -14,12 +14,11 @@ _should_exit = None
 def _register_signal_handler(sig: signal.Signals):
     original_handler = None
 
-    # type: ignore[unreachable]
     def handler(sig_: int, frame: FrameType | None):
         global _should_exit
         _should_exit = True    
         if original_handler:
-            original_handler(sig_, frame)
+            original_handler(sig_, frame)  # type: ignore[unreachable]
 
     original_handler = signal.signal(sig, handler)
 
