@@ -42,7 +42,7 @@ def should_continue() -> bool:
     return not _should_exit
 
 
-def sleep_if_should_exit(timeout: float):
+def sleep_if_should_continue(timeout: float):
     if(timeout <= 1):
         time.sleep(timeout)
         return
@@ -51,7 +51,7 @@ def sleep_if_should_exit(timeout: float):
         time.sleep(1)
 
 
-async def asleep_if_should_exit(timeout: float):
+async def asleep_if_should_continue(timeout: float):
     if(timeout <= 1):
         await asyncio.sleep(timeout)
         return
