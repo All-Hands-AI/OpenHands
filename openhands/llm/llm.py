@@ -2,7 +2,7 @@ import asyncio
 import copy
 import warnings
 from functools import partial
-from typing import Union
+from typing import Any, Dict, Union
 
 from openhands.core.config import LLMConfig
 
@@ -122,43 +122,43 @@ class LLM:
         if self.config.drop_params:
             litellm.drop_params = self.config.drop_params
 
-        # This only seems to work with Google as the provider, not with OpenRouter!
-        gemini_safety_settings = (
-            [
-                {
-                    'category': 'HARM_CATEGORY_HARASSMENT',
-                    'threshold': 'BLOCK_NONE',
-                },
-                {
-                    'category': 'HARM_CATEGORY_HATE_SPEECH',
-                    'threshold': 'BLOCK_NONE',
-                },
-                {
-                    'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                    'threshold': 'BLOCK_NONE',
-                },
-                {
-                    'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                    'threshold': 'BLOCK_NONE',
-                },
-            ]
-            if self.config.model.lower().startswith('gemini')
-            else None
-        )
+        completion_kwargs: Dict[str, Any] = {
+            'model': self.config.model,
+            'api_key': self.config.api_key,
+            'base_url': self.config.base_url,
+            'api_version': self.config.api_version,
+            'custom_llm_provider': self.config.custom_llm_provider,
+            'max_tokens': self.config.max_output_tokens,
+            'timeout': self.config.timeout,
+            'temperature': self.config.temperature,
+            'top_p': self.config.top_p,
+        }
 
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            safety_settings=gemini_safety_settings,
-        )
+        # This only works with Google as the provider, not with OpenRouter!
+        gemini_safety_settings = [
+            {
+                'category': 'HARM_CATEGORY_HARASSMENT',
+                'threshold': 'BLOCK_NONE',
+            },
+            {
+                'category': 'HARM_CATEGORY_HATE_SPEECH',
+                'threshold': 'BLOCK_NONE',
+            },
+            {
+                'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                'threshold': 'BLOCK_NONE',
+            },
+            {
+                'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                'threshold': 'BLOCK_NONE',
+            },
+        ]
+
+        # Add safety_settings only for Gemini models
+        if self.config.model.lower().startswith('gemini'):
+            completion_kwargs['safety_settings'] = gemini_safety_settings
+
+        self._completion = partial(litellm_completion, **completion_kwargs)
 
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
@@ -251,20 +251,26 @@ class LLM:
 
         self._completion = wrapper  # type: ignore
 
-        # Async version
+        # Update for _async_completion
+        async_completion_kwargs: Dict[str, Any] = {
+            'model': self.config.model,
+            'api_key': self.config.api_key,
+            'base_url': self.config.base_url,
+            'api_version': self.config.api_version,
+            'custom_llm_provider': self.config.custom_llm_provider,
+            'max_tokens': self.config.max_output_tokens,
+            'timeout': self.config.timeout,
+            'temperature': self.config.temperature,
+            'top_p': self.config.top_p,
+            'drop_params': True,
+        }
+
+        # Add safety_settings only for Gemini models in async_completion_kwargs
+        if self.config.model.lower().startswith('gemini'):
+            async_completion_kwargs['safety_settings'] = gemini_safety_settings
+
         self._async_completion = partial(
-            self._call_acompletion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=True,
-            safety_settings=gemini_safety_settings,
+            self._call_acompletion, **async_completion_kwargs
         )
 
         async_completion_unwrapped = self._async_completion
