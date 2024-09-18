@@ -11,7 +11,6 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 import pytest
 from litellm import completion
 
-from openhands.core.message import format_messages
 from openhands.llm.llm import message_separator
 
 script_dir = os.environ.get('SCRIPT_DIR')
@@ -76,6 +75,29 @@ def get_log_id(prompt_log_name):
     match = re.search(r'prompt_(\d+).log', prompt_log_name)
     if match:
         return match.group(1)
+
+
+def _format_messages(messages):
+    message_str = ''
+    for message in messages:
+        if isinstance(message, str):
+            message_str += message_separator + message if message_str else message
+        elif isinstance(message, dict):
+            if isinstance(message['content'], list):
+                for m in message['content']:
+                    if isinstance(m, str):
+                        message_str += message_separator + m if message_str else m
+                    elif isinstance(m, dict) and m['type'] == 'text':
+                        message_str += (
+                            message_separator + m['text'] if message_str else m['text']
+                        )
+            elif isinstance(message['content'], str):
+                message_str += (
+                    message_separator + message['content']
+                    if message_str
+                    else message['content']
+                )
+    return message_str
 
 
 def apply_prompt_and_get_mock_response(
@@ -185,10 +207,7 @@ def mock_user_response(*args, test_name, **kwargs):
 def mock_completion(*args, test_name, **kwargs):
     global cur_id
     messages = kwargs['messages']
-    plain_messages = format_messages(
-        messages, with_images=False, with_prompt_caching=False
-    )
-    message_str = message_separator.join(msg['content'] for msg in plain_messages)
+    message_str = _format_messages(messages)  # text only
 
     # this assumes all response_(*).log filenames are in numerical order, starting from one
     cur_id += 1
