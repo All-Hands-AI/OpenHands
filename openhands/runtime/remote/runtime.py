@@ -197,6 +197,8 @@ class RemoteRuntime(Runtime):
             # because the runtime might just be starting up
             # and have not registered the endpoint yet
             retry_fns=[is_404_error],
+            # leave enough time for the runtime to start up
+            timeout=600,
         )
         if response.status_code != 200:
             msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
