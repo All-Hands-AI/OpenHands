@@ -51,11 +51,11 @@ class LogBuffer:
 
         self.buffer: list[str] = []
         self.lock = threading.Lock()
+        self._stop_event = threading.Event()
         self.log_generator = container.logs(stream=True, follow=True)
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
         self.log_stream_thread.daemon = True
         self.log_stream_thread.start()
-        self._stop_event = threading.Event()
 
     def append(self, log_line: str):
         with self.lock:
