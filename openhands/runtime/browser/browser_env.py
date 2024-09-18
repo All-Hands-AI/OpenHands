@@ -157,8 +157,8 @@ class BrowserEnv:
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))
         start_time = time.time()
-        while not is_shutting_down():
-            if time.time() - start_time > timeout:
+        while True:
+            if is_shutting_down() or time.time() - start_time > timeout:
                 raise TimeoutError('Browser environment took too long to respond.')
             if self.agent_side.poll(timeout=0.01):
                 response_id, obs = self.agent_side.recv()
