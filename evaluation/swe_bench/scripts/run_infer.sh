@@ -11,6 +11,7 @@ MAX_ITER=$5
 NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
+N_RUNS=$9
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -73,22 +74,38 @@ echo "EVAL_NOTE: $EVAL_NOTE"
 
 unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
 
-COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
-  --agent-cls $AGENT \
-  --llm-config $MODEL_CONFIG \
-  --max-iterations $MAX_ITER \
-  --max-chars 10000000 \
-  --eval-num-workers $NUM_WORKERS \
-  --eval-note $EVAL_NOTE \
-  --dataset $DATASET \
-  --split $SPLIT"
+run_inference() {
+    local run_eval_note=$1
+    echo "RUN_EVAL_NOTE: $run_eval_note"
 
-if [ -n "$EVAL_LIMIT" ]; then
-  echo "EVAL_LIMIT: $EVAL_LIMIT"
-  COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+    local command="poetry run python evaluation/swe_bench/run_infer.py \
+        --agent-cls $AGENT \
+        --llm-config $MODEL_CONFIG \
+        --max-iterations $MAX_ITER \
+        --max-chars 10000000 \
+        --eval-num-workers $NUM_WORKERS \
+        --eval-note $run_eval_note \
+        --dataset $DATASET \
+        --split $SPLIT"
+
+    if [ -n "$EVAL_LIMIT" ]; then
+        echo "EVAL_LIMIT: $EVAL_LIMIT"
+        command="$command --eval-n-limit $EVAL_LIMIT"
+    fi
+
+    # Run the command
+    eval $command
+}
+
+if [ -n "$N_RUNS" ]; then
+    echo "Running the same experiment $N_RUNS times and save results to different directories"
+    for i in $(seq 1 $N_RUNS); do
+        RUN_EVAL_NOTE="$EVAL_NOTE-run_$i"
+        echo "Running iteration $i of $N_RUNS"
+        run_inference "$RUN_EVAL_NOTE"
+    done
+else
+    run_inference "$EVAL_NOTE"
 fi
-
-# Run the command
-eval $COMMAND
 
 checkout_original_branch
