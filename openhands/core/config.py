@@ -194,8 +194,8 @@ class SandboxConfig:
         runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
-            The path to the interpreter is available as $OD_INTERPRETER_PATH,
-            which can be used to install dependencies for the OD-specific Python interpreter.
+            The path to the interpreter is available as $OH_INTERPRETER_PATH,
+            which can be used to install dependencies for the OH-specific Python interpreter.
         runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
             This is a dictionary of key-value pairs.
             This is useful for setting environment variables that are needed by the runtime.

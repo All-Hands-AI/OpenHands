@@ -44,7 +44,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 
 
 class RemoteRuntime(Runtime):
-    """This runtime will connect to a remote od-runtime-client."""
+    """This runtime will connect to a remote oh-runtime-client."""
 
     port: int = 60000  # default port for the remote runtime client
 
@@ -93,16 +93,16 @@ class RemoteRuntime(Runtime):
                 'Setting runtime_container_image is not supported in the remote runtime.'
             )
         self.container_image: str = self.config.sandbox.base_container_image
-        self.container_name = 'od-remote-runtime-' + self.instance_id
+        self.container_name = 'oh-remote-runtime-' + self.instance_id
         logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
         response = send_request(self.session, 'GET', f'{self.api_url}/registry_prefix')
         response_json = response.json()
         registry_prefix = response_json['registry_prefix']
-        os.environ['OD_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
             registry_prefix.rstrip('/') + '/runtime'
         )
         logger.info(
-            f'Runtime image repo: {os.environ["OD_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
         )
 
         if self.config.sandbox.runtime_extra_deps:

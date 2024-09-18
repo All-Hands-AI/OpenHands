@@ -308,6 +308,7 @@ def run_evaluation(
     max_retries: int = 5,  # number of retries for each instance
 ):
     use_multiprocessing = num_workers > 1
+
     if metadata is not None:
         logger.info(
             f'Evaluation started with Agent {metadata.agent_class}:\n'
