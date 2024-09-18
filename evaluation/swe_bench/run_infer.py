@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import tempfile
-import time
 from typing import Any
 
 import pandas as pd
