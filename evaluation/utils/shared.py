@@ -265,14 +265,22 @@ def _process_instance_wrapper(
             result = process_instance_func(instance, metadata, use_mp)
             return result
         except Exception as e:
+            error = str(e)
+            stacktrace = traceback.format_exc()
             if attempt == max_retries:
                 logger.exception(e)
+                msg = (
+                    '-' * 10
+                    + '\n'
+                    + f'Error in instance [{instance.instance_id}]: {error}. Stacktrace:\n{stacktrace}'
+                    + '\n'
+                    + f'[Encountered after {max_retries} retries. Please check the logs and report the issue.]'
+                    + '-' * 10
+                )
                 # Raise an error after all retries & stop the evaluation
                 raise RuntimeError(
                     f'Maximum error retries reached for instance {instance.instance_id}'
                 ) from e
-            error = str(e)
-            stacktrace = traceback.format_exc()
             msg = (
                 '-' * 10
                 + '\n'
