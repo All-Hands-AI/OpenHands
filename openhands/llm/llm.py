@@ -252,18 +252,8 @@ class LLM:
         self._completion = wrapper  # type: ignore
 
         # Update for _async_completion
-        async_completion_kwargs: dict[str, Any] = {
-            'model': self.config.model,
-            'api_key': self.config.api_key,
-            'base_url': self.config.base_url,
-            'api_version': self.config.api_version,
-            'custom_llm_provider': self.config.custom_llm_provider,
-            'max_tokens': self.config.max_output_tokens,
-            'timeout': self.config.timeout,
-            'temperature': self.config.temperature,
-            'top_p': self.config.top_p,
-            'drop_params': True,
-        }
+        async_completion_kwargs = completion_kwargs.copy()
+        async_completion_kwargs['drop_params'] = True
 
         # Add safety_settings only for Gemini models in async_completion_kwargs
         if self.config.model.lower().startswith('gemini'):
@@ -357,6 +347,9 @@ class LLM:
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion with streaming function."""
+            # Merge async_completion_kwargs with the provided kwargs
+            merged_kwargs = {**async_completion_kwargs, **kwargs}
+
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -371,7 +364,7 @@ class LLM:
 
             try:
                 # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                resp = await async_completion_unwrapped(*args, **merged_kwargs)
 
                 # For streaming we iterate over the chunks
                 async for chunk in resp:
