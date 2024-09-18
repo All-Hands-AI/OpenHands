@@ -83,7 +83,11 @@ async def main():
     """Runs the agent in CLI mode"""
 
     parser = get_parser()
-    parser.parse_args()
+    args = parser.parse_args()
+
+    if args.version:
+        print(f'OpenHands version: {__version__}')
+        return
 
     logger.setLevel(logging.WARNING)
     config = load_app_config()
