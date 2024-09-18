@@ -17,6 +17,7 @@ def _register_signal_handler(sig: signal.Signals):
     def handler(sig_: int, frame: FrameType | None):
         global _should_exit
         _should_exit = True
+        # type: ignore[unreachable]
         if original_handler:
             original_handler(sig_, frame)
 
