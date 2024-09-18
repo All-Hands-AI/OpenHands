@@ -279,7 +279,7 @@ def _process_instance_wrapper(
                 + f'Error in instance [{instance.instance_id}]: {error}. Stacktrace:\n{stacktrace}'
                 + '\n'
                 + '-' * 10
-                + '[This error occurred after maximum retries]'
+                + f'[The above error occurred. Retrying... (attempt {attempt + 1} of {max_retries})]'
                 + '-' * 10
                 + '\n'
             )
