@@ -157,7 +157,11 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            safety_settings=gemini_safety_settings,
+            **(
+                {'safety_settings': gemini_safety_settings}
+                if gemini_safety_settings is not None
+                else {}
+            ),
         )
 
         if self.vision_is_active():
@@ -264,7 +268,11 @@ class LLM:
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=True,
-            safety_settings=gemini_safety_settings,
+            **(
+                {'safety_settings': gemini_safety_settings}
+                if gemini_safety_settings is not None
+                else {}
+            ),
         )
 
         async_completion_unwrapped = self._async_completion
