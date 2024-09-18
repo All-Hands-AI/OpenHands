@@ -101,19 +101,23 @@ class LLM:
             ):
                 self.config.max_input_tokens = self.model_info['max_input_tokens']
             else:
-                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
+                # Safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
 
         if self.config.max_output_tokens is None:
-            if (
-                self.model_info is not None
-                and 'max_output_tokens' in self.model_info
-                and isinstance(self.model_info['max_output_tokens'], int)
-            ):
-                self.config.max_output_tokens = self.model_info['max_output_tokens']
-            else:
-                # Max output tokens for gpt3.5, so this is a safe fallback for any potentially viable model
-                self.config.max_output_tokens = 1024
+            # Safe default for any potentially viable model
+            self.config.max_output_tokens = 4096
+            if self.model_info is not None:
+                # max_output_tokens has precedence over max_tokens, if either exists
+                # litellm has models with both, one or none of these 2 parameters!
+                if 'max_output_tokens' in self.model_info and isinstance(
+                    self.model_info['max_output_tokens'], int
+                ):
+                    self.config.max_output_tokens = self.model_info['max_output_tokens']
+                elif 'max_tokens' in self.model_info and isinstance(
+                    self.model_info['max_tokens'], int
+                ):
+                    self.config.max_output_tokens = self.model_info['max_tokens']
 
         if self.config.drop_params:
             litellm.drop_params = self.config.drop_params
