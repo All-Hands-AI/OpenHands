@@ -195,27 +195,19 @@ class RuntimeClient:
             else:
                 logger.debug('Added sudoer successfully.')
 
-        # Attempt to add the user, retrying with incremented user_id if necessary
-        while True:
-            command = (
-                f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -u {user_id} {username}'
+        command = (
+            f'useradd -rm -d /home/{username} -s /bin/bash '
+            f'-g root -G sudo -u {user_id} {username}'
+        )
+        output = subprocess.run(command, shell=True, capture_output=True)
+        if output.returncode == 0:
+            logger.debug(
+                f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
             )
-            output = subprocess.run(command, shell=True, capture_output=True)
-            if output.returncode == 0:
-                logger.debug(
-                    f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
-                )
-                break
-            elif f'UID {user_id} is not unique' in output.stderr.decode():
-                logger.warning(
-                    f'UID {user_id} is not unique. Incrementing UID and retrying...'
-                )
-                user_id += 1
-            else:
-                raise RuntimeError(
-                    f'Failed to create user `{username}`! Output: [{output.stderr.decode()}]'
-                )
+        else:
+            raise RuntimeError(
+                f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
+            )
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
