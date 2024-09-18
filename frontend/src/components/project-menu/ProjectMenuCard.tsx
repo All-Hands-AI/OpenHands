@@ -8,6 +8,31 @@ import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
 import { cn } from "#/utils/utils";
 import ExternalLinkIcon from "#/assets/external-link.svg?react";
 
+const downloadWorkspace = async () => {
+  try {
+    const response = await fetch("/api/zip-directory", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to download workspace as .zip");
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "workspace.zip");
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+  } catch (e) {
+    console.error("Failed to download workspace as .zip", e);
+  }
+};
+
 // TODO: Merge the two component variants into one
 
 function EmptyProjectMenuCard() {
@@ -28,7 +53,9 @@ function EmptyProjectMenuCard() {
           >
             Connect to GitHub
           </ContextMenuListItem>
-          <ContextMenuListItem>Download as .zip</ContextMenuListItem>
+          <ContextMenuListItem onClick={downloadWorkspace}>
+            Download as .zip
+          </ContextMenuListItem>
         </ContextMenu>
       )}
       <div className="flex flex-col">

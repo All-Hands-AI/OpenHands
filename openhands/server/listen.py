@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import zipfile
 import uuid
 import warnings
 
@@ -26,7 +27,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
@@ -123,6 +124,26 @@ def load_file_upload_config() -> tuple[int, bool, list[str]]:
     )
 
     return max_file_size_mb, restrict_file_types, allowed_extensions
+
+
+def zip_directory(dir: str):
+    """Zip the contents of a directory.
+
+    This function creates a zip archive of the given directory.
+    """
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+    cwd = os.getcwd() + dir
+
+    with zipfile.ZipFile(temp_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(cwd):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, cwd)  # relative path for zip
+                zipf.write(file_path, arcname)
+
+    # "Close" the file so it can be used in the response
+    temp_file.seek(0)
+    return temp_file.name
 
 
 # Load configuration
@@ -759,6 +780,25 @@ async def security_api(request: Request):
             request
         )
     )
+
+
+@app.get('/api/zip-directory')
+async def zip_current_workspace(request: Request):
+    logger.info('Zipping workspace')
+    runtime: Runtime = request.state.session.agent_session.runtime
+    workspace_dir = runtime.config.workspace_mount_path_in_sandbox
+
+    try:
+        zip_file = zip_directory(workspace_dir)
+        response = FileResponse(zip_file, filename="workspace.zip", media_type='application/x-zip-compressed')
+
+        return response
+    except Exception as e:
+        logger.error(f'Error zipping workspace: {e}', exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail='Failed to zip workspace',
+        )
 
 
 app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
