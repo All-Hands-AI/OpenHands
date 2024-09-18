@@ -59,6 +59,7 @@ class EvalOutput(BaseModel):
     metadata: EvalMetadata
     # list[tuple[dict[str, Any], dict[str, Any]]] - for compatibility with the old format
     history: list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]]
+    llm_completions: list[dict[str, Any]]
     metrics: dict[str, Any]
     error: str | None = None
 
