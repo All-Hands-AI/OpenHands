@@ -5,7 +5,7 @@ from functools import partial
 from typing import Union
 
 from openhands.core.config import LLMConfig
-from openhands.runtime.utils.shutdown_listener import is_shutting_down
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -259,7 +259,7 @@ class LLM:
             debug_message = self._get_debug_message(messages)
 
             async def check_stopped():
-                while not is_shutting_down():
+                while should_continue():
                     if (
                         hasattr(self.config, 'on_cancel_requested_fn')
                         and self.config.on_cancel_requested_fn is not None

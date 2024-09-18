@@ -8,7 +8,7 @@ import requests
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
-from openhands.runtime.utils.shutdown_listener import is_shutting_down, sleep_unless_shutdown
+from openhands.runtime.utils.shutdown_listener import should_continue, sleep_unless_shutdown
 
 
 class RemoteRuntimeBuilder(RuntimeBuilder):
@@ -57,7 +57,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         # Poll /build_status until the build is complete
         start_time = time.time()
         timeout = 30 * 60  # 20 minutes in seconds
-        while not is_shutting_down():
+        while should_continue():
             if time.time() - start_time > timeout:
                 logger.error('Build timed out after 30 minutes')
                 raise RuntimeError('Build timed out after 30 minutes')
