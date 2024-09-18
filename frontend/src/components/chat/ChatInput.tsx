@@ -10,16 +10,7 @@ import { useSocket } from "#/context/socket";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { cn } from "#/utils/utils";
 import ArrowSendIcon from "#/assets/arrow-send.svg?react";
-
-const convertImageToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      resolve(reader.result as string);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 
 interface ChatInputProps {
   disabled?: boolean;

@@ -1,11 +1,39 @@
 import React from "react";
-import { Form, useNavigation } from "@remix-run/react";
+import { Form, useFetcher, useNavigation } from "@remix-run/react";
+import { useDispatch, useSelector } from "react-redux";
 import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
+import { RootState } from "#/store";
+import { removeFile } from "#/state/selected-files-slice";
+
+interface UploadedFilePreviewProps {
+  file: string; // base64
+  onRemove: () => void;
+}
+
+function UploadedFilePreview({ file, onRemove }: UploadedFilePreviewProps) {
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Remove"
+        onClick={onRemove}
+        className="absolute right-1 top-1 text-[#A3A3A3] hover:text-danger"
+      >
+        &times;
+      </button>
+      <img src={file} alt="" className="w-16 h-16 aspect-auto rounded" />
+    </div>
+  );
+}
 
 export function TaskForm() {
+  const dispatch = useDispatch();
   const navigation = useNavigation();
+  const fetcher = useFetcher();
+
+  const { files } = useSelector((state: RootState) => state.selectedFiles);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const [hasText, setHasText] = React.useState(false);
@@ -16,6 +44,17 @@ export function TaskForm() {
 
   return (
     <div className="flex flex-col gap-2">
+      {files.length > 0 && (
+        <div className="flex gap-2">
+          {files.map((file, index) => (
+            <UploadedFilePreview
+              key={index}
+              file={file}
+              onRemove={() => dispatch(removeFile(file))}
+            />
+          ))}
+        </div>
+      )}
       <Form ref={formRef} method="post" className="relative">
         <input
           name="q"
@@ -38,13 +77,31 @@ export function TaskForm() {
           </button>
         )}
       </Form>
-      <button
-        type="button"
-        className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]"
-      >
+      <label className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]">
         <Clip width={16} height={16} />
         Attach a file
-      </button>
+        <input
+          hidden
+          type="file"
+          accept="image/*"
+          id="file-input"
+          multiple
+          onChange={(event) => {
+            // CURRENTLY ONLY SUPPORTS SINGLE FILE UPLOAD
+            if (event.target.files) {
+              const formData = new FormData();
+              formData.append("file", event.target.files[0]);
+
+              fetcher.submit(formData, {
+                method: "POST",
+                encType: "multipart/form-data",
+              });
+            } else {
+              // TODO: handle error
+            }
+          }}
+        />
+      </label>
     </div>
   );
 }

@@ -10,11 +10,12 @@ import {
   ClientLoaderFunctionArgs,
   useBeforeUnload,
 } from "@remix-run/react";
+import { useDispatch, useSelector } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
-import store from "#/store";
+import { RootState } from "#/store";
 import { Container } from "#/components/container";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
@@ -26,6 +27,8 @@ import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/assets/code.svg?react";
 import GlobeIcon from "#/assets/globe.svg?react";
 import ListIcon from "#/assets/list-type-number.svg?react";
+import { createChatMessage } from "#/services/chatService";
+import { clearFiles } from "#/state/selected-files-slice";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
@@ -62,6 +65,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function App() {
+  const dispatch = useDispatch();
+  const { files } = useSelector((state: RootState) => state.selectedFiles);
   const { start, send, stop, isConnected } = useSocket();
   const { token, ghToken, repo, securityAnalyzer, q } =
     useLoaderData<typeof clientLoader>();
@@ -85,7 +90,7 @@ function App() {
             const event = sendTerminalCommand(command);
 
             send(event);
-            store.dispatch(appendInput(command.replace(ghToken, "***")));
+            dispatch(appendInput(command.replace(ghToken, "***")));
           }
 
           if (ghToken && repo) {
@@ -95,24 +100,21 @@ function App() {
             const event = sendTerminalCommand(command);
 
             send(event);
-            store.dispatch(appendInput(command.replace(ghToken, "***")));
+            dispatch(appendInput(command.replace(ghToken, "***")));
           }
 
           // send the initial user query if it exists
           if (q) {
-            const event = {
-              action: ActionType.MESSAGE,
-              args: { content: q },
-            };
-
-            send(JSON.stringify(event));
-            store.dispatch(
+            const timestamp = new Date().toISOString();
+            send(createChatMessage(q, files, timestamp));
+            dispatch(
               addUserMessage({
                 content: q,
-                imageUrls: [],
-                timestamp: new Date().toISOString(),
+                imageUrls: files,
+                timestamp,
               }),
             );
+            dispatch(clearFiles());
           }
         }
       },
@@ -141,7 +143,7 @@ function App() {
 
   useEffectOnce(() => {
     // clear and restart the socket connection
-    store.dispatch(clearMessages());
+    dispatch(clearMessages());
     startSocketConnection();
   });
 

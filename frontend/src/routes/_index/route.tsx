@@ -19,6 +19,9 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import store from "#/store";
+import { addFile } from "#/state/selected-files-slice";
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
@@ -42,20 +45,28 @@ export const clientLoader = async () => {
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const searchParams = new URLSearchParams();
 
+  const isFileUpload = !!request.headers
+    .get("Content-Type")
+    ?.includes("multipart");
+
+  if (isFileUpload) {
+    const formData = await request.formData();
+    const file = formData.get("file");
+    if (file instanceof File) {
+      // TODO: Take care of this if SSR is enabled (store is not available on the server)
+      store.dispatch(addFile(await convertImageToBase64(file)));
+    }
+    return json({ success: true });
+  }
+
   const url = new URL(request.url);
   const repo = url.searchParams.get("repo");
 
   const formData = await request.formData();
-
   const q = formData.get("q")?.toString();
-  const reset = formData.get("reset")?.toString() === "true";
 
   if (q) searchParams.set("q", q);
   if (repo) searchParams.set("repo", repo);
-  if (reset) {
-    searchParams.set("reset", "true");
-    localStorage.removeItem("token");
-  }
 
   return redirect(`/app?${searchParams.toString()}`);
 };
