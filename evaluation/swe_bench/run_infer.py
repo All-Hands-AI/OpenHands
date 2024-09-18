@@ -384,7 +384,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    histories = [event_to_dict(event.to_dict()) for event in state.history.get_events()]
+    histories = [event_to_dict(event) for event in state.history.get_events()]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
@@ -396,7 +396,7 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        llm_completions=state.llm_completions,
+        llm_completions=state.extra_data.get('llm_completions', []),
         error=state.last_error if state and state.last_error else None,
     )
     return output

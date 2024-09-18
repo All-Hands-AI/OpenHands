@@ -131,7 +131,9 @@ class AgentController:
     async def update_state_after_step(self):
         # update metrics especially for cost
         self.state.local_metrics = self.agent.llm.metrics
-        self.state.llm_completions.extend(self.agent.llm.llm_completions)
+        if 'llm_completions' not in self.state.extra_data:
+            self.state.extra_data['llm_completions'] = []
+        self.state.extra_data['llm_completions'].extend(self.agent.llm.llm_completions)
         self.agent.llm.llm_completions.clear()
 
     async def report_error(self, message: str, exception: Exception | None = None):

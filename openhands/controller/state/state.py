@@ -97,10 +97,6 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
-    # list of LLM completions. Each completion is a dict with the following keys:
-    # - 'messages': list of messages
-    # - 'response': response from the LLM
-    llm_completions: list[dict[str, Any]] = field(default_factory=list)
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
