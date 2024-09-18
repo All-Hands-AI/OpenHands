@@ -5,6 +5,7 @@ from fastapi import WebSocket
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
 
@@ -47,7 +48,7 @@ class SessionManager:
         return await self.send(sid, {'message': message})
 
     async def _cleanup_sessions(self):
-        while True:
+        while should_continue():
             current_time = time.time()
             session_ids_to_remove = []
             for sid, session in list(self._sessions.items()):

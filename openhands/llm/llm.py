@@ -2,9 +2,9 @@ import asyncio
 import copy
 import warnings
 from functools import partial
-from typing import Union
 
 from openhands.core.config import LLMConfig
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -31,7 +31,7 @@ from tenacity import (
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, format_messages
+from openhands.core.message import Message
 from openhands.core.metrics import Metrics
 
 __all__ = ['LLM']
@@ -157,7 +157,11 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            safety_settings=gemini_safety_settings,
+            **(
+                {'safety_settings': gemini_safety_settings}
+                if gemini_safety_settings is not None
+                else {}
+            ),
         )
 
         if self.vision_is_active():
@@ -264,7 +268,11 @@ class LLM:
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=True,
-            safety_settings=gemini_safety_settings,
+            **(
+                {'safety_settings': gemini_safety_settings}
+                if gemini_safety_settings is not None
+                else {}
+            ),
         )
 
         async_completion_unwrapped = self._async_completion
@@ -288,7 +296,7 @@ class LLM:
             debug_message = self._get_debug_message(messages)
 
             async def check_stopped():
-                while True:
+                while should_continue():
                     if (
                         hasattr(self.config, 'on_cancel_requested_fn')
                         and self.config.on_cancel_requested_fn is not None
@@ -624,9 +632,7 @@ class LLM:
     def reset(self):
         self.metrics = Metrics()
 
-    def format_messages_for_llm(
-        self, messages: Union[Message, list[Message]]
-    ) -> list[dict]:
-        return format_messages(
-            messages, self.vision_is_active(), self.is_caching_prompt_active()
-        )
+    def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
+        if isinstance(messages, Message):
+            return [messages.model_dump()]
+        return [message.model_dump() for message in messages]

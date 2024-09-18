@@ -50,15 +50,16 @@ class EvalMetadata(BaseModel):
 class EvalOutput(BaseModel):
     # NOTE: User-specified
     instance_id: str
-    instruction: str
     # output of the evaluation
     # store anything that is needed for the score calculation
     test_result: dict[str, Any]
 
+    instruction: str | None = None
+
     # Interaction info
-    metadata: EvalMetadata
-    history: list[tuple[dict[str, Any], dict[str, Any]]]
-    metrics: dict[str, Any]
+    metadata: EvalMetadata | None = None
+    history: list[tuple[dict[str, Any], dict[str, Any]]] | None = None
+    metrics: dict[str, Any] | None = None
     error: str | None = None
 
     # Optionally save the input test instance
@@ -66,15 +67,19 @@ class EvalOutput(BaseModel):
 
     def model_dump(self, *args, **kwargs):
         dumped_dict = super().model_dump(*args, **kwargs)
+        # Remove None values
+        dumped_dict = {k: v for k, v in dumped_dict.items() if v is not None}
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = self.metadata.model_dump()
+        if self.metadata is not None:
+            dumped_dict['metadata'] = self.metadata.model_dump()
         return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
         dumped_dict = json.loads(dumped)
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
+        if 'metadata' in dumped_dict:
+            dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
 
 
@@ -260,32 +265,41 @@ def _process_instance_wrapper(
             result = process_instance_func(instance, metadata, use_mp)
             return result
         except Exception as e:
+            error = str(e)
+            stacktrace = traceback.format_exc()
             if attempt == max_retries:
+                logger.exception(e)
+                msg = (
+                    '-' * 10
+                    + '\n'
+                    + f'Error in instance [{instance.instance_id}]: {error}. Stacktrace:\n{stacktrace}'
+                    + '\n'
+                    + f'[Encountered after {max_retries} retries. Please check the logs and report the issue.]'
+                    + '-' * 10
+                )
                 # Raise an error after all retries & stop the evaluation
                 raise RuntimeError(
                     f'Maximum error retries reached for instance {instance.instance_id}'
                 ) from e
-            error = str(e)
-            stacktrace = traceback.format_exc()
             msg = (
                 '-' * 10
                 + '\n'
                 + f'Error in instance [{instance.instance_id}]: {error}. Stacktrace:\n{stacktrace}'
                 + '\n'
                 + '-' * 10
-                + '[This error occurred after maximum retries]'
+                + f'[The above error occurred. Retrying... (attempt {attempt + 1} of {max_retries})]'
                 + '-' * 10
                 + '\n'
             )
             logger.error(msg)
             if use_mp:
                 print(msg)  # use print to directly print to console
-            time.sleep(1)  # Add a small delay before retrying
+            time.sleep(5)
 
 
 def run_evaluation(
     dataset: pd.DataFrame,
-    metadata: EvalMetadata,
+    metadata: EvalMetadata | None,
     output_file: str,
     num_workers: int,
     process_instance_func: Callable[
@@ -294,10 +308,14 @@ def run_evaluation(
     max_retries: int = 5,  # number of retries for each instance
 ):
     use_multiprocessing = num_workers > 1
-    logger.info(
-        f'Evaluation started with Agent {metadata.agent_class}:\n'
-        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
-    )
+
+    if metadata is not None:
+        logger.info(
+            f'Evaluation started with Agent {metadata.agent_class}:\n'
+            f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
+        )
+    else:
+        logger.info(f'Evaluation started with {num_workers} workers.')
 
     total_instances = len(dataset)
     pbar = tqdm(total=total_instances, desc='Instances processed')

@@ -14,9 +14,9 @@ To run the tests for OpenHands project, you can use the provided test runner scr
 3. Navigate to the root directory of the project.
 4. Run the test suite using the test runner script with the required arguments:
    ```
-   python evaluation/regression/run_tests.py --OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxx --model=gpt-3.5-turbo
+   python evaluation/regression/run_tests.py --OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxx --model=gpt-4o
    ```
-   Replace `sk-xxxxxxxxxxxxxxxxxxxxxx` with your actual OpenAI API key. The default model is `gpt-3.5-turbo`, but you can specify a different model if needed.
+   Replace `sk-xxxxxxxxxxxxxxxxxxxxxx` with your actual OpenAI API key. The default model is `gpt-4o`, but you can specify a different model if needed.
 
 The test runner will discover and execute all the test cases in the `cases/` directory, and display the results of the test suite, including the status of each individual test case and the overall summary.
 
