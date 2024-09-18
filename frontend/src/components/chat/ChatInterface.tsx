@@ -16,6 +16,9 @@ import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useSocket } from "#/context/socket";
+import ThumbsUpIcon from "#/assets/thumbs-up.svg?react";
+import ThumbsDownIcon from "#/assets/thumbs-down.svg?react";
+import { cn } from "#/utils/utils";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -102,8 +105,8 @@ function ChatInterface() {
       </div>
 
       <div>
-        <div className="relative">
-          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
+        <div className="relative px-3 py-[6.5px]">
+          <div className="absolute inset-0 flex items-center justify-center">
             {!hitBottom && (
               <ScrollButton
                 onClick={scrollDomToBottom}
@@ -114,13 +117,18 @@ function ChatInterface() {
             {hitBottom && (
               <>
                 {curAgentState === AgentState.AWAITING_USER_INPUT && (
-                  <ScrollButton
+                  <button
+                    type="button"
                     onClick={handleSendContinueMsg}
-                    icon={
-                      <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
-                    }
-                    label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-                  />
+                    className={cn(
+                      "px-2 py-1 bg-neutral-700 border border-neutral-600 rounded",
+                      "text-[11px] leading-4 tracking-[0.01em] font-[500]",
+                      "flex items-center gap-2",
+                    )}
+                  >
+                    <RiArrowRightDoubleLine className="w-3 h-3" />
+                    {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                  </button>
                 )}
                 {curAgentState === AgentState.RUNNING && <TypingIndicator />}
               </>
@@ -128,17 +136,21 @@ function ChatInterface() {
           </div>
 
           {feedbackShared !== messages.length && messages.length > 3 && (
-            <div className="flex justify-start gap-2 p-2">
-              <ScrollButton
+            <div className="flex justify-start gap-[7px]">
+              <button
+                type="button"
                 onClick={() => shareFeedback("positive")}
-                icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
-                label=""
-              />
-              <ScrollButton
+                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
+              >
+                <ThumbsUpIcon width={15} height={15} />
+              </button>
+              <button
+                type="button"
                 onClick={() => shareFeedback("negative")}
-                icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
-                label=""
-              />
+                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
+              >
+                <ThumbsDownIcon width={15} height={15} />
+              </button>
             </div>
           )}
         </div>

@@ -83,7 +83,7 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   };
 
   return (
-    <div className="w-full relative text-base flex pt-3">
+    <div className="w-full relative text-base flex">
       <Textarea
         value={message}
         startContent={
