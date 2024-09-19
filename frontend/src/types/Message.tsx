@@ -10,6 +10,9 @@ export interface ActionMessage {
 
   // A friendly message that can be put in the chat log
   message: string;
+
+  // The timestamp of the message
+  timestamp: string;
 }
 
 export interface ObservationMessage {
@@ -24,6 +27,9 @@ export interface ObservationMessage {
 
   // A friendly message that can be put in the chat log
   message: string;
+
+  // The timestamp of the message
+  timestamp: string;
 }
 
 export interface StatusMessage {

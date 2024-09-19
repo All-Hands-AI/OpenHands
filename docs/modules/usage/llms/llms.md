@@ -24,22 +24,25 @@ also encourage you to open a PR to share your setup process to help others using
 For a full list of the providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
 
-## Local and Open Source Models
-
+:::note
 Most current local and open source models are not as powerful. When using such models, you may see long
 wait times between messages, poor responses, or errors about malformed JSON. OpenHands can only be as powerful as the
 models driving it. However, if you do find ones that work, please add them to the verified list above.
+:::
 
 ## LLM Configuration
 
-The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
-But when using the OpenHands UI, you'll need to choose your model in the settings window.
+The following can be set in the OpenHands UI through the Settings:
+* `LLM Provider`
+* `LLM Model`
+* `API Key`
+* `Base URL` (through `Advanced Settings`)
 
-The following environment variables might be necessary for some LLMs/providers:
+There are some settings that may be necessary for some LLMs/providers that cannot be set through the UI. Instead, these
+can be set through environment variables passed to the [docker run command](/modules/usage/getting-started#installation)
+using `-e`:
 
-* `LLM_API_KEY`
 * `LLM_API_VERSION`
-* `LLM_BASE_URL`
 * `LLM_EMBEDDING_MODEL`
 * `LLM_EMBEDDING_DEPLOYMENT_NAME`
 * `LLM_DROP_PARAMS`
@@ -50,6 +53,7 @@ We have a few guides for running OpenHands with specific model providers:
 
 * [Azure](llms/azure-llms)
 * [Google](llms/google-llms)
+* [Groq](llms/groq)
 * [ollama](llms/local-llms)
 * [OpenAI](llms/openai-llms)
 

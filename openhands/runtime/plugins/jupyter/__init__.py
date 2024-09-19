@@ -8,6 +8,7 @@ from openhands.events.observation import IPythonRunCellObservation
 from openhands.runtime.plugins.jupyter.execute_server import JupyterKernel
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 
 @dataclass
@@ -19,7 +20,7 @@ class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
     async def initialize(self, username: str, kernel_id: str = 'openhands-default'):
-        self.kernel_gateway_port = find_available_tcp_port()
+        self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
             (
@@ -38,7 +39,7 @@ class JupyterPlugin(Plugin):
         )
         # read stdout until the kernel gateway is ready
         output = ''
-        while True and self.gateway_process.stdout is not None:
+        while should_continue() and self.gateway_process.stdout is not None:
             line = self.gateway_process.stdout.readline().decode('utf-8')
             output += line
             if 'at' in line:

@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import tempfile
-import time
 from typing import Any
 
 import pandas as pd
@@ -32,6 +31,7 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.runtime.runtime import Runtime
+from openhands.runtime.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -218,7 +218,7 @@ def initialize_runtime(
         assert obs.exit_code == 0
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-        action.timeout = 1800
+        action.timeout = 3600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -316,10 +316,10 @@ def complete_runtime(
                 break
             else:
                 logger.info('Failed to get git diff, retrying...')
-                time.sleep(10)
+                sleep_if_should_continue(10)
         elif isinstance(obs, ErrorObservation):
             logger.error(f'Error occurred: {obs.content}. Retrying...')
-            time.sleep(10)
+            sleep_if_should_continue(10)
         else:
             raise ValueError(f'Unexpected observation type: {type(obs)}')
 

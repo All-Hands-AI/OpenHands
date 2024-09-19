@@ -22,6 +22,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.agentsession import AgentSession
 from openhands.storage.files import FileStore
 
@@ -65,7 +66,7 @@ class Session:
         try:
             if self.websocket is None:
                 return
-            while True:
+            while should_continue():
                 try:
                     data = await self.websocket.receive_json()
                 except ValueError:

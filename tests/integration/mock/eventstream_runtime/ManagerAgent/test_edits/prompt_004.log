@@ -1,7 +1,3 @@
-
-
-----------
-
 # Task
 You are a proofreader tasked with fixing typos in the files in your current working directory.
 
@@ -51,7 +47,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[{"source": "agent", "action": "read", "args": {"path": "./bad.txt", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "read", "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n", "extras": {"path": "/workspace/bad.txt"}}, {"source": "agent", "action": "message", "args": {"content": "The content of 'bad.txt' has been read. The following typos have been identified:\n1. 'typoo' should be 'typo'\n2. 'mor' should be 'more'\nI will now proceed to fix these typos and overwrite the original file with the corrected content.", "images_urls": null, "wait_for_response": false}}]
+[{"source": "agent", "action": "read", "args": {"path": "./bad.txt", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "read", "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n", "extras": {"path": "/workspace/bad.txt"}}, {"source": "agent", "action": "message", "args": {"content": "I have identified the following typos in the file 'bad.txt':\n1. 'typoo' should be 'typo'\n2. 'mor' should be 'more'\n\nI will now proceed to fix these typos and overwrite the original file.", "images_urls": null, "wait_for_response": false}}]
 
 ## Format
 Your response MUST be in JSON format. It must be an object, and it must contain two fields:
