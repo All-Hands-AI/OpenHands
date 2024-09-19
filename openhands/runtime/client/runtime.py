@@ -418,7 +418,6 @@ class EventStreamRuntime(Runtime):
                 )
                 if response.status_code == 200:
                     output = response.json()
-                    logger.info(f'Response content: {output}')
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
                 else:
