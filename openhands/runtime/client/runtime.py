@@ -150,9 +150,12 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
-        self.skip_container_logs = (
-            os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
-        )
+
+        # container logs can be skipped by setting the SKIP_CONTAINER_LOGS env var to true or 1
+        self.skip_container_logs = os.getenv(
+            'SKIP_CONTAINER_LOGS', 'false'
+        ).lower() in ['true', '1']
+
         if self.runtime_container_image is None:
             if self.base_container_image is None:
                 raise ValueError(

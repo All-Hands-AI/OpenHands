@@ -142,7 +142,9 @@ def prep_docker_build_folder(
         skip_init=skip_init,
         extra_deps=extra_deps,
     )
-    if os.getenv('SKIP_CONTAINER_LOGS', 'false') != 'true':
+
+    # Write or skip container logs
+    if os.getenv('SKIP_CONTAINER_LOGS', 'false').lower() not in ['true', '1']:
         logger.debug(
             (
                 f'===== Dockerfile content start =====\n'
