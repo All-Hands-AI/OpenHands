@@ -1,12 +1,18 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { StatusMessage } from "#/types/Message";
+
+const initialStatusMessage: StatusMessage = {
+  message: "",
+  is_error: false,
+};
 
 export const statusSlice = createSlice({
   name: "status",
   initialState: {
-    curStatusMessage: "",
+    curStatusMessage: initialStatusMessage,
   },
   reducers: {
-    setCurStatusMessage: (state, action) => {
+    setCurStatusMessage: (state, action: PayloadAction<StatusMessage>) => {
       state.curStatusMessage = action.payload;
     },
   },

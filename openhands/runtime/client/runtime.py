@@ -182,6 +182,8 @@ class EventStreamRuntime(Runtime):
             config, event_stream, sid, plugins, env_vars, status_message_callback
         )
 
+        self._wait_until_alive()
+
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
@@ -272,6 +274,9 @@ class EventStreamRuntime(Runtime):
                 )
             else:
                 browsergym_arg = ''
+
+            self.send_status_message('Starting container...')
+
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
@@ -293,9 +298,8 @@ class EventStreamRuntime(Runtime):
                 volumes=volumes,
             )
             self.log_buffer = LogBuffer(container)
-            msg = f'Container started. Server url: {self.api_url}'
-            logger.info(msg)
-            self.send_status_message(msg)
+            logger.info(f'Container started. Server url: {self.api_url}')
+            self.send_status_message('Status: Container started.')
             return container
         except Exception as e:
             logger.error(

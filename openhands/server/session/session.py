@@ -234,4 +234,4 @@ class Session:
                 break
             # commented out as it currently breaks browser (blank screen)
             logger.info(f'send_message:\n{message}\n')
-            # await self.send_message(message)
+            await self.send_message(message)

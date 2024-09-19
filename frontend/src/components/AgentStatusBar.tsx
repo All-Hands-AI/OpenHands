@@ -1,10 +1,11 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
+import { setCurStatusMessage } from "#/state/statusSlice";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -17,6 +18,7 @@ enum IndicatorColor {
 
 function AgentStatusBar() {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
@@ -88,22 +90,33 @@ function AgentStatusBar() {
       curAgentState === AgentState.INIT
     ) {
       if (document.cookie.indexOf("audio") !== -1) beep();
+
+      // TODO once this works, clear the current status message here
+      dispatch(
+        setCurStatusMessage({
+          message: "Ready. [Placeholder]",
+          is_error: false,
+        }),
+      );
     }
-  }, [curAgentState]);
+  }, [curAgentState, dispatch]);
 
   return (
-    <div className="flex items-center">
-      <div
-        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
-      />
-      <span className="text-sm text-stone-400">
-        {AgentStatusMap[curAgentState].message}
-      </span>
-      {curStatusMessage && (
-        <span className="text-sm text-stone-400 ml-2">
-          <br />
-          {curStatusMessage}
+    <div className="flex flex-col items-center">
+      <div className="flex items-center">
+        <div
+          className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
+        />
+        <span className="text-sm text-stone-400">
+          {AgentStatusMap[curAgentState].message}
         </span>
+      </div>
+      {curStatusMessage.message && (
+        <div className="mt-1 flex items-center">
+          <span className="text-sm text-stone-400">
+            {curStatusMessage.message}
+          </span>
+        </div>
       )}
     </div>
   );
