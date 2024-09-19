@@ -26,3 +26,17 @@ class FileWriteObservation(Observation):
     @property
     def message(self) -> str:
         return f'I wrote to the file {self.path}.'
+
+
+@dataclass
+class FileEditObservation(Observation):
+    """This data class represents a file edit operation"""
+
+    path: str
+    prev_exists: bool
+    window: int
+    observation: str = ObservationType.EDIT
+
+    @property
+    def message(self) -> str:
+        return f'I edited the file {self.path}.'

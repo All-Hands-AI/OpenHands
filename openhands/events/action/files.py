@@ -27,6 +27,11 @@ class FileReadAction(Action):
 
 @dataclass
 class FileWriteAction(Action):
+    """Writes a file to a given path.
+    Can be set to write specific lines using start and end
+    Default lines 0:-1 (whole file)
+    """
+
     path: str
     content: str
     start: int = 0
@@ -39,3 +44,15 @@ class FileWriteAction(Action):
     @property
     def message(self) -> str:
         return f'Writing file: {self.path}'
+
+
+@dataclass
+class FileEditAction(Action):
+    """Edits a file by provided a draft at a given path."""
+
+    path: str
+    content: str
+    thought: str = ''
+    action: str = ActionType.DRAFT_EDIT
+    runnable: ClassVar[bool] = True
+    security_risk: ActionSecurityRisk | None = None

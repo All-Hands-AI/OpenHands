@@ -6,6 +6,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     CmdRunAction,
+    FileEditAction,
     IPythonRunCellAction,
     MessageAction,
 )
@@ -175,3 +176,35 @@ class CodeActActionParserMessage(ActionParser):
 
     def parse(self, action_str: str) -> Action:
         return MessageAction(content=action_str, wait_for_response=True)
+
+
+class CodeActActionParserFileEdit(ActionParser):
+    """Parser action:
+    - FileEditAction(path, content) - edit a file
+    """
+
+    def __init__(
+        self,
+    ):
+        self.file_edit = None
+
+    def check_condition(self, action_str: str) -> bool:
+        self.file_edit = re.search(
+            r'<file_edit file_path="(.*?)">(.*?)</file_edit>', action_str, re.DOTALL
+        )
+        return (
+            self.file_edit is not None
+            and self.file_edit.group(1) is not None
+            and self.file_edit.group(2) is not None
+        )
+
+    def parse(self, action_str: str) -> Action:
+        assert (
+            self.file_edit is not None
+        ), 'self.file_edit should not be None when parse is called'
+
+        file_path = self.file_edit.group(1).strip()
+        content = self.file_edit.group(2).strip()
+        thought = action_str.replace(self.file_edit.group(0), '').strip()
+
+        return FileEditAction(path=file_path, content=content, thought=thought)
