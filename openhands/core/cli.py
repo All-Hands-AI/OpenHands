@@ -74,6 +74,7 @@ def get_parser() -> argparse.ArgumentParser:
         action='version',
         version=f'{__version__}',
         help='Show the version number and exit',
+        default=None,
     )
 
     return parser
