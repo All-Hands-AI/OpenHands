@@ -37,6 +37,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.llm.llm import LLM
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -148,7 +149,7 @@ class AgentController:
         """The main loop for the agent's step-by-step execution."""
 
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
-        while True:
+        while should_continue():
             try:
                 await self._step()
             except asyncio.CancelledError:
@@ -382,7 +383,10 @@ class AgentController:
 
         if self.delegate is not None:
             assert self.delegate != self
-            await self._delegate_step()
+            if self.delegate.get_agent_state() == AgentState.PAUSED:
+                await asyncio.sleep(1)
+            else:
+                await self._delegate_step()
             return
 
         logger.info(
@@ -457,7 +461,7 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self.report_error('Delegator agent encounters an error')
+            await self.report_error('Delegator agent encountered an error')
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             logger.info(
                 f'[Agent Controller {self.id}] Delegate agent has finished execution'

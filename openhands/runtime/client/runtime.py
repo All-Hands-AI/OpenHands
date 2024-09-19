@@ -51,11 +51,11 @@ class LogBuffer:
 
         self.buffer: list[str] = []
         self.lock = threading.Lock()
+        self._stop_event = threading.Event()
         self.log_generator = container.logs(stream=True, follow=True)
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
         self.log_stream_thread.daemon = True
         self.log_stream_thread.start()
-        self._stop_event = threading.Event()
 
     def append(self, log_line: str):
         with self.lock:
@@ -170,6 +170,8 @@ class EventStreamRuntime(Runtime):
         )
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
+
+        self._wait_until_alive()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'

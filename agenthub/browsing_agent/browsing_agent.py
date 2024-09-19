@@ -216,10 +216,8 @@ class BrowsingAgent(Agent):
         prompt = get_prompt(error_prefix, cur_url, cur_axtree_txt, prev_action_str)
         messages.append(Message(role='user', content=[TextContent(text=prompt)]))
 
-        flat_messages = self.llm.format_messages_for_llm(messages)
-
         response = self.llm.completion(
-            messages=flat_messages,
+            messages=self.llm.format_messages_for_llm(messages),
             temperature=0.0,
             stop=[')```', ')\n```'],
         )
