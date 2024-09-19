@@ -37,6 +37,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.llm.llm import LLM
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -148,7 +149,7 @@ class AgentController:
         """The main loop for the agent's step-by-step execution."""
 
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
-        while True:
+        while should_continue():
             try:
                 await self._step()
             except asyncio.CancelledError:

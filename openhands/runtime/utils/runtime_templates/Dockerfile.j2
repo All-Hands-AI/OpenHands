@@ -18,6 +18,9 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
+RUN if getent passwd 1000 | grep -q pn; then userdel pn; fi
+
 # Create necessary directories
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \

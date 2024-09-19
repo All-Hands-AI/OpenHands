@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI, WebSocket
 
 from openhands.core.schema import ActionType
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 app = FastAPI()
 
@@ -15,7 +16,7 @@ async def websocket_endpoint(websocket: WebSocket):
     )
 
     try:
-        while True:
+        while should_continue():
             # receive message
             data = await websocket.receive_json()
             print(f'Received message: {data}')
