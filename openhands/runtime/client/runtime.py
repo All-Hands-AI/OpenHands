@@ -290,11 +290,7 @@ class EventStreamRuntime(Runtime):
             self.close(close_client=False)
             raise e
 
-    def _refresh_logs(self, attempt=0, max_attempts=5):
-        if attempt >= max_attempts:
-            logger.error('Failed to get container logs after multiple attempts.')
-            return
-
+    def _refresh_logs(self):
         logger.debug('Getting container logs...')
 
         assert (
@@ -313,12 +309,6 @@ class EventStreamRuntime(Runtime):
                 + '\n'
                 + '-' * 80
             )
-        if not self.log_buffer.client_ready:
-            time.sleep(1)
-            attempts = 0
-            while not self.log_buffer.client_ready and attempts < 5:
-                time.sleep(1)
-                self._refresh_logs(attempt=attempt + 1, max_attempts=max_attempts)
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(10),
