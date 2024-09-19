@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.21"
+version = "1.35.22"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.21-py3-none-any.whl", hash = "sha256:247f88eedce9ae4e014a8fc14a9473759bb8e391460d49396a3b600fb649f33b"},
-    {file = "boto3-1.35.21.tar.gz", hash = "sha256:db5fbbd10248db060f2ccce3ae17764f1641c99c8b9f51d422c26ebe25703a1e"},
+    {file = "boto3-1.35.22-py3-none-any.whl", hash = "sha256:2109b632b451c1d4347a93a9abe6dc866c03db4ff1f910597f4543f1965829de"},
+    {file = "boto3-1.35.22.tar.gz", hash = "sha256:8f4f6e0860ca1b18cbb8d13f3a572a4c099577e741b10205b5604058af0e75b7"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.21,<1.36.0"
+botocore = ">=1.35.22,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.21"
+version = "1.35.22"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.21-py3-none-any.whl", hash = "sha256:3db9ddfe521edc0753fc8c68caef71c7806e1d2d21ce8cbabc2065b7d79192f2"},
-    {file = "botocore-1.35.21.tar.gz", hash = "sha256:db917e7d7b3a2eed1310c6496784bc813c91f020a021c2ab5f9df7d28cdb4f1d"},
+    {file = "botocore-1.35.22-py3-none-any.whl", hash = "sha256:d9bc656e7dde0b3e3f3080fc54bacff6a97fd7806b98acbcc21c7f9d4d0102b9"},
+    {file = "botocore-1.35.22.tar.gz", hash = "sha256:18362b7ec748561d786aebf1dd5c9faf22c4732efbf89344314199f96d3bbb65"},
 ]
 
 [package.dependencies]
@@ -609,32 +609,32 @@ crt = ["awscrt (==0.21.5)"]
 
 [[package]]
 name = "browsergym"
-version = "0.6.3"
+version = "0.6.4"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.6.3-py3-none-any.whl", hash = "sha256:dcac4891d880d1e7977b587b9998cfe4ec1cd70742abdf29506f5fc31164cde7"},
-    {file = "browsergym-0.6.3.tar.gz", hash = "sha256:ce7b8c481d244d041c424591947c09f25d463dccfb8d3222b0d04569c5827c5f"},
+    {file = "browsergym-0.6.4-py3-none-any.whl", hash = "sha256:929ff38c76c11b0982369c032d54ccd7ec9977a9cc6161205a4e2fb528f2f9f7"},
+    {file = "browsergym-0.6.4.tar.gz", hash = "sha256:91500f3f44b135a55fcab4b0710ec4f8790413205a621b31133c57a6eda5812a"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.6.3"
-browsergym-experiments = "0.6.3"
-browsergym-miniwob = "0.6.3"
-browsergym-visualwebarena = "0.6.3"
-browsergym-webarena = "0.6.3"
+browsergym-core = "0.6.4"
+browsergym-experiments = "0.6.4"
+browsergym-miniwob = "0.6.4"
+browsergym-visualwebarena = "0.6.4"
+browsergym-webarena = "0.6.4"
 browsergym-workarena = "*"
 
 [[package]]
 name = "browsergym-core"
-version = "0.6.3"
+version = "0.6.4"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.9"
 files = [
-    {file = "browsergym_core-0.6.3-py3-none-any.whl", hash = "sha256:404fa441dd108d122e8df0ca05bcb08789f44495a134c069b477b91dbd0a6bd2"},
-    {file = "browsergym_core-0.6.3.tar.gz", hash = "sha256:f233467f7820bb103610348d05662639c10bc53c758ce4f82aee2c0214125197"},
+    {file = "browsergym_core-0.6.4-py3-none-any.whl", hash = "sha256:da1edcb7de2cdbfbef54161886203ac22a76fa06f2bb0afcc0ec1e55044692ec"},
+    {file = "browsergym_core-0.6.4.tar.gz", hash = "sha256:5723666da2d7b6288c6521c2d6a0ebec2407cceb4a596f580e7aa4116ec73c3e"},
 ]
 
 [package.dependencies]
@@ -648,62 +648,62 @@ pyparsing = ">=3"
 
 [[package]]
 name = "browsergym-experiments"
-version = "0.6.3"
+version = "0.6.4"
 description = "Experimentation tools for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_experiments-0.6.3-py3-none-any.whl", hash = "sha256:73881b2d1f41984138e755f6348400b442e22e8415adc27401551abc7a30b7b1"},
-    {file = "browsergym_experiments-0.6.3.tar.gz", hash = "sha256:fe56c440112218b967601245ed40db27efda26ef2e0d8ddfcaae83c123ae39e7"},
+    {file = "browsergym_experiments-0.6.4-py3-none-any.whl", hash = "sha256:1a1a38363554380444be759a40952fcd90114ae2b814f7e3aaad0b1b159bcb51"},
+    {file = "browsergym_experiments-0.6.4.tar.gz", hash = "sha256:136538e787a634e0b39c57f0995bc6cf02d1dfd5e0b34640e7362c34c615a96d"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.6.3"
+browsergym-core = "0.6.4"
 tiktoken = ">=0.4"
 
 [[package]]
 name = "browsergym-miniwob"
-version = "0.6.3"
+version = "0.6.4"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.6.3-py3-none-any.whl", hash = "sha256:457b1fe1c659206ca40d3762609fc6dbff89c37d883abe4b4d329245c9f1ba89"},
-    {file = "browsergym_miniwob-0.6.3.tar.gz", hash = "sha256:91e8bb2f9bbdd2bc43abd2a0ae8d08a3b16f6f5458519216204b3e9f7ba382e3"},
+    {file = "browsergym_miniwob-0.6.4-py3-none-any.whl", hash = "sha256:f5a5d0635506957d5428ffbf73dc2acececb91bb5c6005414a03b9127c21ff4b"},
+    {file = "browsergym_miniwob-0.6.4.tar.gz", hash = "sha256:7a43f9db53ffcb613b21f583deef048523ba30133c373659c52d8890f05bcbf9"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.6.3"
+browsergym-core = "0.6.4"
 
 [[package]]
 name = "browsergym-visualwebarena"
-version = "0.6.3"
+version = "0.6.4"
 description = "VisualWebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_visualwebarena-0.6.3-py3-none-any.whl", hash = "sha256:a8a08fa211e5937b2381f72d8b08bc1b242daedf5d50cd810f522141b0874b6d"},
-    {file = "browsergym_visualwebarena-0.6.3.tar.gz", hash = "sha256:0dddc80e0b65c3887e16bbcd9fd4b48fe4cf6bee824e03ba73ea456f75e9ce60"},
+    {file = "browsergym_visualwebarena-0.6.4-py3-none-any.whl", hash = "sha256:479d0e3bd73133a0addbb92056807442f94ddbb2b7532fcca3490c813948e6f0"},
+    {file = "browsergym_visualwebarena-0.6.4.tar.gz", hash = "sha256:82d7bb9b3096386909af0b3c3851e57d21e215a8e84b703b4ceac8a7b6268420"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.6.3"
+browsergym-core = "0.6.4"
 libvisualwebarena = "0.0.8"
 requests = "*"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.6.3"
+version = "0.6.4"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.6.3-py3-none-any.whl", hash = "sha256:9f9cda8840def8c6175521d3f1855584582ba61ad7d68a09f639f7e454a76611"},
-    {file = "browsergym_webarena-0.6.3.tar.gz", hash = "sha256:6d3e200efa3df296fcd4513e6115e896ee604f1ab72adcde9e19e7ea44c8e91f"},
+    {file = "browsergym_webarena-0.6.4-py3-none-any.whl", hash = "sha256:d08719c0088987ebd2d7436dfc7241e795b3af52ff5450df2f730380b5bd6349"},
+    {file = "browsergym_webarena-0.6.4.tar.gz", hash = "sha256:33cb485b2a8aaa0b377d3e8923e0691bb671a455918ff83145f9d4c6edd4972d"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.6.3"
+browsergym-core = "0.6.4"
 libwebarena = "0.0.3"
 
 [[package]]
@@ -1014,13 +1014,13 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.5.5"
+version = "0.5.7"
 description = "Chroma."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "chromadb-0.5.5-py3-none-any.whl", hash = "sha256:2a5a4b84cb0fc32b380e193be68cdbadf3d9f77dbbf141649be9886e42910ddd"},
-    {file = "chromadb-0.5.5.tar.gz", hash = "sha256:84f4bfee320fb4912cbeb4d738f01690891e9894f0ba81f39ee02867102a1c4d"},
+    {file = "chromadb-0.5.7-py3-none-any.whl", hash = "sha256:2358f92804cd198b125de73076ec48f9f55c729df119919a76a6716ad0e465f6"},
+    {file = "chromadb-0.5.7.tar.gz", hash = "sha256:3432865025ef3ceeaee0a59b265a784d8b5978cb7c41593c74ddd2427c776c94"},
 ]
 
 [package.dependencies]
@@ -1033,7 +1033,7 @@ httpx = ">=0.27.0"
 importlib-resources = "*"
 kubernetes = ">=28.1.0"
 mmh3 = ">=4.0.1"
-numpy = ">=1.22.5,<2.0.0"
+numpy = ">=1.22.5"
 onnxruntime = ">=1.14.1"
 opentelemetry-api = ">=1.2.0"
 opentelemetry-exporter-otlp-proto-grpc = ">=1.2.0"
@@ -1045,6 +1045,7 @@ posthog = ">=2.4.0"
 pydantic = ">=1.9"
 pypika = ">=0.48.9"
 PyYAML = ">=6.0.0"
+rich = ">=10.11.0"
 tenacity = ">=8.2.3"
 tokenizers = ">=0.13.2"
 tqdm = ">=4.65.0"
@@ -2239,13 +2240,13 @@ httplib2 = ">=0.19.0"
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.67.0"
+version = "1.67.1"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "google-cloud-aiplatform-1.67.0.tar.gz", hash = "sha256:4c9738d5a66d8baae01e1d0150fa972960481a1829c2ec2060b8a4fe16768901"},
-    {file = "google_cloud_aiplatform-1.67.0-py2.py3-none-any.whl", hash = "sha256:8d14292b2c1ddeadcb67f20364758f794b4c70eedd8f1356dd194303047cd179"},
+    {file = "google-cloud-aiplatform-1.67.1.tar.gz", hash = "sha256:701a19061c8c670baa93464ca0b8a1a8720494f802187cef06bc9fcf952db315"},
+    {file = "google_cloud_aiplatform-1.67.1-py2.py3-none-any.whl", hash = "sha256:2ff0e1794839fcf74d644f3f54ff2de5d8099b3e388edecc48f6d620c1f3582c"},
 ]
 
 [package.dependencies]
@@ -2267,7 +2268,7 @@ cloud-profiler = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow 
 datasets = ["pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)"]
 endpoint = ["requests (>=2.28.1)"]
 evaluation = ["pandas (>=1.0.0,<2.2.0)", "tqdm (>=4.23.0)"]
-full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)"]
+full = ["docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)"]
 langchain = ["langchain (>=0.1.16,<0.3)", "langchain-core (<0.3)", "langchain-google-vertexai (<2)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "orjson (<=3.10.6)", "tenacity (<=8.3)"]
 langchain-testing = ["absl-py", "cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "langchain (>=0.1.16,<0.3)", "langchain-core (<0.3)", "langchain-google-vertexai (<2)", "openinference-instrumentation-langchain (>=0.1.19,<0.2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "orjson (<=3.10.6)", "pydantic (>=2.6.3,<3)", "pytest-xdist", "tenacity (<=8.3)"]
 lit = ["explainable-ai-sdk (>=1.0.0)", "lit-nlp (==0.4.0)", "pandas (>=1.0.0)", "tensorflow (>=2.3.0,<3.0.0dev)"]
@@ -2275,11 +2276,11 @@ metadata = ["numpy (>=1.15.0)", "pandas (>=1.0.0)"]
 pipelines = ["pyyaml (>=5.3.1,<7)"]
 prediction = ["docker (>=5.0.3)", "fastapi (>=0.71.0,<=0.114.0)", "httpx (>=0.23.0,<0.25.0)", "starlette (>=0.17.1)", "uvicorn[standard] (>=0.16.0)"]
 private-endpoints = ["requests (>=2.28.1)", "urllib3 (>=1.21.1,<1.27)"]
-ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "setuptools (<70.0.0)"]
-ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "ray[train] (==2.9.3)", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
+ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "setuptools (<70.0.0)"]
+ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "ray[train] (==2.9.3)", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
 reasoningengine = ["cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)"]
 tensorboard = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "werkzeug (>=2.0.0,<2.1.0dev)"]
-testing = ["bigframes", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pydantic (<2)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
+testing = ["bigframes", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
 tokenization = ["sentencepiece (>=0.2.0)"]
 vizier = ["google-vizier (>=0.1.6)"]
 xai = ["tensorflow (>=2.3.0,<3.0.0dev)"]
@@ -3761,13 +3762,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.46.4"
+version = "1.46.6"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.46.4-py3-none-any.whl", hash = "sha256:6c1410b50aa7e4deff05965aa270bbe3207d5d1d59979b13c62dc7ba6e24f329"},
-    {file = "litellm-1.46.4.tar.gz", hash = "sha256:b5a2d5b1425cd0246fd3e3932ea54dbb82433d8f9bc2f75f5e9e2fb6f3e10c1e"},
+    {file = "litellm-1.46.6-py3-none-any.whl", hash = "sha256:e568933a408ccb6d954c8f48b5a481542e2efaa69f1aad61307c6c99719fdf72"},
+    {file = "litellm-1.46.6.tar.gz", hash = "sha256:1c3196567c85507d05350cdcb4948c551705c9a38c3687c4098a3a58175bdd5a"},
 ]
 
 [package.dependencies]
@@ -5365,13 +5366,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.46.0"
+version = "1.46.1"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.46.0-py3-none-any.whl", hash = "sha256:8e423690b121d0268c7bb83b552e14f339b0ba250e1d0f70d145c194e79c4e1b"},
-    {file = "openai-1.46.0.tar.gz", hash = "sha256:0c5a783530d7cd90e2370dbd52d9239d2d53dc7a0badf9ee1e2e23d3f148969b"},
+    {file = "openai-1.46.1-py3-none-any.whl", hash = "sha256:7517f07117cf66012bbc55c49fd6b983eaac0f3d2a09c90cba1140d4455e4290"},
+    {file = "openai-1.46.1.tar.gz", hash = "sha256:e5cf7f268bf516de23686d496c9dae7f0dcdcd0e87af4d288deeab8329fcbbaf"},
 ]
 
 [package.dependencies]
@@ -8080,13 +8081,13 @@ resolved_reference = "c2b3cefd4a5af0b248966a773650a39046072975"
 
 [[package]]
 name = "sympy"
-version = "1.13.2"
+version = "1.13.3"
 description = "Computer algebra system (CAS) in Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "sympy-1.13.2-py3-none-any.whl", hash = "sha256:c51d75517712f1aed280d4ce58506a4a88d635d6b5dd48b39102a7ae1f3fcfe9"},
-    {file = "sympy-1.13.2.tar.gz", hash = "sha256:401449d84d07be9d0c7a46a64bd54fe097667d5e7181bfe67ec777be9e01cb13"},
+    {file = "sympy-1.13.3-py3-none-any.whl", hash = "sha256:54612cf55a62755ee71824ce692986f23c88ffa77207b30c1368eda4a7060f73"},
+    {file = "sympy-1.13.3.tar.gz", hash = "sha256:b27fd2c6530e0ab39e275fc9b683895367e51d5da91baa8d3d64db2565fec4d9"},
 ]
 
 [package.dependencies]
@@ -9675,4 +9676,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "d62ec4dd5057e6c80cdc6b6b3eb99d34eabe09bdb2918623edf485911b86bc39"
+content-hash = "5f9cad7d0c90e968417ff146361c530afc9819cbf511119e0c95502fd576dc55"
