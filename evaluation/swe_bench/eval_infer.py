@@ -116,6 +116,7 @@ def process_instance(
         'resolved': False,
         'failed_apply_patch': False,
         'error_eval': False,
+        'test_timeout': False,
     }
 
     if model_patch == '':
@@ -192,13 +193,14 @@ def process_instance(
 
                 # Poll for completion
                 start_time = time.time()
-                timeout = 900  # 15 minutes
+                timeout = 1800  # 30 minutes
                 while True:
                     seconds_elapsed = time.time() - start_time
                     if seconds_elapsed > timeout:
                         logger.info(
                             f'[{instance_id}] Evaluation timed out after {timeout} seconds'
                         )
+                        instance['test_result']['report']['test_timeout'] = True
                         break
                     check_action = CmdRunAction(
                         command=f'ps -p {pid} > /dev/null; echo $?', keep_prompt=False
