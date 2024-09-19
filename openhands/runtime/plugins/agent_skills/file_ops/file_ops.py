@@ -512,9 +512,11 @@ def _edit_file_impl(
         if enable_auto_lint:
             # BACKUP the original file
             original_file_backup_path = os.path.join(
+                '/tmp',
                 os.path.dirname(file_name),
                 f'.backup.{os.path.basename(file_name)}',
             )
+            os.makedirs(os.path.dirname(original_file_backup_path), exist_ok=True)
             with open(original_file_backup_path, 'w') as f:
                 f.writelines(lines)
 
