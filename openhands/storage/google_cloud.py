@@ -15,28 +15,28 @@ class GoogleCloudFileStore(FileStore):
         anonymous.
         """
         if bucket_name is None:
-            bucket_name = os.environ['GOOGLE_CLOUD_BUCKET_NAME']
+            bucket_name = os.environ["GOOGLE_CLOUD_BUCKET_NAME"]
         self.storage_client = storage.Client()
         self.bucket = self.storage_client.bucket(bucket_name)
 
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)
-        with blob.open('w') as f:
+        with blob.open("w") as f:
             f.write(contents)
 
     def read(self, path: str) -> str:
         blob = self.bucket.blob(path)
         try:
-            with blob.open('r') as f:
+            with blob.open("r") as f:
                 return f.read()
         except NotFound as err:
             raise FileNotFoundError(err)
 
     def list(self, path: str) -> List[str]:
-        if not path or path == '/':
-            path = ''
-        elif not path.endswith('/'):
-            path += '/'
+        if not path or path == "/":
+            path = ""
+        elif not path.endswith("/"):
+            path += "/"
         # The delimiter logic screens out directories, so we can't use it. :(
         # For example, given a structure:
         #   foo/bar/zap.txt
@@ -51,7 +51,7 @@ class GoogleCloudFileStore(FileStore):
             if name == path:
                 continue
             try:
-                index = name.index('/', prefix_len + 1)
+                index = name.index("/", prefix_len + 1)
                 if index != prefix_len:
                     blobs.add(name[: index + 1])
             except ValueError:
