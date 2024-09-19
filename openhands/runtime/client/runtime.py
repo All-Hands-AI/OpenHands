@@ -171,6 +171,8 @@ class EventStreamRuntime(Runtime):
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
 
+        self._wait_until_alive()
+
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
