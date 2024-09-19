@@ -116,7 +116,7 @@ class RuntimeClient:
         logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
-        """Create user if not exists."""
+        """Create user if the user doesn't exist."""
         # Skip root since it is already created
         if username == 'root':
             return
