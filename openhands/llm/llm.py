@@ -4,8 +4,6 @@ import warnings
 from functools import partial
 
 from openhands.core.config import LLMConfig
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.session_context import get_current_llm_loggers, with_session_context
 from openhands.runtime.utils.shutdown_listener import should_continue
 
 with warnings.catch_warnings():
@@ -31,6 +29,8 @@ from tenacity import (
 )
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.logger import get_llm_loggers
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
 
@@ -42,6 +42,8 @@ cache_prompting_supported_models = [
     'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
 ]
+
+llm_prompt_logger, llm_response_logger = get_llm_loggers().values()
 
 
 class LLM:
@@ -69,11 +71,6 @@ class LLM:
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
-
-        # Initialize loggers from session context
-        self.llm_prompt_logger, self.llm_response_logger = (
-            get_current_llm_loggers().values()
-        )
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -222,7 +219,6 @@ class LLM:
             retry=retry_if_exception_type(self.retry_exceptions),
             wait=custom_completion_wait,
         )
-        @with_session_context
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             # some callers might just send the messages directly
@@ -241,16 +237,18 @@ class LLM:
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
+            # skip if messages is empty (thus debug_message is empty)
             if debug_message:
-                self.llm_prompt_logger.debug(debug_message)
+                llm_prompt_logger.debug(debug_message)
                 resp = completion_unwrapped(*args, **kwargs)
             else:
                 logger.debug('No completion messages!')
                 resp = {'choices': [{'message': {'content': ''}}]}
 
+            # log the response
             message_back = resp['choices'][0]['message']['content']
             if message_back:
-                self.llm_response_logger.debug(message_back)
+                llm_response_logger.debug(message_back)
 
                 # post-process to log costs
                 self._post_completion(resp)
@@ -288,7 +286,6 @@ class LLM:
             retry=retry_if_exception_type(self.retry_exceptions),
             wait=custom_completion_wait,
         )
-        @with_session_context
         async def async_completion_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion function."""
             # some callers might just send the messages directly
@@ -315,7 +312,7 @@ class LLM:
             try:
                 # Directly call and await litellm_acompletion
                 if debug_message:
-                    self.llm_prompt_logger.debug(debug_message)
+                    llm_prompt_logger.debug(debug_message)
                     resp = await async_completion_unwrapped(*args, **kwargs)
                 else:
                     logger.debug('No completion messages!')
@@ -324,7 +321,7 @@ class LLM:
                 # skip if messages is empty (thus debug_message is empty)
                 if debug_message:
                     message_back = resp['choices'][0]['message']['content']
-                    self.llm_response_logger.debug(message_back)
+                    llm_response_logger.debug(message_back)
                 else:
                     resp = {'choices': [{'message': {'content': ''}}]}
                 self._post_completion(resp)
@@ -362,7 +359,6 @@ class LLM:
             retry=retry_if_exception_type(self.retry_exceptions),
             wait=custom_completion_wait,
         )
-        @with_session_context
         async def async_acompletion_stream_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion with streaming function."""
             # some callers might just send the messages directly
@@ -375,8 +371,7 @@ class LLM:
             debug_message = ''
             for message in messages:
                 debug_message += message_separator + message['content']
-
-            self.llm_prompt_logger.debug(debug_message)
+            llm_prompt_logger.debug(debug_message)
 
             try:
                 # Directly call and await litellm_acompletion
@@ -395,7 +390,7 @@ class LLM:
                         )
                     # with streaming, it is "delta", not "message"!
                     message_back = chunk['choices'][0]['delta']['content']
-                    self.llm_response_logger.debug(message_back)
+                    llm_response_logger.debug(message_back)
                     self._post_completion(chunk)
 
                     yield chunk

@@ -245,11 +245,10 @@ class LlmFileHandler(logging.FileHandler):
             if sid not in cls._response_instances:
                 cls._response_instances[sid] = cls(sid, llm_log_type.value)
             return cls._response_instances[sid]
-        # This should be unreachable if the type is correct,
-        # but we include it for robustness
-        raise ValueError(
-            f'Unexpected llm_log_type: {llm_log_type}. This should not happen.'
-        )
+        else:
+            raise ValueError(
+                f'Invalid llm_log_type: {llm_log_type}. Must be a LlmLogType enum.'
+            )
 
     def __init__(self, sid: str, filename: str, mode='a', encoding='utf-8', delay=True):
         """Initializes an instance of LlmFileHandler."""
@@ -304,10 +303,19 @@ def _get_llm_file_handler(llm_log_type: LlmLogType, sid: str, log_level: int):
     return llm_file_handler
 
 
-def setup_llm_logger(llm_log_type: LlmLogType, sid: str, log_level: int):
+def _setup_llm_logger(llm_log_type: LlmLogType, sid: str, log_level: int):
     logger = logging.getLogger(f'{llm_log_type.value}_{sid}')
     logger.propagate = False
     logger.setLevel(log_level)
     if LOG_TO_FILE:
         logger.addHandler(_get_llm_file_handler(llm_log_type, sid, log_level))
     return logger
+
+
+def get_llm_loggers(sid: str = 'default'):
+    return {
+        LlmLogType.PROMPT: _setup_llm_logger(LlmLogType.PROMPT, sid, current_log_level),
+        LlmLogType.RESPONSE: _setup_llm_logger(
+            LlmLogType.RESPONSE, sid, current_log_level
+        ),
+    }
