@@ -317,7 +317,7 @@ class EventStreamRuntime(Runtime):
     )
     def _wait_until_alive(self):
         self._refresh_logs()
-        if not self.log_buffer.client_ready:
+        if not (self.log_buffer and self.log_buffer.client_ready):
             raise RuntimeError('Runtime client is not ready.')
 
         response = self.session.get(f'{self.api_url}/alive')
