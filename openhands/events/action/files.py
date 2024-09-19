@@ -53,6 +53,6 @@ class FileEditAction(Action):
     path: str
     content: str
     thought: str = ''
-    action: str = ActionType.DRAFT_EDIT
+    action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
