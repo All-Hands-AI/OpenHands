@@ -1,13 +1,11 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { type editor } from "monaco-editor";
 import { VscCode } from "react-icons/vsc";
 import {
-  Await,
   ClientActionFunctionArgs,
-  defer,
   json,
   useFetcher,
   useLoaderData,
@@ -20,24 +18,11 @@ import FileExplorer from "#/components/file-explorer/FileExplorer";
 import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
 import { setChanged } from "#/state/file-state-slice";
 import { clientAction as saveFileContentClientAction } from "#/routes/save-file-content";
-
-function FileExplorerFallback() {
-  return (
-    <div className="h-full w-60 border border-yellow-500 rounded-bl-xl bg-neutral-800 px-3 py-2">
-      Loading files...
-    </div>
-  );
-}
+import { useSocket } from "#/context/socket";
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
-
-  if (token) {
-    const files = retrieveFiles(token);
-    return defer({ files });
-  }
-
-  return defer({ files: Promise.resolve([]) }, { status: 401 });
+  return json({ token });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -67,7 +52,7 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { files } = useLoaderData<typeof clientLoader>();
+  const { token } = useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher<typeof clientAction>({ key: "file-selector" });
   const saveFile = useFetcher<typeof saveFileContentClientAction>({
     key: "save-file",
@@ -76,12 +61,19 @@ function CodeEditor() {
     Record<string, string>
   >({});
 
+  const { isConnected } = useSocket();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const activeFilepath = useSelector((state: RootState) => state.code.path);
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
+
+  const [files, setFiles] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    if (isConnected && token) retrieveFiles(token).then(setFiles);
+  }, [isConnected, token]);
 
   React.useEffect(() => {
     // save file content on cmd+s
@@ -193,11 +185,7 @@ function CodeEditor() {
 
   return (
     <div className="flex h-full w-full bg-neutral-900 relative">
-      <Suspense fallback={<FileExplorerFallback />}>
-        <Await resolve={files}>
-          {(resolvedFiled) => <FileExplorer files={resolvedFiled} />}
-        </Await>
-      </Suspense>
+      <FileExplorer files={files} />
       <div className="flex flex-col min-h-0 w-full pt-3">
         <div className="flex grow items-center justify-center">
           {!fileContents[activeFilepath] &&
