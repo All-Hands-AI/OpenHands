@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import time
 import uuid
 from zipfile import ZipFile
 
@@ -169,18 +168,17 @@ class EventStreamRuntime(Runtime):
             plugins=plugins,
         )
 
-        self._wait_until_alive()
-
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
 
         logger.info('Waiting for runtime container to be alive...')
+        self._wait_until_alive()
+
+        self.setup_initial_env()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
-        logger.info(f'Container initialized with env vars: {env_vars}')
-        time.sleep(1)
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
