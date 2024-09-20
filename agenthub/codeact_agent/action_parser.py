@@ -195,20 +195,22 @@ class CodeActActionParserFileEdit(ActionParser):
 
     def check_condition(self, action_str: str) -> bool:
         self.file_edit = re.search(
-            r'<file_edit path="(.*?)">(.*?)</file_edit>', action_str, re.DOTALL
+            r'<file_edit\s+path=(["\']?)(.*?)\1>(.*?)</file_edit>',
+            action_str,
+            re.DOTALL,
         )
-        if self.file_edit is not None:
+        if self.file_edit is None:
+            return False
+
+        path = self.file_edit.group(2)
+        if not path:
             logger.warning(
-                (
-                    f'<file_edit> detected by parser but no `path` specified in action: {action_str}.\n'
-                    'This is likely a LLM quality issue.'
-                )
+                f'<file_edit> detected by parser but no `path` specified in action: {action_str}.\n'
+                'This is likely a LLM quality issue.'
             )
-        return (
-            self.file_edit is not None
-            and self.file_edit.group(1) is not None
-            and self.file_edit.group(2) is not None
-        )
+            return False
+
+        return True
 
     def parse(self, action_str: str) -> Action:
         assert (

@@ -25,24 +25,32 @@ HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
 def _extract_code(string):
     pattern = r'```(?:\w*\n)?(.*?)```'
     matches = re.findall(pattern, string, re.DOTALL)
-    assert matches
+    if not matches:
+        return None
     return matches[0].strip()
 
 
-def get_new_file_contents(llm: LLM, old_contents: str, draft_changes: str) -> str:
-    messages = [
-        {'role': 'system', 'content': SYS_MSG},
-        {
-            'role': 'user',
-            'content': USER_MSG.format(
-                old_contents=old_contents, draft_changes=draft_changes
-            ),
-        },
-    ]
-    print('messages for edit', messages)
-    resp = llm.completion(messages=messages)
-    print('raw response for edit', resp)
-    return _extract_code(resp['choices'][0]['message']['content'])
+def get_new_file_contents(
+    llm: LLM, old_contents: str, draft_changes: str, num_retries: int = 3
+) -> str | None:
+    while num_retries > 0:
+        messages = [
+            {'role': 'system', 'content': SYS_MSG},
+            {
+                'role': 'user',
+                'content': USER_MSG.format(
+                    old_contents=old_contents, draft_changes=draft_changes
+                ),
+            },
+        ]
+        print('messages for edit', messages)
+        resp = llm.completion(messages=messages)
+        print('raw response for edit', resp)
+        new_contents = _extract_code(resp['choices'][0]['message']['content'])
+        if new_contents is not None:
+            return new_contents
+        num_retries -= 1
+    return None
 
 
 def get_diff(old_contents: str, new_contents: str, filepath: str) -> str:

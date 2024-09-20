@@ -496,6 +496,11 @@ class EventStreamRuntime(Runtime):
             updated_content = get_new_file_contents(
                 self.draft_editor_llm, old_file_content, action.content
             )
+            if updated_content is None:
+                return ErrorObservation(
+                    'Failed to get new file contents. '
+                    'Please try to reduce the number of edits and try again.'
+                )
             diff = get_diff(old_file_content, updated_content, action.path)
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
             return FileEditObservation(content=diff, path=action.path, prev_exist=True)
