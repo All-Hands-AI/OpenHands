@@ -1,6 +1,7 @@
 import re
 
 from openhands.controller.action_parser import ActionParser, ResponseParser
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -45,8 +46,8 @@ class CodeActResponseParser(ResponseParser):
         for lang in ['bash', 'ipython', 'browse']:
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
-            if '<edit_file>' in action and '</edit_file>' not in action:
-                action += '</edit_file>'
+            if '<file_edit' in action and '</file_edit>' not in action:
+                action += '</file_edit>'
         return action
 
     def parse_action(self, action_str: str) -> Action:
@@ -194,8 +195,15 @@ class CodeActActionParserFileEdit(ActionParser):
 
     def check_condition(self, action_str: str) -> bool:
         self.file_edit = re.search(
-            r'<file_edit file_path="(.*?)">(.*?)</file_edit>', action_str, re.DOTALL
+            r'<file_edit path="(.*?)">(.*?)</file_edit>', action_str, re.DOTALL
         )
+        if self.file_edit is None:
+            logger.warning(
+                (
+                    f'<file_edit> detected by parser but no `path` specified in action: {action_str}.\n'
+                    'This is likely a LLM quality issue.'
+                )
+            )
         return (
             self.file_edit is not None
             and self.file_edit.group(1) is not None

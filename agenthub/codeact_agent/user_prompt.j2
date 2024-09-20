@@ -15,7 +15,7 @@ openhands@runtime:~/workspace$
 
 ASSISTANT:
 There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
-<file_edit file="/workspace/app.py">
+<file_edit path="/workspace/app.py">
 from flask import Flask
 app = Flask(__name__)
 
@@ -170,7 +170,7 @@ USER:
 
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
-<file_edit file="/workspace/app.py">
+<file_edit path="/workspace/app.py">
 # above stays the same
 @app.route('/')
 def index():

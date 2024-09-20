@@ -12,6 +12,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     CmdRunAction,
+    FileEditAction,
     IPythonRunCellAction,
     MessageAction,
 )
@@ -108,6 +109,8 @@ class CodeActAgent(Agent):
             return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, AgentDelegateAction):
             return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
+        elif isinstance(action, FileEditAction):
+            return f'{action.thought}\n<file_edit path={action.path}>\n{action.content}\n</file_edit>'
         elif isinstance(action, MessageAction):
             return action.content
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
@@ -120,6 +123,7 @@ class CodeActAgent(Agent):
             or isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
+            or isinstance(action, FileEditAction)
             or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
             content = [TextContent(text=self.action_to_str(action))]
@@ -158,7 +162,7 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileEditObservation):
-            text = obs_prefix + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(str(obs), max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = obs_prefix + truncate_content(str(obs.outputs), max_message_chars)
