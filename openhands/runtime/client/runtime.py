@@ -38,6 +38,7 @@ from openhands.llm.llm import LLM
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.client.edit import get_diff, get_new_file_contents
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.plugins.agent_skills.file_ops.file_ops import _lint_file
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -501,7 +502,22 @@ class EventStreamRuntime(Runtime):
                     'Failed to get new file contents. '
                     'Please try to reduce the number of edits and try again.'
                 )
+
             diff = get_diff(old_file_content, updated_content, action.path)
+
+            # Lint the updated content
+            if self.config.sandbox.enable_auto_lint:
+                suffix = os.path.splitext(action.path)[1]
+                with tempfile.NamedTemporaryFile(
+                    suffix=suffix, mode='w+', encoding='utf-8'
+                ) as temp_file:
+                    temp_file.write(updated_content)
+                    temp_file.flush()
+                    lint_error, _ = _lint_file(temp_file.name)
+                    if lint_error:
+                        error_message = f'\n=== Linting failed for edited file [{action.path}] ===\n{lint_error}\n===\nChanges tried:\n{diff}\n==='
+                        return ErrorObservation(error_message)
+
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
             return FileEditObservation(content=diff, path=action.path, prev_exist=True)
         else:
