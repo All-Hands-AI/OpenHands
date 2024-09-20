@@ -8,7 +8,6 @@ import {
   json,
   ClientActionFunctionArgs,
   ClientLoaderFunctionArgs,
-  useBeforeUnload,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
@@ -67,7 +66,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 function App() {
   const dispatch = useDispatch();
   const { files } = useSelector((state: RootState) => state.selectedFiles);
-  const { start, send, stop, isConnected } = useSocket();
+  const { start, send } = useSocket();
   const { settings, token, ghToken, repo, q } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
@@ -145,17 +144,6 @@ function App() {
     dispatch(clearMessages());
     startSocketConnection();
   });
-
-  // TODO: This is a temporary solution to ensure that the socket connection is closed when the user leaves the page.
-  // For some reason, backend enters a dead state when the connection is not closed without clearing the token.
-  /* useBeforeUnload(
-    React.useCallback(() => {
-      if (isConnected) {
-        stop();
-        localStorage.removeItem("token");
-      }
-    }, [isConnected]),
-  ); */
 
   const {
     isOpen: securityModalIsOpen,
