@@ -143,9 +143,25 @@ export default function App() {
                 >
                   Account Settings
                 </ContextMenuListItem>
-                <ContextMenuListItem>Documentation</ContextMenuListItem>
-                <ContextMenuSeparator />
-                <ContextMenuListItem>Logout</ContextMenuListItem>
+                {user && (
+                  <>
+                    <ContextMenuSeparator />
+                    <ContextMenuListItem
+                      onClick={() => {
+                        submit(
+                          {},
+                          {
+                            method: "POST",
+                            action: "/logout",
+                            navigate: false,
+                          },
+                        );
+                      }}
+                    >
+                      Logout
+                    </ContextMenuListItem>
+                  </>
+                )}
               </ContextMenu>
             )}
           </div>
@@ -157,6 +173,15 @@ export default function App() {
           >
             <CogTooth />
           </button>
+          <a
+            href="https://docs.all-hands.dev"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
+            aria-label="Documentation"
+          >
+            Docs
+          </a>
           {!!token && (
             <button
               type="button"
