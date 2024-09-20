@@ -44,6 +44,7 @@ ColorType = Literal[
 ]
 
 LOG_COLORS: Mapping[str, ColorType] = {
+    'DEBUG': 'blue',
     'ACTION': 'green',
     'USER_ACTION': 'light_red',
     'OBSERVATION': 'yellow',
@@ -57,8 +58,8 @@ LOG_COLORS: Mapping[str, ColorType] = {
 class ColoredFormatter(logging.Formatter):
     """Formatter for colored logging in console."""
 
-    def format(self, record):
-        msg_type = record.__dict__.get('msg_type')
+    def format(self, record: logging.LogRecord) -> str:
+        msg_type = record.__dict__.get('msg_type', 'INFO')
         event_source = record.__dict__.get('event_source')
         if event_source:
             new_msg_type = f'{event_source.upper()}_{msg_type}'
@@ -84,43 +85,42 @@ class ColoredFormatter(logging.Formatter):
 class NoColorFormatter(logging.Formatter):
     """Formatter for non-colored logging in files."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         # Create a deep copy of the record to avoid modifying the original
-        new_record = copy.deepcopy(record)
+        new_record: logging.LogRecord = copy.deepcopy(record)
         # Strip ANSI color codes from the message
         new_record.msg = strip_ansi(new_record.msg)
 
         return super().format(new_record)
 
 
-def strip_ansi(str: str) -> str:
+def strip_ansi(s: str) -> str:
     """
     Removes ANSI escape sequences from str, as defined by ECMA-048 in
     http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
     # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
     """
-
     pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
-    stripped = pattern.sub('', str)
+    stripped = pattern.sub('', s)
     return stripped
 
 
-console_formatter = ColoredFormatter(
+console_formatter: ColoredFormatter = ColoredFormatter(
     '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
 
-file_formatter = NoColorFormatter(
+file_formatter: NoColorFormatter = NoColorFormatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
 
-llm_formatter = logging.Formatter('%(message)s')
+llm_formatter: logging.Formatter = logging.Formatter('%(message)s')
 
 
 class SensitiveDataFilter(logging.Filter):
-    def filter(self, record):
-        # start with attributes
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Start with attributes
         sensitive_patterns = [
             'api_key',
             'aws_access_key_id',
@@ -130,17 +130,21 @@ class SensitiveDataFilter(logging.Filter):
             'jwt_secret',
         ]
 
-        # add env var names
+        # Add env var names
         env_vars = [attr.upper() for attr in sensitive_patterns]
         sensitive_patterns.extend(env_vars)
 
-        # and some special cases
-        sensitive_patterns.append('JWT_SECRET')
-        sensitive_patterns.append('LLM_API_KEY')
-        sensitive_patterns.append('GITHUB_TOKEN')
-        sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
+        # And some special cases
+        sensitive_patterns.extend(
+            [
+                'JWT_SECRET',
+                'LLM_API_KEY',
+                'GITHUB_TOKEN',
+                'SANDBOX_ENV_GITHUB_TOKEN',
+            ]
+        )
 
-        # this also formats the message with % args
+        # This also formats the message with % args
         msg = record.getMessage()
         record.args = ()
 
@@ -148,25 +152,29 @@ class SensitiveDataFilter(logging.Filter):
             pattern = rf"{attr}='?([\w-]+)'?"
             msg = re.sub(pattern, f"{attr}='******'", msg)
 
-        # passed with msg
+        # Passed with msg
         record.msg = msg
         return True
 
 
-def get_console_handler(log_level=logging.INFO):
+def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
     """Returns a console handler for logging."""
-    console_handler = logging.StreamHandler()
+    console_handler: logging.StreamHandler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(console_formatter)
     return console_handler
 
 
-def get_file_handler(log_dir, log_level=logging.INFO):
+def get_file_handler(
+    log_dir: str, log_level: int = logging.INFO
+) -> logging.FileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y-%m-%d')
-    file_name = f'openhands_{timestamp}.log'
-    file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
+    timestamp: str = datetime.now().strftime('%Y-%m-%d')
+    file_name: str = f'openhands_{timestamp}.log'
+    file_handler: logging.FileHandler = logging.FileHandler(
+        os.path.join(log_dir, file_name)
+    )
     file_handler.setLevel(log_level)
     file_handler.setFormatter(file_formatter)
     return file_handler
@@ -207,7 +215,8 @@ openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
 openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')
 
-LOG_DIR = os.path.join(
+# Define LOG_DIR after setting up the logger
+LOG_DIR: str = os.path.join(
     # parent dir of openhands/core (i.e., root of the repo)
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
@@ -247,45 +256,49 @@ class LlmFileHandler(logging.FileHandler):
                 f'Invalid llm_log_type: {llm_log_type}. Must be a LlmLogType enum.'
             )
 
-    def __init__(self, sid: str, filename: str, mode='a', encoding='utf-8', delay=True):
+    def __init__(
+        self,
+        sid: str,
+        filename: str,
+        mode: str = 'a',
+        encoding: str = 'utf-8',
+        delay: bool = True,
+    ) -> None:
         """Initializes an instance of LlmFileHandler."""
-        self.filename = filename
-        self.message_counter = 1
-        self.log_directory = os.path.join(LOG_DIR, 'llm', sid)
+        self.filename: str = filename
+        self.message_counter: int = 1
+        self.log_directory: str = os.path.join(LOG_DIR, 'llm', sid)
         os.makedirs(self.log_directory, exist_ok=True)
 
         if not DEBUG:
             # Clear the log directory if not in debug mode
             for file in os.listdir(self.log_directory):
-                file_path = os.path.join(self.log_directory, file)
+                file_path: str = os.path.join(self.log_directory, file)
                 try:
                     os.unlink(file_path)
                 except Exception as e:
                     openhands_logger.error(f'Failed to delete {file_path}. Reason: {e}')
         else:
             # In DEBUG mode, continue writing existing log directory
-            # find the highest message counter
-            existing_files = glob.glob(
+            # Find the highest message counter
+            existing_files: list[str] = glob.glob(
                 os.path.join(self.log_directory, f'{self.filename}_*.log')
             )
             if existing_files:
-                highest_counter = max(
+                highest_counter: int = max(
                     int(f.split('_')[-1].split('.')[0]) for f in existing_files
                 )
                 self.message_counter = highest_counter + 1
 
-        filename = f'{self.filename}_{self.message_counter:03}.log'
-        self.baseFilename = os.path.join(self.log_directory, filename)
+        filename_full: str = f'{self.filename}_{self.message_counter:03}.log'
+        self.baseFilename: str = os.path.join(self.log_directory, filename_full)
         super().__init__(self.baseFilename, mode, encoding, delay)
 
-    def emit(self, record):
-        """Emits a log record.
+    def emit(self, record: logging.LogRecord) -> None:
+        """Emits a log record."""
 
-        Args:
-            record (logging.LogRecord): The log record to emit.
-        """
-        filename = f'{self.filename}_{self.message_counter:03}.log'
-        self.baseFilename = os.path.join(self.log_directory, filename)
+        filename_full: str = f'{self.filename}_{self.message_counter:03}.log'
+        self.baseFilename = os.path.join(self.log_directory, filename_full)
         self.stream = self._open()
         super().emit(record)
         self.stream.close()
@@ -293,15 +306,19 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(llm_log_type: LlmLogType, sid: str, log_level: int):
-    llm_file_handler = LlmFileHandler.get_instance(sid, llm_log_type)
+def _get_llm_file_handler(
+    llm_log_type: LlmLogType, sid: str, log_level: int
+) -> logging.FileHandler:
+    llm_file_handler: LlmFileHandler = LlmFileHandler.get_instance(sid, llm_log_type)
     llm_file_handler.setFormatter(llm_formatter)
     llm_file_handler.setLevel(log_level)
     return llm_file_handler
 
 
-def _setup_llm_logger(llm_log_type: LlmLogType, sid: str, log_level: int):
-    logger = logging.getLogger(f'{llm_log_type.value}_{sid}')
+def _setup_llm_logger(
+    llm_log_type: LlmLogType, sid: str, log_level: int
+) -> logging.Logger:
+    logger: logging.Logger = logging.getLogger(f'{llm_log_type.value}_{sid}')
     logger.propagate = False
     logger.setLevel(log_level)
     if LOG_TO_FILE:
@@ -309,7 +326,7 @@ def _setup_llm_logger(llm_log_type: LlmLogType, sid: str, log_level: int):
     return logger
 
 
-def get_llm_loggers(sid: str = 'default'):
+def get_llm_loggers(sid: str = 'default') -> dict[LlmLogType, logging.Logger]:
     return {
         LlmLogType.PROMPT: _setup_llm_logger(LlmLogType.PROMPT, sid, current_log_level),
         LlmLogType.RESPONSE: _setup_llm_logger(
