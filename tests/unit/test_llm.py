@@ -35,20 +35,6 @@ def default_config():
     )
 
 
-@pytest.fixture
-def llm_test_instance(default_config):
-    with patch('openhands.llm.llm.LLM._call_completion') as mock_call_completion:
-        llm = LLM(config=default_config)
-        llm._call_completion = mock_call_completion
-        yield llm
-
-
-@pytest.fixture
-def mock_call_completion():
-    with patch('openhands.llm.llm.LLM._call_completion') as mock:
-        yield mock
-
-
 def test_llm_init_with_default_config(default_config):
     llm = LLM(default_config)
     assert llm.config.model == 'gpt-4o'
@@ -121,39 +107,27 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
 
 
-def test_completion_with_mocked_logger(llm_test_instance, mock_logger):
-    llm_test_instance._call_completion.return_value = {
+# Tests involving completion and retries
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_with_mocked_logger(
+    mock_litellm_completion, default_config, mock_logger
+):
+    mock_litellm_completion.return_value = {
         'choices': [{'message': {'content': 'Test response'}}]
     }
 
-    response = llm_test_instance.completion(
+    llm = LLM(config=default_config)
+    response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
     )
 
     assert response['choices'][0]['message']['content'] == 'Test response'
-    assert llm_test_instance._call_completion.call_count == 1
+    assert mock_litellm_completion.call_count == 1
 
     mock_logger.debug.assert_called()
-
-
-# Tests involving completion and retries
-
-
-def test_completion(default_config):
-    with patch.object(LLM, '_call_completion') as mock_call_completion:
-        mock_response = {
-            'choices': [{'message': {'content': 'This is a test message.'}}]
-        }
-        mock_call_completion.return_value = mock_response
-        test_llm = LLM(config=default_config)
-        response = test_llm.completion(
-            messages=[{'role': 'user', 'content': 'Hello!'}],
-            stream=False,
-            drop_params=True,
-        )
-        # Assertions for non-streaming completion
-        assert response['choices'][0]['message']['content'] != ''
 
 
 @pytest.mark.parametrize(
@@ -178,39 +152,47 @@ def test_completion(default_config):
         (RateLimitError, {'llm_provider': 'test_provider', 'model': 'test_model'}, 2),
     ],
 )
+@patch('openhands.llm.llm.litellm_completion')
 def test_completion_retries(
-    llm_test_instance, exception_class, extra_args, expected_retries
+    mock_litellm_completion,
+    default_config,
+    exception_class,
+    extra_args,
+    expected_retries,
 ):
-    llm_test_instance._call_completion.side_effect = [
+    mock_litellm_completion.side_effect = [
         exception_class('Test error message', **extra_args),
         {'choices': [{'message': {'content': 'Retry successful'}}]},
     ]
 
-    response = llm_test_instance.completion(
+    llm = LLM(config=default_config)
+    response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
     )
 
     assert response['choices'][0]['message']['content'] == 'Retry successful'
-    assert llm_test_instance._call_completion.call_count == expected_retries
+    assert mock_litellm_completion.call_count == expected_retries
 
 
-def test_completion_rate_limit_wait_time(llm_test_instance):
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config):
     with patch('time.sleep') as mock_sleep:
-        llm_test_instance._call_completion.side_effect = [
+        mock_litellm_completion.side_effect = [
             RateLimitError(
                 'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),
             {'choices': [{'message': {'content': 'Retry successful'}}]},
         ]
 
-        response = llm_test_instance.completion(
+        llm = LLM(config=default_config)
+        response = llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
         )
 
         assert response['choices'][0]['message']['content'] == 'Retry successful'
-        assert llm_test_instance._call_completion.call_count == 2
+        assert mock_litellm_completion.call_count == 2
 
         mock_sleep.assert_called_once()
         wait_time = mock_sleep.call_args[0][0]
@@ -219,58 +201,58 @@ def test_completion_rate_limit_wait_time(llm_test_instance):
         ), f'Expected wait time between 60 and 240 seconds, but got {wait_time}'
 
 
-def test_completion_exhausts_retries(llm_test_instance):
-    llm_test_instance._call_completion.side_effect = APIConnectionError(
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_exhausts_retries(mock_litellm_completion, default_config):
+    mock_litellm_completion.side_effect = APIConnectionError(
         'Persistent error', llm_provider='test_provider', model='test_model'
     )
 
+    llm = LLM(config=default_config)
     with pytest.raises(APIConnectionError):
-        llm_test_instance.completion(
+        llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
         )
 
-    assert (
-        llm_test_instance._call_completion.call_count
-        == llm_test_instance.config.num_retries
-    )
+    assert mock_litellm_completion.call_count == llm.config.num_retries
 
 
-def test_completion_operation_cancelled(llm_test_instance):
-    llm_test_instance._call_completion.side_effect = OperationCancelled(
-        'Operation cancelled'
-    )
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_operation_cancelled(mock_litellm_completion, default_config):
+    mock_litellm_completion.side_effect = OperationCancelled('Operation cancelled')
 
+    llm = LLM(config=default_config)
     with pytest.raises(OperationCancelled):
-        llm_test_instance.completion(
+        llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
         )
 
-    assert llm_test_instance._call_completion.call_count == 1
+    assert mock_litellm_completion.call_count == 1
 
 
-def test_completion_keyboard_interrupt(llm_test_instance):
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_keyboard_interrupt(mock_litellm_completion, default_config):
     def side_effect(*args, **kwargs):
         raise KeyboardInterrupt('Simulated KeyboardInterrupt')
 
-    llm_test_instance._call_completion.side_effect = side_effect
+    mock_litellm_completion.side_effect = side_effect
 
+    llm = LLM(config=default_config)
     with pytest.raises(OperationCancelled):
         try:
-            llm_test_instance.completion(
+            llm.completion(
                 messages=[{'role': 'user', 'content': 'Hello!'}],
                 stream=False,
             )
         except KeyboardInterrupt:
-            # Convert KeyboardInterrupt to OperationCancelled
-            # This simulates what should happen in the LLM class
             raise OperationCancelled('Operation cancelled due to KeyboardInterrupt')
 
-    assert llm_test_instance._call_completion.call_count == 1
+    assert mock_litellm_completion.call_count == 1
 
 
-def test_completion_keyboard_interrupt_handler(llm_test_instance):
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_config):
     global _should_exit
 
     def side_effect(*args, **kwargs):
@@ -278,17 +260,41 @@ def test_completion_keyboard_interrupt_handler(llm_test_instance):
         _should_exit = True
         return {'choices': [{'message': {'content': 'Simulated interrupt response'}}]}
 
-    llm_test_instance._call_completion.side_effect = side_effect
+    mock_litellm_completion.side_effect = side_effect
 
-    result = llm_test_instance.completion(
+    llm = LLM(config=default_config)
+    result = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
     )
 
-    assert llm_test_instance._call_completion.call_count == 1
-
+    assert mock_litellm_completion.call_count == 1
     assert result['choices'][0]['message']['content'] == 'Simulated interrupt response'
-
     assert _should_exit
 
     _should_exit = False
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
+    mock_response = {
+        'choices': [{'message': {'content': 'This is a mocked response.'}}]
+    }
+    mock_litellm_completion.return_value = mock_response
+
+    test_llm = LLM(config=default_config)
+    response = test_llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        stream=False,
+        drop_params=True,
+    )
+
+    # Assertions
+    assert response['choices'][0]['message']['content'] == 'This is a mocked response.'
+    mock_litellm_completion.assert_called_once()
+
+    # Check if the correct arguments were passed to litellm_completion
+    call_args = mock_litellm_completion.call_args[1]  # Get keyword arguments
+    assert call_args['model'] == default_config.model
+    assert call_args['messages'] == [{'role': 'user', 'content': 'Hello!'}]
+    assert not call_args['stream']

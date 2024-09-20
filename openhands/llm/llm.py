@@ -9,6 +9,7 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
@@ -152,7 +153,7 @@ class LLM:
         )
 
         self._completion = partial(
-            self._call_completion,
+            litellm_completion,
             model=self.config.model,
             api_key=self.config.api_key,
             base_url=self.config.base_url,
@@ -465,12 +466,6 @@ class LLM:
             ):
                 return element['image_url']['url']
         return str(element)
-
-    def _call_completion(self, *args, **kwargs):
-        """This is a wrapper for the litellm completion function which
-        makes it mockable for testing.
-        """
-        return litellm.completion(*args, **kwargs)
 
     async def _call_acompletion(self, *args, **kwargs):
         """This is a wrapper for the litellm acompletion function which
