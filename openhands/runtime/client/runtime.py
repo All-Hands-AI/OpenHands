@@ -241,16 +241,23 @@ class EventStreamRuntime(Runtime):
                 environment['DEBUG'] = 'true'
 
             logger.info(f'Workspace Base: {self.config.workspace_base}')
-            if mount_dir is not None and sandbox_workspace_dir is not None:
-                # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
-                logger.info(f'Mount dir: {mount_dir}')
-            else:
-                logger.warn(
-                    'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
-                )
-                volumes = None
-            logger.info(f'Sandbox workspace: {sandbox_workspace_dir}')
+
+            # Define the named volume
+            volume_name = 'sandbox_workspace_volume'
+
+            try:
+                self.docker_client.volumes.get(volume_name)
+                logger.info(f'Using existing Docker volume: {volume_name}')
+            except docker.errors.NotFound:
+                # Create the volume if it doesn't exist
+                self.docker_client.volumes.create(name=volume_name)
+                logger.info(f'Created Docker volume: {volume_name}')
+
+            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
+            volumes = {volume_name: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+            logger.info(
+                f'Using Docker named volume: {volume_name} bound to {sandbox_workspace_dir}'
+            )
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
