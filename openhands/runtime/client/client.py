@@ -184,16 +184,11 @@ class RuntimeClient:
                 raise
 
         # Add sudoer
-        sudoer_line = r'%sudo ALL=(ALL) NOPASSWD:ALL\n'
-        sudoers_path = '/etc/sudoers.d/99_sudo'
-        if not Path(sudoers_path).exists():
-            with open(sudoers_path, 'w') as f:
-                f.write(sudoer_line)
-            output = subprocess.run(['chmod', '0440', sudoers_path])
-            if output.returncode != 0:
-                logger.error('Failed to chmod 99_sudo file!')
-            else:
-                logger.debug('Added sudoer successfully.')
+        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
+        if output.returncode != 0:
+            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
+        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
         command = (
             f'useradd -rm -d /home/{username} -s /bin/bash '
