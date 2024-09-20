@@ -9,7 +9,6 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
@@ -29,7 +28,11 @@ from tenacity import (
     wait_exponential,
 )
 
-from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.exceptions import (
+    LLMResponseError,
+    OperationCancelled,
+    UserCancelledError,
+)
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -149,7 +152,7 @@ class LLM:
         )
 
         self._completion = partial(
-            litellm_completion,
+            self._call_completion,
             model=self.config.model,
             api_key=self.config.api_key,
             base_url=self.config.base_url,
@@ -171,18 +174,21 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        def attempt_on_error(retry_state):
-            """Custom attempt function for litellm completion."""
+        def log_retry_attempt(retry_state):
+            """With before_sleep, this is called before `custom_completion_wait` and
+            ONLY if the retry is triggered by an exception."""
+            if should_exit():
+                raise OperationCancelled(
+                    'Operation cancelled.'
+                )  # exits the @retry loop
+            exception = retry_state.outcome.exception()
             logger.error(
-                f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
+                f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
                 exc_info=False,
             )
-            return None
 
         def custom_completion_wait(retry_state):
             """Custom wait function for litellm completion."""
-            if should_exit():
-                raise UserCancelledError('Shutdown requested during retry by user.')
             if not retry_state:
                 return 0
             exception = retry_state.outcome.exception() if retry_state.outcome else None
@@ -211,20 +217,16 @@ class LLM:
                 max=max_wait_time,
             )
 
-            # Check for shutdown before returning the wait time
-            if should_exit():
-                raise UserCancelledError('Shutdown requested during retry by user.')
-
             # Call the exponential wait function with retry_state to get the actual wait time
             return exponential_wait(retry_state)
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
             retry=(
                 retry_if_exception_type(self.retry_exceptions)
-                & retry_if_not_exception_type(UserCancelledError)
+                & retry_if_not_exception_type(OperationCancelled)
             ),
             wait=custom_completion_wait,
         )
@@ -289,12 +291,12 @@ class LLM:
         async_completion_unwrapped = self._async_completion
 
         @retry(
-            after=attempt_on_error,
+            after=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
             retry=(
                 retry_if_exception_type(self.retry_exceptions)
-                & retry_if_not_exception_type(UserCancelledError)
+                & retry_if_not_exception_type(OperationCancelled)
             ),
             wait=custom_completion_wait,
         )
@@ -365,12 +367,12 @@ class LLM:
                     pass
 
         @retry(
-            after=attempt_on_error,
+            after=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
             retry=(
                 retry_if_exception_type(self.retry_exceptions)
-                & retry_if_not_exception_type(UserCancelledError)
+                & retry_if_not_exception_type(OperationCancelled)
             ),
             wait=custom_completion_wait,
         )
@@ -464,7 +466,16 @@ class LLM:
                 return element['image_url']['url']
         return str(element)
 
+    def _call_completion(self, *args, **kwargs):
+        """This is a wrapper for the litellm completion function which
+        makes it mockable for testing.
+        """
+        return litellm.completion(*args, **kwargs)
+
     async def _call_acompletion(self, *args, **kwargs):
+        """This is a wrapper for the litellm acompletion function which
+        makes it mockable for testing.
+        """
         return await litellm.acompletion(*args, **kwargs)
 
     @property
@@ -545,10 +556,15 @@ class LLM:
             output_tokens = usage.get('completion_tokens')
 
             if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens) + '\n'
+                stats += ('\n' if stats else '') + 'Input tokens: ' + str(input_tokens)
 
             if output_tokens:
-                stats += 'Output tokens: ' + str(output_tokens) + '\n'
+                stats += (
+                    (' | ' if input_tokens else '\n')
+                    + 'Output tokens: '
+                    + str(output_tokens)
+                    + '\n'
+                )
 
             model_extra = usage.get('model_extra', {})
 
