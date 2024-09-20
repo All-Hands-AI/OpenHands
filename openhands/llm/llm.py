@@ -291,7 +291,7 @@ class LLM:
         async_completion_unwrapped = self._async_completion
 
         @retry(
-            after=log_retry_attempt,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
             retry=(
@@ -367,7 +367,7 @@ class LLM:
                     pass
 
         @retry(
-            after=log_retry_attempt,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
             retry=(

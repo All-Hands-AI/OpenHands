@@ -209,6 +209,7 @@ class CodeActAgent(Agent):
                 'anthropic-beta': 'prompt-caching-2024-07-31',
             }
 
+        # TODO: move exception handling to agent_controller
         try:
             response = self.llm.completion(**params)
         except OperationCancelled as e:
