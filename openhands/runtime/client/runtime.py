@@ -168,12 +168,13 @@ class EventStreamRuntime(Runtime):
             mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
             plugins=plugins,
         )
+
+        self._wait_until_alive()
+
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
 
         logger.info('Waiting for runtime container to be alive...')
-
-        self._wait_until_alive()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
