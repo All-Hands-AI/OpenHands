@@ -52,8 +52,6 @@ docker run \
     --pull=always \
     --add-host host.docker.internal:host-gateway \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e LLM_API_KEY="ollama" \
-    -e LLM_BASE_URL="http://host.docker.internal:11434" \
     -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
@@ -63,10 +61,11 @@ docker run \
 ```
 
 You should now be able to connect to `http://localhost:3000/`
+
 ### Configure the Web Application
 
 When running `openhands`, you'll need to set the following in the OpenHands UI through the Settings:
-- the model to `ollama/&lt;model-name&gt;`
+- the model to "ollama/&lt;model-name&gt;"
 - the base url to `http://host.docker.internal:11434`
 - the API key is optional, you can use any string, such as `ollama`.
 
