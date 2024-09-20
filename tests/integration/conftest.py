@@ -233,7 +233,7 @@ def patch_completion(monkeypatch, request):
     test_name = request.node.name
     # Mock LLM completion
     monkeypatch.setattr(
-        'openhands.llm.llm.litellm_completion',
+        'openhands.llm.llm.LLM._call_completion',
         partial(mock_completion, test_name=test_name),
     )
 

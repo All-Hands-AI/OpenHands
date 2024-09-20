@@ -195,7 +195,7 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
 
     codeact_agent.reset()
 
-    # Create a mock for litellm_completion
+    # Create a mock for _call_completion
     def check_headers(**kwargs):
         assert 'extra_headers' in kwargs
         assert 'anthropic-beta' in kwargs['extra_headers']
@@ -207,8 +207,8 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
         mock_response.choices[0].message.content = 'Hello! How can I assist you today?'
         return mock_response
 
-    # Use patch to replace litellm_completion with our check_headers function
-    with patch('openhands.llm.llm.litellm_completion', side_effect=check_headers):
+    # Use patch to replace _call_completion with our check_headers function
+    with patch('openhands.llm.llm.LLM._call_completion', side_effect=check_headers):
         # Also patch the action parser to return a MessageAction
         with patch.object(
             codeact_agent.action_parser,
