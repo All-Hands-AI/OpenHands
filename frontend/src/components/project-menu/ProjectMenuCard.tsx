@@ -11,9 +11,9 @@ import { retrieveWorkspaceZipBlob } from "#/api/open-hands";
 
 const downloadWorkspace = async () => {
   try {
-    const token = localStorage.getItem("ghToken");
+    const token = localStorage.getItem("token");
     if (!token) {
-      throw new Error("No GitHub token found");
+      throw new Error("No token found");
     }
 
     const blob = await retrieveWorkspaceZipBlob(token);

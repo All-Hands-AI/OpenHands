@@ -75,7 +75,7 @@ export const sendFeedback = async (token: string, data: Feedback) => {
 };
 
 export const retrieveWorkspaceZipBlob = async (token: string) => {
-  const response = await fetch("/api/zip-directory", {
+  const response = await fetch(`${BASE_URL}/api/zip-directory`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
