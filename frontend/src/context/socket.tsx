@@ -37,12 +37,16 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
+    /*
     const wsUrl = new URL("/", document.baseURI);
     wsUrl.protocol = wsUrl.protocol.replace("http", "ws");
     if (options?.token) wsUrl.searchParams.set("token", options.token);
-    // const ws = new WebSocket(`${wsUrl.origin}/ws`);
+    const ws = new WebSocket(`${wsUrl.origin}/ws`);
+    */
     // TODO: Remove hardcoded URL; may have to use a proxy
-    const ws = new WebSocket(`ws://localhost:3000/ws`);
+    const ws = new WebSocket(
+      `ws://localhost:3000/ws${options?.token ? `?token=${options.token}` : ""}`,
+    );
 
     ws.addEventListener("open", (event) => {
       setIsConnected(true);

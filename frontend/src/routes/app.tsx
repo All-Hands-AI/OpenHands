@@ -44,10 +44,10 @@ export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
   if (repo) localStorage.setItem("repo", repo);
 
   return json({
+    settings,
     token,
     ghToken,
     repo,
-    securityAnalyzer: settings.SECURITY_ANALYZER,
     q,
   });
 };
@@ -68,7 +68,7 @@ function App() {
   const dispatch = useDispatch();
   const { files } = useSelector((state: RootState) => state.selectedFiles);
   const { start, send, stop, isConnected } = useSocket();
-  const { token, ghToken, repo, securityAnalyzer, q } =
+  const { settings, token, ghToken, repo, q } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
@@ -76,13 +76,12 @@ function App() {
     start({
       token,
       onOpen: () => {
-        const settings = getSettings();
         const initEvent = {
           action: ActionType.INIT,
           args: settings,
         };
-
         send(JSON.stringify(initEvent));
+
         // first time connection
         if (!token) {
           if (ghToken) {
@@ -149,14 +148,14 @@ function App() {
 
   // TODO: This is a temporary solution to ensure that the socket connection is closed when the user leaves the page.
   // For some reason, backend enters a dead state when the connection is not closed without clearing the token.
-  useBeforeUnload(
+  /* useBeforeUnload(
     React.useCallback(() => {
       if (isConnected) {
         stop();
         localStorage.removeItem("token");
       }
     }, [isConnected]),
-  );
+  ); */
 
   const {
     isOpen: securityModalIsOpen,
@@ -200,13 +199,13 @@ function App() {
       <div className="h-[60px]">
         <Controls
           setSecurityOpen={onSecurityModalOpen}
-          showSecurityLock={!!securityAnalyzer}
+          showSecurityLock={!!settings.SECURITY_ANALYZER}
         />
       </div>
       <Security
         isOpen={securityModalIsOpen}
         onOpenChange={onSecurityModalOpenChange}
-        securityAnalyzer={securityAnalyzer}
+        securityAnalyzer={settings.SECURITY_ANALYZER}
       />
       <Toaster />
     </div>
