@@ -17,6 +17,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -24,13 +25,18 @@ from openhands.events.action import (
 from openhands.events.action.action import Action
 from openhands.events.observation import (
     ErrorObservation,
+    FileEditObservation,
+    FileReadObservation,
+    FileWriteObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.llm.llm import LLM
 from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.client.edit import get_diff, get_new_file_contents
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
@@ -170,6 +176,12 @@ class EventStreamRuntime(Runtime):
         )
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
+
+        if 'draft_editor' in self.config.llms:
+            self.draft_editor_llm = LLM(self.config.llms['draft_editor'])
+            logger.info(
+                f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
+            )
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
@@ -382,6 +394,9 @@ class EventStreamRuntime(Runtime):
             self.docker_client.close()
 
     def run_action(self, action: Action) -> Observation:
+        if isinstance(action, FileEditAction):
+            return self.edit(action)
+
         # set timeout to default if not set
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout
@@ -452,6 +467,41 @@ class EventStreamRuntime(Runtime):
 
     def write(self, action: FileWriteAction) -> Observation:
         return self.run_action(action)
+
+    def edit(self, action: FileEditAction) -> Observation:
+        if not hasattr(self, 'draft_editor_llm'):
+            raise RuntimeError(
+                'Edit action is not supported when Draft editor LLM is not set. Please set the "llm.draft_editor" in the config.'
+            )
+        obs = self.read(FileReadAction(path=action.path))
+
+        if (
+            isinstance(obs, ErrorObservation)
+            and 'File not found'.lower() in obs.content.lower()
+        ):
+            # directly write the new content
+            obs = self.write(
+                FileWriteAction(path=action.path, content=action.content.strip())
+            )
+            if isinstance(obs, ErrorObservation):
+                return obs
+            assert isinstance(obs, FileWriteObservation)
+            return FileEditObservation(
+                content=get_diff('', action.content, action.path),
+                path=action.path,
+                prev_exist=False,
+            )
+        elif isinstance(obs, FileReadObservation):
+            old_file_content = obs.content
+            updated_content = get_new_file_contents(
+                self.draft_editor_llm, old_file_content, action.content
+            )
+            diff = get_diff(old_file_content, updated_content, action.path)
+            obs = self.write(FileWriteAction(path=action.path, content=updated_content))
+            return FileEditObservation(content=diff, path=action.path, prev_exist=True)
+        else:
+            logger.error(f'Unhandled error observation: {obs}')
+            return obs
 
     def browse(self, action: BrowseURLAction) -> Observation:
         return self.run_action(action)

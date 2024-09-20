@@ -15,6 +15,7 @@ from openhands.events.action import (
 class CodeActResponseParser(ResponseParser):
     """Parser action:
     - CmdRunAction(command) - bash command to run
+    - FileEditAction(path, content) - edit a file
     - IPythonRunCellAction(code) - IPython code to run
     - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
     - MessageAction(content) - Message action to run (e.g. ask for clarification)
@@ -26,6 +27,7 @@ class CodeActResponseParser(ResponseParser):
         super().__init__()
         self.action_parsers = [
             CodeActActionParserFinish(),
+            CodeActActionParserFileEdit(),
             CodeActActionParserCmdRun(),
             CodeActActionParserIPythonRunCell(),
             CodeActActionParserAgentDelegate(),
@@ -43,6 +45,8 @@ class CodeActResponseParser(ResponseParser):
         for lang in ['bash', 'ipython', 'browse']:
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
+            if '<edit_file>' in action and '</edit_file>' not in action:
+                action += '</edit_file>'
         return action
 
     def parse_action(self, action_str: str) -> Action:

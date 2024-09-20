@@ -18,6 +18,7 @@ from openhands.events.action import (
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
+    FileEditObservation,
     IPythonRunCellObservation,
     UserRejectObservation,
 )
@@ -93,6 +94,10 @@ class CodeActAgent(Agent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
+        logger.info(f'SYSTEM PROMPT:\n{self.prompt_manager.system_message}')
+        logger.info(
+            f'INITIAL USER MESSAGE:\n{self.prompt_manager.initial_user_message}'
+        )
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
@@ -152,6 +157,9 @@ class CodeActAgent(Agent):
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, FileEditObservation):
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = obs_prefix + truncate_content(str(obs.outputs), max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
@@ -199,6 +207,7 @@ class CodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
+                '</file_edit>',
             ],
             'temperature': 0.0,
         }
