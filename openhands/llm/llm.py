@@ -24,6 +24,7 @@ from litellm.types.utils import CostPerToken
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
@@ -33,6 +34,7 @@ from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
+from openhands.runtime.utils.shutdown_listener import should_exit
 
 __all__ = ['LLM']
 
@@ -179,6 +181,8 @@ class LLM:
 
         def custom_completion_wait(retry_state):
             """Custom wait function for litellm completion."""
+            if should_exit():
+                raise UserCancelledError('Shutdown requested during retry by user.')
             if not retry_state:
                 return 0
             exception = retry_state.outcome.exception() if retry_state.outcome else None
@@ -207,6 +211,10 @@ class LLM:
                 max=max_wait_time,
             )
 
+            # Check for shutdown before returning the wait time
+            if should_exit():
+                raise UserCancelledError('Shutdown requested during retry by user.')
+
             # Call the exponential wait function with retry_state to get the actual wait time
             return exponential_wait(retry_state)
 
@@ -214,7 +222,10 @@ class LLM:
             after=attempt_on_error,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(UserCancelledError)
+            ),
             wait=custom_completion_wait,
         )
         def wrapper(*args, **kwargs):
@@ -281,7 +292,10 @@ class LLM:
             after=attempt_on_error,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(UserCancelledError)
+            ),
             wait=custom_completion_wait,
         )
         async def async_completion_wrapper(*args, **kwargs):
@@ -354,7 +368,10 @@ class LLM:
             after=attempt_on_error,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(UserCancelledError)
+            ),
             wait=custom_completion_wait,
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
