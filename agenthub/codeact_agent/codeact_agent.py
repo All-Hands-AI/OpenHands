@@ -153,7 +153,10 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            text = obs_prefix + truncate_content(str(obs.outputs), max_message_chars)
+            text = obs_prefix + truncate_content(
+                obs.outputs['content'] if 'content' in obs.outputs else '',
+                max_message_chars,
+            )
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
