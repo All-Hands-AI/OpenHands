@@ -197,7 +197,7 @@ class CodeActActionParserFileEdit(ActionParser):
         self.file_edit = re.search(
             r'<file_edit path="(.*?)">(.*?)</file_edit>', action_str, re.DOTALL
         )
-        if self.file_edit is None:
+        if self.file_edit is not None:
             logger.warning(
                 (
                     f'<file_edit> detected by parser but no `path` specified in action: {action_str}.\n'
