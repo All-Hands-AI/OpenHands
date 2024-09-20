@@ -179,7 +179,7 @@ class EventStreamRuntime(Runtime):
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
-        logger.info(f'Container initialized with env vars: {env_vars}')
+        logger.debug(f'Container initialized with env vars: {env_vars}')
         time.sleep(1)
 
     @staticmethod
@@ -247,13 +247,13 @@ class EventStreamRuntime(Runtime):
             if mount_dir is not None and sandbox_workspace_dir is not None:
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
                 volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
-                logger.info(f'Mount dir: {mount_dir}')
+                logger.debug(f'Mount dir: {mount_dir}')
             else:
                 logger.warn(
                     'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
                 )
                 volumes = None
-            logger.info(f'Sandbox workspace: {sandbox_workspace_dir}')
+            logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
@@ -282,7 +282,7 @@ class EventStreamRuntime(Runtime):
                 volumes=volumes,
             )
             self.log_buffer = LogBuffer(container)
-            logger.info(f'Container started. Server url: {self.api_url}')
+            logger.debug(f'Container started. Server url: {self.api_url}')
             return container
         except Exception as e:
             logger.error(
@@ -415,7 +415,7 @@ class EventStreamRuntime(Runtime):
                     'Action has been rejected by the user! Waiting for further user input.'
                 )
 
-            logger.info('Awaiting session')
+            logger.debug('Awaiting session')
             self._wait_until_alive()
 
             assert action.timeout is not None
@@ -515,7 +515,7 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            logger.debug(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
             # Refresh docker logs
             self._wait_until_alive()
 

@@ -102,8 +102,6 @@ def strip_ansi(str: str) -> str:
 
     pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
     stripped = pattern.sub('', str)
-    if stripped != str:
-        print(f'Stripped ANSI from {str} to {stripped}')
     return stripped
 
 
@@ -203,7 +201,6 @@ openhands_logger.setLevel(current_log_level)
 
 if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
-    openhands_logger.info('DEBUG mode enabled.')
 
 openhands_logger.addHandler(get_console_handler(current_log_level))
 openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))

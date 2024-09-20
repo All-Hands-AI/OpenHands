@@ -242,7 +242,7 @@ class RemoteRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                logger.info('Executing action')
+                logger.debug('Executing action')
                 request_body = {'action': event_to_dict(action)}
                 logger.debug(f'Request body: {request_body}')
                 response = send_request(
@@ -334,7 +334,7 @@ class RemoteRuntime(Runtime):
                 ),
             )
             if response.status_code == 200:
-                logger.info(
+                logger.debug(
                     f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}'
                 )
                 return
@@ -348,7 +348,7 @@ class RemoteRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            logger.debug(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
     def list_files(self, path: str | None = None) -> list[str]:
         self._wait_until_alive()

@@ -113,7 +113,7 @@ class AgentSession:
                 'Runtime must be initialized before the agent controller'
             )
 
-        logger.info(f'Agents: {agent_configs}')
+        logger.debug(f'Agents: {agent_configs}')
         logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
 
         self.controller = AgentController(
@@ -136,5 +136,4 @@ class AgentSession:
             )
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            logger.info(f'Error restoring state: {e}')
-        logger.info('Agent controller initialized.')
+            logger.debug(f'Cannot restore state: {e}')
