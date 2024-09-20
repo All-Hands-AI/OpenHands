@@ -56,3 +56,10 @@ class FileEditAction(Action):
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
+
+    def __repr__(self) -> str:
+        ret = '**FileEditAction**\n'
+        ret += f'Thought: {self.thought}\n'
+        ret += f'Path: [{self.path}]\n'
+        ret += f'Content:\n```\n{self.content}\n```\n'
+        return ret

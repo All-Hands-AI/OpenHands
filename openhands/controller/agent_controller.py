@@ -432,6 +432,10 @@ class AgentController:
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
             self.event_stream.add_event(action, EventSource.AGENT)
+        else:
+            assert isinstance(action, NullAction)
+            if action.next_obs is not None:
+                self.event_stream.add_event(action.next_obs, EventSource.AGENT)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})

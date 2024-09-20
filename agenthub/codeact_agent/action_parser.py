@@ -1,6 +1,10 @@
 import re
 
-from openhands.controller.action_parser import ActionParser, ResponseParser
+from openhands.controller.action_parser import (
+    ActionParseError,
+    ActionParser,
+    ResponseParser,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -191,18 +195,23 @@ class CodeActActionParserFileEdit(ActionParser):
     def __init__(
         self,
     ):
-        self.file_edit = None
+        self.file_edit_match: re.Match | None = None
 
     def check_condition(self, action_str: str) -> bool:
-        self.file_edit = re.search(
+        if '<file_edit' in action_str and 'path=' not in action_str:
+            raise ActionParseError(
+                error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit by setting `path="<path>"` in <file_edit> tag. For example: <file_edit path="path/to/file.txt">...</file_edit>'
+            )
+
+        self.file_edit_match = re.search(
             r'<file_edit\s+path=(["\']?)(.*?)\1>(.*?)</file_edit>',
             action_str,
             re.DOTALL,
         )
-        if self.file_edit is None:
+        if self.file_edit_match is None:
             return False
 
-        path = self.file_edit.group(2)
+        path = self.file_edit_match.group(2)
         if not path:
             logger.warning(
                 f'<file_edit> detected by parser but no `path` specified in action: {action_str}.\n'
@@ -214,11 +223,11 @@ class CodeActActionParserFileEdit(ActionParser):
 
     def parse(self, action_str: str) -> Action:
         assert (
-            self.file_edit is not None
-        ), 'self.file_edit should not be None when parse is called'
+            self.file_edit_match is not None
+        ), 'self.file_edit_match should not be None when parse is called'
 
-        file_path = self.file_edit.group(1).strip()
-        content = self.file_edit.group(2).strip()
-        thought = action_str.replace(self.file_edit.group(0), '').strip()
+        file_path = self.file_edit_match.group(2).strip()
+        content = self.file_edit_match.group(3).strip()
+        thought = action_str.replace(self.file_edit_match.string, '').strip()
 
         return FileEditAction(path=file_path, content=content, thought=thought)

@@ -2,6 +2,7 @@ import os
 from itertools import islice
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
+from openhands.controller.action_parser import ActionParseError
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -15,6 +16,7 @@ from openhands.events.action import (
     FileEditAction,
     IPythonRunCellAction,
     MessageAction,
+    NullAction,
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -95,6 +97,8 @@ class CodeActAgent(Agent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
+        logger.info(f'System prompt: {self.prompt_manager.system_message}')
+        logger.info(f'Initial user message: {self.prompt_manager.initial_user_message}')
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
@@ -226,7 +230,11 @@ class CodeActAgent(Agent):
                 thought=f'Agent encountered an error while processing the last action.\nError: {error_message}\nPlease try again.'
             )
 
-        return self.action_parser.parse(response)
+        try:
+            return self.action_parser.parse(response)
+        except ActionParseError as e:
+            logger.error(f'{e}')
+            return NullAction(next_obs=ErrorObservation(content=e.error))
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
