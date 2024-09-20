@@ -16,7 +16,9 @@ class GlobalPlannerAgent(CodeActAgent):
     def __init__(self, llm: LLM, config: AgentConfig) -> None:
         super().__init__(llm, config)
 
-        self.action_parser = PlannerResponseParser()
+        self.action_parser = PlannerResponseParser(
+            initial_task_str=self.initial_task_str
+        )
 
         # Planner agent can do everything except file-editing operations
         planner_agentskills_exclude = [

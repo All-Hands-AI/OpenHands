@@ -98,6 +98,7 @@ class CodeActAgent(Agent):
             '</execute_bash>',
             '</execute_browse>',
         ]
+        self.initial_task_str = ''
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
@@ -225,6 +226,7 @@ class CodeActAgent(Agent):
         if state.inputs.get('task') is not None:
             # CodeActAgent is delegated a task
             delegated_task = '\n' + state.inputs['task']
+            self.initial_task_str = state.inputs['task']
 
         messages: list[Message] = [
             Message(
@@ -255,6 +257,10 @@ class CodeActAgent(Agent):
                 message = self.get_observation_message(event)
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
+
+            if message and message.role == 'user' and not self.initial_task_str:
+                # first user message
+                self.initial_task_str = message.content[0].text
 
             # add regular message
             if message:
