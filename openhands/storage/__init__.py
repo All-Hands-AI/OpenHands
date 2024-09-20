@@ -13,5 +13,5 @@ def get_file_store(file_store: str, file_store_path: str | None = None) -> FileS
     elif file_store == 's3':
         return S3FileStore()
     elif file_store == 'google_cloud':
-        return GoogleCloudFileStore()
+        return GoogleCloudFileStore(file_store_path)
     return InMemoryFileStore()
