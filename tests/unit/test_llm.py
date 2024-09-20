@@ -9,12 +9,12 @@ from openhands.llm.llm import LLM
 
 @pytest.fixture
 def default_config():
-    return LLMConfig(model='gpt-3.5-turbo', api_key='test_key')
+    return LLMConfig(model='gpt-4o', api_key='test_key')
 
 
 def test_llm_init_with_default_config(default_config):
     llm = LLM(default_config)
-    assert llm.config.model == 'gpt-3.5-turbo'
+    assert llm.config.model == 'gpt-4o'
     assert llm.config.api_key == 'test_key'
     assert isinstance(llm.metrics, Metrics)
 
@@ -35,7 +35,7 @@ def test_llm_init_without_model_info(mock_get_model_info, default_config):
     mock_get_model_info.side_effect = Exception('Model info not available')
     llm = LLM(default_config)
     assert llm.config.max_input_tokens == 4096
-    assert llm.config.max_output_tokens == 1024
+    assert llm.config.max_output_tokens == 4096
 
 
 def test_llm_init_with_custom_config():
@@ -57,7 +57,7 @@ def test_llm_init_with_custom_config():
 
 
 def test_llm_init_with_metrics():
-    config = LLMConfig(model='gpt-3.5-turbo', api_key='test_key')
+    config = LLMConfig(model='gpt-4o', api_key='test_key')
     metrics = Metrics()
     llm = LLM(config, metrics=metrics)
     assert llm.metrics is metrics
