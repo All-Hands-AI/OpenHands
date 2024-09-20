@@ -551,11 +551,11 @@ class LLM:
             output_tokens = usage.get('completion_tokens')
 
             if input_tokens:
-                stats += ('\n' if stats else '') + 'Input tokens: ' + str(input_tokens)
+                stats += 'Input tokens: ' + str(input_tokens)
 
             if output_tokens:
                 stats += (
-                    (' | ' if input_tokens else '\n')
+                    (' | ' if input_tokens else '')
                     + 'Output tokens: '
                     + str(output_tokens)
                     + '\n'
