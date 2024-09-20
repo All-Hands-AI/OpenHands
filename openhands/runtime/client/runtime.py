@@ -172,6 +172,7 @@ class EventStreamRuntime(Runtime):
         super().__init__(config, event_stream, sid, plugins, env_vars)
 
         logger.info('Waiting for runtime container to be alive...')
+
         self._wait_until_alive()
 
         logger.info(
