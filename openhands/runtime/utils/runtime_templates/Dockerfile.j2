@@ -63,11 +63,13 @@ RUN \
     /openhands/miniforge3/bin/mamba run -n base poetry config virtualenvs.path /openhands/poetry && \
     /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
     # Install project dependencies
-    /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root && \
+    /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root
+RUN \
     # Update and install additional tools
     apt-get update && \
     /openhands/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
-    /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
+    /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium
+RUN \
     # Set environment variables
     export OH_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
     export OH_VENV_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry env info --path) && \
@@ -77,7 +79,7 @@ RUN \
     /openhands/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
     # Set permissions
     {% if not skip_init %}chmod -R g+rws /openhands/poetry && {% endif %} \
-    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
+    mkdir -p /openhands/workspace && chmod -R g+rws /openhands/workspace && \
     # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/miniforge3/bin/mamba clean --all
