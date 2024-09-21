@@ -40,11 +40,6 @@ const sidebars: SidebarsConfig = {
               type: 'doc',
               label: 'Groq',
               id: 'usage/llms/groq',
-            },
-            {
-              type: 'doc',
-              label: 'Local/ollama',
-              id: 'usage/llms/local-llms',
             }
           ],
         },
