@@ -153,7 +153,7 @@ model = "gpt-4o"
 #ollama_base_url = ""
 
 # Temperature for the API
-#temperature = 1.0
+#temperature = 0.0
 
 # Timeout for the API
 #timeout = 0
