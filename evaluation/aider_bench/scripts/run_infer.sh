@@ -27,19 +27,25 @@ echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-COMMAND="export PYTHONPATH=evaluation/aider_bench:\$PYTHONPATH && poetry run python evaluation/aider_bench/run_infer.py \
-  --agent-cls $AGENT \
-  --llm-config $MODEL_CONFIG \
-  --max-iterations 30 \
-  --max-chars 10000000 \
-  --eval-num-workers $NUM_WORKERS \
-  --eval-note $AGENT_VERSION"
+EVAL_NOTE=$AGENT_VERSION
 
 # Default to NOT use unit tests.
 if [ -z "$USE_UNIT_TESTS" ]; then
   export USE_UNIT_TESTS=false
 fi
 echo "USE_UNIT_TESTS: $USE_UNIT_TESTS"
+# If use unit tests, set EVAL_NOTE to the commit hash
+if [ "$USE_UNIT_TESTS" = true ]; then
+  EVAL_NOTE=$EVAL_NOTE-w-test
+fi
+
+COMMAND="export PYTHONPATH=evaluation/aider_bench:\$PYTHONPATH && poetry run python evaluation/aider_bench/run_infer.py \
+  --agent-cls $AGENT \
+  --llm-config $MODEL_CONFIG \
+  --max-iterations 30 \
+  --max-chars 10000000 \
+  --eval-num-workers $NUM_WORKERS \
+  --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
