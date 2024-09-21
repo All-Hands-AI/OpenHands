@@ -1,4 +1,4 @@
-# Azure OpenAI LLM
+# Azure
 
 OpenHands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure).
 
@@ -27,8 +27,8 @@ You will need your ChatGPT deployment name which can be found on the deployments
 
 * Enable `Advanced Options`
 * `Custom Model` to azure/&lt;deployment-name&gt;
-* `Base URL` to your Azure API Base URL (Example: https://example-endpoint.openai.azure.com)
-* `API Key`
+* `Base URL` to your Azure API Base URL (Example: `https://example-endpoint.openai.azure.com`)
+* `API Key` to your Azure API key
 
 ## Embeddings
 
