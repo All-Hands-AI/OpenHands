@@ -204,7 +204,7 @@ class CodeActAgent(Agent):
                 '</execute_bash>',
                 '</execute_browse>',
             ],
-            'temperature': 0.0,
+            'temperature': self.llm.config.temperature,
         }
 
         if self.llm.is_caching_prompt_active():
