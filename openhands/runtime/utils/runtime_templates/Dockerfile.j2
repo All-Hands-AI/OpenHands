@@ -60,8 +60,10 @@ COPY ./code /openhands/code
 WORKDIR /openhands/code
 RUN \
     # Configure Poetry and create virtual environment
-    /openhands/miniforge3/bin/mamba run -n base poetry config virtualenvs.path /openhands/poetry && \
-    /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
+    /openhands/miniforge3/bin/mamba run -n base poetry config virtualenvs.path /openhands/poetry
+RUN \
+    /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11
+RUN \
     # Install project dependencies
     /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root
 RUN \
