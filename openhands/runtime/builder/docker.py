@@ -26,11 +26,16 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.error(f'Sandbox image build failed: {e}')
             raise RuntimeError(f'Sandbox image build failed: {e}')
 
+        layers: dict[str, dict[str, str]] = {}
+        previous_layer_count = 0
         for log in build_logs:
             if 'stream' in log:
                 logger.info(log['stream'].strip())
             elif 'error' in log:
                 logger.error(log['error'].strip())
+            elif 'status' in log:
+                self._output_build_progress(log, layers, previous_layer_count)
+                previous_layer_count = len(layers)
             else:
                 logger.info(str(log))
 
@@ -85,39 +90,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     'Image not found locally. Trying to pull it, please wait...'
                 )
 
-                layers = {}
+                layers: dict[str, dict[str, str]] = {}
                 previous_layer_count = 0
                 for line in self.docker_client.api.pull(
                     image_name, stream=True, decode=True
                 ):
-                    if 'id' in line and 'progressDetail' in line:
-                        layer_id = line['id']
-                        if layer_id not in layers:
-                            layers[layer_id] = {'last_logged': 0}
-
-                        if (
-                            'total' in line['progressDetail']
-                            and 'current' in line['progressDetail']
-                        ):
-                            total = line['progressDetail']['total']
-                            current = line['progressDetail']['current']
-                            percentage = (current / total) * 100
-
-                            # refresh process bar in console if stdout is a tty
-                            if sys.stdout.isatty():
-                                layers[layer_id]['last_logged'] = percentage
-                                self._output_pull_progress(layers, previous_layer_count)
-                                previous_layer_count = len(layers)
-                            # otherwise Log only if percentage is at least 10% higher than last logged
-                            elif percentage - layers[layer_id]['last_logged'] >= 10:
-                                logger.info(
-                                    f'Layer {layer_id}: {percentage:.0f}% downloaded'
-                                )
-                                layers[layer_id]['last_logged'] = percentage
-
-                    elif 'status' in line:
-                        logger.info(line['status'])
-
+                    self._output_build_progress(line, layers, previous_layer_count)
+                    previous_layer_count = len(layers)
                 logger.info('Image pulled')
                 return True
             except docker.errors.ImageNotFound:
@@ -133,9 +112,45 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 logger.warning(msg)
                 return False
 
-    def _output_pull_progress(self, layers: dict, previous_layer_count: int) -> None:
-        sys.stdout.write('\033[F' * previous_layer_count)
-        for lid, layer_data in sorted(layers.items()):
-            sys.stdout.write('\033[K')
-            print(f'Layer {lid}: {layer_data["last_logged"]:.0f}% downloaded')
-        sys.stdout.flush()
+    def _output_build_progress(
+        self, current_line: dict, layers: dict, previous_layer_count: int
+    ) -> None:
+        if 'id' in current_line and 'progressDetail' in current_line:
+            layer_id = current_line['id']
+            if layer_id not in layers:
+                layers[layer_id] = {'status': '', 'progress': '', 'last_logged': 0}
+
+            if 'status' in current_line:
+                layers[layer_id]['status'] = current_line['status']
+
+            if 'progress' in current_line:
+                layers[layer_id]['progress'] = current_line['progress']
+
+            if (
+                'total' in current_line['progressDetail']
+                and 'current' in current_line['progressDetail']
+            ):
+                total = current_line['progressDetail']['total']
+                current = current_line['progressDetail']['current']
+                percentage = (current / total) * 100
+            else:
+                percentage = 0
+
+            # refresh process bar in console if stdout is a tty
+            if sys.stdout.isatty():
+                sys.stdout.write('\033[F' * previous_layer_count)
+                for lid, layer_data in sorted(layers.items()):
+                    sys.stdout.write('\033[K')
+                    print(
+                        f'Layer {lid}: {layer_data["progress"]} {layer_data["status"]}'
+                    )
+                sys.stdout.flush()
+            # otherwise Log only if percentage is at least 10% higher than last logged
+            elif percentage != 0 and percentage - layers[layer_id]['last_logged'] >= 10:
+                logger.info(
+                    f'Layer {layer_id}: {layers[layer_id]["progress"]} {layers[layer_id]["status"]}'
+                )
+
+            layers[layer_id]['last_logged'] = percentage
+        elif 'status' in current_line:
+            logger.info(current_line['status'])

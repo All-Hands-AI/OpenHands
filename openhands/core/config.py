@@ -71,8 +71,8 @@ class LLMConfig:
     retry_max_wait: int = 120
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
-    temperature: float = 0
-    top_p: float = 0.5
+    temperature: float = 0.0
+    top_p: float = 1.0
     custom_llm_provider: str | None = None
     max_input_tokens: int | None = None
     max_output_tokens: int | None = None
