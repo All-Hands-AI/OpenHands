@@ -510,97 +510,97 @@ def _edit_file_impl(
         # NOTE: we need to get env var inside this function
         # because the env var will be set AFTER the agentskills is imported
         if enable_auto_lint:
-            # BACKUP the original file
-            with tempfile.TemporaryDirectory() as temp_dir:
-                original_file_backup_path = os.path.join(
-                    temp_dir,
-                    f'.backup.{os.path.basename(file_name)}',
+            # Generate a random temporary file path
+            suffix = os.path.splitext(file_name)[1]
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tfile:
+                original_file_backup_path = tfile.name
+
+            with open(original_file_backup_path, 'w') as f:
+                f.writelines(lines)
+
+            lint_error, first_error_line = _lint_file(file_name)
+
+            # Select the errors caused by the modification
+            def extract_last_part(line):
+                parts = line.split(':')
+                if len(parts) > 1:
+                    return parts[-1].strip()
+                return line.strip()
+
+            def subtract_strings(str1, str2) -> str:
+                lines1 = str1.splitlines()
+                lines2 = str2.splitlines()
+
+                last_parts1 = [extract_last_part(line) for line in lines1]
+
+                remaining_lines = [
+                    line
+                    for line in lines2
+                    if extract_last_part(line) not in last_parts1
+                ]
+
+                result = '\n'.join(remaining_lines)
+                return result
+
+            if original_lint_error and lint_error:
+                lint_error = subtract_strings(original_lint_error, lint_error)
+                if lint_error == '':
+                    lint_error = None
+                    first_error_line = None
+
+            if lint_error is not None:
+                if first_error_line is not None:
+                    show_line = int(first_error_line)
+                elif is_append:
+                    # original end-of-file
+                    show_line = len(lines)
+                # insert OR edit WILL provide meaningful line numbers
+                elif start is not None and end is not None:
+                    show_line = int((start + end) / 2)
+                else:
+                    raise ValueError('Invalid state. This should never happen.')
+
+                ret_str += LINTER_ERROR_MSG
+                ret_str += lint_error + '\n'
+
+                editor_lines = n_added_lines + 20
+                sep = '-' * 49 + '\n'
+                ret_str += (
+                    f'[This is how your edit would have looked if applied]\n{sep}'
                 )
-                with open(original_file_backup_path, 'w') as f:
-                    f.writelines(lines)
+                ret_str += (
+                    _print_window(file_name, show_line, editor_lines, return_str=True)
+                    + '\n'
+                )
+                ret_str += f'{sep}\n'
 
-                lint_error, first_error_line = _lint_file(file_name)
-
-                # Select the errors caused by the modification
-                def extract_last_part(line):
-                    parts = line.split(':')
-                    if len(parts) > 1:
-                        return parts[-1].strip()
-                    return line.strip()
-
-                def subtract_strings(str1, str2) -> str:
-                    lines1 = str1.splitlines()
-                    lines2 = str2.splitlines()
-
-                    last_parts1 = [extract_last_part(line) for line in lines1]
-
-                    remaining_lines = [
-                        line
-                        for line in lines2
-                        if extract_last_part(line) not in last_parts1
-                    ]
-
-                    result = '\n'.join(remaining_lines)
-                    return result
-
-                if original_lint_error and lint_error:
-                    lint_error = subtract_strings(original_lint_error, lint_error)
-                    if lint_error == '':
-                        lint_error = None
-                        first_error_line = None
-
-                if lint_error is not None:
-                    if first_error_line is not None:
-                        show_line = int(first_error_line)
-                    elif is_append:
-                        # original end-of-file
-                        show_line = len(lines)
-                    # insert OR edit WILL provide meaningful line numbers
-                    elif start is not None and end is not None:
-                        show_line = int((start + end) / 2)
-                    else:
-                        raise ValueError('Invalid state. This should never happen.')
-
-                    ret_str += LINTER_ERROR_MSG
-                    ret_str += lint_error + '\n'
-
-                    editor_lines = n_added_lines + 20
-                    sep = '-' * 49 + '\n'
-                    ret_str += (
-                        f'[This is how your edit would have looked if applied]\n{sep}'
+                ret_str += '[This is the original code before your edit]\n'
+                ret_str += sep
+                ret_str += (
+                    _print_window(
+                        original_file_backup_path,
+                        show_line,
+                        editor_lines,
+                        return_str=True,
                     )
-                    ret_str += (
-                        _print_window(
-                            file_name, show_line, editor_lines, return_str=True
-                        )
-                        + '\n'
-                    )
-                    ret_str += f'{sep}\n'
+                    + '\n'
+                )
+                ret_str += sep
+                ret_str += (
+                    'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                    'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+                    'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+                )
 
-                    ret_str += '[This is the original code before your edit]\n'
-                    ret_str += sep
-                    ret_str += (
-                        _print_window(
-                            original_file_backup_path,
-                            show_line,
-                            editor_lines,
-                            return_str=True,
-                        )
-                        + '\n'
-                    )
-                    ret_str += sep
-                    ret_str += (
-                        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-                        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-                        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
-                    )
+                # recover the original file
+                with open(original_file_backup_path) as fin, open(
+                    file_name, 'w'
+                ) as fout:
+                    fout.write(fin.read())
 
-                    # recover the original file
-                    with open(original_file_backup_path) as fin, open(
-                        file_name, 'w'
-                    ) as fout:
-                        fout.write(fin.read())
-                    return ret_str
+                # Don't forget to remove the temporary file after you're done
+                os.unlink(original_file_backup_path)
+                return ret_str
 
     except FileNotFoundError as e:
         ret_str += f'File not found: {e}\n'
