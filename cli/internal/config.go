@@ -27,4 +27,11 @@ type Config struct {
 	Args    []string
 	WorkDir string
 	Env     map[string]string
+
+	LLM LLMConfig
+}
+
+type LLMConfig struct {
+	Model  string
+	APIKey string
 }

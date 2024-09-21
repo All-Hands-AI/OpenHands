@@ -27,7 +27,7 @@ run-cli: ## Run openhands cli on host with ARGS="..."
 	@echo "Running openhands cli on host $(ARGS)..."
 	@./run-cli.sh $(ARGS)
 
-tidy: ## Tidy go modules on host (go toolchain required)
+tidy: ## Tidy up openhands cli source on host (go toolchain required)
 	@echo "Tidying go modules..."
 	@go fmt ./...; \
 		go vet ./...; \

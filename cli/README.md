@@ -36,7 +36,12 @@ Alternatively, one can also build on host if [Go toolchain](https://go.dev/doc/i
 
 ### Run with make or the script on host
 
+You may set default model and API key with env: LLM_MODEL and LLM_API_KEY.
+
 ```bash
+export LLM_MODEL="openai/gpt-4o"
+export LLM_API_KEY="sk_..."
+#
 make run ARGS="..."
 # same as
 ./run-cli.sh ARGS...
@@ -81,12 +86,14 @@ Usage:
   openhands WORKSPACE  [flags]
 
 Flags:
-      --browse           Open OpenHands Platform UI in a browser (default true)
-  -h, --help             Display help and exit
-      --image string     Specify the OpenHands Docker image (default "ghcr.io/all-hands-ai/openhands:0.9")
-  -p, --port int         Port to use for the OpenHands Platform server. default auto select
-      --sandbox string   Specify the Sandbox Docker image (default "ghcr.io/all-hands-ai/runtime:0.9-nikolaik")
-      --version          Display version and exit
+      --browse               Open OpenHands Platform UI in a browser (default true)
+  -h, --help                 Display help and exit
+      --image string         Specify the OpenHands Docker image (default "ghcr.io/all-hands-ai/openhands:0.9")
+      --llm-api-key string   Specify the LLM API key
+      --llm-model string     Specify the LLM model
+  -p, --port int             Port to use for the OpenHands Platform server. default auto select
+      --sandbox string       Specify the Sandbox Docker image (default "ghcr.io/all-hands-ai/runtime:0.9-nikolaik")
+      --version              Display version and exit
 ```
 
 For a complete list of supported docker OPTIONS:

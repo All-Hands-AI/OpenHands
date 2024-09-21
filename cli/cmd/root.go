@@ -100,6 +100,11 @@ func Execute() {
 var cfg internal.Config
 
 func init() {
+	// load defaults from env
+	model := os.Getenv("LLM_MODEL")
+	apiKey := os.Getenv("LLM_API_KEY")
+
+	// flags
 	rootCmd.PersistentFlags().BoolP("help", "h", false, "Display help and exit")
 	rootCmd.PersistentFlags().Bool("version", false, "Display version and exit")
 
@@ -108,6 +113,9 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&cfg.Port, "port", "p", 0, fmt.Sprintf("Port to use for the %s server. default auto select", internal.AppTitle))
 	rootCmd.PersistentFlags().StringVar(&cfg.Image, "image", internal.Image, "Specify the OpenHands Docker image")
 	rootCmd.PersistentFlags().StringVar(&cfg.Sandbox, "sandbox", internal.SandBox, "Specify the Sandbox Docker image")
+
+	rootCmd.PersistentFlags().StringVar(&cfg.LLM.Model, "llm-model", model, "Specify the LLM model")
+	rootCmd.PersistentFlags().StringVar(&cfg.LLM.APIKey, "llm-api-key", apiKey, "Specify the LLM API key")
 
 	rootCmd.PersistentFlags().StringVar(&cfg.Command, "command", defaultCommand, "Specify the Docker command to use")
 
@@ -125,6 +133,8 @@ func buildArgs(cfg *internal.Config) error {
 		"-e", "SANDBOX_RUNTIME_CONTAINER_IMAGE=" + cfg.Sandbox,
 		"-e", "SANDBOX_USER_ID=" + u.Uid,
 		"-e", "WORKSPACE_MOUNT_PATH=" + cfg.Workspace,
+		"-e", "LLM_API_KEY=" + cfg.LLM.APIKey,
+		"-e", "LLM_MODEL=" + cfg.LLM.Model,
 		"-v", "/var/run/docker.sock:/var/run/docker.sock",
 		"-v", cfg.Workspace + ":/opt/workspace_base",
 		"-p", fmt.Sprintf("%v:3000", cfg.Port),
@@ -154,7 +164,7 @@ func runIt(cfg *internal.Config) error {
 }
 
 func openPage(link string) {
-	timeout := 30 * time.Second
+	timeout := 120 * time.Second
 
 	log.Printf("service url: %s", link)
 
