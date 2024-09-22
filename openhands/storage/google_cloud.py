@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
 
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 
 from openhands.storage.files import FileStore
@@ -25,8 +26,11 @@ class GoogleCloudFileStore(FileStore):
 
     def read(self, path: str) -> str:
         blob = self.bucket.blob(path)
-        with blob.open('r') as f:
-            return f.read()
+        try:
+            with blob.open('r') as f:
+                return f.read()
+        except NotFound as err:
+            raise FileNotFoundError(err)
 
     def list(self, path: str) -> List[str]:
         if not path or path == '/':

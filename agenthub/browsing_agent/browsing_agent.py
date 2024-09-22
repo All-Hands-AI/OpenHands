@@ -218,10 +218,10 @@ class BrowsingAgent(Agent):
 
         flat_messages = self.llm.format_messages_for_llm(messages)
 
-        # print(f'flat_messages: {flat_messages}')
+        print(f'flat_messages: {flat_messages}')
 
         response = self.llm.completion(
-            messages=flat_messages,
+            messages=self.llm.format_messages_for_llm(messages),
             temperature=0.0,
             stop=[')```', ')\n```'],
         )

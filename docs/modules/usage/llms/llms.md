@@ -53,8 +53,9 @@ We have a few guides for running OpenHands with specific model providers:
 
 * [Azure](llms/azure-llms)
 * [Google](llms/google-llms)
-* [ollama](llms/local-llms)
+* [Groq](llms/groq)
 * [OpenAI](llms/openai-llms)
+* [OpenRouter](llms/openrouter)
 
 ### API retries and rate limits
 

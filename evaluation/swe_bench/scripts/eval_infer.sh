@@ -28,9 +28,9 @@ FILE_NAME=$(basename $PROCESS_FILEPATH)
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
 
 # ================================================
-# detect whether PROCESS_FILEPATH is in OD format or in SWE-bench format
+# detect whether PROCESS_FILEPATH is in OH format or in SWE-bench format
 echo "=============================================================="
-echo "Detecting whether PROCESS_FILEPATH is in OD format or in SWE-bench format"
+echo "Detecting whether PROCESS_FILEPATH is in OH format or in SWE-bench format"
 echo "=============================================================="
 # SWE-bench format is a JSONL where every line has three fields: model_name_or_path, instance_id, and model_patch
 function is_swebench_format() {
@@ -56,9 +56,9 @@ if [ $IS_SWEBENCH_FORMAT -eq 0 ]; then
 else
     echo "The file IS NOT in SWE-bench format."
 
-    # ==== Convert OD format to SWE-bench format ====
+    # ==== Convert OH format to SWE-bench format ====
     echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
-    poetry run python3 evaluation/swe_bench/scripts/eval/convert_od_output_to_swe_json.py $PROCESS_FILEPATH
+    poetry run python3 evaluation/swe_bench/scripts/eval/convert_oh_output_to_swe_json.py $PROCESS_FILEPATH
     # replace .jsonl with .swebench.jsonl in filename
     SWEBENCH_FORMAT_JSONL=${PROCESS_FILEPATH/.jsonl/.swebench.jsonl}
     echo "SWEBENCH_FORMAT_JSONL: $SWEBENCH_FORMAT_JSONL"
