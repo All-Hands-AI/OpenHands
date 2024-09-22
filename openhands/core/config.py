@@ -53,6 +53,7 @@ class LLMConfig:
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
         caching_prompt: Using the prompt caching feature provided by the LLM.
+        log_completions: Whether to log LLM completions to the state.
     """
 
     model: str = 'gpt-4o'
@@ -71,8 +72,8 @@ class LLMConfig:
     retry_max_wait: int = 120
     timeout: int | None = None
     max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
-    temperature: float = 0
-    top_p: float = 0.5
+    temperature: float = 0.0
+    top_p: float = 1.0
     custom_llm_provider: str | None = None
     max_input_tokens: int | None = None
     max_output_tokens: int | None = None
@@ -82,6 +83,7 @@ class LLMConfig:
     drop_params: bool | None = None
     disable_vision: bool | None = None
     caching_prompt: bool = False
+    log_completions: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

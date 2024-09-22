@@ -55,6 +55,7 @@ We have a few guides for running OpenHands with specific model providers:
 * [Google](llms/google-llms)
 * [Groq](llms/groq)
 * [OpenAI](llms/openai-llms)
+* [OpenRouter](llms/openrouter)
 
 ### API retries and rate limits
 
