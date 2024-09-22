@@ -1,15 +1,15 @@
-from .agent_config import AgentConfig
-from .app_config import AppConfig
-from .config_utils import (
+from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.app_config import AppConfig
+from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
     UndefinedString,
     get_field_info,
 )
-from .llm_config import LLMConfig
-from .sandbox_config import SandboxConfig
-from .security_config import SecurityConfig
-from .utils import (
+from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
+from openhands.core.config.utils import (
     finalize_config,
     get_llm_config_arg,
     get_parser,

@@ -10,12 +10,15 @@ import toml
 from dotenv import load_dotenv
 
 from openhands.core import logger
-
-from .agent_config import AgentConfig
-from .app_config import AppConfig
-from .config_utils import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS, UndefinedString
-from .llm_config import LLMConfig
-from .sandbox_config import SandboxConfig
+from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.app_config import AppConfig
+from openhands.core.config.config_utils import (
+    OH_DEFAULT_AGENT,
+    OH_MAX_ITERATIONS,
+    UndefinedString,
+)
+from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.sandbox_config import SandboxConfig
 
 load_dotenv()
 
