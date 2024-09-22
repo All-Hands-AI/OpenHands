@@ -1,3 +1,4 @@
+import asyncio
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -75,8 +76,8 @@ class AgentSession:
 
     async def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
-        logger.debug(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
+            logger.debug(f'Using security analyzer: {security_analyzer}')
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
@@ -94,13 +95,22 @@ class AgentSession:
 
         logger.info(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        self.runtime = runtime_cls(
+
+        self.runtime = await asyncio.to_thread(
+            runtime_cls,
             config=config,
             event_stream=self.event_stream,
             sid=self.sid,
             plugins=agent.sandbox_plugins,
             status_message_callback=status_message_callback,
         )
+
+        if self.runtime is not None:
+            logger.debug(
+                f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
+            )
+        else:
+            logger.warning('Runtime initialization failed')
 
     async def _create_controller(
         self,

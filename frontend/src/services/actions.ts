@@ -140,9 +140,6 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  // TODO this should be improved: add status message a "info" bubble to chat window,
-  // without adding to the history, before the LLM does a completion.
-  // e.g. "Running a python command..."
   store.dispatch(setCurStatusMessage(message));
 }
 

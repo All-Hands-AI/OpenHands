@@ -5,7 +5,6 @@ import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
-import { setCurStatusMessage } from "#/state/statusSlice";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -90,14 +89,6 @@ function AgentStatusBar() {
       curAgentState === AgentState.INIT
     ) {
       if (document.cookie.indexOf("audio") !== -1) beep();
-
-      // TODO once this works, clear the current status message here
-      dispatch(
-        setCurStatusMessage({
-          message: "Ready. [Placeholder]",
-          is_error: false,
-        }),
-      );
     }
   }, [curAgentState, dispatch]);
 

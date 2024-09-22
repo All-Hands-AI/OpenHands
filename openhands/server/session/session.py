@@ -1,7 +1,5 @@
 import asyncio
-import threading
 import time
-from queue import Queue
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -23,7 +21,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
-from openhands.server.session.agentsession import AgentSession
+from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 
 DEL_DELT_SEC = 60 * 60 * 5
@@ -35,8 +33,7 @@ class Session:
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
-    status_message_queue: Queue[str | None]
-    status_message_thread: threading.Thread
+    loop: asyncio.AbstractEventLoop
 
     def __init__(
         self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
@@ -49,17 +46,10 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event
         )
         self.config = config
-
-        self.status_message_queue = Queue()
-        self.status_message_thread = threading.Thread(
-            target=self._run_status_message_loop, daemon=True
-        )
-        self.status_message_thread.start()
+        self.loop = asyncio.get_event_loop()
 
     async def close(self):
         self.is_alive = False
-        self.status_message_queue.put(None)  # Signal to stop the status message loop
-        self.status_message_thread.join(timeout=5)
         await self.agent_session.close()
 
     async def loop_recv(self):
@@ -69,10 +59,10 @@ class Session:
             while should_continue():
                 try:
                     data = await self.websocket.receive_json()
+                    asyncio.create_task(self.dispatch(data))
                 except ValueError:
                     await self.send_error('Invalid JSON')
                     continue
-                await self.dispatch(data)
         except WebSocketDisconnect:
             await self.close()
             logger.info('WebSocket disconnected, sid: %s', self.sid)
@@ -184,14 +174,16 @@ class Session:
 
     async def send(self, data: dict[str, object]) -> bool:
         try:
-            logger.debug(f'session.send called with data:\n{data}')
             if self.websocket is None or not self.is_alive:
-                logger.debug('session.send: websocket is NOT alive yet!')
+                logger.debug('session.send: websocket is NOT alive!')
                 return False
             await self.websocket.send_json(data)
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
+        except RuntimeError:
+            self.is_alive = False
+            return False
         except WebSocketDisconnect:
             self.is_alive = False
             return False
@@ -218,20 +210,5 @@ class Session:
 
     def queue_status_message(self, message: str):
         """Queues a status message to be sent asynchronously."""
-        self.status_message_queue.put(message)
-
-    def _run_status_message_loop(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self._process_status_messages())
-
-    async def _process_status_messages(self):
-        while True:
-            message = await asyncio.get_event_loop().run_in_executor(
-                None, self.status_message_queue.get
-            )
-            if message is None:  # Stop signal
-                break
-            # commented out as it currently breaks browser (blank screen)
-            logger.info(f'send_message:\n{message}\n')
-            await self.send_message(message)
+        # Ensure the coroutine runs in the main event loop
+        asyncio.run_coroutine_threadsafe(self.send_message(message), self.loop)
