@@ -14,7 +14,7 @@ The main configuration classes are:
 - `SandboxConfig`: Configuration for the sandbox environment
 - `SecurityConfig`: Configuration for security settings
 
-These classes are defined as dataclasses, allowing for easy type checking and default value specification.
+These classes are defined as dataclasses, with class attributes holding default values for all fields.
 
 ## Loading Configuration from Environment Variables
 
@@ -22,8 +22,8 @@ The `load_from_env` function in the config package is responsible for loading co
 
 ### Naming Convention for Environment Variables
 
-- Prefix: Uppercase name of the configuration class followed by an underscore (e.g., `LLM_`, `AGENT_`)
-- Field Names: Uppercase, with underscores replaced by uppercase letters
+- Prefix: uppercase name of the configuration class followed by an underscore (e.g., `LLM_`, `AGENT_`)
+- Field Names: all uppercase
 - Full Variable Name: Prefix + Field Name (e.g., `LLM_API_KEY`, `AGENT_MEMORY_ENABLED`)
 
 ### Examples
@@ -57,23 +57,17 @@ The `AppConfig` class contains nested configurations like `LLMConfig` and `Agent
 
 Be cautious when setting sensitive information like API keys in environment variables. Ensure your environment is secure.
 
-Certainly. I'll add a paragraph to the "## Usage" section that highlights the recommended way to use `load_app_config`. Here's the updated section:
-
 ## Usage
-
-To load configuration from environment variables, TOML files, and apply final tweaks:
-
-1. Set the required environment variables
-2. Create a `config.toml` file with your desired settings
-3. Use the `load_app_config()` function to load all relevant config settings with one call
 
 The `load_app_config()` function is the recommended way to initialize your configuration. It performs the following steps:
 
 1. Creates an instance of `AppConfig`
 2. Loads settings from the `config.toml` file (if present)
 3. Loads settings from environment variables, overriding TOML settings if applicable
-4. Applies final tweaks and validations to the configuration
+4. Applies final tweaks and validations to the configuration, falling back to the default values specified in the code
 5. Optionally sets global logging levels based on the configuration
+
+There are also command line args, which may work to override other sources.
 
 Here's an example of how to use `load_app_config()`:
 
