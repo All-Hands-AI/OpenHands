@@ -17,45 +17,45 @@ from openhands.events.action import (
 
 class PlannerResponseParser(CodeActResponseParser):
     """Parser action:
-    - CmdRunAction(comman) - bash command to run
+    - CmdRunAction(command) - bash command to run
     - IPythonRunCellAction(code) - IPython code to run
-    - AgentDelegateAction(agent, inputs) - delegate action for subtask
+    - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
     - MessageAction(content) - Message action to run (e.g. ask for clarification)
     - AgentFinishAction() - end the interaction
     """
 
-    def __init__(self):
-        # Need to pay attention to the item order in self.action_parsers
+    def __init__(self, initial_task_str=''):
+        # Need pay attention to the item order in self.action_parsers
         super().__init__()
         self.action_parsers = [
             CodeActActionParserFinish(),
             CodeActActionParserCmdRun(),
             CodeActActionParserIPythonRunCell(),
             CodeActActionParserAgentDelegate(),
-            CoActActionParserGlobalPlan(),
+            CoActActionParserGlobalPlan(initial_task_str=initial_task_str),
         ]
         self.default_parser = CodeActActionParserMessage()
 
-        def parse_response(self, response) -> str:
-            action = response.choices[0].message.content
-            if action is None:
-                return ''
-            for action_suffix in [
-                'bash',
-                'ipython',
-                'browse',
-                'global_plan',
-                'decide',
-                'revise',
-                'overrule',
-                'collation',
-            ]:
-                if (
-                    f'<execute_{action_suffix}>' in action
-                    and f'</execute_{action_suffix}' not in action
-                ):
-                    action += f'</execute_{action_suffix}'
-            return action
+    def parse_response(self, response) -> str:
+        action = response.choices[0].message.content
+        if action is None:
+            return ''
+        for action_suffix in [
+            'bash',
+            'ipython',
+            'browse',
+            'global_plan',
+            'decide',
+            'revise',
+            'overrule',
+            'collation',
+        ]:
+            if (
+                f'<execute_{action_suffix}>' in action
+                and f'</execute_{action_suffix}>' not in action
+            ):
+                action += f'</execute_{action_suffix}>'
+        return action
 
 
 class CoActActionParserGlobalPlan(ActionParser):
@@ -65,8 +65,10 @@ class CoActActionParserGlobalPlan(ActionParser):
 
     def __init__(
         self,
+        initial_task_str='',
     ):
         self.global_plan = None
+        self.initial_task_str = initial_task_str
 
     def check_condition(self, action_str: str) -> bool:
         self.global_plan = re.search(
@@ -78,10 +80,13 @@ class CoActActionParserGlobalPlan(ActionParser):
         assert (
             self.global_plan is not None
         ), 'self.global_plan should not be None when parse is called'
-        # thought = action_str.replace(self.global_plan.ggroup(0), '').strip()
+        thought = action_str.replace(self.global_plan.group(0), '').strip()
         global_plan_actions = self.global_plan.group(1).strip()
         return AgentDelegateAction(
             agent='CoActExecutorAgent',
-            inputs={'task': global_plan_actions},
+            thought=thought,
+            inputs={
+                'task': f'The user message is: {self.initial_task_str}.\nExecute the following plan to fulfill it:  {global_plan_actions}'
+            },
             action_suffix='global_plan',
-        )  # FIXME: check to use a more proper key like 'global_plan' instead of 'task'
+        )

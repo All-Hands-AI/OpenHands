@@ -94,6 +94,12 @@ class CodeActAgent(Agent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
+        self.stop_sequences = [
+            '</execute_ipython>',
+            '</execute_bash>',
+            '</execute_browse>',
+        ]
+        self.initial_task_str = ''
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
@@ -199,11 +205,8 @@ class CodeActAgent(Agent):
         messages = self._get_messages(state)
         params = {
             'messages': self.llm.format_messages_for_llm(messages),
-            'stop': [
-                '</execute_ipython>',
-                '</execute_bash>',
-                '</execute_browse>',
-            ],
+            'stop': self.stop_sequences,
+            'temperature': 0.0,
         }
 
         # print the messages for debugging
@@ -233,7 +236,8 @@ class CodeActAgent(Agent):
         delegated_task = ''
         if state.inputs.get('task') is not None:
             # CodeActAgent is delegated a task
-            delegated_task = state.inputs['task']
+            delegated_task = '\n' + state.inputs['task']
+            self.initial_task_str = state.inputs['task']
 
         messages: list[Message] = [
             Message(
@@ -249,9 +253,7 @@ class CodeActAgent(Agent):
                 role='user',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.initial_user_message
-                        + '\n'
-                        + delegated_task,
+                        text=self.prompt_manager.initial_user_message + delegated_task,
                         cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
                     )
                 ],
@@ -266,6 +268,10 @@ class CodeActAgent(Agent):
                 message = self.get_observation_message(event)
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
+
+            if message and message.role == 'user' and not self.initial_task_str:
+                # first user message
+                self.initial_task_str = message.content[0].text
 
             # add regular message
             if message:
