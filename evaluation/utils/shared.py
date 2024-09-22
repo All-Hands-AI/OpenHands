@@ -58,7 +58,11 @@ class EvalOutput(BaseModel):
 
     # Interaction info
     metadata: EvalMetadata | None = None
-    history: list[tuple[dict[str, Any], dict[str, Any]]] | None = None
+    # list[tuple[dict[str, Any], dict[str, Any]]] - for compatibility with the old format
+    history: (
+        list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
+    ) = None
+    llm_completions: list[dict[str, Any]]
     metrics: dict[str, Any] | None = None
     error: str | None = None
 
@@ -278,6 +282,7 @@ def _process_instance_wrapper(
                     + '-' * 10
                 )
                 # Raise an error after all retries & stop the evaluation
+                logger.exception(e)
                 raise RuntimeError(
                     f'Maximum error retries reached for instance {instance.instance_id}'
                 ) from e

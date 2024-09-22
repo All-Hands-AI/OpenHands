@@ -1,7 +1,9 @@
 import asyncio
 import copy
+import time
 import warnings
 from functools import partial
+from typing import Any
 
 from openhands.core.config import LLMConfig
 from openhands.runtime.utils.shutdown_listener import should_continue
@@ -72,6 +74,11 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
+
+        # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
+        # - 'messages': list of messages
+        # - 'response': response from the LLM
+        self.llm_completions: list[dict[str, Any]] = []
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
@@ -256,6 +263,16 @@ class LLM:
             else:
                 logger.debug('No completion messages!')
                 resp = {'choices': [{'message': {'content': ''}}]}
+
+            if self.config.log_completions:
+                self.llm_completions.append(
+                    {
+                        'messages': messages,
+                        'response': resp,
+                        'timestamp': time.time(),
+                        'cost': self.completion_cost(resp),
+                    }
+                )
 
             # log the response
             message_back = resp['choices'][0]['message']['content']
@@ -659,6 +676,7 @@ class LLM:
 
     def reset(self):
         self.metrics = Metrics()
+        self.llm_completions = []
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):
