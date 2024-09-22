@@ -203,6 +203,10 @@ class CodeActAgent(Agent):
             'temperature': 0.0,
         }
 
+        # print the messages for debugging
+        # for m in params['messages']:
+        #     print(m)
+
         if self.llm.is_caching_prompt_active():
             params['extra_headers'] = {
                 'anthropic-beta': 'prompt-caching-2024-07-31',
