@@ -163,6 +163,11 @@ model = "gpt-4o"
 
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
+[llm.o1-preview]
+api-key = "your-api-key"
+model = "o1-preview"
+embedding_model = ""
+
 
 [llm.gpt4o-mini]
 # API key to use
