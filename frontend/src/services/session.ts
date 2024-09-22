@@ -122,7 +122,7 @@ class Session {
       }
     };
 
-    Session._socket.onerror = (error) => {
+    Session._socket.onerror = () => {
       // TODO report error
       toast.error(
         "ws",
