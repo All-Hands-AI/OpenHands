@@ -16,6 +16,7 @@ from PIL import Image
 
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.utils.shutdown_listener import should_continue, should_exit
 
 BROWSER_EVAL_GET_GOAL_ACTION = 'GET_EVAL_GOAL'
 BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
@@ -99,7 +100,7 @@ class BrowserEnv:
             self.eval_goal = obs['goal']
 
         logger.info('Browser env started.')
-        while True:
+        while should_continue():
             try:
                 if self.browser_side.poll(timeout=0.01):
                     unique_request_id, action_data = self.browser_side.recv()
@@ -157,7 +158,7 @@ class BrowserEnv:
         self.agent_side.send((unique_request_id, {'action': action_str}))
         start_time = time.time()
         while True:
-            if time.time() - start_time > timeout:
+            if should_exit() or time.time() - start_time > timeout:
                 raise TimeoutError('Browser environment took too long to respond.')
             if self.agent_side.poll(timeout=0.01):
                 response_id, obs = self.agent_side.recv()

@@ -57,7 +57,7 @@ class Flags:
 
     @classmethod
     def from_dict(self, flags_dict):
-        """Helper for JSON serializble requirement."""
+        """Helper for JSON serializable requirement."""
         if isinstance(flags_dict, Flags):
             return flags_dict
 
