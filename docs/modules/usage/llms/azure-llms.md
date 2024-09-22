@@ -1,6 +1,6 @@
 # Azure
 
-OpenHands uses LiteLLM for completion calls. You can find their documentation on Azure [here](https://docs.litellm.ai/docs/providers/azure).
+OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their documentation on using Azure as a provider [here](https://docs.litellm.ai/docs/providers/azure).
 
 ## Azure OpenAI Configuration
 
@@ -27,7 +27,7 @@ You will need your ChatGPT deployment name which can be found on the deployments
 
 * Enable `Advanced Options`
 * `Custom Model` to azure/&lt;deployment-name&gt;
-* `Base URL` to your Azure API Base URL (Example: `https://example-endpoint.openai.azure.com`)
+* `Base URL` to your Azure API Base URL (e.g. `https://example-endpoint.openai.azure.com`)
 * `API Key` to your Azure API key
 
 ## Embeddings

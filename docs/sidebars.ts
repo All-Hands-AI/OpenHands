@@ -23,11 +23,6 @@ const sidebars: SidebarsConfig = {
           items: [
             {
               type: 'doc',
-              label: 'OpenAI',
-              id: 'usage/llms/openai-llms',
-            },
-            {
-              type: 'doc',
               label: 'Azure',
               id: 'usage/llms/azure-llms',
             },
@@ -40,7 +35,17 @@ const sidebars: SidebarsConfig = {
               type: 'doc',
               label: 'Groq',
               id: 'usage/llms/groq',
-            }
+            },
+            {
+              type: 'doc',
+              label: 'OpenAI',
+              id: 'usage/llms/openai-llms',
+            },
+            {
+              type: 'doc',
+              label: 'OpenRouter',
+              id: 'usage/llms/openrouter',
+            },
           ],
         },
       ],
