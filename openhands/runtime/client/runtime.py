@@ -183,6 +183,7 @@ class EventStreamRuntime(Runtime):
             logger.info(
                 f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
             )
+            # TODO: figure a way to track costs for draft editor LLM
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
