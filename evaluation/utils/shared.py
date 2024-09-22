@@ -59,7 +59,9 @@ class EvalOutput(BaseModel):
     # Interaction info
     metadata: EvalMetadata | None = None
     # list[tuple[dict[str, Any], dict[str, Any]]] - for compatibility with the old format
-    history: list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None = None
+    history: (
+        list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
+    ) = None
     llm_completions: list[dict[str, Any]]
     metrics: dict[str, Any] | None = None
     error: str | None = None
