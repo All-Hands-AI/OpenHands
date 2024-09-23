@@ -52,7 +52,6 @@ class AgentSession:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_security_analyzer(config.security.security_analyzer)
         
         # Runtimes can take a long time to create / start - and we don't want to lock up the 
         # main event loop waiting for this, so we do this in a background thread
