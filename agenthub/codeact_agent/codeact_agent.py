@@ -97,8 +97,6 @@ class CodeActAgent(Agent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
-        logger.info(f'System prompt: {self.prompt_manager.system_message}')
-        logger.info(f'Initial user message: {self.prompt_manager.initial_user_message}')
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
