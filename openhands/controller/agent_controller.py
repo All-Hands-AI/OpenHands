@@ -116,7 +116,7 @@ class AgentController:
         self._stuck_detector = StuckDetector(self.state)
 
         if not is_delegate:
-            self.agent_task = asyncio.create_task(self._start_step_loop())
+            self.agent_task = asyncio.create_task(self.start_step_loop())
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
@@ -149,7 +149,7 @@ class AgentController:
             self.state.last_error += f': {exception}'
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
-    async def _start_step_loop(self):
+    async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
 
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')

@@ -59,6 +59,7 @@ class AgentSession:
         # We may consider making the executor shared and global if it is used very frequently.
         with ThreadPoolExecutor(1) as executor: 
             await asyncio.get_event_loop().run_in_executor(executor, self._start, runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs)
+        await self.controller.start_step_loop()
 
     def _start(self,
         runtime_name: str,
@@ -147,6 +148,7 @@ class AgentSession:
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
             headless_mode=False,
+            is_delegate=True
         )
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
