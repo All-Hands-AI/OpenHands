@@ -27,7 +27,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self,
         path: str,
         tags: list[str],
-        use_local_cache: bool = True,
+        use_local_cache: bool = False,
         extra_build_args: list[str] | None = None,
     ) -> str:
         """Builds a Docker image using BuildKit and handles the build logs appropriately.
