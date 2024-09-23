@@ -159,7 +159,7 @@ model = "gpt-4o"
 #timeout = 0
 
 # Top p for the API
-#top_p = 0.5
+#top_p = 1.0
 
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
