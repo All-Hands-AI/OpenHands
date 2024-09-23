@@ -70,21 +70,16 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
-            '--load',
+            #'--load',
         ]
 
         cache_dir = '/tmp/.buildx-cache'
         if use_local_cache and self._is_cache_usable(cache_dir):
-            logger.debug('With local cache options')
             buildx_cmd.extend(
                 [
                     f'--cache-from=type=local,src={cache_dir}',
                     f'--cache-to=type=local,dest={cache_dir},mode=max',
                 ]
-            )
-        else:
-            logger.warning(
-                f'Local cache at {cache_dir} is not usable. Building without cache.'
             )
 
         if extra_build_args:
