@@ -46,9 +46,13 @@ __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
 
-cache_prompting_supported_models = [
+# list of models that support prompt caching
+# remove this when liteLLM support querying natively
+PROMPT_CACHE_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
+    'anthropic/claude-3-5-sonnet-20240620',
+    'anthropic/claude-3-haiku-20240307',
 ]
 
 
@@ -538,13 +542,13 @@ class LLM:
             return False
 
     def is_caching_prompt_active(self) -> bool:
-        """Check if prompt caching is enabled and supported for current model.
+        """Check if prompt caching is supported and enabled for current model.
 
         Returns:
-            boolean: True if prompt caching is active for the given model.
+            boolean: True if prompt caching is supported and enabled for the given model.
         """
         return self.config.caching_prompt is True and any(
-            model in self.config.model for model in cache_prompting_supported_models
+            model in self.config.model for model in PROMPT_CACHE_SUPPORTED_MODELS
         )
 
     def _post_completion(self, response) -> None:

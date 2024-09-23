@@ -36,7 +36,7 @@ class LLMConfig:
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
-        caching_prompt: Using the prompt caching feature provided by the LLM.
+        caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
     """
 
@@ -66,7 +66,7 @@ class LLMConfig:
     ollama_base_url: str | None = None
     drop_params: bool | None = None
     disable_vision: bool | None = None
-    caching_prompt: bool = False
+    caching_prompt: bool = True
     log_completions: bool = False
 
     def defaults_to_dict(self) -> dict:
