@@ -27,7 +27,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym = "0.6.4" # integrate browsergym as the browsing interface
+browsergym = "0.7.0" # integrate browsergym as the browsing interface
 html2text = "*"
 e2b = "^0.17.1"
 pexpect = "*"
@@ -65,7 +65,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.6.6"
+ruff = "0.6.7"
 mypy = "1.11.2"
 pre-commit = "3.8.0"
 build = "*"
