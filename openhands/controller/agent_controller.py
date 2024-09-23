@@ -72,6 +72,7 @@ class AgentController:
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
+        in_asyncio: bool = True,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -115,7 +116,7 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
 
-        if not is_delegate:
+        if not is_delegate and in_asyncio:
             self.agent_task = asyncio.create_task(self.start_step_loop())
 
     async def close(self):

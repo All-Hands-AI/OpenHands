@@ -148,7 +148,7 @@ class AgentSession:
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
             headless_mode=False,
-            is_delegate=True
+            in_asyncio=False
         )
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
