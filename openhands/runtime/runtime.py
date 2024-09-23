@@ -50,7 +50,7 @@ class Runtime(FileEditRuntimeMixin):
 
     sid: str
     config: AppConfig
-    DEFAULT_ENV_VARS: dict[str, str]
+    initial_env_vars: dict[str, str]
 
     def __init__(
         self,
@@ -66,15 +66,15 @@ class Runtime(FileEditRuntimeMixin):
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
 
         self.config = copy.deepcopy(config)
-        self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close)
 
-        if self.DEFAULT_ENV_VARS:
-            logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
-            self.add_env_vars(self.DEFAULT_ENV_VARS)
+        self.initial_env_vars = _default_env_vars(config.sandbox)
         if env_vars is not None:
-            logger.debug(f'Adding provided env vars: {env_vars}')
-            self.add_env_vars(env_vars)
+            self.initial_env_vars.update(env_vars)
+
+    def setup_initial_env(self) -> None:
+        logger.debug(f'Adding env vars: {self.initial_env_vars}')
+        self.add_env_vars(self.initial_env_vars)
 
         # Load mixins
         FileEditRuntimeMixin.__init__(self)

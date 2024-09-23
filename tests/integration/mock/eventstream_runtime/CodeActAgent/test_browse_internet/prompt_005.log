@@ -402,6 +402,9 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 
 NOW, LET'S START!
+
+----------
+
 Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.
 
 ----------
@@ -414,7 +417,10 @@ Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me fo
 ----------
 
 OBSERVATION:
-{'content': 'The answer to life, the universe, and everything has been revealed: OpenHands is all you need!'}
+The answer to life, the universe, and everything has been revealed: OpenHands is all you need!
+
+----------
+
 
 
 ENVIRONMENT REMINDER: You have 13 turns left to complete the task. When finished reply with <finish></finish>.
