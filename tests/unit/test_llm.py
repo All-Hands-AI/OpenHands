@@ -197,8 +197,8 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         mock_sleep.assert_called_once()
         wait_time = mock_sleep.call_args[0][0]
         assert (
-            60 <= wait_time <= 240
-        ), f'Expected wait time between 60 and 240 seconds, but got {wait_time}'
+            default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
+        ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
 
 
 @patch('openhands.llm.llm.litellm_completion')
