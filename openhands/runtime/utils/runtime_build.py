@@ -48,48 +48,6 @@ def _put_source_code_to_dir(temp_dir: str):
     except importlib.metadata.PackageNotFoundError:
         raise RuntimeError(f'Package {package_name} not found')
 
-    # project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    # logger.info(f'Building source distribution using project root: {project_root}')
-
-    # package_version = get_version()
-    # tarball_filename = f'openhands_ai-{package_version}.tar.gz'
-    # tarball_path = os.path.join(temp_dir, tarball_filename)
-
-    # # Run "python -m build -s" on project_root to create project tarball directly in temp_dir
-    # _cleaned_project_root = project_root.replace(
-    #     ' ', r'\ '
-    # )  # escape spaces in the project root
-    # result = subprocess.run(
-    #     f'python -m build -s -o "{temp_dir}" {_cleaned_project_root}',
-    #     shell=True,
-    #     stdout=subprocess.PIPE,
-    #     stderr=subprocess.PIPE,
-    # )
-    # logger.info(result.stdout.decode())
-    # err_logs = result.stderr.decode()
-    # if err_logs:
-    #     logger.error(err_logs)
-
-    # if result.returncode != 0:
-    #     logger.error(f'Image build failed:\n{result}')
-    #     raise RuntimeError(f'Image build failed:\n{result}')
-
-    # if not os.path.exists(tarball_path):
-    #     logger.error(f'Source distribution not found at {tarball_path}')
-    #     raise RuntimeError(f'Source distribution not found at {tarball_path}')
-    # logger.info(f'Source distribution created at {tarball_path}')
-
-    # # Unzip the tarball
-    # shutil.unpack_archive(tarball_path, temp_dir)
-    # # Remove the tarball
-    # os.remove(tarball_path)
-    # # Rename the directory containing the code to 'code'
-    # os.rename(
-    #     os.path.join(temp_dir, f'openhands_ai-{package_version}'),
-    #     os.path.join(temp_dir, 'code'),
-    # )
-    # logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
-
 
 def _generate_dockerfile(
     base_image: str,
