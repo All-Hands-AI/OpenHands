@@ -5,7 +5,6 @@ from openhands.controller.action_parser import (
     ActionParser,
     ResponseParser,
 )
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -200,7 +199,7 @@ class CodeActActionParserFileEdit(ActionParser):
     def check_condition(self, action_str: str) -> bool:
         if '<file_edit' not in action_str:
             return False
-            
+
         self.file_edit_match = re.search(
             r'<file_edit\s+path=(["\']?)(.*?)\1>(.*?)</file_edit>',
             action_str,
@@ -211,8 +210,6 @@ class CodeActActionParserFileEdit(ActionParser):
             raise ActionParseError(
                 error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit by setting `path="<path>"` in <file_edit> tag. For example: <file_edit path="path/to/file.txt">...</file_edit>'
             )
-        
-        return True
 
         return True
 

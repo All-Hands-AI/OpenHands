@@ -1,4 +1,5 @@
 from dataclasses import dataclass, fields
+from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
 
@@ -38,6 +39,7 @@ class LLMConfig:
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
         caching_prompt: Using the prompt caching feature provided by the LLM.
         log_completions: Whether to log LLM completions to the state.
+        draft_editor: The LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
     """
 
     model: str = 'gpt-4o'
@@ -68,6 +70,7 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = False
     log_completions: bool = False
+    draft_editor: Optional['LLMConfig'] = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -98,6 +101,8 @@ class LLMConfig:
         for k, v in ret.items():
             if k in LLM_SENSITIVE_FIELDS:
                 ret[k] = '******' if v else None
+            elif isinstance(v, LLMConfig):
+                ret[k] = v.to_safe_dict()
         return ret
 
     def set_missing_attributes(self):

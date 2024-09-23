@@ -99,18 +99,19 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if 'draft_editor' in self.config.llms:
-            self.draft_editor_llm = LLM(self.config.llms['draft_editor'])
-            logger.info(
-                f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
+        llm_config = self.config.get_llm_config()
+
+        if llm_config.draft_editor is None:
+            raise RuntimeError(
+                'ERROR: Draft editor LLM is not set. Please set a draft editor LLM in the config.'
             )
-            # TODO: figure a way to track costs for draft editor LLM
+
+        self.draft_editor_llm = LLM(llm_config.draft_editor)
+        logger.info(
+            f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
+        )
 
     def edit(self, action: FileEditAction) -> Observation:
-        if not hasattr(self, 'draft_editor_llm'):
-            raise RuntimeError(
-                'Edit action is not supported when Draft editor LLM is not set. Please set the "llm.draft_editor" in the config.'
-            )
         obs = self.read(FileReadAction(path=action.path))
 
         if (

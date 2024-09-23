@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import os
 import tempfile
 from typing import Any
@@ -25,7 +24,6 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
-    load_from_toml,
     parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -61,18 +59,6 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
-
-    # copy 'draft_editor' config if exists
-    config_copy = copy.deepcopy(config)
-    load_from_toml(config_copy)
-    if 'draft_editor' in config_copy.llms:
-        config.set_llm_config(config_copy.llms['draft_editor'], 'draft_editor')
-        if metadata.details is None:
-            metadata.details = {}
-        metadata.details['draft_editor'] = config_copy.llms[
-            'draft_editor'
-        ].to_safe_dict()
-
     return config
 
 
