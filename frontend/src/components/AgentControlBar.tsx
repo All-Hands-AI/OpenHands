@@ -57,7 +57,7 @@ function ActionButton({
         disabled={isDisabled}
         className={`
           relative overflow-visible cursor-default hover:cursor-pointer group
-          disabled:cursor-not-allowed disabled:opacity-60
+          disabled:cursor-not-allowed
           ${large ? "rounded-full bg-neutral-800 p-3" : ""}
           transition-all duration-300 ease-in-out
         `}

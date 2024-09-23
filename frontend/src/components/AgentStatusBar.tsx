@@ -92,7 +92,7 @@ function AgentStatusBar() {
   }, [curAgentState]);
 
   return (
-    <div className="flex items-center bg-root-secondary py-1 px-2 rounded-[100px]">
+    <div className="flex items-center bg-neutral-800 py-1 px-2 rounded-[100px]">
       <div
         className={cn(
           "w-3 h-3 mr-2 rounded-full animate-pulse",
