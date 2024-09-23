@@ -29,8 +29,8 @@ class AgentSession:
         """Initializes a new instance of the Session class
 
         Parameters:
-        - sid (str): The session ID
-        - file_store (FileStore): Instance of the FileStore
+        - sid: The session ID
+        - file_store: Instance of the FileStore
         """
 
         self.sid = sid
@@ -50,13 +50,13 @@ class AgentSession:
         """Starts the Agent session
 
         Parameters:
-        - runtime_name (str): The name of the runtime associated with the session
-        - config (AppConfig):
-        - agent (Agent):
-        - max_interations (int):
-        - max_budget_per_task (float):
-        - agent_to_llm_config (dict[str, LLMConfig]):
-        - agent_configs (dict[str, AgentConfig]):
+        - runtime_name: The name of the runtime associated with the session
+        - config:
+        - agent:
+        - max_interations:
+        - max_budget_per_task:
+        - agent_to_llm_config:
+        - agent_configs:
         """
 
         if self.controller or self.runtime:
@@ -93,7 +93,7 @@ class AgentSession:
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
         Parameters:
-        - security_analyzer (str): The name of the security analyzer to use
+        - security_analyzer: The name of the security analyzer to use
         """
 
         logger.info(f'Using security analyzer: {security_analyzer}')
@@ -106,9 +106,9 @@ class AgentSession:
         """Creates a runtime instance
 
         Parameters:
-        - runtime_name (str): The name of the runtime associated with the session
-        - config (AppConfig):
-        - agent: (Agent):
+        - runtime_name: The name of the runtime associated with the session
+        - config:
+        - agent:
         """
 
         if self.runtime is not None:
@@ -135,12 +135,12 @@ class AgentSession:
         """Creates an AgentController instance
 
         Parameters:
-        - agent (Agent):
-        - confirmation_mode (bool): Whether to use confirmation mode
-        - max_iterations (int):
-        - max_budget_per_task (float):
-        - agent_to_llm_config (dict[str, LLMConfig]):
-        - agent_configs (dict[str, AgentConfig]):
+        - agent:
+        - confirmation_mode: Whether to use confirmation mode
+        - max_iterations:
+        - max_budget_per_task:
+        - agent_to_llm_config:
+        - agent_configs:
         """
 
         if self.controller is not None:
