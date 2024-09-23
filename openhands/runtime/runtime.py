@@ -72,12 +72,12 @@ class Runtime(FileEditRuntimeMixin):
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
+        # Load mixins
+        FileEditRuntimeMixin.__init__(self)
+
     def setup_initial_env(self) -> None:
         logger.debug(f'Adding env vars: {self.initial_env_vars}')
         self.add_env_vars(self.initial_env_vars)
-
-        # Load mixins
-        FileEditRuntimeMixin.__init__(self)
 
     def close(self) -> None:
         pass
