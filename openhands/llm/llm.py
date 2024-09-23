@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import time
 import warnings
 from functools import partial
@@ -74,6 +75,9 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
+
+        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
+        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
 
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
