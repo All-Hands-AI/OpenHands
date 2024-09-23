@@ -246,7 +246,3 @@ export default function App() {
     </div>
   );
 }
-
-export function HydrateFallback() {
-  return <p>Loading...</p>;
-}
