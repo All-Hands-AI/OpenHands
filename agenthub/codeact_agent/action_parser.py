@@ -50,8 +50,8 @@ class CodeActResponseParser(ResponseParser):
         for lang in ['bash', 'ipython', 'browse']:
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
-            if '<file_edit' in action and '</file_edit>' not in action:
-                action += '</file_edit>'
+        if '<file_edit' in action and '</file_edit>' not in action:
+            action += '</file_edit>'
         return action
 
     def parse_action(self, action_str: str) -> Action:
