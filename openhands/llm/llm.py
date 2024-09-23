@@ -53,6 +53,8 @@ PROMPT_CACHE_SUPPORTED_MODELS = [
     'claude-3-haiku-20240307',
     'anthropic/claude-3-5-sonnet-20240620',
     'anthropic/claude-3-haiku-20240307',
+    'gemini/gemini-1.5-pro',
+    'gemini-1.5-pro',
 ]
 
 
@@ -537,7 +539,14 @@ class LLM:
             bool: True if model is vision capable. If model is not supported by litellm, it will return False.
         """
         try:
-            return litellm.supports_vision(self.config.model)
+            # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
+            # but model_info will have the correct value for some reason.
+            # we can go with it, but we will need to keep an eye if model_info is correct for Vertex or other providers
+            # remove when litellm is updated to fix https://github.com/BerriAI/litellm/issues/5608
+            return litellm.supports_vision(self.config.model) or (
+                self.model_info is not None
+                and self.model_info.get('supports_vision', False)
+            )
         except Exception:
             return False
 
