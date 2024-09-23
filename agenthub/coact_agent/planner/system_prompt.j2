@@ -9,16 +9,16 @@ The structure of the global plan should be as follows:
 <execute_global_plan>
 # Phases
 ## Phase 1
-- description: <<Describe the task that needs to be done in this phase.>>
 - reason: <<Assistant's thorough thoughts on why this phase is necessary. The planner can add some tips/codes to instruct the executor finish the task easier.>>
+- description: <<Describe what needs to be done in this phase.>>
 - expected_state: <<Describe the expected state after this phase is completed. If the task involves code editing, provide the expectation of the code after the edit.>>
 <file_path> <<Optinal - Provide the file path here. In one phase only 1 file is edited.>> </file_path>
 <expected_content>
 <<Optional - Provide the expected content here WITH LINE NUMBERS and a vertical bar before the actual code e.g., 1|, 11|,. Only use partial content to avoid repetition.>>
 </expected_content>
 ## Phase 2
-- description: ...
 - reason: ...
+- description: ...
 - expected_state: ...
 <file_path> ... </file_path>
 <expected_content>
@@ -44,9 +44,6 @@ If a command execution result says "Command timed out. Sending SIGINT to the pro
 
 As a planner agent, there are some additional actions that you can use to communicate and delegate tasks to the local agent：
 - `<execute_global_plan>`: Construct a multi-stage global plan, providing separate subtask descriptions and expected states for each phase.
-- `<execute_decide>`: Based on the description in the request for a new global plan submitted by the local agent, decide whether to agree to the re-planning. If so, the next action is to revise; if not, the next action is to overrule.
-- `<execute_revise>`: Facing the local agent's request, you chose to revise your previously made global plan. Please reconsider the characteristics of the task based on the description in the request and make a new global plan.
-- `<execute_overrule>`: Facing the local agent's request, you believe your previous global plan is correct, so you refuse to adjust it and overrule the local agent's request. You believe they should adjust their local plan instead. Please give them suggestions for modifications.
 {% endset %}
 {% set PIP_INSTALL_PREFIX %}
 The agent can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
