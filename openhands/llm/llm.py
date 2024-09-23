@@ -26,7 +26,6 @@ from litellm.types.utils import CostPerToken
 from tenacity import (
     retry,
     retry_if_exception_type,
-    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
@@ -213,10 +212,7 @@ class LLM:
             exception_type = type(exception).__name__
             logger.error(f'\nexception_type: {exception_type}\n')
 
-            if exception_type == 'RateLimitError':
-                min_wait_time = 60
-                max_wait_time = 240
-            elif exception_type == 'BadRequestError' and exception.response:
+            if exception_type == 'BadRequestError' and exception.response:
                 # this should give us the burried, actual error message from
                 # the LLM model.
                 logger.error(f'\n\nBadRequestError: {exception.response}\n\n')
@@ -235,10 +231,7 @@ class LLM:
             before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=(
-                retry_if_exception_type(self.retry_exceptions)
-                & retry_if_not_exception_type(OperationCancelled)
-            ),
+            retry=(retry_if_exception_type(self.retry_exceptions)),
             wait=custom_completion_wait,
         )
         def wrapper(*args, **kwargs):
@@ -315,10 +308,7 @@ class LLM:
             before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=(
-                retry_if_exception_type(self.retry_exceptions)
-                & retry_if_not_exception_type(OperationCancelled)
-            ),
+            retry=(retry_if_exception_type(self.retry_exceptions)),
             wait=custom_completion_wait,
         )
         async def async_completion_wrapper(*args, **kwargs):
@@ -391,10 +381,7 @@ class LLM:
             before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=(
-                retry_if_exception_type(self.retry_exceptions)
-                & retry_if_not_exception_type(OperationCancelled)
-            ),
+            retry=(retry_if_exception_type(self.retry_exceptions)),
             wait=custom_completion_wait,
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
