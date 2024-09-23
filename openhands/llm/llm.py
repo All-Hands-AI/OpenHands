@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import time
 import warnings
 from functools import partial
@@ -75,6 +76,9 @@ class LLM:
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
 
+        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
+        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
+
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
         # - 'response': response from the LLM
@@ -132,9 +136,6 @@ class LLM:
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        if self.config.drop_params:
-            litellm.drop_params = self.config.drop_params
-
         # This only seems to work with Google as the provider, not with OpenRouter!
         gemini_safety_settings = (
             [
@@ -170,6 +171,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
@@ -298,7 +300,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            drop_params=True,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None

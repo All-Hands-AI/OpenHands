@@ -50,6 +50,8 @@ class LLMConfig:
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
+    openrouter_site_url: str = 'https://docs.all-hands.dev/'
+    openrouter_app_name: str = 'OpenHands'
     num_retries: int = 8
     retry_multiplier: float = 2
     retry_min_wait: int = 15
@@ -64,7 +66,7 @@ class LLMConfig:
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
-    drop_params: bool | None = None
+    drop_params: bool = True
     disable_vision: bool | None = None
     caching_prompt: bool = False
     log_completions: bool = False
