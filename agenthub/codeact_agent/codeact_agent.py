@@ -206,11 +206,6 @@ class CodeActAgent(Agent):
             ],
         }
 
-        if self.llm.is_caching_prompt_active():
-            params['extra_headers'] = {
-                'anthropic-beta': 'prompt-caching-2024-07-31',
-            }
-
         # TODO: move exception handling to agent_controller
         try:
             response = self.llm.completion(**params)
