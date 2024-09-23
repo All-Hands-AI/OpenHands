@@ -104,8 +104,32 @@ function ChatInterface() {
       </div>
 
       <div>
-        <div className="relative px-3 py-[6.5px]">
-          <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative">
+          {feedbackShared !== messages.length && messages.length > 3 && (
+            <div
+              className={cn(
+                "flex justify-start gap-[7px]",
+                "absolute left-3 bottom-[6.5px]",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => shareFeedback("positive")}
+                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
+              >
+                <ThumbsUpIcon width={15} height={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => shareFeedback("negative")}
+                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
+              >
+                <ThumbsDownIcon width={15} height={15} />
+              </button>
+            </div>
+          )}
+
+          <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[6.5px]">
             {!hitBottom && (
               <ScrollButton
                 onClick={scrollDomToBottom}
@@ -133,25 +157,6 @@ function ChatInterface() {
               </>
             )}
           </div>
-
-          {feedbackShared !== messages.length && messages.length > 3 && (
-            <div className="flex justify-start gap-[7px]">
-              <button
-                type="button"
-                onClick={() => shareFeedback("positive")}
-                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
-              >
-                <ThumbsUpIcon width={15} height={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => shareFeedback("negative")}
-                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
-              >
-                <ThumbsDownIcon width={15} height={15} />
-              </button>
-            </div>
-          )}
         </div>
 
         <ChatInput
