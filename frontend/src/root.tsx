@@ -1,5 +1,4 @@
 import {
-  ClientActionFunctionArgs,
   Link,
   Links,
   Meta,
@@ -7,7 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   defer,
-  json,
+  useFetcher,
   useLoaderData,
   useLocation,
   useNavigation,
@@ -22,7 +21,9 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import { getAgents, getModels } from "./api/open-hands";
-import LoadingProjectModal from "./components/modals/LoadingProject";
+import LoadingProjectModal, {
+  LoadingSpinner,
+} from "./components/modals/LoadingProject";
 import {
   getSettings,
   maybeMigrateSettings,
@@ -84,20 +85,10 @@ export const clientLoader = async () => {
   });
 };
 
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const formData = await request.formData();
-  const ghToken = formData.get("ghToken")?.toString();
-
-  if (ghToken) {
-    localStorage.setItem("ghToken", ghToken);
-  }
-
-  return json({ success: true });
-};
-
 export default function App() {
   const navigation = useNavigation();
   const location = useLocation();
+  const fetcher = useFetcher({ key: "login" });
   const { token, user, models, agents, settingsIsUpdated, settings } =
     useLoaderData<typeof clientLoader>();
   const submit = useSubmit();
@@ -123,7 +114,14 @@ export default function App() {
               className="bg-white w-8 h-8 rounded-full flex items-center justify-center"
               onClick={() => setAccountContextMenuIsVisible((prev) => !prev)}
             >
-              {!user && <DefaultUserAvatar width={20} height={20} />}
+              {!user && fetcher.state === "idle" && (
+                <DefaultUserAvatar width={20} height={20} />
+              )}
+              {!user &&
+                (fetcher.state === "submitting" ||
+                  fetcher.state === "loading") && (
+                  <LoadingSpinner size="small" />
+                )}
               {user && (
                 <img
                   src={user.avatar_url}
@@ -222,7 +220,7 @@ export default function App() {
           <ModalBackdrop>
             <AccountSettingsModal
               onClose={() => setAccountSettingsModalOpen(false)}
-              language={settings.LANGUAGE}
+              selectedLanguage={settings.LANGUAGE}
             />
           </ModalBackdrop>
         )}

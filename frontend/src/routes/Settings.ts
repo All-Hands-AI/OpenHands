@@ -14,9 +14,6 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
   if (intent === "account") {
     const LANGUAGE = formData.get("language")?.toString();
-    const ghToken = formData.get("ghToken")?.toString();
-
-    if (ghToken) localStorage.setItem("ghToken", ghToken);
     if (LANGUAGE) saveSettings({ LANGUAGE });
 
     return json({ success: true });

@@ -7,7 +7,8 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/BaseModal";
-import { clientAction, clientLoader } from "#/root";
+import { clientLoader } from "#/root";
+import { clientAction } from "#/routes/login";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
@@ -15,11 +16,7 @@ interface ConnectToGitHubModalProps {
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
   const data = useRouteLoaderData<typeof clientLoader>("root");
-  const fetcher = useFetcher<typeof clientAction>();
-
-  React.useEffect(() => {
-    if (fetcher.data?.success) onClose();
-  }, [fetcher.data]);
+  const fetcher = useFetcher<typeof clientAction>({ key: "login" });
 
   return (
     <ModalBody>
@@ -43,8 +40,9 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
       </div>
       <fetcher.Form
         method="POST"
-        action="/"
+        action="/login"
         className="w-full flex flex-col gap-6"
+        onSubmit={onClose}
       >
         <CustomInput
           label="GitHub Token"

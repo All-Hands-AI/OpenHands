@@ -6,38 +6,59 @@ import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
 import { clientLoader } from "#/root";
-import { clientAction } from "#/routes/Settings";
+import { clientAction as settingsClientAction } from "#/routes/Settings";
+import { clientAction as loginClientAction } from "#/routes/login";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
-  language: string;
+  selectedLanguage: string;
 }
 
 function AccountSettingsModal({
   onClose,
-  language,
+  selectedLanguage,
 }: AccountSettingsModalProps) {
   const data = useRouteLoaderData<typeof clientLoader>("root");
-  const fetcher = useFetcher<typeof clientAction>();
+  const settingsFetcher = useFetcher<typeof settingsClientAction>({
+    key: "settings",
+  });
+  const loginFetcher = useFetcher<typeof loginClientAction>({ key: "login" });
 
-  React.useEffect(() => {
-    if (fetcher.data?.success) onClose();
-  }, [fetcher.data]);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const language = formData.get("language")?.toString();
+    const ghToken = formData.get("ghToken")?.toString();
+
+    const accountForm = new FormData();
+    const loginForm = new FormData();
+
+    accountForm.append("intent", "account");
+    if (language) accountForm.append("language", language);
+    if (ghToken) loginForm.append("ghToken", ghToken);
+
+    settingsFetcher.submit(accountForm, {
+      method: "POST",
+      action: "/settings",
+    });
+    loginFetcher.submit(loginForm, {
+      method: "POST",
+      action: "/login",
+    });
+
+    onClose();
+  };
 
   return (
     <ModalBody>
-      <fetcher.Form
-        method="POST"
-        action="/settings"
-        className="flex flex-col w-full gap-6"
-      >
+      <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
         <div className="w-full flex flex-col gap-2">
           <BaseModalTitle title="Account Settings" />
 
           <FormFieldset
             id="language"
             label="Language"
-            defaultSelectedKey={language}
+            defaultSelectedKey={selectedLanguage}
             isClearable={false}
             items={[
               { key: "en", value: "English" },
@@ -55,16 +76,20 @@ function AccountSettingsModal({
           <ModalButton
             variant="text-like"
             text="Disconnect"
-            onClick={() =>
-              fetcher.submit({}, { method: "POST", action: "/logout" })
-            }
+            onClick={() => {
+              settingsFetcher.submit({}, { method: "POST", action: "/logout" });
+              onClose();
+            }}
             className="text-danger self-start"
           />
         </div>
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
-            disabled={fetcher.state === "submitting"}
+            disabled={
+              settingsFetcher.state === "submitting" ||
+              loginFetcher.state === "submitting"
+            }
             type="submit"
             intent="account"
             text="Save"
@@ -76,7 +101,7 @@ function AccountSettingsModal({
             className="bg-[#737373]"
           />
         </div>
-      </fetcher.Form>
+      </form>
     </ModalBody>
   );
 }
