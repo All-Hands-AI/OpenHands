@@ -64,7 +64,7 @@ class LLMConfig:
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
-    drop_params: bool | None = None
+    drop_params: bool = True
     disable_vision: bool | None = None
     caching_prompt: bool = False
     log_completions: bool = False
