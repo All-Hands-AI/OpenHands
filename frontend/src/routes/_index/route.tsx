@@ -21,7 +21,7 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import store from "#/store";
-import { addFile } from "#/state/selected-files-slice";
+import { addFile, setInitialQuery } from "#/state/initial-query-slice";
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
@@ -43,8 +43,6 @@ export const clientLoader = async () => {
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const searchParams = new URLSearchParams();
-
   const isFileUpload = !!request.headers
     .get("Content-Type")
     ?.includes("multipart");
@@ -59,16 +57,12 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     return json({ success: true });
   }
 
-  const url = new URL(request.url);
-  const repo = url.searchParams.get("repo");
-
   const formData = await request.formData();
+
   const q = formData.get("q")?.toString();
+  if (q) store.dispatch(setInitialQuery(q));
 
-  if (q) searchParams.set("q", q);
-  if (repo) searchParams.set("repo", repo);
-
-  return redirect(`/app?${searchParams.toString()}`);
+  return redirect("/app");
 };
 
 function Home() {

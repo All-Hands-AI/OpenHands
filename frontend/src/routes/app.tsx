@@ -7,14 +7,13 @@ import {
   useLoaderData,
   json,
   ClientActionFunctionArgs,
-  ClientLoaderFunctionArgs,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
-import { RootState } from "#/store";
+import store, { RootState } from "#/store";
 import { Container } from "#/components/container";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
@@ -27,14 +26,13 @@ import CodeIcon from "#/assets/code.svg?react";
 import GlobeIcon from "#/assets/globe.svg?react";
 import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
-import { clearFiles } from "#/state/selected-files-slice";
+import { clearFiles } from "#/state/initial-query-slice";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
-export const clientLoader = ({ request }: ClientLoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const q = url.searchParams.get("q");
-  const repo = url.searchParams.get("repo") || localStorage.getItem("repo");
+export const clientLoader = () => {
+  const q = store.getState().initalQuery.initialQuery;
+  const repo = store.getState().initalQuery.selectedRepository;
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
@@ -65,7 +63,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function App() {
   const dispatch = useDispatch();
-  const { files } = useSelector((state: RootState) => state.selectedFiles);
+  const { files } = useSelector((state: RootState) => state.initalQuery);
   const { start, send } = useSocket();
   const { settings, token, ghToken, repo, q } =
     useLoaderData<typeof clientLoader>();

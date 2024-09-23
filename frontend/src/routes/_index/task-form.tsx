@@ -5,7 +5,7 @@ import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { removeFile } from "#/state/selected-files-slice";
+import { removeFile } from "#/state/initial-query-slice";
 
 interface UploadedFilePreviewProps {
   file: string; // base64
@@ -33,7 +33,7 @@ export function TaskForm() {
   const navigation = useNavigation();
   const fetcher = useFetcher();
 
-  const { files } = useSelector((state: RootState) => state.selectedFiles);
+  const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const [hasText, setHasText] = React.useState(false);

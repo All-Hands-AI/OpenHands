@@ -1,5 +1,6 @@
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
-import { useSearchParams } from "@remix-run/react";
+import { useDispatch } from "react-redux";
+import { setSelectedRepository } from "#/state/initial-query-slice";
 
 interface GitHubRepositorySelectorProps {
   repositories: GitHubRepository[];
@@ -8,25 +9,19 @@ interface GitHubRepositorySelectorProps {
 export function GitHubRepositorySelector({
   repositories,
 }: GitHubRepositorySelectorProps) {
-  const [, setSearchParams] = useSearchParams();
+  const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
     const repo = repositories.find((r) => r.id.toString() === id);
     if (repo) {
       // set query param
-      setSearchParams((prev) => {
-        prev.set("repo", repo.full_name);
-        return prev;
-      });
+      dispatch(setSelectedRepository(repo.full_name));
     }
   };
 
   const handleClearSelection = () => {
     // clear query param
-    setSearchParams((prev) => {
-      prev.delete("repo");
-      return prev;
-    });
+    dispatch(setSelectedRepository(null));
   };
 
   return (

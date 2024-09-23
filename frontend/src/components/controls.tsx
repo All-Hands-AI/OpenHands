@@ -1,11 +1,12 @@
 import { IoLockClosed } from "react-icons/io5";
 import { useRouteLoaderData } from "@remix-run/react";
 import React from "react";
+import { useSelector } from "react-redux";
 import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
 import { clientLoader as rootClientLoader } from "#/root";
-import { clientLoader as appClientLoader } from "#/routes/app";
+import { RootState } from "#/store";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -13,19 +14,21 @@ interface ControlsProps {
 }
 
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
   const rootData = useRouteLoaderData<typeof rootClientLoader>("root");
-  const appData = useRouteLoaderData<typeof appClientLoader>("routes/app");
 
   const projectMenuCardData = React.useMemo(
     () =>
-      rootData?.user && appData?.repo
+      rootData?.user && selectedRepository
         ? {
             avatar: rootData.user.avatar_url,
-            repoName: appData.repo,
+            repoName: selectedRepository,
             lastCommit: { id: "123", date: "2021-10-10" },
           }
         : null,
-    [rootData, appData],
+    [rootData, selectedRepository],
   );
 
   return (
