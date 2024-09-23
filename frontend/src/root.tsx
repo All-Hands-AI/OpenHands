@@ -19,7 +19,11 @@ import { SettingsForm } from "./components/form/settings-form";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
-import { getAgents, getModels } from "./api/open-hands";
+import {
+  getAgents,
+  getModels,
+  retrieveSecurityAnalyzers,
+} from "./api/open-hands";
 import LoadingProjectModal, {
   LoadingSpinner,
 } from "./components/modals/LoadingProject";
@@ -60,6 +64,7 @@ export const clientLoader = async () => {
 
   const models = getModels();
   const agents = getAgents();
+  const securityAnalyzers = retrieveSecurityAnalyzers();
 
   let user: GitHubUser | null = null;
   if (ghToken) {
@@ -79,6 +84,7 @@ export const clientLoader = async () => {
     user,
     models,
     agents,
+    securityAnalyzers,
     settingsIsUpdated,
     settings: getSettings(),
   });
@@ -88,8 +94,15 @@ export default function App() {
   const navigation = useNavigation();
   const location = useLocation();
   const fetcher = useFetcher({ key: "login" });
-  const { token, user, models, agents, settingsIsUpdated, settings } =
-    useLoaderData<typeof clientLoader>();
+  const {
+    token,
+    user,
+    models,
+    agents,
+    securityAnalyzers,
+    settingsIsUpdated,
+    settings,
+  } = useLoaderData<typeof clientLoader>();
   const submit = useSubmit();
 
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
@@ -208,6 +221,7 @@ export default function App() {
                 settings={settings}
                 models={models}
                 agents={agents}
+                securityAnalyzers={securityAnalyzers}
                 onClose={() => setSettingsModalIsOpen(false)}
               />
             </div>

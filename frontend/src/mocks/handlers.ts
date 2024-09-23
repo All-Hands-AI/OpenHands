@@ -17,7 +17,7 @@ export const handlers = [
     ]);
   }),
   http.get("http://localhost:3000/api/list-files", async ({ request }) => {
-    await delay(2500);
+    await delay();
 
     const token = request.headers
       .get("Authorization")
@@ -52,11 +52,11 @@ export const handlers = [
     return HttpResponse.json(null, { status: 404 });
   }),
   http.get("http://localhost:3000/api/options/agents", async () => {
-    await delay(2500);
+    await delay();
     return HttpResponse.json(["CodeActAgent", "CoActAgent"]);
   }),
   http.get("http://localhost:3000/api/options/models", async () => {
-    await delay(2500);
+    await delay();
     return HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
@@ -69,4 +69,8 @@ export const handlers = [
   http.post("http://localhost:3000/api/save-file", () =>
     HttpResponse.json(null, { status: 200 }),
   ),
+  http.get("http://localhost:3000/api/options/security-analyzers", async () => {
+    await delay();
+    return HttpResponse.json(["mock-invariant"]);
+  }),
 ];

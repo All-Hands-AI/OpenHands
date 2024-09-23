@@ -83,3 +83,8 @@ export const retrieveWorkspaceZipBlob = async (token: string) => {
 
   return response.blob();
 };
+
+export const retrieveSecurityAnalyzers = async (): Promise<string[]> => {
+  const response = await fetch(`${BASE_URL}/api/options/security-analyzers`);
+  return response.json();
+};

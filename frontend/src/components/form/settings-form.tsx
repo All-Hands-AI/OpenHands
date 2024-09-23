@@ -19,6 +19,7 @@ interface SettingsFormProps {
   settings: Settings;
   models: Promise<string[]>;
   agents: Promise<string[]>;
+  securityAnalyzers: Promise<string[]>;
   onClose: () => void;
 }
 
@@ -26,12 +27,13 @@ export function SettingsForm({
   settings,
   models,
   agents,
+  securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
   const fetcher = useFetcher<typeof clientAction>();
   const formRef = React.useRef<HTMLFormElement>(null);
   const [showAdvancedOptions, setShowAdvancedOptions] = React.useState(
-    localStorage.getItem("use-custom-model") === "true",
+    localStorage.getItem("use-advanced-options") === "true",
   );
   const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
     React.useState(false);
@@ -47,8 +49,7 @@ export function SettingsForm({
     >
       <div className="flex flex-col gap-2">
         <Switch
-          name="use-custom-model"
-          data-testid="custom-model-toggle"
+          name="use-advanced-options"
           isSelected={showAdvancedOptions}
           onValueChange={setShowAdvancedOptions}
           classNames={{
@@ -63,15 +64,12 @@ export function SettingsForm({
             label: "text-[#A3A3A3] text-xs",
           }}
         >
-          Use custom model
+          Advanced Options
         </Switch>
 
         {showAdvancedOptions && (
           <>
-            <fieldset
-              data-testid="custom-model-input"
-              className="flex flex-col gap-2"
-            >
+            <fieldset className="flex flex-col gap-2">
               <label
                 htmlFor="custom-model"
                 className="font-[500] text-[#A3A3A3] text-xs"
@@ -89,10 +87,7 @@ export function SettingsForm({
                 }}
               />
             </fieldset>
-            <fieldset
-              data-testid="base-url-input"
-              className="flex flex-col gap-2"
-            >
+            <fieldset className="flex flex-col gap-2">
               <label
                 htmlFor="base-url"
                 className="font-[500] text-[#A3A3A3] text-xs"
@@ -185,6 +180,66 @@ export function SettingsForm({
             </Await>
           </Suspense>
         </fieldset>
+
+        {showAdvancedOptions && (
+          <>
+            <fieldset className="flex flex-col gap-2">
+              <label
+                htmlFor="security-analyzer"
+                className="font-[500] text-[#A3A3A3] text-xs"
+              >
+                Security Analyzer (Optional)
+              </label>
+              <Suspense fallback={<div>Loading analyzers...</div>}>
+                <Await resolve={securityAnalyzers}>
+                  {(resolvedSecurityAnalyzers) => (
+                    <Autocomplete
+                      isRequired
+                      id="security-analyzer"
+                      name="security-analyzer"
+                      aria-label="Security Analyzer"
+                      defaultSelectedKey={
+                        fetcher.formData
+                          ?.get("security-analyzer")
+                          ?.toString() ?? settings.SECURITY_ANALYZER
+                      }
+                      inputProps={{
+                        classNames: {
+                          inputWrapper:
+                            "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                        },
+                      }}
+                    >
+                      {resolvedSecurityAnalyzers.map((analyzer) => (
+                        <AutocompleteItem key={analyzer} value={analyzer}>
+                          {analyzer}
+                        </AutocompleteItem>
+                      ))}
+                    </Autocomplete>
+                  )}
+                </Await>
+              </Suspense>
+            </fieldset>
+
+            <Switch
+              name="confirmation-mode"
+              defaultSelected={settings.CONFIRMATION_MODE}
+              classNames={{
+                thumb: clsx(
+                  "bg-[#5D5D5D] w-3 h-3",
+                  "group-data-[selected=true]:bg-white",
+                ),
+                wrapper: clsx(
+                  "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
+                  "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
+                ),
+                label: "text-[#A3A3A3] text-xs",
+              }}
+            >
+              Enable Confirmation Mode
+            </Switch>
+          </>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">

@@ -24,16 +24,22 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     return json(null);
   }
 
-  const isUsingCustomModel = Object.keys(
-    Object.fromEntries(formData.entries()),
-  ).includes("use-custom-model");
+  const keys = Array.from(formData.keys());
+  const isUsingAdvancedOptions = keys.includes("use-advanced-options");
 
   let customModel: string | undefined;
   let baseUrl: string | undefined;
+  let confirmationMode = false;
+  let securityAnalyzer: string | undefined;
 
-  if (isUsingCustomModel) {
+  if (isUsingAdvancedOptions) {
     customModel = formData.get("custom-model")?.toString();
     baseUrl = formData.get("base-url")?.toString();
+    confirmationMode = keys.includes("confirmation-mode");
+    if (confirmationMode) {
+      // only set securityAnalyzer if confirmationMode is enabled
+      securityAnalyzer = formData.get("security-analyzer")?.toString();
+    }
   }
 
   const provider = formData.get("llm-provider")?.toString();
@@ -44,6 +50,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const AGENT = formData.get("agent")?.toString();
   const LANGUAGE = formData.get("language")?.toString();
   const LLM_BASE_URL = baseUrl;
+  const CONFIRMATION_MODE = confirmationMode;
+  const SECURITY_ANALYZER = securityAnalyzer;
 
   const settings: Partial<Settings> = {
     LLM_MODEL,
@@ -51,13 +59,15 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     AGENT,
     LANGUAGE,
     LLM_BASE_URL,
+    CONFIRMATION_MODE,
+    SECURITY_ANALYZER,
   };
 
   saveSettings(settings);
   // store for settings view
   localStorage.setItem(
-    "use-custom-model",
-    isUsingCustomModel ? "true" : "false",
+    "use-advanced-options",
+    isUsingAdvancedOptions ? "true" : "false",
   );
 
   // If the settings version is different from the current version, update it.
