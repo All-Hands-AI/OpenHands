@@ -59,7 +59,8 @@ class AgentSession:
         # We may consider making the executor shared and global if it is used very frequently.
         with ThreadPoolExecutor(1) as executor: 
             await asyncio.get_event_loop().run_in_executor(executor, self._start, runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs)
-        await self.controller.start_step_loop()
+        if self.controller is not None:
+            await self.controller.start_step_loop()
 
     def _start(self,
         runtime_name: str,
@@ -94,7 +95,7 @@ class AgentSession:
             await self.security_analyzer.close()
         self._closed = True
 
-    async def _create_security_analyzer(self, security_analyzer: str | None):
+    def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
         logger.info(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
