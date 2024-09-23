@@ -27,10 +27,11 @@ import GlobeIcon from "#/assets/globe.svg?react";
 import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import { clearFiles } from "#/state/initial-query-slice";
+import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
-export const clientLoader = () => {
+export const clientLoader = async () => {
   const q = store.getState().initalQuery.initialQuery;
   const repo = store.getState().initalQuery.selectedRepository;
 
@@ -40,12 +41,24 @@ export const clientLoader = () => {
 
   if (repo) localStorage.setItem("repo", repo);
 
+  let lastCommit: GitHubCommit | null = null;
+  if (ghToken && repo) {
+    const data = await retrieveLatestGitHubCommit(ghToken, repo);
+    if (isGitHubErrorReponse(data)) {
+      // TODO: Handle error
+      console.error("Failed to retrieve latest commit", data);
+    } else {
+      [lastCommit] = data;
+    }
+  }
+
   return json({
     settings,
     token,
     ghToken,
     repo,
     q,
+    lastCommit,
   });
 };
 
@@ -65,7 +78,7 @@ function App() {
   const dispatch = useDispatch();
   const { files } = useSelector((state: RootState) => state.initalQuery);
   const { start, send } = useSocket();
-  const { settings, token, ghToken, repo, q } =
+  const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
 
@@ -187,6 +200,7 @@ function App() {
         <Controls
           setSecurityOpen={onSecurityModalOpen}
           showSecurityLock={!!settings.SECURITY_ANALYZER}
+          lastCommitData={lastCommit}
         />
       </div>
       <Security

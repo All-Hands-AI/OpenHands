@@ -147,3 +147,16 @@ export const createGitHubRepository = async (
 
   return response.json();
 };
+
+export const retrieveLatestGitHubCommit = async (
+  token: string,
+  repository: string,
+): Promise<GitHubCommit[] | GitHubErrorReponse> => {
+  const url = new URL(`https://api.github.com/repos/${repository}/commits`);
+  url.searchParams.append("per_page", "1");
+  const response = await fetch(url.toString(), {
+    headers: generateGitHubAPIHeaders(token),
+  });
+
+  return response.json();
+};

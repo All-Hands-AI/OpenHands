@@ -11,9 +11,14 @@ import { RootState } from "#/store";
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
   showSecurityLock: boolean;
+  lastCommitData: GitHubCommit | null;
 }
 
-export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
+export function Controls({
+  setSecurityOpen,
+  showSecurityLock,
+  lastCommitData,
+}: ControlsProps) {
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
@@ -21,11 +26,11 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
 
   const projectMenuCardData = React.useMemo(
     () =>
-      rootData?.user && selectedRepository
+      rootData?.user && selectedRepository && lastCommitData
         ? {
             avatar: rootData.user.avatar_url,
             repoName: selectedRepository,
-            lastCommit: { id: "123", date: "2021-10-10" },
+            lastCommit: lastCommitData,
           }
         : null,
     [rootData, selectedRepository],

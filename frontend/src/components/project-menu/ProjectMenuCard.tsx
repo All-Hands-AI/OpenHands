@@ -102,7 +102,7 @@ function EmptyProjectMenuCard({
 interface DetailedProjectMenuCardProps {
   avatar: string;
   repoName: string;
-  lastCommit: { id: string; date: string };
+  lastCommit: GitHubCommit;
 }
 
 function DetailedProjectMenuCard({
@@ -136,10 +136,15 @@ function DetailedProjectMenuCard({
           </a>
           <ExternalLinkIcon width={16} height={16} />
         </div>
-        <div className="text-xs text-[#A3A3A3]">
-          <span>{lastCommit.id}</span> <span>&middot;</span>{" "}
-          <span>{lastCommit.date}</span>
-        </div>
+        <a
+          href={lastCommit.html_url}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-xs text-[#A3A3A3] hover:underline hover:underline-offset-2"
+        >
+          <span>{lastCommit.sha.slice(-7)}</span> <span>&middot;</span>{" "}
+          <span>{lastCommit.commit.author.date}</span>
+        </a>
       </div>
       <button
         type="button"
@@ -157,7 +162,7 @@ interface ProjectMenuCardProps {
   githubData: {
     avatar: string;
     repoName: string;
-    lastCommit: { id: string; date: string };
+    lastCommit: GitHubCommit;
   } | null;
 }
 
