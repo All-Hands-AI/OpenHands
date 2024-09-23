@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, fields
 
 from openhands.core.config.config_utils import get_field_info
@@ -78,6 +79,18 @@ class LLMConfig:
             result[f.name] = get_field_info(f)
         return result
 
+    def __post_init__(self):
+        """
+        Post-initialization hook to assign OpenRouter-related variables to environment variables.
+        This ensures that these values are accessible to litellm at runtime.
+        """
+
+        # Assign OpenRouter-specific variables to environment variables
+        if self.openrouter_site_url:
+            os.environ['OPENROUTER_SITE_URL'] = self.openrouter_site_url
+        if self.openrouter_app_name:
+            os.environ['OPENROUTER_APP_NAME'] = self.openrouter_app_name
+
     def __str__(self):
         attr_str = []
         for f in fields(self):
@@ -101,9 +114,3 @@ class LLMConfig:
             if k in LLM_SENSITIVE_FIELDS:
                 ret[k] = '******' if v else None
         return ret
-
-    def set_missing_attributes(self):
-        """Set any missing attributes to their default values."""
-        for field_name, field_obj in self.__dataclass_fields__.items():
-            if not hasattr(self, field_name):
-                setattr(self, field_name, field_obj.default)

@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import os
 import time
 import warnings
 from functools import partial
@@ -84,16 +83,10 @@ class LLM:
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
 
-        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
-        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
-
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
         # - 'response': response from the LLM
         self.llm_completions: list[dict[str, Any]] = []
-
-        # Set up config attributes with default values to prevent AttributeError
-        LLMConfig.set_missing_attributes(self.config)
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
