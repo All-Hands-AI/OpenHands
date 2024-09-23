@@ -22,6 +22,9 @@ jobs:
         python-version: ['3.11']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -107,6 +110,9 @@ jobs:
         python-version: ['3.11']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python

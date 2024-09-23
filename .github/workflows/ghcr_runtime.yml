@@ -115,6 +115,9 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
         if: github.event.pull_request.head.repo.fork
@@ -177,6 +180,9 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
         if: github.event.pull_request.head.repo.fork
@@ -240,6 +246,9 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
         if: github.event.pull_request.head.repo.fork
