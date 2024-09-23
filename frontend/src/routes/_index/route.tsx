@@ -85,24 +85,26 @@ function Home() {
         </div>
       )}
       <HeroHeading />
-      <TaskForm />
-      <div className="flex gap-4">
-        <SuggestionBox
-          title="Open a Repo"
-          content={
-            ghToken ? (
-              <GitHubRepositorySelector repositories={repositories} />
-            ) : (
-              <ModalButton
-                text="Connect to GitHub"
-                icon={<GitHubLogo width={20} height={20} />}
-                className="bg-[#791B80] w-full"
-                onClick={() => setConnectToGitHubModalOpen(true)}
-              />
-            )
-          }
-        />
-        <SuggestionBox title="+ Import Project" content="from your desktop" />
+      <div className="flex flex-col gap-16 items-center">
+        <TaskForm />
+        <div className="flex gap-4 w-full">
+          <SuggestionBox
+            title="Open a Repo"
+            content={
+              ghToken ? (
+                <GitHubRepositorySelector repositories={repositories} />
+              ) : (
+                <ModalButton
+                  text="Connect to GitHub"
+                  icon={<GitHubLogo width={20} height={20} />}
+                  className="bg-[#791B80] w-full"
+                  onClick={() => setConnectToGitHubModalOpen(true)}
+                />
+              )
+            }
+          />
+          <SuggestionBox title="+ Import Project" content="from your desktop" />
+        </div>
       </div>
       {connectToGitHubModalOpen && (
         <ModalBackdrop>
