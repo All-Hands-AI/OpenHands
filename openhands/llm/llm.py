@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import time
 import warnings
 from functools import partial
@@ -50,6 +51,15 @@ cache_prompting_supported_models = [
     'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
 ]
+
+_DEFAULT_LLM_ENV_VAR = {
+    'OR_SITE_URL': 'https://docs.all-hands.dev/',
+    'OR_APP_NAME': 'OpenHands',
+}
+
+for key, value in _DEFAULT_LLM_ENV_VAR.items():
+    if key not in os.environ:
+        os.environ[key] = value
 
 
 class LLM:
