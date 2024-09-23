@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import time
 import uuid
 from zipfile import ZipFile
 
@@ -51,11 +50,11 @@ class LogBuffer:
 
         self.buffer: list[str] = []
         self.lock = threading.Lock()
+        self._stop_event = threading.Event()
         self.log_generator = container.logs(stream=True, follow=True)
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
         self.log_stream_thread.daemon = True
         self.log_stream_thread.start()
-        self._stop_event = threading.Event()
 
     def append(self, log_line: str):
         with self.lock:
@@ -168,14 +167,18 @@ class EventStreamRuntime(Runtime):
             mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
             plugins=plugins,
         )
+
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
+
+        logger.info('Waiting for runtime container to be alive...')
+        self._wait_until_alive()
+
+        self.setup_initial_env()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
-        logger.info(f'Container initialized with env vars: {env_vars}')
-        time.sleep(1)
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -287,19 +290,13 @@ class EventStreamRuntime(Runtime):
             self.close(close_client=False)
             raise e
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(10),
-        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
-        reraise=(ConnectionRefusedError,),
-    )
-    def _wait_until_alive(self):
+    def _refresh_logs(self):
         logger.debug('Getting container logs...')
 
         assert (
             self.log_buffer is not None
         ), 'Log buffer is expected to be initialized when container is started'
 
-        # Always process logs, regardless of client_ready status
         logs = self.log_buffer.get_and_clear()
         if logs:
             formatted_logs = '\n'.join([f'    |{log}' for log in logs])
@@ -313,24 +310,15 @@ class EventStreamRuntime(Runtime):
                 + '-' * 80
             )
 
-        if not self.log_buffer.client_ready:
-            time.sleep(1)
-            attempts = 0
-            while not self.log_buffer.client_ready and attempts < 5:
-                attempts += 1
-                time.sleep(1)
-                logs = self.log_buffer.get_and_clear()
-                if logs:
-                    formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-                    logger.info(
-                        '\n'
-                        + '-' * 35
-                        + 'Container logs:'
-                        + '-' * 35
-                        + f'\n{formatted_logs}'
-                        + '\n'
-                        + '-' * 80
-                    )
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(10),
+        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
+        reraise=(ConnectionRefusedError,),
+    )
+    def _wait_until_alive(self):
+        self._refresh_logs()
+        if not (self.log_buffer and self.log_buffer.client_ready):
+            raise RuntimeError('Runtime client is not ready.')
 
         response = self.session.get(f'{self.api_url}/alive')
         if response.status_code == 200:
@@ -410,8 +398,7 @@ class EventStreamRuntime(Runtime):
                     'Action has been rejected by the user! Waiting for further user input.'
                 )
 
-            logger.info('Awaiting session')
-            self._wait_until_alive()
+            self._refresh_logs()
 
             assert action.timeout is not None
 
@@ -437,8 +424,7 @@ class EventStreamRuntime(Runtime):
             except Exception as e:
                 logger.error(f'Error during command execution: {e}')
                 obs = ErrorObservation(f'Command execution failed: {str(e)}')
-            # TODO Refresh docker logs or not?
-            # self._wait_until_alive()
+            self._refresh_logs()
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
@@ -469,7 +455,7 @@ class EventStreamRuntime(Runtime):
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
-        self._wait_until_alive()
+        self._refresh_logs()
         try:
             if recursive:
                 # For recursive copy, create a zip file
@@ -511,15 +497,14 @@ class EventStreamRuntime(Runtime):
             if recursive:
                 os.unlink(temp_zip_path)
             logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
-            # Refresh docker logs
-            self._wait_until_alive()
+            self._refresh_logs()
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-        self._wait_until_alive()
+        self._refresh_logs()
         try:
             data = {}
             if path is not None:

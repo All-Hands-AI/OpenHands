@@ -44,11 +44,13 @@ class ShortTermHistory(list[Event]):
     def set_event_stream(self, event_stream: EventStream):
         self._event_stream = event_stream
 
-    def get_events_as_list(self) -> list[Event]:
+    def get_events_as_list(self, include_delegates: bool = False) -> list[Event]:
         """Return the history as a list of Event objects."""
-        return list(self.get_events())
+        return list(self.get_events(include_delegates=include_delegates))
 
-    def get_events(self, reverse: bool = False) -> Iterable[Event]:
+    def get_events(
+        self, reverse: bool = False, include_delegates: bool = False
+    ) -> Iterable[Event]:
         """Return the events as a stream of Event objects."""
         # TODO handle AgentRejectAction, if it's not part of a chunk ending with an AgentDelegateObservation
         # or even if it is, because currently we don't add it to the summary
@@ -71,13 +73,15 @@ class ShortTermHistory(list[Event]):
             # and filter out events that were included in a summary
 
             # filter out the events from a delegate of the current agent
-            if not any(
+            if not include_delegates and not any(
                 # except for the delegate action and observation themselves, currently
                 # AgentDelegateAction has id = delegate_start
                 # AgentDelegateObservation has id = delegate_end
                 delegate_start < event.id < delegate_end
                 for delegate_start, delegate_end in self.delegates.keys()
             ):
+                yield event
+            elif include_delegates:
                 yield event
 
     def get_last_action(self, end_id: int = -1) -> Action | None:
@@ -224,7 +228,7 @@ class ShortTermHistory(list[Event]):
         # (other_action?, NullObservation)
         # (NullAction, CmdOutputObservation) background CmdOutputObservations
 
-        for event in self.get_events_as_list():
+        for event in self.get_events_as_list(include_delegates=True):
             if event.id is None or event.id == -1:
                 logger.debug(f'Event {event} has no ID')
 
