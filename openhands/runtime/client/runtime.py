@@ -25,20 +25,14 @@ from openhands.events.action import (
 from openhands.events.action.action import Action
 from openhands.events.observation import (
     ErrorObservation,
-    FileEditObservation,
-    FileReadObservation,
-    FileWriteObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.llm.llm import LLM
 from openhands.runtime.builder import DockerRuntimeBuilder
-from openhands.runtime.client.edit import get_diff, get_new_file_contents
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.plugins.agent_skills.file_ops.file_ops import _lint_file
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -177,13 +171,6 @@ class EventStreamRuntime(Runtime):
         )
         # will initialize both the event stream and the env vars
         super().__init__(config, event_stream, sid, plugins, env_vars)
-
-        if 'draft_editor' in self.config.llms:
-            self.draft_editor_llm = LLM(self.config.llms['draft_editor'])
-            logger.info(
-                f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
-            )
-            # TODO: figure a way to track costs for draft editor LLM
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
@@ -469,61 +456,6 @@ class EventStreamRuntime(Runtime):
 
     def write(self, action: FileWriteAction) -> Observation:
         return self.run_action(action)
-
-    def edit(self, action: FileEditAction) -> Observation:
-        if not hasattr(self, 'draft_editor_llm'):
-            raise RuntimeError(
-                'Edit action is not supported when Draft editor LLM is not set. Please set the "llm.draft_editor" in the config.'
-            )
-        obs = self.read(FileReadAction(path=action.path))
-
-        if (
-            isinstance(obs, ErrorObservation)
-            and 'File not found'.lower() in obs.content.lower()
-        ):
-            # directly write the new content
-            obs = self.write(
-                FileWriteAction(path=action.path, content=action.content.strip())
-            )
-            if isinstance(obs, ErrorObservation):
-                return obs
-            assert isinstance(obs, FileWriteObservation)
-            return FileEditObservation(
-                content=get_diff('', action.content, action.path),
-                path=action.path,
-                prev_exist=False,
-            )
-        elif isinstance(obs, FileReadObservation):
-            old_file_content = obs.content
-            updated_content = get_new_file_contents(
-                self.draft_editor_llm, old_file_content, action.content
-            )
-            if updated_content is None:
-                return ErrorObservation(
-                    'Failed to get new file contents. '
-                    'Please try to reduce the number of edits and try again.'
-                )
-
-            diff = get_diff(old_file_content, updated_content, action.path)
-
-            # Lint the updated content
-            if self.config.sandbox.enable_auto_lint:
-                suffix = os.path.splitext(action.path)[1]
-                with tempfile.NamedTemporaryFile(
-                    suffix=suffix, mode='w+', encoding='utf-8'
-                ) as temp_file:
-                    temp_file.write(updated_content)
-                    temp_file.flush()
-                    lint_error, _ = _lint_file(temp_file.name)
-                    if lint_error:
-                        error_message = f'\n=== Linting failed for edited file [{action.path}] ===\n{lint_error}\n===\nChanges tried:\n{diff}\n==='
-                        return ErrorObservation(error_message)
-
-            obs = self.write(FileWriteAction(path=action.path, content=updated_content))
-            return FileEditObservation(content=diff, path=action.path, prev_exist=True)
-        else:
-            logger.error(f'Unhandled error observation: {obs}')
-            return obs
 
     def browse(self, action: BrowseURLAction) -> Observation:
         return self.run_action(action)

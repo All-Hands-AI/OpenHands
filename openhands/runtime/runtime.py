@@ -27,6 +27,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
+from openhands.runtime.utils.edit import FileEditRuntimeMixin
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -40,7 +41,7 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     return ret
 
 
-class Runtime:
+class Runtime(FileEditRuntimeMixin):
     """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
@@ -74,6 +75,9 @@ class Runtime:
         if env_vars is not None:
             logger.debug(f'Adding provided env vars: {env_vars}')
             self.add_env_vars(env_vars)
+
+        # Load mixins
+        FileEditRuntimeMixin.__init__(self)
 
     def close(self) -> None:
         pass
