@@ -753,11 +753,4 @@ async def security_api(request: Request):
     )
 
 
-@app.get("/heartbeat")
-async def heartbeat():
-    print("Getting the heartbeat file (This demos that the server is not locked up!)")
-    response = FileResponse(f"tim_test/heartbeat.html")
-    return response
-
-
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')
