@@ -140,9 +140,6 @@ class LLM:
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        if self.config.drop_params:
-            litellm.drop_params = self.config.drop_params
-
         # This only seems to work with Google as the provider, not with OpenRouter!
         gemini_safety_settings = (
             [
@@ -178,6 +175,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
@@ -306,7 +304,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            drop_params=True,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
