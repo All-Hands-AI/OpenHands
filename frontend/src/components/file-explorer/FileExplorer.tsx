@@ -206,7 +206,7 @@ function FileExplorer({ files }: FileExplorerProps) {
       )}
       <div
         className={twMerge(
-          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring",
+          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col",
           isHidden ? "w-12" : "w-60",
         )}
       >
