@@ -1,3 +1,5 @@
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -51,8 +53,25 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
         await self._create_security_analyzer(config.security.security_analyzer)
-        await self._create_runtime(runtime_name, config, agent)
-        await self._create_controller(
+        
+        # Runtimes can take a long time to create / start - and we don't want to lock up the 
+        # main event loop waiting for this, so we do this in a background thread
+        # We may consider making the executor shared and global if it is used very frequently.
+        with ThreadPoolExecutor(1) as executor: 
+            await asyncio.get_event_loop().run_in_executor(executor, self._start, runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs)
+
+    def _start(self,
+        runtime_name: str,
+        config: AppConfig,
+        agent: Agent,
+        max_iterations: int,
+        max_budget_per_task: float,
+        agent_to_llm_config: dict[str, LLMConfig],
+        agent_configs: dict[str, AgentConfig],
+    ):
+        self._create_security_analyzer(config.security.security_analyzer)
+        self._create_runtime(runtime_name, config, agent)
+        self._create_controller(
             agent,
             config.security.confirmation_mode,
             max_iterations,
@@ -82,7 +101,7 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
+    def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
         """Creates a runtime instance."""
         if self.runtime is not None:
             raise Exception('Runtime already created')
@@ -96,7 +115,7 @@ class AgentSession:
             plugins=agent.sandbox_plugins,
         )
 
-    async def _create_controller(
+    def _create_controller(
         self,
         agent: Agent,
         confirmation_mode: bool,

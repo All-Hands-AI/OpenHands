@@ -26,7 +26,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
@@ -751,6 +751,13 @@ async def security_api(request: Request):
             request
         )
     )
+
+
+@app.get("/heartbeat")
+async def heartbeat():
+    print("Getting the heartbeat file (This demos that the server is not locked up!)")
+    response = FileResponse(f"tim_test/heartbeat.html")
+    return response
 
 
 app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')
