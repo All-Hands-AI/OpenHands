@@ -1,35 +1,22 @@
 import argparse
 import hashlib
+import importlib.metadata
 import os
 import shutil
-import subprocess
 import tempfile
+import time
 
 import docker
-import toml
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
-import openhands
+from openhands import get_version
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 
 def get_runtime_image_repo():
     return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
-
-
-def _get_package_version():
-    """Read the version from pyproject.toml.
-
-    Returns:
-    - The version specified in pyproject.toml under [tool.poetry]
-    """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    pyproject_path = os.path.join(project_root, 'pyproject.toml')
-    with open(pyproject_path, 'r') as f:
-        pyproject_data = toml.load(f)
-    return pyproject_data['tool']['poetry']['version']
 
 
 def _put_source_code_to_dir(temp_dir: str):
@@ -42,48 +29,66 @@ def _put_source_code_to_dir(temp_dir: str):
     if not os.path.isdir(temp_dir):
         raise RuntimeError(f'Temp directory {temp_dir} does not exist')
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    logger.info(f'Building source distribution using project root: {project_root}')
+    package_name = 'openhands-ai'
+    try:
+        distribution = importlib.metadata.distribution(package_name)
+        source_dir = os.path.dirname(distribution.locate_file(package_name))
+        dest_dir = os.path.join(temp_dir, 'code')
+        for package_name in ['openhands']:
+            package_folder = os.path.join(source_dir, package_name)
+            shutil.copytree(package_folder, os.path.join(dest_dir, package_name))
+        shutil.move(
+            os.path.join(dest_dir, 'openhands/pyproject.toml'), os.path.join(dest_dir)
+        )
+        shutil.move(
+            os.path.join(dest_dir, 'openhands/poetry.lock'), os.path.join(dest_dir)
+        )
+        logger.info(f'Unpacked source code directory: {dest_dir}')
+        time.sleep(10)
+    except importlib.metadata.PackageNotFoundError:
+        raise RuntimeError(f'Package {package_name} not found')
 
-    # Fetch the correct version from pyproject.toml
-    package_version = _get_package_version()
-    tarball_filename = f'openhands_ai-{package_version}.tar.gz'
-    tarball_path = os.path.join(temp_dir, tarball_filename)
+    # project_root = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
+    # logger.info(f'Building source distribution using project root: {project_root}')
 
-    # Run "python -m build -s" on project_root to create project tarball directly in temp_dir
-    _cleaned_project_root = project_root.replace(
-        ' ', r'\ '
-    )  # escape spaces in the project root
-    result = subprocess.run(
-        f'python -m build -s -o "{temp_dir}" {_cleaned_project_root}',
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    logger.info(result.stdout.decode())
-    err_logs = result.stderr.decode()
-    if err_logs:
-        logger.error(err_logs)
+    # package_version = get_version()
+    # tarball_filename = f'openhands_ai-{package_version}.tar.gz'
+    # tarball_path = os.path.join(temp_dir, tarball_filename)
 
-    if result.returncode != 0:
-        logger.error(f'Image build failed:\n{result}')
-        raise RuntimeError(f'Image build failed:\n{result}')
+    # # Run "python -m build -s" on project_root to create project tarball directly in temp_dir
+    # _cleaned_project_root = project_root.replace(
+    #     ' ', r'\ '
+    # )  # escape spaces in the project root
+    # result = subprocess.run(
+    #     f'python -m build -s -o "{temp_dir}" {_cleaned_project_root}',
+    #     shell=True,
+    #     stdout=subprocess.PIPE,
+    #     stderr=subprocess.PIPE,
+    # )
+    # logger.info(result.stdout.decode())
+    # err_logs = result.stderr.decode()
+    # if err_logs:
+    #     logger.error(err_logs)
 
-    if not os.path.exists(tarball_path):
-        logger.error(f'Source distribution not found at {tarball_path}')
-        raise RuntimeError(f'Source distribution not found at {tarball_path}')
-    logger.info(f'Source distribution created at {tarball_path}')
+    # if result.returncode != 0:
+    #     logger.error(f'Image build failed:\n{result}')
+    #     raise RuntimeError(f'Image build failed:\n{result}')
 
-    # Unzip the tarball
-    shutil.unpack_archive(tarball_path, temp_dir)
-    # Remove the tarball
-    os.remove(tarball_path)
-    # Rename the directory containing the code to 'code'
-    os.rename(
-        os.path.join(temp_dir, f'openhands_ai-{package_version}'),
-        os.path.join(temp_dir, 'code'),
-    )
-    logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
+    # if not os.path.exists(tarball_path):
+    #     logger.error(f'Source distribution not found at {tarball_path}')
+    #     raise RuntimeError(f'Source distribution not found at {tarball_path}')
+    # logger.info(f'Source distribution created at {tarball_path}')
+
+    # # Unzip the tarball
+    # shutil.unpack_archive(tarball_path, temp_dir)
+    # # Remove the tarball
+    # os.remove(tarball_path)
+    # # Rename the directory containing the code to 'code'
+    # os.rename(
+    #     os.path.join(temp_dir, f'openhands_ai-{package_version}'),
+    #     os.path.join(temp_dir, 'code'),
+    # )
+    # logger.info(f'Unpacked source code directory: {os.path.join(temp_dir, "code")}')
 
 
 def _generate_dockerfile(
@@ -188,7 +193,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         if ':' not in base_image:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
-        oh_version = _get_package_version()
+        oh_version = get_version()
 
         # Hash the repo if it's too long
         if len(repo) > 32:
