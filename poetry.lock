@@ -3805,23 +3805,23 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.10"
+version = "0.11.12"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.10-py3-none-any.whl", hash = "sha256:5f5ef55e14c2f670a855abb4d24bf626333ef33dd630a90ec61c3b36635b2cf7"},
-    {file = "llama_index-0.11.10.tar.gz", hash = "sha256:1733f23bfb5afcea97a594d356994d379e6fb0da4e85d5adcb49757559f113e6"},
+    {file = "llama_index-0.11.12-py3-none-any.whl", hash = "sha256:a7d0b4065df2689cec1baeab9bfaed4d94e4ddc7e941df2ee47abfb218ce3ea1"},
+    {file = "llama_index-0.11.12.tar.gz", hash = "sha256:6b9220bf4c76a4ac0a82ccc642c3ea94f51381a9718ac601021f2fa95b74aab1"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.1,<0.4.0"
+llama-index-agent-openai = ">=0.3.4,<0.4.0"
 llama-index-cli = ">=0.3.1,<0.4.0"
-llama-index-core = ">=0.11.10,<0.12.0"
+llama-index-core = ">=0.11.11,<0.12.0"
 llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
-llama-index-llms-openai = ">=0.2.3,<0.3.0"
+llama-index-llms-openai = ">=0.2.9,<0.3.0"
 llama-index-multi-modal-llms-openai = ">=0.2.0,<0.3.0"
 llama-index-program-openai = ">=0.2.0,<0.3.0"
 llama-index-question-gen-openai = ">=0.2.0,<0.3.0"
@@ -3831,18 +3831,18 @@ nltk = ">3.8.1"
 
 [[package]]
 name = "llama-index-agent-openai"
-version = "0.3.1"
+version = "0.3.4"
 description = "llama-index agent openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_agent_openai-0.3.1-py3-none-any.whl", hash = "sha256:21886081ae74574d8cad1ec4886f2d4b082284b9364adb46fff87aba1a25e9b9"},
-    {file = "llama_index_agent_openai-0.3.1.tar.gz", hash = "sha256:41c9aa5b7cebc5043adddb3442e3167e97971589466e36448e04e0a767f5b9aa"},
+    {file = "llama_index_agent_openai-0.3.4-py3-none-any.whl", hash = "sha256:3720ce9bb12417a99a3fe84e52cce23e762b13f88a2dfc4292c76f4df9b26b4a"},
+    {file = "llama_index_agent_openai-0.3.4.tar.gz", hash = "sha256:80e3408d97121bebca3fa3ffd14b51285870c1c3c73d4ee04d3d18cfe6040466"},
 ]
 
 [package.dependencies]
 llama-index-core = ">=0.11.0,<0.12.0"
-llama-index-llms-openai = ">=0.2.0,<0.3.0"
+llama-index-llms-openai = ">=0.2.9,<0.3.0"
 openai = ">=1.14.0"
 
 [[package]]
@@ -3863,13 +3863,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.10"
+version = "0.11.12"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.10-py3-none-any.whl", hash = "sha256:2dddd7cb4ccee89fdbbddd62e5fe3c7ae7fc431130e0a0a7155daee052874191"},
-    {file = "llama_index_core-0.11.10.tar.gz", hash = "sha256:9929b11cfb24a3581620466660ab11a6360fde8c2441caa3660e0127df65c1b9"},
+    {file = "llama_index_core-0.11.12-py3-none-any.whl", hash = "sha256:7dc7ead649bac8f09e61c6c8bf93d257f68a7315223552421be4f0ffc3a8054d"},
+    {file = "llama_index_core-0.11.12.tar.gz", hash = "sha256:ce2dd037ff889d9ea6b25872228cc9de614c10445d19377f6ae5c66b93a50c61"},
 ]
 
 [package.dependencies]
@@ -4030,17 +4030,16 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-llms-openai"
-version = "0.2.3"
+version = "0.2.9"
 description = "llama-index llms openai integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_llms_openai-0.2.3-py3-none-any.whl", hash = "sha256:dbcf8636bca57b0c063621a9981bbf2fdfaedd96c8e4906b8ddf0a139cb74d2f"},
-    {file = "llama_index_llms_openai-0.2.3.tar.gz", hash = "sha256:e9173b430331791c6a5a9df16796437ae4a3ae247fd4e0f281f7cbe59258b07a"},
+    {file = "llama_index_llms_openai-0.2.9-py3-none-any.whl", hash = "sha256:5f36e8cbca2c3c657380c711bd3974fe7e2344d3b6a8dde6c263e56868d01e27"},
+    {file = "llama_index_llms_openai-0.2.9.tar.gz", hash = "sha256:56376f39e3a40253b5c4fb90d0fb6af093f21bb2935925615f0c28a28d028187"},
 ]
 
 [package.dependencies]
-llama-index-agent-openai = ">=0.3.1,<0.4.0"
 llama-index-core = ">=0.11.7,<0.12.0"
 openai = ">=1.40.0,<2.0.0"
 
