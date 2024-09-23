@@ -4,7 +4,6 @@ import importlib.metadata
 import os
 import shutil
 import tempfile
-import time
 
 import docker
 from dirhash import dirhash
@@ -44,7 +43,6 @@ def _put_source_code_to_dir(temp_dir: str):
             os.path.join(dest_dir, 'openhands/poetry.lock'), os.path.join(dest_dir)
         )
         logger.info(f'Unpacked source code directory: {dest_dir}')
-        time.sleep(10)
     except importlib.metadata.PackageNotFoundError:
         raise RuntimeError(f'Package {package_name} not found')
 
