@@ -60,7 +60,6 @@ class AgentSession:
             await asyncio.get_event_loop().run_in_executor(executor, self._start, runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs)
         if self.controller is not None:
             self.controller.agent_task = asyncio.create_task(self.controller.start_step_loop())
-            #await self.controller.start_step_loop()
 
     def _start(self,
         runtime_name: str,
