@@ -52,15 +52,6 @@ cache_prompting_supported_models = [
     'claude-3-haiku-20240307',
 ]
 
-_DEFAULT_LLM_ENV_VAR = {
-    'OR_SITE_URL': 'https://docs.all-hands.dev/',
-    'OR_APP_NAME': 'OpenHands',
-}
-
-for key, value in _DEFAULT_LLM_ENV_VAR.items():
-    if key not in os.environ:
-        os.environ[key] = value
-
 
 class LLM:
     """The LLM class represents a Language Model instance.
@@ -84,6 +75,9 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
+
+        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
+        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
 
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
