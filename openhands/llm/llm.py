@@ -680,5 +680,12 @@ class LLM:
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):
-            return [messages.model_dump()]
+            messages = [messages]
+
+        # set flags to know how to serialize the messages
+        for message in messages:
+            message.cache_enabled = self.is_caching_prompt_active()
+            message.vision_enabled = self.vision_is_active()
+
+        # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
