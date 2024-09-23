@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.4  # Specify BuildKit syntax version
-
 {% if skip_init %}
 FROM {{ base_image }}
 {% else %}
@@ -15,8 +13,7 @@ FROM {{ base_image }}
 {% endif %}
 
 # Install necessary packages and clean up in one layer
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -32,8 +29,7 @@ RUN mkdir -p /openhands && \
 # Directory containing subdirectories for virtual environment.
 ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
 
-RUN --mount=type=cache,target=/openhands/miniforge3/pkgs \
-    if [ ! -d /openhands/miniforge3 ]; then \
+RUN if [ ! -d /openhands/miniforge3 ]; then \
     wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
     bash Miniforge3.sh -b -p /openhands/miniforge3 && \
     rm Miniforge3.sh && \
@@ -62,8 +58,7 @@ COPY ./code /openhands/code
 # the bash environment to ensure the correct Python interpreter and
 # virtual environment are used by default.
 WORKDIR /openhands/code
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/openhands/poetry/cache \
+RUN \
     # Configure Poetry and create virtual environment
     /openhands/miniforge3/bin/mamba run -n base poetry config virtualenvs.path /openhands/poetry && \
     /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
