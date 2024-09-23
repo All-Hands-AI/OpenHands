@@ -104,9 +104,7 @@ export default function App() {
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
       <aside className="px-1 flex flex-col gap-[15px]">
-        <Link data-testid="link-to-main" to="/">
-          <AllHandsLogo width={34} height={23} />
-        </Link>
+        <AllHandsLogo width={34} height={23} />
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <div className="w-8 h-8 relative">
             <button
