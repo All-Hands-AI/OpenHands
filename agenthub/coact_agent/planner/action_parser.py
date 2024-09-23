@@ -24,7 +24,7 @@ class PlannerResponseParser(CodeActResponseParser):
     - AgentFinishAction() - end the interaction
     """
 
-    def __init__(self, initial_task_str=''):
+    def __init__(self, initial_task_str=None):
         # Need pay attention to the item order in self.action_parsers
         super().__init__()
         self.action_parsers = [
@@ -65,10 +65,10 @@ class CoActActionParserGlobalPlan(ActionParser):
 
     def __init__(
         self,
-        initial_task_str='',
+        initial_task_str: list | None = None,
     ):
-        self.global_plan = None
-        self.initial_task_str = initial_task_str
+        self.global_plan: re.Match | None = None
+        self.initial_task_str = initial_task_str or ['']
 
     def check_condition(self, action_str: str) -> bool:
         self.global_plan = re.search(
@@ -86,7 +86,7 @@ class CoActActionParserGlobalPlan(ActionParser):
             agent='CoActExecutorAgent',
             thought=thought,
             inputs={
-                'task': f'The user message is: {self.initial_task_str}.\nExecute the following plan to fulfill it:  {global_plan_actions}'
+                'task': f'The user message is: {self.initial_task_str[0]}.\nExecute the following plan to fulfill it:\n{global_plan_actions}'
             },
             action_suffix='global_plan',
         )
