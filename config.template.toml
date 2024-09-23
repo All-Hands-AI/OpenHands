@@ -146,8 +146,8 @@ model = "gpt-4o"
 # Drop any unmapped (unsupported) params without causing an exception
 #drop_params = false
 
-# Using the prompt caching feature provided by the LLM
-#caching_prompt = false
+# Using the prompt caching feature if provided by the LLM and supported
+#caching_prompt = true
 
 # Base URL for the OLLAMA API
 #ollama_base_url = ""

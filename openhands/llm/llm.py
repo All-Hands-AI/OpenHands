@@ -51,8 +51,10 @@ message_separator = '\n\n----------\n\n'
 PROMPT_CACHE_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
+    'claude-3-opus-20240229',
     'anthropic/claude-3-5-sonnet-20240620',
     'anthropic/claude-3-haiku-20240307',
+    'anthropic/claude-3-opus-20240229',
     'gemini/gemini-1.5-pro',
     'gemini-1.5-pro',
 ]
