@@ -72,6 +72,7 @@ function CodeEditor() {
   const [files, setFiles] = React.useState<string[]>([]);
 
   React.useEffect(() => {
+    // only retrieve files if connected to WS to prevent requesting before runtime is ready
     if (isConnected && token) retrieveFiles(token).then(setFiles);
   }, [isConnected, token]);
 
