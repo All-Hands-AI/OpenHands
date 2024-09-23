@@ -198,26 +198,21 @@ class CodeActActionParserFileEdit(ActionParser):
         self.file_edit_match: re.Match | None = None
 
     def check_condition(self, action_str: str) -> bool:
-        if '<file_edit' in action_str and 'path=' not in action_str:
-            raise ActionParseError(
-                error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit by setting `path="<path>"` in <file_edit> tag. For example: <file_edit path="path/to/file.txt">...</file_edit>'
-            )
-
+        if '<file_edit' not in action_str:
+            return False
+            
         self.file_edit_match = re.search(
             r'<file_edit\s+path=(["\']?)(.*?)\1>(.*?)</file_edit>',
             action_str,
             re.DOTALL,
         )
-        if self.file_edit_match is None:
-            return False
-
-        path = self.file_edit_match.group(2)
+        path = None if self.file_edit_match is None else self.file_edit_match.group(2)
         if not path:
-            logger.warning(
-                f'<file_edit> detected by parser but no `path` specified in action: {action_str}.\n'
-                'This is likely a LLM quality issue.'
+            raise ActionParseError(
+                error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit by setting `path="<path>"` in <file_edit> tag. For example: <file_edit path="path/to/file.txt">...</file_edit>'
             )
-            return False
+        
+        return True
 
         return True
 
