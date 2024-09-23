@@ -46,8 +46,11 @@ class FileEditObservation(Observation):
             ret += f'[Edited existing file {self.path}]\n'
         else:
             ret += f'[New file {self.path} is created.]\n'
-        ret += '(begin of changes)\n'
-        ret += self.content
-        ret = ret.rstrip() + '\n'
-        ret += '(end of changes)\n'
+        if not self.content.strip():
+            ret += '(no changes detected. Please make sure your edits changes the content of the existing file.)\n'
+        else:
+            ret += '(begin of changes)\n'
+            ret += self.content
+            ret = ret.rstrip() + '\n'
+            ret += '(end of changes)\n'
         return ret.rstrip() + '\n'
