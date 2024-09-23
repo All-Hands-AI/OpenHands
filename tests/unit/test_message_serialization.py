@@ -1,7 +1,7 @@
 from openhands.core.message import ImageContent, Message, TextContent
 
 
-def test_message_serialization():
+def test_message_with_vision_enabled():
     text_content1 = TextContent(text='This is a text message')
     image_content1 = ImageContent(
         image_urls=['http://example.com/image1.png', 'http://example.com/image2.png']
@@ -14,6 +14,7 @@ def test_message_serialization():
     message = Message(
         role='user',
         content=[text_content1, image_content1, text_content2, image_content2],
+        vision_enabled=True,
     )
     serialized_message = message.serialize_model()
 
@@ -45,11 +46,13 @@ def test_message_serialization():
     assert message.contains_image is True
 
 
-def test_message_with_only_text_content():
+def test_message_with_only_text_content_and_vision_enabled():
     text_content1 = TextContent(text='This is a text message')
     text_content2 = TextContent(text='This is another text message')
 
-    message = Message(role='user', content=[text_content1, text_content2])
+    message = Message(
+        role='user', content=[text_content1, text_content2], vision_enabled=True
+    )
     serialized_message = message.serialize_model()
 
     expected_serialized_message = {
@@ -58,6 +61,24 @@ def test_message_with_only_text_content():
             {'type': 'text', 'text': 'This is a text message'},
             {'type': 'text', 'text': 'This is another text message'},
         ],
+    }
+
+    assert serialized_message == expected_serialized_message
+    assert message.contains_image is False
+
+
+def test_message_with_only_text_content_and_vision_disabled():
+    text_content1 = TextContent(text='This is a text message')
+    text_content2 = TextContent(text='This is another text message')
+
+    message = Message(
+        role='user', content=[text_content1, text_content2], vision_enabled=False
+    )
+    serialized_message = message.serialize_model()
+
+    expected_serialized_message = {
+        'role': 'user',
+        'content': 'This is a text message\nThis is another text message',
     }
 
     assert serialized_message == expected_serialized_message
