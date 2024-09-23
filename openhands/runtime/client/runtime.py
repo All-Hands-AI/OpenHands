@@ -134,7 +134,7 @@ class EventStreamRuntime(Runtime):
         )
         self.status_message_callback = status_message_callback
 
-        self.send_status_message('Starting runtime...')
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
@@ -163,9 +163,8 @@ class EventStreamRuntime(Runtime):
                 raise ValueError(
                     'Neither runtime container image nor base container image is set'
                 )
-            msg = 'Preparing container, this might several minutes...'
-            logger.debug(msg)
-            self.send_status_message(msg)
+            logger.info('Preparing container, this might take a few minutes...')
+            self.send_status_message('STATUS$STARTING_CONTAINER')
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
@@ -182,9 +181,8 @@ class EventStreamRuntime(Runtime):
             config, event_stream, sid, plugins, env_vars, status_message_callback
         )
 
-        msg = 'Waiting for client to become ready...'
-        logger.info(msg)
-        self.send_status_message(msg)
+        logger.info('Waiting for client to become ready...')
+        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         self._wait_until_alive()
 
@@ -216,9 +214,8 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
-            msg = 'Preparing to start container...'
-            logger.info(msg)
-            self.send_status_message(msg)
+            logger.info('Preparing to start container...')
+            self.send_status_message('STATUS$PREPARING_CONTAINER')
             plugin_arg = ''
             if plugins is not None and len(plugins) > 0:
                 plugin_arg = (
@@ -297,7 +294,7 @@ class EventStreamRuntime(Runtime):
             )
             self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
-            self.send_status_message('Container started.')
+            self.send_status_message('STATUS$CONTAINER_STARTED')
             return container
         except Exception as e:
             logger.error(

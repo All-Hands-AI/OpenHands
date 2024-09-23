@@ -140,7 +140,11 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  store.dispatch(setCurStatusMessage(message));
+  const msg = message.message == null ? '' : message.message.trim();
+  store.dispatch(setCurStatusMessage({
+    ...message,
+    message: msg
+  }));
 }
 
 export function handleAssistantMessage(data: string | SocketMessage) {

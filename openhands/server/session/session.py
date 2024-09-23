@@ -59,10 +59,10 @@ class Session:
             while should_continue():
                 try:
                     data = await self.websocket.receive_json()
-                    asyncio.create_task(self.dispatch(data))
                 except ValueError:
                     await self.send_error('Invalid JSON')
                     continue
+                await self.dispatch(data)
         except WebSocketDisconnect:
             await self.close()
             logger.info('WebSocket disconnected, sid: %s', self.sid)
@@ -136,13 +136,11 @@ class Session:
         Args:
             event: The agent event (Observation or Action).
         """
-        logger.debug(f'Server event: {event}')
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
-            logger.info('Server event from agent')
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER and isinstance(
             event, CmdOutputObservation
@@ -152,7 +150,6 @@ class Session:
     async def dispatch(self, data: dict):
         action = data.get('action', '')
         if action == ActionType.INIT:
-            logger.debug('Received INIT, initializing agent')
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
@@ -175,7 +172,6 @@ class Session:
     async def send(self, data: dict[str, object]) -> bool:
         try:
             if self.websocket is None or not self.is_alive:
-                logger.debug('session.send: websocket is NOT alive!')
                 return False
             await self.websocket.send_json(data)
             await asyncio.sleep(0.001)  # This flushes the data to the client

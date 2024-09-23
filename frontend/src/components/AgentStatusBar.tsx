@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
@@ -17,7 +17,6 @@ enum IndicatorColor {
 
 function AgentStatusBar() {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
@@ -90,7 +89,7 @@ function AgentStatusBar() {
     ) {
       if (document.cookie.indexOf("audio") !== -1) beep();
     }
-  }, [curAgentState, dispatch]);
+  }, [curAgentState]);
 
   return (
     <div className="flex flex-col items-center">
@@ -102,10 +101,10 @@ function AgentStatusBar() {
           {AgentStatusMap[curAgentState].message}
         </span>
       </div>
-      {curStatusMessage.message && (
+      {curStatusMessage.message && curStatusMessage.message.length > 0 && (
         <div className="mt-1 flex items-center">
           <span className="text-sm text-stone-400">
-            {curStatusMessage.message}
+            {t(curStatusMessage.message)}
           </span>
         </div>
       )}
