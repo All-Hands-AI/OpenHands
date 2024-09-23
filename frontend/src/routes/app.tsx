@@ -21,7 +21,7 @@ import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage, clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import { sendTerminalCommand } from "#/services/terminalService";
-import { appendInput } from "#/state/commandSlice";
+import { appendInput, clearTerminal } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/assets/code.svg?react";
 import GlobeIcon from "#/assets/globe.svg?react";
@@ -142,6 +142,7 @@ function App() {
   useEffectOnce(() => {
     // clear and restart the socket connection
     dispatch(clearMessages());
+    dispatch(clearTerminal());
     startSocketConnection();
   });
 
