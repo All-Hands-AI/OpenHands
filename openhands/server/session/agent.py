@@ -56,7 +56,7 @@ class AgentSession:
         # Runtimes can take a long time to create / start - and we don't want to lock up the 
         # main event loop waiting for this, so we do this in a background thread
         # We may consider making the executor shared and global if it is used very frequently.
-        with ThreadPoolExecutor(1) as executor: 
+        with ThreadPoolExecutor(1, initargs={"daemon": True}) as executor: 
             await asyncio.get_event_loop().run_in_executor(executor, self._start, runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs)
         if self.controller is not None:
             self.controller.agent_task = asyncio.create_task(self.controller.start_step_loop())
