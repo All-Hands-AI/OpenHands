@@ -60,6 +60,10 @@ function ChatMessage({
     }
   };
 
+  const copyButtonTitle = message.timestamp
+    ? `${t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)} - ${formatTimestamp(message.timestamp)}`
+    : t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE);
+
   return (
     <article
       data-testid="article"
@@ -78,7 +82,8 @@ function ChatMessage({
           data-testid="copy-button"
           onClick={copyToClipboard}
           className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-700"
-          aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)}
+          aria-label={copyButtonTitle}
+          title={copyButtonTitle}
           type="button"
         >
           {isCopy ? <FaClipboardCheck /> : <FaClipboard />}
@@ -99,9 +104,6 @@ function ChatMessage({
           ))}
         </div>
       )}
-      <div className="text-xs text-neutral-400 mt-2">
-        {formatTimestamp(message.timestamp)}
-      </div>
       {isLastMessage &&
         message.sender === "assistant" &&
         awaitingUserConfirmation && <ConfirmationButtons />}

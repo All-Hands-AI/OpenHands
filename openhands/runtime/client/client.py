@@ -184,38 +184,25 @@ class RuntimeClient:
                 raise
 
         # Add sudoer
-        sudoer_line = r'%sudo ALL=(ALL) NOPASSWD:ALL\n'
-        sudoers_path = '/etc/sudoers.d/99_sudo'
-        if not Path(sudoers_path).exists():
-            with open(sudoers_path, 'w') as f:
-                f.write(sudoer_line)
-            output = subprocess.run(['chmod', '0440', sudoers_path])
-            if output.returncode != 0:
-                logger.error('Failed to chmod 99_sudo file!')
-            else:
-                logger.debug('Added sudoer successfully.')
+        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
+        if output.returncode != 0:
+            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
+        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
-        # Attempt to add the user, retrying with incremented user_id if necessary
-        while True:
-            command = (
-                f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -u {user_id} {username}'
+        command = (
+            f'useradd -rm -d /home/{username} -s /bin/bash '
+            f'-g root -G sudo -u {user_id} {username}'
+        )
+        output = subprocess.run(command, shell=True, capture_output=True)
+        if output.returncode == 0:
+            logger.debug(
+                f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
             )
-            output = subprocess.run(command, shell=True, capture_output=True)
-            if output.returncode == 0:
-                logger.debug(
-                    f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
-                )
-                break
-            elif f'UID {user_id} is not unique' in output.stderr.decode():
-                logger.warning(
-                    f'UID {user_id} is not unique. Incrementing UID and retrying...'
-                )
-                user_id += 1
-            else:
-                raise RuntimeError(
-                    f'Failed to create user `{username}`! Output: [{output.stderr.decode()}]'
-                )
+        else:
+            raise RuntimeError(
+                f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
+            )
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
