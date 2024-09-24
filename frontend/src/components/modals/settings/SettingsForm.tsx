@@ -44,8 +44,12 @@ function SettingsForm({
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
   const advancedAlreadyInUse = React.useMemo(() => {
     const organizedModels = organizeModelsAndProviders(models);
-    const { provider, model } = extractModelAndProvider(settings.LLM_MODEL || '');
-    const isKnownModel = provider in organizedModels && organizedModels[provider].models.includes(model);
+    const { provider, model } = extractModelAndProvider(
+      settings.LLM_MODEL || "",
+    );
+    const isKnownModel =
+      provider in organizedModels &&
+      organizedModels[provider].models.includes(model);
 
     return (
       !!settings.SECURITY_ANALYZER ||
@@ -54,7 +58,8 @@ function SettingsForm({
       (!!settings.LLM_MODEL && !isKnownModel)
     );
   }, [settings, models]);
-  const [enableAdvanced, setEnableAdvanced] = React.useState(advancedAlreadyInUse);
+  const [enableAdvanced, setEnableAdvanced] =
+    React.useState(advancedAlreadyInUse);
 
   React.useEffect(() => {
     setEnableAdvanced(advancedAlreadyInUse);
