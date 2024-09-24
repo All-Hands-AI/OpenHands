@@ -1,6 +1,6 @@
 # Debugging
 
-The following is intended as a primer on debugging OpenHands for Development purposes.
+The following is intended as a primer on debugging OpenHands for development purposes.
 
 ## Server / VSCode
 
