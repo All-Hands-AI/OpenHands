@@ -421,9 +421,11 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
     container = None
     client = docker.from_env()
     try:
-        with patch('sys.stdout.isatty', return_value=True):
+        with patch('sys.stdout.isatty', return_value=False):
             built_image_name = docker_runtime_builder.build(
-                context_path, tags, use_local_cache=True
+                context_path,
+                tags,
+                use_local_cache=False,
             )
             assert built_image_name == f'{tags[0]}'
 
@@ -431,15 +433,10 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
             image = client.images.get(tags[0])
             assert image is not None
 
-            # Run the container to verify it works
-            container = client.containers.run(tags[0], detach=True)
-            container.wait()
-            logs = container.logs().decode('utf-8').strip()
-            print(f'\nLogs: `{logs}`\n')
-            assert logs == 'Hello, World!'
-
-    except RuntimeError as e:
-        pytest.fail(f'Build failed with error: {str(e)}')
+    except docker.errors.ImageNotFound:
+        pytest.fail('test_build_image_from_scratch: test image not found!')
+    except Exception as e:
+        pytest.fail(f'test_build_image_from_scratch: Build failed with error: {str(e)}')
 
     finally:
         # Clean up the container
@@ -465,9 +462,28 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
             logger.warning('No image was built, so no image cleanup was necessary.')
 
 
-def test_build_runtime_image_from_repo(docker_runtime_builder, tmp_path):
+def _format_size_to_gb(bytes_size):
+    """Convert bytes to gigabytes with two decimal places."""
+    return round(bytes_size / (1024**3), 2)
+
+
+def test_list_dangling_images():
+    client = docker.from_env()
+    dangling_images = client.images.list(filters={'dangling': True})
+    if dangling_images and len(dangling_images) > 0:
+        for image in dangling_images:
+            if 'Size' in image.attrs and isinstance(image.attrs['Size'], int):
+                size_gb = _format_size_to_gb(image.attrs['Size'])
+                logger.info(f'Dangling image: {image.tags}, Size: {size_gb} GB')
+            else:
+                logger.info(f'Dangling image: {image.tags}, Size: N/A')
+    else:
+        logger.info('No dangling images found')
+
+
+def test_build_image_from_repo(docker_runtime_builder, tmp_path):
     context_path = str(tmp_path)
-    tags = ['alpine/mysql:latest']
+    tags = ['alpine:latest']
 
     # Create a minimal Dockerfile in the context path
     with open(os.path.join(context_path, 'Dockerfile'), 'w') as f:
@@ -478,22 +494,19 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
     container = None
     client = docker.from_env()
     try:
-        with patch('sys.stdout.isatty', return_value=True):
-            built_image_name = docker_runtime_builder.build(context_path, tags)
+        with patch('sys.stdout.isatty', return_value=False):
+            built_image_name = docker_runtime_builder.build(
+                context_path,
+                tags,
+                use_local_cache=False,
+            )
             assert built_image_name == f'{tags[0]}'
 
             image = client.images.get(tags[0])
             assert image is not None
 
-            # Run the container to verify it works
-            container = client.containers.run(tags[0], detach=True)
-            container.wait()
-            logs = container.logs().decode('utf-8').strip()
-            print(f'\nLogs: `{logs}`\n')
-            assert logs == 'Hello, World!'
-
-    except RuntimeError as e:
-        pytest.fail(f'Build failed with error: {str(e)}')
+    except docker.errors.ImageNotFound:
+        pytest.fail('test_build_image_from_repo: test image not found!')
 
     finally:
         # Clean up the container

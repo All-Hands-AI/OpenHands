@@ -70,7 +70,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
-            #'--load',
+            '--load',
         ]
 
         cache_dir = '/tmp/.buildx-cache'
