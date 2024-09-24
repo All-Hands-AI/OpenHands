@@ -98,7 +98,6 @@ class AgentSession:
         - security_analyzer: The name of the security analyzer to use
         """
 
-        logger.info(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
             logger.debug(f'Using security analyzer: {security_analyzer}')
             self.security_analyzer = options.SecurityAnalyzers.get(
