@@ -3,6 +3,7 @@ import copy
 import json
 import os
 from abc import abstractmethod
+from typing import Callable
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
@@ -58,11 +59,13 @@ class Runtime:
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Callable | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
+        self.status_message_callback = status_message_callback
 
         self.config = copy.deepcopy(config)
         atexit.register(self.close)
