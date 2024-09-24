@@ -84,8 +84,7 @@ class AgentSession:
         )
         
         if self.controller is not None:
-            self.controller.agent_task = asyncio.create_task(self.controller.start_step_loop())
-            asyncio.run_coroutine_threadsafe(self.controller.agent_task, self.loop)
+            self.controller.agent_future = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop)
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
