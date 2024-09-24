@@ -59,7 +59,7 @@ class Runtime:
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Optional[Callable] = None,
+        status_message_callback: Callable | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
