@@ -213,9 +213,8 @@ class CodeActAgent(Agent):
             raise e
         except Exception as e:
             logger.error(f'{e}')
-            error_message = '{}: {}'.format(type(e).__name__, str(e).split('\n')[0])
             return AgentFinishAction(
-                thought=f'Agent encountered an error while processing the last action.\nError: {error_message}\nPlease try again.'
+                thought='Agent encountered an error while processing the last action.\nPlease try again.'
             )
 
         return self.action_parser.parse(response)

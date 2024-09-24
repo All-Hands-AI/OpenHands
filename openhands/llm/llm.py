@@ -15,10 +15,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
-    ContentPolicyViolationError,
     InternalServerError,
-    NotFoundError,
-    OpenAIError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -101,10 +98,9 @@ class LLM:
         # Tuple of exceptions to retry on
         self.retry_exceptions = (
             APIConnectionError,
-            ContentPolicyViolationError,
             InternalServerError,
-            OpenAIError,
             RateLimitError,
+            ServiceUnavailableError,
         )
 
         # Set the max tokens in an LM-specific way if not set
@@ -179,6 +175,8 @@ class LLM:
 
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
+        if self.is_caching_prompt_active():
+            logger.debug('LLM: caching prompt enabled')
 
         completion_unwrapped = self._completion
 
@@ -355,17 +353,6 @@ class LLM:
             except UserCancelledError:
                 logger.info('LLM request cancelled by user.')
                 raise
-            except (
-                APIConnectionError,
-                ContentPolicyViolationError,
-                InternalServerError,
-                NotFoundError,
-                OpenAIError,
-                RateLimitError,
-                ServiceUnavailableError,
-            ) as e:
-                logger.error(f'Completion Error occurred:\n{e}')
-                raise
 
             finally:
                 await asyncio.sleep(0.1)
@@ -420,17 +407,6 @@ class LLM:
 
             except UserCancelledError:
                 logger.info('LLM request cancelled by user.')
-                raise
-            except (
-                APIConnectionError,
-                ContentPolicyViolationError,
-                InternalServerError,
-                NotFoundError,
-                OpenAIError,
-                RateLimitError,
-                ServiceUnavailableError,
-            ) as e:
-                logger.error(f'Completion Error occurred:\n{e}')
                 raise
 
             finally:
