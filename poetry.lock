@@ -7539,21 +7539,6 @@ testing = ["h5py (>=3.7.0)", "huggingface-hub (>=0.12.1)", "hypothesis (>=6.70.2
 torch = ["safetensors[numpy]", "torch (>=1.10)"]
 
 [[package]]
-name = "scantree"
-version = "0.0.4"
-description = "Flexible recursive directory iterator: scandir meets glob(\"**\", recursive=True)"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "scantree-0.0.4-py3-none-any.whl", hash = "sha256:7616ab65aa6b7f16fcf8e6fa1d9afaa99a27ab72bba05c61b691853b96763174"},
-    {file = "scantree-0.0.4.tar.gz", hash = "sha256:15bd5cb24483b04db2c70653604e8ea3522e98087db7e38ab8482f053984c0ac"},
-]
-
-[package.dependencies]
-attrs = ">=18.0.0"
-pathspec = ">=0.10.1"
-
-[[package]]
 name = "scikit-image"
 version = "0.24.0"
 description = "Image processing in Python"
@@ -9685,4 +9670,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "90636ce436e5c05146a69730f461f46fd3185b595be37d3eafd8aef36667db81"
+content-hash = "dfdbd4e46352e86e6872575ec5da4c6bb7c9a841bd7cbc87b7ee76b9914fd4f1"
