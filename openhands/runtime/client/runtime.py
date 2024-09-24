@@ -2,7 +2,7 @@ import os
 import tempfile
 import threading
 import uuid
-from typing import Callable, Optional
+from typing import Callable
 from zipfile import ZipFile
 
 import docker
