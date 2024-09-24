@@ -102,9 +102,7 @@ function AgentStatusBar() {
         <div
           className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
         />
-        <span className="text-sm text-stone-400">
-          {t(statusMessage)}
-        </span>
+        <span className="text-sm text-stone-400">{t(statusMessage)}</span>
       </div>
     </div>
   );
