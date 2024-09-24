@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./docs/static/img/openhands_banner.png" alt="OpenHands Banner" width="100%">
+  <img src="https://github.com/All-Hands-AI/OpenHands/raw/main/docs/static/img/logo.png" alt="OpenHands Banner" width="30%">
 
   # OpenHands: Code Less, Make More
 
