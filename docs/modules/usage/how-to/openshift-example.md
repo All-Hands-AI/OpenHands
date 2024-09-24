@@ -266,7 +266,9 @@ Events:                   <none>
 
 
 
-####GCP GKE Openhands deployment
+## GCP GKE Openhands deployment
+
+**Warning**: this deployment grants the OpenHands application access to the Kubernetes docker socket, which creates security risk. Use at your own discretion.
 1- Create policy for privillege access
 2- Create gke credentials(optional)
 3- Create openhands deployment
