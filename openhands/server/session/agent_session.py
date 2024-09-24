@@ -84,7 +84,8 @@ class AgentSession:
         )
         
         if self.controller is not None:
-            self.controller.agent_task = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop)
+            self.controller.agent_task = asyncio.create_task(self.controller.start_step_loop())
+            asyncio.run_coroutine_threadsafe(self.controller.agent_task, self.loop)
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
@@ -144,7 +145,6 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
 
         self.runtime = runtime_cls(
-            runtime_cls,
             config=config,
             event_stream=self.event_stream,
             sid=self.sid,
@@ -207,7 +207,6 @@ class AgentSession:
             # run the agent in headless mode.
             headless_mode=False,
         )
-        self.controller.agent_task = asyncio.create_task(self.start_step_loop())
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
             self.controller.set_initial_state(
