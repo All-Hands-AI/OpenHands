@@ -89,7 +89,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
     const isValid = validKeys.includes(key as keyof Settings);
     if (!isValid) return;
     let value = settings[key as keyof Settings];
-    if (value === undefined || value === null) value = '';
+    if (value === undefined || value === null) value = "";
     localStorage.setItem(key, value.toString());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
