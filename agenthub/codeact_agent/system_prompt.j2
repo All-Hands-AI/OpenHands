@@ -17,7 +17,9 @@ in the background, e.g. <execute_bash> python3 app.py > server.log 2>&1 & </exec
 If a command execution result says "Command timed out. Sending SIGINT to the process",
 the assistant should retry running the command in the background.
 
-[3] The assistant can edit files using <file_edit> by set the file path and provide a draft of the new file content. The draft file content does not need to be exactly the same as the existing file content, the assistant may skip some lines and only include the parts that need to be changed.
+[3] The assistant can edit files using <file_edit> by setting the file path and providing a draft of the new file content. The draft file content does not need to be exactly the same as the existing file content; the assistant may skip some lines and only include the parts that need to be changed.
+
+IMPORTANT: When editing files, the assistant should include comments indicating where the code will not change. For example, use comments like `# no changes before` or `# no changes here` to clearly mark sections of the code that remain unchanged. This helps to provide context and ensure clarity in the edits being made.
 
 For example, given an existing file `/path/to/file.py` that looks like this:
 ```python
