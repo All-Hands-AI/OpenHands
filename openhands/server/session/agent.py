@@ -11,7 +11,7 @@ from openhands.storage.files import FileStore
 
 
 class AgentSession:
-    """Represents a session with an agent.
+    """Represents a session with an Agent
 
     Attributes:
         controller: The AgentController instance for controlling the agent.
@@ -26,7 +26,13 @@ class AgentSession:
     _closed: bool = False
 
     def __init__(self, sid: str, file_store: FileStore):
-        """Initializes a new instance of the Session class."""
+        """Initializes a new instance of the Session class
+
+        Parameters:
+        - sid: The session ID
+        - file_store: Instance of the FileStore
+        """
+
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
@@ -41,11 +47,18 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
     ):
-        """Starts the agent session.
+        """Starts the Agent session
 
-        Args:
-            start_event: The start event data (optional).
+        Parameters:
+        - runtime_name: The name of the runtime associated with the session
+        - config:
+        - agent:
+        - max_interations:
+        - max_budget_per_task:
+        - agent_to_llm_config:
+        - agent_configs:
         """
+
         if self.controller or self.runtime:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
@@ -62,6 +75,8 @@ class AgentSession:
         )
 
     async def close(self):
+        """Closes the Agent session"""
+
         if self._closed:
             return
         if self.controller is not None:
@@ -75,7 +90,12 @@ class AgentSession:
         self._closed = True
 
     async def _create_security_analyzer(self, security_analyzer: str | None):
-        """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions."""
+        """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
+
+        Parameters:
+        - security_analyzer: The name of the security analyzer to use
+        """
+
         logger.info(f'Using security analyzer: {security_analyzer}')
         if security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
@@ -83,7 +103,14 @@ class AgentSession:
             )(self.event_stream)
 
     async def _create_runtime(self, runtime_name: str, config: AppConfig, agent: Agent):
-        """Creates a runtime instance."""
+        """Creates a runtime instance
+
+        Parameters:
+        - runtime_name: The name of the runtime associated with the session
+        - config:
+        - agent:
+        """
+
         if self.runtime is not None:
             raise Exception('Runtime already created')
 
@@ -105,7 +132,17 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
     ):
-        """Creates an AgentController instance."""
+        """Creates an AgentController instance
+
+        Parameters:
+        - agent:
+        - confirmation_mode: Whether to use confirmation mode
+        - max_iterations:
+        - max_budget_per_task:
+        - agent_to_llm_config:
+        - agent_configs:
+        """
+
         if self.controller is not None:
             raise RuntimeError('Controller already created')
         if self.runtime is None:
@@ -113,8 +150,13 @@ class AgentSession:
                 'Runtime must be initialized before the agent controller'
             )
 
-        logger.info(f'Agents: {agent_configs}')
-        logger.info(f'Creating agent {agent.name} using LLM {agent.llm.config.model}')
+        logger.info(
+            '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
+            f'LLM: {agent.llm.config.model}\n'
+            f'Base URL: {agent.llm.config.base_url}\n'
+            f'Agent: {agent.name}\n'
+            '-------------------------------------------------------------------------------------------'
+        )
 
         self.controller = AgentController(
             sid=self.sid,

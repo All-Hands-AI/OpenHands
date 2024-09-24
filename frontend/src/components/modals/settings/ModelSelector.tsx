@@ -107,6 +107,7 @@ export function ModelSelector({
           </Autocomplete>
         </fieldset>
 
+<<<<<<< HEAD
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
             LLM Model
@@ -149,6 +150,37 @@ export function ModelSelector({
             </AutocompleteSection>
           </Autocomplete>
         </fieldset>
+=======
+        <Autocomplete
+          label="LLM Model"
+          placeholder="Select a model"
+          onSelectionChange={(e) => {
+            if (e?.toString()) handleChangeModel(e.toString());
+          }}
+          isDisabled={isDisabled || !selectedProvider}
+          selectedKey={selectedModel}
+          defaultSelectedKey={selectedModel ?? undefined}
+        >
+          <AutocompleteSection title="Verified">
+            {models[selectedProvider || ""]?.models
+              .filter((model) => VERIFIED_MODELS.includes(model))
+              .map((model) => (
+                <AutocompleteItem key={model} value={model} title={model}>
+                  {model}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+          <AutocompleteSection title="Others">
+            {models[selectedProvider || ""]?.models
+              .filter((model) => !VERIFIED_MODELS.includes(model))
+              .map((model) => (
+                <AutocompleteItem key={model} value={model} title={model}>
+                  {model}
+                </AutocompleteItem>
+              ))}
+          </AutocompleteSection>
+        </Autocomplete>
+>>>>>>> main
       </div>
     </div>
   );

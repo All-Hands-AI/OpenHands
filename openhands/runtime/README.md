@@ -74,6 +74,41 @@ Key features of the `RuntimeClient` class:
 - The system uses a plugin architecture for extensibility.
 - All interactions with the external environment are managed through the Runtime, ensuring a controlled and secure execution environment.
 
+## Runtime Types
+
+### EventStream Runtime
+
+The EventStream Runtime is designed for local execution using Docker containers:
+
+- Creates and manages a Docker container for each session
+- Executes actions within the container
+- Supports direct file system access and local resource management
+- Ideal for development, testing, and scenarios requiring full control over the execution environment
+
+Key features:
+- Real-time logging and debugging capabilities
+- Direct access to the local file system
+- Faster execution due to local resources
+
+This is the default runtime used within OpenHands.
+
+### Remote Runtime
+
+The Remote Runtime is designed for execution in a remote environment:
+
+- Connects to a remote server running the RuntimeClient
+- Executes actions by sending requests to the remote client
+- Supports distributed execution and cloud-based deployments
+- Ideal for production environments, scalability, and scenarios where local resource constraints are a concern
+
+Key features:
+- Scalability and resource flexibility
+- Reduced local resource usage
+- Support for cloud-based deployments
+- Potential for improved security through isolation
+
+At the time of this writing, this is mostly used in parallel evaluation, such as this example for [SWE-Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/swe_bench#run-inference-on-remoteruntime-experimental).
+
 ## Related Components
 
 - The runtime interacts closely with the event system defined in the `openhands.events` module.
