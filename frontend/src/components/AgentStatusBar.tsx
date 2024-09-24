@@ -91,15 +91,16 @@ function AgentStatusBar() {
     }
   }, [curAgentState]);
 
-  const [statusMessage, setStatusMessage] = React.useState<string>(
-    curStatusMessage.message,
-  );
+  const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
-    if (!statusMessage || !statusMessage.length) {
+    const trimmedCustomMessage = curStatusMessage.message.trim();
+    if (trimmedCustomMessage) {
+      setStatusMessage(t(trimmedCustomMessage));
+    } else {
       setStatusMessage(AgentStatusMap[curAgentState].message);
     }
-  }, [curAgentState, statusMessage]);
+  }, [curAgentState, curStatusMessage.message]);
 
   return (
     <div className="flex flex-col items-center">
@@ -107,7 +108,7 @@ function AgentStatusBar() {
         <div
           className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
         />
-        <span className="text-sm text-stone-400">{t(statusMessage)}</span>
+        <span className="text-sm text-stone-400">{statusMessage}</span>
       </div>
     </div>
   );
