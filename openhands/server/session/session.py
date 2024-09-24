@@ -76,9 +76,7 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
         )
         # Extract the agent-relevant arguments from the request
-        args = {
-            key: value for key, value in data.get('args', {}).items() if value != ''
-        }
+        args = {key: value for key, value in data.get('args', {}).items()}
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
         self.config.security.confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
