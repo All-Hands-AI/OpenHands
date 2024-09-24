@@ -6,7 +6,6 @@ import pathlib
 import subprocess
 import time
 import traceback
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
@@ -328,21 +327,22 @@ def run_evaluation(
 
     try:
         if use_multiprocessing:
-            with ProcessPoolExecutor(num_workers) as executor:
-                futures = [
-                    executor.submit(
+            with mp.Pool(num_workers) as pool:
+                results = [
+                    pool.apply_async(
                         _process_instance_wrapper,
-                        process_instance_func=process_instance_func,
-                        instance=instance,
-                        metadata=metadata,
-                        use_mp=True,
-                        max_retries=max_retries,
+                        args=(
+                            process_instance_func,
+                            instance,
+                            metadata,
+                            True,
+                            max_retries,
+                        ),
                     )
                     for _, instance in dataset.iterrows()
                 ]
-                for future in as_completed(futures):
-                    result = future.result()
-                    update_progress(result, pbar, output_fp)
+                for result in results:
+                    update_progress(result.get(), pbar, output_fp)
         else:
             for _, instance in dataset.iterrows():
                 result = _process_instance_wrapper(
