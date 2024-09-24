@@ -143,6 +143,9 @@ async def run_controller(
         headless_mode=headless_mode,
     )
 
+    if controller is not None:
+        controller.agent_task = asyncio.create_task(controller.start_step_loop())
+
     assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
     # Logging
     logger.info(
