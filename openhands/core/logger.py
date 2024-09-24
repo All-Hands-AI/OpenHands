@@ -117,14 +117,11 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
+def get_console_handler(log_level=logging.INFO):
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
-    formatter_str = '%(asctime)s - %(levelname)s - %(message)s'
-    if extra_info:
-        formatter_str = f'{extra_info} - ' + formatter_str
-    console_handler.setFormatter(logging.Formatter(formatter_str))
+    console_handler.setFormatter(console_formatter)
     return console_handler
 
 

@@ -380,8 +380,11 @@ def reset_logger_for_multiprocessing(
         logger.removeHandler(handler)
 
     # add console handler to print ONE line
-    console_handler = get_console_handler(
-        log_level=logging.INFO, extra_info=f'Instance {instance_id}'
+    console_handler = get_console_handler(log_level=logging.INFO)
+    console_handler.setFormatter(
+        logging.Formatter(
+            f'Instance {instance_id} - ' + '%(asctime)s - %(levelname)s - %(message)s'
+        )
     )
     logger.addHandler(console_handler)
     logger.info(
