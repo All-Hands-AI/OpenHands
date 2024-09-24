@@ -3,7 +3,7 @@ import copy
 import json
 import os
 from abc import abstractmethod
-from typing import Callable, Optional
+from typing import Callable
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
