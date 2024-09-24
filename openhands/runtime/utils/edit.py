@@ -26,6 +26,179 @@ provided draft of the new version. The provided draft may be incomplete (it may 
 NOTE: The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
 You should output the new version of the file by wrapping the new version of the file content in a ``` block.
 """
+
+USER_MSG_EXAMPLE_1 = """
+HERE IS THE OLD VERSION OF THE FILE:
+```
+from ansiblelint import AnsibleLintRule
+
+format = "{}"
+
+class RoleRelativePath(AnsibleLintRule):
+    id = 'E201'
+    shortdesc = "Doesn't need a relative path in role"
+    description = ''
+    tags = ['role']
+
+    def matchplay(self, file, play):
+        # assume if 'roles' in path, inside a role.
+        if 'roles' not in file['path']:
+            return []
+        if 'template' in play:
+            if not isinstance(play['template'], dict):
+                return False
+            if "../templates" in play['template']['src']:
+                return [({'': play['template']},
+                                self.shortdesc)]
+        if 'win_template' in play:
+            if not isinstance(play['win_template'], dict):
+                return False
+            if "../win_templates" in play['win_template']['src']:
+                return ({'win_template': play['win_template']},
+                                self.shortdesc)
+        if 'copy' in play:
+            if not isinstance(play['copy'], dict):
+                return False
+            if "../copys" in play['copy']['src']:
+                return ({'sudo': play['copy']},
+                                self.shortdesc)
+        if 'win_copy' in play:
+            if not isinstance(play['win_copy'], dict):
+                return False
+            if "../win_copys" in play['win_copy']['src']:
+                return ({'sudo': play['win_copy']},
+                                self.shortdesc)
+        return []
+```
+
+HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
+```
+# no changes before
+
+class RoleRelativePath(AnsibleLintRule):
+    # no changes here
+
+    def matchplay(self, file, play):
+        # assume if 'roles' in path, inside a role.
+        if 'roles' not in file['path']:
+            return []
+        if 'template' not in play:
+            if not isinstance(play['template'], dict):
+                return False
+            if "../templates" in play['template']['src']:
+                return [({'': play['template']},
+                                self.shortdesc)]
+# rest of the file is unchanged
+```
+""".strip()
+
+ASSISTANT_MSG_EXAMPLE_1 = """
+```
+from ansiblelint import AnsibleLintRule
+
+format = "{}"
+
+class RoleRelativePath(AnsibleLintRule):
+    id = 'E201'
+    shortdesc = "Doesn't need a relative path in role"
+    description = ''
+    tags = ['role']
+
+    def matchplay(self, file, play):
+        # assume if 'roles' in path, inside a role.
+        if 'roles' not in file['path']:
+            return []
+        if 'template' not in play:
+            if not isinstance(play['template'], dict):
+                return False
+            if "../templates" in play['template']['src']:
+                return [({'': play['template']},
+                                self.shortdesc)]
+        if 'win_template' in play:
+            if not isinstance(play['win_template'], dict):
+                return False
+            if "../win_templates" in play['win_template']['src']:
+                return ({'win_template': play['win_template']},
+                                self.shortdesc)
+        if 'copy' in play:
+            if not isinstance(play['copy'], dict):
+                return False
+            if "../copys" in play['copy']['src']:
+                return ({'sudo': play['copy']},
+                                self.shortdesc)
+        if 'win_copy' in play:
+            if not isinstance(play['win_copy'], dict):
+                return False
+            if "../win_copys" in play['win_copy']['src']:
+                return ({'sudo': play['win_copy']},
+                                self.shortdesc)
+        return []
+```
+""".strip()
+
+USER_MSG_EXAMPLE_2 = """
+HERE IS THE OLD VERSION OF THE FILE:
+```
+import cutplanner
+import unittest
+```
+
+HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
+```
+class TestPlanner(unittest.TestCase):
+
+    def setUp(self):
+        sizes = [50, 80, 120]
+        needed = [10, 25, 75]
+        loss = 0.25
+        self.planner = cutplanner.Planner(sizes, needed, loss)
+
+    def test_largest_stock(self):
+        largest = self.planner.largest_stock
+        self.assertEqual(largest, 120)
+
+    def test_finalize(self):
+        self.planner.cur_stock = cutplanner.Stock(self.planner.largest_stock)
+        self.planner.cut_piece(cutplanner.Piece(1, 60))
+        self.planner.finalize_stock()
+        self.assertEqual(len(self.planner.stock), 1)
+        self.assertEqual(self.planner.stock[0].length, 80)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+""".strip()
+
+ASSISTANT_MSG_EXAMPLE_2 = """
+Since there's no explicit instruction to remove the imports, we should keep them and append the new code to the end of the file.
+```
+import cutplanner
+import unittest
+
+class TestPlanner(unittest.TestCase):
+
+    def setUp(self):
+        sizes = [50, 80, 120]
+        needed = [10, 25, 75]
+        loss = 0.25
+        self.planner = cutplanner.Planner(sizes, needed, loss)
+
+    def test_largest_stock(self):
+        largest = self.planner.largest_stock
+        self.assertEqual(largest, 120)
+
+    def test_finalize(self):
+        self.planner.cur_stock = cutplanner.Stock(self.planner.largest_stock)
+        self.planner.cut_piece(cutplanner.Piece(1, 60))
+        self.planner.finalize_stock()
+        self.assertEqual(len(self.planner.stock), 1)
+        self.assertEqual(self.planner.stock[0].length, 80)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+""".strip()
+
 USER_MSG = """
 HERE IS THE OLD VERSION OF THE FILE:
 ```
@@ -36,8 +209,7 @@ HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
 ```
 {draft_changes}
 ```
-
-"""
+""".strip()
 
 
 def _extract_code(string):
@@ -54,6 +226,10 @@ def get_new_file_contents(
     while num_retries > 0:
         messages = [
             {'role': 'system', 'content': SYS_MSG},
+            {'role': 'user', 'content': USER_MSG_EXAMPLE_1},
+            {'role': 'assistant', 'content': ASSISTANT_MSG_EXAMPLE_1},
+            {'role': 'user', 'content': USER_MSG_EXAMPLE_2},
+            {'role': 'assistant', 'content': ASSISTANT_MSG_EXAMPLE_2},
             {
                 'role': 'user',
                 'content': USER_MSG.format(
