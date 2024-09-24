@@ -46,13 +46,14 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
             timeout=100,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
         ),
         # do not mount workspace
         workspace_base=None,
