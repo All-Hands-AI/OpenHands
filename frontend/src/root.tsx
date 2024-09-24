@@ -39,6 +39,7 @@ import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
 import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
 import DefaultUserAvatar from "./assets/default-user.svg?react";
+import i18n from "./i18n";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -78,6 +79,9 @@ export const clientLoader = async () => {
     settingsIsUpdated = true;
   }
 
+  const settings = getSettings();
+  await i18n.changeLanguage(settings.LANGUAGE);
+
   return defer({
     token,
     ghToken,
@@ -86,7 +90,7 @@ export const clientLoader = async () => {
     agents,
     securityAnalyzers,
     settingsIsUpdated,
-    settings: getSettings(),
+    settings,
   });
 };
 

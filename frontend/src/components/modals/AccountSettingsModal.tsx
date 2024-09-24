@@ -8,6 +8,7 @@ import { CustomInput } from "../form/custom-input";
 import { clientLoader } from "#/root";
 import { clientAction as settingsClientAction } from "#/routes/Settings";
 import { clientAction as loginClientAction } from "#/routes/login";
+import { AvailableLanguages } from "#/i18n";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -34,7 +35,12 @@ function AccountSettingsModal({
     const loginForm = new FormData();
 
     accountForm.append("intent", "account");
-    if (language) accountForm.append("language", language);
+    if (language) {
+      const languageKey = AvailableLanguages.find(
+        ({ label }) => label === language,
+      )?.value;
+      accountForm.append("language", languageKey ?? "en");
+    }
     if (ghToken) loginForm.append("ghToken", ghToken);
 
     settingsFetcher.submit(accountForm, {
@@ -60,11 +66,10 @@ function AccountSettingsModal({
             label="Language"
             defaultSelectedKey={selectedLanguage}
             isClearable={false}
-            items={[
-              { key: "en", value: "English" },
-              { key: "es", value: "Spanish" },
-              { key: "fr", value: "French" },
-            ]}
+            items={AvailableLanguages.map(({ label, value: key }) => ({
+              key,
+              value: label,
+            }))}
           />
 
           <CustomInput
