@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from threading import Thread
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -65,24 +66,11 @@ class AgentSession:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
-        
-        # Runtimes can take a long time to create / start - and we don't want to lock up the 
-        # main event loop waiting for this, so we do this in a background thread
-        # We may consider making the executor shared and global if it is used very frequently.
-        with ThreadPoolExecutor(1) as executor: 
-            await asyncio.get_event_loop().run_in_executor(executor, self._start, runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs)
-        if self.controller is not None:
-            self.controller.agent_task = asyncio.create_task(self.controller.start_step_loop())
 
-    def _start(self,
-        runtime_name: str,
-        config: AppConfig,
-        agent: Agent,
-        max_iterations: int,
-        max_budget_per_task: float | None,
-        agent_to_llm_config: dict[str, LLMConfig] | None,
-        agent_configs: dict[str, AgentConfig] | None,
-    ):
+        self.loop = asyncio.new_event_loop()
+        self.thread = Thread(target=self._run, daemon=True)
+        self.thread.start()
+
         self._create_security_analyzer(config.security.security_analyzer)
         self._create_runtime(runtime_name, config, agent)
         self._create_controller(
@@ -93,6 +81,12 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
+
+        self.controller.agent_task = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop)
+
+    def _run(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
 
     async def close(self):
         """Closes the Agent session"""
@@ -107,6 +101,10 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join()
+
         self._closed = True
 
     def _create_security_analyzer(self, security_analyzer: str | None):
@@ -190,7 +188,7 @@ class AgentSession:
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
             headless_mode=False,
-            in_asyncio=False
+            in_asyncio=False,
         )
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
