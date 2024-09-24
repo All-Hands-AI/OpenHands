@@ -237,9 +237,7 @@ def get_new_file_contents(
                 ),
             },
         ]
-        print('messages for edit', messages)
         resp = llm.completion(messages=messages)
-        print('raw response for edit', resp)
         new_contents = _extract_code(resp['choices'][0]['message']['content'])
         if new_contents is not None:
             return new_contents
