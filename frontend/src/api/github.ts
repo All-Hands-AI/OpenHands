@@ -37,6 +37,7 @@ export const retrieveGitHubUserRepositories = async (
   page = 1,
 ): Promise<Response> => {
   const url = new URL("https://api.github.com/user/repos");
+  url.searchParams.append("sort", "pushed"); // sort by most recently pushed
   url.searchParams.append("per_page", per_page.toString());
   url.searchParams.append("page", page.toString());
 
