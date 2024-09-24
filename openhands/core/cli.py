@@ -120,6 +120,9 @@ async def main():
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
     )
+    
+    if controller is not None:
+        controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     async def prompt_for_next_task():
         next_message = input('How can I help? >> ')

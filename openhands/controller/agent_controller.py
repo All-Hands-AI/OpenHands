@@ -116,9 +116,6 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
 
-        if not is_delegate and in_asyncio:
-            self.agent_task = asyncio.create_task(self.start_step_loop())
-
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         if self.agent_task is not None:

@@ -81,8 +81,9 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
-
-        self.controller.agent_task = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop)
+        
+        if self.controller is not None:
+            self.controller.agent_task = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop)
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
@@ -188,8 +189,8 @@ class AgentSession:
             # AgentSession is designed to communicate with the frontend, so we don't want to
             # run the agent in headless mode.
             headless_mode=False,
-            in_asyncio=False,
         )
+        self.controller.agent_task = asyncio.create_task(self.start_step_loop())
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
             self.controller.set_initial_state(
