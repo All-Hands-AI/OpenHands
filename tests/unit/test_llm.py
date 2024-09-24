@@ -3,10 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from litellm.exceptions import (
     APIConnectionError,
-    ContentPolicyViolationError,
     InternalServerError,
-    OpenAIError,
     RateLimitError,
+    ServiceUnavailableError,
 )
 
 from openhands.core.config import LLMConfig
@@ -139,16 +138,15 @@ def test_completion_with_mocked_logger(
             2,
         ),
         (
-            ContentPolicyViolationError,
-            {'model': 'test_model', 'llm_provider': 'test_provider'},
-            2,
-        ),
-        (
             InternalServerError,
             {'llm_provider': 'test_provider', 'model': 'test_model'},
             2,
         ),
-        (OpenAIError, {}, 2),
+        (
+            ServiceUnavailableError,
+            {'llm_provider': 'test_provider', 'model': 'test_model'},
+            2,
+        ),
         (RateLimitError, {'llm_provider': 'test_provider', 'model': 'test_model'}, 2),
     ],
 )
