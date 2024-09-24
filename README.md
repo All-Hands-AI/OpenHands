@@ -1,37 +1,31 @@
 <div align="center">
-
-  ![OpenHands Logo](./docs/static/img/logo.png)
+  <img src="./docs/static/img/openhands_banner.png" alt="OpenHands Banner" width="100%">
 
   # OpenHands: Code Less, Make More
 
-  ![Contributors](https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)
-  ![Stars](https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)
-  ![Coverage](https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)
-  ![License](https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)
+  [![Contributors](https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)](https://github.com/All-Hands-AI/OpenHands/graphs/contributors)
+  [![Stars](https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)](https://github.com/All-Hands-AI/OpenHands/stargazers)
+  [![Coverage](https://img.shields.io/codecov/c/github/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)](https://codecov.io/github/All-Hands-AI/OpenHands?branch=main)
+  [![License](https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue)](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE)
 
   [![Slack](https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge)](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA)
   [![Discord](https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/ESHStjSjD4)
-  [![Credits](https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white)](https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md)
-
-  [![Docs](https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge)](https://docs.all-hands.dev/modules/usage/getting-started)
+  [![Documentation](https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge)](https://docs.all-hands.dev/modules/usage/getting-started)
   [![Paper](https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge)](https://arxiv.org/abs/2407.16741)
   [![Benchmark](https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge)](https://huggingface.co/spaces/OpenHands/evaluation)
-
 </div>
-
-<p align="center">
-  <img src="./docs/static/img/screenshot.png" alt="OpenHands Screenshot" width="600">
-</p>
 
 ## 🚀 Table of Contents
 
 - [About OpenHands](#-about-openhands)
-- [Features](#-features)
-- [Quick Start](#-quick-start)
+- [Key Features](#-key-features)
+- [Demo](#-demo)
+- [Getting Started](#-getting-started)
 - [Documentation](#-documentation)
+- [Roadmap](#-roadmap)
 - [How to Contribute](#-how-to-contribute)
-- [Join Our Community](#-join-our-community)
-- [Progress](#-progress)
+- [Community](#-community)
+- [FAQ](#-faq)
 - [License](#-license)
 - [Acknowledgements](#-acknowledgements)
 - [Cite](#-cite)
@@ -40,60 +34,97 @@
 
 OpenHands (formerly OpenDevin) is a cutting-edge platform for software development agents powered by AI. Our agents can perform any task a human developer can, including modifying code, running commands, browsing the web, and even copying code snippets from StackOverflow.
 
-## ✨ Features
+## ✨ Key Features
 
-- 🧠 AI-powered software development agents
-- 🌐 Web browsing and API integration capabilities
-- 🔧 Code modification and command execution
-- 📚 Comprehensive documentation and community support
-- 🔬 Ongoing research and evaluation
+<div align="center">
 
-## ⚡ Quick Start
+| 🧠 AI-Powered Agents | 🌐 Web Integration | 🔧 Code Modification | 📚 Comprehensive Docs |
+|:-------------------:|:-------------------:|:--------------------:|:---------------------:|
+| Intelligent software development assistants | Seamless browsing and API capabilities | Effortless code updates and command execution | Detailed guides and community support |
 
-<details>
-<summary>Click to expand Quick Start guide</summary>
+</div>
 
-The easiest way to run OpenHands is in Docker. Change `WORKSPACE_BASE` to point OpenHands to existing code you'd like to modify.
+## 🎥 Demo
 
-```bash
-export WORKSPACE_BASE=$(pwd)/workspace
+<p align="center">
+  <img src="./docs/static/img/openhands_demo.gif" alt="OpenHands Demo" width="600">
+</p>
 
-docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.9
-```
+## 🚀 Getting Started
 
-Visit [http://localhost:3000](http://localhost:3000) to start using OpenHands!
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/All-Hands-AI/OpenHands.git
+   cd OpenHands
+   ```
 
-</details>
+2. **Set up your workspace:**
+   ```bash
+   export WORKSPACE_BASE=$(pwd)/workspace
+   ```
+
+3. **Run OpenHands with Docker:**
+   ```bash
+   docker run -it --pull=always \
+       -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
+       -e SANDBOX_USER_ID=$(id -u) \
+       -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+       -v $WORKSPACE_BASE:/opt/workspace_base \
+       -v /var/run/docker.sock:/var/run/docker.sock \
+       -p 3000:3000 \
+       --add-host host.docker.internal:host-gateway \
+       --name openhands-app-$(date +%Y%m%d%H%M%S) \
+       ghcr.io/all-hands-ai/openhands:0.9
+   ```
+
+4. **Access OpenHands:**
+   Open your browser and visit [http://localhost:3000](http://localhost:3000)
 
 ## 📖 Documentation
 
 For detailed information, setup instructions, and advanced configuration options, visit our [comprehensive documentation](https://docs.all-hands.dev/modules/usage/getting-started).
 
+## 🗺️ Roadmap
+
+- [ ] Enhanced natural language understanding
+- [ ] Multi-agent collaboration features
+- [ ] Expanded language and framework support
+- [ ] Improved code generation capabilities
+- [ ] Integration with popular IDEs
+
 ## 🤝 How to Contribute
 
-We welcome contributions from everyone! Whether you're a developer, researcher, or enthusiast, there are many ways to get involved:
+We welcome contributions from everyone! Here's how you can get involved:
 
-- 💻 Code Contributions
-- 🔬 Research and Evaluation
-- 🐛 Feedback and Testing
+- 💻 **Code Contributions:** Help us develop new features and fix bugs
+- 🔬 **Research and Evaluation:** Contribute to our understanding of AI in software engineering
+- 🐛 **Feedback and Testing:** Use OpenHands and report issues or suggest improvements
 
 Check out our [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
-## 🌟 Join Our Community
+## 🌟 Community
 
-Let's revolutionize software engineering together!
+Join our vibrant community and help shape the future of AI-assisted software development:
 
 - 💬 [Slack Workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) - For research, architecture, and development discussions
 - 🎮 [Discord Server](https://discord.gg/ESHStjSjD4) - For general discussion, questions, and feedback
+
+## ❓ FAQ
+
+<details>
+<summary>What makes OpenHands different from other AI coding assistants?</summary>
+OpenHands provides a complete platform for AI-powered software development, offering not just code suggestions, but full task automation and web integration capabilities.
+</details>
+
+<details>
+<summary>Is OpenHands free to use?</summary>
+Yes, OpenHands is open-source and free to use under the MIT License.
+</details>
+
+<details>
+<summary>How can I contribute to the project?</summary>
+Check out our [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to contribute code, research, or provide feedback.
+</details>
 
 ## 📈 Progress
 
