@@ -23,204 +23,11 @@ from openhands.runtime.plugins.agent_skills.file_ops.file_ops import _lint_file
 
 SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
 provided draft of the new version. The provided draft may be incomplete (it may skip lines) and/or incorrectly indented. You should try to apply the changes present in the draft to the old version, and output a new version of the file.
-NOTE: The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
-You should output the new version of the file by wrapping the new version of the file content in a ``` block.
+NOTE:
+- The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
+- You should output the new version of the file by wrapping the new version of the file content in a ``` block.
+- If there's no explicit comment to remove the existing code, we should keep them and append the new code to the end of the file.
 """
-
-USER_MSG_EXAMPLE_1 = """
-HERE IS THE OLD VERSION OF THE FILE:
-```
-from ansiblelint import AnsibleLintRule
-
-format = "{}"
-
-class RoleRelativePath(AnsibleLintRule):
-    id = 'E201'
-    shortdesc = "Doesn't need a relative path in role"
-    description = ''
-    tags = ['role']
-
-    def matchplay(self, file, play):
-        # assume if 'roles' in path, inside a role.
-        if 'roles' not in file['path']:
-            return []
-        if 'template' in play:
-            if not isinstance(play['template'], dict):
-                return False
-            if "../templates" in play['template']['src']:
-                return [({'': play['template']},
-                                self.shortdesc)]
-        if 'win_template' in play:
-            if not isinstance(play['win_template'], dict):
-                return False
-            if "../win_templates" in play['win_template']['src']:
-                return ({'win_template': play['win_template']},
-                                self.shortdesc)
-        if 'copy' in play:
-            if not isinstance(play['copy'], dict):
-                return False
-            if "../copys" in play['copy']['src']:
-                return ({'sudo': play['copy']},
-                                self.shortdesc)
-        if 'win_copy' in play:
-            if not isinstance(play['win_copy'], dict):
-                return False
-            if "../win_copys" in play['win_copy']['src']:
-                return ({'sudo': play['win_copy']},
-                                self.shortdesc)
-        return []
-```
-
-HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
-```
-# no changes before
-
-class RoleRelativePath(AnsibleLintRule):
-    # no changes here
-
-    def matchplay(self, file, play):
-        # assume if 'roles' in path, inside a role.
-        # delete this: if 'roles' not in file['path']:
-        if 'template' not in play:
-            if not isinstance(play['template'], dict):
-                return False
-            if "../templates" in play['template']['src']:
-                return [({'': play['template']},
-                                self.shortdesc)]
-# rest of the file is unchanged
-```
-""".strip()
-
-ASSISTANT_MSG_EXAMPLE_1 = """
-```
-from ansiblelint import AnsibleLintRule
-
-format = "{}"
-
-class RoleRelativePath(AnsibleLintRule):
-    id = 'E201'
-    shortdesc = "Doesn't need a relative path in role"
-    description = ''
-    tags = ['role']
-
-    def matchplay(self, file, play):
-        # assume if 'roles' in path, inside a role.
-        if 'template' not in play:
-            if not isinstance(play['template'], dict):
-                return False
-            if "../templates" in play['template']['src']:
-                return [({'': play['template']},
-                                self.shortdesc)]
-        if 'win_template' in play:
-            if not isinstance(play['win_template'], dict):
-                return False
-            if "../win_templates" in play['win_template']['src']:
-                return ({'win_template': play['win_template']},
-                                self.shortdesc)
-        if 'copy' in play:
-            if not isinstance(play['copy'], dict):
-                return False
-            if "../copys" in play['copy']['src']:
-                return ({'sudo': play['copy']},
-                                self.shortdesc)
-        if 'win_copy' in play:
-            if not isinstance(play['win_copy'], dict):
-                return False
-            if "../win_copys" in play['win_copy']['src']:
-                return ({'sudo': play['win_copy']},
-                                self.shortdesc)
-        return []
-```
-""".strip()
-
-USER_MSG_EXAMPLE_2 = """
-HERE IS THE OLD VERSION OF THE FILE:
-```
-#include "ics3/parameter.hpp"
-
-ics::Parameter ics::Parameter::stretch() noexcept {
-  static const Parameter STRETCH(0x01, 1, 127);
-  return STRETCH;
-}
-
-ics::Parameter ics::Parameter::speed() noexcept {
-  static const Parameter SPEED(0x02, 1, 127);
-  return SPEED;
-}
-
-ics::Parameter ics::Parameter::current() noexcept {
-  static const Parameter CURRENT(0x03, 0, 63);
-  return CURRENT;
-}
-```
-
-HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
-```
-ics::Parameter ics::Parameter::temperature() noexcept {
-  static const Parameter TEMPERATURE(0x04, 1, 127);
-  return TEMPERATURE;
-}
-
-unsigned char ics::Parameter::get() const noexcept {
-  return data;
-}
-
-void ics::Parameter::set(unsigned char input) throw(std::invalid_argument) {
-  if (input < min) throw std::invalid_argument("Too small value");
-  if (max < input) throw std::invalid_argument("Too big value");
-  data = input;
-}
-
-ics::Parameter::Parameter(unsigned char sc, unsigned char min, unsigned char max) noexcept
-: sc(sc),
-  min(min),
-  max(max)
-{}
-```
-""".strip()
-
-ASSISTANT_MSG_EXAMPLE_2 = """
-Since there's no explicit comment to remove the existing code, we should keep them and append the new code to the end of the file.
-```
-#include "ics3/parameter.hpp"
-
-ics::Parameter ics::Parameter::stretch() noexcept {
-  static const Parameter STRETCH(0x01, 1, 127);
-  return STRETCH;
-}
-
-ics::Parameter ics::Parameter::speed() noexcept {
-  static const Parameter SPEED(0x02, 1, 127);
-  return SPEED;
-}
-
-ics::Parameter ics::Parameter::current() noexcept {
-  static const Parameter CURRENT(0x03, 0, 63);
-  return CURRENT;
-}
-
-ics::Parameter ics::Parameter::temperature() noexcept {
-  static const Parameter TEMPERATURE(0x04, 1, 127);
-  return TEMPERATURE;
-}
-
-unsigned char ics::Parameter::get() const noexcept {
-  return data;
-}
-
-void ics::Parameter::set(unsigned char input) throw(std::invalid_argument) {
-  if (input < min) throw std::invalid_argument("Too small value");
-  if (max < input) throw std::invalid_argument("Too big value");
-  data = input;
-}
-
-ics::Parameter::Parameter(unsigned char sc, unsigned char min, unsigned char max) noexcept
-: sc(sc),
-  min(min),
-  max(max)
-{}
-```
-""".strip()
 
 USER_MSG = """
 HERE IS THE OLD VERSION OF THE FILE:
@@ -232,6 +39,8 @@ HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
 ```
 {draft_changes}
 ```
+
+GIVE ME THE NEW VERSION OF THE FILE.
 """.strip()
 
 
@@ -249,10 +58,6 @@ def get_new_file_contents(
     while num_retries > 0:
         messages = [
             {'role': 'system', 'content': SYS_MSG},
-            {'role': 'user', 'content': USER_MSG_EXAMPLE_1},
-            {'role': 'assistant', 'content': ASSISTANT_MSG_EXAMPLE_1},
-            {'role': 'user', 'content': USER_MSG_EXAMPLE_2},
-            {'role': 'assistant', 'content': ASSISTANT_MSG_EXAMPLE_2},
             {
                 'role': 'user',
                 'content': USER_MSG.format(
