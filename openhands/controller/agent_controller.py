@@ -72,7 +72,6 @@ class AgentController:
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
-        in_asyncio: bool = True,
     ):
         """Initializes a new instance of the AgentController class.
 
