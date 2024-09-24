@@ -1,3 +1,5 @@
+from typing import Callable, Optional
+
 from openhands.core.config import AppConfig
 from openhands.events.action import (
     FileReadAction,
@@ -25,8 +27,15 @@ class E2BRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
+        status_message_callback: Optional[Callable] = None,
     ):
-        super().__init__(config, event_stream, sid, plugins)
+        super().__init__(
+            config,
+            event_stream,
+            sid,
+            plugins,
+            status_message_callback=status_message_callback,
+        )
         if sandbox is None:
             self.sandbox = E2BSandbox()
         if not isinstance(self.sandbox, E2BSandbox):
