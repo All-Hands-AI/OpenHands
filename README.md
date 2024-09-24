@@ -46,13 +46,14 @@ OpenHands (formerly OpenDevin) is a cutting-edge platform for software developme
 
 ## 🎥 Demo
 
-### Demo Video 1: Introduction to OpenHands
+| OpenHands Introduction | OpenHands Demo |
+|:----------|:-----|
+|[![OpenHands Introduction](http://img.youtube.com/vi/Q3DyeIV96tY/0.jpg)](https://www.youtube.com/watch?v=Q3DyeIV96tY) | [![OpenHands Demo](http://img.youtube.com/vi/2_6-ejOhHXQ/0.jpg)](https://www.youtube.com/watch?v=2_6-ejOhHXQ) |
 
-[![OpenHands Introduction](http://img.youtube.com/vi/Q3DyeIV96tY/0.jpg)](https://www.youtube.com/watch?v=Q3DyeIV96tY)
 
-### Demo Video 2: OpenHands in Action
 
-[![OpenHands Demo](http://img.youtube.com/vi/2_6-ejOhHXQ/0.jpg)](https://www.youtube.com/watch?v=2_6-ejOhHXQ)
+
+
 
 ## 🚀 Getting Started
 
