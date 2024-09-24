@@ -51,7 +51,7 @@ const generateAgentRunObservation = (): CommandObservation => ({
 const api = ws.link("ws://localhost:3000/ws");
 
 export const handlers: WebSocketHandler[] = [
-  api.on("connection", ({ server, client }) => {
+  api.addEventListener("connection", ({ server, client }) => {
     client.send(
       JSON.stringify({
         status: "ok",

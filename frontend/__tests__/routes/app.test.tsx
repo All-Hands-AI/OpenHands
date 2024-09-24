@@ -31,7 +31,7 @@ describe("App", () => {
 
   it("should establish a ws connection and send the init message", async () => {
     server.use(
-      agent.on("connection", ({ client }) => {
+      agent.addEventListener("connection", ({ client }) => {
         client.send(
           JSON.stringify({
             id: 1,
