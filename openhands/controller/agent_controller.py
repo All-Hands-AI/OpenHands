@@ -596,6 +596,6 @@ class AgentController:
         return (
             f'AgentController(id={self.id}, agent={self.agent!r}, '
             f'event_stream={self.event_stream!r}, '
-            f'state={self.state!r}, agent_future={self.agent_future!r}, '
+            f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
