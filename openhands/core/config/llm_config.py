@@ -87,9 +87,9 @@ class LLMConfig:
 
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
-            os.environ['OPENROUTER_SITE_URL'] = self.openrouter_site_url
+            os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
-            os.environ['OPENROUTER_APP_NAME'] = self.openrouter_app_name
+            os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
     def __str__(self):
         attr_str = []
