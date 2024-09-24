@@ -2,6 +2,7 @@ import os
 import tempfile
 import threading
 import uuid
+from typing import Callable
 from zipfile import ZipFile
 
 import docker
@@ -119,6 +120,7 @@ class EventStreamRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Callable | None = None,
     ):
         self.config = config
         self._host_port = 30000  # initial dummy value
@@ -130,12 +132,13 @@ class EventStreamRuntime(Runtime):
         self.instance_id = (
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
+        self.status_message_callback = status_message_callback
 
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = self.container_name_prefix + self.instance_id
-
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
@@ -146,9 +149,10 @@ class EventStreamRuntime(Runtime):
         self.log_buffer: LogBuffer | None = None
 
         if self.config.sandbox.runtime_extra_deps:
-            logger.info(
+            logger.debug(
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
+
         self.skip_container_logs = (
             os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
         )
@@ -157,6 +161,8 @@ class EventStreamRuntime(Runtime):
                 raise ValueError(
                     'Neither runtime container image nor base container image is set'
                 )
+            logger.info('Preparing container, this might take a few minutes...')
+            self.send_status_message('STATUS$STARTING_CONTAINER')
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
@@ -169,9 +175,13 @@ class EventStreamRuntime(Runtime):
         )
 
         # will initialize both the event stream and the env vars
-        super().__init__(config, event_stream, sid, plugins, env_vars)
+        super().__init__(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
 
-        logger.info('Waiting for runtime container to be alive...')
+        logger.info('Waiting for client to become ready...')
+        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+
         self._wait_until_alive()
 
         self.setup_initial_env()
@@ -179,6 +189,7 @@ class EventStreamRuntime(Runtime):
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
+        self.send_status_message(' ')
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
@@ -201,9 +212,8 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
-            logger.info(
-                f'Starting container with image: {self.runtime_container_image} and name: {self.container_name}'
-            )
+            logger.info('Preparing to start container...')
+            self.send_status_message('STATUS$PREPARING_CONTAINER')
             plugin_arg = ''
             if plugins is not None and len(plugins) > 0:
                 plugin_arg = (
@@ -241,17 +251,17 @@ class EventStreamRuntime(Runtime):
             if self.config.debug:
                 environment['DEBUG'] = 'true'
 
-            logger.info(f'Workspace Base: {self.config.workspace_base}')
+            logger.debug(f'Workspace Base: {self.config.workspace_base}')
             if mount_dir is not None and sandbox_workspace_dir is not None:
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
                 volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
-                logger.info(f'Mount dir: {mount_dir}')
+                logger.debug(f'Mount dir: {mount_dir}')
             else:
                 logger.warn(
                     'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
                 )
                 volumes = None
-            logger.info(f'Sandbox workspace: {sandbox_workspace_dir}')
+            logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
@@ -259,6 +269,7 @@ class EventStreamRuntime(Runtime):
                 )
             else:
                 browsergym_arg = ''
+
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
@@ -281,6 +292,7 @@ class EventStreamRuntime(Runtime):
             )
             self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
+            self.send_status_message('STATUS$CONTAINER_STARTED')
             return container
         except Exception as e:
             logger.error(
@@ -539,3 +551,8 @@ class EventStreamRuntime(Runtime):
                 return port
         # If no port is found after max_attempts, return the last tried port
         return port
+
+    def send_status_message(self, message: str):
+        """Sends a status message if the callback function was provided."""
+        if self.status_message_callback:
+            self.status_message_callback(message)
