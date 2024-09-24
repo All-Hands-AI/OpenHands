@@ -91,6 +91,11 @@ function AgentStatusBar() {
     }
   }, [curAgentState]);
 
+  let statusMessage = curStatusMessage.message;
+  if (!statusMessage || !statusMessage.length) {
+    statusMessage = AgentStatusMap[curAgentState].message;
+  }
+
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center">
@@ -98,16 +103,9 @@ function AgentStatusBar() {
           className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
         />
         <span className="text-sm text-stone-400">
-          {AgentStatusMap[curAgentState].message}
+          {t(statusMessage)}
         </span>
       </div>
-      {curStatusMessage.message && curStatusMessage.message.length > 0 && (
-        <div className="mt-1 flex items-center">
-          <span className="text-sm text-stone-400">
-            {t(curStatusMessage.message)}
-          </span>
-        </div>
-      )}
     </div>
   );
 }
