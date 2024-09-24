@@ -1,0 +1,66 @@
+[33mRunning the app...(B[m
+[33mStarting backend server...(B[m
+[33mWaiting for the backend to start...(B[m
+INFO:     Started server process [8736]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:3000 (Press CTRL+C to quit)
+[32mBackend started successfully.(B[m
+[36mStarting frontend with npm...(B[m
+
+> openhands-frontend@0.9.2 start
+> npm run make-i18n && vite --port 3001
+
+
+> openhands-frontend@0.9.2 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+
+  VITE v5.4.3  ready in 580 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
+[33mRunning the app...(B[m
+[33mStarting backend server...(B[m
+[33mWaiting for the backend to start...(B[m
+INFO:     Started server process [178]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:3000 (Press CTRL+C to quit)
+[32mBackend started successfully.(B[m
+[36mStarting frontend with npm...(B[m
+
+> openhands-frontend@0.9.2 start
+> npm run make-i18n && vite --port 3001
+
+
+> openhands-frontend@0.9.2 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+
+  VITE v5.4.3  ready in 9697 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
+[33mRunning the app...(B[m
+[33mStarting backend server...(B[m
+[33mWaiting for the backend to start...(B[m
+INFO:     Started server process [275]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:3000 (Press CTRL+C to quit)
+[32mBackend started successfully.(B[m
+[36mStarting frontend with npm...(B[m
+
+> openhands-frontend@0.9.2 start
+> npm run make-i18n && vite --port 3001
+
+
+> openhands-frontend@0.9.2 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+
+  VITE v5.4.3  ready in 3699 ms
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
