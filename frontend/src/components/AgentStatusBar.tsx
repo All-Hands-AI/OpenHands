@@ -91,10 +91,15 @@ function AgentStatusBar() {
     }
   }, [curAgentState]);
 
-  let statusMessage = curStatusMessage.message;
-  if (!statusMessage || !statusMessage.length) {
-    statusMessage = AgentStatusMap[curAgentState].message;
-  }
+  const [statusMessage, setStatusMessage] = React.useState<string>(
+    curStatusMessage.message,
+  );
+
+  React.useEffect(() => {
+    if (!statusMessage || !statusMessage.length) {
+      setStatusMessage(AgentStatusMap[curAgentState].message);
+    }
+  }, [curAgentState, statusMessage]);
 
   return (
     <div className="flex flex-col items-center">
