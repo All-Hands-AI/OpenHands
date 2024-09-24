@@ -1,11 +1,20 @@
 import React from "react";
-import { Form, useFetcher, useNavigation } from "@remix-run/react";
+import { Form, useFetcher, useNavigation, useSubmit } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { removeFile } from "#/state/initial-query-slice";
+import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
+import { SuggestionBubble } from "#/components/suggestion-bubble";
+import { SUGGESTIONS } from "#/utils/suggestions";
+
+const getRandomKey = (obj: Record<string, string>) => {
+  const keys = Object.keys(obj);
+  const randomKey = keys[Math.floor(Math.random() * keys.length)];
+
+  return randomKey;
+};
 
 interface UploadedFilePreviewProps {
   file: string; // base64
@@ -32,11 +41,46 @@ export function TaskForm() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const fetcher = useFetcher();
+  const submit = useSubmit();
 
-  const { files } = useSelector((state: RootState) => state.initalQuery);
+  const { files, selectedRepository } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const [hasText, setHasText] = React.useState(false);
+  const [suggestion, setSuggestion] = React.useState(
+    getRandomKey(
+      selectedRepository ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"],
+    ),
+  );
+
+  React.useEffect(() => {
+    // Display a suggestion based on whether a repository is selected
+    if (selectedRepository) {
+      setSuggestion(getRandomKey(SUGGESTIONS.repo));
+    } else {
+      setSuggestion(getRandomKey(SUGGESTIONS["non-repo"]));
+    }
+  }, [selectedRepository]);
+
+  const onRefreshSuggestion = () => {
+    const suggestions = SUGGESTIONS[selectedRepository ? "repo" : "non-repo"];
+    // remove current suggestion to avoid refreshing to the same suggestion
+    const suggestionCopy = { ...suggestions };
+    delete suggestionCopy[suggestion];
+
+    const key = getRandomKey(suggestionCopy);
+    setSuggestion(key);
+  };
+
+  const onClickSuggestion = () => {
+    const suggestions = SUGGESTIONS[selectedRepository ? "repo" : "non-repo"];
+    const value = suggestions[suggestion];
+
+    dispatch(setInitialQuery(value));
+    submit({}, { method: "POST" });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHasText(!!e.target.value);
@@ -55,7 +99,16 @@ export function TaskForm() {
           ))}
         </div>
       )}
-      <Form ref={formRef} method="post" className="relative">
+      <Form
+        ref={formRef}
+        method="post"
+        className="relative flex flex-col items-center gap-2"
+      >
+        <SuggestionBubble
+          suggestion={suggestion}
+          onClick={onClickSuggestion}
+          onRefresh={onRefreshSuggestion}
+        />
         <input
           name="q"
           type="text"
