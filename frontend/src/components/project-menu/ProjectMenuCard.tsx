@@ -1,4 +1,5 @@
 import React from "react";
+import { useDispatch } from "react-redux";
 import EllipsisH from "#/assets/ellipsis-h.svg?react";
 import CloudConnection from "#/assets/cloud-connection.svg?react";
 import { ContextMenu } from "../context-menu/context-menu";
@@ -8,6 +9,9 @@ import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
 import { cn } from "#/utils/utils";
 import ExternalLinkIcon from "#/assets/external-link.svg?react";
 import { retrieveWorkspaceZipBlob } from "#/api/open-hands";
+import { addUserMessage } from "#/state/chatSlice";
+import { useSocket } from "#/context/socket";
+import { createChatMessage } from "#/services/chatService";
 
 const downloadWorkspace = async () => {
   try {
@@ -110,17 +114,38 @@ function DetailedProjectMenuCard({
   repoName,
   lastCommit,
 }: DetailedProjectMenuCardProps) {
+  const { send } = useSocket();
+  const dispatch = useDispatch();
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
 
   const toggleMenuVisibility = () => {
     setContextMenuIsOpen((prev) => !prev);
   };
 
+  const handlePushToGitHub = () => {
+    const rawEvent = {
+      content: "Please commit and push these changes to the repository.",
+      imageUrls: [],
+      timestamp: new Date().toISOString(),
+    };
+    const event = createChatMessage(
+      rawEvent.content,
+      rawEvent.imageUrls,
+      rawEvent.timestamp,
+    );
+
+    send(event); // send to socket
+    dispatch(addUserMessage(rawEvent)); // display in chat interface
+    setContextMenuIsOpen(false);
+  };
+
   return (
     <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
       {contextMenuIsOpen && (
         <ContextMenu className="absolute right-0 bottom-[calc(100%+8px)]">
-          <ContextMenuListItem>Push to GitHub</ContextMenuListItem>
+          <ContextMenuListItem onClick={handlePushToGitHub}>
+            Push to GitHub
+          </ContextMenuListItem>
           <ContextMenuListItem>Download as .zip</ContextMenuListItem>
         </ContextMenu>
       )}
