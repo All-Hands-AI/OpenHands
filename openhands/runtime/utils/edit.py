@@ -80,8 +80,7 @@ class RoleRelativePath(AnsibleLintRule):
 
     def matchplay(self, file, play):
         # assume if 'roles' in path, inside a role.
-        if 'roles' not in file['path']:
-            return []
+        # delete this: if 'roles' not in file['path']:
         if 'template' not in play:
             if not isinstance(play['template'], dict):
                 return False
@@ -106,8 +105,6 @@ class RoleRelativePath(AnsibleLintRule):
 
     def matchplay(self, file, play):
         # assume if 'roles' in path, inside a role.
-        if 'roles' not in file['path']:
-            return []
         if 'template' not in play:
             if not isinstance(play['template'], dict):
                 return False
@@ -139,63 +136,89 @@ class RoleRelativePath(AnsibleLintRule):
 USER_MSG_EXAMPLE_2 = """
 HERE IS THE OLD VERSION OF THE FILE:
 ```
-import cutplanner
-import unittest
+#include "ics3/parameter.hpp"
+
+ics::Parameter ics::Parameter::stretch() noexcept {
+  static const Parameter STRETCH(0x01, 1, 127);
+  return STRETCH;
+}
+
+ics::Parameter ics::Parameter::speed() noexcept {
+  static const Parameter SPEED(0x02, 1, 127);
+  return SPEED;
+}
+
+ics::Parameter ics::Parameter::current() noexcept {
+  static const Parameter CURRENT(0x03, 0, 63);
+  return CURRENT;
+}
 ```
 
 HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
 ```
-class TestPlanner(unittest.TestCase):
+ics::Parameter ics::Parameter::temperature() noexcept {
+  static const Parameter TEMPERATURE(0x04, 1, 127);
+  return TEMPERATURE;
+}
 
-    def setUp(self):
-        sizes = [50, 80, 120]
-        needed = [10, 25, 75]
-        loss = 0.25
-        self.planner = cutplanner.Planner(sizes, needed, loss)
+unsigned char ics::Parameter::get() const noexcept {
+  return data;
+}
 
-    def test_largest_stock(self):
-        largest = self.planner.largest_stock
-        self.assertEqual(largest, 120)
+void ics::Parameter::set(unsigned char input) throw(std::invalid_argument) {
+  if (input < min) throw std::invalid_argument("Too small value");
+  if (max < input) throw std::invalid_argument("Too big value");
+  data = input;
+}
 
-    def test_finalize(self):
-        self.planner.cur_stock = cutplanner.Stock(self.planner.largest_stock)
-        self.planner.cut_piece(cutplanner.Piece(1, 60))
-        self.planner.finalize_stock()
-        self.assertEqual(len(self.planner.stock), 1)
-        self.assertEqual(self.planner.stock[0].length, 80)
-
-if __name__ == '__main__':
-    unittest.main()
+ics::Parameter::Parameter(unsigned char sc, unsigned char min, unsigned char max) noexcept
+: sc(sc),
+  min(min),
+  max(max)
+{}
 ```
 """.strip()
 
 ASSISTANT_MSG_EXAMPLE_2 = """
-Since there's no explicit instruction to remove the imports, we should keep them and append the new code to the end of the file.
+Since there's no explicit comment to remove the existing code, we should keep them and append the new code to the end of the file.
 ```
-import cutplanner
-import unittest
+#include "ics3/parameter.hpp"
 
-class TestPlanner(unittest.TestCase):
+ics::Parameter ics::Parameter::stretch() noexcept {
+  static const Parameter STRETCH(0x01, 1, 127);
+  return STRETCH;
+}
 
-    def setUp(self):
-        sizes = [50, 80, 120]
-        needed = [10, 25, 75]
-        loss = 0.25
-        self.planner = cutplanner.Planner(sizes, needed, loss)
+ics::Parameter ics::Parameter::speed() noexcept {
+  static const Parameter SPEED(0x02, 1, 127);
+  return SPEED;
+}
 
-    def test_largest_stock(self):
-        largest = self.planner.largest_stock
-        self.assertEqual(largest, 120)
+ics::Parameter ics::Parameter::current() noexcept {
+  static const Parameter CURRENT(0x03, 0, 63);
+  return CURRENT;
+}
 
-    def test_finalize(self):
-        self.planner.cur_stock = cutplanner.Stock(self.planner.largest_stock)
-        self.planner.cut_piece(cutplanner.Piece(1, 60))
-        self.planner.finalize_stock()
-        self.assertEqual(len(self.planner.stock), 1)
-        self.assertEqual(self.planner.stock[0].length, 80)
+ics::Parameter ics::Parameter::temperature() noexcept {
+  static const Parameter TEMPERATURE(0x04, 1, 127);
+  return TEMPERATURE;
+}
 
-if __name__ == '__main__':
-    unittest.main()
+unsigned char ics::Parameter::get() const noexcept {
+  return data;
+}
+
+void ics::Parameter::set(unsigned char input) throw(std::invalid_argument) {
+  if (input < min) throw std::invalid_argument("Too small value");
+  if (max < input) throw std::invalid_argument("Too big value");
+  data = input;
+}
+
+ics::Parameter::Parameter(unsigned char sc, unsigned char min, unsigned char max) noexcept
+: sc(sc),
+  min(min),
+  max(max)
+{}
 ```
 """.strip()
 

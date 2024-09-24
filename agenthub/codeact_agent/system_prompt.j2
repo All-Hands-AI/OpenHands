@@ -27,7 +27,9 @@ class MyClass:
     def __init__(self):
         self.x = 1
         self.y = 2
+        self.z = 3
 
+print(MyClass().z)
 print(MyClass().x)
 ```
 
@@ -43,8 +45,13 @@ print(MyClass().y)
 
 The assistant may produce an edit action like this:
 <file_edit path="/path/to/file.txt">
-# Myclass stays the same
+class MyClass:
+    def __init__(self):
+        # no changes before
+        self.y = 2
+        # self.z is removed
 
+# MyClass().z is removed
 print(MyClass().y)
 </file_edit>
 
