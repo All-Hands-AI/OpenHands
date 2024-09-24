@@ -323,21 +323,15 @@ def run_evaluation(
     try:
         if use_multiprocessing:
             with mp.Pool(num_workers) as pool:
-                results = [
-                    pool.apply_async(
-                        _process_instance_wrapper,
-                        args=(
-                            process_instance_func,
-                            instance,
-                            metadata,
-                            True,
-                            max_retries,
-                        ),
-                    )
-                    for _, instance in dataset.iterrows()
-                ]
+                results = pool.imap_unordered(
+                    lambda args: _process_instance_wrapper(*args),
+                    [
+                        (process_instance_func, instance, metadata, True, max_retries)
+                        for _, instance in dataset.iterrows()
+                    ],
+                )
                 for result in results:
-                    update_progress(result.get(), pbar, output_fp)
+                    update_progress(result, pbar, output_fp)
         else:
             for _, instance in dataset.iterrows():
                 result = _process_instance_wrapper(
