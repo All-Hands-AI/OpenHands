@@ -97,12 +97,7 @@ function ChatInterface() {
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         className="flex flex-col max-h-full overflow-y-auto"
       >
-        <div
-          className="p-3"
-          aria-label={t(I18nKey.CHAT_INTERFACE$CHAT_CONVERSATION)}
-        >
-          <Chat messages={messages} curAgentState={curAgentState} />
-        </div>
+        <Chat messages={messages} curAgentState={curAgentState} />
       </div>
 
       <div>

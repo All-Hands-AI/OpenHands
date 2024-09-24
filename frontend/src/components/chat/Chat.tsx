@@ -1,4 +1,3 @@
-import React from "react";
 import ChatMessage from "./ChatMessage";
 import AgentState from "#/types/AgentState";
 
@@ -9,7 +8,7 @@ interface ChatProps {
 
 function Chat({ messages, curAgentState }: ChatProps) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 px-3 pt-3 mb-6">
       {messages.map((message, index) => (
         <ChatMessage
           key={index}
