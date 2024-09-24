@@ -28,17 +28,14 @@ mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
 starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ```
 
-## Start OpenHands
+## Run OpenHands with Docker
 
-### Docker
-
+### Start OpenHands
 Use the instructions [here](../getting-started) to start OpenHands using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
 --add-host host.docker.internal:host-gateway \
--e LLM_API_KEY="ollama" \
--e LLM_BASE_URL="http://host.docker.internal:11434" \
 -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
 ```
 
@@ -55,8 +52,6 @@ docker run \
     --pull=always \
     --add-host host.docker.internal:host-gateway \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e LLM_API_KEY="ollama" \
-    -e LLM_BASE_URL="http://host.docker.internal:11434" \
     -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
@@ -66,6 +61,16 @@ docker run \
 ```
 
 You should now be able to connect to `http://localhost:3000/`
+
+### Configure the Web Application
+
+When running `openhands`, you'll need to set the following in the OpenHands UI through the Settings:
+- the model to "ollama/&lt;model-name&gt;"
+- the base url to `http://host.docker.internal:11434`
+- the API key is optional, you can use any string, such as `ollama`.
+
+
+## Run OpenHands in Development Mode
 
 ### Build from Source
 
@@ -77,23 +82,22 @@ Make sure `config.toml` is there by running `make setup-config` which will creat
 workspace_base="./workspace"
 
 [llm]
-model="ollama/codellama:7b"
-api_key="ollama"
 embedding_model="local"
-base_url="http://localhost:11434"
 ollama_base_url="http://localhost:11434"
 
 ```
 
-Replace `LLM_MODEL` of your choice if you need to.
+Done! Now you can start OpenHands by: `make run`. You now should be able to connect to `http://localhost:3000/`
 
-Done! Now you can start OpenHands by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
-
-## Select your Model
+### Configure the Web Application
 
 In the OpenHands UI, click on the Settings wheel in the bottom-left corner.
 Then in the `Model` input, enter `ollama/codellama:7b`, or the name of the model you pulled earlier.
-If it doesn’t show up in a dropdown, that’s fine, just type it in. Click Save when you’re done.
+If it doesn’t show up in the dropdown, enable `Advanced Settings` and type it in. Please note: you need the model name as listed by `ollama list`, with the prefix `ollama/`.
+
+In the API Key field, enter `ollama` or any value, since you don't need a particular key.
+
+In the Base URL field, enter `http://localhost:11434`.
 
 And now you're ready to go!
 

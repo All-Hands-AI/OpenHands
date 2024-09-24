@@ -35,9 +35,11 @@ class SessionManager:
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
-        if sid not in self._sessions:
+        session = self.get_session(sid)
+        if session is None:
+            logger.error(f'*** No session found for {sid}, skipping message ***')
             return False
-        return await self._sessions[sid].send(data)
+        return await session.send(data)
 
     async def send_error(self, sid: str, message: str) -> bool:
         """Sends an error message to the client."""

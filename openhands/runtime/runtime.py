@@ -3,6 +3,7 @@ import copy
 import json
 import os
 from abc import abstractmethod
+from typing import Callable
 
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
@@ -49,7 +50,7 @@ class Runtime:
 
     sid: str
     config: AppConfig
-    DEFAULT_ENV_VARS: dict[str, str]
+    initial_env_vars: dict[str, str]
 
     def __init__(
         self,
@@ -58,22 +59,24 @@ class Runtime:
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Callable | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
+        self.status_message_callback = status_message_callback
 
         self.config = copy.deepcopy(config)
-        self.DEFAULT_ENV_VARS = _default_env_vars(config.sandbox)
         atexit.register(self.close)
 
-        if self.DEFAULT_ENV_VARS:
-            logger.debug(f'Adding default env vars: {self.DEFAULT_ENV_VARS}')
-            self.add_env_vars(self.DEFAULT_ENV_VARS)
+        self.initial_env_vars = _default_env_vars(config.sandbox)
         if env_vars is not None:
-            logger.debug(f'Adding provided env vars: {env_vars}')
-            self.add_env_vars(env_vars)
+            self.initial_env_vars.update(env_vars)
+
+    def setup_initial_env(self) -> None:
+        logger.debug(f'Adding env vars: {self.initial_env_vars}')
+        self.add_env_vars(self.initial_env_vars)
 
     def close(self) -> None:
         pass

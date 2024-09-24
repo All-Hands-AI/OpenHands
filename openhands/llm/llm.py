@@ -1,7 +1,10 @@
 import asyncio
 import copy
+import os
+import time
 import warnings
 from functools import partial
+from typing import Any
 
 from openhands.core.config import LLMConfig
 from openhands.runtime.utils.shutdown_listener import should_continue
@@ -24,15 +27,21 @@ from litellm.types.utils import CostPerToken
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
 
-from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.exceptions import (
+    LLMResponseError,
+    OperationCancelled,
+    UserCancelledError,
+)
 from openhands.core.logger import get_llm_loggers
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
+from openhands.runtime.utils.shutdown_listener import should_exit
 
 __all__ = ['LLM']
 
@@ -68,6 +77,14 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
+
+        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
+        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
+
+        # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
+        # - 'messages': list of messages
+        # - 'response': response from the LLM
+        self.llm_completions: list[dict[str, Any]] = []
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
@@ -121,9 +138,6 @@ class LLM:
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        if self.config.drop_params:
-            litellm.drop_params = self.config.drop_params
-
         # This only seems to work with Google as the provider, not with OpenRouter!
         gemini_safety_settings = (
             [
@@ -159,6 +173,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
@@ -171,13 +186,18 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        def attempt_on_error(retry_state):
-            """Custom attempt function for litellm completion."""
+        def log_retry_attempt(retry_state):
+            """With before_sleep, this is called before `custom_completion_wait` and
+            ONLY if the retry is triggered by an exception."""
+            if should_exit():
+                raise OperationCancelled(
+                    'Operation cancelled.'
+                )  # exits the @retry loop
+            exception = retry_state.outcome.exception()
             logger.error(
-                f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
+                f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
                 exc_info=False,
             )
-            return None
 
         def custom_completion_wait(retry_state):
             """Custom wait function for litellm completion."""
@@ -213,10 +233,13 @@ class LLM:
             return exponential_wait(retry_state)
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(OperationCancelled)
+            ),
             wait=custom_completion_wait,
         )
         def wrapper(*args, **kwargs):
@@ -245,6 +268,16 @@ class LLM:
                 logger.debug('No completion messages!')
                 resp = {'choices': [{'message': {'content': ''}}]}
 
+            if self.config.log_completions:
+                self.llm_completions.append(
+                    {
+                        'messages': messages,
+                        'response': resp,
+                        'timestamp': time.time(),
+                        'cost': self.completion_cost(resp),
+                    }
+                )
+
             # log the response
             message_back = resp['choices'][0]['message']['content']
             if message_back:
@@ -269,7 +302,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            drop_params=True,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
@@ -280,10 +313,13 @@ class LLM:
         async_completion_unwrapped = self._async_completion
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(OperationCancelled)
+            ),
             wait=custom_completion_wait,
         )
         async def async_completion_wrapper(*args, **kwargs):
@@ -353,10 +389,13 @@ class LLM:
                     pass
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(OperationCancelled)
+            ),
             wait=custom_completion_wait,
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
@@ -450,6 +489,9 @@ class LLM:
         return str(element)
 
     async def _call_acompletion(self, *args, **kwargs):
+        """This is a wrapper for the litellm acompletion function which
+        makes it mockable for testing.
+        """
         return await litellm.acompletion(*args, **kwargs)
 
     @property
@@ -530,10 +572,15 @@ class LLM:
             output_tokens = usage.get('completion_tokens')
 
             if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens) + '\n'
+                stats += 'Input tokens: ' + str(input_tokens)
 
             if output_tokens:
-                stats += 'Output tokens: ' + str(output_tokens) + '\n'
+                stats += (
+                    (' | ' if input_tokens else '')
+                    + 'Output tokens: '
+                    + str(output_tokens)
+                    + '\n'
+                )
 
             model_extra = usage.get('model_extra', {})
 
@@ -633,6 +680,7 @@ class LLM:
 
     def reset(self):
         self.metrics = Metrics()
+        self.llm_completions = []
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):
