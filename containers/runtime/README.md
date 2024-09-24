@@ -1,11 +1,12 @@
-# Dynamic constructed Dockerfile
+# Dynamically constructed Dockerfile
 
-This folder builds runtime image (sandbox), which will use a `Dockerfile` that is dynamically generated depends on the `base_image` AND a [Python source distribution](https://docs.python.org/3.10/distutils/sourcedist.html) that's based on the current commit of `openhands`.
+This folder builds a runtime image (sandbox), which will use a dynamically generated `Dockerfile`
+that depends on the `base_image` **AND** a [Python source distribution](https://docs.python.org/3.10/distutils/sourcedist.html) that is based on the current commit of `openhands`.
 
-The following command will generate Dockerfile for `ubuntu:22.04` and the source distribution `.tar` into `containers/runtime`.
+The following command will generate a `Dockerfile` file for `nikolaik/python-nodejs:python3.11-nodejs22` (the default base image), an updated `config.sh` and the runtime source distribution files/folders into `containers/runtime`:
 
 ```bash
 poetry run python3 openhands/runtime/utils/runtime_build.py \
-    --base_image ubuntu:22.04 \
+    --base_image nikolaik/python-nodejs:python3.11-nodejs22 \
     --build_folder containers/runtime
 ```
