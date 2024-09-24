@@ -121,6 +121,9 @@ async def main():
         event_stream=event_stream,
     )
 
+    if controller is not None:
+        controller.agent_task = asyncio.create_task(controller.start_step_loop())
+
     async def prompt_for_next_task():
         next_message = input('How can I help? >> ')
         if next_message == 'exit':
