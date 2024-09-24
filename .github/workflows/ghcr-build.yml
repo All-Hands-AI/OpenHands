@@ -75,9 +75,8 @@ jobs:
       - name: Get hash in App Image
         id: get_hash_in_app_image
         run: |
-          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock -it ${{ github.repository_owner }}/openhands:${{ github.sha }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" > docker-output.txt 2>&1
-          cat docker-output.txt
-          hash_from_app_image=$(cat docker-output.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
+          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock -it ${{ github.repository_owner }}/openhands:${{ github.sha }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
+          hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
 
 
