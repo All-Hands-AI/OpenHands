@@ -5,6 +5,7 @@ from fastapi import WebSocket
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
 
@@ -34,9 +35,11 @@ class SessionManager:
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
-        if sid not in self._sessions:
+        session = self.get_session(sid)
+        if session is None:
+            logger.error(f'*** No session found for {sid}, skipping message ***')
             return False
-        return await self._sessions[sid].send(data)
+        return await session.send(data)
 
     async def send_error(self, sid: str, message: str) -> bool:
         """Sends an error message to the client."""
@@ -47,7 +50,7 @@ class SessionManager:
         return await self.send(sid, {'message': message})
 
     async def _cleanup_sessions(self):
-        while True:
+        while should_continue():
             current_time = time.time()
             session_ids_to_remove = []
             for sid, session in list(self._sessions.items()):

@@ -1,13 +1,12 @@
 import os
-import ssl
 import tempfile
 import threading
 import uuid
-from typing import Any, Type
+from typing import Callable, Optional
 from zipfile import ZipFile
 
 import requests
-from requests.exceptions import HTTPError, RequestException, Timeout
+from requests.exceptions import Timeout
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -37,18 +36,16 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
+from openhands.runtime.utils.request import (
+    DEFAULT_RETRY_EXCEPTIONS,
+    is_404_error,
+    send_request,
+)
 from openhands.runtime.utils.runtime_build import build_runtime_image
-
-DEFAULT_RETRY_EXCEPTIONS = [
-    ssl.SSLCertVerificationError,
-    RequestException,
-    HTTPError,
-    Timeout,
-]
 
 
 class RemoteRuntime(Runtime):
-    """This runtime will connect to a remote od-runtime-client."""
+    """This runtime will connect to a remote oh-runtime-client."""
 
     port: int = 60000  # default port for the remote runtime client
 
@@ -59,6 +56,7 @@ class RemoteRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Optional[Callable] = None,
     ):
         self.config = config
         if self.config.sandbox.api_hostname == 'localhost':
@@ -97,16 +95,16 @@ class RemoteRuntime(Runtime):
                 'Setting runtime_container_image is not supported in the remote runtime.'
             )
         self.container_image: str = self.config.sandbox.base_container_image
-        self.container_name = 'od-remote-runtime-' + self.instance_id
+        self.container_name = 'oh-remote-runtime-' + self.instance_id
         logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
-        response = self._send_request('GET', f'{self.api_url}/registry_prefix')
+        response = send_request(self.session, 'GET', f'{self.api_url}/registry_prefix')
         response_json = response.json()
         registry_prefix = response_json['registry_prefix']
-        os.environ['OD_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
             registry_prefix.rstrip('/') + '/runtime'
         )
         logger.info(
-            f'Runtime image repo: {os.environ["OD_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
         )
 
         if self.config.sandbox.runtime_extra_deps:
@@ -122,7 +120,8 @@ class RemoteRuntime(Runtime):
         )
 
         # Use the /image_exists endpoint to check if the image exists
-        response = self._send_request(
+        response = send_request(
+            self.session,
             'GET',
             f'{self.api_url}/image_exists',
             params={'image': self.container_image},
@@ -145,7 +144,7 @@ class RemoteRuntime(Runtime):
                 f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
                 'PYTHONUNBUFFERED=1 poetry run '
                 f'python -u -m openhands.runtime.client.client {self.port} '
-                f'--working-dir {self.sandbox_workspace_dir} '
+                f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
                 f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                 f'--user-id {self.config.sandbox.user_id} '
@@ -157,8 +156,8 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
-        response = self._send_request(
-            'POST', f'{self.api_url}/start', json=start_request
+        response = send_request(
+            self.session, 'POST', f'{self.api_url}/start', json=start_request
         )
         if response.status_code != 201:
             raise RuntimeError(f'Failed to start sandbox: {response.text}')
@@ -171,7 +170,9 @@ class RemoteRuntime(Runtime):
         )
 
         # Initialize the eventstream and env vars
-        super().__init__(config, event_stream, sid, plugins, env_vars)
+        super().__init__(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
 
         logger.info(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.plugins]}'
@@ -184,29 +185,6 @@ class RemoteRuntime(Runtime):
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
 
-    def _send_request(
-        self,
-        method: str,
-        url: str,
-        retry_exceptions: list[Type[Exception]] | None = None,
-        **kwargs: Any,
-    ) -> requests.Response:
-        if retry_exceptions is None:
-            retry_exceptions = DEFAULT_RETRY_EXCEPTIONS
-
-        @retry(
-            stop=stop_after_attempt(30),
-            wait=wait_exponential(multiplier=1, min=4, max=60),
-            retry=retry_if_exception_type(tuple(retry_exceptions)),
-            reraise=True,
-        )
-        def _send_request_with_retry():
-            response = self.session.request(method, url, **kwargs)
-            response.raise_for_status()
-            return response
-
-        return _send_request_with_retry()
-
     @retry(
         stop=stop_after_attempt(10),
         wait=wait_exponential(multiplier=1, min=4, max=60),
@@ -215,21 +193,30 @@ class RemoteRuntime(Runtime):
     )
     def _wait_until_alive(self):
         logger.info('Waiting for sandbox to be alive...')
-        response = self._send_request('GET', f'{self.runtime_url}/alive')
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.runtime_url}/alive',
+            # Retry 404 errors for the /alive endpoint
+            # because the runtime might just be starting up
+            # and have not registered the endpoint yet
+            retry_fns=[is_404_error],
+            # leave enough time for the runtime to start up
+            timeout=600,
+        )
         if response.status_code != 200:
             msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
             logger.warning(msg)
             raise RuntimeError(msg)
 
-    @property
-    def sandbox_workspace_dir(self):
-        return self.config.workspace_mount_path_in_sandbox
-
     def close(self):
         if self.runtime_id:
             try:
-                response = self._send_request(
-                    'POST', f'{self.api_url}/stop', json={'runtime_id': self.runtime_id}
+                response = send_request(
+                    self.session,
+                    'POST',
+                    f'{self.api_url}/stop',
+                    json={'runtime_id': self.runtime_id},
                 )
                 if response.status_code != 200:
                     logger.error(f'Failed to stop sandbox: {response.text}')
@@ -262,7 +249,8 @@ class RemoteRuntime(Runtime):
                 logger.info('Executing action')
                 request_body = {'action': event_to_dict(action)}
                 logger.debug(f'Request body: {request_body}')
-                response = self._send_request(
+                response = send_request(
+                    self.session,
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
@@ -270,6 +258,10 @@ class RemoteRuntime(Runtime):
                     retry_exceptions=list(
                         filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                     ),
+                    # Retry 404 errors for the /execute_action endpoint
+                    # because the runtime might just be starting up
+                    # and have not registered the endpoint yet
+                    retry_fns=[is_404_error],
                 )
                 if response.status_code == 200:
                     output = response.json()
@@ -335,7 +327,8 @@ class RemoteRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = self._send_request(
+            response = send_request(
+                self.session,
                 'POST',
                 f'{self.runtime_url}/upload_file',
                 files=upload_data,
@@ -368,7 +361,8 @@ class RemoteRuntime(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = self._send_request(
+            response = send_request(
+                self.session,
                 'POST',
                 f'{self.runtime_url}/list_files',
                 json=data,

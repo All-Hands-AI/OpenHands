@@ -1,9 +1,7 @@
 """Image-related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
-import time
-
 import pytest
-from conftest import _load_runtime
+from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -17,7 +15,6 @@ def test_bash_python_version(temp_dir, box_class, base_container_image):
     """Make sure Python is available in bash."""
     if base_container_image not in [
         'python:3.11-bookworm',
-        'nikolaik/python-nodejs:python3.11-nodejs22',
     ]:
         pytest.skip('This test is only for python-related images')
 
@@ -45,15 +42,13 @@ def test_bash_python_version(temp_dir, box_class, base_container_image):
     assert obs.exit_code == 0
     assert 'pip' in obs.content  # Check that pip is available
 
-    runtime.close()
-    time.sleep(1)
+    _close_test_runtime(runtime)
 
 
 def test_nodejs_22_version(temp_dir, box_class, base_container_image):
     """Make sure Node.js is available in bash."""
     if base_container_image not in [
         'node:22-bookworm',
-        'nikolaik/python-nodejs:python3.11-nodejs22',
     ]:
         pytest.skip('This test is only for nodejs-related images')
 
@@ -68,8 +63,7 @@ def test_nodejs_22_version(temp_dir, box_class, base_container_image):
     assert obs.exit_code == 0
     assert 'v22' in obs.content  # Check for specific version
 
-    runtime.close()
-    time.sleep(1)
+    _close_test_runtime(runtime)
 
 
 def test_go_version(temp_dir, box_class, base_container_image):
@@ -90,5 +84,4 @@ def test_go_version(temp_dir, box_class, base_container_image):
     assert obs.exit_code == 0
     assert 'go1.23' in obs.content  # Check for specific version
 
-    runtime.close()
-    time.sleep(1)
+    _close_test_runtime(runtime)

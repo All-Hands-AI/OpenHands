@@ -10,7 +10,8 @@ export const VERIFIED_OPENAI_MODELS = [
   "gpt-4-turbo",
   "gpt-4",
   "gpt-4-32k",
-  "gpt-3.5-turbo",
+  "o1-mini",
+  "o1-preview",
 ];
 
 // LiteLLM does not return the compatible Anthropic models with the provider, so we list them here to set them ourselves

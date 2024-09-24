@@ -16,10 +16,10 @@ from pathlib import Path
 
 import pexpect
 from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
 from openhands.core.logger import openhands_logger as logger
@@ -86,7 +86,6 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
-        self._initial_pwd = work_dir
 
     @property
     def initial_pwd(self):
@@ -118,20 +117,73 @@ class RuntimeClient:
         logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
-        """Create user if not exists."""
+        """Create working directory and user if not exists.
+        It performs the following steps effectively:
+        * Creates the Working Directory:
+            - Uses mkdir -p to create the directory.
+            - Sets ownership to username:root.
+            - Adjusts permissions to be readable and writable by group and others.
+        * User Verification and Creation:
+            - Checks if the user exists using id -u.
+            - If the user exists with the correct UID, it skips creation.
+            - If the UID differs, it logs a warning and updates self.user_id.
+            - If the user doesn't exist, it proceeds to create the user.
+        * Sudo Configuration:
+            - Appends %sudo ALL=(ALL) NOPASSWD:ALL to /etc/sudoers to grant
+              passwordless sudo access to the sudo group.
+            - Adds the user to the sudo group with the useradd command, handling
+              UID conflicts by incrementing the UID if necessary.
+        """
+
+        # First create the working directory, independent of the user
+        logger.info(f'Client working directory: {self.initial_pwd}')
+        command = f'umask 002; mkdir -p {self.initial_pwd}'
+        output = subprocess.run(command, shell=True, capture_output=True)
+        out_str = output.stdout.decode()
+
+        command = f'chown -R {username}:root {self.initial_pwd}'
+        output = subprocess.run(command, shell=True, capture_output=True)
+        out_str += output.stdout.decode()
+
+        command = f'chmod g+rw {self.initial_pwd}'
+        output = subprocess.run(command, shell=True, capture_output=True)
+        out_str += output.stdout.decode()
+        logger.debug(f'Created working directory. Output: [{out_str}]')
+
         # Skip root since it is already created
         if username == 'root':
             return
 
         # Check if the username already exists
+        existing_user_id = -1
         try:
-            subprocess.run(
+            result = subprocess.run(
                 f'id -u {username}', shell=True, check=True, capture_output=True
             )
-            logger.debug(f'User {username} already exists. Skipping creation.')
+            existing_user_id = int(result.stdout.decode().strip())
+
+            # The user ID already exists, skip setup
+            if existing_user_id == user_id:
+                logger.debug(
+                    f'User `{username}` already has the provided UID {user_id}. Skipping user setup.'
+                )
+            else:
+                logger.warning(
+                    f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
+                )
+                self.user_id = existing_user_id
             return
-        except subprocess.CalledProcessError:
-            pass  # User does not exist, continue with creation
+        except subprocess.CalledProcessError as e:
+            # Returncode 1 indicates, that the user does not exist yet
+            if e.returncode == 1:
+                logger.debug(
+                    f'User `{username}` does not exist. Proceeding with user creation.'
+                )
+            else:
+                logger.error(
+                    f'Error checking user `{username}`, skipping setup:\n{e}\n'
+                )
+                raise
 
         # Add sudoer
         sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
@@ -140,33 +192,19 @@ class RuntimeClient:
             raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
         logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
-        # Attempt to add the user, retrying with incremented user_id if necessary
-        while True:
-            command = (
-                f'useradd -rm -d /home/{username} -s /bin/bash '
-                f'-g root -G sudo -u {user_id} {username}'
+        command = (
+            f'useradd -rm -d /home/{username} -s /bin/bash '
+            f'-g root -G sudo -u {user_id} {username}'
+        )
+        output = subprocess.run(command, shell=True, capture_output=True)
+        if output.returncode == 0:
+            logger.debug(
+                f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
             )
-
-            if not os.path.exists(self.initial_pwd):
-                command += f' && mkdir -p {self.initial_pwd}'
-                command += f' && chown -R {username}:root {self.initial_pwd}'
-                command += f' && chmod g+s {self.initial_pwd}'
-
-            output = subprocess.run(command, shell=True, capture_output=True)
-            if output.returncode == 0:
-                logger.debug(
-                    f'Added user {username} successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
-                )
-                break
-            elif f'UID {user_id} is not unique' in output.stderr.decode():
-                logger.warning(
-                    f'UID {user_id} is not unique. Incrementing UID and retrying...'
-                )
-                user_id += 1
-            else:
-                raise RuntimeError(
-                    f'Failed to create user {username}: {output.stderr.decode()}'
-                )
+        else:
+            raise RuntimeError(
+                f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
+            )
 
     def _init_bash_shell(self, work_dir: str, username: str) -> None:
         self.shell = pexpect.spawn(
@@ -183,8 +221,8 @@ class RuntimeClient:
 
         # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
         self.__bash_expect_regex = r'\[PEXPECT_BEGIN\]\s*(.*?)\s*([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+)\s*\[PEXPECT_END\]'
-
-        self.shell.sendline(f'export PS1="{self.__bash_PS1}"; export PS2=""')
+        # Set umask to allow group write permissions
+        self.shell.sendline(f'umask 002; export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
         self.shell.sendline(
@@ -192,8 +230,11 @@ class RuntimeClient:
         )
         self.shell.expect(self.__bash_expect_regex)
         logger.debug(
-            f'Bash initialized. Working directory: {work_dir}. Output: {self.shell.before}'
+            f'Bash initialized. Working directory: {work_dir}. Output: [{self.shell.before}]'
         )
+        # Ensure the group has write permissions on the working directory
+        self.shell.sendline(f'chmod g+rw "{work_dir}"')
+        self.shell.expect(self.__bash_expect_regex)
 
     async def _init_bash_commands(self):
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
@@ -297,14 +338,14 @@ class RuntimeClient:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
             if keep_prompt:
                 output += '\r\n' + bash_prompt
-            logger.debug(f'Command output: {output}')
+            # logger.debug(f'Command output:\n{output}')
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
         action_type = action.action
-        logger.debug(f'Running action: {action}')
+        logger.debug(f'Running action:\n{action}')
         observation = await getattr(self, action_type)(action)
-        logger.debug(f'Action output: {observation}')
+        logger.debug(f'Action output:\n{observation}')
         return observation
 
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
@@ -328,9 +369,11 @@ class RuntimeClient:
                 else:
                     output, exit_code = self._execute_bash(
                         command,
-                        timeout=SOFT_TIMEOUT_SECONDS,
+                        timeout=SOFT_TIMEOUT_SECONDS
+                        if not action.blocking
+                        else action.timeout,
                         keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False,
+                        kill_on_timeout=False if not action.blocking else True,
                     )
                 if all_output:
                     # previous output already exists with prompt "user@hostname:working_dir #""
@@ -355,10 +398,9 @@ class RuntimeClient:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            if self.pwd != getattr(self, '_jupyter_pwd', None):
-                logger.debug(
-                    f"{self.pwd} != {getattr(self, '_jupyter_pwd', None)} -> reset Jupyter PWD"
-                )
+            jupyter_pwd = getattr(self, '_jupyter_pwd', None)
+            if self.pwd != jupyter_pwd:
+                logger.debug(f'{self.pwd} != {jupyter_pwd} -> reset Jupyter PWD')
                 reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
                 _reset_obs = await _jupyter_plugin.run(_aux_action)
@@ -450,7 +492,7 @@ class RuntimeClient:
                     os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
                 else:
                     # set the new file permissions if the file is new
-                    os.chmod(filepath, 0o644)
+                    os.chmod(filepath, 0o664)
                     os.chown(filepath, self.user_id, self.user_id)
 
             except FileNotFoundError:
@@ -521,6 +563,35 @@ if __name__ == '__main__':
         client.close()
 
     app = FastAPI(lifespan=lifespan)
+
+    # TODO below 3 exception handlers were recommended by Sonnet.
+    # Are these something we should keep?
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        logger.exception('Unhandled exception occurred:')
+        return JSONResponse(
+            status_code=500,
+            content={
+                'message': 'An unexpected error occurred. Please try again later.'
+            },
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        logger.error(f'HTTP exception occurred: {exc.detail}')
+        return JSONResponse(
+            status_code=exc.status_code, content={'message': exc.detail}
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        logger.error(f'Validation error occurred: {exc}')
+        return JSONResponse(
+            status_code=422,
+            content={'message': 'Invalid request parameters', 'details': exc.errors()},
+        )
 
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):
@@ -649,52 +720,12 @@ if __name__ == '__main__':
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
                 return []
 
-            # Check if .gitignore exists
-            gitignore_path = os.path.join(full_path, '.gitignore')
-            if os.path.exists(gitignore_path):
-                # Use PathSpec to parse .gitignore
-                with open(gitignore_path, 'r') as f:
-                    spec = PathSpec.from_lines(GitWildMatchPattern, f.readlines())
-            else:
-                # Fallback to default exclude list if .gitignore doesn't exist
-                default_exclude = [
-                    '.git',
-                    '.DS_Store',
-                    '.svn',
-                    '.hg',
-                    '.idea',
-                    '.vscode',
-                    '.settings',
-                    '.pytest_cache',
-                    '__pycache__',
-                    'node_modules',
-                    'vendor',
-                    'build',
-                    'dist',
-                    'bin',
-                    'logs',
-                    'log',
-                    'tmp',
-                    'temp',
-                    'coverage',
-                    'venv',
-                    'env',
-                ]
-                spec = PathSpec.from_lines(GitWildMatchPattern, default_exclude)
-
             entries = os.listdir(full_path)
-
-            # Filter entries using PathSpec
-            filtered_entries = [
-                os.path.join(full_path, entry)
-                for entry in entries
-                if not spec.match_file(os.path.relpath(entry, str(full_path)))
-            ]
 
             # Separate directories and files
             directories = []
             files = []
-            for entry in filtered_entries:
+            for entry in entries:
                 # Remove leading slash and any parent directory components
                 entry_relative = entry.lstrip('/').split('/')[-1]
 

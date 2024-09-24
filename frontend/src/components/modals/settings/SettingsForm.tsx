@@ -17,6 +17,7 @@ interface SettingsFormProps {
   disabled: boolean;
 
   onModelChange: (model: string) => void;
+  onBaseURLChange: (baseURL: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
@@ -31,6 +32,7 @@ function SettingsForm({
   securityAnalyzers,
   disabled,
   onModelChange,
+  onBaseURLChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
@@ -39,11 +41,20 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-  const advancedAlreadyInUse =
-    !!settings.SECURITY_ANALYZER || !!settings.CONFIRMATION_MODE;
-  // TODO: || model is not in the list
+  const advancedAlreadyInUse = React.useMemo(
+    () =>
+      !!settings.SECURITY_ANALYZER ||
+      !!settings.CONFIRMATION_MODE ||
+      !!settings.LLM_BASE_URL ||
+      (!!settings.LLM_MODEL && !models.includes(settings.LLM_MODEL)),
+    [],
+  );
   const [enableAdvanced, setEnableAdvanced] =
     React.useState(advancedAlreadyInUse);
+
+  const handleAdvancedChange = (value: boolean) => {
+    setEnableAdvanced(value);
+  };
 
   return (
     <>
@@ -51,17 +62,25 @@ function SettingsForm({
         data-testid="advanced-options-toggle"
         aria-checked={enableAdvanced}
         isSelected={enableAdvanced}
-        onValueChange={(value) => setEnableAdvanced(value)}
+        onValueChange={handleAdvancedChange}
       >
         Advanced Options
       </Switch>
       {enableAdvanced && (
-        <Input
-          data-testid="custom-model-input"
-          label="Custom Model"
-          onValueChange={onModelChange}
-          defaultValue={settings.LLM_MODEL}
-        />
+        <>
+          <Input
+            data-testid="custom-model-input"
+            label="Custom Model"
+            onValueChange={onModelChange}
+            defaultValue={settings.LLM_MODEL}
+          />
+          <Input
+            data-testid="base-url-input"
+            label="Base URL"
+            onValueChange={onBaseURLChange}
+            defaultValue={settings.LLM_BASE_URL}
+          />
+        </>
       )}
       {!enableAdvanced && (
         <ModelSelector

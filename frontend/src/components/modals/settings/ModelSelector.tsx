@@ -48,7 +48,11 @@ export function ModelSelector({
 
   const handleChangeModel = (model: string) => {
     const separator = models[selectedProvider || ""]?.separator || "";
-    const fullModel = selectedProvider + separator + model;
+    let fullModel = selectedProvider + separator + model;
+    if (selectedProvider === "openai") {
+      // LiteLLM lists OpenAI models without the openai/ prefix
+      fullModel = model;
+    }
     setLitellmId(fullModel);
     onModelChange(fullModel);
     setSelectedModel(model);
@@ -108,7 +112,7 @@ export function ModelSelector({
             {models[selectedProvider || ""]?.models
               .filter((model) => VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model} value={model}>
+                <AutocompleteItem key={model} value={model} title={model}>
                   {model}
                 </AutocompleteItem>
               ))}
@@ -117,7 +121,7 @@ export function ModelSelector({
             {models[selectedProvider || ""]?.models
               .filter((model) => !VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model} value={model}>
+                <AutocompleteItem key={model} value={model} title={model}>
                   {model}
                 </AutocompleteItem>
               ))}

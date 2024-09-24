@@ -1,8 +1,8 @@
-```json
 {
   "action": "reject",
   "args": {
-    "reason": "Not a valid git repository."
+    "outputs": {
+      "reason": "The CommitWriterAgent was unable to generate a commit message because this is not a valid git repository. Since writing a git commit message requires access to a valid git repository with staged changes, and no other agent has the capability to create or simulate a git repository, I cannot accomplish this task. The task cannot be completed in the current environment."
+    }
   }
 }
-```

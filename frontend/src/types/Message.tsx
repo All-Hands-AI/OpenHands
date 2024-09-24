@@ -10,6 +10,9 @@ export interface ActionMessage {
 
   // A friendly message that can be put in the chat log
   message: string;
+
+  // The timestamp of the message
+  timestamp: string;
 }
 
 export interface ObservationMessage {
@@ -23,5 +26,17 @@ export interface ObservationMessage {
   extras: Record<string, string>;
 
   // A friendly message that can be put in the chat log
+  message: string;
+
+  // The timestamp of the message
+  timestamp: string;
+}
+
+export interface StatusMessage {
+  // TODO not implemented yet
+  // Whether the status is an error, default is false
+  is_error: boolean;
+
+  // A status message to display to the user
   message: string;
 }
