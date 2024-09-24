@@ -11,6 +11,7 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from litellm import ModelInfo
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -19,7 +20,7 @@ from litellm.exceptions import (
     RateLimitError,
     ServiceUnavailableError,
 )
-from litellm.types.utils import CostPerToken
+from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -53,6 +54,14 @@ PROMPT_CACHE_SUPPORTED_MODELS = [
     'anthropic/claude-3-opus-20240229',
 ]
 
+# tuple of exceptions to retry on
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    APIConnectionError,
+    InternalServerError,
+    RateLimitError,
+    ServiceUnavailableError,
+)
+
 
 class LLM:
     """The LLM class represents a Language Model instance.
@@ -73,9 +82,9 @@ class LLM:
         Args:
             config: The LLM configuration
         """
-        self.metrics = metrics if metrics is not None else Metrics()
-        self.cost_metric_supported = True
-        self.config = copy.deepcopy(config)
+        self.metrics: Metrics = metrics if metrics is not None else Metrics()
+        self.cost_metric_supported: bool = True
+        self.config: LLMConfig = copy.deepcopy(config)
 
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
@@ -83,7 +92,7 @@ class LLM:
         self.llm_completions: list[dict[str, Any]] = []
 
         # litellm actually uses base Exception here for unknown model
-        self.model_info = None
+        self.model_info: ModelInfo | None = None
         try:
             if self.config.model.startswith('openrouter'):
                 self.model_info = litellm.get_model_info(self.config.model)
@@ -94,14 +103,6 @@ class LLM:
         # noinspection PyBroadException
         except Exception as e:
             logger.warning(f'Could not get model info for {config.model}:\n{e}')
-
-        # Tuple of exceptions to retry on
-        self.retry_exceptions = (
-            APIConnectionError,
-            InternalServerError,
-            RateLimitError,
-            ServiceUnavailableError,
-        )
 
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
@@ -131,7 +132,7 @@ class LLM:
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
         # This only seems to work with Google as the provider, not with OpenRouter!
-        gemini_safety_settings = (
+        gemini_safety_settings: list[dict[str, str]] | None = (
             [
                 {
                     'category': 'HARM_CATEGORY_HARASSMENT',
@@ -227,19 +228,23 @@ class LLM:
             before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=(retry_if_exception_type(self.retry_exceptions)),
+            retry=(retry_if_exception_type(LLM_RETRY_EXCEPTIONS)),
             wait=custom_completion_wait,
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
+            messages: list[dict[str, Any]] | dict[str, Any] = []
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[0] if len(args) > 0 else []
+
+            # work with a list
+            messages = messages if isinstance(messages, list) else [messages]
 
             # this serves to prevent empty messages and logging the messages
-            debug_message = self._get_debug_message(messages)
+            debug_message: str = self._get_debug_message(messages)
 
             if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching
@@ -251,7 +256,8 @@ class LLM:
             # skip if messages is empty (thus debug_message is empty)
             if debug_message:
                 llm_prompt_logger.debug(debug_message)
-                resp = completion_unwrapped(*args, **kwargs)
+                # we don't support streaming here, thus we get a ModelResponse
+                resp: ModelResponse = completion_unwrapped(*args, **kwargs)
             else:
                 logger.debug('No completion messages!')
                 resp = {'choices': [{'message': {'content': ''}}]}
@@ -267,7 +273,7 @@ class LLM:
                 )
 
             # log the response
-            message_back = resp['choices'][0]['message']['content']
+            message_back: str = resp['choices'][0]['message']['content']
             if message_back:
                 llm_response_logger.debug(message_back)
 
@@ -304,16 +310,20 @@ class LLM:
             before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=(retry_if_exception_type(self.retry_exceptions)),
+            retry=(retry_if_exception_type(LLM_RETRY_EXCEPTIONS)),
             wait=custom_completion_wait,
         )
         async def async_completion_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion function."""
+            messages: list[dict[str, Any]] | dict[str, Any] = []
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[0] if len(args) > 0 else []
+
+            # work with a list
+            messages = messages if isinstance(messages, list) else [messages]
 
             # this serves to prevent empty messages and logging the messages
             debug_message = self._get_debug_message(messages)
@@ -366,16 +376,20 @@ class LLM:
             before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=(retry_if_exception_type(self.retry_exceptions)),
+            retry=(retry_if_exception_type(LLM_RETRY_EXCEPTIONS)),
             wait=custom_completion_wait,
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
             """Async wrapper for the litellm acompletion with streaming function."""
+            messages: list[dict[str, Any]] | dict[str, Any] = []
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[0] if len(args) > 0 else []
+
+            # work with a list
+            messages = messages if isinstance(messages, list) else [messages]
 
             # log the prompt
             debug_message = ''
@@ -416,27 +430,23 @@ class LLM:
         self._async_completion = async_completion_wrapper  # type: ignore
         self._async_streaming_completion = async_acompletion_stream_wrapper  # type: ignore
 
-    def _get_debug_message(self, messages):
+    def _get_debug_message(self, messages: list[dict[str, Any]]) -> str:
         if not messages:
             return ''
 
-        messages = messages if isinstance(messages, list) else [messages]
         return message_separator.join(
             self._format_message_content(msg) for msg in messages if msg['content']
         )
 
-    def _format_message_content(self, message):
-        content = message['content']
+    def _format_message_content(self, message: dict[str, Any]) -> str:
+        content: str | list[dict[str, Any]] = message['content']
         if isinstance(content, list):
-            return self._format_list_content(content)
+            return '\n'.join(
+                self._format_content_element(element) for element in content
+            )
         return str(content)
 
-    def _format_list_content(self, content_list):
-        return '\n'.join(
-            self._format_content_element(element) for element in content_list
-        )
-
-    def _format_content_element(self, element):
+    def _format_content_element(self, element: dict[str, Any]) -> str:
         if isinstance(element, dict):
             if 'text' in element:
                 return element['text']
@@ -518,7 +528,7 @@ class LLM:
             model in self.config.model for model in PROMPT_CACHE_SUPPORTED_MODELS
         )
 
-    def _post_completion(self, response) -> None:
+    def _post_completion(self, response: ModelResponse) -> None:
         """Post-process the completion response."""
         try:
             cur_cost = self.completion_cost(response)
@@ -532,7 +542,7 @@ class LLM:
                 self.metrics.accumulated_cost,
             )
 
-        usage = response.get('usage')
+        usage: Usage | None = response.get('usage')
 
         if usage:
             input_tokens = usage.get('prompt_tokens')
