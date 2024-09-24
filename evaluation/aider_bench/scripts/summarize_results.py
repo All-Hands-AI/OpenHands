@@ -65,6 +65,6 @@ if __name__ == '__main__':
         f'\nPassed {len(passed_tests)} tests, failed {len(failed_tests)} tests, resolve rate = {resolve_rate:.2f}%'
     )
     print('PASSED TESTS:')
-    print(passed_tests)
+    print(sorted(passed_tests))
     print('FAILED TESTS:')
-    print(failed_tests)
+    print(sorted(failed_tests))
