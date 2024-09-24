@@ -1,5 +1,5 @@
 # Workflow that builds, tests and then pushes the runtime docker images to the ghcr.io repository
-name: Build, Test and Publish Runtime Image
+name: Build, Test and Publish RT Image
 
 # Only run one workflow of the same group at a time.
 # There can be at most one running and one pending job in a concurrency group at any time.
@@ -38,10 +38,6 @@ jobs:
         base_image:
           - image: 'nikolaik/python-nodejs:python3.11-nodejs22'
             tag: nikolaik
-          - image: 'python:3.11-bookworm'
-            tag: python
-          - image: 'node:22-bookworm'
-            tag: node
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,85 +66,164 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: Install poetry via pipx
-        run: pipx install poetry
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'poetry'
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Build and push runtime image ${{ matrix.base_image.image }}
-        if: "!github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork != true
         run: |
           ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ matrix.base_image.tag }}
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
-        if: "github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork
         uses: docker/build-push-action@v6
         with:
           tags: ghcr.io/all-hands-ai/runtime:${{ github.sha }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
       - name: Upload runtime image for fork
-        if: "github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork
         uses: actions/upload-artifact@v4
         with:
           name: runtime-${{ matrix.base_image.tag }}
           path: /tmp/runtime-${{ matrix.base_image.tag }}.tar
 
-  # Run unit tests with the EventStream runtime Docker images
-  test_runtime:
-    name: Test Runtime
-    runs-on: ubuntu-latest
+  # Run unit tests with the EventStream runtime Docker images as root
+  test_runtime_root:
+    name: RT Unit Tests (Root)
     needs: [ghcr_build_runtime]
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        base_image: ['nikolaik', 'python', 'node']
+        base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
-        if: "github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
           name: runtime-${{ matrix.base_image }}
           path: /tmp
       - name: Load runtime image for fork
-        if: "github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
-      - name: Install poetry via pipx
-        run: pipx install poetry
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'poetry'
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
+          # We install pytest-xdist in order to run tests across CPUs. However, tests start to fail when we run
+          # then across more than 2 CPUs for some reason
+          poetry run pip install pytest-xdist
+
+          # Install to be able to retry on failures for flaky tests
+          poetry run pip install pytest-rerunfailures
+
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
+          SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          poetry run pytest --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          RUN_AS_OPENHANDS=false \
+          poetry run pytest -n 3 --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Run unit tests with the EventStream runtime Docker images as openhands user
+  test_runtime_oh:
+    name: RT Unit Tests (openhands)
+    runs-on: ubuntu-latest
+    needs: [ghcr_build_runtime]
+    strategy:
+      matrix:
+        base_image: ['nikolaik']
+    steps:
+      - uses: actions/checkout@v4
+      # Forked repos can't push to GHCR, so we need to download the image as an artifact
+      - name: Download runtime image for fork
+        if: github.event.pull_request.head.repo.fork
+        uses: actions/download-artifact@v4
+        with:
+          name: runtime-${{ matrix.base_image }}
+          path: /tmp
+      - name: Load runtime image for fork
+        if: github.event.pull_request.head.repo.fork
+        run: |
+          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install poetry via pipx
+        run: pipx install poetry
+      - name: Install Python dependencies using Poetry
+        run: make install-python-dependencies
+      - name: Run runtime tests
+        run: |
+          # We install pytest-xdist in order to run tests across CPUs. However, tests start to fail when we run
+          # then across more than 2 CPUs for some reason
+          poetry run pip install pytest-xdist
+
+          # Install to be able to retry on failures for flaky tests
+          poetry run pip install pytest-rerunfailures
+
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ github.sha }}-${{ matrix.base_image }}
+          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
+
+          SKIP_CONTAINER_LOGS=true \
+          TEST_RUNTIME=eventstream \
+          SANDBOX_USER_ID=$(id -u) \
+          SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
+          TEST_IN_CI=true \
+          RUN_AS_OPENHANDS=true \
+          poetry run pytest -n 3 --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -156,33 +231,41 @@ jobs:
 
   # Run integration tests with the eventstream runtime Docker image
   runtime_integration_tests_on_linux:
-    name: Runtime Integration Tests on Linux
+    name: RT Integration Tests (Linux)
     runs-on: ubuntu-latest
     needs: [ghcr_build_runtime]
     strategy:
       fail-fast: false
       matrix:
-        base_image: ['nikolaik', 'python', 'node']
+        base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
       # Forked repos can't push to GHCR, so we need to download the image as an artifact
       - name: Download runtime image for fork
-        if: "github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork
         uses: actions/download-artifact@v4
         with:
           name: runtime-${{ matrix.base_image }}
           path: /tmp
       - name: Load runtime image for fork
-        if: "github.event.pull_request.head.repo.fork"
+        if: github.event.pull_request.head.repo.fork
         run: |
           docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
-      - name: Install poetry via pipx
-        run: pipx install poetry
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'poetry'
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
       - name: Run integration tests
@@ -201,11 +284,26 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # Checks that all runtime tests have passed
-  all_runtime_tests_passed:
+  # The two following jobs (named identically) are to check whether all the runtime tests have passed as the
+  # "All Runtime Tests Passed" is a required job for PRs to merge
+  # Due to this bug: https://github.com/actions/runner/issues/2566, we want to create a job that runs when the
+  # prerequisites have been cancelled or failed so merging is disallowed, otherwise Github considers "skipped" as "success"
+  runtime_tests_check_success:
     name: All Runtime Tests Passed
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
-    needs: [test_runtime, runtime_integration_tests_on_linux]
+    needs: [test_runtime_root, test_runtime_oh, runtime_integration_tests_on_linux]
     steps:
       - name: All tests passed
         run: echo "All runtime tests have passed successfully!"
+
+  runtime_tests_check_fail:
+    name: All Runtime Tests Passed
+    if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+    runs-on: ubuntu-latest
+    needs: [test_runtime_root, test_runtime_oh, runtime_integration_tests_on_linux]
+    steps:
+      - name: Some tests failed
+        run: |
+          echo "Some runtime tests failed or were cancelled"
+          exit 1

@@ -8,6 +8,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
 
 
@@ -85,7 +86,7 @@ class EventStream:
                 event_id -= 1
         else:
             event_id = start_id
-            while True:
+            while should_continue():
                 if end_id is not None and event_id > end_id:
                     break
                 try:
@@ -132,7 +133,7 @@ class EventStream:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
         logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
-        event._timestamp = datetime.now()  # type: ignore [attr-defined]
+        event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
         if event.id is not None:

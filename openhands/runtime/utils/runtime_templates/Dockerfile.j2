@@ -18,11 +18,15 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
+RUN if getent passwd 1000 | grep -q pn; then userdel pn; fi
+
 # Create necessary directories
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
     mkdir -p /openhands/poetry
 
+# Directory containing subdirectories for virtual environment.
 ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
 
 RUN if [ ! -d /openhands/miniforge3 ]; then \
@@ -46,23 +50,47 @@ RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y
 RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi
 COPY ./code /openhands/code
 
-# Install/Update Dependencies
-# 1. Install pyproject.toml via poetry
-# 2. Install playwright and chromium
-# 3. Clear poetry, apt, mamba caches
-RUN cd /openhands/code && \
+# Below RUN command sets up the Python environment using Poetry,
+# installs project dependencies, and configures the container
+# for OpenHands development.
+# It creates and activates a virtual environment, installs necessary
+# tools like Playwright, sets up environment variables, and configures
+# the bash environment to ensure the correct Python interpreter and
+# virtual environment are used by default.
+WORKDIR /openhands/code
+RUN \
+    # Configure Poetry and create virtual environment
+    /openhands/miniforge3/bin/mamba run -n base poetry config virtualenvs.path /openhands/poetry && \
     /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
+    # Install project dependencies
     /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root && \
+    # Update and install additional tools
     apt-get update && \
     /openhands/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
     /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
-    export OD_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
+    # Set environment variables
+    export OH_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
+    export OH_VENV_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry env info --path) && \
+    # Install extra dependencies if specified
     {{ extra_deps }} {% if extra_deps %} && {% endif %} \
+    # Clear caches
     /openhands/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
+    # Set permissions
     {% if not skip_init %}chmod -R g+rws /openhands/poetry && {% endif %} \
+    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
+    # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/miniforge3/bin/mamba clean --all
-
+{% if not skip_init %}
+RUN \
+    # Add the Poetry virtual environment to the bashrc
+    echo "export OH_INTERPRETER_PATH=\"$OH_INTERPRETER_PATH\"" >> /etc/bash.bashrc && \
+    echo "export OH_VENV_PATH=\"$OH_VENV_PATH\"" >> /etc/bash.bashrc && \
+    # Activate the Poetry virtual environment
+    echo 'source "$OH_VENV_PATH/bin/activate"' >> /etc/bash.bashrc && \
+    # Use the Poetry virtual environment's Python interpreter
+    echo 'alias python="$OH_INTERPRETER_PATH"' >> /etc/bash.bashrc
+{% endif %}
 # ================================================================
 # END: Copy Project and Install/Update Dependencies
 # ================================================================

@@ -1,10 +1,13 @@
 import asyncio
 import copy
+import os
+import time
 import warnings
 from functools import partial
-from typing import Union
+from typing import Any
 
 from openhands.core.config import LLMConfig
+from openhands.runtime.utils.shutdown_listener import should_continue
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -24,15 +27,21 @@ from litellm.types.utils import CostPerToken
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
 
-from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.exceptions import (
+    LLMResponseError,
+    OperationCancelled,
+    UserCancelledError,
+)
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, format_messages
+from openhands.core.message import Message
 from openhands.core.metrics import Metrics
+from openhands.runtime.utils.shutdown_listener import should_exit
 
 __all__ = ['LLM']
 
@@ -66,6 +75,14 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
+
+        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
+        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
+
+        # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
+        # - 'messages': list of messages
+        # - 'response': response from the LLM
+        self.llm_completions: list[dict[str, Any]] = []
 
         # Set up config attributes with default values to prevent AttributeError
         LLMConfig.set_missing_attributes(self.config)
@@ -101,22 +118,47 @@ class LLM:
             ):
                 self.config.max_input_tokens = self.model_info['max_input_tokens']
             else:
-                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
+                # Safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
 
         if self.config.max_output_tokens is None:
-            if (
-                self.model_info is not None
-                and 'max_output_tokens' in self.model_info
-                and isinstance(self.model_info['max_output_tokens'], int)
-            ):
-                self.config.max_output_tokens = self.model_info['max_output_tokens']
-            else:
-                # Max output tokens for gpt3.5, so this is a safe fallback for any potentially viable model
-                self.config.max_output_tokens = 1024
+            # Safe default for any potentially viable model
+            self.config.max_output_tokens = 4096
+            if self.model_info is not None:
+                # max_output_tokens has precedence over max_tokens, if either exists.
+                # litellm has models with both, one or none of these 2 parameters!
+                if 'max_output_tokens' in self.model_info and isinstance(
+                    self.model_info['max_output_tokens'], int
+                ):
+                    self.config.max_output_tokens = self.model_info['max_output_tokens']
+                elif 'max_tokens' in self.model_info and isinstance(
+                    self.model_info['max_tokens'], int
+                ):
+                    self.config.max_output_tokens = self.model_info['max_tokens']
 
-        if self.config.drop_params:
-            litellm.drop_params = self.config.drop_params
+        # This only seems to work with Google as the provider, not with OpenRouter!
+        gemini_safety_settings = (
+            [
+                {
+                    'category': 'HARM_CATEGORY_HARASSMENT',
+                    'threshold': 'BLOCK_NONE',
+                },
+                {
+                    'category': 'HARM_CATEGORY_HATE_SPEECH',
+                    'threshold': 'BLOCK_NONE',
+                },
+                {
+                    'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                    'threshold': 'BLOCK_NONE',
+                },
+                {
+                    'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                    'threshold': 'BLOCK_NONE',
+                },
+            ]
+            if self.config.model.lower().startswith('gemini')
+            else None
+        )
 
         self._completion = partial(
             litellm_completion,
@@ -129,6 +171,12 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
+            **(
+                {'safety_settings': gemini_safety_settings}
+                if gemini_safety_settings is not None
+                else {}
+            ),
         )
 
         if self.vision_is_active():
@@ -136,13 +184,18 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        def attempt_on_error(retry_state):
-            """Custom attempt function for litellm completion."""
+        def log_retry_attempt(retry_state):
+            """With before_sleep, this is called before `custom_completion_wait` and
+            ONLY if the retry is triggered by an exception."""
+            if should_exit():
+                raise OperationCancelled(
+                    'Operation cancelled.'
+                )  # exits the @retry loop
+            exception = retry_state.outcome.exception()
             logger.error(
-                f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
+                f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
                 exc_info=False,
             )
-            return None
 
         def custom_completion_wait(retry_state):
             """Custom wait function for litellm completion."""
@@ -178,10 +231,13 @@ class LLM:
             return exponential_wait(retry_state)
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(OperationCancelled)
+            ),
             wait=custom_completion_wait,
         )
         def wrapper(*args, **kwargs):
@@ -192,32 +248,8 @@ class LLM:
             else:
                 messages = args[1] if len(args) > 1 else []
 
-            # log the prompt
-            debug_message = ''
-            for message in messages:
-                debug_str = ''  # helper to prevent empty messages
-                content = message['content']
-
-                if isinstance(content, list):
-                    for element in content:
-                        if isinstance(element, dict):
-                            if 'text' in element:
-                                debug_str = element['text'].strip()
-                            elif (
-                                self.vision_is_active()
-                                and 'image_url' in element
-                                and 'url' in element['image_url']
-                            ):
-                                debug_str = element['image_url']['url']
-                            else:
-                                debug_str = str(element)
-                        else:
-                            debug_str = str(element)
-                else:
-                    debug_str = str(content)
-
-                if debug_str:
-                    debug_message += message_separator + debug_str
+            # this serves to prevent empty messages and logging the messages
+            debug_message = self._get_debug_message(messages)
 
             if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching
@@ -234,13 +266,23 @@ class LLM:
                 logger.debug('No completion messages!')
                 resp = {'choices': [{'message': {'content': ''}}]}
 
+            if self.config.log_completions:
+                self.llm_completions.append(
+                    {
+                        'messages': messages,
+                        'response': resp,
+                        'timestamp': time.time(),
+                        'cost': self.completion_cost(resp),
+                    }
+                )
+
             # log the response
             message_back = resp['choices'][0]['message']['content']
+            if message_back:
+                llm_response_logger.debug(message_back)
 
-            llm_response_logger.debug(message_back)
-
-            # post-process to log costs
-            self._post_completion(resp)
+                # post-process to log costs
+                self._post_completion(resp)
 
             return resp
 
@@ -258,16 +300,24 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            drop_params=True,
+            drop_params=self.config.drop_params,
+            **(
+                {'safety_settings': gemini_safety_settings}
+                if gemini_safety_settings is not None
+                else {}
+            ),
         )
 
         async_completion_unwrapped = self._async_completion
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(OperationCancelled)
+            ),
             wait=custom_completion_wait,
         )
         async def async_completion_wrapper(*args, **kwargs):
@@ -276,39 +326,13 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1]
+                messages = args[1] if len(args) > 1 else []
 
-            # log the prompt
-            debug_message = ''
-            for message in messages:
-                content = message['content']
-
-                if isinstance(content, list):
-                    for element in content:
-                        if isinstance(element, dict):
-                            if 'text' in element:
-                                debug_str = element['text']
-                            elif (
-                                self.vision_is_active()
-                                and 'image_url' in element
-                                and 'url' in element['image_url']
-                            ):
-                                debug_str = element['image_url']['url']
-                            else:
-                                debug_str = str(element)
-                        else:
-                            debug_str = str(element)
-
-                        debug_message += message_separator + debug_str
-                else:
-                    debug_str = str(content)
-
-                debug_message += message_separator + debug_str
-
-            llm_prompt_logger.debug(debug_message)
+            # this serves to prevent empty messages and logging the messages
+            debug_message = self._get_debug_message(messages)
 
             async def check_stopped():
-                while True:
+                while should_continue():
                     if (
                         hasattr(self.config, 'on_cancel_requested_fn')
                         and self.config.on_cancel_requested_fn is not None
@@ -321,7 +345,12 @@ class LLM:
 
             try:
                 # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                if debug_message:
+                    llm_prompt_logger.debug(debug_message)
+                    resp = await async_completion_unwrapped(*args, **kwargs)
+                else:
+                    logger.debug('No completion messages!')
+                    resp = {'choices': [{'message': {'content': ''}}]}
 
                 # skip if messages is empty (thus debug_message is empty)
                 if debug_message:
@@ -358,10 +387,13 @@ class LLM:
                     pass
 
         @retry(
-            after=attempt_on_error,
+            before_sleep=log_retry_attempt,
             stop=stop_after_attempt(self.config.num_retries),
             reraise=True,
-            retry=retry_if_exception_type(self.retry_exceptions),
+            retry=(
+                retry_if_exception_type(self.retry_exceptions)
+                & retry_if_not_exception_type(OperationCancelled)
+            ),
             wait=custom_completion_wait,
         )
         async def async_acompletion_stream_wrapper(*args, **kwargs):
@@ -370,7 +402,7 @@ class LLM:
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1]
+                messages = args[1] if len(args) > 1 else []
 
             # log the prompt
             debug_message = ''
@@ -422,7 +454,42 @@ class LLM:
         self._async_completion = async_completion_wrapper  # type: ignore
         self._async_streaming_completion = async_acompletion_stream_wrapper  # type: ignore
 
+    def _get_debug_message(self, messages):
+        if not messages:
+            return ''
+
+        messages = messages if isinstance(messages, list) else [messages]
+        return message_separator.join(
+            self._format_message_content(msg) for msg in messages if msg['content']
+        )
+
+    def _format_message_content(self, message):
+        content = message['content']
+        if isinstance(content, list):
+            return self._format_list_content(content)
+        return str(content)
+
+    def _format_list_content(self, content_list):
+        return '\n'.join(
+            self._format_content_element(element) for element in content_list
+        )
+
+    def _format_content_element(self, element):
+        if isinstance(element, dict):
+            if 'text' in element:
+                return element['text']
+            if (
+                self.vision_is_active()
+                and 'image_url' in element
+                and 'url' in element['image_url']
+            ):
+                return element['image_url']['url']
+        return str(element)
+
     async def _call_acompletion(self, *args, **kwargs):
+        """This is a wrapper for the litellm acompletion function which
+        makes it mockable for testing.
+        """
         return await litellm.acompletion(*args, **kwargs)
 
     @property
@@ -478,9 +545,8 @@ class LLM:
         Returns:
             boolean: True if prompt caching is active for the given model.
         """
-        return (
-            self.config.caching_prompt is True
-            and self.config.model in cache_prompting_supported_models
+        return self.config.caching_prompt is True and any(
+            model in self.config.model for model in cache_prompting_supported_models
         )
 
     def _post_completion(self, response) -> None:
@@ -504,10 +570,15 @@ class LLM:
             output_tokens = usage.get('completion_tokens')
 
             if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens) + '\n'
+                stats += 'Input tokens: ' + str(input_tokens)
 
             if output_tokens:
-                stats += 'Output tokens: ' + str(output_tokens) + '\n'
+                stats += (
+                    (' | ' if input_tokens else '')
+                    + 'Output tokens: '
+                    + str(output_tokens)
+                    + '\n'
+                )
 
             model_extra = usage.get('model_extra', {})
 
@@ -607,8 +678,9 @@ class LLM:
 
     def reset(self):
         self.metrics = Metrics()
+        self.llm_completions = []
 
-    def format_messages_for_llm(
-        self, messages: Union[Message, list[Message]]
-    ) -> list[dict]:
-        return format_messages(messages, self.vision_is_active())
+    def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
+        if isinstance(messages, Message):
+            return [messages.model_dump()]
+        return [message.model_dump() for message in messages]

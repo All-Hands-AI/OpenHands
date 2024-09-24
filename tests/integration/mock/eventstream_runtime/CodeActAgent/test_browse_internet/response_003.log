@@ -1,6 +1,6 @@
-To accomplish our goal of retrieving the ultimate answer to life, we need to click on the "Click me" button. The button has a bid of 10, so we should click on it.
+To accomplish the goal of revealing the answer, I need to click on the "Click me" button. The button has a bid of 10.
 
 Here's the action I'll take:
 
-In order to accomplish my goal, I need to click on the button with bid 10
+In order to accomplish our goal, I need to click on the button with bid 10
 ```click("10"

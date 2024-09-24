@@ -97,3 +97,28 @@ Please refer to [this README](./tests/integration/README.md) for details.
 ### 9. Add or update dependency
 1. Add your dependency in `pyproject.toml` or use `poetry add xxx`
 2. Update the poetry.lock file via `poetry lock --no-update`
+
+## Develop inside Docker container
+
+TL;DR
+
+```bash
+make docker-dev
+```
+
+See more details [here](./containers/dev/README.md)
+
+If you are just interested in running `OpenHands` without installing all the required tools on your host.
+
+```bash
+make docker-run
+```
+
+If you do not have `make` on your host, run:
+
+```bash
+cd ./containers/dev
+./dev.sh
+```
+
+You do need [Docker](https://docs.docker.com/engine/install/) installed on your host though.

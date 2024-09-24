@@ -1,9 +1,8 @@
 """Browsing-related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
 
 import json
-import time
 
-from conftest import _load_runtime
+from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -38,7 +37,7 @@ def test_simple_browse(temp_dir, box_class, run_as_openhands):
     assert obs.exit_code == 0
     assert '[1]' in obs.content
 
-    action_cmd = CmdRunAction(command='sleep 5 && cat server.log')
+    action_cmd = CmdRunAction(command='sleep 3 && cat server.log')
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -66,8 +65,7 @@ def test_simple_browse(temp_dir, box_class, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    runtime.close()
-    time.sleep(1)
+    _close_test_runtime(runtime)
 
 
 def test_browsergym_eval_env(box_class, temp_dir):
@@ -111,5 +109,4 @@ def test_browsergym_eval_env(box_class, temp_dir):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert json.loads(obs.content) == [0.0]
 
-    runtime.close()
-    time.sleep(1)
+    _close_test_runtime(runtime)

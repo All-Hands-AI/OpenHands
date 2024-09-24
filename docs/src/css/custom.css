@@ -28,6 +28,6 @@
   --secondary-light: #ccc;
 }
 
-p a, .a {
+article a, .a {
   text-decoration: underline;
 }

@@ -50,9 +50,6 @@ class Session {
       action: ActionType.INIT,
       args: {
         ...settings,
-        LLM_MODEL: settings.USING_CUSTOM_MODEL
-          ? settings.CUSTOM_LLM_MODEL
-          : settings.LLM_MODEL,
       },
     };
     const eventString = JSON.stringify(event);

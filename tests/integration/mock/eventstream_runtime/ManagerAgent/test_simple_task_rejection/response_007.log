@@ -1,8 +1,0 @@
-{
-  "action": "reject",
-  "args": {
-    "outputs": {
-      "reason": "Not a valid git repository."
-    }
-  }
-}

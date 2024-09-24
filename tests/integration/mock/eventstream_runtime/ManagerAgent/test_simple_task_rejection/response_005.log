@@ -1,8 +1,0 @@
-```json
-{
-  "action": "reject",
-  "args": {
-    "reason": "Not a valid git repository."
-  }
-}
-```

@@ -9,13 +9,14 @@ We'll try to make the install process easier, but for now you can look for your 
 If you find more information or a workaround for one of these issues, please open a *PR* to add details to this file.
 
 :::tip
-If you're running on Windows and having trouble, check out our [Notes for Windows and WSL users](troubleshooting/windows).
+OpenHands only supports Windows via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+Please be sure to run all commands inside your WSL terminal.
+Check out [Notes for WSL on Windows Users](troubleshooting/windows) for some troubleshooting guides.
 :::
 
 ## Common Issues
 
 * [Unable to connect to Docker](#unable-to-connect-to-docker)
-* [Unable to connect to SSH box](#unable-to-connect-to-ssh-box)
 * [404 Resource not found](#404-resource-not-found)
 * [`make build` getting stuck on package installations](#make-build-getting-stuck-on-package-installations)
 * [Sessions are not restored](#sessions-are-not-restored)
@@ -44,58 +45,6 @@ OpenHands uses a Docker container to do its work safely, without potentially bre
 * Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
 * If you are on a Mac, check the [permissions requirements](https://docs.docker.com/desktop/mac/permission-requirements/) and in particular consider enabling the `Allow the default Docker socket to be used` under `Settings > Advanced` in Docker Desktop.
 * In addition, upgrade your Docker to the latest version under `Check for Updates`
-
----
-### Unable to connect to SSH box
-
-[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1156)
-
-**Symptoms**
-
-```python
-self.shell = DockerSSHBox(
-...
-pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
-```
-
-**Details**
-
-By default, OpenHands connects to a running container using SSH. On some machines,
-especially Windows, this seems to fail.
-
-**Workarounds**
-
-* Restart your computer (sometimes it does work)
-* Be sure to have the latest versions of WSL and Docker
-* Check that your distribution in WSL is up to date as well
-* Try [this reinstallation guide](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
-
----
-### Unable to connect to LLM
-
-[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1208)
-
-**Symptoms**
-
-```python
-  File "/app/.venv/lib/python3.12/site-packages/openai/_exceptions.py", line 81, in __init__
-    super().__init__(message, response.request, body=body)
-                              ^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'request'
-```
-
-**Details**
-
-[GitHub Issues](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
-
-This usually happens with *local* LLM setups, when OpenHands can't connect to the LLM server.
-See our guide for [local LLMs](llms/local-llms) for more information.
-
-**Workarounds**
-
-* Check your `base_url` in your config.toml (if it exists) under the "llm" section
-* Check that ollama (or whatever LLM you're using) is running OK
-* Make sure you're using `--add-host host.docker.internal:host-gateway` when running in Docker
 
 ---
 ### `404 Resource not found`
@@ -138,7 +87,6 @@ the API endpoint you're trying to connect to. Most often this happens for Azure 
   * If you're running inside the UI, be sure to set the `model` in the settings modal
   * If you're running headless (via main.py) be sure to set `LLM_MODEL` in your env/config
 * Make sure you've followed any special instructions for your LLM provider
-  * [ollama](/modules/usage/llms/local-llms)
   * [Azure](/modules/usage/llms/azure-llms)
   * [Google](/modules/usage/llms/google-llms)
 * Make sure your API key is correct

@@ -5,8 +5,8 @@ import os
 import pathlib
 import subprocess
 import time
-from concurrent.futures import ProcessPoolExecutor
-from typing import Any, Awaitable, Callable
+import traceback
+from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
 from pydantic import BaseModel
@@ -49,15 +49,20 @@ class EvalMetadata(BaseModel):
 class EvalOutput(BaseModel):
     # NOTE: User-specified
     instance_id: str
-    instruction: str
     # output of the evaluation
     # store anything that is needed for the score calculation
     test_result: dict[str, Any]
 
+    instruction: str | None = None
+
     # Interaction info
-    metadata: EvalMetadata
-    history: list[tuple[dict[str, Any], dict[str, Any]]]
-    metrics: dict[str, Any]
+    metadata: EvalMetadata | None = None
+    # list[tuple[dict[str, Any], dict[str, Any]]] - for compatibility with the old format
+    history: (
+        list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
+    ) = None
+    llm_completions: list[dict[str, Any]]
+    metrics: dict[str, Any] | None = None
     error: str | None = None
 
     # Optionally save the input test instance
@@ -65,15 +70,19 @@ class EvalOutput(BaseModel):
 
     def model_dump(self, *args, **kwargs):
         dumped_dict = super().model_dump(*args, **kwargs)
+        # Remove None values
+        dumped_dict = {k: v for k, v in dumped_dict.items() if v is not None}
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = self.metadata.model_dump()
+        if self.metadata is not None:
+            dumped_dict['metadata'] = self.metadata.model_dump()
         return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
         dumped_dict = json.loads(dumped)
         # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
+        if 'metadata' in dumped_dict:
+            dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
 
 
@@ -227,56 +236,123 @@ def prepare_dataset(
     return pd.DataFrame(new_dataset)
 
 
+def update_progress(
+    result: EvalOutput,
+    pbar: tqdm,
+    output_fp: TextIO,
+):
+    """Update the progress bar and write the result to the output file."""
+    pbar.update(1)
+    pbar.set_description(f'Instance {result.instance_id}')
+    pbar.set_postfix_str(f'Test Result: {result.test_result}')
+    logger.info(
+        f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
+    )
+    output_fp.write(json.dumps(result.model_dump()) + '\n')
+    output_fp.flush()
+
+
+def _process_instance_wrapper(
+    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], EvalOutput],
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    use_mp: bool,
+    max_retries: int = 5,
+) -> EvalOutput:
+    """Wrap the process_instance_func to handle retries and errors.
+
+    Retry an instance up to max_retries times if it fails (e.g., due to transient network/runtime issues).
+    """
+    for attempt in range(max_retries + 1):
+        try:
+            result = process_instance_func(instance, metadata, use_mp)
+            return result
+        except Exception as e:
+            error = str(e)
+            stacktrace = traceback.format_exc()
+            if attempt == max_retries:
+                logger.exception(e)
+                msg = (
+                    '-' * 10
+                    + '\n'
+                    + f'Error in instance [{instance.instance_id}]: {error}. Stacktrace:\n{stacktrace}'
+                    + '\n'
+                    + f'[Encountered after {max_retries} retries. Please check the logs and report the issue.]'
+                    + '-' * 10
+                )
+                # Raise an error after all retries & stop the evaluation
+                logger.exception(e)
+                raise RuntimeError(
+                    f'Maximum error retries reached for instance {instance.instance_id}'
+                ) from e
+            msg = (
+                '-' * 10
+                + '\n'
+                + f'Error in instance [{instance.instance_id}]: {error}. Stacktrace:\n{stacktrace}'
+                + '\n'
+                + '-' * 10
+                + f'[The above error occurred. Retrying... (attempt {attempt + 1} of {max_retries})]'
+                + '-' * 10
+                + '\n'
+            )
+            logger.error(msg)
+            if use_mp:
+                print(msg)  # use print to directly print to console
+            time.sleep(5)
+
+
 def run_evaluation(
     dataset: pd.DataFrame,
-    metadata: EvalMetadata,
+    metadata: EvalMetadata | None,
     output_file: str,
     num_workers: int,
     process_instance_func: Callable[
         [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
     ],
+    max_retries: int = 5,  # number of retries for each instance
 ):
     use_multiprocessing = num_workers > 1
-    logger.info(
-        f'Evaluation started with Agent {metadata.agent_class}:\n'
-        f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
-    )
-    pbar = tqdm(total=len(dataset))
-    output_fp = open(output_file, 'a')
 
-    def update_progress(future):
-        pbar.update(1)
-        output: EvalOutput = future.result() if use_multiprocessing else future
-
-        pbar.set_description(f'Instance {output.instance_id}')
-        pbar.set_postfix_str(f'Test Result: {output.test_result}')
+    if metadata is not None:
         logger.info(
-            f'Finished evaluation for instance {output.instance_id}: {str(output.test_result)[:300]}...\n'
+            f'Evaluation started with Agent {metadata.agent_class}:\n'
+            f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
         )
-        output_fp.write(json.dumps(output.model_dump()) + '\n')
-        output_fp.flush()
+    else:
+        logger.info(f'Evaluation started with {num_workers} workers.')
+
+    total_instances = len(dataset)
+    pbar = tqdm(total=total_instances, desc='Instances processed')
+    output_fp = open(output_file, 'a')
 
     try:
         if use_multiprocessing:
-            with ProcessPoolExecutor(num_workers) as executor:
-                futures = []
-                for _, instance in dataset.iterrows():
-                    future = executor.submit(
-                        process_instance_func,
-                        instance,
-                        metadata,
-                        bool(num_workers > 1),
+            with mp.Pool(num_workers) as pool:
+                results = [
+                    pool.apply_async(
+                        _process_instance_wrapper,
+                        args=(
+                            process_instance_func,
+                            instance,
+                            metadata,
+                            True,
+                            max_retries,
+                        ),
                     )
-                    future.add_done_callback(update_progress)
-                    futures.append(future)
-                for future in futures:
-                    future.result()
-        # Use plain for loop for single process for easier debugging
+                    for _, instance in dataset.iterrows()
+                ]
+                for result in results:
+                    update_progress(result.get(), pbar, output_fp)
         else:
-            assert num_workers == 1
             for _, instance in dataset.iterrows():
-                output = process_instance_func(instance, metadata, False)
-                update_progress(output)
+                result = _process_instance_wrapper(
+                    process_instance_func=process_instance_func,
+                    instance=instance,
+                    metadata=metadata,
+                    use_mp=False,
+                    max_retries=max_retries,
+                )
+                update_progress(result, pbar, output_fp)
 
     except KeyboardInterrupt:
         print('\nKeyboardInterrupt received. Cleaning up...\n')

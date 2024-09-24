@@ -8,6 +8,7 @@ import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
+import { formatTimestamp } from "#/utils/utils";
 
 interface MessageProps {
   message: Message;
@@ -59,19 +60,30 @@ function ChatMessage({
     }
   };
 
+  const copyButtonTitle = message.timestamp
+    ? `${t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)} - ${formatTimestamp(message.timestamp)}`
+    : t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE);
+
   return (
-    <div
-      data-testid="message"
+    <article
+      data-testid="article"
       className={className}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      aria-label={t(I18nKey.CHAT_INTERFACE$MESSAGE_ARIA_LABEL, {
+        sender: message.sender
+          ? message.sender.charAt(0).toUpperCase() +
+            message.sender.slice(1).toLowerCase()
+          : t(I18nKey.CHAT_INTERFACE$UNKNOWN_SENDER),
+      })}
     >
       {isHovering && (
         <button
           data-testid="copy-button"
           onClick={copyToClipboard}
           className="absolute top-1 right-1 p-1 bg-neutral-600 rounded hover:bg-neutral-700"
-          aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE)}
+          aria-label={copyButtonTitle}
+          title={copyButtonTitle}
           type="button"
         >
           {isCopy ? <FaClipboardCheck /> : <FaClipboard />}
@@ -80,9 +92,9 @@ function ChatMessage({
       <Markdown components={{ code }} remarkPlugins={[remarkGfm]}>
         {message.content}
       </Markdown>
-      {message.imageUrls.length > 0 && (
+      {(message.imageUrls?.length ?? 0) > 0 && (
         <div className="flex space-x-2 mt-2">
-          {message.imageUrls.map((url, index) => (
+          {message.imageUrls?.map((url, index) => (
             <img
               key={index}
               src={url}
@@ -95,7 +107,7 @@ function ChatMessage({
       {isLastMessage &&
         message.sender === "assistant" &&
         awaitingUserConfirmation && <ConfirmationButtons />}
-    </div>
+    </article>
   );
 }
 

@@ -18,7 +18,7 @@
   <br/>
   <a href="https://docs.all-hands.dev/modules/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
-  <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
+  <a href="https://huggingface.co/spaces/OpenHands/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
   <hr>
 </div>
 
@@ -40,10 +40,10 @@ See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-start
 system requirements and more information.
 
 ```bash
-WORKSPACE_BASE=$(pwd)/workspace
+export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9.2-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
@@ -70,7 +70,7 @@ Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/us
 To learn more about the project, and for tips on using OpenHands,
 **check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started)**.
 
-There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
+There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
 
 ## 🤝 How to Contribute

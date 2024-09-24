@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import tempfile
-import time
 from typing import Any
 
 import pandas as pd
@@ -31,7 +30,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.runtime import Runtime
+from openhands.runtime.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -157,12 +158,14 @@ def initialize_runtime(
     action = CmdRunAction(
         command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
     )
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -174,6 +177,7 @@ def initialize_runtime(
 
         # inject the instance info
         action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
+        action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -201,18 +205,21 @@ def initialize_runtime(
             '/swe_util/',
         )
         action = CmdRunAction(command='cat ~/.bashrc')
+        action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
         action = CmdRunAction(command='source ~/.bashrc')
+        action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
+        action.timeout = 3600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -228,12 +235,14 @@ def initialize_runtime(
         ), f'Failed to source /swe_util/swe_entry.sh: {obs.content}'
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='git reset --hard')
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -242,6 +251,7 @@ def initialize_runtime(
     action = CmdRunAction(
         command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
     )
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -269,18 +279,21 @@ def complete_runtime(
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='git config --global core.pager ""')
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
     action = CmdRunAction(command='git add -A')
+    action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -304,10 +317,10 @@ def complete_runtime(
                 break
             else:
                 logger.info('Failed to get git diff, retrying...')
-                time.sleep(10)
+                sleep_if_should_continue(10)
         elif isinstance(obs, ErrorObservation):
             logger.error(f'Error occurred: {obs.content}. Retrying...')
-            time.sleep(10)
+            sleep_if_should_continue(10)
         else:
             raise ValueError(f'Unexpected observation type: {type(obs)}')
 
@@ -371,10 +384,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
-    # for compatibility with the existing output format, we can remake the pairs here
-    # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = [event_to_dict(event) for event in state.history.get_events()]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
@@ -386,6 +396,7 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
+        llm_completions=state.extra_data.get('llm_completions', []),
         error=state.last_error if state and state.last_error else None,
     )
     return output
@@ -456,11 +467,11 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
-    if not isinstance(
+    if len(instances) > 0 and not isinstance(
         instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
     ):
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
-            instances[col] = instances[col].apply(lambda x: str(list(x)))
+            instances[col] = instances[col].apply(lambda x: str(x))
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
