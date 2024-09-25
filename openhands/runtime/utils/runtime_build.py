@@ -7,7 +7,7 @@ import tempfile
 
 import docker
 import toml
-from checksumdir import dirhash
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -157,8 +157,11 @@ def prep_docker_build_folder(
     dir_hash = dirhash(
         dir_path,
         'md5',
-        ignore_hidden=True,
-        excluded_extensions=['pyc'],
+        ignore=[
+            '.*/',  # hidden directories
+            '__pycache__/',
+            '*.pyc',
+        ],
     )
     hash = f'v{_get_package_version()}_{dir_hash}'
     logger.info(
