@@ -161,7 +161,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             obs, FileReadObservation
         ), f'Expected FileReadObservation, got {type(obs)}'
 
-        old_file_lines = obs.content.split('\n')
+        original_file_content = obs.content
+        old_file_lines = original_file_content.split('\n')
         # NOTE: start and end are 1-indexed
         start = action.start
         end = action.end
@@ -173,7 +174,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         # append to the end of the file
         if start == -1:
             updated_content = '\n'.join(old_file_lines + action.content.split('\n'))
-            diff = get_diff('\n'.join(old_file_lines), updated_content, action.path)
+            diff = get_diff(original_file_content, updated_content, action.path)
             # Lint the updated content
             if self.config.sandbox.enable_auto_lint:
                 suffix = os.path.splitext(action.path)[1]
@@ -222,7 +223,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             + old_file_lines[end_idx:]
         )
         updated_content = '\n'.join(updated_lines)
-        diff = get_diff(content_to_edit, updated_content, action.path)
+        diff = get_diff(original_file_content, updated_content, action.path)
 
         # Lint the updated content
         if self.config.sandbox.enable_auto_lint:

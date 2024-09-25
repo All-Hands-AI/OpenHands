@@ -5,6 +5,7 @@ from openhands.controller.action_parser import (
     ActionParser,
     ResponseParser,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -205,6 +206,9 @@ class CodeActActionParserFileEdit(ActionParser):
         )
 
         if self.file_edit_match is None:
+            logger.error(
+                f'FileEditAction detected but the format is incorrect. Unable to match for <file_edit> in:\n{"-" * 80}\n{action_str}\n{"-" * 80}'
+            )
             raise ActionParseError(
                 error=(
                     'FileEditAction detected but the format is incorrect. Usage:\n'

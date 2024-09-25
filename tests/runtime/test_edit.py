@@ -119,7 +119,7 @@ This is line 101 + 10
 """
 
 
-def test_edit_long_file_error(temp_dir, box_class, run_as_openhands):
+def test_edit_long_file(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
         action = FileEditAction(
@@ -155,7 +155,10 @@ def test_edit_long_file_error(temp_dir, box_class, run_as_openhands):
             == (
                 '--- /workspace/app.py\n'
                 '+++ /workspace/app.py\n'
-                '@@ -1,5 +1,5 @@\n'
+                '@@ -97,8 +97,8 @@\n'
+                ' This is line 97\n'
+                ' This is line 98\n'
+                ' This is line 99\n'
                 '-This is line 100\n'
                 '-This is line 101\n'
                 '+This is line 100 + 10\n'
@@ -163,7 +166,6 @@ def test_edit_long_file_error(temp_dir, box_class, run_as_openhands):
                 ' This is line 102\n'
                 ' This is line 103\n'
                 ' This is line 104\n'
-                '(end of changes)\n'
             ).strip()
         )
     finally:
