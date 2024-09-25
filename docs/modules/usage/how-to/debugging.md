@@ -6,7 +6,7 @@ The following is intended as a primer on debugging OpenHands for Development pur
 
 The following `launch.json` will allow debugging the agent, controller and server elements, but not the sandbox (Which
 runs inside docker). It will ignore changes in the `workspace/` directory (So updates to files here will
-not cause uvicorn to reload):
+not cause uvicorn to reload - unfortunately this means that this file must exist before starting your server):
 
 ```
 {
@@ -29,6 +29,8 @@ not cause uvicorn to reload):
                 "--reload",
                 "--reload-exclude",
                 "workspace/*",
+                "--reload-exclude",
+                "**/workspace/**/*.py",
                 "--port",
                 "3000"
             ],
