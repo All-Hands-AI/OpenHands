@@ -43,16 +43,6 @@ __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
 
-# list of models that support prompt caching
-# remove this when liteLLM support querying natively
-PROMPT_CACHE_SUPPORTED_MODELS = [
-    'claude-3-5-sonnet-20240620',
-    'claude-3-haiku-20240307',
-    'claude-3-opus-20240229',
-    'anthropic/claude-3-5-sonnet-20240620',
-    'anthropic/claude-3-haiku-20240307',
-    'anthropic/claude-3-opus-20240229',
-]
 
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
@@ -506,17 +496,14 @@ class LLM:
         Returns:
             bool: True if model is vision capable. If model is not supported by litellm, it will return False.
         """
-        try:
-            # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
-            # but model_info will have the correct value for some reason.
-            # we can go with it, but we will need to keep an eye if model_info is correct for Vertex or other providers
-            # remove when litellm is updated to fix https://github.com/BerriAI/litellm/issues/5608
-            return litellm.supports_vision(self.config.model) or (
-                self.model_info is not None
-                and self.model_info.get('supports_vision', False)
-            )
-        except Exception:
-            return False
+        # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
+        # but model_info will have the correct value for some reason.
+        # we can go with it, but we will need to keep an eye if model_info is correct for Vertex or other providers
+        # remove when litellm is updated to fix https://github.com/BerriAI/litellm/issues/5608
+        return litellm.supports_vision(self.config.model) or (
+            self.model_info is not None
+            and self.model_info.get('supports_vision', False)
+        )
 
     def is_caching_prompt_active(self) -> bool:
         """Check if prompt caching is supported and enabled for current model.
@@ -524,8 +511,10 @@ class LLM:
         Returns:
             boolean: True if prompt caching is supported and enabled for the given model.
         """
-        return self.config.caching_prompt is True and any(
-            model in self.config.model for model in PROMPT_CACHE_SUPPORTED_MODELS
+        return (
+            self.config.caching_prompt is True
+            and self.model_info is not None
+            and self.model_info.get('supports_prompt_caching', False)
         )
 
     def _post_completion(self, response: ModelResponse) -> None:
