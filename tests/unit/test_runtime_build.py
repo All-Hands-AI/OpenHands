@@ -7,9 +7,9 @@ import pytest
 import toml
 from pytest import TempPathFactory
 
+from openhands import get_version
 from openhands.runtime.utils.runtime_build import (
     _generate_dockerfile,
-    _get_package_version,
     _put_source_code_to_dir,
     build_runtime_image,
     get_runtime_image_repo,
@@ -17,7 +17,7 @@ from openhands.runtime.utils.runtime_build import (
     prep_docker_build_folder,
 )
 
-OH_VERSION = f'oh_v{_get_package_version()}'
+OH_VERSION = f'oh_v{get_version()}'
 
 
 @pytest.fixture
