@@ -98,10 +98,11 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
-        self.controller.agent_task = self.controller.start_step_loop()
-        self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
-        )
+        if self.controller:
+            self.controller.agent_task = self.controller.start_step_loop()
+            self.event_stream.add_event(
+                ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+            )
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
