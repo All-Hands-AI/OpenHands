@@ -26,8 +26,8 @@ runs inside docker):
             "args": [
                 "openhands.server.listen:app",
                 "--reload",
-                "--reload-include",
-                "openhands/*",
+                "--reload-dir",
+                "openhands",
                 "--port",
                 "3000"
             ],
