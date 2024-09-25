@@ -88,3 +88,18 @@ export const retrieveSecurityAnalyzers = async (): Promise<string[]> => {
   const response = await fetch(`${BASE_URL}/api/options/security-analyzers`);
   return response.json();
 };
+
+export const uploadFile = async (token: string, file: File) => {
+  const formData = new FormData();
+  formData.append("files", file);
+
+  const response = await fetch(`${BASE_URL}/api/upload-files`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  return response.json();
+};

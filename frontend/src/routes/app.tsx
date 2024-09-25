@@ -28,16 +28,46 @@ import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import { clearFiles } from "#/state/initial-query-slice";
 import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
+import { uploadFile } from "#/api/open-hands";
+
+const base64ToBlob = (base64: string) => {
+  // Remove the prefix (e.g. data:image/png;base64,)
+  const base64WithoutPrefix = base64.split(",")[1];
+
+  // Decode to bytes
+  const bytes = atob(base64WithoutPrefix);
+
+  // Create an array of byte values
+  const byteNumbers = new Array(bytes.length);
+  for (let i = 0; i < bytes.length; i += 1) {
+    byteNumbers[i] = bytes.charCodeAt(i);
+  }
+
+  // Convert to Uint8Array
+  const array = new Uint8Array(byteNumbers);
+
+  // Create a Blob
+  return new Blob([array], { type: "application/zip" });
+};
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
 export const clientLoader = async () => {
   const q = store.getState().initalQuery.initialQuery;
   const repo = store.getState().initalQuery.selectedRepository;
+  const importedProject = store.getState().initalQuery.importedProjectZip;
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+
+  if (token && importedProject) {
+    const blob = base64ToBlob(importedProject);
+    const file = new File([blob], "imported-project.zip", {
+      type: blob.type,
+    });
+    await uploadFile(token, file);
+  }
 
   if (repo) localStorage.setItem("repo", repo);
 

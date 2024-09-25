@@ -37,7 +37,11 @@ function UploadedFilePreview({ file, onRemove }: UploadedFilePreviewProps) {
   );
 }
 
-export function TaskForm() {
+interface TaskFormProps {
+  importedProjectZip: File | null;
+}
+
+export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const fetcher = useFetcher();
@@ -79,11 +83,24 @@ export function TaskForm() {
     const value = suggestions[suggestion];
 
     dispatch(setInitialQuery(value));
-    submit({}, { method: "POST" });
+    submit({}, { method: "POST" }); // TODO: Probably better to use navigate instead
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHasText(!!e.target.value);
+  };
+
+  const handleSubmitForm = () => {
+    // This is submitted on top of the form submission
+    const formData = new FormData();
+    if (importedProjectZip) {
+      formData.append("imported-project", importedProjectZip);
+    }
+    fetcher.submit(formData, {
+      method: "POST",
+      action: "/upload-initial-files",
+      encType: "multipart/form-data",
+    });
   };
 
   return (
@@ -102,33 +119,36 @@ export function TaskForm() {
       <Form
         ref={formRef}
         method="post"
-        className="relative flex flex-col items-center gap-2"
+        className="flex flex-col items-center gap-2"
+        onSubmit={handleSubmitForm}
       >
         <SuggestionBubble
           suggestion={suggestion}
           onClick={onClickSuggestion}
           onRefresh={onRefreshSuggestion}
         />
-        <input
-          name="q"
-          type="text"
-          placeholder="What do you want to build?"
-          onChange={handleChange}
-          className={cn(
-            "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
-            "focus:bg-[#525252]",
+        <div className="relative">
+          <input
+            name="q"
+            type="text"
+            placeholder="What do you want to build?"
+            onChange={handleChange}
+            className={cn(
+              "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
+              "focus:bg-[#525252]",
+            )}
+          />
+          {hasText && (
+            <button
+              type="submit"
+              aria-label="Submit"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2"
+              disabled={navigation.state === "loading"}
+            >
+              <Send width={24} height={24} />
+            </button>
           )}
-        />
-        {hasText && (
-          <button
-            type="submit"
-            aria-label="Submit"
-            className="absolute right-4 top-1/2 transform -translate-y-1/2"
-            disabled={navigation.state === "loading"}
-          >
-            <Send width={24} height={24} />
-          </button>
-        )}
+        </div>
       </Form>
       <label className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]">
         <Clip width={16} height={16} />
@@ -147,6 +167,7 @@ export function TaskForm() {
 
               fetcher.submit(formData, {
                 method: "POST",
+                action: "/upload-initial-files",
                 encType: "multipart/form-data",
               });
             } else {
