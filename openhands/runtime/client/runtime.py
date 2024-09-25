@@ -4,7 +4,6 @@ import threading
 import uuid
 from typing import Callable
 from zipfile import ZipFile
-from datetime import datetime
 
 import docker
 import requests
