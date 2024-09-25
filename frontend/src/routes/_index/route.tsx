@@ -22,6 +22,35 @@ import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 
+const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+const redirectUri = "http://localhost:3001/oauth/github/callback";
+const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
+
+interface GitHubAuthProps {
+  onConnectToGitHub: () => void;
+  repositories: GitHubRepository[];
+  isLoggedIn: boolean;
+}
+
+function GitHubAuth({
+  onConnectToGitHub,
+  repositories,
+  isLoggedIn,
+}: GitHubAuthProps) {
+  if (isLoggedIn) {
+    return <GitHubRepositorySelector repositories={repositories} />;
+  }
+
+  return (
+    <ModalButton
+      text="Connect to GitHub"
+      icon={<GitHubLogo width={20} height={20} />}
+      className="bg-[#791B80] w-full"
+      onClick={onConnectToGitHub}
+    />
+  );
+}
+
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
   const token = localStorage.getItem("token");
@@ -55,6 +84,15 @@ function Home() {
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
+  const isSaas = true;
+
+  const handleConnectToGitHub = () => {
+    if (isSaas) {
+      window.location.href = githubAuthUrl;
+    } else {
+      setConnectToGitHubModalOpen(true);
+    }
+  };
 
   return (
     <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center gap-16 relative">
@@ -70,16 +108,11 @@ function Home() {
           <SuggestionBox
             title="Open a Repo"
             content={
-              ghToken ? (
-                <GitHubRepositorySelector repositories={repositories} />
-              ) : (
-                <ModalButton
-                  text="Connect to GitHub"
-                  icon={<GitHubLogo width={20} height={20} />}
-                  className="bg-[#791B80] w-full"
-                  onClick={() => setConnectToGitHubModalOpen(true)}
-                />
-              )
+              <GitHubAuth
+                isLoggedIn={!!ghToken}
+                repositories={repositories}
+                onConnectToGitHub={handleConnectToGitHub}
+              />
             }
           />
           <SuggestionBox

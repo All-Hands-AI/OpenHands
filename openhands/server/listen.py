@@ -30,6 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -799,6 +800,42 @@ async def zip_current_workspace(request: Request):
             status_code=500,
             detail='Failed to zip workspace',
         )
+
+
+class AuthCode(BaseModel):
+    code: str
+
+
+@app.post("/github/callback")
+def github_callback(auth_code: AuthCode):
+    # Prepare data for the token exchange request
+    data = {
+        "client_id": os.getenv("CLIENT_ID"),
+        "client_secret": os.getenv("CLIENT_SECRET"),
+        "code": auth_code.code,
+    }
+
+    headers = {"Accept": "application/json"}
+    response = requests.post("https://github.com/login/oauth/access_token", data=data, headers=headers)
+
+    if response.status_code != 200:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": "Failed to exchange code for token"},
+        )
+
+    token_response = response.json()
+
+    if "access_token" not in token_response:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": "No access token in response"},
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"access_token": token_response["access_token"]},
+    )
 
 
 app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
