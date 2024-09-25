@@ -1,6 +1,6 @@
 # Debugging
 
-The following is intended as a primer on debugging OpenHands for development purposes.
+The following is intended as a primer on debugging OpenHands for Development purposes.
 
 ## Server / VSCode
 
@@ -26,6 +26,8 @@ runs inside docker):
             "args": [
                 "openhands.server.listen:app",
                 "--reload",
+                "--reload-include",
+                "openhands/*",
                 "--port",
                 "3000"
             ],
