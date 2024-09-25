@@ -1,4 +1,6 @@
 import asyncio
+
+from threading import Thread
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -65,9 +67,14 @@ class AgentSession:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_security_analyzer(config.security.security_analyzer)
-        await self._create_runtime(runtime_name, config, agent, status_message_callback)
-        await self._create_controller(
+
+        self.loop = asyncio.new_event_loop()
+        self.thread = Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+        self._create_security_analyzer(config.security.security_analyzer)
+        self._create_runtime(runtime_name, config, agent, status_message_callback)
+        self._create_controller(
             agent,
             config.security.confirmation_mode,
             max_iterations,
@@ -75,6 +82,13 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
+        
+        if self.controller is not None:
+            self.controller.agent_task = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop) # type: ignore
+
+    def _run(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
 
     async def close(self):
         """Closes the Agent session"""
@@ -89,9 +103,13 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join()
+
         self._closed = True
 
-    async def _create_security_analyzer(self, security_analyzer: str | None):
+    def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
         Parameters:
@@ -104,7 +122,7 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    async def _create_runtime(
+    def _create_runtime(
         self,
         runtime_name: str,
         config: AppConfig,
@@ -125,8 +143,7 @@ class AgentSession:
         logger.info(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        self.runtime = await asyncio.to_thread(
-            runtime_cls,
+        self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
             sid=self.sid,
@@ -141,7 +158,7 @@ class AgentSession:
         else:
             logger.warning('Runtime initialization failed')
 
-    async def _create_controller(
+    def _create_controller(
         self,
         agent: Agent,
         confirmation_mode: bool,
