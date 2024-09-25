@@ -6,7 +6,6 @@ import pathlib
 import subprocess
 import time
 import traceback
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
@@ -302,6 +301,11 @@ def _process_instance_wrapper(
             time.sleep(5)
 
 
+def _process_instance_wrapper_mp(args):
+    """Wrapper for multiprocessing, especially for imap_unordered."""
+    return _process_instance_wrapper(*args)
+
+
 def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata | None,
@@ -328,20 +332,13 @@ def run_evaluation(
 
     try:
         if use_multiprocessing:
-            with ProcessPoolExecutor(num_workers) as executor:
-                futures = [
-                    executor.submit(
-                        _process_instance_wrapper,
-                        process_instance_func=process_instance_func,
-                        instance=instance,
-                        metadata=metadata,
-                        use_mp=True,
-                        max_retries=max_retries,
-                    )
+            with mp.Pool(num_workers) as pool:
+                args_iter = (
+                    (process_instance_func, instance, metadata, True, max_retries)
                     for _, instance in dataset.iterrows()
-                ]
-                for future in as_completed(futures):
-                    result = future.result()
+                )
+                results = pool.imap_unordered(_process_instance_wrapper_mp, args_iter)
+                for result in results:
                     update_progress(result, pbar, output_fp)
         else:
             for _, instance in dataset.iterrows():

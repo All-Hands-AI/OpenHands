@@ -52,13 +52,17 @@ function SettingsForm({
   const [enableAdvanced, setEnableAdvanced] =
     React.useState(advancedAlreadyInUse);
 
+  const handleAdvancedChange = (value: boolean) => {
+    setEnableAdvanced(value);
+  };
+
   return (
     <>
       <Switch
         data-testid="advanced-options-toggle"
         aria-checked={enableAdvanced}
         isSelected={enableAdvanced}
-        onValueChange={(value) => setEnableAdvanced(value)}
+        onValueChange={handleAdvancedChange}
       >
         Advanced Options
       </Switch>

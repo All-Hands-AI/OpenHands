@@ -112,7 +112,7 @@ export function ModelSelector({
             {models[selectedProvider || ""]?.models
               .filter((model) => VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model} value={model}>
+                <AutocompleteItem key={model} value={model} title={model}>
                   {model}
                 </AutocompleteItem>
               ))}
@@ -121,7 +121,7 @@ export function ModelSelector({
             {models[selectedProvider || ""]?.models
               .filter((model) => !VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model} value={model}>
+                <AutocompleteItem key={model} value={model} title={model}>
                   {model}
                 </AutocompleteItem>
               ))}
