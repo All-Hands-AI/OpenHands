@@ -98,6 +98,10 @@ class FileEditRuntimeInterface(ABC):
 
 
 class FileEditRuntimeMixin(FileEditRuntimeInterface):
+    # Most LLMs have output token limit of 4k tokens.
+    # This restricts the number of lines we can edit to avoid exceeding the token limit.
+    MAX_LINES_TO_EDIT = 300
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -113,9 +117,30 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
 
+    def _validate_range(
+        self, start: int, end: int, total_lines: int
+    ) -> Observation | None:
+        # start and end are 1-indexed and inclusive
+        if (
+            (start < 1 and start != -1)
+            or start > total_lines
+            or (start > end and end != -1 and start != -1)
+        ):
+            return ErrorObservation(
+                f'Invalid range for editing: start={start}, end={end}, total lines={total_lines}. start must be >= 1 and <={total_lines} (total lines of the edited file), start <= end, or start == -1 (append to the end of the file).'
+            )
+        if (
+            (end < 1 and end != -1)
+            or end > total_lines
+            or (end < start and start != -1 and end != -1)
+        ):
+            return ErrorObservation(
+                f'Invalid range for editing: start={start}, end={end}, total lines={total_lines}. end must be >= 1 and <= {total_lines} (total lines of the edited file), end >= start, or end == -1 (to edit till the end of the file).'
+            )
+        return None
+
     def edit(self, action: FileEditAction) -> Observation:
         obs = self.read(FileReadAction(path=action.path))
-
         if (
             isinstance(obs, ErrorObservation)
             and 'File not found'.lower() in obs.content.lower()
@@ -132,19 +157,23 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 path=action.path,
                 prev_exist=False,
             )
-        elif isinstance(obs, FileReadObservation):
-            old_file_content = obs.content
-            updated_content = get_new_file_contents(
-                self.draft_editor_llm, old_file_content, action.content
-            )
-            if updated_content is None:
-                return ErrorObservation(
-                    'Failed to get new file contents. '
-                    'Please try to reduce the number of edits and try again.'
-                )
+        assert isinstance(
+            obs, FileReadObservation
+        ), f'Expected FileReadObservation, got {type(obs)}'
 
-            diff = get_diff(old_file_content, updated_content, action.path)
+        old_file_lines = obs.content.split('\n')
+        # NOTE: start and end are 1-indexed
+        start = action.start
+        end = action.end
+        # validate the range
+        error = self._validate_range(start, end, len(old_file_lines))
+        if error is not None:
+            return error
 
+        # append to the end of the file
+        if start == -1:
+            updated_content = '\n'.join(old_file_lines + action.content.split('\n'))
+            diff = get_diff('\n'.join(old_file_lines), updated_content, action.path)
             # Lint the updated content
             if self.config.sandbox.enable_auto_lint:
                 suffix = os.path.splitext(action.path)[1]
@@ -157,9 +186,56 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     if lint_error:
                         error_message = f'\n=== Linting failed for edited file [{action.path}] ===\n{lint_error}\n===\nChanges tried:\n{diff}\n==='
                         return ErrorObservation(error_message)
-
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
             return FileEditObservation(content=diff, path=action.path, prev_exist=True)
+
+        # Get the 0-indexed start and end
+        start_idx = start - 1
+        if end != -1:
+            # remove 1 to make it 0-indexed
+            # then add 1 since the `end` is inclusive
+            end_idx = end - 1 + 1
         else:
-            logger.error(f'Unhandled error observation: {obs}')
-            return obs
+            # end == -1 means the user wants to edit till the end of the file
+            end_idx = len(old_file_lines)
+
+        length_of_range = end_idx - start_idx
+        if length_of_range > self.MAX_LINES_TO_EDIT:
+            return ErrorObservation(
+                f'The range of lines to edit is too long. The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}.'
+            )
+
+        content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
+        updated_content_draft = get_new_file_contents(
+            self.draft_editor_llm, content_to_edit, action.content
+        )
+        if updated_content_draft is None:
+            return ErrorObservation(
+                'Failed to get new file contents. '
+                'Please try to reduce the number of edits and try again.'
+            )
+
+        # piece the updated content with the unchanged content
+        updated_lines = (
+            old_file_lines[:start_idx]
+            + updated_content_draft.split('\n')
+            + old_file_lines[end_idx:]
+        )
+        updated_content = '\n'.join(updated_lines)
+        diff = get_diff(content_to_edit, updated_content, action.path)
+
+        # Lint the updated content
+        if self.config.sandbox.enable_auto_lint:
+            suffix = os.path.splitext(action.path)[1]
+            with tempfile.NamedTemporaryFile(
+                suffix=suffix, mode='w+', encoding='utf-8'
+            ) as temp_file:
+                temp_file.write(updated_content)
+                temp_file.flush()
+                lint_error, _ = _lint_file(temp_file.name)
+                if lint_error:
+                    error_message = f'\n=== Linting failed for edited file [{action.path}] ===\n{lint_error}\n===\nChanges tried:\n{diff}\n==='
+                    return ErrorObservation(error_message)
+
+        obs = self.write(FileWriteAction(path=action.path, content=updated_content))
+        return FileEditObservation(content=diff, path=action.path, prev_exist=True)

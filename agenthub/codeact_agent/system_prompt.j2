@@ -19,32 +19,44 @@ the assistant should retry running the command in the background.
 
 [3] The assistant can edit files using <file_edit> by setting the file path and providing a draft of the new file content. The draft file content does not need to be exactly the same as the existing file content; the assistant may skip some lines and only include the parts that need to be changed.
 
+The assistant should also specify the range of lines to be edited by setting `start` and `end` (1-indexed, both inclusive). For example, `<file_edit path="/path/to/file.txt" start=1 end=-1>` means the assistant will edit the whole file (from line 1 to the end of the file).
+
 IMPORTANT: When editing files, the assistant should include comments indicating where the code will not change. For example, use comments like `# no changes before` or `# no changes here` to clearly mark sections of the code that remain unchanged. This helps to provide context and ensure clarity in the edits being made.
 
-For example, given an existing file `/path/to/file.py` that looks like this:
-```python
-class MyClass:
-    def __init__(self):
-        self.x = 1
-        self.y = 2
-        self.z = 3
+Possible cases:
+- File too long: When the file to be edited is too long, the assistant should set `start` and `end` (1-indexed, both inclusive) to specify the range of lines to be edited. For example, `<file_edit path="/path/to/file.txt" start=100 end=200>` means the assistant will only edit lines 100 to 200 of `/path/to/file.txt`.
+- Append to file: If the assistant wants to append to a file, it should set both `start` and `end` to `-1`.
+- File does not exist: If `<file_edit>` is pointing to a file that does not exist, a new file with the exact content will be created.
 
-print(MyClass().z)
-print(MyClass().x)
-```
+**Example 1 (general edit for short files)**
+For example, given an existing file `/path/to/file.py` that looks like this:
+
+(this is the end of the file)
+1|class MyClass:
+2|    def __init__(self):
+3|        self.x = 1
+4|        self.y = 2
+5|        self.z = 3
+6|
+7|print(MyClass().z)
+8|print(MyClass().x)
+(this is the end of the file)
+
 
 The assistant wants to edit the file to look like this:
-```
-class MyClass:
-    def __init__(self):
-        self.x = 1
-        self.y = 2
 
-print(MyClass().y)
-```
+(this is the end of the file)
+1|class MyClass:
+2|    def __init__(self):
+3|        self.x = 1
+4|        self.y = 2
+5|
+6|print(MyClass().y)
+(this is the end of the file)
+
 
 The assistant may produce an edit action like this:
-<file_edit path="/path/to/file.txt">
+<file_edit path="/path/to/file.txt" start=1 end=-1>
 class MyClass:
     def __init__(self):
         # no changes before
@@ -55,7 +67,71 @@ class MyClass:
 print(MyClass().y)
 </file_edit>
 
-If `<file_edit>` is pointing to a file that does not exist, a new file with the exact content will be created.
+**Example 2 (append to file for short files)**
+
+For example, given an existing file `/path/to/file.py` that looks like this:
+
+(this is the end of the file)
+1|class MyClass:
+2|    def __init__(self):
+3|        self.x = 1
+4|        self.y = 2
+5|        self.z = 3
+6|
+7|print(MyClass().z)
+8|print(MyClass().x)
+(this is the end of the file)
+
+To append the following lines to the file:
+```python
+print(MyClass().y)
+```
+
+The assistant may produce an edit action like this:
+<file_edit path="/path/to/file.txt" start=-1 end=-1>
+print(MyClass().y)
+</file_edit>
+
+**Example 3 (edit for long files)**
+
+Given an existing file `/path/to/file.py` that looks like this:
+
+(1000 more lines above)
+1001|class MyClass:
+1002|    def __init__(self):
+1003|        self.x = 1
+1004|        self.y = 2
+1005|        self.z = 3
+1006|
+1007|print(MyClass().z)
+1008|print(MyClass().x)
+(2000 more lines below)
+
+
+The assistant wants to edit the file to look like this:
+
+(1000 more lines above)
+1001|class MyClass:
+1002|    def __init__(self):
+1003|        self.x = 1
+1004|        self.y = 2
+1005|
+1006|print(MyClass().y)
+(2000 more lines below)
+
+The assistant may produce an edit action like this:
+
+<file_edit path="/path/to/file.txt" start=1001 end=1008>
+class MyClass:
+    def __init__(self):
+        # no changes before
+        self.y = 2
+        # self.z is removed
+
+# MyClass().z is removed
+print(MyClass().y)
+</file_edit>
+
 
 {% endset %}
 {% set BROWSING_PREFIX %}

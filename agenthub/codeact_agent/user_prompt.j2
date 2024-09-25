@@ -15,7 +15,7 @@ openhands@runtime:~/workspace$
 
 ASSISTANT:
 There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
-<file_edit path="/workspace/app.py">
+<file_edit path="/workspace/app.py" start=-1 end=-1>
 from flask import Flask
 app = Flask(__name__)
 
@@ -170,13 +170,12 @@ USER:
 
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
-<file_edit path="/workspace/app.py">
-# above stays the same
+<file_edit path="/workspace/app.py" start=4 end=7>
 @app.route('/')
 def index():
     numbers = list(range(1, 11))
-    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-# below stays the same
+    ret = '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+    return ret
 </file_edit>
 
 USER:
@@ -190,10 +189,11 @@ Observation:
 4|@app.route('/')
 5|def index():
 6|    numbers = list(range(1, 11))
-7|    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-8|
-9|if __name__ == '__main__':
-10|    app.run(port=5000)
+7|    ret = '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+8|    return ret
+9|
+10|if __name__ == '__main__':
+11|    app.run(port=5000)
 (this is the end of the file)
 [File updated (edited at line 7). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 

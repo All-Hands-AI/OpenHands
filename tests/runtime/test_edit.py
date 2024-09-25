@@ -33,6 +33,7 @@ def test_edit_from_scratch(temp_dir, box_class, run_as_openhands):
     try:
         action = FileEditAction(
             content=ORGINAL,
+            start=-1,
             path=os.path.join('/workspace', 'app.py'),
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -105,6 +106,64 @@ def test_edit(temp_dir, box_class, run_as_openhands):
                 '\n'
                 " if __name__ == '__main__':\n"
                 '     app.run(port=5000)\n'
+            ).strip()
+        )
+    finally:
+        _close_test_runtime(runtime)
+
+
+ORIGINAL_LONG = '\n'.join([f'This is line {i}' for i in range(1, 1000)])
+EDIT_LONG = """
+This is line 100 + 10
+This is line 101 + 10
+"""
+
+
+def test_edit_long_file_error(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    try:
+        action = FileEditAction(
+            content=ORIGINAL_LONG,
+            path=os.path.join('/workspace', 'app.py'),
+            start=-1,
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        assert isinstance(
+            obs, FileEditObservation
+        ), 'The observation should be a FileEditObservation.'
+
+        action = FileReadAction(
+            path=os.path.join('/workspace', 'app.py'),
+        )
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.content.strip() == ORIGINAL_LONG.strip()
+
+        action = FileEditAction(
+            content=EDIT_LONG,
+            path=os.path.join('/workspace', 'app.py'),
+            start=100,
+            end=200,
+        )
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert (
+            obs.content.strip()
+            == (
+                '--- /workspace/app.py\n'
+                '+++ /workspace/app.py\n'
+                '@@ -1,5 +1,5 @@\n'
+                '-This is line 100\n'
+                '-This is line 101\n'
+                '+This is line 100 + 10\n'
+                '+This is line 101 + 10\n'
+                ' This is line 102\n'
+                ' This is line 103\n'
+                ' This is line 104\n'
+                '(end of changes)\n'
             ).strip()
         )
     finally:

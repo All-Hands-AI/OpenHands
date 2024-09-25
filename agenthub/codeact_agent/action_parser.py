@@ -191,9 +191,7 @@ class CodeActActionParserFileEdit(ActionParser):
     - FileEditAction(path, content) - edit a file
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         self.file_edit_match: re.Match | None = None
 
     def check_condition(self, action_str: str) -> bool:
@@ -201,14 +199,40 @@ class CodeActActionParserFileEdit(ActionParser):
             return False
 
         self.file_edit_match = re.search(
-            r'<file_edit\s+path=(["\']?)(.*?)\1>(.*?)</file_edit>',
+            r'<file_edit\s+path=(["\']?)(.*?)\1\s+start=(["\']?)(.*?)\3\s+end=(["\']?)(.*?)\5\s*>(.*?)</file_edit>',
             action_str,
             re.DOTALL,
         )
-        path = None if self.file_edit_match is None else self.file_edit_match.group(2)
+
+        if self.file_edit_match is None:
+            raise ActionParseError(
+                error=(
+                    'FileEditAction detected but the format is incorrect. Usage:\n'
+                    '<file_edit path="[path]" start=[start_line] end=[end_line]>\n'
+                    '[content_to_edit]\n'
+                    '</file_edit>\n'
+                )
+            )
+
+        path = self.file_edit_match.group(2)
+        start = self.file_edit_match.group(4)
+        end = self.file_edit_match.group(6)
+
         if not path:
             raise ActionParseError(
-                error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit by setting `path="<path>"` in <file_edit> tag. For example: <file_edit path="path/to/file.txt">...</file_edit>'
+                error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit.'
+            )
+        try:
+            int(start)
+        except ValueError:
+            raise ActionParseError(
+                error=f'FileEditAction detected but `start` is not valid integers: {start}'
+            )
+        try:
+            int(end)
+        except ValueError:
+            raise ActionParseError(
+                error=f'FileEditAction detected but `end` is not valid integers: {end}'
             )
 
         return True
@@ -219,7 +243,15 @@ class CodeActActionParserFileEdit(ActionParser):
         ), 'self.file_edit_match should not be None when parse is called'
 
         file_path = self.file_edit_match.group(2).strip()
-        content = self.file_edit_match.group(3).strip()
-        thought = action_str.replace(self.file_edit_match.string, '').strip()
+        start_line = int(self.file_edit_match.group(4))
+        end_line = int(self.file_edit_match.group(6))
+        content = self.file_edit_match.group(7).strip()
+        thought = action_str.replace(self.file_edit_match.group(0), '').strip()
 
-        return FileEditAction(path=file_path, content=content, thought=thought)
+        return FileEditAction(
+            path=file_path,
+            content=content,
+            thought=thought,
+            start=start_line,
+            end=end_line,
+        )
