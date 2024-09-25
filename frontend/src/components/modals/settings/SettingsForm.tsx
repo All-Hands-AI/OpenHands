@@ -7,6 +7,7 @@ import { I18nKey } from "../../../i18n/declaration";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 import { ModelSelector } from "./ModelSelector";
 
 interface SettingsFormProps {
@@ -41,16 +42,28 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-  const advancedAlreadyInUse = React.useMemo(
-    () =>
+  const advancedAlreadyInUse = React.useMemo(() => {
+    const organizedModels = organizeModelsAndProviders(models);
+    const { provider, model } = extractModelAndProvider(
+      settings.LLM_MODEL || "",
+    );
+    const isKnownModel =
+      provider in organizedModels &&
+      organizedModels[provider].models.includes(model);
+
+    return (
       !!settings.SECURITY_ANALYZER ||
       !!settings.CONFIRMATION_MODE ||
       !!settings.LLM_BASE_URL ||
-      (!!settings.LLM_MODEL && !models.includes(settings.LLM_MODEL)),
-    [],
-  );
+      (!!settings.LLM_MODEL && !isKnownModel)
+    );
+  }, [settings, models]);
   const [enableAdvanced, setEnableAdvanced] =
     React.useState(advancedAlreadyInUse);
+
+  React.useEffect(() => {
+    setEnableAdvanced(advancedAlreadyInUse);
+  }, [advancedAlreadyInUse]);
 
   const handleAdvancedChange = (value: boolean) => {
     setEnableAdvanced(value);

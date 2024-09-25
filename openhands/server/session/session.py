@@ -123,9 +123,6 @@ class Session:
                 f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
-        self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
-        )
 
     async def on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.

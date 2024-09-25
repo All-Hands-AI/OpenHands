@@ -1,4 +1,6 @@
 import asyncio
+
+from threading import Thread
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -6,6 +8,9 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.agent import AgentState
+from openhands.events.action.agent import ChangeAgentStateAction
+from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
@@ -65,9 +70,27 @@ class AgentSession:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_security_analyzer(config.security.security_analyzer)
-        await self._create_runtime(runtime_name, config, agent, status_message_callback)
-        await self._create_controller(
+
+        self.loop = asyncio.new_event_loop()
+        self.thread = Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+        coro = self._start(runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs, status_message_callback)
+        asyncio.run_coroutine_threadsafe(coro, self.loop) # type: ignore
+
+    async def _start(self,
+        runtime_name: str,
+        config: AppConfig,
+        agent: Agent,
+        max_iterations: int,
+        max_budget_per_task: float | None = None,
+        agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
+        status_message_callback: Optional[Callable] = None,
+    ):
+        self._create_security_analyzer(config.security.security_analyzer)
+        self._create_runtime(runtime_name, config, agent, status_message_callback)
+        self._create_controller(
             agent,
             config.security.confirmation_mode,
             max_iterations,
@@ -75,6 +98,16 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
+        self.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+        )
+        if self.controller:
+            self.controller.agent_task = self.controller.start_step_loop()   
+            await self.controller.agent_task # type: ignore
+
+    def _run(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
 
     async def close(self):
         """Closes the Agent session"""
@@ -89,9 +122,13 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join()
+
         self._closed = True
 
-    async def _create_security_analyzer(self, security_analyzer: str | None):
+    def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
         Parameters:
@@ -104,7 +141,7 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    async def _create_runtime(
+    def _create_runtime(
         self,
         runtime_name: str,
         config: AppConfig,
@@ -125,8 +162,7 @@ class AgentSession:
         logger.info(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        self.runtime = await asyncio.to_thread(
-            runtime_cls,
+        self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
             sid=self.sid,
@@ -141,7 +177,7 @@ class AgentSession:
         else:
             logger.warning('Runtime initialization failed')
 
-    async def _create_controller(
+    def _create_controller(
         self,
         agent: Agent,
         confirmation_mode: bool,

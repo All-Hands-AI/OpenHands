@@ -301,6 +301,11 @@ def _process_instance_wrapper(
             time.sleep(5)
 
 
+def _process_instance_wrapper_mp(args):
+    """Wrapper for multiprocessing, especially for imap_unordered."""
+    return _process_instance_wrapper(*args)
+
+
 def run_evaluation(
     dataset: pd.DataFrame,
     metadata: EvalMetadata | None,
@@ -328,21 +333,13 @@ def run_evaluation(
     try:
         if use_multiprocessing:
             with mp.Pool(num_workers) as pool:
-                results = [
-                    pool.apply_async(
-                        _process_instance_wrapper,
-                        args=(
-                            process_instance_func,
-                            instance,
-                            metadata,
-                            True,
-                            max_retries,
-                        ),
-                    )
+                args_iter = (
+                    (process_instance_func, instance, metadata, True, max_retries)
                     for _, instance in dataset.iterrows()
-                ]
+                )
+                results = pool.imap_unordered(_process_instance_wrapper_mp, args_iter)
                 for result in results:
-                    update_progress(result.get(), pbar, output_fp)
+                    update_progress(result, pbar, output_fp)
         else:
             for _, instance in dataset.iterrows():
                 result = _process_instance_wrapper(
@@ -378,18 +375,27 @@ def reset_logger_for_multiprocessing(
     # Remove all existing handlers from logger
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
-    # add back the console handler to print ONE line
-    logger.addHandler(get_console_handler())
+
+    # add console handler to print ONE line
+    console_handler = get_console_handler(log_level=logging.INFO)
+    console_handler.setFormatter(
+        logging.Formatter(
+            f'Instance {instance_id} - ' + '%(asctime)s - %(levelname)s - %(message)s'
+        )
+    )
+    logger.addHandler(console_handler)
     logger.info(
         f'Starting evaluation for instance {instance_id}.\n'
         f'Hint: run "tail -f {log_file}" to see live logs in a separate shell'
     )
-    # Remove all existing handlers from logger
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
+    # Only log WARNING or higher to console
+    console_handler.setLevel(logging.WARNING)
+
+    # Log INFO and above to file
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(
         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
+    file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)

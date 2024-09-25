@@ -243,6 +243,7 @@ def _load_runtime(
 
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
+        config.sandbox.runtime_container_image = None
 
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid, file_store)

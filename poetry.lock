@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.25"
+version = "1.35.26"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.25-py3-none-any.whl", hash = "sha256:b1cfad301184cdd44dfd4805187ccab12de8dd28dd12a11a5cfdace17918c6de"},
-    {file = "boto3-1.35.25.tar.gz", hash = "sha256:5df4e2cbe3409db07d3a0d8d63d5220ce3202a78206ad87afdbb41519b26ce45"},
+    {file = "boto3-1.35.26-py3-none-any.whl", hash = "sha256:c31db992655db233d98762612690cfe60723c9e1503b5709aad92c1c564877bb"},
+    {file = "boto3-1.35.26.tar.gz", hash = "sha256:b04087afd3570ba540fd293823c77270ec675672af23da9396bd5988a3f8128b"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.25,<1.36.0"
+botocore = ">=1.35.26,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.25"
+version = "1.35.26"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.25-py3-none-any.whl", hash = "sha256:e58d60260abf10ccc4417967923117c9902a6a0cff9fddb6ea7ff42dc1bd4630"},
-    {file = "botocore-1.35.25.tar.gz", hash = "sha256:76c5706b2c6533000603ae8683a297c887abbbaf6ee31e1b2e2863b74b2989bc"},
+    {file = "botocore-1.35.26-py3-none-any.whl", hash = "sha256:0b9dee5e4a3314e251e103585837506b17fcc7485c3c8adb61a9a913f46da1e7"},
+    {file = "botocore-1.35.26.tar.gz", hash = "sha256:19efc3a22c9df77960712b4e203f912486f8bcd3794bff0fd7b2a0f5f1d5712d"},
 ]
 
 [package.dependencies]
@@ -2142,13 +2142,13 @@ test = ["coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre-commit",
 
 [[package]]
 name = "google-ai-generativelanguage"
-version = "0.6.9"
+version = "0.6.10"
 description = "Google Ai Generativelanguage API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google_ai_generativelanguage-0.6.9-py3-none-any.whl", hash = "sha256:50360cd80015d1a8cc70952e98560f32fa06ddee2e8e9f4b4b98e431dc561e0b"},
-    {file = "google_ai_generativelanguage-0.6.9.tar.gz", hash = "sha256:899f1d3a06efa9739f1cd9d2788070178db33c89d4a76f2e8f4da76f649155fa"},
+    {file = "google_ai_generativelanguage-0.6.10-py3-none-any.whl", hash = "sha256:854a2bf833d18be05ad5ef13c755567b66a4f4a870f099b62c61fe11bddabcf4"},
+    {file = "google_ai_generativelanguage-0.6.10.tar.gz", hash = "sha256:6fa642c964d8728006fe7e8771026fc0b599ae0ebeaf83caf550941e8e693455"},
 ]
 
 [package.dependencies]
@@ -2457,16 +2457,16 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-generativeai"
-version = "0.8.1"
+version = "0.8.2"
 description = "Google Generative AI High level API client library and tools."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "google_generativeai-0.8.1-py3-none-any.whl", hash = "sha256:b031877f24d51af0945207657c085896a0a886eceec7a1cb7029327b0aa6e2f6"},
+    {file = "google_generativeai-0.8.2-py3-none-any.whl", hash = "sha256:fabc0e2e8d2bfb6fdb1653e91dba83fecb2a2a6878883b80017def90fda8032d"},
 ]
 
 [package.dependencies]
-google-ai-generativelanguage = "0.6.9"
+google-ai-generativelanguage = "0.6.10"
 google-api-core = "*"
 google-api-python-client = "*"
 google-auth = ">=2.15.0"
@@ -3762,13 +3762,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.48.0"
+version = "1.48.1"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.48.0-py3-none-any.whl", hash = "sha256:7765e8a92069778f5fc66aacfabd0e2f8ec8d74fb117f5e475567d89b0d376b9"},
-    {file = "litellm-1.48.0.tar.gz", hash = "sha256:31a9b8a25a9daf44c24ddc08bf74298da920f2c5cea44135e5061278d0aa6fc9"},
+    {file = "litellm-1.48.1-py3-none-any.whl", hash = "sha256:a3a03b31ba8b8eafda2b7f58c5cf3a1dfff091d2158df26a5ec08fc48a8df06e"},
+    {file = "litellm-1.48.1.tar.gz", hash = "sha256:6bf2282a517835e137ff1de854f1be335416f2a671e20a1cfef51d009bf01493"},
 ]
 
 [package.dependencies]
@@ -3805,19 +3805,19 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.12"
+version = "0.11.13"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.12-py3-none-any.whl", hash = "sha256:a7d0b4065df2689cec1baeab9bfaed4d94e4ddc7e941df2ee47abfb218ce3ea1"},
-    {file = "llama_index-0.11.12.tar.gz", hash = "sha256:6b9220bf4c76a4ac0a82ccc642c3ea94f51381a9718ac601021f2fa95b74aab1"},
+    {file = "llama_index-0.11.13-py3-none-any.whl", hash = "sha256:9979153bed81e41c9dd9abe4b5ab136a582b9028aac5357100f13b921b6bc432"},
+    {file = "llama_index-0.11.13.tar.gz", hash = "sha256:e15b30e3786aacd39a426b4d3bd3829bf7bb8b3fbafc08c737ff14a815992342"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.3.4,<0.4.0"
 llama-index-cli = ">=0.3.1,<0.4.0"
-llama-index-core = ">=0.11.11,<0.12.0"
+llama-index-core = ">=0.11.13,<0.12.0"
 llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
@@ -3863,13 +3863,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.12"
+version = "0.11.13.post1"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.12-py3-none-any.whl", hash = "sha256:7dc7ead649bac8f09e61c6c8bf93d257f68a7315223552421be4f0ffc3a8054d"},
-    {file = "llama_index_core-0.11.12.tar.gz", hash = "sha256:ce2dd037ff889d9ea6b25872228cc9de614c10445d19377f6ae5c66b93a50c61"},
+    {file = "llama_index_core-0.11.13.post1-py3-none-any.whl", hash = "sha256:b71021ac86644898e723098a38bfc5f5b98bccb89e194854610b94ce6e3caeec"},
+    {file = "llama_index_core-0.11.13.post1.tar.gz", hash = "sha256:2f2041cc176398f71be449e5aadcad261236fcbfdde9deb7d396512aecb3428a"},
 ]
 
 [package.dependencies]
