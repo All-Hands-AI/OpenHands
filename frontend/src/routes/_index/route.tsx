@@ -84,9 +84,10 @@ function Home() {
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
-  const isSaas = true;
 
   const handleConnectToGitHub = () => {
+    const isSaas = import.meta.env.VITE_APP_MODE === "saas";
+
     if (isSaas) {
       window.location.href = githubAuthUrl;
     } else {

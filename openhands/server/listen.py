@@ -56,6 +56,10 @@ from openhands.runtime.runtime import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.session import SessionManager
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
@@ -810,10 +814,12 @@ class AuthCode(BaseModel):
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
-        "client_id": os.getenv("CLIENT_ID"),
-        "client_secret": os.getenv("CLIENT_SECRET"),
+        "client_id": os.getenv("GITHUB_CLIENT_ID"),
+        "client_secret": os.getenv("GITHUB_CLIENT_SECRET"),
         "code": auth_code.code,
     }
+
+    logger.info(f"Exchanging code for token: {data}")
 
     headers = {"Accept": "application/json"}
     response = requests.post("https://github.com/login/oauth/access_token", data=data, headers=headers)
