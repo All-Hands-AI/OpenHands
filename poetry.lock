@@ -2142,13 +2142,13 @@ test = ["coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock", "mypy", "pre-commit",
 
 [[package]]
 name = "google-ai-generativelanguage"
-version = "0.6.9"
+version = "0.6.10"
 description = "Google Ai Generativelanguage API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google_ai_generativelanguage-0.6.9-py3-none-any.whl", hash = "sha256:50360cd80015d1a8cc70952e98560f32fa06ddee2e8e9f4b4b98e431dc561e0b"},
-    {file = "google_ai_generativelanguage-0.6.9.tar.gz", hash = "sha256:899f1d3a06efa9739f1cd9d2788070178db33c89d4a76f2e8f4da76f649155fa"},
+    {file = "google_ai_generativelanguage-0.6.10-py3-none-any.whl", hash = "sha256:854a2bf833d18be05ad5ef13c755567b66a4f4a870f099b62c61fe11bddabcf4"},
+    {file = "google_ai_generativelanguage-0.6.10.tar.gz", hash = "sha256:6fa642c964d8728006fe7e8771026fc0b599ae0ebeaf83caf550941e8e693455"},
 ]
 
 [package.dependencies]
@@ -2457,16 +2457,16 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-generativeai"
-version = "0.8.1"
+version = "0.8.2"
 description = "Google Generative AI High level API client library and tools."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "google_generativeai-0.8.1-py3-none-any.whl", hash = "sha256:b031877f24d51af0945207657c085896a0a886eceec7a1cb7029327b0aa6e2f6"},
+    {file = "google_generativeai-0.8.2-py3-none-any.whl", hash = "sha256:fabc0e2e8d2bfb6fdb1653e91dba83fecb2a2a6878883b80017def90fda8032d"},
 ]
 
 [package.dependencies]
-google-ai-generativelanguage = "0.6.9"
+google-ai-generativelanguage = "0.6.10"
 google-api-core = "*"
 google-api-python-client = "*"
 google-auth = ">=2.15.0"
