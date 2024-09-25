@@ -54,8 +54,6 @@ function SettingsForm({
 
   const handleAdvancedChange = (value: boolean) => {
     setEnableAdvanced(value);
-    // Reset the base URL if the user disables advanced options
-    if (!value) onBaseURLChange("");
   };
 
   return (

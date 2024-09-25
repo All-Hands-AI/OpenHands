@@ -5,7 +5,6 @@ import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
-import { cn } from "#/utils/utils";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -19,6 +18,7 @@ enum IndicatorColor {
 function AgentStatusBar() {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
   const AgentStatusMap: {
     [k: string]: { message: string; indicator: IndicatorColor };
@@ -91,17 +91,25 @@ function AgentStatusBar() {
     }
   }, [curAgentState]);
 
+  const [statusMessage, setStatusMessage] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const trimmedCustomMessage = curStatusMessage.message.trim();
+    if (trimmedCustomMessage) {
+      setStatusMessage(t(trimmedCustomMessage));
+    } else {
+      setStatusMessage(AgentStatusMap[curAgentState].message);
+    }
+  }, [curAgentState, curStatusMessage.message]);
+
   return (
-    <div className="flex items-center bg-neutral-800 py-1 px-2 rounded-[100px]">
-      <div
-        className={cn(
-          "w-3 h-3 mr-2 rounded-full animate-pulse",
-          AgentStatusMap[curAgentState].indicator,
-        )}
-      />
-      <span className="text-sm text-neutral-400">
-        {AgentStatusMap[curAgentState].message}
-      </span>
+    <div className="flex flex-col items-center">
+      <div className="flex items-center">
+        <div
+          className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
+        />
+        <span className="text-sm text-stone-400">{statusMessage}</span>
+      </div>
     </div>
   );
 }

@@ -145,8 +145,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          # We install pytest-xdist in order to run tests across CPUs. However, tests start to fail when we run
-          # then across more than 2 CPUs for some reason
+          # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
 
           # Install to be able to retry on failures for flaky tests
@@ -158,10 +157,10 @@ jobs:
           SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
+          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 3 --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raR --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -207,8 +206,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run runtime tests
         run: |
-          # We install pytest-xdist in order to run tests across CPUs. However, tests start to fail when we run
-          # then across more than 2 CPUs for some reason
+          # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
 
           # Install to be able to retry on failures for flaky tests
@@ -220,10 +218,10 @@ jobs:
           SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
+          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 3 --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raR --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -275,7 +273,7 @@ jobs:
 
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_BASE_CONTAINER_IMAGE=$image_name \
+          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           TEST_ONLY=true \
           ./tests/integration/regenerate.sh

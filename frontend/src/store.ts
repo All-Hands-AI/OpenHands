@@ -9,6 +9,7 @@ import commandReducer from "./state/commandSlice";
 import taskReducer from "./state/taskSlice";
 import jupyterReducer from "./state/jupyterSlice";
 import securityAnalyzerReducer from "./state/securityAnalyzerSlice";
+import statusReducer from "./state/statusSlice";
 
 export const rootReducer = combineReducers({
   fileState: fileStateReducer,
@@ -21,6 +22,7 @@ export const rootReducer = combineReducers({
   agent: agentReducer,
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
+  status: statusReducer,
 });
 
 const store = configureStore({

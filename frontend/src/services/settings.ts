@@ -87,10 +87,10 @@ export const getSettings = (): Settings => {
 export const saveSettings = (settings: Partial<Settings>) => {
   Object.keys(settings).forEach((key) => {
     const isValid = validKeys.includes(key as keyof Settings);
-    const value = settings[key as keyof Settings];
-
-    if (isValid && typeof value !== "undefined")
-      localStorage.setItem(key, value.toString());
+    if (!isValid) return;
+    let value = settings[key as keyof Settings];
+    if (value === undefined || value === null) value = "";
+    localStorage.setItem(key, value.toString());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
 };
