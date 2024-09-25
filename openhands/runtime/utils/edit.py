@@ -206,10 +206,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
-        updated_content_draft = get_new_file_contents(
+        _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
-        if updated_content_draft is None:
+        if _edited_content is None:
             return ErrorObservation(
                 'Failed to get new file contents. '
                 'Please try to reduce the number of edits and try again.'
@@ -218,7 +218,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         # piece the updated content with the unchanged content
         updated_lines = (
             old_file_lines[:start_idx]
-            + updated_content_draft.split('\n')
+            + _edited_content.split('\n')
             + old_file_lines[end_idx:]
         )
         updated_content = '\n'.join(updated_lines)
