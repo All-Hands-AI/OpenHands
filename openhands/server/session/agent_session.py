@@ -103,7 +103,7 @@ class AgentSession:
         )
         if self.controller:
             self.controller.agent_task = self.controller.start_step_loop()   
-            await self.controller.agent_task
+            await self.controller.agent_task # type: ignore
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
