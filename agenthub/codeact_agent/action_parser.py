@@ -199,8 +199,9 @@ class CodeActActionParserFileEdit(ActionParser):
         if '<file_edit' not in action_str:
             return False
 
+        # Updated regex to make start and end optional
         self.file_edit_match = re.search(
-            r'<file_edit\s+path=(["\']?)(.*?)\1\s+start=(["\']?)(.*?)\3\s+end=(["\']?)(.*?)\5\s*>(.*?)</file_edit>',
+            r'<file_edit\s+path=(["\']?)(.*?)\1(?:\s+start=(["\']?)(.*?)\3)?(?:\s+end=(["\']?)(.*?)\5)?\s*>(.*?)</file_edit>',
             action_str,
             re.DOTALL,
         )
@@ -226,17 +227,14 @@ class CodeActActionParserFileEdit(ActionParser):
             raise ActionParseError(
                 error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit.'
             )
-        try:
-            int(start)
-        except ValueError:
+
+        if start and not start.isdigit():
             raise ActionParseError(
-                error=f'FileEditAction detected but `start` is not valid integers: {start}'
+                error=f'FileEditAction detected but `start` is not a valid integer: {start}'
             )
-        try:
-            int(end)
-        except ValueError:
+        if end and not end.isdigit():
             raise ActionParseError(
-                error=f'FileEditAction detected but `end` is not valid integers: {end}'
+                error=f'FileEditAction detected but `end` is not a valid integer: {end}'
             )
 
         return True
@@ -247,15 +245,22 @@ class CodeActActionParserFileEdit(ActionParser):
         ), 'self.file_edit_match should not be None when parse is called'
 
         file_path = self.file_edit_match.group(2).strip()
-        start_line = int(self.file_edit_match.group(4))
-        end_line = int(self.file_edit_match.group(6))
+        start_line = (
+            int(self.file_edit_match.group(4))
+            if self.file_edit_match.group(4)
+            else None
+        )
+        end_line = (
+            int(self.file_edit_match.group(6))
+            if self.file_edit_match.group(6)
+            else None
+        )
         content = self.file_edit_match.group(7).strip()
         thought = action_str.replace(self.file_edit_match.group(0), '').strip()
 
-        return FileEditAction(
-            path=file_path,
-            content=content,
-            thought=thought,
-            start=start_line,
-            end=end_line,
-        )
+        action = FileEditAction(path=file_path, content=content, thought=thought)
+        if start_line is not None:
+            action.start = start_line
+        if end_line is not None:
+            action.end = end_line
+        return action
