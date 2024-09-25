@@ -36,6 +36,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      hash_from_app_image: ${{ steps.get_hash_in_app_image.outputs.hash_from_app_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,6 +85,7 @@ jobs:
           # Get the hash from the build script
           hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
+          echo "Hash from app image: $hash_from_app_image"
 
 
   # Builds the runtime Docker images
@@ -192,6 +195,7 @@ jobs:
         run: make install-python-dependencies
       - name: Get hash in App Image
         run: |
+          echo "Hash from app image: ${{ needs.ghcr_build_app.outputs.hash_from_app_image }}"
           echo "hash_from_app_image=${{ needs.ghcr_build_app.outputs.hash_from_app_image }}" >> $GITHUB_ENV
 
       - name: Get hash using code (development mode)
