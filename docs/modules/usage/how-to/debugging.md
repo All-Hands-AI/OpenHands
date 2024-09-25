@@ -5,7 +5,7 @@ The following is intended as a primer on debugging OpenHands for Development pur
 ## Server / VSCode
 
 The following `launch.json` will allow debugging the agent, controller and server elements, but not the sandbox (Which
-runs inside docker). It will watch for changes in the `openhands` directory (So updates to files in your workspace will
+runs inside docker). It will ignore changes in the `workspace/` directory (So updates to files here will
 not cause uvicorn to reload):
 
 ```
@@ -27,8 +27,8 @@ not cause uvicorn to reload):
             "args": [
                 "openhands.server.listen:app",
                 "--reload",
-                "--reload-include",
-                "openhands",
+                "--reload-exclude",
+                "workspace/*",
                 "--port",
                 "3000"
             ],
