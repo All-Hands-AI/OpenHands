@@ -61,6 +61,7 @@ INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
 SOFT_TIMEOUT_SECONDS = 5
+HARD_TIMEOUT_SECONDS = 120
 
 
 class RuntimeClient:
@@ -369,7 +370,7 @@ class RuntimeClient:
                 else:
                     output, exit_code = self._execute_bash(
                         command,
-                        timeout=SOFT_TIMEOUT_SECONDS
+                        timeout=HARD_TIMEOUT_SECONDS
                         if not action.blocking
                         else action.timeout,
                         keep_prompt=action.keep_prompt,
