@@ -54,7 +54,6 @@ class AgentController:
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
     agent_configs: dict[str, AgentConfig]
-    agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
@@ -117,8 +116,6 @@ class AgentController:
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
-        if self.agent_task is not None:
-            self.agent_task.cancel()
         await self.set_agent_state_to(AgentState.STOPPED)
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
 
@@ -596,6 +593,6 @@ class AgentController:
         return (
             f'AgentController(id={self.id}, agent={self.agent!r}, '
             f'event_stream={self.event_stream!r}, '
-            f'state={self.state!r}, agent_task={self.agent_task!r}, '
-            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
+            f'state={self.state!r}, delegate={self.delegate!r}, '
+            f'_pending_action={self._pending_action!r})'
         )
