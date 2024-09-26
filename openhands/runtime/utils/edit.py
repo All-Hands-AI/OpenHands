@@ -49,7 +49,7 @@ def _extract_code(string):
     matches = re.findall(pattern, string, re.DOTALL)
     if not matches:
         return None
-    return matches[0].strip()
+    return matches[0]
 
 
 def get_new_file_contents(
