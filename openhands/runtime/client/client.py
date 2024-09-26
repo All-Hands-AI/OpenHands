@@ -61,7 +61,7 @@ INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
 SOFT_TIMEOUT_SECONDS = 5
-HARD_TIMEOUT_SECONDS = 120
+HARD_TIMEOUT_SECONDS = 180
 
 
 class RuntimeClient:
