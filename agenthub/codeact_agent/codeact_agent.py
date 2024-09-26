@@ -5,8 +5,6 @@ from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.exceptions import OperationCancelled
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -206,16 +204,7 @@ class CodeActAgent(Agent):
             ],
         }
 
-        # TODO: move exception handling to agent_controller
-        try:
-            response = self.llm.completion(**params)
-        except OperationCancelled as e:
-            raise e
-        except Exception as e:
-            logger.error(f'{e}')
-            return AgentFinishAction(
-                thought='Agent encountered an error while processing the last action.\nPlease try again.'
-            )
+        response = self.llm.completion(**params)
 
         return self.action_parser.parse(response)
 
