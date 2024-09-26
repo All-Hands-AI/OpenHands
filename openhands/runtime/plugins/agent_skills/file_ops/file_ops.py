@@ -29,7 +29,7 @@ else:
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
-WINDOW = 100
+WINDOW = 500
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
