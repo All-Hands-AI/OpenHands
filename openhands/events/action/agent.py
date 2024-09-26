@@ -45,6 +45,7 @@ class AgentFinishAction(Action):
 
     outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
+    error: str = ''
     action: str = ActionType.FINISH
 
     @property

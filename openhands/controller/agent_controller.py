@@ -200,6 +200,8 @@ class AgentController:
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
+            if action.error:
+                self.state.last_error = action.error
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(action, AgentRejectAction):
             self.state.outputs = action.outputs
