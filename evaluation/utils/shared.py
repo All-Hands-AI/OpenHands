@@ -375,18 +375,27 @@ def reset_logger_for_multiprocessing(
     # Remove all existing handlers from logger
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
-    # add back the console handler to print ONE line
-    logger.addHandler(get_console_handler())
+
+    # add console handler to print ONE line
+    console_handler = get_console_handler(log_level=logging.INFO)
+    console_handler.setFormatter(
+        logging.Formatter(
+            f'Instance {instance_id} - ' + '%(asctime)s - %(levelname)s - %(message)s'
+        )
+    )
+    logger.addHandler(console_handler)
     logger.info(
         f'Starting evaluation for instance {instance_id}.\n'
         f'Hint: run "tail -f {log_file}" to see live logs in a separate shell'
     )
-    # Remove all existing handlers from logger
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
+    # Only log WARNING or higher to console
+    console_handler.setLevel(logging.WARNING)
+
+    # Log INFO and above to file
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(
         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
+    file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)

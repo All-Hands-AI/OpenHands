@@ -14,20 +14,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Set up environment
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          poetry install --without evaluation,llama-index
-          poetry run playwright install --with-deps chromium
-          wget https://huggingface.co/BAAI/bge-small-en-v1.5/raw/main/1_Pooling/config.json -P /tmp/llama_index/models--BAAI--bge-small-en-v1.5/snapshots/5c38ec7c405ec4b44b94cc5a9bb96e735b38267a/1_Pooling/
+          cache: 'poetry'
+      - name: Install Python dependencies using Poetry
+        run: poetry install --without evaluation,llama-index
+      - name: Build Environment
+        run: make build
       - name: Run tests
         run: |
           set -e
-          poetry run python openhands/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
+          poetry run python3 openhands/core/main.py -t "do a flip" -d ./workspace/ -c DummyAgent
       - name: Check exit code
         run: |
           if [ $? -ne 0 ]; then
