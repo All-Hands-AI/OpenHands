@@ -8,7 +8,7 @@ from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
 
 # TODO: move `content` into `extras`
-TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
+TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation', 'timeout']
 UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause']
 
 DELETE_FROM_MEMORY_EXTRAS = {
@@ -58,6 +58,8 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
+        if key == 'timeout' and d.get('timeout') is None:
+            d.pop('timeout', None)
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
