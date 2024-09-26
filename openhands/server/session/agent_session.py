@@ -8,6 +8,9 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.agent import AgentState
+from openhands.events.action.agent import ChangeAgentStateAction
+from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
@@ -72,6 +75,19 @@ class AgentSession:
         self.thread = Thread(target=self._run, daemon=True)
         self.thread.start()
 
+        coro = self._start(runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs, status_message_callback)
+        asyncio.run_coroutine_threadsafe(coro, self.loop) # type: ignore
+
+    async def _start(self,
+        runtime_name: str,
+        config: AppConfig,
+        agent: Agent,
+        max_iterations: int,
+        max_budget_per_task: float | None = None,
+        agent_to_llm_config: dict[str, LLMConfig] | None = None,
+        agent_configs: dict[str, AgentConfig] | None = None,
+        status_message_callback: Optional[Callable] = None,
+    ):
         self._create_security_analyzer(config.security.security_analyzer)
         self._create_runtime(runtime_name, config, agent, status_message_callback)
         self._create_controller(
@@ -82,9 +98,12 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
-        
-        if self.controller is not None:
-            self.controller.agent_task = asyncio.run_coroutine_threadsafe(self.controller.start_step_loop(), self.loop) # type: ignore
+        self.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+        )
+        if self.controller:
+            self.controller.agent_task = self.controller.start_step_loop()   
+            await self.controller.agent_task # type: ignore
 
     def _run(self):
         asyncio.set_event_loop(self.loop)

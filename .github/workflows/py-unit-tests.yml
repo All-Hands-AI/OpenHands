@@ -89,6 +89,9 @@ jobs:
           sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
       - name: Build Environment
         run: make build
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       - name: Run Tests
         run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml ./tests/unit
       - name: Upload coverage to Codecov
@@ -107,6 +110,9 @@ jobs:
         python-version: ['3.11']
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python

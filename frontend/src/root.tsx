@@ -32,14 +32,13 @@ import {
   maybeMigrateSettings,
   settingsAreUpToDate,
 } from "./services/settings";
-import { ContextMenu } from "./components/context-menu/context-menu";
-import { ContextMenuListItem } from "./components/context-menu/context-menu-list-item";
-import { ContextMenuSeparator } from "./components/context-menu/context-menu-separator";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
 import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
 import DefaultUserAvatar from "./assets/default-user.svg?react";
 import i18n from "./i18n";
+import { cn } from "./utils/utils";
+import { AccountSettingsContextMenu } from "./components/account-settings-context-menu";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -67,11 +66,8 @@ export const clientLoader = async () => {
   const agents = getAgents();
   const securityAnalyzers = retrieveSecurityAnalyzers();
 
-  let user: GitHubUser | null = null;
-  if (ghToken) {
-    const data = await retrieveGitHubUser(ghToken);
-    if (!isGitHubErrorReponse(data)) user = data;
-  }
+  let user: GitHubUser | GitHubErrorReponse | null = null;
+  if (ghToken) user = await retrieveGitHubUser(ghToken);
 
   let settingsIsUpdated = false;
   if (!settingsAreUpToDate()) {
@@ -117,26 +113,39 @@ export default function App() {
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
 
+  React.useEffect(() => {
+    if (isGitHubErrorReponse(user)) {
+      setAccountSettingsModalOpen(true);
+    }
+  }, [user]);
+
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
       <aside className="px-1 flex flex-col gap-[15px]">
-        <AllHandsLogo width={34} height={23} />
+        <button
+          type="button"
+          aria-label="All Hands Logo"
+          onClick={() => setStartNewProjectModalIsOpen(true)}
+        >
+          <AllHandsLogo width={34} height={23} />
+        </button>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <div className="w-8 h-8 relative">
             <button
               type="button"
-              className="bg-white w-8 h-8 rounded-full flex items-center justify-center"
+              className={cn(
+                "bg-white w-8 h-8 rounded-full flex items-center justify-center",
+                fetcher.state !== "idle" && "bg-transparent",
+              )}
               onClick={() => setAccountContextMenuIsVisible((prev) => !prev)}
             >
               {!user && fetcher.state === "idle" && (
                 <DefaultUserAvatar width={20} height={20} />
               )}
-              {!user &&
-                (fetcher.state === "submitting" ||
-                  fetcher.state === "loading") && (
-                  <LoadingSpinner size="small" />
-                )}
-              {user && (
+              {!user && fetcher.state !== "idle" && (
+                <LoadingSpinner size="small" />
+              )}
+              {user && !isGitHubErrorReponse(user) && (
                 <img
                   src={user.avatar_url}
                   alt="User avatar"
@@ -144,37 +153,25 @@ export default function App() {
                 />
               )}
             </button>
-
             {accountContextMenuIsVisible && (
-              <ContextMenu className="absolute left-full -top-1 z-10">
-                <ContextMenuListItem
-                  onClick={() => {
-                    setAccountContextMenuIsVisible(false);
-                    setAccountSettingsModalOpen(true);
-                  }}
-                >
-                  Account Settings
-                </ContextMenuListItem>
-                {user && (
-                  <>
-                    <ContextMenuSeparator />
-                    <ContextMenuListItem
-                      onClick={() => {
-                        submit(
-                          {},
-                          {
-                            method: "POST",
-                            action: "/logout",
-                            navigate: false,
-                          },
-                        );
-                      }}
-                    >
-                      Logout
-                    </ContextMenuListItem>
-                  </>
-                )}
-              </ContextMenu>
+              <AccountSettingsContextMenu
+                isLoggedIn={!!user}
+                onClose={() => setAccountContextMenuIsVisible(false)}
+                onClickAccountSettings={() => {
+                  setAccountContextMenuIsVisible(false);
+                  setAccountSettingsModalOpen(true);
+                }}
+                onLogout={() => {
+                  submit(
+                    {},
+                    {
+                      method: "POST",
+                      action: "/logout",
+                      navigate: false,
+                    },
+                  );
+                }}
+              />
             )}
           </div>
           <button
@@ -236,6 +233,7 @@ export default function App() {
             <AccountSettingsModal
               onClose={() => setAccountSettingsModalOpen(false)}
               selectedLanguage={settings.LANGUAGE}
+              gitHubError={isGitHubErrorReponse(user)}
             />
           </ModalBackdrop>
         )}
@@ -249,6 +247,7 @@ export default function App() {
                 submit(new FormData(), {
                   method: "POST",
                   action: "/new-session",
+                  replace: true,
                 });
               }}
               onCancel={() => setStartNewProjectModalIsOpen(false)}

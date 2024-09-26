@@ -7,6 +7,7 @@ import AgentStatusBar from "./AgentStatusBar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
 import { clientLoader as rootClientLoader } from "#/root";
 import { RootState } from "#/store";
+import { isGitHubErrorReponse } from "#/api/github";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -26,7 +27,10 @@ export function Controls({
 
   const projectMenuCardData = React.useMemo(
     () =>
-      rootData?.user && selectedRepository && lastCommitData
+      rootData?.user &&
+      !isGitHubErrorReponse(rootData.user) &&
+      selectedRepository &&
+      lastCommitData
         ? {
             avatar: rootData.user.avatar_url,
             repoName: selectedRepository,
