@@ -31,26 +31,41 @@ The following `launch.json` will allow debugging the agent, controller and serve
                 "3000"
             ],
             "justMyCode": false
-        },
-        {
-            "name": "D: CodeAct",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "openhands.core.main",
-            "args": [
-                "-t",
-                "Ask me what your task is.",
-                "-d",
-                "/home/user/workspace",
-                "-c",
-                "CodeActAgent",
-                "-l",
-                "llm.o1",
-                "-n",
-                "prompts"
-            ],
-            "justMyCode": false
         }
     ]
 }
 ```
+
+More specific debugging configurations which include more parameters may be specified:
+
+```
+    ...
+    {
+      "name": "Debug CodeAct",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "openhands.core.main",
+      "args": [
+        "-t",
+        "Ask me what your task is.",
+        "-d",
+        "${workspaceFolder}/workspace",
+        "-c",
+        "CodeActAgent",
+        "-l",
+        "llm.o1",
+        "-n",
+        "prompts"
+      ],
+      "justMyCode": false
+    }
+    ...
+```
+
+Values in the snippet above can be updated such that:
+
+    * *t*: the task
+    * *d*: the openhands workspace directory
+    * *c*: the agent
+    * *l*: the LLM config (pre-defined in config.toml)
+    * *n*: session name (e.g. eventstream name)
