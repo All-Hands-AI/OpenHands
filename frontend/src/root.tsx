@@ -247,6 +247,7 @@ export default function App() {
                 submit(new FormData(), {
                   method: "POST",
                   action: "/new-session",
+                  replace: true,
                 });
               }}
               onCancel={() => setStartNewProjectModalIsOpen(false)}

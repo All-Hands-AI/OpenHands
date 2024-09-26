@@ -92,12 +92,12 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
     const formData = new FormData();
     if (importedProjectZip) {
       formData.append("imported-project", importedProjectZip);
+      fetcher.submit(formData, {
+        method: "POST",
+        action: "/upload-initial-files",
+        encType: "multipart/form-data",
+      });
     }
-    fetcher.submit(formData, {
-      method: "POST",
-      action: "/upload-initial-files",
-      encType: "multipart/form-data",
-    });
   };
 
   return (
@@ -118,6 +118,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         method="post"
         className="flex flex-col items-center gap-2"
         onSubmit={handleSubmitForm}
+        replace
       >
         <SuggestionBubble
           suggestion={suggestion}
