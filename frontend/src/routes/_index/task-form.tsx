@@ -129,7 +129,11 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
           <input
             name="q"
             type="text"
-            placeholder="What do you want to build?"
+            placeholder={
+              selectedRepository
+                ? `What would you like to change in ${selectedRepository}`
+                : "What do you want to build?"
+            }
             onChange={handleChange}
             value={text}
             className={cn(
