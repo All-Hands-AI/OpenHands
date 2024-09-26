@@ -18,8 +18,8 @@ from openhands.llm.llm import LLM
 def mock_logger(monkeypatch):
     # suppress logging of completion data to file
     mock_logger = MagicMock()
-    monkeypatch.setattr('openhands.llm.llm.llm_prompt_logger', mock_logger)
-    monkeypatch.setattr('openhands.llm.llm.llm_response_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.debug_mixin.llm_prompt_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.debug_mixin.llm_response_logger', mock_logger)
     return mock_logger
 
 

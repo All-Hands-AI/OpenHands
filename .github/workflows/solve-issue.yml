@@ -21,6 +21,9 @@ jobs:
     steps:
     - name: install git, github cli
       run: apt-get install -y git gh
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v3
     - name: Checkout Repository
       uses: actions/checkout@v4
     - name: Write Task File
