@@ -228,14 +228,21 @@ class CodeActActionParserFileEdit(ActionParser):
                 error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit.'
             )
 
-        if start and not start.isdigit():
-            raise ActionParseError(
-                error=f'FileEditAction detected but `start` is not a valid integer: {start}'
-            )
-        if end and not end.isdigit():
-            raise ActionParseError(
-                error=f'FileEditAction detected but `end` is not a valid integer: {end}'
-            )
+        if start:
+            try:
+                int(start)
+            except ValueError:
+                raise ActionParseError(
+                    error=f'FileEditAction detected but `start` is not a valid integer: {start}'
+                )
+
+        if end:
+            try:
+                int(end)
+            except ValueError:
+                raise ActionParseError(
+                    error=f'FileEditAction detected but `end` is not a valid integer: {end}'
+                )
 
         return True
 
