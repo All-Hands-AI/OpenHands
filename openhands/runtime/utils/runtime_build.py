@@ -21,7 +21,6 @@ def get_runtime_image_repo():
 def _put_source_code_to_dir(temp_dir: str):
     """Builds the project source tarball directly in temp_dir and unpacks it.
     The OpenHands source code ends up in the temp_dir/code directory.
-
     Parameters:
     - temp_dir (str): The directory to put the source code in
     """
@@ -29,22 +28,40 @@ def _put_source_code_to_dir(temp_dir: str):
         raise RuntimeError(f'Temp directory {temp_dir} does not exist')
 
     package_name = 'openhands-ai'
+    dest_dir = os.path.join(temp_dir, 'code')
+
     try:
+        # Try to get the source directory from the installed package
         distribution = importlib.metadata.distribution(package_name)
         source_dir = os.path.dirname(distribution.locate_file(package_name))
-        dest_dir = os.path.join(temp_dir, 'code')
-        for package_name in ['openhands']:
-            package_folder = os.path.join(source_dir, package_name)
-            shutil.copytree(package_folder, os.path.join(dest_dir, package_name))
-        shutil.move(
-            os.path.join(dest_dir, 'openhands/pyproject.toml'), os.path.join(dest_dir)
-        )
-        shutil.move(
-            os.path.join(dest_dir, 'openhands/poetry.lock'), os.path.join(dest_dir)
-        )
-        logger.info(f'Unpacked source code directory: {dest_dir}')
+        openhands_dir = os.path.join(source_dir, 'openhands')
     except importlib.metadata.PackageNotFoundError:
-        raise RuntimeError(f'Package {package_name} not found')
+        pass
+
+    if openhands_dir is None or not os.path.isdir(openhands_dir):
+        # If package is not found, use the current working directory as source
+        source_dir = os.getcwd()
+        openhands_dir = os.path.join(source_dir, 'openhands')
+        logger.info(
+            f'Package {package_name} not found. Using current directory: {source_dir}'
+        )
+
+    # Copy the 'openhands' directory
+    if os.path.isdir(openhands_dir):
+        shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
+    else:
+        raise RuntimeError(f"'openhands' directory not found in {source_dir}")
+
+    # Move pyproject.toml and poetry.lock files
+    for file in ['pyproject.toml', 'poetry.lock']:
+        src_file = os.path.join(source_dir, file)
+        dest_file = os.path.join(dest_dir, file)
+        if os.path.isfile(src_file):
+            shutil.copy2(src_file, dest_file)
+        else:
+            logger.warning(f'{file} not found in {source_dir}')
+
+    logger.info(f'Unpacked source code directory: {dest_dir}')
 
 
 def _generate_dockerfile(
