@@ -150,17 +150,16 @@ function DetailedProjectMenuCard({
         </ContextMenu>
       )}
       <div className="flex flex-col">
-        <div className="flex items-center gap-2">
+        <a
+          href={`https://github.com/${repoName}`}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="flex items-center gap-2"
+        >
           <img src={avatar} alt="" className="w-4 h-4 rounded-full" />
-          <a
-            href={`https://github.com/${repoName}`}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            <span className="text-sm leading-6 font-semibold">{repoName}</span>
-          </a>
+          <span className="text-sm leading-6 font-semibold">{repoName}</span>
           <ExternalLinkIcon width={16} height={16} />
-        </div>
+        </a>
         <a
           href={lastCommit.html_url}
           target="_blank"
