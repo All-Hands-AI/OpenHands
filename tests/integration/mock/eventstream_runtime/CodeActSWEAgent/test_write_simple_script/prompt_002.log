@@ -109,7 +109,6 @@ append_file(file_name: str, content: str) -> None:
     It appends text `content` to the end of the specified file, ideal after a `create_file`!
     Args:
     file_name: str: The name of the file to edit.
-    line_number: int: The line number (starting from 1) to insert the content after.
     content: str: The content to insert.
 
 search_dir(search_term: str, dir_path: str = './') -> None:
