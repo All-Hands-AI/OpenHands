@@ -21,9 +21,6 @@ from litellm.exceptions import (
 )
 from litellm.types.utils import CostPerToken
 
-from openhands.core.exceptions import (
-    LLMResponseError,
-)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
@@ -203,10 +200,7 @@ class LLM(RetryMixin, DebugMixin):
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
-        try:
-            return self._completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._completion
 
     def vision_is_active(self):
         return not self.config.disable_vision and self._supports_vision()
