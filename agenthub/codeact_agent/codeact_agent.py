@@ -228,7 +228,7 @@ class CodeActAgent(Agent):
         except OperationCancelled as e:
             raise e
         except Exception as e:
-            logger.error(f'{e}')
+            logger.error(f'LLM exception: {str(e)}')
             error_message = '{}: {}'.format(type(e).__name__, str(e).split('\n')[0])
             return AgentFinishAction(
                 thought=f'Agent encountered an error while processing the last action.\nError: {error_message}\nPlease try again.'
@@ -237,7 +237,7 @@ class CodeActAgent(Agent):
         try:
             return self.action_parser.parse(response)
         except ActionParseError as e:
-            logger.error(f'{e}')
+            logger.error(f'Agent Action Parser error: {str(e)}')
             return NullAction(next_obs=ErrorObservation(content=e.error))
 
     def _get_messages(self, state: State) -> list[Message]:
