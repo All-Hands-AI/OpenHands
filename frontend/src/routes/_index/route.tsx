@@ -57,7 +57,7 @@ function Home() {
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
 
   return (
-    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center gap-16 relative">
+    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative">
       {navigation.state === "loading" && (
         <div className="absolute top-8 right-8">
           <LoadingSpinner size="small" />
