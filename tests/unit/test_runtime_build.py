@@ -476,7 +476,7 @@ def test_list_dangling_images():
                 size_gb = _format_size_to_gb(image.attrs['Size'])
                 logger.info(f'Dangling image: {image.tags}, Size: {size_gb} GB')
             else:
-                logger.info(f'Dangling image: {image.tags}, Size: N/A')
+                logger.info(f'Dangling image: {image.tags}, Size: n/a')
     else:
         logger.info('No dangling images found')
 

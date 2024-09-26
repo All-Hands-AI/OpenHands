@@ -118,20 +118,22 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed: {e}')
-            logger.error(f'Command output: {e.output}')
+            logger.error(f'Image build failed:\n{e}')
+            logger.error(f'Command output:\n{e.output}')
             raise
 
         except subprocess.TimeoutExpired:
             logger.error('Image build timed out')
             raise
 
-        except FileNotFoundError:
-            logger.error('Python executable not found')
+        except FileNotFoundError as e:
+            logger.error(f'Python executable not found: {e}')
             raise
 
-        except PermissionError:
-            logger.error('Permission denied when trying to execute the build command')
+        except PermissionError as e:
+            logger.error(
+                f'Permission denied when trying to execute the build command:\n{e}'
+            )
             raise
 
         except Exception as e:
@@ -325,7 +327,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 return False
 
         if not os.access(cache_dir, os.W_OK):
-            logger.debug(f'Cache directory {cache_dir} is not writable')
+            logger.warning(
+                f'Cache directory {cache_dir} is not writable. Caches will not be used for Docker builds.'
+            )
             return False
 
         self._prune_old_cache_files(cache_dir)
