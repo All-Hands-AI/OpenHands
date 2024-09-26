@@ -94,13 +94,13 @@ function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
-    const trimmedCustomMessage = curStatusMessage.message.trim();
+    const trimmedCustomMessage = curStatusMessage.status.trim();
     if (trimmedCustomMessage) {
       setStatusMessage(t(trimmedCustomMessage));
     } else {
       setStatusMessage(AgentStatusMap[curAgentState].message);
     }
-  }, [curAgentState, curStatusMessage.message]);
+  }, [curAgentState, curStatusMessage.status]);
 
   return (
     <div className="flex flex-col items-center">

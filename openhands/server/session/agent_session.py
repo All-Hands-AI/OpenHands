@@ -1,5 +1,4 @@
 import asyncio
-
 from threading import Thread
 from typing import Callable, Optional
 
@@ -76,10 +75,20 @@ class AgentSession:
         self.thread = Thread(target=self._run, daemon=True)
         self.thread.start()
 
-        coro = self._start(runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs, status_message_callback)
-        asyncio.run_coroutine_threadsafe(coro, self.loop) # type: ignore
+        coro = self._start(
+            runtime_name,
+            config,
+            agent,
+            max_iterations,
+            max_budget_per_task,
+            agent_to_llm_config,
+            agent_configs,
+            status_message_callback,
+        )
+        asyncio.run_coroutine_threadsafe(coro, self.loop)  # type: ignore
 
-    async def _start(self,
+    async def _start(
+        self,
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
@@ -103,8 +112,8 @@ class AgentSession:
             ChangeAgentStateAction(AgentState.INIT), EventSource.USER
         )
         if self.controller:
-            self.controller.agent_task = self.controller.start_step_loop()   
-            await self.controller.agent_task # type: ignore
+            self.controller.agent_task = self.controller.start_step_loop()
+            await self.controller.agent_task  # type: ignore
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
