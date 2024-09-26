@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import traceback
 from typing import Type
 
@@ -36,6 +37,7 @@ from openhands.events.observation import (
     ErrorObservation,
     Observation,
 )
+from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
 
@@ -54,7 +56,7 @@ class AgentController:
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
     agent_configs: dict[str, AgentConfig]
-    agent_task: asyncio.Task | None = None
+    agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
@@ -115,9 +117,6 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
 
-        if not is_delegate:
-            self.agent_task = asyncio.create_task(self._start_step_loop())
-
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         if self.agent_task is not None:
@@ -149,7 +148,7 @@ class AgentController:
             self.state.last_error += f': {exception}'
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
-    async def _start_step_loop(self):
+    async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
 
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
@@ -223,7 +222,13 @@ class AgentController:
         ):
             return
 
-        logger.info(observation, extra={'msg_type': 'OBSERVATION'})
+        # Make sure we print the observation in the same way as the LLM sees it
+        observation_to_print = copy.deepcopy(observation)
+        if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
+            observation_to_print.content = truncate_content(
+                observation_to_print.content, self.agent.llm.config.max_message_chars
+            )
+        logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:

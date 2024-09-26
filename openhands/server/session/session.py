@@ -21,7 +21,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
-from openhands.server.session.agent import AgentSession
+from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 
 DEL_DELT_SEC = 60 * 60 * 5
@@ -33,6 +33,7 @@ class Session:
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
+    loop: asyncio.AbstractEventLoop
 
     def __init__(
         self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
@@ -45,6 +46,7 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event
         )
         self.config = config
+        self.loop = asyncio.get_event_loop()
 
     async def close(self):
         self.is_alive = False
@@ -76,9 +78,7 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
         )
         # Extract the agent-relevant arguments from the request
-        args = {
-            key: value for key, value in data.get('args', {}).items() if value != ''
-        }
+        args = {key: value for key, value in data.get('args', {}).items()}
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
         self.config.security.confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
@@ -115,6 +115,7 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
+                status_message_callback=self.queue_status_message,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -122,12 +123,10 @@ class Session:
                 f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
-        self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
-        )
 
     async def on_event(self, event: Event):
-        """Callback function for agent events.
+        """Callback function for events that mainly come from the agent.
+        Event is the base class for any agent action and observation.
 
         Args:
             event: The agent event (Observation or Action).
@@ -137,7 +136,6 @@ class Session:
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
-            logger.info('Server event')
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER and isinstance(
             event, CmdOutputObservation
@@ -174,6 +172,9 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
+        except RuntimeError:
+            self.is_alive = False
+            return False
         except WebSocketDisconnect:
             self.is_alive = False
             return False
@@ -197,3 +198,8 @@ class Session:
             return False
         self.is_alive = data.get('is_alive', False)
         return True
+
+    def queue_status_message(self, message: str):
+        """Queues a status message to be sent asynchronously."""
+        # Ensure the coroutine runs in the main event loop
+        asyncio.run_coroutine_threadsafe(self.send_message(message), self.loop)

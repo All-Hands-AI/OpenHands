@@ -1,5 +1,5 @@
-import { ActionMessage, ObservationMessage } from "./Message";
+import { ActionMessage, ObservationMessage, StatusMessage } from "./Message";
 
-type SocketMessage = ActionMessage | ObservationMessage;
+type SocketMessage = ActionMessage | ObservationMessage | StatusMessage;
 
 export { type SocketMessage };

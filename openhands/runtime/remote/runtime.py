@@ -2,6 +2,7 @@ import os
 import tempfile
 import threading
 import uuid
+from typing import Callable, Optional
 from zipfile import ZipFile
 
 import requests
@@ -55,11 +56,12 @@ class RemoteRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
+        status_message_callback: Optional[Callable] = None,
     ):
         self.config = config
         if self.config.sandbox.api_hostname == 'localhost':
             self.config.sandbox.api_hostname = 'api.all-hands.dev/v0/runtime'
-            logger.warning(
+            logger.info(
                 'Using localhost as the API hostname is not supported in the RemoteRuntime. Please set a proper hostname.\n'
                 'Setting it to default value: api.all-hands.dev/v0/runtime'
             )
@@ -168,7 +170,9 @@ class RemoteRuntime(Runtime):
         )
 
         # Initialize the eventstream and env vars
-        super().__init__(config, event_stream, sid, plugins, env_vars)
+        super().__init__(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
 
         logger.info(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.plugins]}'

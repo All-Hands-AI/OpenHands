@@ -8,6 +8,7 @@ import errorsReducer from "./state/errorsSlice";
 import taskReducer from "./state/taskSlice";
 import jupyterReducer from "./state/jupyterSlice";
 import securityAnalyzerReducer from "./state/securityAnalyzerSlice";
+import statusReducer from "./state/statusSlice";
 
 export const rootReducer = combineReducers({
   browser: browserReducer,
@@ -19,6 +20,7 @@ export const rootReducer = combineReducers({
   agent: agentReducer,
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
+  status: statusReducer,
 });
 
 const store = configureStore({

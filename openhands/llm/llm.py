@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import time
 import warnings
 from functools import partial
@@ -32,7 +33,6 @@ from tenacity import (
 )
 
 from openhands.core.exceptions import (
-    LLMResponseError,
     OperationCancelled,
     UserCancelledError,
 )
@@ -74,6 +74,9 @@ class LLM:
         self.metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported = True
         self.config = copy.deepcopy(config)
+
+        os.environ['OR_SITE_URL'] = self.config.openrouter_site_url
+        os.environ['OR_APP_NAME'] = self.config.openrouter_app_name
 
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
@@ -132,9 +135,6 @@ class LLM:
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        if self.config.drop_params:
-            litellm.drop_params = self.config.drop_params
-
         # This only seems to work with Google as the provider, not with OpenRouter!
         gemini_safety_settings = (
             [
@@ -170,6 +170,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
@@ -298,7 +299,7 @@ class LLM:
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            drop_params=True,
+            drop_params=self.config.drop_params,
             **(
                 {'safety_settings': gemini_safety_settings}
                 if gemini_safety_settings is not None
@@ -496,10 +497,7 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
-        try:
-            return self._completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._completion
 
     @property
     def async_completion(self):
@@ -507,10 +505,7 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
-        try:
-            return self._async_completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._async_completion
 
     @property
     def async_streaming_completion(self):
@@ -518,10 +513,7 @@ class LLM:
 
         Check the complete documentation at https://litellm.vercel.app/docs/providers/ollama#example-usage---streaming--acompletion
         """
-        try:
-            return self._async_streaming_completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._async_streaming_completion
 
     def vision_is_active(self):
         return not self.config.disable_vision and self._supports_vision()
