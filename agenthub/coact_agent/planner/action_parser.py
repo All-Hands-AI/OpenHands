@@ -82,6 +82,14 @@ class CoActActionParserGlobalPlan(ActionParser):
         ), 'self.global_plan should not be None when parse is called'
         thought = action_str.replace(self.global_plan.group(0), '').strip()
         global_plan_actions = self.global_plan.group(1).strip()
+
+        # Some extra processing when doing swe-bench eval: extract text up to and including '--- END ISSUE ---'
+        issue_text_pattern = re.compile(r'(.*--- END ISSUE ---)', re.DOTALL)
+        issue_text_match = issue_text_pattern.match(self.initial_task_str[0])
+
+        if issue_text_match:
+            self.initial_task_str[0] = issue_text_match.group(1)
+
         return AgentDelegateAction(
             agent='CoActExecutorAgent',
             thought=thought,
