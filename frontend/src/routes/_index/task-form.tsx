@@ -9,6 +9,59 @@ import { removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 
+interface MainTextareaInputProps {
+  placeholder: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+}
+
+function MainTextareaInput({
+  placeholder,
+  value,
+  onChange,
+}: MainTextareaInputProps) {
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const adjustHeight = () => {
+    const MAX_LINES = 5;
+
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto"; // Reset to auto to recalculate scroll height
+      const { scrollHeight } = textarea;
+
+      // Calculate based on line height and max lines
+      const lineHeight = parseInt(
+        window.getComputedStyle(textarea).lineHeight,
+        10,
+      );
+      const maxHeight = lineHeight * MAX_LINES;
+
+      textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+    }
+  };
+
+  React.useEffect(() => {
+    adjustHeight();
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      name="q"
+      rows={1}
+      placeholder={placeholder}
+      onChange={onChange}
+      value={value}
+      className={cn(
+        "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
+        "focus:bg-[#525252]",
+        "resize-none",
+      )}
+    />
+  );
+}
+
 const getRandomKey = (obj: Record<string, string>) => {
   const keys = Object.keys(obj);
   const randomKey = keys[Math.floor(Math.random() * keys.length)];
@@ -83,7 +136,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
     setText(value);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
   };
 
@@ -126,9 +179,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
           onRefresh={onRefreshSuggestion}
         />
         <div className="relative">
-          <input
-            name="q"
-            type="text"
+          <MainTextareaInput
             placeholder={
               selectedRepository
                 ? `What would you like to change in ${selectedRepository}`
@@ -136,10 +187,6 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             }
             onChange={handleChange}
             value={text}
-            className={cn(
-              "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
-              "focus:bg-[#525252]",
-            )}
           />
           {!!text && (
             <button
