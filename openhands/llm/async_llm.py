@@ -1,9 +1,10 @@
 import asyncio
 from functools import partial
+from typing import Any
 
 from litellm import completion as litellm_acompletion
 
-from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM, LLM_RETRY_EXCEPTIONS
 from openhands.runtime.utils.shutdown_listener import should_continue
@@ -40,11 +41,15 @@ class AsyncLLM(LLM):
         )
         async def async_completion_wrapper(*args, **kwargs):
             """Wrapper for the litellm acompletion function."""
+            messages: list[dict[str, Any]] | dict[str, Any] = []
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[0] if len(args) > 0 else []
+
+            # work with a list
+            messages = messages if isinstance(messages, list) else [messages]
 
             if not messages:
                 raise ValueError(
@@ -101,7 +106,4 @@ class AsyncLLM(LLM):
     @property
     def async_completion(self):
         """Decorator for the async litellm acompletion function."""
-        try:
-            return self._async_completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._async_completion

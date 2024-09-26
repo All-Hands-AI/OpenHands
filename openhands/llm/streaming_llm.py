@@ -1,7 +1,8 @@
 import asyncio
 from functools import partial
+from typing import Any
 
-from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
 
@@ -37,11 +38,15 @@ class StreamingLLM(AsyncLLM):
             retry_multiplier=self.config.retry_multiplier,
         )
         async def async_streaming_completion_wrapper(*args, **kwargs):
+            messages: list[dict[str, Any]] | dict[str, Any] = []
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
-                messages = args[1] if len(args) > 1 else []
+                messages = args[0] if len(args) > 0 else []
+
+            # work with a list
+            messages = messages if isinstance(messages, list) else [messages]
 
             if not messages:
                 raise ValueError(
@@ -90,7 +95,4 @@ class StreamingLLM(AsyncLLM):
     @property
     def async_streaming_completion(self):
         """Decorator for the async litellm acompletion function with streaming."""
-        try:
-            return self._async_streaming_completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._async_streaming_completion

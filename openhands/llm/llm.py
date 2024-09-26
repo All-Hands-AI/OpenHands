@@ -162,6 +162,7 @@ class LLM(RetryMixin, DebugMixin):
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
+            # we don't support streaming here, thus we get a ModelResponse
             resp: ModelResponse = completion_unwrapped(*args, **kwargs)
 
             # log for evals or other scripts that need the raw completion
