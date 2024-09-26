@@ -46,10 +46,6 @@ class DebugMixin:
                 return element['image_url']['url']
         return str(element)
 
-    def _log_stats(self, stats: str):
-        if stats:
-            logger.info(stats)
-
     # This method should be implemented in the class that uses DebugMixin
     def vision_is_active(self):
         raise NotImplementedError
