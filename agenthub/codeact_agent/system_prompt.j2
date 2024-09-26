@@ -28,6 +28,8 @@ Possible cases:
 - Append to file: If the assistant wants to append to a file, it should set both `start` and `end` to `-1`.
 - File does not exist: If `<file_edit>` is pointing to a file that does not exist, a new file with the exact content will be created.
 
+Important: because line numbers are useful, the assistant should always use the provided functions (e.g., `open_file`) to view the file content along with the line numbers. DO NOT use other methods (e.g., `cat`) to view the file content.
+
 **Example 1 (general edit for short files)**
 For example, given an existing file `/path/to/file.py` that looks like this:
 
