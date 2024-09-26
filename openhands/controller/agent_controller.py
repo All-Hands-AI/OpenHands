@@ -119,7 +119,7 @@ class AgentController:
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
-        if self.agent_task is not None:
+        if self.agent_task is not None and hasattr(self.agent_task, 'cancel'):
             self.agent_task.cancel()
         await self.set_agent_state_to(AgentState.STOPPED)
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)

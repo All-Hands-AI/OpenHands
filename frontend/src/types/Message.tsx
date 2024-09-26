@@ -38,5 +38,5 @@ export interface StatusMessage {
   is_error: boolean;
 
   // A status message to display to the user
-  message: string;
+  status: string;
 }
