@@ -182,7 +182,7 @@ class LLM(RetryMixin, DebugMixin):
                         'messages': messages,
                         'response': resp,
                         'timestamp': time.time(),
-                        'cost': self.completion_cost(resp),
+                        'cost': self._completion_cost(resp),
                     }
                 )
 
@@ -239,7 +239,7 @@ class LLM(RetryMixin, DebugMixin):
         Logs the cost and usage stats of the completion call.
         """
         try:
-            cur_cost = self.completion_cost(response)
+            cur_cost = self._completion_cost(response)
         except Exception:
             cur_cost = 0
 
@@ -305,7 +305,7 @@ class LLM(RetryMixin, DebugMixin):
             # TODO: this is to limit logspam in case token count is not supported
             return 0
 
-    def is_local(self):
+    def _is_local(self):
         """Determines if the system is using a locally running LLM.
 
         Returns:
@@ -320,7 +320,7 @@ class LLM(RetryMixin, DebugMixin):
                 return True
         return False
 
-    def completion_cost(self, response):
+    def _completion_cost(self, response):
         """Calculate the cost of a completion response based on the model.  Local models are treated as free.
         Add the current cost into total cost in metrics.
 
@@ -345,7 +345,7 @@ class LLM(RetryMixin, DebugMixin):
             logger.info(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
-        if not self.is_local():
+        if not self._is_local():
             try:
                 cost = litellm_completion_cost(
                     completion_response=response, **extra_kwargs
