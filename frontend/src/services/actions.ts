@@ -160,9 +160,9 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else if ("observation" in socketMessage) {
-    handleObservationMessage(socketMessage);
   } else if ("message" in socketMessage) {
     handleStatusMessage(socketMessage);
+  } else {
+    handleObservationMessage(socketMessage);
   }
 }
