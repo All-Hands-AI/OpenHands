@@ -40,6 +40,7 @@ import NewProjectIcon from "./assets/new-project.svg?react";
 import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
 import DefaultUserAvatar from "./assets/default-user.svg?react";
 import i18n from "./i18n";
+import { cn } from "./utils/utils";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -131,17 +132,18 @@ export default function App() {
           <div className="w-8 h-8 relative">
             <button
               type="button"
-              className="bg-white w-8 h-8 rounded-full flex items-center justify-center"
+              className={cn(
+                "bg-white w-8 h-8 rounded-full flex items-center justify-center",
+                fetcher.state !== "idle" && "bg-transparent",
+              )}
               onClick={() => setAccountContextMenuIsVisible((prev) => !prev)}
             >
               {!user && fetcher.state === "idle" && (
                 <DefaultUserAvatar width={20} height={20} />
               )}
-              {!user &&
-                (fetcher.state === "submitting" ||
-                  fetcher.state === "loading") && (
-                  <LoadingSpinner size="small" />
-                )}
+              {!user && fetcher.state !== "idle" && (
+                <LoadingSpinner size="small" />
+              )}
               {user && (
                 <img
                   src={user.avatar_url}
