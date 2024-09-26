@@ -61,7 +61,7 @@ class RemoteRuntime(Runtime):
         self.config = config
         if self.config.sandbox.api_hostname == 'localhost':
             self.config.sandbox.api_hostname = 'api.all-hands.dev/v0/runtime'
-            logger.warning(
+            logger.info(
                 'Using localhost as the API hostname is not supported in the RemoteRuntime. Please set a proper hostname.\n'
                 'Setting it to default value: api.all-hands.dev/v0/runtime'
             )
