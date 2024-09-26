@@ -103,12 +103,12 @@ class AgentSession:
             ChangeAgentStateAction(AgentState.INIT), EventSource.USER
         )
         if self.controller:
-            self.controller.agent_task = self.controller.start_step_loop()   
-            await self.controller.agent_task # type: ignore
+            self.controller.agent_task = self.controller.start_step_loop() # type: ignore
+            await self.controller.agent_task
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
-        self.loop.run_forever()
+        self.loop.run_forever() # type: ignore
 
     async def close(self):
         """Closes the Agent session"""
@@ -124,7 +124,7 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.loop.call_soon_threadsafe(self.loop.stop) # type: ignore
         self.thread.join()
 
         self._closed = True
