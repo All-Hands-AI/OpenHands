@@ -1,7 +1,6 @@
 import asyncio
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
-from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 
 from .async_llm import AsyncLLM
@@ -29,9 +28,12 @@ class StreamingLLM(AsyncLLM):
             else:
                 messages = args[1] if len(args) > 1 else []
 
-            # log the prompt
-            debug_message = self._get_debug_message(messages)
-            llm_prompt_logger.debug(debug_message)
+            if not messages:
+                raise ValueError(
+                    'The messages list is empty. At least one message is required.'
+                )
+
+            self.log_prompt(messages)
 
             try:
                 # Directly call and await litellm_acompletion
@@ -51,7 +53,7 @@ class StreamingLLM(AsyncLLM):
                     # with streaming, it is "delta", not "message"!
                     message_back = chunk['choices'][0]['delta'].get('content', '')
                     if message_back:
-                        llm_response_logger.debug(message_back)
+                        self.log_response(message_back)
                     self._post_completion(chunk)
 
                     yield chunk

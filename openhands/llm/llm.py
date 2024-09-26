@@ -24,16 +24,14 @@ from litellm.types.utils import CostPerToken
 from openhands.core.exceptions import (
     LLMResponseError,
 )
-from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
 
+from .debug_mixin import DebugMixin
 from .retry_mixin import RetryMixin
 
 __all__ = ['LLM']
-
-message_separator = '\n\n----------\n\n'
 
 cache_prompting_supported_models = [
     'claude-3-5-sonnet-20240620',
@@ -41,7 +39,7 @@ cache_prompting_supported_models = [
 ]
 
 
-class LLM(RetryMixin):
+class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
 
     Attributes:
@@ -159,8 +157,12 @@ class LLM(RetryMixin):
             else:
                 messages = args[1] if len(args) > 1 else []
 
-            # this serves to prevent empty messages and logging the messages
-            debug_message = self._get_debug_message(messages)
+            if not messages:
+                raise ValueError(
+                    'The messages list is empty. At least one message is required.'
+                )
+
+            self.log_prompt(messages)
 
             if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching
@@ -169,13 +171,7 @@ class LLM(RetryMixin):
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
-            # skip if messages is empty (thus debug_message is empty)
-            if debug_message:
-                llm_prompt_logger.debug(debug_message)
-                resp = completion_unwrapped(*args, **kwargs)
-            else:
-                logger.debug('No completion messages!')
-                resp = {'choices': [{'message': {'content': ''}}]}
+            resp = completion_unwrapped(*args, **kwargs)
 
             if self.config.log_completions:
                 self.llm_completions.append(
@@ -187,49 +183,14 @@ class LLM(RetryMixin):
                     }
                 )
 
-            # log the response
             message_back = resp['choices'][0]['message']['content']
-            if message_back:
-                llm_response_logger.debug(message_back)
+            self.log_response(message_back)
 
-                # post-process to log costs
-                self._post_completion(resp)
+            self._post_completion(resp)
 
             return resp
 
-        self._completion = wrapper  # type: ignore
-
-    def _get_debug_message(self, messages):
-        if not messages:
-            return ''
-
-        messages = messages if isinstance(messages, list) else [messages]
-        return message_separator.join(
-            self._format_message_content(msg) for msg in messages if msg['content']
-        )
-
-    def _format_message_content(self, message):
-        content = message['content']
-        if isinstance(content, list):
-            return self._format_list_content(content)
-        return str(content)
-
-    def _format_list_content(self, content_list):
-        return '\n'.join(
-            self._format_content_element(element) for element in content_list
-        )
-
-    def _format_content_element(self, element):
-        if isinstance(element, dict):
-            if 'text' in element:
-                return element['text']
-            if (
-                self.vision_is_active()
-                and 'image_url' in element
-                and 'url' in element['image_url']
-            ):
-                return element['image_url']['url']
-        return str(element)
+        self._completion = wrapper
 
     @property
     def completion(self):

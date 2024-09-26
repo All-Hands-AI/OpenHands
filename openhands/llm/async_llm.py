@@ -4,7 +4,6 @@ from functools import partial
 from litellm import completion as litellm_acompletion
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
-from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils.shutdown_listener import should_continue
 
@@ -42,8 +41,12 @@ class AsyncLLM(LLM):
             else:
                 messages = args[1] if len(args) > 1 else []
 
-            # this serves to prevent empty messages and logging the messages
-            debug_message = self._get_debug_message(messages)
+            if not messages:
+                raise ValueError(
+                    'The messages list is empty. At least one message is required.'
+                )
+
+            self.log_prompt(messages)
 
             async def check_stopped():
                 while should_continue():
@@ -59,19 +62,10 @@ class AsyncLLM(LLM):
 
             try:
                 # Directly call and await litellm_acompletion
-                if debug_message:
-                    llm_prompt_logger.debug(debug_message)
-                    resp = await async_completion_unwrapped(*args, **kwargs)
-                else:
-                    logger.debug('No completion messages!')
-                    resp = {'choices': [{'message': {'content': ''}}]}
+                resp = await async_completion_unwrapped(*args, **kwargs)
 
-                # skip if messages is empty (thus debug_message is empty)
-                if debug_message:
-                    message_back = resp['choices'][0]['message']['content']
-                    llm_response_logger.debug(message_back)
-                else:
-                    resp = {'choices': [{'message': {'content': ''}}]}
+                message_back = resp['choices'][0]['message']['content']
+                self.log_response(message_back)
                 self._post_completion(resp)
 
                 # We do not support streaming in this method, thus return resp
