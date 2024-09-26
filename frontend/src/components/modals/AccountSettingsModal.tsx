@@ -13,11 +13,13 @@ import { AvailableLanguages } from "#/i18n";
 interface AccountSettingsModalProps {
   onClose: () => void;
   selectedLanguage: string;
+  gitHubError: boolean;
 }
 
 function AccountSettingsModal({
   onClose,
   selectedLanguage,
+  gitHubError,
 }: AccountSettingsModalProps) {
   const data = useRouteLoaderData<typeof clientLoader>("root");
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
@@ -78,15 +80,25 @@ function AccountSettingsModal({
             type="password"
             defaultValue={data?.ghToken ?? ""}
           />
-          <ModalButton
-            variant="text-like"
-            text="Disconnect"
-            onClick={() => {
-              settingsFetcher.submit({}, { method: "POST", action: "/logout" });
-              onClose();
-            }}
-            className="text-danger self-start"
-          />
+          {gitHubError && (
+            <p className="text-danger text-xs">
+              GitHub token is invalid. Please try again.
+            </p>
+          )}
+          {data?.ghToken && !gitHubError && (
+            <ModalButton
+              variant="text-like"
+              text="Disconnect"
+              onClick={() => {
+                settingsFetcher.submit(
+                  {},
+                  { method: "POST", action: "/logout" },
+                );
+                onClose();
+              }}
+              className="text-danger self-start"
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2 w-full">

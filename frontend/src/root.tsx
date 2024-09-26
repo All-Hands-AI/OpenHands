@@ -68,11 +68,8 @@ export const clientLoader = async () => {
   const agents = getAgents();
   const securityAnalyzers = retrieveSecurityAnalyzers();
 
-  let user: GitHubUser | null = null;
-  if (ghToken) {
-    const data = await retrieveGitHubUser(ghToken);
-    if (!isGitHubErrorReponse(data)) user = data;
-  }
+  let user: GitHubUser | GitHubErrorReponse | null = null;
+  if (ghToken) user = await retrieveGitHubUser(ghToken);
 
   let settingsIsUpdated = false;
   if (!settingsAreUpToDate()) {
@@ -118,6 +115,12 @@ export default function App() {
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
 
+  React.useEffect(() => {
+    if (isGitHubErrorReponse(user)) {
+      setAccountSettingsModalOpen(true);
+    }
+  }, [user]);
+
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
       <aside className="px-1 flex flex-col gap-[15px]">
@@ -144,7 +147,7 @@ export default function App() {
               {!user && fetcher.state !== "idle" && (
                 <LoadingSpinner size="small" />
               )}
-              {user && (
+              {user && !isGitHubErrorReponse(user) && (
                 <img
                   src={user.avatar_url}
                   alt="User avatar"
@@ -244,6 +247,7 @@ export default function App() {
             <AccountSettingsModal
               onClose={() => setAccountSettingsModalOpen(false)}
               selectedLanguage={settings.LANGUAGE}
+              gitHubError={isGitHubErrorReponse(user)}
             />
           </ModalBackdrop>
         )}

@@ -1,3 +1,9 @@
+interface GitHubErrorReponse {
+  message: string;
+  documentation_url: string;
+  status: number;
+}
+
 interface GitHubUser {
   id: number;
   login: string;

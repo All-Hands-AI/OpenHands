@@ -1,9 +1,3 @@
-interface GitHubErrorReponse {
-  message: string;
-  documentation_url: string;
-  status: number;
-}
-
 /**
  * Generates the headers for the GitHub API
  * @param token The GitHub token
@@ -92,6 +86,8 @@ export const retrieveAllGitHubUserRepositories = async (
 
   for (const response of responses) {
     if (response.ok) {
+      // TODO: Is there a way to avoid using await within a loop?
+      // eslint-disable-next-line no-await-in-loop
       const data = await response.json();
       repositories.push(...data);
     } else {
