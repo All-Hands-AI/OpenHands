@@ -1,7 +1,7 @@
 from typing import Any, Callable, Type
 
 import requests
-from requests.exceptions import ConnectionError, Timeout
+from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
 from tenacity import (
     retry,
     retry_if_exception,
@@ -9,6 +9,7 @@ from tenacity import (
     stop_after_delay,
     wait_exponential,
 )
+from urllib3.exceptions import IncompleteRead
 
 
 def is_server_error(exception):
@@ -28,6 +29,8 @@ def is_404_error(exception):
 DEFAULT_RETRY_EXCEPTIONS = [
     ConnectionError,
     Timeout,
+    IncompleteRead,
+    ChunkedEncodingError,
 ]
 
 
@@ -47,7 +50,7 @@ def send_request(
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
-    kwargs["timeout"] = timeout
+    kwargs['timeout'] = timeout
 
     @retry(
         stop=stop_after_delay(timeout),
