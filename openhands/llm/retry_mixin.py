@@ -33,15 +33,9 @@ class RetryMixin:
         def custom_completion_wait(self, retry_state):
             """Custom wait for completion."""
             exception = retry_state.outcome.exception() if retry_state.outcome else None
-            if exception is None:
-                return 0
-
-            # retry_min_wait = config.retry_min_wait
-            # retry_max_wait = config.retry_max_wait
 
             # rate limit errors
             exception_type = type(exception).__name__
-            logger.error(rf'\exception_type: {exception_type}\n')
 
             if exception_type == 'RateLimitError':
                 retry_min_wait = 60
