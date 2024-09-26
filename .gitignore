@@ -26,8 +26,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 requirements.txt
-openhands/poetry.lock
-openhands/pyproject.toml
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
