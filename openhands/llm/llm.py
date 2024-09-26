@@ -157,11 +157,13 @@ class LLM(RetryMixin, DebugMixin):
             else:
                 messages = args[1] if len(args) > 1 else []
 
+            # if we have no messages, something went very wrong
             if not messages:
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
                 )
 
+            # log the entire LLM prompt
             self.log_prompt(messages)
 
             if self.is_caching_prompt_active():
@@ -173,6 +175,7 @@ class LLM(RetryMixin, DebugMixin):
 
             resp = completion_unwrapped(*args, **kwargs)
 
+            # log for evals or other scripts that need the raw completion
             if self.config.log_completions:
                 self.llm_completions.append(
                     {
@@ -184,8 +187,11 @@ class LLM(RetryMixin, DebugMixin):
                 )
 
             message_back = resp['choices'][0]['message']['content']
+
+            # log the LLM response
             self.log_response(message_back)
 
+            # post-process the response
             self._post_completion(resp)
 
             return resp
@@ -228,7 +234,10 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def _post_completion(self, response) -> None:
-        """Post-process the completion response."""
+        """Post-process the completion response.
+
+        Logs the cost and usage stats of the completion call.
+        """
         try:
             cur_cost = self.completion_cost(response)
         except Exception:
@@ -236,6 +245,7 @@ class LLM(RetryMixin, DebugMixin):
 
         stats = ''
         if self.cost_metric_supported:
+            # keep track of the cost
             stats = 'Cost: %.2f USD | Accumulated Cost: %.2f USD\n' % (
                 cur_cost,
                 self.metrics.accumulated_cost,
@@ -244,6 +254,7 @@ class LLM(RetryMixin, DebugMixin):
         usage = response.get('usage')
 
         if usage:
+            # keep track of the input and output tokens
             input_tokens = usage.get('prompt_tokens')
             output_tokens = usage.get('completion_tokens')
 
@@ -258,6 +269,7 @@ class LLM(RetryMixin, DebugMixin):
                     + '\n'
                 )
 
+            # read the prompt caching status as received from the provider
             model_extra = usage.get('model_extra', {})
 
             cache_creation_input_tokens = model_extra.get('cache_creation_input_tokens')
@@ -274,6 +286,7 @@ class LLM(RetryMixin, DebugMixin):
                     'Input tokens (cache read): ' + str(cache_read_input_tokens) + '\n'
                 )
 
+        # log the stats
         if stats:
             logger.info(stats)
 
