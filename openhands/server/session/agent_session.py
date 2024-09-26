@@ -32,7 +32,7 @@ class AgentSession:
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
-    loop: asyncio.AbstractEventLoop | None = None
+    loop: asyncio.AbstractEventLoop
 
     def __init__(self, sid: str, file_store: FileStore):
         """Initializes a new instance of the Session class
@@ -104,7 +104,7 @@ class AgentSession:
         )
         if self.controller:
             self.controller.agent_task = self.controller.start_step_loop() # type: ignore
-            await self.controller.agent_task
+            await self.controller.agent_task # type: ignore
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
