@@ -27,9 +27,8 @@ from openhands.core.exceptions import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
-
-from .debug_mixin import DebugMixin
-from .retry_mixin import RetryMixin
+from openhands.llm.debug_mixin import DebugMixin
+from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
 

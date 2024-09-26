@@ -5,9 +5,8 @@ from litellm import completion as litellm_acompletion
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
 from openhands.core.logger import openhands_logger as logger
+from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
-
-from .llm import LLM
 
 
 class AsyncLLM(LLM):
@@ -32,7 +31,13 @@ class AsyncLLM(LLM):
 
         async_completion_unwrapped = self._async_completion
 
-        @self.retry_decorator(num_retries=5, retry_min_wait=10, retry_max_wait=60)
+        @self.retry_decorator(
+            num_retries=self.config.num_retries,
+            retry_exceptions=self.retry_exceptions,
+            retry_min_wait=self.config.retry_min_wait,
+            retry_max_wait=self.config.retry_max_wait,
+            retry_multiplier=self.config.retry_multiplier,
+        )
         async def async_completion_wrapper(*args, **kwargs):
             """Wrapper for the litellm acompletion function."""
             # some callers might just send the messages directly

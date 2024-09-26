@@ -1,9 +1,9 @@
 import asyncio
+from functools import partial
 
 from openhands.core.exceptions import LLMResponseError, UserCancelledError
 from openhands.core.logger import openhands_logger as logger
-
-from .async_llm import AsyncLLM
+from openhands.llm.async_llm import AsyncLLM
 
 
 class StreamingLLM(AsyncLLM):
@@ -11,9 +11,24 @@ class StreamingLLM(AsyncLLM):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._async_streaming_completion = self._create_async_streaming_completion()
 
-    def _create_async_streaming_completion(self):
+        self._async_streaming_completion = partial(
+            self._call_acompletion,
+            model=self.config.model,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            custom_llm_provider=self.config.custom_llm_provider,
+            max_tokens=self.config.max_output_tokens,
+            timeout=self.config.timeout,
+            temperature=self.config.temperature,
+            top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
+            stream=True,  # Ensure streaming is enabled
+        )
+
+        async_streaming_completion_unwrapped = self._async_streaming_completion
+
         @self.retry_decorator(
             num_retries=self.config.num_retries,
             retry_exceptions=self.retry_exceptions,
@@ -21,7 +36,7 @@ class StreamingLLM(AsyncLLM):
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
         )
-        async def async_acompletion_stream_wrapper(*args, **kwargs):
+        async def async_streaming_completion_wrapper(*args, **kwargs):
             # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -37,7 +52,7 @@ class StreamingLLM(AsyncLLM):
 
             try:
                 # Directly call and await litellm_acompletion
-                resp = await self._async_completion(*args, **kwargs)
+                resp = await async_streaming_completion_unwrapped(*args, **kwargs)
 
                 # For streaming we iterate over the chunks
                 async for chunk in resp:
@@ -66,10 +81,11 @@ class StreamingLLM(AsyncLLM):
                 raise
 
             finally:
+                # sleep for 0.1 seconds to allow the stream to be flushed
                 if kwargs.get('stream', False):
                     await asyncio.sleep(0.1)
 
-        return async_acompletion_stream_wrapper
+        self._async_streaming_completion = async_streaming_completion_wrapper
 
     @property
     def async_streaming_completion(self):
