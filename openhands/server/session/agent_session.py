@@ -31,6 +31,7 @@ class AgentSession:
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
+    loop: asyncio.AbstractEventLoop
 
     def __init__(self, sid: str, file_store: FileStore):
         """Initializes a new instance of the Session class
@@ -43,6 +44,7 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
+        self.loop = asyncio.new_event_loop()
 
     async def start(
         self,
@@ -70,7 +72,6 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        self.loop = asyncio.new_event_loop()
         self.thread = Thread(target=self._run, daemon=True)
         self.thread.start()
 
