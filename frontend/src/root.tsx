@@ -32,15 +32,13 @@ import {
   maybeMigrateSettings,
   settingsAreUpToDate,
 } from "./services/settings";
-import { ContextMenu } from "./components/context-menu/context-menu";
-import { ContextMenuListItem } from "./components/context-menu/context-menu-list-item";
-import { ContextMenuSeparator } from "./components/context-menu/context-menu-separator";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
 import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
 import DefaultUserAvatar from "./assets/default-user.svg?react";
 import i18n from "./i18n";
 import { cn } from "./utils/utils";
+import { AccountSettingsContextMenu } from "./components/account-settings-context-menu";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -155,37 +153,25 @@ export default function App() {
                 />
               )}
             </button>
-
             {accountContextMenuIsVisible && (
-              <ContextMenu className="absolute left-full -top-1 z-10">
-                <ContextMenuListItem
-                  onClick={() => {
-                    setAccountContextMenuIsVisible(false);
-                    setAccountSettingsModalOpen(true);
-                  }}
-                >
-                  Account Settings
-                </ContextMenuListItem>
-                {user && (
-                  <>
-                    <ContextMenuSeparator />
-                    <ContextMenuListItem
-                      onClick={() => {
-                        submit(
-                          {},
-                          {
-                            method: "POST",
-                            action: "/logout",
-                            navigate: false,
-                          },
-                        );
-                      }}
-                    >
-                      Logout
-                    </ContextMenuListItem>
-                  </>
-                )}
-              </ContextMenu>
+              <AccountSettingsContextMenu
+                isLoggedIn={!!user}
+                onClose={() => setAccountContextMenuIsVisible(false)}
+                onClickAccountSettings={() => {
+                  setAccountContextMenuIsVisible(false);
+                  setAccountSettingsModalOpen(true);
+                }}
+                onLogout={() => {
+                  submit(
+                    {},
+                    {
+                      method: "POST",
+                      action: "/logout",
+                      navigate: false,
+                    },
+                  );
+                }}
+              />
             )}
           </div>
           <button
