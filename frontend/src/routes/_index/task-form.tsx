@@ -1,11 +1,11 @@
 import React from "react";
-import { Form, useFetcher, useNavigation, useSubmit } from "@remix-run/react";
+import { Form, useFetcher, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
+import { removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 
@@ -45,14 +45,13 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const fetcher = useFetcher();
-  const submit = useSubmit();
 
   const { files, selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);
-  const [hasText, setHasText] = React.useState(false);
+  const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(
     getRandomKey(
       selectedRepository ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"],
@@ -81,13 +80,11 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const onClickSuggestion = () => {
     const suggestions = SUGGESTIONS[selectedRepository ? "repo" : "non-repo"];
     const value = suggestions[suggestion];
-
-    dispatch(setInitialQuery(value));
-    submit({}, { method: "POST" }); // TODO: Probably better to use navigate instead
+    setText(value);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setHasText(!!e.target.value);
+    setText(e.target.value);
   };
 
   const handleSubmitForm = () => {
@@ -133,12 +130,13 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             type="text"
             placeholder="What do you want to build?"
             onChange={handleChange}
+            value={text}
             className={cn(
               "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
               "focus:bg-[#525252]",
             )}
           />
-          {hasText && (
+          {!!text && (
             <button
               type="submit"
               aria-label="Submit"
