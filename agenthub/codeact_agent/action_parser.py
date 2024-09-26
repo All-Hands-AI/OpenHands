@@ -255,7 +255,7 @@ class CodeActActionParserFileEdit(ActionParser):
             if self.file_edit_match.group(6)
             else None
         )
-        content = self.file_edit_match.group(7).strip()
+        content = self.file_edit_match.group(7)
         thought = action_str.replace(self.file_edit_match.group(0), '').strip()
 
         action = FileEditAction(path=file_path, content=content, thought=thought)
