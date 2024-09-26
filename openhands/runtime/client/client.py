@@ -324,6 +324,7 @@ class RuntimeClient:
             try:
                 exit_code = int(_exit_code_output.strip().split()[0])
             except:
+                logger.error('Error getting exit code from bash script')
                 # If we try to run an invalid shell script the output sometimes includes error text
                 # rather than the error code - we assume this is an error
                 exit_code = 2
@@ -544,7 +545,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--cmd-timeout',
         type=int,
-        help="Timeout for a single command",
+        help='Timeout for a single command',
         default=180,
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
