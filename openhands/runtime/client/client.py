@@ -60,8 +60,6 @@ ROOT_GID = 0
 INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
-SOFT_TIMEOUT_SECONDS = 5
-HARD_TIMEOUT_SECONDS = 180
 
 
 class RuntimeClient:
@@ -76,6 +74,7 @@ class RuntimeClient:
         username: str,
         user_id: int,
         browsergym_eval_env: str | None,
+        cmd_timeout: int
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self.username = username
@@ -87,6 +86,7 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
+        self.cmd_timeout = cmd_timeout
 
     @property
     def initial_pwd(self):
@@ -321,7 +321,12 @@ class RuntimeClient:
             logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             _exit_code_output = self.shell.before
-            exit_code = int(_exit_code_output.strip().split()[0])
+            try:
+                exit_code = int(_exit_code_output.strip().split()[0])
+            except:
+                # If we try to run an invalid shell script the output sometimes includes error text
+                # rather than the error code - we assume this is an error
+                exit_code = 2
 
         except pexpect.TIMEOUT as e:
             if kill_on_timeout:
@@ -359,18 +364,18 @@ class RuntimeClient:
             for command in commands:
                 if command == '':
                     output, exit_code = self._continue_bash(
-                        timeout=SOFT_TIMEOUT_SECONDS,
+                        timeout=self.cmd_timeout,
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False,
                     )
                 elif command.lower() == 'ctrl+c':
                     output, exit_code = self._interrupt_bash(
-                        timeout=SOFT_TIMEOUT_SECONDS
+                        timeout=self.cmd_timeout
                     )
                 else:
                     output, exit_code = self._execute_bash(
                         command,
-                        timeout=HARD_TIMEOUT_SECONDS
+                        timeout=self.cmd_timeout
                         if not action.blocking
                         else action.timeout,
                         keep_prompt=action.keep_prompt,
@@ -536,6 +541,12 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
+    parser.add_argument(
+        '--cmd-timeout',
+        type=int,
+        help="Timeout for a single command",
+        default=180,
+    )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -557,6 +568,7 @@ if __name__ == '__main__':
             username=args.username,
             user_id=args.user_id,
             browsergym_eval_env=args.browsergym_eval_env,
+            cmd_timeout=args.cmd_timeout,
         )
         await client.ainit()
         yield
@@ -611,7 +623,7 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error processing command: {str(e)}')
+            logger.error(f'Error processing command: {str(e)}', exc_info=True, stack_info=True)
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')
