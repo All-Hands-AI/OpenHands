@@ -9,6 +9,9 @@ class ActionParseError(Exception):
     def __init__(self, error: str):
         self.error = error
 
+    def __str__(self):
+        return self.error
+
 
 class ResponseParser(ABC):
     """This abstract base class is a general interface for an response parser dedicated to
