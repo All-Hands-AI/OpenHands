@@ -25,7 +25,8 @@ def test_visualize_standard_case(mock_file_content):
         "\033[91m10|Line 10\033[0m\n"
         f"  {' ' * lint_result.column}^ ERROR HERE: Test error message\n"
         "11|Line 11\n"
-        "12|Line 12"
+        "12|Line 12\n"
+        "13|Line 13"
     )
 
     assert result == expected_output
@@ -42,7 +43,8 @@ def test_visualize_small_window(mock_file_content):
     expected_output = (
         " 9|Line 9\n"
         "\033[91m10|Line 10\033[0m\n"
-        f"  {' ' * lint_result.column}^ ERROR HERE: Test error message"
+        f"  {' ' * lint_result.column}^ ERROR HERE: Test error message\n"
+        "11|Line 11"
     )
 
     assert result == expected_output
