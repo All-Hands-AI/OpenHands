@@ -181,7 +181,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     + '-' * 40
                     + '\n'
                 )
-                for i, lint_error in enumerate(updated_lint_error):
+                print('-' * 20 + 'First 5 lint errors' + '-' * 20)
+                for i, lint_error in enumerate(updated_lint_error[:5]):
                     error_message += f'[begin lint error {i}]\n'
                     error_message += lint_error.visualize().strip() + '\n'
                     error_message += f'[end lint error {i}]\n'
