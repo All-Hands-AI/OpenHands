@@ -4,7 +4,7 @@ from openhands.linter.base import BaseLinter, LintResult
 from openhands.linter.utils import run_cmd
 
 
-def python_compile_lint(fname) -> list[LintResult]:
+def python_compile_lint(fname: str) -> list[LintResult]:
     try:
         with open(fname, 'r') as f:
             code = f.read()

@@ -1,4 +1,4 @@
-from openhands.linter import Linter, LintResult
+from openhands.linter import DefaultLinter, LintResult
 from openhands.linter.languages.python import (
     PythonLinter,
     flake_lint,
@@ -30,7 +30,7 @@ def test_wrongly_indented_py_file(wrongly_indented_py_file):
 
     # General linter should have same result as Python linter
     # bc it uses PythonLinter under the hood
-    general_linter = Linter()
+    general_linter = DefaultLinter()
     assert '.py' in general_linter.supported_extensions
     result = general_linter.lint(wrongly_indented_py_file)
     assert result == linter.lint(wrongly_indented_py_file)
@@ -52,7 +52,7 @@ def test_simple_correct_py_file(simple_correct_py_file):
     result = linter.lint(simple_correct_py_file)
     assert result == []
 
-    general_linter = Linter()
+    general_linter = DefaultLinter()
     assert '.py' in general_linter.supported_extensions
     result = general_linter.lint(simple_correct_py_file)
     assert result == linter.lint(simple_correct_py_file)
@@ -71,7 +71,7 @@ def test_simple_correct_py_func_def(simple_correct_py_func_def):
     result = linter.lint(simple_correct_py_func_def)
     assert result == []
 
-    general_linter = Linter()
+    general_linter = DefaultLinter()
     assert '.py' in general_linter.supported_extensions
     result = general_linter.lint(simple_correct_py_func_def)
     assert result == linter.lint(simple_correct_py_func_def)

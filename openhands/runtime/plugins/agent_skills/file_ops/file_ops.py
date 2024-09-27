@@ -22,10 +22,7 @@ import shutil
 import tempfile
 import uuid
 
-if __package__ is None or __package__ == '':
-    from aider import Linter
-else:
-    from openhands.linter import Linter, LintResult
+from openhands.linter import DefaultLinter, LintResult
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
@@ -98,7 +95,7 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     Returns:
         tuple[str | None, int | None]: (lint_error, first_error_line_number)
     """
-    linter = Linter()
+    linter = DefaultLinter()
     lint_error: list[LintResult] = linter.lint(file_path)
     if not lint_error:
         # Linting successful. No issues found.
@@ -551,7 +548,8 @@ def _edit_file_impl(
             with open(original_file_backup_path, 'w') as f:
                 f.writelines(lines)
 
-            lint_error, first_error_line = _lint_file(file_name)
+            file_name_abs = os.path.abspath(file_name)
+            lint_error, first_error_line = _lint_file(file_name_abs)
 
             if original_lint_error and lint_error:
                 lint_error = _subtract_strings(original_lint_error, lint_error)
