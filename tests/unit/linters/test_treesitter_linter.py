@@ -1,4 +1,4 @@
-from openhands.linter import LintResult
+from openhands.linter import Linter, LintResult
 from openhands.linter.languages.treesitter import TreesitterBasicLinter
 
 
@@ -28,11 +28,22 @@ def test_syntax_error_py_file(syntax_error_py_file):
     )
     print(result[0].visualize())
 
+    general_linter = Linter()
+    general_result = general_linter.lint(syntax_error_py_file)
+    # NOTE: general linter returns different result
+    # because it uses flake8 first, which is different from treesitter
+    assert general_result != result
+
 
 def test_simple_correct_ruby_file(simple_correct_ruby_file):
     linter = TreesitterBasicLinter()
     result = linter.lint(simple_correct_ruby_file)
     assert isinstance(result, list) and len(result) == 0
+
+    # Test that the general linter also returns the same result
+    general_linter = Linter()
+    general_result = general_linter.lint(simple_correct_ruby_file)
+    assert general_result == result
 
 
 def test_simple_incorrect_ruby_file(simple_incorrect_ruby_file):
@@ -73,6 +84,11 @@ def test_simple_incorrect_ruby_file(simple_incorrect_ruby_file):
         )
     )
 
+    # Test that the general linter also returns the same result
+    general_linter = Linter()
+    general_result = general_linter.lint(simple_incorrect_ruby_file)
+    assert general_result == result
+
 
 def test_parenthesis_incorrect_ruby_file(parenthesis_incorrect_ruby_file):
     linter = TreesitterBasicLinter()
@@ -91,3 +107,8 @@ def test_parenthesis_incorrect_ruby_file(parenthesis_incorrect_ruby_file):
         '  ^ ERROR HERE: Syntax error\n'
         "2|    puts 'Hello World'"
     )
+
+    # Test that the general linter also returns the same result
+    general_linter = Linter()
+    general_result = general_linter.lint(parenthesis_incorrect_ruby_file)
+    assert general_result == result
