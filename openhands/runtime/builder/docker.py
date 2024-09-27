@@ -166,12 +166,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         )
         return target_image_hash_name
 
-    def image_exists(self, image_name: str, build_if_missing: bool = True) -> bool:
+    def image_exists(self, image_name: str, pull_from_remote: bool = True) -> bool:
         """Check if the image exists in the registry (try to pull it first) or in the local store.
 
         Args:
             image_name (str): The Docker image to check (<image repo>:<image tag>)
-            build_if_missing (bool): Whether to build the image if it is not present.
+            pull_from_remote (bool): Whether to pull from the remote repo if the image not present locally
         Returns:
             bool: Whether the Docker image exists in the registry or in the local store
         """
@@ -185,7 +185,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.debug('Image found locally.')
             return True
         except docker.errors.ImageNotFound:
-            if not build_if_missing:
+            if not pull_from_remote:
                 logger.debug(
                     f'Image {image_name} not found locally'
                 )
