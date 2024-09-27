@@ -140,11 +140,11 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  const msg = message.message == null ? "" : message.message.trim();
+  const msg = message.status == null ? "" : message.status.trim();
   store.dispatch(
     setCurStatusMessage({
       ...message,
-      message: msg,
+      status: msg,
     }),
   );
 }
@@ -160,9 +160,9 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else if ("observation" in socketMessage) {
-    handleObservationMessage(socketMessage);
-  } else if ("message" in socketMessage) {
+  } else if ("status" in socketMessage) {
     handleStatusMessage(socketMessage);
+  } else {
+    handleObservationMessage(socketMessage);
   }
 }

@@ -1,4 +1,5 @@
 from typing import List
+
 from openhands.linter.base import BaseLinter, LintResult
 from openhands.linter.utils import run_cmd
 
@@ -16,10 +17,7 @@ def python_compile_lint(fname) -> list[LintResult]:
             err_offset = err.offset
         return [
             LintResult(
-                file=fname,
-                line=err_lineno,
-                column=err_offset or 1,
-                message=err.msg
+                file=fname, line=err_lineno, column=err_offset or 1, message=err.msg
             )
         ]
 
@@ -38,18 +36,21 @@ def flake_lint(filepath: str) -> list[LintResult]:
     for line in cmd_outputs.splitlines():
         parts = line.split(':')
         if len(parts) >= 4:
-            results.append(LintResult(
-                file=filepath,
-                line=int(parts[1]),
-                column=int(parts[2]),
-                message=parts[3].strip(),
-            ))
+            _msg = parts[3].strip()
+            if len(parts) > 4:
+                _msg += ': ' + parts[4].strip()
+            results.append(
+                LintResult(
+                    file=filepath,
+                    line=int(parts[1]),
+                    column=int(parts[2]),
+                    message=_msg,
+                )
+            )
     return results
 
 
-
 class PythonLinter(BaseLinter):
-
     @property
     def supported_extensions(self) -> List[str]:
         return ['.py']
@@ -65,10 +66,12 @@ class PythonLinter(BaseLinter):
             compile(code, file_path, 'exec')
             return []
         except SyntaxError as e:
-            return [LintResult(
-                file=file_path,
-                line=e.lineno,
-                column=e.offset,
-                message=str(e),
-                rule='SyntaxError'
-            )]
+            return [
+                LintResult(
+                    file=file_path,
+                    line=e.lineno,
+                    column=e.offset,
+                    message=str(e),
+                    rule='SyntaxError',
+                )
+            ]

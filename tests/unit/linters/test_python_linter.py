@@ -1,14 +1,12 @@
-from openhands.linter import LintResult, Linter
+from openhands.linter import Linter, LintResult
 from openhands.linter.languages.python import (
     PythonLinter,
     flake_lint,
-    python_compile_lint
+    python_compile_lint,
 )
 
 
-
 def test_wrongly_indented_py_file(wrongly_indented_py_file):
-
     # Test Python linter
     linter = PythonLinter()
     assert '.py' in linter.supported_extensions
@@ -19,13 +17,13 @@ def test_wrongly_indented_py_file(wrongly_indented_py_file):
         file=wrongly_indented_py_file,
         line=2,
         column=5,
-        message="E999 IndentationError",
+        message='E999 IndentationError: unexpected indent',
     )
     print(result[0].visualize())
     assert result[0].visualize() == (
         '1|\n'
         '\033[91m2|    def foo():\033[0m\n'
-        '      ^ error here\n'
+        '      ^ ERROR HERE: E999 IndentationError: unexpected indent\n'
         '3|            print("Hello, World!")\n'
         '4|'
     )
@@ -44,11 +42,9 @@ def test_wrongly_indented_py_file(wrongly_indented_py_file):
     compile_result = python_compile_lint(wrongly_indented_py_file)
     assert isinstance(compile_result, list) and len(compile_result) == 1
     assert compile_result[0] == LintResult(
-        file=wrongly_indented_py_file,
-        line=2,
-        column=4,
-        message='unexpected indent'
+        file=wrongly_indented_py_file, line=2, column=4, message='unexpected indent'
     )
+
 
 def test_simple_correct_py_file(simple_correct_py_file):
     linter = PythonLinter()
@@ -68,6 +64,7 @@ def test_simple_correct_py_file(simple_correct_py_file):
     # Test flake_lint
     flake_result = flake_lint(simple_correct_py_file)
     assert flake_result == []
+
 
 def test_simple_correct_py_func_def(simple_correct_py_func_def):
     linter = PythonLinter()

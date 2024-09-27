@@ -1,12 +1,14 @@
 import warnings
+
 from grep_ast import TreeContext, filename_to_lang
 from grep_ast.parsers import PARSERS
 from tree_sitter_languages import get_parser
 
-from openhands.linter.base import LintResult, BaseLinter
+from openhands.linter.base import BaseLinter, LintResult
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter('ignore', category=FutureWarning)
+
 
 def tree_context(fname, code, line_nums):
     context = TreeContext(
@@ -28,6 +30,7 @@ def tree_context(fname, code, line_nums):
     output = context.format()
     return output
 
+
 def traverse_tree(node):
     """Traverses the tree to find errors."""
     errors = []
@@ -42,8 +45,8 @@ def traverse_tree(node):
 
     return errors
 
-class TreesitterBasicLinter(BaseLinter):
 
+class TreesitterBasicLinter(BaseLinter):
     @property
     def supported_extensions(self) -> list[str]:
         return list(PARSERS.keys())
@@ -55,10 +58,9 @@ class TreesitterBasicLinter(BaseLinter):
             return []
         parser = get_parser(lang)
         with open(file_path, 'r') as f:
-            code = f.read() 
+            code = f.read()
         tree = parser.parse(bytes(code, 'utf-8'))
         errors = traverse_tree(tree.root_node)
-        print('\n', errors)
         if not errors:
             return []
         return [
