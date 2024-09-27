@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { StatusMessage } from "#/types/Message";
 
 const initialStatusMessage: StatusMessage = {
-  message: "",
+  status: "",
   is_error: false,
 };
 

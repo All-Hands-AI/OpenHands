@@ -5,7 +5,9 @@ import pytest
 
 from openhands.core.config import load_app_config
 from openhands.core.exceptions import UserCancelledError
+from openhands.llm.async_llm import AsyncLLM
 from openhands.llm.llm import LLM
+from openhands.llm.streaming_llm import StreamingLLM
 
 config = load_app_config()
 
@@ -39,12 +41,12 @@ def mock_response():
 
 @pytest.mark.asyncio
 async def test_acompletion_non_streaming():
-    with patch.object(LLM, '_call_acompletion') as mock_call_acompletion:
+    with patch.object(AsyncLLM, '_call_acompletion') as mock_call_acompletion:
         mock_response = {
             'choices': [{'message': {'content': 'This is a test message.'}}]
         }
         mock_call_acompletion.return_value = mock_response
-        test_llm = LLM(config=config.get_llm_config())
+        test_llm = AsyncLLM(config=config.get_llm_config())
         response = await test_llm.async_completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
@@ -56,9 +58,9 @@ async def test_acompletion_non_streaming():
 
 @pytest.mark.asyncio
 async def test_acompletion_streaming(mock_response):
-    with patch.object(LLM, '_call_acompletion') as mock_call_acompletion:
+    with patch.object(StreamingLLM, '_call_acompletion') as mock_call_acompletion:
         mock_call_acompletion.return_value.__aiter__.return_value = iter(mock_response)
-        test_llm = LLM(config=config.get_llm_config())
+        test_llm = StreamingLLM(config=config.get_llm_config())
         async for chunk in test_llm.async_streaming_completion(
             messages=[{'role': 'user', 'content': 'Hello!'}], stream=True
         ):
@@ -104,10 +106,10 @@ async def test_async_completion_with_user_cancellation(cancel_delay):
         return {'choices': [{'message': {'content': 'This is a test message.'}}]}
 
     with patch.object(
-        LLM, '_call_acompletion', new_callable=AsyncMock
+        AsyncLLM, '_call_acompletion', new_callable=AsyncMock
     ) as mock_call_acompletion:
         mock_call_acompletion.side_effect = mock_acompletion
-        test_llm = LLM(config=config.get_llm_config())
+        test_llm = AsyncLLM(config=config.get_llm_config())
 
         async def cancel_after_delay():
             print(f'Starting cancel_after_delay with delay {cancel_delay}')
@@ -166,10 +168,10 @@ async def test_async_streaming_completion_with_user_cancellation(cancel_after_ch
             await asyncio.sleep(0.05)  # Simulate some delay between chunks
 
     with patch.object(
-        LLM, '_call_acompletion', new_callable=AsyncMock
+        AsyncLLM, '_call_acompletion', new_callable=AsyncMock
     ) as mock_call_acompletion:
         mock_call_acompletion.return_value = mock_acompletion()
-        test_llm = LLM(config=config.get_llm_config())
+        test_llm = StreamingLLM(config=config.get_llm_config())
 
         received_chunks = []
         with pytest.raises(UserCancelledError):
