@@ -70,10 +70,11 @@ RUN playwright install --with-deps chromium
 COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
 COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
 COPY --chown=openhands:app --chmod=770 ./agenthub ./agenthub
-COPY --chown=openhands:app --chmod=770 ./pyproject.toml ./pyproject.toml
-COPY --chown=openhands:app --chmod=770 ./poetry.lock ./poetry.lock
-COPY --chown=openhands:app --chmod=770 ./README.md ./README.md
-COPY --chown=openhands:app --chmod=770 ./MANIFEST.in ./MANIFEST.in
+COPY --chown=openhands:app ./pyproject.toml ./pyproject.toml
+COPY --chown=openhands:app ./poetry.lock ./poetry.lock
+COPY --chown=openhands:app ./README.md ./README.md
+COPY --chown=openhands:app ./MANIFEST.in ./MANIFEST.in
+COPY --chown=openhands:app ./LICENSE ./LICENSE
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
 RUN python openhands/core/download.py # No-op to download assets
