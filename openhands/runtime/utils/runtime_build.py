@@ -9,7 +9,7 @@ import docker
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
-from openhands import get_version
+from openhands import __version__ as oh_version
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
@@ -168,7 +168,6 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         if ':' not in base_image:
             base_image = base_image + ':latest'
         [repo, tag] = base_image.split(':')
-        oh_version = get_version()
 
         # Hash the repo if it's too long
         if len(repo) > 32:
@@ -350,14 +349,20 @@ def _build_sandbox_image(
     target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
 
+    tags_to_add = [target_image_hash_name]
+
+    # Only add the generic tag if the image does not exist
+    # so it does not get overwritten & only points to the earliest version
+    # to avoid "too many layers" after many re-builds
+    if not runtime_builder.image_exists(target_image_generic_name):
+        tags_to_add.append(target_image_generic_name)
+
     try:
-        image_name = runtime_builder.build(
-            path=docker_folder, tags=[target_image_hash_name, target_image_generic_name]
-        )
+        image_name = runtime_builder.build(path=docker_folder, tags=tags_to_add)
         if not image_name:
             raise RuntimeError(f'Build failed for image {target_image_hash_name}')
     except Exception as e:
-        logger.error(f'Sandbox image build failed: {e}')
+        logger.error(f'Sandbox image build failed: {str(e)}')
         raise
 
     return image_name

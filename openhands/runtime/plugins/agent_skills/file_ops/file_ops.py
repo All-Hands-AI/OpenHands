@@ -786,7 +786,6 @@ def append_file(file_name: str, content: str) -> None:
 
     Args:
         file_name: str: The name of the file to edit.
-        line_number: int: The line number (starting from 1) to insert the content after.
         content: str: The content to insert.
     """
     ret_str = _edit_file_impl(
