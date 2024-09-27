@@ -26,7 +26,7 @@ class RuntimeBuilder(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def image_exists(self, image_name: str) -> bool:
+    def image_exists(self, image_name: str, build_if_missing: bool = True) -> bool:
         """
         Check if the runtime image exists.
 
