@@ -117,7 +117,7 @@ class AgentSession:
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
-        self.loop.run_forever() # type: ignore
+        self.loop.run_forever()
 
     async def close(self):
         """Closes the Agent session"""
@@ -133,7 +133,7 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-        self.loop.call_soon_threadsafe(self.loop.stop) # type: ignore
+        self.loop.call_soon_threadsafe(self.loop.stop)
         self.thread.join()
 
         self._closed = True
