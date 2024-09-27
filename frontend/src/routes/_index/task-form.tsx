@@ -13,12 +13,14 @@ interface MainTextareaInputProps {
   placeholder: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  formRef: React.RefObject<HTMLFormElement>;
 }
 
 function MainTextareaInput({
   placeholder,
   value,
   onChange,
+  formRef,
 }: MainTextareaInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -55,6 +57,7 @@ function MainTextareaInput({
       onKeyDown={(e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
+          formRef.current?.requestSubmit();
         }
       }}
       value={value}
@@ -192,6 +195,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             }
             onChange={handleChange}
             value={text}
+            formRef={formRef}
           />
           {!!text && (
             <button
