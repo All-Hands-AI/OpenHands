@@ -7123,13 +7123,13 @@ files = [
 
 [[package]]
 name = "reportlab"
-version = "4.2.2"
+version = "4.2.4"
 description = "The Reportlab Toolkit"
 optional = false
 python-versions = "<4,>=3.7"
 files = [
-    {file = "reportlab-4.2.2-py3-none-any.whl", hash = "sha256:927616931637e2f13e2ee3b3b6316d7a07803170e258621cff7d138bde17fbb5"},
-    {file = "reportlab-4.2.2.tar.gz", hash = "sha256:765eecbdd68491c56947e29c38b8b69b834ee5dbbdd2fb7409f08ebdebf04428"},
+    {file = "reportlab-4.2.4-py3-none-any.whl", hash = "sha256:6e4d86647b8bfd772f475a58f9b0dcba4b340b1969f0db36333089f6ca9ab362"},
+    {file = "reportlab-4.2.4.tar.gz", hash = "sha256:a00b57292e156a7bda84edf31d60c25578153076c8fb96331d0c59eddda052c8"},
 ]
 
 [package.dependencies]
