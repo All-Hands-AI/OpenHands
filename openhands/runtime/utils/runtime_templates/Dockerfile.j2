@@ -69,8 +69,7 @@ RUN \
     /openhands/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
     /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
     # Set environment variables
-    export OH_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)") && \
-    export OH_VENV_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry env info --path) && \
+    echo "OH_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
     # Install extra dependencies if specified
     {{ extra_deps }} {% if extra_deps %} && {% endif %} \
     # Clear caches
@@ -81,16 +80,6 @@ RUN \
     # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/miniforge3/bin/mamba clean --all
-{% if not skip_init %}
-RUN \
-    # Add the Poetry virtual environment to the bashrc
-    echo "export OH_INTERPRETER_PATH=\"$OH_INTERPRETER_PATH\"" >> /etc/bash.bashrc && \
-    echo "export OH_VENV_PATH=\"$OH_VENV_PATH\"" >> /etc/bash.bashrc && \
-    # Activate the Poetry virtual environment
-    echo 'source "$OH_VENV_PATH/bin/activate"' >> /etc/bash.bashrc && \
-    # Use the Poetry virtual environment's Python interpreter
-    echo 'alias python="$OH_INTERPRETER_PATH"' >> /etc/bash.bashrc
-{% endif %}
 # ================================================================
 # END: Copy Project and Install/Update Dependencies
 # ================================================================

@@ -1,5 +1,4 @@
 import asyncio
-
 from threading import Thread
 from typing import Callable, Optional
 
@@ -32,6 +31,7 @@ class AgentSession:
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
+    loop: asyncio.AbstractEventLoop
 
     def __init__(self, sid: str, file_store: FileStore):
         """Initializes a new instance of the Session class
@@ -44,6 +44,7 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
+        self.loop = asyncio.new_event_loop()
 
     async def start(
         self,
@@ -71,14 +72,23 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        self.loop = asyncio.new_event_loop()
         self.thread = Thread(target=self._run, daemon=True)
         self.thread.start()
 
-        coro = self._start(runtime_name, config, agent, max_iterations, max_budget_per_task, agent_to_llm_config, agent_configs, status_message_callback)
-        asyncio.run_coroutine_threadsafe(coro, self.loop) # type: ignore
+        coro = self._start(
+            runtime_name,
+            config,
+            agent,
+            max_iterations,
+            max_budget_per_task,
+            agent_to_llm_config,
+            agent_configs,
+            status_message_callback,
+        )
+        asyncio.run_coroutine_threadsafe(coro, self.loop)  # type: ignore
 
-    async def _start(self,
+    async def _start(
+        self,
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
@@ -102,8 +112,8 @@ class AgentSession:
             ChangeAgentStateAction(AgentState.INIT), EventSource.USER
         )
         if self.controller:
-            self.controller.agent_task = self.controller.start_step_loop()   
-            await self.controller.agent_task # type: ignore
+            self.controller.agent_task = self.controller.start_step_loop()
+            await self.controller.agent_task  # type: ignore
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
