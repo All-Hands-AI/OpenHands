@@ -38,28 +38,30 @@ def _put_source_code_to_dir(temp_dir: str):
     except importlib.metadata.PackageNotFoundError:
         pass
 
-    if openhands_dir is None or not os.path.isdir(openhands_dir):
+    if os.path.isdir(openhands_dir):
+        logger.info(f'Package {package_name} found')
+        shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
+        # note: "pyproject.toml" and "poetry.lock" are included in the openhands
+        # package, so we need to move them out to the top-level directory
+        for filename in ['pyproject.toml', 'poetry.lock']:
+            shutil.move(os.path.join(dest_dir, 'openhands', filename), dest_dir)
+    else:
         # If package is not found, use the current working directory as source
-        source_dir = os.getcwd()
-        openhands_dir = os.path.join(source_dir, 'openhands')
         logger.info(
             f'Package {package_name} not found. Using current directory: {source_dir}'
         )
-
-    # Copy the 'openhands' directory
-    if os.path.isdir(openhands_dir):
+        source_dir = os.getcwd()
+        # Copy the 'openhands' directory
+        openhands_dir = os.path.join(source_dir, 'openhands')
+        if not os.path.isdir(openhands_dir):
+            raise RuntimeError(f"'openhands' directory not found in {source_dir}")
         shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
-    else:
-        raise RuntimeError(f"'openhands' directory not found in {source_dir}")
 
-    # Move pyproject.toml and poetry.lock files
-    for file in ['pyproject.toml', 'poetry.lock']:
-        src_file = os.path.join(source_dir, file)
-        dest_file = os.path.join(dest_dir, file)
-        if os.path.isfile(src_file):
+        # Copy pyproject.toml and poetry.lock files
+        for file in ['pyproject.toml', 'poetry.lock']:
+            src_file = os.path.join(source_dir, file)
+            dest_file = os.path.join(dest_dir, file)
             shutil.copy2(src_file, dest_file)
-        else:
-            logger.warning(f'{file} not found in {source_dir}')
 
     logger.info(f'Unpacked source code directory: {dest_dir}')
 
