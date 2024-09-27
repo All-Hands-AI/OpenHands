@@ -6,7 +6,7 @@ from openhands.linter.languages.python import PythonLinter
 from openhands.linter.languages.treesitter import TreesitterBasicLinter
 
 
-class Linter(BaseLinter):
+class DefaultLinter(BaseLinter):
     def __init__(self):
         self.linters: dict[str, list[BaseLinter]] = defaultdict(list)
         self.linters['.py'] = [PythonLinter()]

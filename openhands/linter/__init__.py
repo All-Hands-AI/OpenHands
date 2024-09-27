@@ -4,6 +4,6 @@ Part of this Linter module is adapted from Aider (Apache 2.0 License, [original 
 """
 
 from openhands.linter.base import LintResult
-from openhands.linter.linter import Linter
+from openhands.linter.linter import DefaultLinter
 
-__all__ = ['Linter', 'LintResult']
+__all__ = ['DefaultLinter', 'LintResult']
