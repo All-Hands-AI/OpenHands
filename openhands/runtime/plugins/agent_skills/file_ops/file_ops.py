@@ -104,7 +104,9 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
         # Linting successful. No issues found.
         return None, None
     first_error_line = lint_error[0].line if len(lint_error) > 0 else None
-    error_text = '\n'.join([f'Line {err.line}: {err.text}' for err in lint_error])
+    error_text = '\n'.join(
+        [f'{file_path}:{err.line}:{err.column}: {err.message}' for err in lint_error]
+    )
     return error_text, first_error_line
 
 
