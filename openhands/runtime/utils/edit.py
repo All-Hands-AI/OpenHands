@@ -18,11 +18,8 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
+from openhands.linter.linter import Linter, LintResult
 from openhands.llm.llm import LLM
-from openhands.runtime.plugins.agent_skills.file_ops.file_ops import (
-    _lint_file,
-    _subtract_strings,
-)
 
 SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
 provided draft of the new version. The provided draft may be incomplete (it may skip lines) and/or incorrectly indented. You should try to apply the changes present in the draft to the old version, and output a new version of the file.
@@ -144,7 +141,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
     def _get_lint_error(
         self, suffix: str, old_content: str, new_content: str
-    ) -> str | None:
+    ) -> list[LintResult]:
+        linter = Linter()
         # Copy the original file to a temporary file (with the same ext) and lint it
         with tempfile.NamedTemporaryFile(
             suffix=suffix, mode='w+', encoding='utf-8'
@@ -154,21 +152,42 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             # Lint the original file
             original_file_copy.write(old_content)
             original_file_copy.flush()
-            original_lint_error, _ = _lint_file(original_file_copy.name)
+            original_lint_error: list[LintResult] = linter.lint(original_file_copy.name)
 
             # Lint the updated file
             updated_file_copy.write(new_content)
             updated_file_copy.flush()
-            updated_lint_error, _ = _lint_file(updated_file_copy.name)
+            updated_lint_error: list[LintResult] = linter.lint(updated_file_copy.name)
 
             # Subtract the lint errors caused by the unchanged lines
             if original_lint_error and updated_lint_error:
-                updated_lint_error = _subtract_strings(
-                    original_lint_error, updated_lint_error
-                )
-                if updated_lint_error == '':
-                    updated_lint_error = None
+                # remove the lint errors caused by the unchanged lines
+                updated_lint_error = [
+                    err for err in updated_lint_error if err not in original_lint_error
+                ]
             return updated_lint_error
+
+    def _get_lint_error_obs(
+        self, lint_errors: list[LintResult], filepath: str, diff: str
+    ) -> ErrorObservation | None:
+        if len(lint_errors) > 0:
+            error_message = (
+                (
+                    f'\n[Linting failed for edited file {filepath}. {len(lint_errors)} lint errors found.]\n'
+                    '[begin attempted changes]\n'
+                    f'{diff}\n'
+                    '[end attempted changes]\n'
+                )
+                + '-' * 40
+                + '\n'
+            )
+            for i, lint_error in enumerate(lint_errors):
+                error_message += f'[begin lint error {i}]\n'
+                error_message += lint_error.visualize().strip() + '\n'
+                error_message += f'[end lint error {i}]\n'
+                error_message += '-' * 40 + '\n'
+            return ErrorObservation(error_message)
+        return None
 
     def edit(self, action: FileEditAction) -> Observation:
         obs = self.read(FileReadAction(path=action.path))
@@ -210,19 +229,13 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             if self.config.sandbox.enable_auto_lint:
                 suffix = os.path.splitext(action.path)[1]
 
-                lint_error = self._get_lint_error(
+                lint_errors = self._get_lint_error(
                     suffix, original_file_content, updated_content
                 )
-                if lint_error is not None:
-                    error_message = (
-                        f'\n=== Linting failed for edited file [{action.path}] ===\n'
-                        f'{lint_error}\n'
-                        '===\n'
-                        'Changes tried:\n'
-                        f'{diff}\n'
-                        '===\n'
-                    )
-                    return ErrorObservation(error_message)
+                error_obs = self._get_lint_error_obs(lint_errors, action.path, diff)
+                if error_obs is not None:
+                    return error_obs
+
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
             return FileEditObservation(content=diff, path=action.path, prev_exist=True)
 
@@ -264,19 +277,11 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         # Lint the updated content
         if self.config.sandbox.enable_auto_lint:
             suffix = os.path.splitext(action.path)[1]
-            lint_error = self._get_lint_error(
+            lint_errors = self._get_lint_error(
                 suffix, original_file_content, updated_content
             )
-            if lint_error is not None:
-                error_message = (
-                    f'\n=== Linting failed for edited file [{action.path}] ===\n'
-                    f'{lint_error}\n'
-                    '===\n'
-                    'Changes tried:\n'
-                    f'{diff}\n'
-                    '===\n'
-                )
-                return ErrorObservation(error_message)
-
+            error_obs = self._get_lint_error_obs(lint_errors, action.path, diff)
+            if error_obs is not None:
+                return error_obs
         obs = self.write(FileWriteAction(path=action.path, content=updated_content))
         return FileEditObservation(content=diff, path=action.path, prev_exist=True)
