@@ -47,10 +47,10 @@ def _put_source_code_to_dir(temp_dir: str):
             shutil.move(os.path.join(dest_dir, 'openhands', filename), dest_dir)
     else:
         # If package is not found, use the current working directory as source
+        source_dir = os.getcwd()
         logger.info(
             f'Package {package_name} not found. Using current directory: {source_dir}'
         )
-        source_dir = os.getcwd()
         # Copy the 'openhands' directory
         openhands_dir = os.path.join(source_dir, 'openhands')
         if not os.path.isdir(openhands_dir):
