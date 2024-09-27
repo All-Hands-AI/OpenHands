@@ -1,9 +1,11 @@
 import os
 
-from openhands.linter.base import BaseLinter, LintResult, LinterException
+from openhands.linter.base import BaseLinter, LinterException, LintResult
 from openhands.linter.languages.python import PythonLinter
+
 # from openhands.linter.languages.typescript import TypeScriptLinter
 from openhands.linter.languages.treesitter import TreesitterBasicLinter
+
 
 class Linter(BaseLinter):
     def __init__(self):
@@ -28,7 +30,7 @@ class Linter(BaseLinter):
 
     def lint(self, file_path: str) -> list[LintResult]:
         if not os.path.isabs(file_path):
-            raise LinterException(f"File path {file_path} is not an absolute path")
+            raise LinterException(f'File path {file_path} is not an absolute path')
         file_extension = os.path.splitext(file_path)[1]
 
         linters: list[BaseLinter] = self.linters.get(file_extension, [])
