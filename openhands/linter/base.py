@@ -63,7 +63,7 @@ class BaseLinter(ABC):
     @property
     @abstractmethod
     def supported_extensions(self) -> list[str]:
-        """The extensions that this linter supports."""
+        """The file extensions that this linter supports, such as .py or .tsx."""
         return []
 
     @abstractmethod
