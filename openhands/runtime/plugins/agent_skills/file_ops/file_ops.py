@@ -518,7 +518,8 @@ def _edit_file_impl(
             with open(original_file_backup_path, 'w') as f:
                 f.writelines(lines)
 
-            lint_error, first_error_line = _lint_file(file_name)
+            file_name_abs = os.path.abspath(file_name)
+            lint_error, first_error_line = _lint_file(file_name_abs)
 
             # Select the errors caused by the modification
             def extract_last_part(line):
