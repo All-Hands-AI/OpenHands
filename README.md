@@ -42,6 +42,8 @@ system requirements and more information.
 ```bash
 export WORKSPACE_BASE=$(pwd)/workspace
 
+docker pull ghcr.io/all-hands-ai/runtime:0.9-nikolaik
+
 docker run -it --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
