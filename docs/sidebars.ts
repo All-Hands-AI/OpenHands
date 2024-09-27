@@ -83,6 +83,10 @@ const sidebars: SidebarsConfig = {
         {
           type: 'doc',
           id: 'usage/how-to/openshift-example',
+        },
+        {
+          type: 'doc',
+          id: 'usage/how-to/debugging',
         }
       ]
     },
