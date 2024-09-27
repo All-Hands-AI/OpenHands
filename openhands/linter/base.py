@@ -10,7 +10,11 @@ class LintResult(BaseModel):
     message: str
 
     def visualize(self, window_size: int = 10) -> str:
-        """Visualize the lint result by print out all the lines where the lint result is found."""
+        """Visualize the lint result by print out all the lines where the lint result is found.
+
+        Args:
+            window_size: The number of context lines to display around the error.
+        """
         with open(self.file, 'r') as f:
             file_lines = f.readlines()
 
