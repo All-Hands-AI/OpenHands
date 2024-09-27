@@ -9,7 +9,8 @@ class SandboxConfig:
     """Configuration for the sandbox.
 
     Attributes:
-        api_hostname: The hostname for the EventStream Runtime API.
+        remote_runtime_url: The hostname for the Remote Runtime API.
+        api_hostname: The hostname for the runtime's EventStream API.
         base_container_image: The base container image from which to build the runtime image.
         runtime_container_image: The runtime container image to use.
         user_id: The user ID for the sandbox.
@@ -31,6 +32,7 @@ class SandboxConfig:
     """
 
     api_hostname: str = 'localhost'
+    remote_runtime_url: str = 'http://localhost:8000'
     api_key: str | None = None
     base_container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
     runtime_container_image: str | None = None
