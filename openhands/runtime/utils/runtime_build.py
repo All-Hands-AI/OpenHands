@@ -150,7 +150,7 @@ def prep_docker_build_folder(
             '*.pyc',
         ],
     )
-    hash = f'v{_get_package_version()}_{dir_hash}'
+    hash = f'v{oh_version}_{dir_hash}'
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
