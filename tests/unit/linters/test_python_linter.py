@@ -17,13 +17,13 @@ def test_wrongly_indented_py_file(wrongly_indented_py_file):
         file=wrongly_indented_py_file,
         line=2,
         column=5,
-        message='E999 IndentationError',
+        message='E999 IndentationError: unexpected indent',
     )
     print(result[0].visualize())
     assert result[0].visualize() == (
         '1|\n'
         '\033[91m2|    def foo():\033[0m\n'
-        '      ^ ERROR HERE: E999 IndentationError\n'
+        '      ^ ERROR HERE: E999 IndentationError: unexpected indent\n'
         '3|            print("Hello, World!")\n'
         '4|'
     )
