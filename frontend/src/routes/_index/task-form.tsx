@@ -52,6 +52,11 @@ function MainTextareaInput({
       rows={1}
       placeholder={placeholder}
       onChange={onChange}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+        }
+      }}
       value={value}
       className={cn(
         "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
