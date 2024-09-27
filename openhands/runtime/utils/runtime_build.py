@@ -356,10 +356,16 @@ def _build_sandbox_image(
     target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
 
+    tags_to_add = [target_image_hash_name]
+
+    # Only add the generic tag if the image does not exist
+    # so it does not get overwritten & only points to the earliest version
+    # to avoid "too many layers" after many re-builds
+    if not runtime_builder.image_exists(target_image_generic_name):
+        tags_to_add.append(target_image_generic_name)
+
     try:
-        image_name = runtime_builder.build(
-            path=docker_folder, tags=[target_image_hash_name, target_image_generic_name]
-        )
+        image_name = runtime_builder.build(path=docker_folder, tags=tags_to_add)
         if not image_name:
             raise RuntimeError(f'Build failed for image {target_image_hash_name}')
     except Exception as e:
