@@ -13,6 +13,8 @@ interface WebSocketContextType {
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   start: (options?: WebSocketClientOptions) => void;
   stop: () => void;
+  setRuntimeIsInitialized: () => void;
+  runtimeActive: boolean;
   isConnected: boolean;
   events: Record<string, unknown>[];
 }
@@ -27,8 +29,13 @@ interface SocketProviderProps {
 
 function SocketProvider({ children }: SocketProviderProps) {
   const wsRef = React.useRef<WebSocket | null>(null);
-  const [isConnected, setIsConnected] = React.useState<boolean>(false);
+  const [isConnected, setIsConnected] = React.useState(false);
+  const [runtimeActive, setRuntimeActive] = React.useState(false);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+
+  const setRuntimeIsInitialized = () => {
+    setRuntimeActive(true);
+  };
 
   const start = React.useCallback((options?: WebSocketClientOptions): void => {
     if (wsRef.current) {
@@ -54,16 +61,26 @@ function SocketProvider({ children }: SocketProviderProps) {
     });
 
     ws.addEventListener("message", (event) => {
+      console.warn(
+        "Received message",
+        JSON.stringify(JSON.parse(event.data.toString()), null, 2),
+      );
+
       setEvents((prevEvents) => [...prevEvents, JSON.parse(event.data)]);
       options?.onMessage?.(event);
     });
 
     ws.addEventListener("error", (event) => {
+      console.error("SOCKET ERROR", event);
+
       options?.onError?.(event);
     });
 
     ws.addEventListener("close", (event) => {
+      console.warn("SOCKET CLOSED", event);
+
       setIsConnected(false);
+      setRuntimeActive(false);
       wsRef.current = null;
       options?.onClose?.(event);
     });
@@ -90,8 +107,24 @@ function SocketProvider({ children }: SocketProviderProps) {
   );
 
   const value = React.useMemo(
-    () => ({ send, start, stop, isConnected, events }),
-    [send, start, stop, isConnected, events],
+    () => ({
+      send,
+      start,
+      stop,
+      setRuntimeIsInitialized,
+      runtimeActive,
+      isConnected,
+      events,
+    }),
+    [
+      send,
+      start,
+      stop,
+      setRuntimeIsInitialized,
+      runtimeActive,
+      isConnected,
+      events,
+    ],
   );
 
   return (

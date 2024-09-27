@@ -29,26 +29,15 @@ import { createChatMessage } from "#/services/chatService";
 import { clearFiles } from "#/state/initial-query-slice";
 import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import { uploadFile } from "#/api/open-hands";
+import AgentState from "#/types/AgentState";
+import { base64ToBlob } from "#/utils/base64-to-blob";
 
-const base64ToBlob = (base64: string) => {
-  // Remove the prefix (e.g. data:image/png;base64,)
-  const base64WithoutPrefix = base64.split(",")[1];
-
-  // Decode to bytes
-  const bytes = atob(base64WithoutPrefix);
-
-  // Create an array of byte values
-  const byteNumbers = new Array(bytes.length);
-  for (let i = 0; i < bytes.length; i += 1) {
-    byteNumbers[i] = bytes.charCodeAt(i);
-  }
-
-  // Convert to Uint8Array
-  const array = new Uint8Array(byteNumbers);
-
-  // Create a Blob
-  return new Blob([array], { type: "application/zip" });
-};
+const isAgentStateChange = (
+  data: object,
+): data is { extras: { agent_state: AgentState } } =>
+  "extras" in data &&
+  data.extras instanceof Object &&
+  "agent_state" in data.extras;
 
 const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
@@ -107,10 +96,42 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 function App() {
   const dispatch = useDispatch();
   const { files } = useSelector((state: RootState) => state.initalQuery);
-  const { start, send } = useSocket();
+  const { start, send, setRuntimeIsInitialized } = useSocket();
   const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
+
+  const exportGitHubTokenToTerminal = (gitHubToken: string) => {
+    const command = `export GH_TOKEN=${gitHubToken}`;
+    const event = sendTerminalCommand(command);
+
+    send(event);
+    dispatch(appendInput(command.replace(gitHubToken, "***")));
+  };
+
+  const sendCloneRepoCommandToTerminal = (
+    gitHubToken: string,
+    repository: string,
+  ) => {
+    const url = `https://${gitHubToken}@github.com/${repository}.git`;
+    const command = `git clone ${url}`;
+    const event = sendTerminalCommand(command);
+
+    send(event);
+    dispatch(appendInput(command.replace(gitHubToken, "***")));
+  };
+
+  const sendInitialQuery = (query: string, base64Files: string[]) => {
+    const timestamp = new Date().toISOString();
+    send(createChatMessage(query, base64Files, timestamp));
+    dispatch(
+      addUserMessage({
+        content: query,
+        imageUrls: base64Files,
+        timestamp,
+      }),
+    );
+  };
 
   const startSocketConnection = React.useCallback(() => {
     start({
@@ -121,47 +142,8 @@ function App() {
           args: settings,
         };
         send(JSON.stringify(initEvent));
-
-        // first time connection
-        if (!token) {
-          if (ghToken) {
-            const command = `export GH_TOKEN=${ghToken}`;
-            const event = sendTerminalCommand(command);
-
-            send(event);
-            dispatch(appendInput(command.replace(ghToken, "***")));
-          }
-
-          if (ghToken && repo) {
-            // clone repo via terminal
-            const url = `https://${ghToken}@github.com/${repo}.git`;
-            const command = `git clone ${url}`;
-            const event = sendTerminalCommand(command);
-
-            send(event);
-            dispatch(appendInput(command.replace(ghToken, "***")));
-          }
-
-          // send the initial user query if it exists
-          if (q) {
-            const timestamp = new Date().toISOString();
-            send(createChatMessage(q, files, timestamp));
-            dispatch(
-              addUserMessage({
-                content: q,
-                imageUrls: files,
-                timestamp,
-              }),
-            );
-            dispatch(clearFiles());
-          }
-        }
       },
       onMessage: (message) => {
-        console.warn(
-          "Received message",
-          JSON.stringify(JSON.parse(message.data.toString()), null, 2),
-        );
         // set token received from the server
         const parsed = JSON.parse(message.data.toString());
         if ("token" in parsed) {
@@ -170,12 +152,30 @@ function App() {
         }
 
         handleAssistantMessage(message.data.toString());
-      },
-      onClose: (event) => {
-        console.warn("SOCKET CLOSED", event);
-      },
-      onError: (event) => {
-        console.error("SOCKET ERROR", event);
+
+        // handle first time connection
+        if (
+          isAgentStateChange(parsed) &&
+          parsed.extras.agent_state === AgentState.INIT
+        ) {
+          setRuntimeIsInitialized();
+
+          // handle new session
+          if (!token) {
+            if (ghToken) {
+              exportGitHubTokenToTerminal(ghToken);
+            }
+
+            if (ghToken && repo) {
+              sendCloneRepoCommandToTerminal(ghToken, repo);
+            }
+
+            if (q) {
+              sendInitialQuery(q, files);
+              dispatch(clearFiles()); // reset selected files; maybe better to move this to '/'?
+            }
+          }
+        }
       },
     });
   }, [token, q, ghToken, repo]);

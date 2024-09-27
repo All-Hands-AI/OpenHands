@@ -61,7 +61,7 @@ function CodeEditor() {
     Record<string, string>
   >({});
 
-  const { isConnected } = useSocket();
+  const { runtimeActive } = useSocket();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const activeFilepath = useSelector((state: RootState) => state.code.path);
@@ -73,8 +73,8 @@ function CodeEditor() {
 
   React.useEffect(() => {
     // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (isConnected && token) retrieveFiles(token).then(setFiles);
-  }, [isConnected, token]);
+    if (runtimeActive && token) retrieveFiles(token).then(setFiles);
+  }, [runtimeActive, token]);
 
   React.useEffect(() => {
     // save file content on cmd+s
