@@ -13,12 +13,14 @@ interface MainTextareaInputProps {
   placeholder: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  formRef: React.RefObject<HTMLFormElement>;
 }
 
 function MainTextareaInput({
   placeholder,
   value,
   onChange,
+  formRef,
 }: MainTextareaInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -52,6 +54,12 @@ function MainTextareaInput({
       rows={1}
       placeholder={placeholder}
       onChange={onChange}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          formRef.current?.requestSubmit();
+        }
+      }}
       value={value}
       className={cn(
         "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
@@ -187,6 +195,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             }
             onChange={handleChange}
             value={text}
+            formRef={formRef}
           />
           {!!text && (
             <button

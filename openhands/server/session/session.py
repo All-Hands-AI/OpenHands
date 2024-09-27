@@ -187,6 +187,10 @@ class Session:
         """Sends a message to the client."""
         return await self.send({'message': message})
 
+    async def send_status_message(self, message: str) -> bool:
+        """Sends a status message to the client."""
+        return await self.send({'status': message})
+
     def update_connection(self, ws: WebSocket):
         self.websocket = ws
         self.is_alive = True
@@ -202,4 +206,4 @@ class Session:
     def queue_status_message(self, message: str):
         """Queues a status message to be sent asynchronously."""
         # Ensure the coroutine runs in the main event loop
-        asyncio.run_coroutine_threadsafe(self.send_message(message), self.loop)
+        asyncio.run_coroutine_threadsafe(self.send_status_message(message), self.loop)

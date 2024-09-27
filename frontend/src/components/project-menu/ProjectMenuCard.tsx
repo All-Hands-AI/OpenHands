@@ -12,6 +12,7 @@ import { retrieveWorkspaceZipBlob } from "#/api/open-hands";
 import { addUserMessage } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import { createChatMessage } from "#/services/chatService";
+import { formatTimeDelta } from "#/utils/format-time-delta";
 
 const downloadWorkspace = async () => {
   try {
@@ -167,7 +168,9 @@ function DetailedProjectMenuCard({
           className="text-xs text-[#A3A3A3] hover:underline hover:underline-offset-2"
         >
           <span>{lastCommit.sha.slice(-7)}</span> <span>&middot;</span>{" "}
-          <span>{lastCommit.commit.author.date}</span>
+          <span>
+            {formatTimeDelta(new Date(lastCommit.commit.author.date))} ago
+          </span>
         </a>
       </div>
       <button
