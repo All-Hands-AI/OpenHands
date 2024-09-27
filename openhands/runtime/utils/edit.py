@@ -18,7 +18,7 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
-from openhands.linter.linter import Linter, LintResult
+from openhands.linter import DefaultLinter, LintResult
 from openhands.llm.llm import LLM
 
 SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
@@ -140,9 +140,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         return None
 
     def _get_lint_error(
-        self, suffix: str, old_content: str, new_content: str
-    ) -> list[LintResult]:
-        linter = Linter()
+        self,
+        suffix: str,
+        old_content: str,
+        new_content: str,
+        filepath: str,
+        diff: str,
+    ) -> ErrorObservation | None:
+        linter = DefaultLinter()
         # Copy the original file to a temporary file (with the same ext) and lint it
         with tempfile.NamedTemporaryFile(
             suffix=suffix, mode='w+', encoding='utf-8'
@@ -165,28 +170,23 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 updated_lint_error = [
                     err for err in updated_lint_error if err not in original_lint_error
                 ]
-            return updated_lint_error
-
-    def _get_lint_error_obs(
-        self, lint_errors: list[LintResult], filepath: str, diff: str
-    ) -> ErrorObservation | None:
-        if len(lint_errors) > 0:
-            error_message = (
-                (
-                    f'\n[Linting failed for edited file {filepath}. {len(lint_errors)} lint errors found.]\n'
-                    '[begin attempted changes]\n'
-                    f'{diff}\n'
-                    '[end attempted changes]\n'
+            if len(updated_lint_error) > 0:
+                error_message = (
+                    (
+                        f'\n[Linting failed for edited file {filepath}. {len(updated_lint_error)} lint errors found.]\n'
+                        '[begin attempted changes]\n'
+                        f'{diff}\n'
+                        '[end attempted changes]\n'
+                    )
+                    + '-' * 40
+                    + '\n'
                 )
-                + '-' * 40
-                + '\n'
-            )
-            for i, lint_error in enumerate(lint_errors):
-                error_message += f'[begin lint error {i}]\n'
-                error_message += lint_error.visualize().strip() + '\n'
-                error_message += f'[end lint error {i}]\n'
-                error_message += '-' * 40 + '\n'
-            return ErrorObservation(error_message)
+                for i, lint_error in enumerate(updated_lint_error):
+                    error_message += f'[begin lint error {i}]\n'
+                    error_message += lint_error.visualize().strip() + '\n'
+                    error_message += f'[end lint error {i}]\n'
+                    error_message += '-' * 40 + '\n'
+                return ErrorObservation(error_message)
         return None
 
     def edit(self, action: FileEditAction) -> Observation:
@@ -229,10 +229,13 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             if self.config.sandbox.enable_auto_lint:
                 suffix = os.path.splitext(action.path)[1]
 
-                lint_errors = self._get_lint_error(
-                    suffix, original_file_content, updated_content
+                error_obs = self._get_lint_error(
+                    suffix,
+                    original_file_content,
+                    updated_content,
+                    action.path,
+                    diff,
                 )
-                error_obs = self._get_lint_error_obs(lint_errors, action.path, diff)
                 if error_obs is not None:
                     return error_obs
 
@@ -277,10 +280,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         # Lint the updated content
         if self.config.sandbox.enable_auto_lint:
             suffix = os.path.splitext(action.path)[1]
-            lint_errors = self._get_lint_error(
-                suffix, original_file_content, updated_content
+            error_obs = self._get_lint_error(
+                suffix, original_file_content, updated_content, action.path, diff
             )
-            error_obs = self._get_lint_error_obs(lint_errors, action.path, diff)
             if error_obs is not None:
                 return error_obs
         obs = self.write(FileWriteAction(path=action.path, content=updated_content))
