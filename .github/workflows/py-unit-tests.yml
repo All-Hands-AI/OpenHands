@@ -91,7 +91,7 @@ jobs:
         run: make build
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3.0.0
+        uses: docker/setup-buildx-action@v3
       - name: Run Tests
         run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml ./tests/unit
       - name: Upload coverage to Codecov
@@ -112,7 +112,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v3.0.0
+        uses: docker/setup-buildx-action@v3
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
