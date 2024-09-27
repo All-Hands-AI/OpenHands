@@ -9,11 +9,11 @@ class LintResult(BaseModel):
     column: int  # 1-indexed
     message: str
 
-    def visualize(self, window_size: int = 10) -> str:
+    def visualize(self, half_window: int = 3) -> str:
         """Visualize the lint result by print out all the lines where the lint result is found.
 
         Args:
-            window_size: The number of context lines to display around the error.
+            half_window: The number of context lines to display around the error on each side.
         """
         with open(self.file, 'r') as f:
             file_lines = f.readlines()
@@ -28,8 +28,8 @@ class LintResult(BaseModel):
         # Get the window of lines to display
         assert self.line <= len(file_lines) and self.line > 0
         line_idx = self.line - 1
-        begin_window = max(0, line_idx - window_size // 2)
-        end_window = min(len(file_lines), line_idx + window_size // 2)
+        begin_window = max(0, line_idx - half_window)
+        end_window = min(len(file_lines), line_idx + half_window + 1)
 
         selected_lines = file_lines[begin_window:end_window]
         line_idx_in_window = line_idx - begin_window
